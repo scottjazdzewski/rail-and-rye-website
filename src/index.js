@@ -1,3 +1,4 @@
+import { handleCommerce } from './commerce.js';
 /* Rail & Rye admin MVP. Dependencies: Cloudflare Workers, R2, D1, Cloudflare Access.
    Admin routes FAIL CLOSED until ACCESS_TEAM_DOMAIN, ACCESS_AUD and ADMIN_EMAIL
    are configured in Cloudflare Worker runtime variables, and a matching Access
@@ -153,7 +154,8 @@ async function handleAdminAPI(request,env,pathname) {
     try{
       await Promise.all([pump,env.CARDS_BUCKET.put(key,readable,{httpMetadata:{contentType:"application/pdf"}})]);
       await env.STORE_DB.prepare("UPDATE products SET pdf_key=? WHERE id=?").bind(key,id).run();
-      if(item.pdf_key) await env.CARDS_BUCKET.delete(item.pdf_key).catch(e=>console.warn("Old PDF cleanup failed",e));
+      // Preserve older PDF versions: existing paid orders may still reference them.
+      // Cleanup requires checking unexpired D1 entitlements first.
     }catch(e){await env.CARDS_BUCKET.delete(key).catch(()=>{});console.error("PDF upload failed",e);return fail("PDF upload failed; check size and retry",500);}
     return json({product:await fetchProduct(env,id)});
   }
@@ -201,6 +203,7 @@ export default {
       }
       const image=path.match(/^\/media\/cover\/([0-9a-f-]{36})$/i);
       if(image&&request.method==="GET")return publicCover(env,image[1]);
+      if(path==="/api/products"||path==="/api/checkout"||path==="/api/stripe/webhook"||path.startsWith("/api/orders/"))return handleCommerce(request,env,url);
       if(path.startsWith("/api/"))return fail("Not found",404);
       return env.ASSETS.fetch(request);
     }catch(e){console.error("Rail & Rye request error",e);return fail("An internal error occurred",500);}

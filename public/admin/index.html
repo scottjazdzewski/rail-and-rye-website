@@ -32,7 +32,7 @@
   </style>
 </head>
 <body>
-<header><div class="top"><div class="logo">RAIL &amp; RYE <small>The Publisher's Desk</small></div><a href="/">View website ↗</a></div></header>
+<header><div class="top"><div class="logo">RAIL &amp; RYE <small>The Publisher's Desk</small></div><a href="/store/" style="margin-right:16px">Test store ↗</a> <a href="/">View website ↗</a></div></header>
 <main>
   <div class="kicker">Independent thoroughbred racing intelligence</div>
   <h1>Publisher's Desk</h1>
@@ -55,7 +55,7 @@
         <div class="field"><label for="pdf">Premium PDF <span id="pdfStatus"></span></label><input id="pdf" type="file" accept="application/pdf,.pdf"><div class="detail">Private R2 storage. Up to 75 MB per PDF. Uploading a new PDF replaces the previous copy.</div></div>
         <div class="field"><label for="cover">Cover image <span id="coverStatus"></span></label><input id="cover" type="file" accept="image/jpeg,image/png,image/webp"><div class="detail">Optional JPG, PNG or WebP, up to 6 MB. Visible publicly only when the product is published.</div></div>
         <div class="actions"><button type="button" class="primary" id="draftBtn">Save draft</button><button type="button" class="gold" id="publishBtn">Publish product</button><button type="button" class="secondary" id="archiveBtn" disabled>Archive</button></div>
-        <p class="detail" style="margin-top:12px">Publishing makes a product eligible for the future storefront. It does not enable payments or customer downloads yet.</p>
+        <p class="detail" style="margin-top:12px">Publishing a test product makes it visible in the test store, where sandbox Checkout will be available after Stripe secrets and webhook are configured. Never publish real premium cards before going live.</p>
       </form>
     </section>
     <aside>
@@ -111,7 +111,7 @@
         await api('/api/admin/products/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
       }
       await refresh(id);
-      message(status==='published'?'Published successfully. Checkout is not connected yet.':status==='archive'?'Product archived.':'Draft saved successfully.','good');
+      message(status==='published'?'Published to the sandbox publication desk. No real payments can be processed.':status==='archive'?'Product archived.':'Draft saved successfully.','good');
     }catch(e){message(e.message,'error');}finally{setBusy(false);}}
   $('newBtn').addEventListener('click',reset);
   $('draftBtn').addEventListener('click',()=>save('draft'));

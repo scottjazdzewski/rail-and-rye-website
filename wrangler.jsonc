@@ -5,7 +5,11 @@
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
-    "run_worker_first": ["/admin*", "/api/*", "/media/*"]
+    "run_worker_first": [
+      "/admin*",
+      "/api/*",
+      "/media/*"
+    ]
   },
   "r2_buckets": [
     {
@@ -19,5 +23,6 @@
       "database_name": "rail-and-rye-store",
       "database_id": "9109de34-c3f1-4482-af87-02c3461b84f1"
     }
-  ]
+  ],
+  "keep_vars": true
 }

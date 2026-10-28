@@ -1,90 +1,70 @@
-# RAIL & RYE WEBSITE — ADMIN DASHBOARD v1
+# RAIL & RYE WEBSITE — STRIPE SANDBOX CHECKOUT V2
 
-Prepared 2026-10-28. This package upgrades the **existing** Rail & Rye Cloudflare Worker. It preserves the original `public/index.html` homepage and the existing R2 / D1 binding names.
+Created October 28, 2026. **TEST ONLY: no real charges.** This is an upgrade for the EXISTING `rail-and-rye-website` Cloudflare Worker; it is not another website or Stripe store. Original public homepage layout is retained, original admin access/production bindings are preserved. It does not activate live Stripe payments.
 
-## What is built
+## Features delivered
 
-- `/admin` — polished owner-only publishing interface for Race Cards, Longshot Radar, Stable Notes and Target List.
-- Create, edit, save drafts, publish and archive product records in the existing D1 `products` table.
-- Upload and replace private PDF files (max 75 MB) in `CARDS_BUCKET` using a streaming upload.
-- Upload JPG, PNG, WebP cover images (max 6 MB). Draft images stay private; published covers are served by `/media/cover/:id`.
-- Server-side Cloudflare Access JWT validation (RS256 signature, issuer, audience, expiry and owner email); fails closed if not configured.
-- CSRF protection via strict same-origin checks on write requests.
-- Existing `/api/health` retained and expanded with a database-binding presence indicator.
-- **NOT included yet:** Stripe checkout, paid customer PDF downloads, order and entitlements tables, product storefront pages, email delivery. `published` only changes product status in D1; it cannot initiate sales yet.
+- `/store/`: new refined Rail & Rye product list, querying only **published products with an attached PDF**; no product setup required in Stripe.
+- Stripe Checkout Sessions for single PDF purchases, created server-side from the product's current D1 price. Test-mode secret only (`sk_test_...` enforced).
+- `/api/stripe/webhook`: signature-verified Stripe webhook, raw body preservation, five-minute timestamp window, reject live events, durable D1 event log and order fulfillment. Handles paid checkout, delayed-payment events, failed checkout, full refunds, disputes.
+- `/store/success.html`: test payment status and download button, only after signed webhook has recorded the payment.
+- `/api/orders/:session_id/download`: private R2 file streamed **after D1 paid-entitlement check**. No public R2 bucket or file URLs. Five download attempts during 30 days after payment, blocked on refunds/disputes.
+- Existing `/admin` dashboard and `src/index.js` preserved, plus updated admin copy/link to test store.
+- `keep_vars: true` in Wrangler prevents later deploys from removing `ADMIN_EMAIL`, `ACCESS_AUD`, `ACCESS_TEAM_DOMAIN` set through Cloudflare Dashboard.
 
-## Files
+## IMPORTANT LIMITS / DON'T LAUNCH YET
 
-- `public/index.html` — existing homepage retained unchanged from the previously provided starter package.
-- `public/admin/index.html` — new owner dashboard UI.
-- `src/index.js` — replacement Worker backend.
-- `wrangler.jsonc` — retains existing bindings, adds Worker-first routing on `/admin*`, `/api/*`, and `/media/*`.
+- The first test must use a **harmless sample PDF** and a **draft test product**; do not publish genuine premium PDFs while building.
+- Only a sandbox Checkout session is supported. There is NO live Stripe key path and real customers cannot pay using this build.
+- The confirmation URL with the unpredictable `cs_test_...` session ID acts as the purchaser's temporary access link. It must be kept private. **Receipt email and download recovery are not built yet**. Add these before production (with email provider and proof of ownership).
+- Tax compliance, sales tax settings, policies/refunds/terms, chargeback operations, monitoring, reconciliation of missing webhooks, and Stripe account approval are not complete. User sells research/analysis, not bets, entry fees or prizes, but Stripe must confirm account eligibility for this category.
+- Changes to a published product's PDF will NOT change the existing order snapshot: a buyer receives the version purchased. The V2 uploader retains old R2 PDF objects when replacing a file; schedule safe cleanup of files not referenced by any active orders before production to avoid storage growth.
+- The published product list is intentionally accessible via `/store/` but NOT linked from the public homepage, so the test interface isn't promoted.
+- Stronger session ownership or email-based delivery is required before real customers. Download requests may be cached by external browsers only if misconfigured; response headers here explicitly deny caching.
 
-## DO NOT deploy admin unsecured
+## ONE-TIME DEPLOYMENT — DO IN THIS ORDER
 
-The Worker will *refuse* requests to `/admin` and `/api/admin/*` until all three vars below are set. That fail-closed behavior is intentional. Do not weaken it or put credentials in GitHub. Your public homepage continues to work.
+### 1. Cloudflare D1: add orders + Stripe event tables
 
-### 1. Deploy code into the EXISTING private GitHub repo
+Go to https://dash.cloudflare.com/ → Storage & databases → D1 → **rail-and-rye-store** → Console. Run the SQL in `migrations/001_stripe_orders.sql`. You can run each statement one at a time; verify success. This is additive and does not alter the existing `products` table.
 
-Target: https://github.com/scottjazdzewski/rail-and-rye-website (branch: `main`).
+### 2. Upload V2 to the same GitHub repo
 
-Copy the *contents* of this package to the repository root: `public/`, `src/`, `wrangler.jsonc`, and `README.md`. GitHub should show the new `public/admin/index.html` and the updated `src/index.js`. Upload extracted files, NOT the zip archive. Do not create a new Cloudflare application. Cloudflare will build with the existing `npx wrangler deploy` command.
+Target: https://github.com/scottjazdzewski/rail-and-rye-website on `main`.
+Upload package contents, NOT the ZIP. Folders `src`, `public`, `migrations`, and `wrangler.jsonc`/`README.md` must be at the repository ROOT. This adds `src/commerce.js`, `public/store/index.html`, `public/store/success.html`, and the SQL migration. It also updates existing `src/index.js`, `public/admin/index.html`, `wrangler.jsonc`. Existing homepage `public/index.html` is preserved. Do not create another Cloudflare app.
 
-Because the connected GitHub app did not expose this private repository to this ChatGPT session, the package was prepared as a downloadable ZIP rather than pushed to the repository directly.
+Verify successful Cloudflare deployment of `rail-and-rye-website`, website homepage still public and `/admin` still requires Cloudflare Access. Both `CARDS_BUCKET` and `STORE_DB` production bindings must remain present. Worker-first routing already covers `/api/*`; `/store/` is served as static assets.
 
-### 2. Set up the Cloudflare Access sign-in app
+### 3. Stripe TEST secret (never paste secrets into chat or GitHub)
 
-In Cloudflare dashboard open **Zero Trust → Access → Applications → Add an application → Self-hosted**. Protect the following paths using one self-hosted Access application so both receive the same application AUD:
+In the Stripe sandbox/test Dashboard https://dashboard.stripe.com/test/apikeys find **Secret key** beginning `sk_test_...`. In Cloudflare → Workers & Pages → rail-and-rye-website → Settings → Runtime variables and secrets → Add variable, add **Secret** named `STRIPE_SECRET_KEY`, set it to the Stripe **test** secret. Keep Production selected for the Worker; Production Cloudflare is running *sandbox Stripe only*. Never use `sk_live_...` here. `STRIPE_SECRET_KEY` must be secret type, not plaintext.
 
-- Hostname `rail-and-rye-website.scottjazdzewski.workers.dev`, path `/admin*`.
-- Same hostname, path `/api/admin*`.
+### 4. Stripe TEST webhook
 
-Configure an **Allow** policy for your specific owner email (do NOT grant Everyone). Use an email one-time PIN or another identity provider. Confirm that an unauthenticated browser is blocked. Cloudflare dashboard form labels may vary; follow current docs: https://developers.cloudflare.com/workers/configuration/cloudflare-access/
+In Stripe sandbox open https://dashboard.stripe.com/test/webhooks (may be under Workbench → Webhooks or Developers → Webhooks). Add a destination/end-point for exact URL:
+`https://rail-and-rye-website.scottjazdzewski.workers.dev/api/stripe/webhook`
+Listen to the events:
+`checkout.session.completed`
+`checkout.session.async_payment_succeeded`
+`checkout.session.async_payment_failed`
+`charge.refunded`
+`charge.dispute.created`
 
-Cloudflare Access may normalize paths differently depending on its UI; ensure `/admin`, `/admin/`, `/admin/index.html`, and the `/api/admin` routes are protected, and prevent a bypass through the other public hostname when the custom domain is added. The Worker independently verifies token and email as defense in depth.
+Set event payload type to **snapshot** events (standard full object), not thin events. Retrieve the specific endpoint's **signing secret** `whsec_...`. In Cloudflare Worker settings add **Secret** `STRIPE_WEBHOOK_SECRET` = the dashboard endpoint's signing secret. The Stripe CLI's `whsec_` and Dashboard endpoint `whsec_` are different; choose the correct one. Do not publish this secret anywhere. Test the webhook endpoint with Stripe's delivery tester.
 
-### 3. Set Worker runtime variables
+### 5. End-to-end sandbox test
 
-In Cloudflare **Workers & Pages → rail-and-rye-website → Settings → Variables and secrets**, add:
+From the protected dashboard https://rail-and-rye-website.scottjazdzewski.workers.dev/admin, create or use a harmless **TEST** product at **$1.00** with a small harmless PDF, then Publish (do not use real paid cards). Open https://rail-and-rye-website.scottjazdzewski.workers.dev/store/, check the test product displays and has test-purchase button. Purchase using a Stripe published test card number (e.g. test `4242 4242 4242 4242`, future expiry, any CVC; use only on Stripe sandbox). On successful redirection, wait for verified webhook; the download button should appear. Download PDF once. Without payment, `/api/orders/.../download` should return 403; after refund, should return 403. Confirm R2 remains private. Test the root homepage public in Incognito and `/admin` blocked without sign-in.
 
-- `ACCESS_TEAM_DOMAIN` = your Cloudflare Zero Trust team hostname, like `your-team.cloudflareaccess.com` (no example value should be used as a real setting)
-- `ACCESS_AUD` = the **Application Audience (AUD) Tag** copied from your Access application, NOT the app name
-- `ADMIN_EMAIL` = the precise email allowed by your Access policy
+## Database schema
 
-You do not need to share these with ChatGPT. They belong in Cloudflare runtime settings, not GitHub. `ACCESS_AUD` is not a Stripe secret, and no Stripe keys should be configured until checkout is built.
+See `migrations/001_stripe_orders.sql`. It adds `orders` and `stripe_events`, plus an index on payment intent. Existing `products` table and R2 objects unchanged.
 
-### 4. Test admin securely
+## Risk / next production tasks
 
-- Visit `https://rail-and-rye-website.scottjazdzewski.workers.dev/admin` using your browser.
-- Sign in through Cloudflare Access. Verify only the intended owner can access it.
-- Create a **draft** using a sample title and `price=0.00` (test item only).
-- Upload a small TEST PDF; confirm that D1 has the `pdf_key` for the record and R2 contains `cards/<id>/<uuid>.pdf`.
-- Upload a cover and edit the draft; archive or keep it as a test item. Do NOT sell anything yet.
-- Confirm a signed-out/incognito browser cannot fetch `/api/admin/products`, cannot open `/admin/index.html`, and cannot fetch private PDF objects directly.
-
-### 5. Next work
-
-Build public catalog and product detail pages; connect Stripe Checkout **only after merchant eligibility approval**; verify Stripe signed webhooks and durable orders in D1; gate private PDF downloads by paid entitlements. Add email delivery and a complete test purchase before accepting payment.
-
-## Current D1 table expected
-
-The production database already contains a `products` table, created earlier using:
-
-```sql
-CREATE TABLE IF NOT EXISTS products (
-  id TEXT PRIMARY KEY,
-  title TEXT NOT NULL,
-  slug TEXT NOT NULL UNIQUE,
-  category TEXT NOT NULL,
-  race_date TEXT,
-  track TEXT,
-  description TEXT DEFAULT '',
-  price_cents INTEGER NOT NULL DEFAULT 0,
-  pdf_key TEXT,
-  image_url TEXT,
-  status TEXT NOT NULL DEFAULT 'draft',
-  created_at TEXT DEFAULT CURRENT_TIMESTAMP
-);
-```
-
-No extra D1 SQL is required for this admin v1. Never expose private files through a public R2 URL.
+1. Get clear Stripe eligibility/merchant account approval for paid racing analytics before live payments.
+2. Add transaction emails + durable recovery; do not rely exclusively on the session URL in live use.
+3. Add safe cleanup/retention for replaced PDFs, retaining all objects referenced by active orders.
+4. Add public privacy/refund/terms policies; sales tax and appropriate Stripe tax settings.
+5. Reconciliation jobs for missed webhook events, payout/chargeback reporting, fraud controls and testing.
+6. Only after all signoffs deliberately create a separate production-mode release with `sk_live_` support; do not enable live accidentally.
