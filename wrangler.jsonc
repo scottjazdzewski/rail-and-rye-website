@@ -1,7 +1,14 @@
+
 {
   "name": "rail-and-rye-website",
   "compatibility_date": "2026-10-28",
   "assets": {
     "directory": "./public"
-  }
+  },
+  "r2_buckets": [
+    {
+      "binding": "CARDS_BUCKET",
+      "bucket_name": "rail-and-rye-private-cards"
+    }
+  ]
 }
