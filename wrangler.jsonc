@@ -1,0 +1,7 @@
+{
+  "name": "rail-and-rye-website",
+  "compatibility_date": "2026-10-28",
+  "assets": {
+    "directory": "./public"
+  }
+}
