@@ -12,5 +12,12 @@
       "binding": "CARDS_BUCKET",
       "bucket_name": "rail-and-rye-private-cards"
     }
+  ],
+  "d1_databases": [
+    {
+      "binding": "STORE_DB",
+      "database_name": "rail-and-rye-store",
+      "database_id": "9109de34-c3f1-4482-af87-02c3461b84f1"
+    }
   ]
 }
