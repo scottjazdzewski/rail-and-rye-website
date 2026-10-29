@@ -1,0 +1,31 @@
+RAIL & RYE — HERITAGE HOMEPAGE PRODUCTION PATCH V3 (Oct 29, 2026)
+
+STATUS: READY TO PUBLISH, NOT AUTOMATICALLY DEPLOYED.
+
+This is a visual-only patch to the existing Cloudflare Worker GitHub repository.
+Use the repository's actual local root folder as the destination when extracting.
+It adds/modifies ONLY:
+ public/index.html
+ public/assets/heritage-v1.css
+ public/assets/heritage-v1/hero-original.jpg  (owner supplied photo)
+ public/assets/heritage-v1/card-races.jpg
+ public/assets/heritage-v1/card-journal.jpg
+ public/assets/heritage-v1/badge-longshot.jpg
+ public/assets/heritage-v1/badge-stable.jpg
+ public/assets/heritage-v1/badge-target.jpg
+ public/assets/heritage-v1/parchment.jpg
+ public/assets/heritage-v1/rail-rye-ivory-logo.png  (owner supplied exact original, trimmed transparent margins only)
+
+No server/worker/commerce/admin/store/payment code, no secrets, no config changes.
+Keep current local git repo as source of truth; DO NOT replace all site source with an older release zip.
+
+WINDOWS - GitHub Desktop / Cloudflare instructions:
+1. In GitHub Desktop, open repository scottjazdzewski/rail-and-rye-website on main; Fetch origin, Pull if any changes are available.
+2. Repository > Show in Explorer. OPEN the repository root folder.
+3. Extract only the 'public' folder from this ZIP into that repository root; when prompted, merge and overwrite public/index.html. Existing non-patch files stay in place.
+4. GitHub Desktop: inspect list of changes (only listed public HTML/CSS/images), commit 'Premium heritage homepage and exact ivory logo', Push origin.
+5. In Cloudflare Workers & Pages > rail-and-rye-website > Deployments, confirm new deployment is Ready.
+6. Open https://railandryeracing.com/ on cellular + mobile, hard refresh. Check links: Race Cards, Journal, Publications, order access, checkout.
+
+ROLLBACK: GitHub Desktop History > Revert this commit, Push origin, wait Cloudflare Ready.
+Be aware of any unpublished work currently in your repo; review the changes before commit.
