@@ -1,0 +1,31 @@
+/* Rail & Rye V6: unified one-line header, with owner's vintage Sovereignty artwork. */
+.heritage-home .heritage-strap{color:#f6eeda}
+.heritage-home .heritage-strap .heritage-horse-mini{display:block;width:66px;height:76px;flex:0 0 66px;object-fit:contain;opacity:1;filter:drop-shadow(0 2px 4px #0009)}
+@media(min-width:1121px){
+ .heritage-home .heritage-header-inner{display:grid;grid-template-columns:max-content minmax(0,1fr) max-content;align-items:center;gap:clamp(10px,1.2vw,22px);min-height:115px}
+ .heritage-home .heritage-brand{gap:clamp(8px,.7vw,12px)}
+ .heritage-home .heritage-brand-mark{width:clamp(62px,5vw,86px);height:clamp(62px,5vw,86px)}
+ .heritage-home .heritage-brand-mark img{width:100%;height:100%}
+ .heritage-home .heritage-wordmark{font-size:clamp(27px,2.4vw,43px)}
+ .heritage-home .heritage-strap,.heritage-inner-page .heritage-strap{position:static;top:auto;left:auto;transform:none;display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:8px;width:auto;max-width:none;min-width:0;overflow:visible;letter-spacing:.065em;font:600 clamp(16px,1.24vw,22px)/1.12 var(--heritage-serif);text-transform:uppercase;pointer-events:auto;color:#f6eeda}
+ .heritage-home .heritage-strap span{white-space:nowrap}
+ .heritage-home .heritage-nav,.heritage-inner-page .heritage-nav{transform:none;margin-left:0;display:flex;align-items:center;justify-content:flex-end;gap:clamp(7px,.8vw,14px)}
+ .heritage-home .heritage-nav .heritage-nav-pill{min-height:42px;padding:9px clamp(10px,.82vw,16px);font-size:clamp(9px,.65vw,12px)}
+ .heritage-home .heritage-mobile-nav{display:none}
+}
+@media(min-width:1121px) and (max-width:1470px){.heritage-home .heritage-strap{font-size:clamp(14px,1.05vw,18px);letter-spacing:.04em}.heritage-home .heritage-strap .heritage-horse-mini{width:53px;height:65px;flex-basis:53px}.heritage-home .heritage-wordmark{font-size:clamp(26px,2.35vw,34px)}}
+@media(min-width:751px) and (max-width:1120px){
+ .heritage-home .heritage-header-inner{display:grid;grid-template-columns:max-content minmax(0,1fr) max-content;align-items:center;gap:10px;min-height:108px}
+ .heritage-home .heritage-brand-mark{width:60px;height:60px}.heritage-home .heritage-brand-mark img{width:100%;height:100%}
+ .heritage-home .heritage-wordmark{font-size:27px}
+ .heritage-home .heritage-strap,.heritage-inner-page .heritage-strap{position:static;display:flex;transform:none;top:auto;left:auto;max-width:none;width:auto;min-width:0;align-items:center;justify-content:flex-start;gap:5px;letter-spacing:.025em;font:600 clamp(13px,1.5vw,16px)/1.2 var(--heritage-serif)}
+ .heritage-home .heritage-strap .heritage-horse-mini{width:42px;height:52px;flex-basis:42px}
+ .heritage-home .heritage-nav{display:none}
+ .heritage-home .heritage-mobile-nav{display:block;position:relative;margin-left:auto;z-index:10}
+ .heritage-home .heritage-mobile-nav summary{cursor:pointer;list-style:none;border:1px solid #e0b572;color:#f6ebd8;border-radius:99px;padding:11px 14px;font:700 11px var(--heritage-sans);letter-spacing:.08em;text-transform:uppercase}
+ .heritage-home .heritage-mobile-nav summary::-webkit-details-marker{display:none}
+ .heritage-home .heritage-mobile-nav nav{position:absolute;right:0;top:45px;min-width:220px;display:flex;flex-direction:column;padding:10px;background:#071e30;border:1px solid #cba56a;box-shadow:0 9px 28px #000a;border-radius:7px}
+ .heritage-home .heritage-mobile-nav nav a{padding:12px 11px;color:#fff;font:700 11px var(--heritage-sans);text-transform:uppercase}
+}
+@media(max-width:750px){.heritage-home .heritage-strap .heritage-horse-mini{width:43px;height:48px;flex-basis:43px}.heritage-home .heritage-strap{font-size:clamp(9px,2.5vw,11px);letter-spacing:.05em;gap:5px}}
+@media(max-width:390px){.heritage-home .heritage-strap .heritage-horse-mini{width:35px;height:39px;flex-basis:35px}.heritage-home .heritage-strap{font-size:8.8px;letter-spacing:.02em}}
