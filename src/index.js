@@ -1,4 +1,4 @@
-import { handleCommerce, sendQueuedEmails } from './commerce.js';
+import { handleCommerce, sendQueuedEmails, checkoutReadiness } from './commerce.js';
 /* Rail & Rye admin MVP. Dependencies: Cloudflare Workers, R2, D1, Cloudflare Access.
    Admin routes FAIL CLOSED until ACCESS_TEAM_DOMAIN, ACCESS_AUD and ADMIN_EMAIL
    are configured in Cloudflare Worker runtime variables, and a matching Access
@@ -103,7 +103,7 @@ async function handleAdminAPI(request,env,pathname) {
   if(!env.STORE_DB||!env.CARDS_BUCKET) return fail("Database or storage binding missing",503);
   if(!["GET","POST","PATCH","PUT"].includes(request.method)) return fail("Method not allowed",405);
   if(request.method!=="GET"&&!trustedOrigin(request)) return fail("Same-origin request required",403);
-  if(pathname==="/api/admin/status"&&request.method==="GET") return json({ready:true,categories:[...CATEGORIES],max_pdf_bytes:MAX_PDF});
+  if(pathname==="/api/admin/status"&&request.method==="GET") return json({ready:true,categories:[...CATEGORIES],max_pdf_bytes:MAX_PDF,...checkoutReadiness(env)});
   if(pathname==="/api/admin/products") {
     if(request.method==="GET") {
       const result=await env.STORE_DB.prepare("SELECT * FROM products ORDER BY created_at DESC, id DESC LIMIT 250").all();
@@ -203,7 +203,7 @@ export default {
       }
       const image=path.match(/^\/media\/cover\/([0-9a-f-]{36})$/i);
       if(image&&request.method==="GET")return publicCover(env,image[1]);
-      if(path==="/api/products"||path==="/api/checkout"||path==="/api/stripe/webhook"||path.startsWith("/api/orders/")||path==="/api/delivery/download"||path==="/api/recovery/request")return handleCommerce(request,env,url,ctx);
+      if(path==="/api/products"||path==="/api/checkout"||path==="/api/stripe/webhook"||path==="/api/stripe/live-webhook"||path.startsWith("/api/orders/")||path==="/api/delivery/download"||path==="/api/recovery/request")return handleCommerce(request,env,url,ctx);
       if(path.startsWith("/api/"))return fail("Not found",404);
       return env.ASSETS.fetch(request);
     }catch(e){console.error("Rail & Rye request error",e);return fail("An internal error occurred",500);}

@@ -7,11 +7,12 @@ const db=new DatabaseSync(':memory:');
 db.exec(`CREATE TABLE products (id TEXT PRIMARY KEY,title TEXT,slug TEXT,category TEXT,race_date TEXT,track TEXT,description TEXT,price_cents INTEGER,pdf_key TEXT,image_url TEXT,status TEXT,created_at TEXT DEFAULT CURRENT_TIMESTAMP);`);
 db.exec(readFileSync('./migrations/001_stripe_orders.sql','utf8'));
 db.exec(readFileSync('./migrations/002_email_delivery.sql','utf8'));
+db.exec(readFileSync('./migrations/003_live_readiness.sql','utf8'));
 const item='ceb80f18-4e0d-4363-8323-0cdbe12d51de';
 db.prepare('INSERT INTO products (id,title,slug,category,race_date,track,description,price_cents,pdf_key,status) VALUES (?,?,?,?,?,?,?,?,?,?)')
  .run(item,'TEST — Keeneland Race Card','test','Race Cards','2026-10-28','Keeneland','Safe test item',100,'cards/'+item+'/test.pdf','published');
 const wrap={prepare(sql){let args=[];const x={bind(...a){args=a;return x;},first(){return db.prepare(sql).get(...args);},all(){return {results:db.prepare(sql).all(...args)};},run(){const r=db.prepare(sql).run(...args);return {meta:{changes:r.changes}};}};return x;},async batch(stmts){db.exec('BEGIN IMMEDIATE');try{const x=stmts.map(s=>s.run());db.exec('COMMIT');return x}catch(e){db.exec('ROLLBACK');throw e}}};
-const env={STORE_DB:wrap,CARDS_BUCKET:{async get(key){assert.equal(key,'cards/'+item+'/test.pdf');return {body:new TextEncoder().encode('%PDF- sandbox test')}}},STRIPE_SECRET_KEY:'sk_test_fake',STRIPE_WEBHOOK_SECRET:'whsec_test_fake',RESEND_API_KEY:'re_test_fake',ADMIN_EMAIL:'buyer@example.test'};
+const env={STORE_DB:wrap,CARDS_BUCKET:{async get(key){assert.equal(key,'cards/'+item+'/test.pdf');return {body:new TextEncoder().encode('%PDF- sandbox test')}}},STRIPE_SECRET_KEY:'sk_test_fake',STRIPE_WEBHOOK_SECRET:'whsec_test_fake_0123456789abc',RESEND_API_KEY:'re_test_fake',ADMIN_EMAIL:'buyer@example.test'};
 const sid='cs_test_'+'A'.repeat(50);
 let mails=[];let resendFail=false, stripeCalls=0;
 const originalFetch=globalThis.fetch;
@@ -37,11 +38,11 @@ assert.equal(db.prepare('SELECT status FROM orders').get().status,'paid');assert
 assert.equal((await run(await event(evt))).status,200);await flush();assert.equal(mails.length,1,'Duplicate webhook must not send duplicate email');
 const code=new URL((mails[0].html.match(/href="(https:\/\/railandryeracing\.com\/store\/access\.html\?code=[^"]+)"/)||[])[1]).searchParams.get('code');assert.ok(code);
 const untrusted=await run(post('/api/delivery/download',{code},{origin:'https://evil.example'}));assert.equal(untrusted.status,403);
-const invalid=await run(post('/api/delivery/download',{code:code.slice(0,-1)+'0'}));assert.equal(invalid.status,403);
+const invalid=await run(post('/api/delivery/download',{code:code.slice(0,-1)+(code.endsWith('0')?'1':'0')}));assert.equal(invalid.status,403);
 const pdf=await run(post('/api/delivery/download',{code}));assert.equal(pdf.status,200);assert.equal(await pdf.text(),'%PDF- sandbox test');assert.equal(db.prepare('SELECT download_count FROM orders').get().download_count,1);
 // Purchase-recovery requests are generic, throttled and never reveal other users' orders.
-const other=await (await run(post('/api/recovery/request',{email:'notbuyer@example.test'}))).json();assert.match(other.message,/If eligible test purchases/);
-const first=await (await run(post('/api/recovery/request',{email:env.ADMIN_EMAIL}))).json();assert.match(first.message,/If eligible test purchases/);await flush();assert.equal(mails.length,2);
+const other=await (await run(post('/api/recovery/request',{email:'notbuyer@example.test'}))).json();assert.match(other.message,/If an eligible purchase/);
+const first=await (await run(post('/api/recovery/request',{email:env.ADMIN_EMAIL}))).json();assert.match(first.message,/If an eligible purchase/);await flush();assert.equal(mails.length,2);
 const throttled=await run(post('/api/recovery/request',{email:env.ADMIN_EMAIL}));assert.equal(throttled.status,200);await flush();assert.equal(mails.length,2,'Repeated request within 15 minutes may not cause another email');
 const recoverLink=new URL(mails[1].html.match(/href="(https:\/\/railandryeracing\.com\/store\/access\.html\?code=[^"]+)"/)[1]).searchParams.get('code');assert.equal((await run(post('/api/delivery/download',{code:recoverLink}))).status,200);
 // Refund should immediately invalidate both originally emailed and recovered URLs.
