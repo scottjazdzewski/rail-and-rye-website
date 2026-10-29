@@ -1,3 +1,21 @@
+# V4.1 POLICY REVIEW PACKAGE — OCTOBER 28, 2026
+
+**REVIEW BEFORE DEPLOYMENT.** This builds on the already-deployed V4 website. Only the three HTML legal-policy pages and this README have been changed from V4. No Worker backend, Stripe, Cloudflare, D1, R2, email, Access rules, branding, journal or storefront files changed.
+
+- Site owner confirmed: Rail & Rye Racing is presently a **Georgia sole proprietorship** operating from **Paulding County**, and trade-name (DBA) registration is **pending, not yet filed**. This package does **not** assert the brand is an LLC or registered DBA.
+- Site owner approved: five successful PDF downloads within 30 days per paid non-refunded order; replacement access links normally expire after 24 hours and never reset the limit. Confirmed these rules against the original V4 `src/commerce.js`.
+- Changed refund policy to describe billing and access problems, refund/correction, and revocation of access after refunds.
+- Changed terms to explain no sportsbook or bet handling, no outcome guarantees, personal-use license, customer access rules and help links.
+- Changed privacy policy to accurately describe existing **active** Resend transactional emails, Stripe payment processing, Cloudflare infrastructure, available privacy requests and data retention descriptions. Removed outdated "Resend after V3 enabled" language.
+- Removed pre-launch DRAFT banners and explicit "real-money payments are not enabled" statements **from the policy pages only**; the public store remains sandbox-labeled and backend checkout remains *test-only*.
+- Seller legal-identity disclosure, merchant public contact information (Stripe may request phone/address), DBA filing, local business license, jurisdictional legal counsel review, applicable taxes and direct confirmation of Stripe's acceptance of the precise business model still need independent verification before **real sales**. These drafts are publication candidates, not an attorney's legal opinion.
+
+**CRITICAL:** Pushing this ZIP to GitHub DOES NOT enable live payments. The V4 backend deliberately checks `cs_test_` and `livemode === false` and accepts only a configured ADMIN_EMAIL in the test email workflow. Switching live keys without a separately engineered and tested live release will break the checkout/webhook flow. Do not change Cloudflare secrets, toggle live payments or remove the store's TEST CHECKOUT ONLY notice as part of this V4.1 update.
+
+**Deployment (after owner and appropriate legal review):** extract the contents of this ZIP, copy the six existing root items `README.md`, `test-v3.mjs`, `wrangler.jsonc`, `migrations/`, `public/`, `src/` into the local GitHub Desktop checkout of `rail-and-rye-website`, choose Replace/merge, inspect GitHub Desktop Changes (expected: three policy HTML files + README ONLY), then commit and push main. If more files appear changed, STOP and investigate. Verify Cloudflare Ready and each policy page. Do not rerun SQL migrations.
+
+---
+
 # RAIL & RYE — V3 AUTOMATIC EMAIL & PDF RECOVERY (SANDBOX)
 
 Prepared October 28, 2026 from the **exact latest GitHub ZIP** uploaded by the owner (`rail-and-rye-website-main.zip`, commit `d0a98fba036d0ae72aee3365d8e77bdc489cbd7a`). This is a source-code update package, **not yet deployed**. Preserve the existing Cloudflare Worker `rail-and-rye-website`, existing D1/R2, Cloudflare Access and Stripe test settings. **Never put API secrets into GitHub or this ZIP.**
