@@ -1,0 +1,72 @@
+/* Rail & Rye V5: owner-approved home refinements.
+   Heritage homepage only: shorter opening view, paddock Journal art, original
+   Sovereignty-photo-pose silhouette beside brand intelligence title. */
+.heritage-home .heritage-hero{
+  min-height:clamp(445px,29vw,505px);
+}
+.heritage-home .heritage-lead{
+  padding-top:clamp(25px,2.25vw,39px);
+  padding-bottom:clamp(28px,2.6vw,44px);
+}
+.heritage-home .heritage-lead h1{
+  font-size:clamp(55px,4.35vw,87px);
+  line-height:.92;
+  margin:16px 0 18px;
+}
+.heritage-home .heritage-lead p{margin-top:13px}
+.heritage-home .heritage-feature-grid{padding-top:14px}
+.heritage-home .heritage-panel{min-height:clamp(218px,13.8vw,266px)}
+.heritage-home .journal-panel-heritage{
+  background-image:url('/assets/heritage-v1/home-journal-paddock.webp');
+  background-position:center 52%;
+}
+.heritage-home .heritage-strap{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  width:max-content;
+  max-width:none;
+  overflow:visible;
+  left:50%;
+  top:26px;
+  font-size:clamp(12px,.97vw,17px);
+  letter-spacing:.17em;
+  line-height:1.25;
+}
+.heritage-home .heritage-strap span{white-space:nowrap}
+.heritage-home .heritage-strap .heritage-horse-mini{
+  width:49px;
+  height:39px;
+  flex:0 0 auto;
+  object-fit:contain;
+  filter:drop-shadow(0 1px 4px rgba(0,0,0,.45));
+}
+@media (max-width:1250px) and (min-width:751px){
+  .heritage-home .heritage-strap{display:none}
+}
+@media(max-width:750px){
+  .heritage-home .heritage-hero{min-height:565px}
+  .heritage-home .heritage-strap{
+    display:flex;
+    top:79px;
+    width:calc(100% - 22px);
+    max-width:calc(100% - 22px);
+    gap:7px;
+    font-size:clamp(9px,2.65vw,11px);
+    letter-spacing:.09em;
+  }
+  .heritage-home .heritage-strap .heritage-horse-mini{width:32px;height:28px}
+  .heritage-home .heritage-lead{padding-top:102px;padding-bottom:37px}
+  .heritage-home .heritage-lead h1{
+    font-size:clamp(48px,10.7vw,68px);
+    line-height:.95;
+    margin:17px 0;
+  }
+  .heritage-home .heritage-panel{min-height:235px}
+}
+@media(max-width:390px){
+  .heritage-home .heritage-strap{font-size:8.5px;letter-spacing:.055em}
+  .heritage-home .heritage-strap .heritage-horse-mini{width:28px;height:25px}
+  .heritage-home .heritage-lead h1{font-size:46px}
+}
