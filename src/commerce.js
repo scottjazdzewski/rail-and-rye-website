@@ -27,7 +27,12 @@ function checkoutMode(env){
   return 'test';
 }
 function stripeKey(env,mode){return mode==='live'?env.STRIPE_LIVE_SECRET_KEY:env.STRIPE_SECRET_KEY;}
-function stripeReadyFor(env,mode){const key=stripeKey(env,mode);return typeof key==='string' && key.startsWith(mode==='live'?'sk_live_':'sk_test_');}
+// Live Stripe Checkout supports both standard (sk_live_) and least-privilege
+// restricted (rk_live_) keys; sandbox remains pinned to sk_test_.
+function stripeReadyFor(env,mode){
+  const key=stripeKey(env,mode);
+  return typeof key==='string' && (mode==='live' ? /^(?:sk|rk)_live_/.test(key) : key.startsWith('sk_test_'));
+}
 // Never create a charge unless fulfillment resources and the relevant webhook
 // signing secret are present. The live path additionally requires a dedicated
 // PDF signing key, to keep delivery credentials independent of Stripe secrets.

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import {readFileSync} from 'node:fs';
 import {webcrypto} from 'node:crypto';
-import {handleCommerce} from './src/commerce.js';
+import {handleCommerce,checkoutReadiness} from './src/commerce.js';
 const db=new DatabaseSync(':memory:');
 db.exec(`CREATE TABLE products (id TEXT PRIMARY KEY,title TEXT,slug TEXT,category TEXT,race_date TEXT,track TEXT,description TEXT,price_cents INTEGER,pdf_key TEXT,image_url TEXT,status TEXT,created_at TEXT DEFAULT CURRENT_TIMESTAMP);`);
 for (const file of ['001_stripe_orders.sql','002_email_delivery.sql','003_live_readiness.sql']) db.exec(readFileSync('./migrations/'+file,'utf8'));
@@ -10,12 +10,19 @@ const item='ceb80f18-4e0d-4363-8323-0cdbe12d51de';
 db.prepare('INSERT INTO products (id,title,slug,category,race_date,track,description,price_cents,pdf_key,status) VALUES (?,?,?,?,?,?,?,?,?,?)')
  .run(item,'Live Card','test','Race Cards','2026-10-28','Keeneland','Paid item',100,'cards/'+item+'/test.pdf','published');
 const wrap={prepare(sql){let args=[];const x={bind(...a){args=a;return x;},first(){return db.prepare(sql).get(...args);},all(){return {results:db.prepare(sql).all(...args)};},run(){const r=db.prepare(sql).run(...args);return {meta:{changes:r.changes}};}};return x;},async batch(stmts){db.exec('BEGIN IMMEDIATE');try{const x=stmts.map(s=>s.run());db.exec('COMMIT');return x}catch(e){db.exec('ROLLBACK');throw e}}};
-const env={STORE_DB:wrap,CARDS_BUCKET:{async get(key){assert.equal(key,'cards/'+item+'/test.pdf');return {body:new TextEncoder().encode('%PDF- live simulator')}}},STRIPE_SECRET_KEY:'sk_test_fake',STRIPE_WEBHOOK_SECRET:'whsec_test_fake_0123456789abc',STRIPE_LIVE_SECRET_KEY:'sk_live_fake',STRIPE_LIVE_WEBHOOK_SECRET:'whsec_live_fake_0123456789abc',RR_DELIVERY_SIGNING_KEY:'0123456789abcdef0123456789abcdef0123456789abcdef',RESEND_API_KEY:'re_fake',ADMIN_EMAIL:'admin@example.test',RR_PAYMENT_MODE:'live',RR_LIVE_ACTIVATION:'CONFIRM_LIVE_SALES'};
+const env={STORE_DB:wrap,CARDS_BUCKET:{async get(key){assert.equal(key,'cards/'+item+'/test.pdf');return {body:new TextEncoder().encode('%PDF- live simulator')}}},STRIPE_SECRET_KEY:'sk_test_fake',STRIPE_WEBHOOK_SECRET:'whsec_test_fake_0123456789abc',STRIPE_LIVE_SECRET_KEY:'rk_live_fake',STRIPE_LIVE_WEBHOOK_SECRET:'whsec_live_fake_0123456789abc',RR_DELIVERY_SIGNING_KEY:'0123456789abcdef0123456789abcdef0123456789abcdef',RESEND_API_KEY:'re_fake',ADMIN_EMAIL:'admin@example.test',RR_PAYMENT_MODE:'live',RR_LIVE_ACTIVATION:'CONFIRM_LIVE_SALES'};
+// Test least-privilege rk_live_ and the backward-compatible sk_live_ format.
+assert.deepEqual(checkoutReadiness(env),{payment_mode:'live',checkout_ready:true});
+for(const [key,ready] of [['sk_live_fake',true],['sk_test_fake',false],['rk_test_fake',false],['not_a_stripe_key',false],['rk_live_fake',true]]){
+  env.STRIPE_LIVE_SECRET_KEY=key;
+  assert.equal(checkoutReadiness(env).checkout_ready,ready,`Live readiness key format ${key}`);
+}
+env.STRIPE_LIVE_SECRET_KEY='rk_live_fake';
 const sid1='cs_live_'+'A'.repeat(50),sid2='cs_live_'+'B'.repeat(50);let sessionCounter=0,mails=[],stripeCalls=0;
 const origFetch=globalThis.fetch;
 globalThis.fetch=async(url,options)=>{
  if(String(url).includes('api.stripe.com/v1/checkout/sessions')){
-   stripeCalls++;assert.equal(options.headers.Authorization,'Bearer sk_live_fake');
+   stripeCalls++;assert.equal(options.headers.Authorization,'Bearer rk_live_fake');
    const form=new URLSearchParams(options.body);assert.equal(form.get('line_items[0][price_data][unit_amount]'),'100');
    return Response.json({id:++sessionCounter===1?sid1:sid2,url:'https://checkout.stripe.com/c/pay/live',livemode:true});
  }
