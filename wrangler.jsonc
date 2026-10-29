@@ -24,5 +24,10 @@
       "database_id": "9109de34-c3f1-4482-af87-02c3461b84f1"
     }
   ],
-  "keep_vars": true
+  "keep_vars": true,
+  "triggers": {
+    "crons": [
+      "*/10 * * * *"
+    ]
+  }
 }

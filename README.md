@@ -1,3 +1,60 @@
+# RAIL & RYE — V3 AUTOMATIC EMAIL & PDF RECOVERY (SANDBOX)
+
+Prepared October 28, 2026 from the **exact latest GitHub ZIP** uploaded by the owner (`rail-and-rye-website-main.zip`, commit `d0a98fba036d0ae72aee3365d8e77bdc489cbd7a`). This is a source-code update package, **not yet deployed**. Preserve the existing Cloudflare Worker `rail-and-rye-website`, existing D1/R2, Cloudflare Access and Stripe test settings. **Never put API secrets into GitHub or this ZIP.**
+
+## What V3 changes
+
+- Sends a branded purchase-confirmation and PDF-access email as **Rail & Rye Racing <orders@railandryeracing.com>** after a *verified paid Stripe sandbox webhook*. Resend API key is a Worker secret `RESEND_API_KEY` already reported installed. Sender domain was reported verified.
+- Uses transactional D1 `email_jobs` outbox + provider idempotency keys; retries failures via Cloudflare cron every 10 minutes (maximum six attempts) and after the webhook via `waitUntil()`. Stripe webhook success does not depend on Resend availability.
+- Email links are 256-bit HMAC signed, use an opaque job identifier (not a Stripe Checkout session ID), point to `/store/access.html`, are valid **24 hours after email was sent**, are not auto-downloaded on opening, and grant PDF access only while the purchased D1 order is paid and within the 30-day/five-download quota. Each authorized PDF remains private in R2. Refunds and disputes revoke all links, including recovery links.
+- `/store/recover.html`: purchase email request form; same-origin POST `/api/recovery/request`, generic non-enumerating responses, per-email / per-IP throttling, new 24-hour emailed links for paid unexpired orders. The form never directly reveals purchase history.
+- **SANDBOX SAFETY:** Outbound email is strictly allowed **only to the same address as `ADMIN_EMAIL`**; all other checkout emails are ignored for delivery (even if the Stripe test checkout succeeds). This makes it safe for limited sandbox tests, not a production commerce release.
+- Preserves `/store/`, `/store/success.html`, `/admin`, `/api/admin/*`, `/api/stripe/webhook`, `products`, `orders`, R2 bindings, the old workers.dev address, and the existing custom domain. The old Stripe session success/download link still works (and is revoked on refund).
+- No extra customer mailbox is required to **send** transactional email; replies to orders@ will not reliably reach anyone until inbound routing or mail hosting is separately set up.
+
+## DEPLOY IN THIS ORDER — ONE EXISTING WEBSITE
+
+**1. Cloudflare D1 migration FIRST.** Navigate to https://dash.cloudflare.com/ → Storage & databases → D1 → `rail-and-rye-store` → Console. Run the four statements in `migrations/002_email_delivery.sql` one at a time. This creates `email_jobs`, two indexes and `recovery_limits` without touching existing records. Confirm all succeed before uploading code, as the new webhook would otherwise fail when referencing the new table.
+
+**2. GitHub upgrade.** Extract this ZIP and upload its contents into the ROOT of your existing repo https://github.com/scottjazdzewski/rail-and-rye-website (main branch). Do not upload the ZIP itself or create another Cloudflare application. Files updated are `src/commerce.js`, `src/index.js`, `public/store/index.html`, `public/store/success.html`, `README.md`, `wrangler.jsonc`; files added are `public/store/access.html`, `public/store/recover.html`, `migrations/002_email_delivery.sql`, `test-v3.mjs`. Unchanged homepage/admin/migration 001 must remain intact. Cloudflare should auto-deploy. The `wrangler.jsonc` retains `keep_vars: true` and the exact R2/D1 bindings and adds a cron `*/10 * * * *`.
+
+**3. Cloudflare verify.** Confirm `rail-and-rye-website` latest deployment green; Worker variables still include `ACCESS_AUD`, `ACCESS_TEAM_DOMAIN`, `ADMIN_EMAIL`, `STRIPE_SECRET_KEY` (`sk_test_`), `STRIPE_WEBHOOK_SECRET` (`whsec_`), `RESEND_API_KEY` (`re_`). Do NOT screenshot any secret values. Do not enable `sk_live_`. Verify `/admin` on the custom domain still presents Cloudflare Access login in a private browsing session; verify `/api/admin/products` is not anonymously readable.
+
+**4. SANDBOX purchase email test.** The older TEST – KEENELAND RACE CARD was archived; create/publish a harmless new $1 test product with a sample PDF. Visit https://railandryeracing.com/store/ and use a Stripe sandbox test card (`4242 4242 4242 4242`, future expiry). Crucially, enter **the exact same email currently set as `ADMIN_EMAIL` in the Worker** to allow test sending. Confirm Stripe sandbox checkout success, a branded Resend email arriving, and the email's ACCESS YOUR PDF button downloading the test PDF. If no email arrives, inspect Resend Emails and D1:
+
+```sql
+SELECT id,purpose,state,attempts,sent_at,last_error FROM email_jobs ORDER BY created_at DESC LIMIT 10;
+```
+
+Wait for Cloudflare's scheduled retries if a provider call is temporarily unavailable; if an email failed six attempts, the job needs manual review. Do not expose customer email addresses or signed links in public logs or support tickets.
+
+**5. Recovery + refunds.** After downloading, open https://railandryeracing.com/store/recover.html and enter the checkout email. Confirm a new access link arrives. Requests are limited to one per email every 15 minutes and six per IP every 15 minutes; the page intentionally gives the same acknowledgment for unknown emails. Then refund the test payment in Stripe Sandbox and check:
+
+```sql
+SELECT product_title,status,revoked_at FROM orders ORDER BY created_at DESC LIMIT 5;
+```
+
+Verify original emailed link and recovered emailed link both reject PDF access (HTTP 403). A previously downloaded PDF cannot be recalled.
+
+## Important limits BEFORE LIVE LAUNCH
+
+- **NOT a live storefront**: V3 is strictly test-only with existing Stripe `sk_test_` guard and admin-only mail restriction. Other customers will NOT receive emails until a separately reviewed production release deliberately enables broader recipients and Stripe live mode.
+- Existing Stripe customer payment receipts are separate from Rail & Rye's PDF delivery emails. Sandbox mode may not generate real Stripe customer receipts.
+- This version does not provide inbound `orders@` or `support@` mailbox handling. If replies are desired, configure Cloudflare Email Routing + a branded reply solution separately.
+- Confirm Stripe account and category eligibility for horse-racing research/analysis; complete taxes, terms, privacy, refunds, chargeback and account compliance. Do not accept real purchases until approved.
+- Service monitors should alert on failed webhook deliveries, stale queued emails, exhausted retries and bounced messages before launch.
+- Access emails use a one-day bearer link, which can be forwarded; keep it private. Refunds, the five-download/30-day limit and the HTTP no-store/no-referrer headers reduce exposure.
+- Existing Stripe Checkout session success link remains a bearer download credential, valid under the original five-download/30-day policy. Future live release should address account-based access and long-term support.
+- Existing admin Access application must cover BOTH workers.dev and custom domain `/admin*` and `/api/admin*`; owner confirmed this previously.
+
+## Local validation
+
+`node --no-warnings test-v3.mjs` (Node 22+) uses an in-memory SQLite DB with migration 001 + 002 and a mocked Stripe/Resend network. Tests: published product checkout, Stripe signature, duplicate webhook idempotency, branded outgoing email, authenticated email link, wrong-origin/tampered links, email-recovery throttling, refunded order revocation. **Passing local mocks are NOT a substitute for a real Stripe sandbox + Resend delivery test.**
+
+---
+
+## Previous V2 checkout instructions / notes
+
 # RAIL & RYE WEBSITE — STRIPE SANDBOX CHECKOUT V2
 
 Created October 28, 2026. **TEST ONLY: no real charges.** This is an upgrade for the EXISTING `rail-and-rye-website` Cloudflare Worker; it is not another website or Stripe store. Original public homepage layout is retained, original admin access/production bindings are preserved. It does not activate live Stripe payments.
@@ -68,3 +125,35 @@ See `migrations/001_stripe_orders.sql`. It adds `orders` and `stripe_events`, pl
 4. Add public privacy/refund/terms policies; sales tax and appropriate Stripe tax settings.
 5. Reconciliation jobs for missed webhook events, payout/chargeback reporting, fraud controls and testing.
 6. Only after all signoffs deliberately create a separate production-mode release with `sk_live_` support; do not enable live accidentally.
+
+---
+
+# V4 COMPACT RESPONSIVE BRAND WEBSITE — DEPLOYMENT HANDOFF
+
+**Status:** Prepared, NOT deployed. Built from the V3 email & recovery source and the user's exact approved TBS Rail & Rye brand kit. This upgrade is ONE deployment to the existing Cloudflare Worker/GitHub repo; do not deploy the obsolete V3 ZIP separately after V4.
+
+## What was added or changed
+
+- `public/index.html`: compact, accessible homepage. Actual official R&R horseshoe logo and traditional saddle chips 1–8 (clearly labelled as illustrative program colors, NOT today's entries or handicapping results). All homepage CTAs lead directly to a working route. Product availability text comes from `/api/products` instead of invented inventory.
+- `public/assets/site.css`: one responsive site theme. Single domain and site; screen widths <=560px get a dense phone layout and touch-friendly action buttons, 561–780px tablet navigation adapts, and larger desktop widths show side-by-side Race Cards and Journal. Core palette exactly navy `#072B67`, gold `#BE7C04`, ivory `#FEFDF6` per TBS locked authority. Supporting accessible variations may be used for readability.
+- `public/assets/brand/chip_1.png` ... `chip_20.png`: exact approved static customer chip PNG bytes copied without modification. All twenty matched SHA-256 in the source brand authority manifest.
+- `public/assets/brand/rail_rye_official_horseshoe_logo.png`: exact official master bytes, unchanged. `rail_rye_logo_header.png` and `public/favicon.png` are cropped-to-visible-content/rescaled display derivatives of the original artwork for tiny browser contexts; the original master is retained unmodified.
+- `public/store/index.html`: a fully functional reskin of existing V3 test storefront, using the same API endpoints and Stripe `POST /api/checkout`. Category filter reads `?category=` and filters only published real items returned by the existing `/api/products` endpoint; it does not invent products. Includes no real-money checkout and clear sandbox banner. Script escaped by text DOM methods, not injected HTML.
+- `public/journal/index.html`: dedicated Journal destination (not invented articles; explicitly states none published yet). Future articles require owner-supplied content and publishing process.
+- `public/policies/refunds.html`, `terms.html`, `privacy.html`: visible clearly labelled **pre-launch draft** policies (not final legal advice, real-money payments remain disabled). Review and approve details with applicable laws/business operations before accepting real payments.
+- All existing V3 backend, D1/R2 bindings, Cloudflare Access protections, Resend sandbox-only email restrictions, Stripe sandbox-only webhook/checkout, recovery and admin remain intact. `migrations/001_*` and `002_*` are unchanged and user confirmed already executed; DO NOT rerun the migrations unless necessary.
+
+## Why it isn't live yet
+
+The available connected GitHub account cannot access private repository `scottjazdzewski/rail-and-rye-website` (repo search returned no results, contents API returned 404), and no Cloudflare deployment connector is available. No authorized direct production deployment action could be taken. **Do not claim live until owner updates GitHub main and Cloudflare deployment passes.**
+
+## Next one-time deployment
+
+1. From a laptop, open the latest V4 ZIP in Google Drive, download and extract it.
+2. Go to **existing** repository `https://github.com/scottjazdzewski/rail-and-rye-website` (do not create a new repo). In GitHub's file uploader, upload the **contents** of the extracted V4 ZIP into the repository root, preserving `public/`, `src/`, `migrations/` directory paths. Commit to main. This single deployment supersedes the previous V3 ZIP.
+3. In Cloudflare Workers, confirm new green deployment. Test `/` (desktop/mobile), `/store/`, category filters, `/journal/`, `/policies/`, `/admin` Access login, `/api/products` and Stripe test checkout. `RESEND_API_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` and Access variables remain Cloudflare secrets, not committed files.
+4. Complete V3 end-to-end test purchase using **ADMIN_EMAIL** in Stripe sandbox, confirm receipt, recovery and refund revocation. Never put real payment keys in sandbox. Stripe under review; no live payments yet.
+
+## Published safety disclaimers
+
+Do not assume these designs are legal/business approval, transaction integration proof or photo licensing. Website currently uses no racing photos. Seller's real identity, legal jurisdiction, consent/retention, and effective policy text must be reviewed before real-money production. Client tests based on actual old V2/V3 code and mock test path are useful but not end-to-end live deployment evidence.

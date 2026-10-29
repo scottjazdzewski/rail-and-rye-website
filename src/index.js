@@ -1,4 +1,4 @@
-import { handleCommerce } from './commerce.js';
+import { handleCommerce, sendQueuedEmails } from './commerce.js';
 /* Rail & Rye admin MVP. Dependencies: Cloudflare Workers, R2, D1, Cloudflare Access.
    Admin routes FAIL CLOSED until ACCESS_TEAM_DOMAIN, ACCESS_AUD and ADMIN_EMAIL
    are configured in Cloudflare Worker runtime variables, and a matching Access
@@ -185,7 +185,7 @@ async function publicCover(env,id) {
   return new Response(object.body,{headers:{"Content-Type":object.httpMetadata?.contentType||"application/octet-stream","Cache-Control":"public, max-age=300","X-Content-Type-Options":"nosniff"}});
 }
 export default {
-  async fetch(request,env) {
+  async fetch(request,env,ctx) {
     const url=new URL(request.url),path=url.pathname;
     try{
       if(path==="/api/health"&&request.method==="GET") return json({website:"Rail & Rye",status:"online",storage:env.CARDS_BUCKET?"connected":"not connected",database:env.STORE_DB?"bound":"not bound"});
@@ -203,9 +203,12 @@ export default {
       }
       const image=path.match(/^\/media\/cover\/([0-9a-f-]{36})$/i);
       if(image&&request.method==="GET")return publicCover(env,image[1]);
-      if(path==="/api/products"||path==="/api/checkout"||path==="/api/stripe/webhook"||path.startsWith("/api/orders/"))return handleCommerce(request,env,url);
+      if(path==="/api/products"||path==="/api/checkout"||path==="/api/stripe/webhook"||path.startsWith("/api/orders/")||path==="/api/delivery/download"||path==="/api/recovery/request")return handleCommerce(request,env,url,ctx);
       if(path.startsWith("/api/"))return fail("Not found",404);
       return env.ASSETS.fetch(request);
     }catch(e){console.error("Rail & Rye request error",e);return fail("An internal error occurred",500);}
+  },
+  async scheduled(controller,env,ctx){
+    ctx.waitUntil(sendQueuedEmails(env,8));
   }
 };
