@@ -114,6 +114,17 @@ body.heritage-home .heritage-strap .heritage-horse-mini{width:38px;height:34px;f
 body.heritage-home .heritage-nav .heritage-nav-pill{min-height:43px}
 body.heritage-home .heritage-mobile-nav nav a{text-align:center}
 
+@media(min-width:961px){
+ body.heritage-home .heritage-header-inner{
+  grid-template-columns:minmax(0,1fr) auto
+ }
+ body.heritage-home .heritage-nav{
+  grid-column:2;grid-row:1;justify-self:end;justify-content:flex-end;
+  gap:clamp(13px,2vw,36px);margin-left:auto;transform:translateY(22px)
+ }
+ body.heritage-home .heritage-nav .heritage-nav-pill{text-align:center}
+}
+
 /* Equal responsive image-hero frames; the approved photo and its page-specific crop remain in place. */
 body.heritage-home .heritage-hero,
 body.heritage-home .heritage-inner-hero,
