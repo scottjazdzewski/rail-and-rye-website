@@ -2,9 +2,6 @@
    Page-specific Race Cards plus legal and secure-delivery presentation. */
 /* Rail & Rye Race Cards — editorial intelligence desk */
 .rr-racecards-page{background:#f4eddd;color:#0a2b3f}
-.rr-racecards-hero{min-height:640px;background:
- linear-gradient(90deg,rgba(2,17,27,.97) 0%,rgba(3,19,29,.91) 31%,rgba(3,20,30,.66) 55%,rgba(3,18,28,.24) 100%),
- url('/assets/approved/race-cards/hero.webp') center 48%/cover no-repeat;color:#f9f0dc;border-bottom:5px solid #b98d4d}
 .rr-racecards-hero-grid{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(420px,.92fr);gap:clamp(42px,6vw,105px);align-items:center;padding-top:clamp(48px,5vw,82px);padding-bottom:clamp(55px,6vw,92px)}
 .rr-racecards-intro{max-width:720px}
 .rr-racecards-kicker{display:flex!important;align-items:center;gap:12px;color:#e8bd72;letter-spacing:.17em}
@@ -20,21 +17,6 @@
 .rr-racecards-live-mark{font:600 18px/1 var(--heritage-serif);border:1px solid #bd9659;color:#e7c483;border-radius:50%;width:46px;height:46px;display:grid;place-items:center}
 .rr-racecards-live-mark img{display:block;width:38px;height:38px;object-fit:contain}
 .rr-racecards-status{margin:15px 0 11px;font:700 10px/1.4 var(--heritage-sans);text-transform:uppercase;letter-spacing:.08em;color:#d6bf99}
-.rr-racecards-products{display:grid;gap:10px}
-.rr-racecards-product{display:grid;grid-template-columns:64px minmax(0,1fr) auto;align-items:center;gap:13px;padding:10px 11px;border:1px solid rgba(218,180,111,.5);border-radius:7px;background:linear-gradient(90deg,rgba(249,239,215,.12),rgba(255,255,255,.035));transition:transform .18s ease,border-color .18s ease,background .18s ease}
-.rr-racecards-product:hover{transform:translateY(-2px);border-color:#e1b86f;background:linear-gradient(90deg,rgba(249,239,215,.17),rgba(255,255,255,.055))}
-.rr-racecards-product-cover{width:64px;height:76px;overflow:hidden;border:1px solid rgba(224,188,123,.72);background:#efe4cc;display:grid;place-items:center;color:#0c3147;font:700 13px var(--heritage-serif)}
-.rr-racecards-product-cover img{width:100%;height:100%;object-fit:cover;display:block}
-
-
-
-.rr-racecards-product-copy{min-width:0}
-.rr-racecards-meta{font:800 9px/1.3 var(--heritage-sans);letter-spacing:.08em;text-transform:uppercase;color:#dcb36e;margin-bottom:4px}
-.rr-racecards-product h3{font:500 clamp(19px,1.45vw,27px)/1.05 var(--heritage-serif);color:#fff4e3;margin:0}
-.rr-racecards-price{margin-top:6px;font:600 17px/1 var(--heritage-serif);color:#f1d196}
-.rr-racecards-buy{border:1px solid #c89f61;border-radius:5px;background:#f4ead3;color:#0b3045;padding:10px 12px;font:800 10px/1 var(--heritage-sans);letter-spacing:.05em;text-transform:uppercase;cursor:pointer;box-shadow:none;white-space:nowrap}
-.rr-racecards-buy:hover:not(:disabled){background:#fff5df}
-.rr-racecards-buy:disabled{opacity:.48;cursor:not-allowed}
 .rr-racecards-all{margin-top:14px;align-self:flex-start;color:#e7bd73;font:800 10px var(--heritage-sans);letter-spacing:.06em;text-transform:uppercase;text-decoration:underline;text-underline-offset:4px}
 .rr-racecards-main{background:linear-gradient(180deg,rgba(231,207,161,.35),transparent 170px),url('/assets/approved/textures/parchment.jpg') center top/720px auto repeat;border-bottom:1px solid #c7af87}
 .rr-racecards-editorial{display:grid;grid-template-columns:.85fr 1.15fr;gap:clamp(45px,7vw,120px);padding-top:clamp(58px,6vw,92px);padding-bottom:clamp(65px,7vw,105px)}
@@ -51,16 +33,12 @@
  .rr-racecards-editorial{grid-template-columns:1fr;gap:34px}
 }
 @media(max-width:650px){
- .rr-racecards-hero{min-height:0;background-position:58% center}
  .rr-racecards-hero-grid{padding-top:90px;padding-bottom:38px}
  .rr-racecards-intro h1{font-size:clamp(52px,14vw,72px)}
  .rr-racecards-purchase-rail{padding:20px 15px}
- .rr-racecards-product{grid-template-columns:52px minmax(0,1fr);gap:10px}
- .rr-racecards-product-cover{width:52px;height:63px}
- .rr-racecards-buy{grid-column:1/-1;width:100%}
  .rr-racecards-features{grid-template-columns:1fr}
 }
-@media(prefers-reduced-motion:reduce){.rr-racecards-product{transition:none}}
+@media(prefers-reduced-motion:reduce){}
 
 /* Legal pages: intentionally quiet, editorial, and consistent with the brand shell. */
 .rr-legal-main{width:min(100%,980px);margin-inline:auto;padding:clamp(46px,6vw,84px) clamp(22px,4vw,54px) clamp(70px,8vw,120px)}
@@ -98,21 +76,6 @@
  --rr-action-ivory:#f6edda;
  --rr-action-paper:#f3ead7;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-/* Equal responsive image-hero frames; the approved photo and its page-specific crop remain in place. */
-body.heritage-home .heritage-inner-hero,
-body.heritage-home .rr-racecards-hero{min-height:var(--rr-shared-photo-hero-height)}
 
 /* Restore the approved compact emblem-left publication row. */
 body.heritage-home .rr-publication-card-content{flex-direction:row}
@@ -196,11 +159,6 @@ body.heritage-home .rr-delivery-main button:focus-visible{outline:3px solid #e4c
   background-repeat:no-repeat;background-size:auto var(--rr-shared-photo-hero-height);
   background-position:center top
  }
- body.heritage-home .rr-racecards-hero{
-  background-color:#071a2b;background-repeat:no-repeat;
-  background-size:100% var(--rr-shared-photo-hero-height),auto var(--rr-shared-photo-hero-height);
-  background-position:left top,center top
- }
  body.heritage-home .heritage-lead{padding-top:12px;padding-bottom:8px}
  body.heritage-home .heritage-lead h1{
   font-size:clamp(44px,10.7vw,48px);line-height:.92;margin:8px 0
@@ -257,18 +215,6 @@ body.heritage-home.heritage-store-page .heritage-inner-filters .heritage-recover
  display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:10px 15px;text-align:center;text-decoration:none;white-space:nowrap
 }
 body.heritage-home.heritage-store-page .heritage-store-inventory{min-width:0;padding-top:8px}
-body.heritage-home.heritage-store-page .heritage-store-inventory .store-cards{
- grid-template-columns:minmax(0,1fr);gap:12px;padding:0
-}
-body.heritage-home.heritage-store-page .heritage-store-inventory .store-card{
- display:grid;grid-template-columns:104px minmax(0,1fr);min-height:0;align-items:stretch
-}
-
-
-body.heritage-home.heritage-store-page .heritage-store-inventory .store-body{min-width:0;padding:15px}
-body.heritage-home.heritage-store-page .heritage-store-inventory .store-body h2{font-size:clamp(20px,2vw,28px);line-height:1.02;margin:6px 0}
-body.heritage-home.heritage-store-page .heritage-store-inventory .store-description{margin:4px 0}
-body.heritage-home.heritage-store-page .heritage-store-inventory .store-bottom{gap:8px;margin-top:10px}
 body.heritage-home.heritage-store-page .heritage-store-inventory .store-banner{margin-top:14px}
 body.heritage-home.heritage-store-page .heritage-store-inventory .status-note{color:#f7e9cf;padding:0 0 9px}
 @media(max-width:960px){
@@ -285,7 +231,6 @@ body.heritage-home.heritage-store-page .heritage-store-inventory .status-note{co
  body.heritage-home.heritage-store-page .heritage-inner-filters .category-tabs{gap:7px}
  body.heritage-home.heritage-store-page .heritage-inner-filters .category-tabs button,
  body.heritage-home.heritage-store-page .heritage-inner-filters .heritage-recovery{min-height:38px;padding:9px 11px;font-size:9px}
- body.heritage-home.heritage-store-page .heritage-store-inventory .store-cards{grid-template-columns:1fr;gap:10px}
 }
 @media(max-width:560px){
  body.heritage-home.heritage-store-page .heritage-store-hero{
@@ -301,15 +246,6 @@ body.heritage-home.heritage-store-page .heritage-store-inventory .status-note{co
  body.heritage-home.heritage-store-page .heritage-inner-filters .category-tabs button,
  body.heritage-home.heritage-store-page .heritage-inner-filters .heritage-recovery{min-height:36px;padding:8px 10px;font-size:8px;letter-spacing:.06em}
  body.heritage-home.heritage-store-page .heritage-store-layout{padding-inline:14px}
- body.heritage-home.heritage-store-page .heritage-store-inventory .store-card{grid-template-columns:76px minmax(0,1fr)}
- 
- body.heritage-home.heritage-store-page .heritage-store-inventory .store-body{padding:11px}
- body.heritage-home.heritage-store-page .heritage-store-inventory .store-meta{font-size:8px;letter-spacing:.07em}
- body.heritage-home.heritage-store-page .heritage-store-inventory .store-body h2{font-size:clamp(18px,5vw,23px);margin:5px 0}
- body.heritage-home.heritage-store-page .heritage-store-inventory .store-description{font-size:11px;line-height:1.4}
- body.heritage-home.heritage-store-page .heritage-store-inventory .store-bottom{flex-wrap:wrap;gap:7px;margin-top:8px}
- body.heritage-home.heritage-store-page .heritage-store-inventory .store-price{font-size:21px}
- body.heritage-home.heritage-store-page .heritage-store-inventory .buy-button{padding:10px 12px;font-size:9px}
 }
 
 
@@ -364,73 +300,12 @@ body.heritage-home .rr-racecards-live-mark img{display:block;width:34px;height:3
 body.heritage-home .rr-racecards-rail-head h2{font-size:clamp(26px,2.3vw,32px);line-height:1.02;margin-top:7px}
 body.heritage-home .rr-racecards-rail-head{padding-bottom:12px}
 body.heritage-home .rr-racecards-status{margin:10px 0 8px}
-body.heritage-home .rr-racecards-products{gap:8px}
-body.heritage-home .rr-racecards-product{grid-template-columns:54px minmax(0,1fr) auto;gap:10px;padding:7px 8px}
-body.heritage-home .rr-racecards-product-cover{width:54px;height:62px;min-height:62px}
-body.heritage-home .rr-purchase-badge{
- display:grid;place-items:center;justify-self:center;align-self:center;
- width:54px;height:62px;min-height:62px;max-height:62px;max-width:none;padding:0;overflow:hidden;
- border:1px solid rgba(226,176,89,.9);border-radius:7px;
- background:rgba(8,31,45,.92);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
- box-shadow:inset 0 1px rgba(255,255,255,.17),0 5px 14px rgba(0,0,0,.17)
-}
-body.heritage-home.heritage-store-page .heritage-store-inventory .store-card{grid-template-columns:64px minmax(0,1fr);min-height:0}
-body.heritage-home.heritage-store-page .heritage-store-inventory .store-body{min-width:0;padding:10px 12px}
-body.heritage-home.heritage-store-page .heritage-store-inventory .store-meta{font-size:9px}
-body.heritage-home.heritage-store-page .heritage-store-inventory .store-body h2{font-size:clamp(18px,1.55vw,22px);line-height:1.05;margin:5px 0}
-body.heritage-home.heritage-store-page .heritage-store-inventory .store-description{font-size:11px;line-height:1.42;margin:4px 0}
-body.heritage-home.heritage-store-page .heritage-store-inventory .store-bottom{gap:8px;margin-top:7px}
-body.heritage-home.heritage-store-page .heritage-store-inventory .buy-button{min-height:38px;padding:9px 12px}
 body.heritage-home .rr-racecards-all{margin-top:10px}
 @media(max-width:750px){
  body.heritage-home .rr-racecards-rail-head h2{font-size:clamp(23px,5vw,27px)}
- body.heritage-home .rr-racecards-product{grid-template-columns:48px minmax(0,1fr);gap:8px;padding:6px 7px}
- body.heritage-home .rr-racecards-product-cover{width:48px;height:54px;min-height:54px}
- body.heritage-home .rr-racecards-buy{grid-column:1/-1;width:100%;min-height:38px;padding:8px 11px!important}
- body.heritage-home.heritage-store-page .heritage-store-inventory .store-card{grid-template-columns:58px minmax(0,1fr)}
- body.heritage-home .rr-purchase-badge{
-  width:48px;height:54px;min-height:54px;max-height:54px
- }
-  body.heritage-home.heritage-store-page .heritage-store-inventory .store-body{padding:8px 9px}
- body.heritage-home.heritage-store-page .heritage-store-inventory .store-meta{font-size:8px;letter-spacing:.07em}
- body.heritage-home.heritage-store-page .heritage-store-inventory .store-body h2{font-size:18px}
- body.heritage-home.heritage-store-page .heritage-store-inventory .store-description{font-size:10px}
- body.heritage-home.heritage-store-page .heritage-store-inventory .store-price{font-size:21px}
- body.heritage-home.heritage-store-page .heritage-store-inventory .buy-button{min-height:36px;padding:8px 10px;font-size:9px}
-}
-
-
-/* Canonical shared glass frame for every product purchase badge, with or without artwork. */
-body.heritage-home .rr-purchase-badge{background:rgba(8,31,45,.88)!important;border-color:rgba(226,176,89,.9)!important;border-radius:7px!important;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:inset 0 1px rgba(255,255,255,.17),0 5px 14px rgba(0,0,0,.17)!important}
-body.heritage-home .rr-purchase-badge-image{
- display:block;width:34px!important;height:42px!important;
- max-width:none!important;max-height:none!important;padding:0!important;
- object-fit:contain!important;object-position:center;box-sizing:border-box;
- background:transparent;border:0;border-radius:0;box-shadow:none
 }
 @media(max-width:750px){
- body.heritage-home .rr-purchase-badge{width:48px;height:54px;min-height:54px;max-height:54px}
- body.heritage-home .rr-purchase-badge-image{width:30px!important;height:36px!important}
 }
-
-
-/* PUBLICATION DESK GLASS CARD + CLEAR HERO HEADER */
-/* Product cards use the same navy translucent glass treatment as the Race Cards rail. */
-body.heritage-home.heritage-store-page .heritage-store-inventory .store-card{
- background-color:rgba(4,24,36,.88);
- background-image:linear-gradient(90deg,rgba(249,239,215,.08),rgba(255,255,255,.025));
- border:1px solid rgba(218,180,111,.5);
- box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
- -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#f7edda
-}
-body.heritage-home.heritage-store-page .heritage-store-inventory .store-card:hover{
- transform:translateY(-2px);border-color:#e1b86f;
- background-image:linear-gradient(90deg,rgba(249,239,215,.12),rgba(255,255,255,.035))
-}
-body.heritage-home.heritage-store-page .heritage-store-inventory .store-meta{color:#dcb36e}
-body.heritage-home.heritage-store-page .heritage-store-inventory .store-body h2{color:#fff4e3}
-body.heritage-home.heritage-store-page .heritage-store-inventory .store-description{color:#f5ead7}
-body.heritage-home.heritage-store-page .heritage-store-inventory .store-price{color:#f1d196}
 
 /* Keep the header on the shared hero plane; remove the Publication Desk's extra stripe texture. */
 body.heritage-home.heritage-store-page .heritage-store-hero:after{display:none}
@@ -492,3 +367,91 @@ body.heritage-home.heritage-store-page .heritage-inner-heading h1{
  body.heritage-home.heritage-store-page .heritage-store-hero:after{top:112px}
  .heritage-home .rr-publication-card-number{top:4px;left:8px;width:28px;height:28px;flex-basis:28px;border-radius:5px}
 }
+
+/* Purchase card system: both product rails share one glass surface and padded official mark. */
+body.heritage-home .rr-glass-purchase-card{
+ box-sizing:border-box;display:grid;grid-template-columns:72px minmax(0,1fr) auto;
+ align-items:center;gap:14px;width:100%;min-width:0;min-height:0;
+ padding:12px;border:1px solid rgba(218,180,111,.62);border-radius:12px;
+ color:#f6eeda;background:rgba(6,27,41,.88);
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.09),0 8px 20px rgba(0,0,0,.18);
+ -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+ transition:transform .18s ease,border-color .18s ease
+}
+body.heritage-home .rr-glass-purchase-card:hover{
+ transform:translateY(-2px);border-color:#e1b86f;background:rgba(6,27,41,.88)
+}
+body.heritage-home .rr-purchase-brand-mark{
+ box-sizing:border-box;display:grid;place-items:center;
+ width:72px;height:84px;min-width:72px;min-height:84px;max-width:72px;max-height:84px;
+ margin:0;padding:8px;overflow:hidden;border:1px solid rgba(226,176,89,.9);border-radius:9px;
+ background:rgba(8,31,45,.88);box-shadow:inset 0 1px 0 rgba(255,255,255,.1)
+}
+body.heritage-home .rr-purchase-brand-logo{
+ display:block;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;
+ padding:0!important;object-fit:contain!important;object-position:center;box-sizing:border-box;
+ background:transparent;border:0;border-radius:0;box-shadow:none
+}
+body.heritage-home .rr-purchase-copy{min-width:0;display:flex;flex-direction:column;gap:4px}
+body.heritage-home .rr-purchase-meta{
+ color:#e6b667;font:700 11px/1.25 var(--heritage-sans);letter-spacing:.075em;text-transform:uppercase
+}
+body.heritage-home .rr-purchase-title{
+ color:#fff4e3;font:500 clamp(20px,1.55vw,27px)/1.04 var(--heritage-serif);margin:0
+}
+body.heritage-home .rr-purchase-description{
+ color:#f5ead7;font:400 14px/1.4 var(--heritage-sans);margin:0
+}
+body.heritage-home .rr-purchase-price{
+ color:#f1d196;font:500 25px/1.05 var(--heritage-serif);margin-top:3px
+}
+body.heritage-home .rr-purchase-buy{
+ display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;
+ min-width:142px;min-height:44px;padding:10px 14px;
+ border:1px solid #dcad5f;border-radius:9px;background:#f7ead0;color:#0b2d40;
+ font:700 12px/1.1 var(--heritage-sans);letter-spacing:.075em;text-transform:uppercase;
+ text-align:center;cursor:pointer;transition:background .18s ease,color .18s ease,border-color .18s ease
+}
+body.heritage-home .rr-purchase-buy:hover:not(:disabled){background:#ffefcf;border-color:#f0c779}
+body.heritage-home .rr-purchase-buy:disabled{opacity:.56;cursor:not-allowed}
+body.heritage-home .rr-glass-purchase-card:focus-within{outline:2px solid #f0c779;outline-offset:3px}
+@media(max-width:750px){
+ body.heritage-home .rr-glass-purchase-card{grid-template-columns:56px minmax(0,1fr);gap:8px;padding:9px}
+ body.heritage-home .rr-purchase-brand-mark{
+  grid-column:1;grid-row:1;width:56px;height:66px;min-width:56px;min-height:66px;max-width:56px;max-height:66px;padding:7px
+ }
+ body.heritage-home .rr-purchase-copy{grid-column:2;grid-row:1}
+ body.heritage-home .rr-purchase-title{font-size:clamp(19px,5vw,23px)}
+ body.heritage-home .rr-purchase-description{font-size:12px}
+ body.heritage-home .rr-purchase-price{font-size:22px}
+ body.heritage-home .rr-purchase-buy{grid-column:2;grid-row:2;justify-self:start;min-width:128px;min-height:38px;margin-top:2px;padding:8px 12px;font-size:10px}
+}
+@media(prefers-reduced-motion:reduce){
+ body.heritage-home .rr-glass-purchase-card{transition:none}
+}
+@media(max-width:750px){
+}
+
+
+/* Shared hero frames and the single source for product rail surfaces. */
+body.heritage-home .heritage-inner-hero,body.heritage-home .rr-racecards-hero{
+ min-height:var(--rr-shared-photo-hero-height,600px)
+}
+.rr-racecards-hero{
+ position:relative;isolation:isolate;overflow:hidden;display:block;color:#f9f0dc;
+ min-height:var(--rr-shared-photo-hero-height,640px);border-bottom:5px solid #b98d4d;
+ background-color:#071a2b;background-image:url('/assets/approved/race-cards/hero.webp');
+ background-repeat:no-repeat;background-position:center 48%;background-size:cover
+}
+body.heritage-home .heritage-store-inventory .store-cards{
+ display:grid;grid-template-columns:minmax(0,1fr);gap:12px;padding:0
+}
+@media(max-width:750px){
+ .rr-racecards-hero{min-height:0;background-position:58% center}
+ body.heritage-home .heritage-store-inventory .store-cards{gap:10px}
+}
+@media(max-width:750px){}
+
+/* Product list spacing, shared across the two publication sales rails. */
+.rr-racecards-products{display:grid;gap:10px}
+@media(max-width:750px){.rr-racecards-products{gap:10px}}

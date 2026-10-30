@@ -16,14 +16,14 @@ const el=(tag,cls,text)=>{const x=document.createElement(tag);if(cls)x.className
   status.textContent=cards.length===1?'1 Race Card available':cards.length+' Race Cards available';
   const ready=Boolean(data.checkout_ready),live=data.checkout_mode==='live';
   cards.slice(0,4).forEach(p=>{
-   const card=el('article','rr-racecards-product');
-   const cover=el('div','rr-racecards-product-cover rr-purchase-badge');
-   if(p.image_url){const img=document.createElement('img');img.src=p.image_url;img.alt='';img.className='rr-purchase-badge-image';img.loading='lazy';img.decoding='async';cover.append(img)}else{cover.classList.add('rr-racecards-product-cover--brand');const img=document.createElement('img');img.src='/assets/approved/brand/rail-rye-ivory-logo.png';img.alt='Rail & Rye official horseshoe emblem';img.className='rr-purchase-badge-image rr-racecards-brand-mark';img.loading='lazy';img.decoding='async';cover.append(img)}
-   const copy=el('div','rr-racecards-product-copy');
-   copy.append(el('div','rr-racecards-meta',[p.track,p.race_date].filter(Boolean).join(' · ')||'Rail & Rye Race Card'));
-   copy.append(el('h3','',p.title||'Race Card'));
-   copy.append(el('div','rr-racecards-price',money(p.price_cents)));
-   const buy=el('button','rr-racecards-buy',ready?(live?'Purchase':'Test purchase'):'Unavailable');
+   const card=el('article','rr-glass-purchase-card');
+   const cover=el('div','rr-purchase-brand-mark');
+   const img=document.createElement('img');img.src='/assets/approved/brand/rail-rye-ivory-logo.png';img.alt='Rail & Rye official horseshoe emblem';img.className='rr-purchase-brand-logo';img.loading='lazy';img.decoding='async';cover.append(img);
+   const copy=el('div','rr-purchase-copy');
+   copy.append(el('div','rr-purchase-meta',[p.track,p.race_date].filter(Boolean).join(' · ')||'Rail & Rye Race Card'));
+   copy.append(el('h3','rr-purchase-title',p.title||'Race Card'));
+   copy.append(el('div','rr-purchase-price',money(p.price_cents)));
+   const buy=el('button','rr-purchase-buy',ready?(live?'Purchase':'Test purchase'):'Unavailable');
    buy.type='button';buy.disabled=!ready||!Number.isFinite(Number(p.price_cents))||Number(p.price_cents)<50;
    buy.addEventListener('click',async()=>{
     buy.disabled=true;const old=buy.textContent;buy.textContent='Opening…';
