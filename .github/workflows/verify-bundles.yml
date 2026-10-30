@@ -1,0 +1,23 @@
+name: Verify automatic bundles
+on:
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'migrations/**'
+      - 'test-*.mjs'
+      - '.github/workflows/verify-bundles.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  commerce:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Existing Stripe commerce regression
+        run: node --experimental-sqlite test-v5.mjs
+      - name: Bundle purchases, download protection and refund tests
+        run: node --experimental-sqlite test-bundles.mjs
