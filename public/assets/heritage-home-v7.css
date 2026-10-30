@@ -12,7 +12,7 @@
  .heritage-home .heritage-kicker{font-size:clamp(11px,.82vw,15px);letter-spacing:.15em}
  .heritage-home .heritage-lead p{
    font-size:clamp(12px,.88vw,15px);
-   line-height:1.47;max-width:795px;margin-top:10px;
+   line-height:1.47;max-width:600px;margin-top:10px;
  }
  .heritage-home .heritage-feature-grid{padding-top:10px;gap:15px}
  .heritage-home .heritage-panel{min-height:195px}
@@ -23,6 +23,9 @@
  .heritage-home .heritage-badge{min-height:80px;padding:10px 15px}
  .heritage-home .badge-emblem{width:48px;height:48px;font-size:24px}
  .heritage-home .badge-text strong{font-size:clamp(23px,1.7vw,32px)}
+}
+@media(min-width:751px) and (max-width:1120px){
+ .heritage-home .heritage-lead p{max-width:600px}
 }
 @media(max-width:750px){
  .heritage-home .heritage-lead p{max-width:410px;line-height:1.58}
