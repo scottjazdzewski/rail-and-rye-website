@@ -171,8 +171,8 @@
 }
 .heritage-inner-page.heritage-store-page .heritage-inner-hero,
 .heritage-inner-page.heritage-store-page.race-mode .heritage-inner-hero{
-  background-image:url('/assets/approved/race-cards/hero.webp');
-  background-position:center 48%;
+  background-image:linear-gradient(90deg,rgba(5,23,35,.82) 0%,rgba(5,23,35,.68) 35%,rgba(5,23,35,.34) 68%,rgba(5,23,35,.12) 100%),url('/assets/approved/publication-desk/hero.webp');
+  background-position:center,center 52%;
 }
 .heritage-inner-page.heritage-journal-page .heritage-inner-hero{
   background-image:url('/assets/approved/journal/hero.webp');

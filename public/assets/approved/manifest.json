@@ -47,5 +47,8 @@
     "18": "/assets/approved/saddlecloths/18.png",
     "19": "/assets/approved/saddlecloths/19.png",
     "20": "/assets/approved/saddlecloths/20.png"
+  },
+  "publication_desk": {
+    "hero": "/assets/approved/publication-desk/hero.webp"
   }
 }
