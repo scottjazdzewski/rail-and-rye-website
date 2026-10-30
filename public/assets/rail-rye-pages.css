@@ -198,12 +198,12 @@ body.heritage-home .rr-delivery-main button:focus-visible{outline:3px solid #e4c
 body.heritage-home.heritage-store-page .heritage-store-hero{min-height:0}
 body.heritage-home.heritage-store-page .heritage-store-layout{
  display:grid;grid-template-columns:minmax(0,1fr) minmax(430px,.96fr);gap:clamp(30px,4.2vw,68px);
- align-items:start;position:relative;z-index:2;padding-top:clamp(28px,3.8vw,54px);padding-bottom:clamp(40px,5vw,72px)
+  align-items:start;position:relative;z-index:2;padding-bottom:clamp(40px,5vw,72px)
 }
 body.heritage-home.heritage-store-page .heritage-store-copy{min-width:0}
 body.heritage-home.heritage-store-page .heritage-inner-heading{padding:0;max-width:720px}
-body.heritage-home.heritage-store-page .heritage-inner-heading h1{font-size:clamp(55px,4.35vw,87px);line-height:.92;letter-spacing:-.035em;margin:16px 0 18px}
-body.heritage-home.heritage-store-page .heritage-inner-heading p{max-width:560px;font-size:clamp(14px,1.18vw,17px);line-height:1.6;margin-top:0}
+
+
 body.heritage-home.heritage-store-page .heritage-inner-filters{margin-top:26px}
 body.heritage-home.heritage-store-page .heritage-inner-filters .category-tabs{
  display:flex;flex-wrap:wrap;align-items:center;gap:9px;padding:0
@@ -218,15 +218,15 @@ body.heritage-home.heritage-store-page .heritage-store-inventory{min-width:0;pad
 body.heritage-home.heritage-store-page .heritage-store-inventory .store-banner{margin-top:14px}
 body.heritage-home.heritage-store-page .heritage-store-inventory .status-note{color:#f7e9cf;padding:0 0 9px}
 @media(max-width:960px){
- body.heritage-home.heritage-store-page .heritage-store-layout{grid-template-columns:1fr;gap:22px;padding-top:26px;padding-bottom:38px}
+  body.heritage-home.heritage-store-page .heritage-store-layout{grid-template-columns:1fr;gap:22px;padding-bottom:38px}
  body.heritage-home.heritage-store-page .heritage-inner-heading{max-width:780px}
  body.heritage-home.heritage-store-page .heritage-store-inventory{padding-top:0}
 }
 @media(max-width:750px){
- body.heritage-home.heritage-store-page .heritage-store-layout{gap:18px;padding-top:16px;padding-bottom:24px}
+  body.heritage-home.heritage-store-page .heritage-store-layout{gap:18px;padding-bottom:24px}
  body.heritage-home.heritage-store-page .heritage-inner-heading{padding:0}
- body.heritage-home.heritage-store-page .heritage-inner-heading h1{font-size:clamp(48px,10.7vw,68px);line-height:.95;letter-spacing:-.035em;margin:17px 0}
- body.heritage-home.heritage-store-page .heritage-inner-heading p{font-size:13px;line-height:1.45;max-width:38ch}
+
+
  body.heritage-home.heritage-store-page .heritage-inner-filters{margin-top:16px}
  body.heritage-home.heritage-store-page .heritage-inner-filters .category-tabs{gap:7px}
  body.heritage-home.heritage-store-page .heritage-inner-filters .category-tabs button,
@@ -236,11 +236,11 @@ body.heritage-home.heritage-store-page .heritage-store-inventory .status-note{co
  body.heritage-home.heritage-store-page .heritage-store-hero{
   min-height:0;background-color:#071b29;background-position:center top;background-size:100% 490px,auto 490px
  }
- body.heritage-home.heritage-store-page .heritage-store-layout{gap:16px;padding-top:12px;padding-bottom:20px}
- body.heritage-home.heritage-store-page .heritage-inner-kicker{font-size:9px;letter-spacing:.16em}
- body.heritage-home.heritage-store-page .heritage-inner-heading h1{font-size:clamp(44px,10.7vw,48px);line-height:.92;letter-spacing:-.035em;margin:8px 0}
+  body.heritage-home.heritage-store-page .heritage-store-layout{gap:16px;padding-bottom:20px}
+
+
  body.heritage-home.heritage-store-page .heritage-inner-rule{width:64px}
- body.heritage-home.heritage-store-page .heritage-inner-heading p{font-size:12px;line-height:1.42;margin-top:7px;max-width:35ch}
+
  body.heritage-home.heritage-store-page .heritage-inner-filters{margin-top:13px}
  body.heritage-home.heritage-store-page .heritage-inner-filters .category-tabs{gap:6px}
  body.heritage-home.heritage-store-page .heritage-inner-filters .category-tabs button,
@@ -279,12 +279,6 @@ body.heritage-home .category-tabs button[aria-selected=true]:hover{
 body.heritage-home .rr-racecards-intro h1{
  font-size:clamp(54px,4.6vw,64px);line-height:.98;letter-spacing:-.04em
 }
-@media(min-width:1121px){
- body.heritage-home.heritage-store-page .heritage-inner-heading h1{
-  font-size:clamp(54px,4.05vw,76px);line-height:.93;letter-spacing:-.035em;
-  margin:9px 0 12px;text-shadow:0 6px 18px #000000b0
- }
-}
 @media(max-width:750px){
  body.heritage-home .rr-racecards-intro h1{font-size:clamp(38px,10vw,46px);line-height:.98}
 }
@@ -310,26 +304,42 @@ body.heritage-home .rr-racecards-all{margin-top:10px}
 /* Keep the header on the shared hero plane; remove the Publication Desk's extra stripe texture. */
 body.heritage-home.heritage-store-page .heritage-store-hero:after{display:none}
 
-/* Publication Desk kicker and title use the homepage hero's shared styles. */
-body.heritage-home.heritage-store-page .heritage-inner-kicker{
- color:#dfae60;font:600 clamp(10px,.77vw,15px) var(--heritage-serif);
- letter-spacing:.22em;text-transform:uppercase
+/* Shared hero typography contract: Home and Publication Desk use one scale. */
+body.heritage-home{
+ --rr-hero-top-space:25px;--rr-hero-kicker-size:clamp(10px,.77vw,15px);--rr-hero-kicker-line:normal;
+ --rr-hero-kicker-track:.22em;--rr-hero-kicker-width:none;--rr-hero-kicker-display-width:auto;
+ --rr-hero-title-size:clamp(55px,4.35vw,87px);--rr-hero-title-line:.92;--rr-hero-title-margin:16px 0 18px;
+ --rr-hero-copy-size:clamp(12px,.98vw,18px);--rr-hero-copy-line:1.65;--rr-hero-copy-margin:18px;--rr-hero-copy-width:min(430px,100%);
 }
-body.heritage-home.heritage-store-page .heritage-inner-heading h1{
- font-family:var(--heritage-serif);font-weight:500;letter-spacing:-.035em;
- text-shadow:0 6px 18px #000000b0
+body.heritage-home .heritage-lead,body.heritage-home.heritage-store-page .heritage-store-layout{padding-top:var(--rr-hero-top-space)}
+body.heritage-home .heritage-lead .heritage-kicker,body.heritage-home.heritage-store-page .heritage-inner-heading .heritage-kicker{
+ width:var(--rr-hero-kicker-display-width);max-width:var(--rr-hero-kicker-width);color:#dfae60;font-family:var(--heritage-serif);
+ font-size:var(--rr-hero-kicker-size);font-weight:600;line-height:var(--rr-hero-kicker-line);letter-spacing:var(--rr-hero-kicker-track);text-transform:uppercase
 }
-@media(max-width:750px){
- body.heritage-home.heritage-store-page .heritage-inner-kicker{
-  font-size:11px;line-height:1.7;max-width:310px
- }
+body.heritage-home .heritage-lead h1,body.heritage-home.heritage-store-page .heritage-inner-heading h1{
+ max-width:1000px;margin:var(--rr-hero-title-margin);color:#fff;font-family:var(--heritage-serif);font-size:var(--rr-hero-title-size);
+ font-weight:500;line-height:var(--rr-hero-title-line);letter-spacing:-.035em;text-shadow:0 6px 18px #000000b0
 }
-@media(max-width:560px){
- body.heritage-home.heritage-store-page .heritage-inner-kicker{
-  width:100%;max-width:none;font-size:10px;line-height:1.45;letter-spacing:.07em
- }
+body.heritage-home .heritage-lead p,body.heritage-home.heritage-store-page .heritage-inner-heading p{
+ max-width:var(--rr-hero-copy-width);margin:var(--rr-hero-copy-margin) 0 0;color:#f9eede;font-family:var(--heritage-sans);
+ font-size:var(--rr-hero-copy-size);font-weight:500;line-height:var(--rr-hero-copy-line);letter-spacing:.01em;text-shadow:0 2px 9px #000c
 }
-
+@media(min-width:1121px){body.heritage-home{
+ --rr-hero-top-space:16px;--rr-hero-kicker-size:clamp(11px,.82vw,15px);--rr-hero-kicker-track:.15em;
+ --rr-hero-title-size:clamp(54px,4.05vw,76px);--rr-hero-title-line:.93;--rr-hero-title-margin:9px 0 12px;
+ --rr-hero-copy-size:clamp(12px,.88vw,15px);--rr-hero-copy-line:1.47;--rr-hero-copy-margin:8px
+}}
+@media(max-width:750px){body.heritage-home{
+ --rr-hero-top-space:102px;--rr-hero-kicker-size:11px;--rr-hero-kicker-line:1.6;--rr-hero-kicker-width:310px;
+ --rr-hero-title-size:clamp(48px,10.7vw,68px);--rr-hero-title-line:.95;--rr-hero-title-margin:17px 0;
+ --rr-hero-copy-size:12px;--rr-hero-copy-line:1.58;--rr-hero-copy-margin:18px;--rr-hero-copy-width:min(100%,340px)
+}}
+@media(max-width:560px){body.heritage-home{
+ --rr-hero-top-space:12px;--rr-hero-kicker-size:10px;--rr-hero-kicker-line:1.45;--rr-hero-kicker-track:.07em;
+ --rr-hero-kicker-width:none;--rr-hero-kicker-display-width:100%;--rr-hero-title-size:clamp(44px,10.7vw,48px);
+ --rr-hero-title-line:.92;--rr-hero-title-margin:8px 0;--rr-hero-copy-size:12px;--rr-hero-copy-line:1.5;
+ --rr-hero-copy-margin:8px;--rr-hero-copy-width:min(100%,340px)
+}}
 /* Reserved saddlecloth column for logos and titles on cards 3, 4, and 5. */
 @media(min-width:1101px){
  .heritage-home .rr-publication-card-content{
