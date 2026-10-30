@@ -195,14 +195,15 @@
     const ids=[...document.querySelectorAll('[data-bundle-product]:checked')].map(x=>x.value);
     const price=Number($('bundlePrice').value),cents=Math.round(price*100);
     if(!Number.isFinite(price)||price<0||Math.abs(price*100-cents)>1e-5){note('Enter a valid dollar price.');return;}
-    if(ids.length<2||ids.length>12){note('Select 2 to 12 published PDFs.');return;}
+    if(status!=='archived'&&(ids.length<2||ids.length>12)){note('Select 2 to 12 published PDFs.');return;}
     const title=$('bundleTitle').value.trim();if(title.length<3){note('Enter a bundle name.');return;}
     const current=bundles.find(x=>x.id===selectedId);
     // Saving edits never silently unpublishes an existing live bundle.
     if(status==='draft'&&current?.status==='published')status='published';
     if(status==='archived'&&!selectedId)return;
     const body={title,category:$('bundleCategory').value,race_date:$('bundleDate').value||null,
-      description:$('bundleDescription').value.trim(),price_cents:cents,status,product_ids:ids};
+      description:$('bundleDescription').value.trim(),price_cents:cents,status,
+      product_ids:status==='archived'&&current?current.product_ids:ids};
     busy=true;for(const id of ['bundleDraft','bundlePublish','bundleArchive','bundleNew'])$(id).disabled=true;
     try{
       const r=await api(selectedId?'/api/admin/bundles/'+selectedId:'/api/admin/bundles',
