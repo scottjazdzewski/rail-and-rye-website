@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "status": "PRODUCTION_APPROVED",
+  "note": "Canonical Rail & Rye production asset map. Do not substitute artwork without owner approval.",
+  "brand": {
+    "logo": "/assets/approved/brand/rail-rye-ivory-logo.png",
+    "header_horse": "/assets/approved/brand/header-horse.webp",
+    "parchment": "/assets/approved/textures/parchment.jpg"
+  },
+  "homepage": {
+    "hero": "/assets/approved/home/hero.jpg",
+    "race_cards": "/assets/approved/race-cards/hero.webp",
+    "journal": "/assets/approved/journal/hero.webp"
+  },
+  "publications": {
+    "longshot_radar": {
+      "hero": "/assets/approved/publications/longshot-hero.jpg",
+      "mark": "/assets/approved/publications/longshot-mark.png"
+    },
+    "stable_notes": {
+      "hero": "/assets/approved/publications/stable-hero.jpg",
+      "mark": "/assets/approved/publications/stable-mark.png"
+    },
+    "target_list": {
+      "hero": "/assets/approved/publications/target-hero.jpg",
+      "mark": "/assets/approved/publications/target-mark.png"
+    }
+  },
+  "saddlecloths": {
+    "1": "/assets/approved/saddlecloths/1.png",
+    "2": "/assets/approved/saddlecloths/2.png",
+    "3": "/assets/approved/saddlecloths/3.png",
+    "4": "/assets/approved/saddlecloths/4.png",
+    "5": "/assets/approved/saddlecloths/5.png",
+    "6": "/assets/approved/saddlecloths/6.png",
+    "7": "/assets/approved/saddlecloths/7.png",
+    "8": "/assets/approved/saddlecloths/8.png",
+    "9": "/assets/approved/saddlecloths/9.png",
+    "10": "/assets/approved/saddlecloths/10.png",
+    "11": "/assets/approved/saddlecloths/11.png",
+    "12": "/assets/approved/saddlecloths/12.png",
+    "13": "/assets/approved/saddlecloths/13.png",
+    "14": "/assets/approved/saddlecloths/14.png",
+    "15": "/assets/approved/saddlecloths/15.png",
+    "16": "/assets/approved/saddlecloths/16.png",
+    "17": "/assets/approved/saddlecloths/17.png",
+    "18": "/assets/approved/saddlecloths/18.png",
+    "19": "/assets/approved/saddlecloths/19.png",
+    "20": "/assets/approved/saddlecloths/20.png"
+  }
+}
