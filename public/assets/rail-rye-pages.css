@@ -383,3 +383,74 @@ body.heritage-home.heritage-store-page .heritage-inner-heading h1{
  body.heritage-home .rr-racecards-intro h1{font-size:clamp(38px,10vw,46px);line-height:.98}
  body.heritage-home.heritage-store-page .heritage-inner-heading h1{font-size:clamp(38px,9vw,46px);line-height:.98}
 }
+
+
+/* ENGINEERING DEFAULT: official brand marks use one translucent glass badge.
+   Keep publication rows compact so the desk can show more live editions. */
+body.heritage-home .rr-racecards-live-mark,
+body.heritage-home .rr-racecards-product-cover--brand img.rr-racecards-brand-mark,
+body.heritage-home.heritage-store-page .heritage-store-inventory .store-cover img.rr-official-logo-fallback{
+ background:rgba(8,31,45,.44)!important;border:1px solid rgba(226,176,89,.9)!important;
+ border-radius:50%;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+ box-shadow:inset 0 1px rgba(255,255,255,.17),0 5px 14px rgba(0,0,0,.17)
+}
+body.heritage-home .rr-racecards-live-mark{
+ width:42px;height:42px;flex:0 0 42px;color:#f2d59a
+}
+body.heritage-home .rr-racecards-live-mark img{width:34px;height:34px}
+body.heritage-home .rr-racecards-product-cover--brand{
+ background:rgba(8,31,45,.3);border-color:rgba(226,176,89,.62);border-radius:7px
+}
+body.heritage-home .rr-racecards-product-cover--brand img.rr-racecards-brand-mark{
+ width:48px;height:48px;object-fit:contain;padding:6px;box-sizing:border-box
+}
+body.heritage-home .rr-racecards-rail-head h2{
+ font-size:clamp(28px,2.5vw,36px);line-height:1.02;margin-top:7px
+}
+body.heritage-home .rr-racecards-rail-head{padding-bottom:12px}
+body.heritage-home .rr-racecards-status{margin:10px 0 8px}
+body.heritage-home .rr-racecards-products{gap:8px}
+body.heritage-home .rr-racecards-product{
+ grid-template-columns:54px minmax(0,1fr) auto;gap:10px;padding:7px 8px
+}
+body.heritage-home .rr-racecards-product-cover{width:54px;height:62px;border-radius:6px}
+body.heritage-home .rr-racecards-product-cover img.rr-racecards-brand-mark{width:48px;height:48px}
+body.heritage-home .rr-racecards-all{margin-top:10px}
+body.heritage-home.heritage-store-page .heritage-store-inventory .store-card{
+ grid-template-columns:78px minmax(0,1fr)
+}
+body.heritage-home.heritage-store-page .heritage-store-inventory .store-cover{
+ min-height:108px;padding:6px;background:rgba(8,31,45,.34);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)
+}
+body.heritage-home.heritage-store-page .heritage-store-inventory .store-cover img.rr-official-logo-fallback{
+ width:56px;height:56px;max-width:none;object-fit:contain;object-position:center;padding:7px;box-sizing:border-box
+}
+body.heritage-home.heritage-store-page .heritage-store-inventory .store-body{padding:10px 12px}
+body.heritage-home.heritage-store-page .heritage-store-inventory .store-meta{font-size:9px}
+body.heritage-home.heritage-store-page .heritage-store-inventory .store-body h2{
+ font-size:clamp(18px,1.55vw,22px);line-height:1.05;margin:5px 0
+}
+body.heritage-home.heritage-store-page .heritage-store-inventory .store-description{font-size:11px;line-height:1.42}
+body.heritage-home.heritage-store-page .heritage-store-inventory .store-bottom{margin-top:7px}
+body.heritage-home.heritage-store-page .heritage-store-inventory .buy-button{min-height:38px;padding:9px 12px!important}
+@media(max-width:750px){
+ body.heritage-home .rr-racecards-rail-head h2{font-size:clamp(24px,5vw,30px)}
+ body.heritage-home .rr-racecards-product{
+  grid-template-columns:48px minmax(0,1fr);gap:8px;padding:6px 7px
+ }
+ body.heritage-home .rr-racecards-product-cover{width:48px;height:54px}
+ body.heritage-home .rr-racecards-product-cover--brand img.rr-racecards-brand-mark{width:42px;height:42px;padding:5px}
+ body.heritage-home .rr-racecards-buy{grid-column:1/-1;width:100%;min-height:38px;padding:8px 11px!important}
+}
+@media(max-width:560px){
+ body.heritage-home.heritage-store-page .heritage-store-inventory .store-card{grid-template-columns:62px minmax(0,1fr)}
+ body.heritage-home.heritage-store-page .heritage-store-inventory .store-cover{min-height:94px;padding:4px}
+ body.heritage-home.heritage-store-page .heritage-store-inventory .store-cover img.rr-official-logo-fallback{
+  width:48px;height:48px;padding:6px
+ }
+ body.heritage-home.heritage-store-page .heritage-store-inventory .store-body{padding:8px 9px}
+ body.heritage-home.heritage-store-page .heritage-store-inventory .store-meta{font-size:8px}
+ body.heritage-home.heritage-store-page .heritage-store-inventory .store-body h2{font-size:18px}
+ body.heritage-home.heritage-store-page .heritage-store-inventory .store-description{font-size:10px}
+ body.heritage-home.heritage-store-page .heritage-store-inventory .buy-button{min-height:36px;padding:8px 10px!important;font-size:9px}
+}
