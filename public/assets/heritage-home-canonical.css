@@ -20,7 +20,7 @@
 .heritage-home .rr-publication-card:after{content:'';position:absolute;inset:0;border:1px solid rgba(241,207,145,.24);box-shadow:inset 0 0 0 6px rgba(6,26,37,.12);border-radius:inherit;pointer-events:none}
 .heritage-home .rr-publication-card--longshot{background-image:url('/assets/heritage-v1/longshot-owner-hero-v11.jpg');background-position:55% 44%}
 .heritage-home .rr-publication-card--stable{background-image:url('/assets/heritage-v1/stable-owner-hero-v11.jpg');background-position:50% 53%}
-.heritage-home .rr-publication-card--target{background-image:url('/assets/heritage-v1/target-owner-hero-v13.jpg');background-position:58% 45%}
+.heritage-home .rr-publication-card--target{background-image:url('/assets/heritage-v1/target-owner-grandstand-v15.jpg');background-position:58% 45%}
 .heritage-home .rr-publication-card-content{
  display:flex;align-items:center;gap:clamp(11px,1vw,17px);height:100%;max-width:none;width:100%;
  padding:16px clamp(15px,1.5vw,27px);position:relative;z-index:2;
@@ -37,7 +37,7 @@
 .heritage-home .heritage-panel-content{position:relative;z-index:2}
 .heritage-home .heritage-eyebrow-chip{display:inline-flex;align-items:center;gap:10px;position:relative;isolation:isolate;z-index:3}
 .heritage-home .rr-chip-solid{position:relative;display:inline-grid;place-items:center;flex:0 0 38px;width:38px;height:38px;border-radius:6px;overflow:hidden;isolation:isolate;opacity:1;mix-blend-mode:normal}
-.heritage-home .rr-chip-solid--1{background:#e00b15}
+.heritage-home .rr-chip-solid--1{background:#fff}
 .heritage-home .rr-chip-solid--2{background:#fff}
 .heritage-home .rr-chip-solid img{display:block;width:100%;height:100%;object-fit:contain;opacity:1!important;mix-blend-mode:normal!important;filter:none!important;box-shadow:none!important;background:transparent!important;position:relative;z-index:1}
 @media(max-width:1100px) and (min-width:751px){
@@ -55,3 +55,15 @@
  .heritage-home .rr-chip-solid{width:35px;height:35px;flex-basis:35px}
 }
 @media(prefers-reduced-motion:reduce){.heritage-home .rr-publication-card,.heritage-home .rr-publication-card .rr-publication-card-arrow{transition:none}}
+
+/* Original program chip PNGs contain partially transparent ink/paper. Keep an opaque
+   ivory-white plate behind each ORIGINAL numeric glyph; never repaint the numeral. */
+.heritage-home .rr-chip-solid--1,.heritage-home .rr-chip-solid--2{
+ background:#ffffff!important; opacity:1!important;mix-blend-mode:normal!important;
+}
+.heritage-home .rr-chip-solid img{opacity:1!important;filter:none!important;mix-blend-mode:normal!important}
+/* Preserve short horizontal placement and original publication emblems.
+   Gentle darkening over Target List prevents tiny saddlecloth lettering being read. */
+.heritage-home .rr-publication-card--target:before{
+ background:linear-gradient(90deg,rgba(3,17,26,.98) 0%,rgba(5,22,32,.89) 43%,rgba(4,18,29,.71) 77%,rgba(4,18,29,.57) 100%);
+}
