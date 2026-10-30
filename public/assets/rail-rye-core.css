@@ -21,7 +21,7 @@
 
 :root{--heritage-navy:#061d2d;--heritage-blue:#0b273c;--heritage-gold:#d4a759;--heritage-cream:#fff1d4;--heritage-ink:#152c37}
 html,body{max-width:100%;overflow-x:clip}.heritage-home{background:#e9dcc3;color:var(--heritage-ink);font-family:var(--heritage-sans);font-size:14px}.heritage-home h1,.heritage-home h2,.heritage-home h3{font-family:var(--heritage-serif)}.heritage-shell{width:min(100%,1940px);padding-inline:clamp(22px,3.2vw,64px);margin-inline:auto}
-.heritage-hero{position:relative;min-height:clamp(450px,31vw,630px);color:white;background:#172735 url('/assets/approved/home/hero.jpg') center 36%/cover no-repeat;isolation:isolate;overflow:hidden}
+.heritage-hero{position:relative;min-height:clamp(450px,31vw,630px);color:white;background:#172735 url('/assets/approved/home/hero-dust-charged-finish.jpg') center 36%/cover no-repeat;isolation:isolate;overflow:hidden}
 
 
 
