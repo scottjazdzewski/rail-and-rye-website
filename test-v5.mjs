@@ -18,13 +18,13 @@ for(const [key,ready] of [['sk_live_fake',true],['sk_test_fake',false],['rk_test
   assert.equal(checkoutReadiness(env).checkout_ready,ready,`Live readiness key format ${key}`);
 }
 env.STRIPE_LIVE_SECRET_KEY='rk_live_fake';
-const sid1='cs_live_'+'A'.repeat(50),sid2='cs_live_'+'B'.repeat(50);let sessionCounter=0,mails=[],stripeCalls=0;
+const sid1='cs_live_'+'A'.repeat(50),sid2='cs_live_'+'B'.repeat(50),sid3='cs_live_'+'D'.repeat(50),sid4='cs_live_'+'E'.repeat(50),sid5='cs_live_'+'F'.repeat(50);let sessionCounter=0,mails=[],stripeCalls=0;
 const origFetch=globalThis.fetch;
 globalThis.fetch=async(url,options)=>{
  if(String(url).includes('api.stripe.com/v1/checkout/sessions')){
    stripeCalls++;assert.equal(options.headers.Authorization,'Bearer rk_live_fake');
-   const form=new URLSearchParams(options.body);assert.equal(form.get('line_items[0][price_data][unit_amount]'),'100');
-   return Response.json({id:++sessionCounter===1?sid1:sid2,url:'https://checkout.stripe.com/c/pay/live',livemode:true});
+   const form=new URLSearchParams(options.body);assert.equal(form.get('line_items[0][price_data][unit_amount]'),'100');assert.equal(form.get('allow_promotion_codes'),'true');
+   return Response.json({id:[sid1,sid2,sid3,sid4,sid5][sessionCounter++]||sid5,url:'https://checkout.stripe.com/c/pay/live',livemode:true});
  }
  if(String(url).includes('api.resend.com/emails')){
    const m=JSON.parse(options.body);mails.push(m);
@@ -48,7 +48,7 @@ async function sig(payload,mode='live'){
 async function event(evt,mode='live'){const body=JSON.stringify(evt);return new Request(root+'/api/stripe/'+(mode==='live'?'live-webhook':'webhook'),{method:'POST',headers:{'Stripe-Signature':await sig(body,mode)},body});}
 const launch=await run(post('/api/checkout',{product_id:item}));assert.equal(launch.status,200);assert.equal((await launch.json()).url,'https://checkout.stripe.com/c/pay/live');assert.equal(stripeCalls,1);
 const pending=db.prepare('SELECT * FROM orders').get();assert.equal(pending.stripe_session_id,sid1);
-const payment={id:sid1,livemode:true,payment_status:'paid',mode:'payment',currency:'usd',amount_total:100,metadata:{order_id:pending.id},payment_intent:'pi_live_123',customer_details:{email:'buyer@example.org'}};
+const payment={id:sid1,livemode:true,payment_status:'paid',mode:'payment',currency:'usd',amount_subtotal:100,amount_total:100,total_details:{amount_discount:0,amount_tax:0,amount_shipping:0},metadata:{order_id:pending.id},payment_intent:'pi_live_123',customer_details:{email:'buyer@example.org'}};
 const completed={id:'evt_live_1111111111',livemode:true,type:'checkout.session.completed',data:{object:payment}};
 // Signed test endpoint will reject a live event even if signed with test secret.
 assert.equal((await run(await event(completed,'test'))).status,400);
@@ -112,7 +112,42 @@ const dispute={id:'evt_live_5555555555',livemode:true,type:'charge.dispute.creat
 assert.equal((await run(await event(dispute))).status,200);await flush();
 assert.equal((await run(post('/api/delivery/download',{code:thirdCode}))).status,403,'Dispute revokes PDF');
 assert.equal(db.prepare('SELECT status FROM orders WHERE id=?').get(thirdOrder).status,'revoked');
+// Discounted paid orders must match Stripe's signed pre-discount subtotal.
+env.RR_LIVE_ACTIVATION='CONFIRM_LIVE_SALES';
+const discounted=await run(post('/api/checkout',{product_id:item}));assert.equal(discounted.status,200);
+const discountOrder=db.prepare('SELECT id FROM orders WHERE stripe_session_id=?').get(sid3);
+const discountedPaid={...payment,id:sid3,metadata:{order_id:discountOrder.id},
+  payment_intent:'pi_live_discounted',amount_total:75,
+  total_details:{amount_discount:25,amount_shipping:0,amount_tax:0}};
+assert.equal((await run(await event({id:'evt_live_discounted_1',livemode:true,type:'checkout.session.completed',data:{object:discountedPaid}}))).status,200);
+await flush();
+assert.equal(db.prepare('SELECT status FROM orders WHERE id=?').get(discountOrder.id).status,'paid','25% promo purchase still delivers');
+assert.equal(db.prepare('SELECT purpose FROM email_jobs WHERE order_id=?').get(discountOrder.id).purpose,'purchase');
+
+// A valid 100%-off code produces a Stripe no-payment-required completion.
+const freeLaunch=await run(post('/api/checkout',{product_id:item}));assert.equal(freeLaunch.status,200);
+const freeOrder=db.prepare('SELECT id FROM orders WHERE stripe_session_id=?').get(sid4);
+const freePaid={...payment,id:sid4,metadata:{order_id:freeOrder.id},payment_intent:null,
+  amount_total:0,payment_status:'no_payment_required',
+  total_details:{amount_discount:100,amount_shipping:0,amount_tax:0}};
+assert.equal((await run(await event({id:'evt_live_free_1',livemode:true,type:'checkout.session.completed',data:{object:freePaid}}))).status,200);
+await flush();
+const completedFree=db.prepare('SELECT status,stripe_payment_intent FROM orders WHERE id=?').get(freeOrder.id);
+assert.equal(completedFree.status,'paid','100% promo Checkout delivers a free entitlement after signed Stripe event');
+assert.equal(completedFree.stripe_payment_intent,null);
+assert.equal(db.prepare('SELECT purpose FROM email_jobs WHERE order_id=?').get(freeOrder.id).purpose,'purchase');
+
+// Invalid arithmetic cannot authorize a PDF, even when a Checkout event is signed.
+const badLaunch=await run(post('/api/checkout',{product_id:item}));assert.equal(badLaunch.status,200);
+const badOrder=db.prepare('SELECT id FROM orders WHERE stripe_session_id=?').get(sid5);
+const forged={...payment,id:sid5,metadata:{order_id:badOrder.id},
+  payment_intent:'pi_live_invalid_discount',amount_total:75,
+  total_details:{amount_discount:10,amount_shipping:0,amount_tax:0}};
+assert.equal((await run(await event({id:'evt_live_invalid_1',livemode:true,type:'checkout.session.completed',data:{object:forged}}))).status,200);
+await flush();
+assert.equal(db.prepare('SELECT status FROM orders WHERE id=?').get(badOrder.id).status,'pending','Inconsistent discount must not grant PDFs');
+
 // Fail-closed: missing production keys means checkout unavailable (not automatic fallback).
 env.RR_LIVE_ACTIVATION='CONFIRM_LIVE_SALES';delete env.STRIPE_LIVE_SECRET_KEY;
 assert.equal((await run(post('/api/checkout',{product_id:item}))).status,503);
-console.log('PASS V5: live Stripe key isolation, real recipient delivery, signed live/test webhook isolation, recovery, refund revocation, out-of-order refund rejection, idempotency, fail-closed activation. No real Stripe/network charges.');
+console.log('PASS V5 and promo codes: checkout code field, signed subtotal verification, valid discounted and 100%-comped PDFs, invalid discounts rejected, old order protection, refunds and recovery. No real Stripe/network charges.');

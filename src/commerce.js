@@ -86,11 +86,27 @@ async function webhook(request,env,ctx,mode){
   const put=env.STORE_DB.prepare('INSERT OR IGNORE INTO stripe_events (event_id,event_type) VALUES (?,?)').bind(evt.id,evt.type);
   let ops=[put];
   if(['checkout.session.completed','checkout.session.async_payment_succeeded'].includes(evt.type)){
-    if(obj.livemode===(mode==='live')&&obj.payment_status==='paid'&&obj.mode==='payment'&&obj.currency==='usd'&&obj.metadata?.order_id&&typeof obj.id==='string'&&SESSION_RE.test(obj.id)&&sessionMode(obj.id)===mode&&Number.isSafeInteger(obj.amount_total)&&typeof obj.payment_intent==='string'){
+    // Stripe, not the browser, calculates the promotion discount. Match the
+    // original catalog subtotal to D1 and verify the exact discounted total.
+    // No shipping or tax is configured for these digital-only Checkout Sessions.
+    const subtotal=obj.amount_subtotal,discount=obj.total_details?.amount_discount;
+    const amountsValid=Number.isSafeInteger(subtotal)&&subtotal>=50&&
+      Number.isSafeInteger(discount)&&discount>=0&&discount<=subtotal&&
+      obj.total_details?.amount_tax===0&&obj.total_details?.amount_shipping===0&&
+      Number.isSafeInteger(obj.amount_total)&&obj.amount_total===subtotal-discount;
+    const paidIntent=obj.amount_total>0&&obj.payment_status==='paid'&&
+      typeof obj.payment_intent==='string'&&obj.payment_intent.startsWith('pi_');
+    // A 100%-off Stripe-hosted Checkout Session has no PaymentIntent. Require
+    // Stripe's no_payment_required status, no intent and a fully verified total.
+    const freeCheckout=obj.amount_total===0&&obj.payment_status==='no_payment_required'&&
+      (obj.payment_intent===null||obj.payment_intent===undefined);
+    if(obj.livemode===(mode==='live')&&amountsValid&&(paidIntent||freeCheckout)&&
+      obj.mode==='payment'&&obj.currency==='usd'&&obj.metadata?.order_id&&
+      typeof obj.id==='string'&&SESSION_RE.test(obj.id)&&sessionMode(obj.id)===mode){
       ops.push(env.STORE_DB.prepare(`UPDATE orders SET status='paid',stripe_payment_intent=?,buyer_email=?,paid_at=COALESCE(paid_at,CURRENT_TIMESTAMP)
         WHERE id=? AND stripe_session_id=? AND amount_cents=? AND status IN ('pending','paid')
         AND NOT EXISTS (SELECT 1 FROM payment_revocations WHERE payment_intent=?)`)
-        .bind(obj.payment_intent, normalizeEmail(obj.customer_details?.email).slice(0,254),obj.metadata.order_id,obj.id,obj.amount_total,obj.payment_intent));
+        .bind(paidIntent?obj.payment_intent:null, normalizeEmail(obj.customer_details?.email).slice(0,254),obj.metadata.order_id,obj.id,subtotal,paidIntent?obj.payment_intent:null));
       // Durable, idempotent email outbox. Created transactionally only for paid
       // orders and the one permitted test recipient. Never email a stranger in sandbox.
       if(recipientAllowed(env,obj.customer_details?.email,obj.id)) {
@@ -341,6 +357,8 @@ async function checkout(request,env){
   const fields=new URLSearchParams({
     mode:'payment',
     'payment_method_types[0]':'card',
+    // Buyer enters an active Stripe promotion code directly in Stripe Checkout.
+    allow_promotion_codes:'true',
     'line_items[0][quantity]':'1',
     'line_items[0][price_data][currency]':'usd',
     'line_items[0][price_data][unit_amount]':String(p.price_cents),
