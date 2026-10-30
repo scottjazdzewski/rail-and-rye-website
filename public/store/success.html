@@ -9,7 +9,21 @@
 (async()=>{'use strict';const panel=document.getElementById('panel'),link=document.getElementById('download');const id=new URL(location.href).searchParams.get('session_id')||'';if(!/^cs_(?:test|live)_[A-Za-z0-9_]{10,200}$/.test(id)){panel.textContent='No valid Checkout Session was provided.';return;}
 const root='/api/orders/'+encodeURIComponent(id);let tries=0;
 while(tries++<12){try{const r=await fetch(root+'/status',{cache:'no-store'}),v=await r.json();if(!r.ok)throw Error(v.error||'Order lookup failed');
-if(v.status==='paid'){panel.textContent='Payment confirmed for '+v.title+'. You may now download your PDF. Remaining downloads: '+v.downloads_remaining;link.href=root+'/download';link.style.display='inline-block';return;}
+if(v.status==='paid'){
+  if(v.bundle){
+    panel.textContent='Payment confirmed for '+v.title+'. Your included publications are available below (five downloads per PDF within 30 days).';
+    const area=link.parentElement;
+    for(const item of v.items||[]){
+      const a=document.createElement('a');a.className='rr-delivery-action';
+      a.href=root+'/download?item_id='+encodeURIComponent(item.id);
+      a.textContent='Download '+item.title+' ('+item.downloads_remaining+' left)';
+      a.style.cssText='display:block;margin-top:12px;text-align:center';a.rel='noreferrer';area.append(a);
+    }
+    return;
+  }
+  panel.textContent='Payment confirmed for '+v.title+'. You may now download your PDF. Remaining downloads: '+v.downloads_remaining;
+  link.href=root+'/download';link.style.display='inline-block';return;
+}
 if(['refunded','revoked','failed'].includes(v.status)){panel.textContent='This order is '+v.status+'. A download is not available.';return;}
 panel.textContent='Payment confirmation is pending. Checking securely…';
 }catch(e){panel.textContent=e.message;return;}
