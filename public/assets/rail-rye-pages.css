@@ -271,11 +271,7 @@ body.heritage-home .rr-racecards-all:hover{
 body.heritage-home .category-tabs button[aria-selected=true]:hover{
  background:rgba(8,31,45,.98)!important;color:#fff5df!important;transform:none
 }
-/* Keep inner-page hero titles on the homepage's responsive type scale. */
-body.heritage-home 
-@media(max-width:750px){
- body.heritage-home 
-}
+/* Shared numbered-page title styles are defined below. */
 
 /* ENGINEERING DEFAULT: one shared translucent glass badge for official logo covers. */
 body.heritage-home .rr-racecards-live-mark{
