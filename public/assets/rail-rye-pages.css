@@ -314,7 +314,7 @@ body.heritage-home{
 }
 body.heritage-home .heritage-lead,body.heritage-home.heritage-store-page .heritage-store-layout{padding-top:var(--rr-hero-top-space)}
 body.heritage-home .heritage-lead .heritage-kicker,body.heritage-home.heritage-store-page .heritage-inner-heading .heritage-kicker{
- width:var(--rr-hero-kicker-display-width);max-width:var(--rr-hero-kicker-width);color:#dfae60;font-family:var(--heritage-serif);
+ display:block;width:var(--rr-hero-kicker-display-width);max-width:var(--rr-hero-kicker-width);color:#dfae60;font-family:var(--heritage-serif);
  font-size:var(--rr-hero-kicker-size);font-weight:600;line-height:var(--rr-hero-kicker-line);letter-spacing:var(--rr-hero-kicker-track);text-transform:uppercase
 }
 body.heritage-home .heritage-lead h1,body.heritage-home.heritage-store-page .heritage-inner-heading h1{
