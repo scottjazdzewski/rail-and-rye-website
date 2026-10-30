@@ -1,0 +1,23 @@
+/* Rail & Rye canonical saddlecloth rendering.
+   Always use the original program-chip PNG numeral artwork; never redraw the number in CSS.
+   The solid ivory plate prevents alpha in the source PNG from washing out over photography. */
+.rr-chip-solid{
+  background:#fff!important;
+  opacity:1!important;
+  mix-blend-mode:normal!important;
+  isolation:isolate;
+}
+.rr-chip-solid img,
+.rr-original-saddle-chip,
+.journal-chips img,
+img[src^="/assets/brand/chip_"]{
+  opacity:1!important;
+  mix-blend-mode:normal!important;
+  filter:none!important;
+}
+.rr-chip-solid img{background:#fff!important}
+.rr-original-saddle-chip,
+.journal-chips img{
+  background:#fff!important;
+  border-radius:6px;
+}
