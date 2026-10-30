@@ -84,3 +84,148 @@
 .rr-delivery-main a:not(.rr-delivery-action){color:#7e5b2d;text-decoration:underline;text-underline-offset:3px}
 .rr-delivery-main #panel,.rr-delivery-main #result{min-height:32px}
 @media(max-width:750px){.rr-legal-main,.rr-delivery-main{padding-inline:20px}.rr-delivery-main h1{font-size:50px}}
+
+
+/* RAIL & RYE — shared page shell, hero frame and action system (owner approved). */
+:root{
+ --rr-shared-photo-hero-height:clamp(470px,44vw,600px);
+ --rr-action-border:#b89257;
+ --rr-action-navy:#0b2b3d;
+ --rr-action-ivory:#f6edda;
+ --rr-action-paper:#f3ead7;
+}
+body.heritage-home .heritage-header-inner{
+ display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);grid-template-rows:auto auto;
+ align-items:center;column-gap:clamp(12px,1.5vw,24px);row-gap:4px;min-height:124px;padding-block:10px 8px;
+}
+body.heritage-home .heritage-brand{grid-column:1;grid-row:1;justify-self:start}
+body.heritage-home .heritage-nav{
+ grid-column:2;grid-row:1;justify-self:center;display:flex!important;align-items:center;justify-content:center;
+ gap:clamp(8px,1vw,14px);margin:0;transform:none
+}
+body.heritage-home .heritage-mobile-nav{grid-column:3;grid-row:1;justify-self:end;margin-left:0;display:none!important}
+body.heritage-home .heritage-strap{
+ grid-column:1/-1;grid-row:2;position:static;top:auto;left:auto;transform:none;justify-self:center;
+ display:flex;align-items:center;justify-content:center;gap:7px;width:auto;max-width:100%;overflow:visible;
+ white-space:nowrap;pointer-events:auto;font:600 clamp(10px,.9vw,13px)/1.15 var(--heritage-serif);letter-spacing:.12em
+}
+body.heritage-home .heritage-strap span{white-space:nowrap}
+body.heritage-home .heritage-strap .heritage-horse-mini{width:38px;height:34px;flex:0 0 38px;object-fit:contain}
+body.heritage-home .heritage-nav .heritage-nav-pill{min-height:43px}
+body.heritage-home .heritage-mobile-nav nav a{text-align:center}
+
+/* Equal responsive image-hero frames; the approved photo and its page-specific crop remain in place. */
+body.heritage-home .heritage-hero,
+body.heritage-home .heritage-inner-hero,
+body.heritage-home .rr-racecards-hero{min-height:var(--rr-shared-photo-hero-height)}
+
+/* Restore the approved compact emblem-left publication row. */
+body.heritage-home .rr-publication-card-content{flex-direction:row}
+
+/* One flat, antique-gold-edged action system across public pages. */
+body.heritage-home .btn,
+body.heritage-home .text-link,
+body.heritage-home .category-tabs button,
+body.heritage-home .buy-button,
+body.heritage-home .heritage-recovery,
+body.heritage-home .rr-publication-hero-link,
+body.heritage-home .rr-all-pubs,
+body.heritage-home .rr-pub-outline-link,
+body.heritage-home .rr-edition-buy,
+body.heritage-home .rr-racecards-desk-link,
+body.heritage-home .rr-racecards-all,
+body.heritage-home .rr-delivery-main .rr-delivery-action,
+body.heritage-home .rr-delivery-main button{
+ box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;gap:8px;
+ min-height:44px;padding:10px 18px!important;border:1px solid var(--rr-action-border)!important;
+ border-radius:999px!important;box-shadow:none!important;text-shadow:none!important;
+ font:700 10px/1.15 var(--heritage-sans)!important;letter-spacing:.08em!important;
+ text-transform:uppercase;text-decoration:none!important;white-space:normal;max-width:100%;
+ transition:background-color .18s ease,color .18s ease,border-color .18s ease,transform .18s ease;
+}
+body.heritage-home .btn{background:var(--rr-action-navy);color:var(--rr-action-ivory)}
+body.heritage-home .btn-gold{background:#d0ad6a!important;color:#102b3c!important}
+body.heritage-home .btn-navy,
+body.heritage-home .buy-button,
+body.heritage-home .rr-edition-buy,
+body.heritage-home .rr-delivery-main .rr-delivery-action,
+body.heritage-home .rr-delivery-main button{background:var(--rr-action-navy)!important;color:var(--rr-action-ivory)!important}
+body.heritage-home .btn-outline,
+body.heritage-home .rr-publication-hero-link,
+body.heritage-home .rr-racecards-desk-link{background:rgba(8,31,45,.82)!important;color:#f2d59a!important}
+body.heritage-home .text-link,
+body.heritage-home .category-tabs button,
+body.heritage-home .heritage-recovery,
+body.heritage-home .rr-all-pubs,
+body.heritage-home .rr-pub-outline-link,
+body.heritage-home .rr-racecards-all{background:var(--rr-action-paper)!important;color:var(--rr-action-navy)!important}
+body.heritage-home .category-tabs button[aria-selected=true]{background:var(--rr-action-navy)!important;color:var(--rr-action-ivory)!important}
+body.heritage-home .btn-gold:hover:not(:disabled){background:#dfbd80!important;color:#102b3c!important;transform:translateY(-1px)}
+body.heritage-home .btn-navy:hover:not(:disabled),
+body.heritage-home .buy-button:hover:not(:disabled),
+body.heritage-home .rr-edition-buy:hover:not(:disabled),
+body.heritage-home .rr-delivery-main .rr-delivery-action:hover,
+body.heritage-home .rr-delivery-main button:hover:not(:disabled){background:#174253!important;color:var(--rr-action-ivory)!important;transform:translateY(-1px)}
+body.heritage-home .btn-outline:hover:not(:disabled),
+body.heritage-home .rr-publication-hero-link:hover,
+body.heritage-home .rr-racecards-desk-link:hover{background:#183b4d!important;color:#f6dfb4!important;transform:translateY(-1px)}
+body.heritage-home .text-link:hover,
+body.heritage-home .category-tabs button:hover:not([aria-selected=true]),
+body.heritage-home .heritage-recovery:hover,
+body.heritage-home .rr-all-pubs:hover,
+body.heritage-home .rr-pub-outline-link:hover,
+body.heritage-home .rr-racecards-all:hover{background:#e8d8b6!important;color:#0b2b3d!important;transform:translateY(-1px)}
+body.heritage-home .category-tabs button[aria-selected=true]:hover{background:var(--rr-action-navy)!important;color:var(--rr-action-ivory)!important;transform:none}
+body.heritage-home .buy-button:disabled,
+body.heritage-home .rr-edition-buy:disabled,
+body.heritage-home .rr-delivery-main button:disabled{opacity:.56!important;cursor:not-allowed;transform:none}
+body.heritage-home .btn:focus-visible,
+body.heritage-home .text-link:focus-visible,
+body.heritage-home .category-tabs button:focus-visible,
+body.heritage-home .buy-button:focus-visible,
+body.heritage-home .heritage-recovery:focus-visible,
+body.heritage-home .rr-publication-hero-link:focus-visible,
+body.heritage-home .rr-all-pubs:focus-visible,
+body.heritage-home .rr-pub-outline-link:focus-visible,
+body.heritage-home .rr-edition-buy:focus-visible,
+body.heritage-home .rr-racecards-desk-link:focus-visible,
+body.heritage-home .rr-racecards-all:focus-visible,
+body.heritage-home .rr-delivery-main .rr-delivery-action:focus-visible,
+body.heritage-home .rr-delivery-main button:focus-visible{outline:3px solid #e4c27f;outline-offset:3px}
+
+@media(max-width:960px){
+ body.heritage-home .heritage-nav{display:none!important}
+ body.heritage-home .heritage-mobile-nav{display:block!important}
+ body.heritage-home .heritage-mobile-nav summary{display:flex;align-items:center;justify-content:center;gap:7px}
+}
+@media(max-width:560px){
+ :root{--rr-shared-photo-hero-height:480px}
+ body.heritage-home .heritage-header-inner{
+  grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto;min-height:112px;
+  padding-block:9px 8px;column-gap:10px;row-gap:8px
+ }
+ body.heritage-home .heritage-brand{grid-column:1;grid-row:1;min-width:0;max-width:100%}
+ body.heritage-home .heritage-mobile-nav{grid-column:2;grid-row:1;margin-left:0}
+ body.heritage-home .heritage-strap{
+  grid-column:1/-1;grid-row:2;justify-self:center;position:static;top:auto;left:auto;transform:none;
+  display:flex;align-items:center;justify-content:center;gap:5px;width:auto;max-width:100%;overflow:visible;
+  font-size:9px;line-height:1.15;letter-spacing:.035em;white-space:nowrap
+ }
+ body.heritage-home .heritage-strap .heritage-horse-mini{width:28px;height:26px;flex:0 0 28px}
+ body.heritage-home .heritage-kicker{width:100%;max-width:none;font-size:10px;line-height:1.45;letter-spacing:.07em}
+}
+@media(prefers-reduced-motion:reduce){
+ body.heritage-home .btn,
+ body.heritage-home .text-link,
+ body.heritage-home .category-tabs button,
+ body.heritage-home .buy-button,
+ body.heritage-home .heritage-recovery,
+ body.heritage-home .rr-publication-hero-link,
+ body.heritage-home .rr-all-pubs,
+ body.heritage-home .rr-pub-outline-link,
+ body.heritage-home .rr-edition-buy,
+ body.heritage-home .rr-racecards-desk-link,
+ body.heritage-home .rr-racecards-all,
+ body.heritage-home .rr-delivery-main .rr-delivery-action,
+ body.heritage-home .rr-delivery-main button{transition:none}
+}
