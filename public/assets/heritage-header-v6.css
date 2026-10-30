@@ -29,3 +29,7 @@
 }
 @media(max-width:750px){.heritage-home .heritage-strap .heritage-horse-mini{width:43px;height:48px;flex-basis:43px}.heritage-home .heritage-strap{font-size:clamp(9px,2.5vw,11px);letter-spacing:.05em;gap:5px}}
 @media(max-width:390px){.heritage-home .heritage-strap .heritage-horse-mini{width:35px;height:39px;flex-basis:35px}.heritage-home .heritage-strap{font-size:8.8px;letter-spacing:.02em}}
+
+/* Publications is a quiet text link, not a third outlined button. */
+.heritage-home .heritage-nav .heritage-nav-link{display:inline-flex;align-items:center;min-height:42px;padding:0 4px;color:#f6eeda;font:700 clamp(9px,.65vw,12px) var(--heritage-sans);letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;text-shadow:0 2px 9px #0716228c}
+.heritage-home .heritage-nav .heritage-nav-link:hover,.heritage-home .heritage-nav .heritage-nav-link[aria-current=page]{color:#e6bb70;text-decoration:underline;text-underline-offset:5px}
