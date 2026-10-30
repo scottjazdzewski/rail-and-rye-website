@@ -57,7 +57,7 @@ globalThis.fetch=async(url,options)=>{
     stripeCalls++;
     const form=new URLSearchParams(options.body);
     assert.equal(options.headers.Authorization,'Bearer rk_live_fake');
-    assert.equal(form.get('line_items[0][price_data][unit_amount]'),'1999','Server owns price');
+    assert.equal(form.get('line_items[0][price_data][unit_amount]'),'1999','Server owns price');assert.equal(form.get('allow_promotion_codes'),'true','Stripe-hosted promotion code input enabled');
     return Response.json({id:sid,url:'https://checkout.stripe.com/c/pay/bundle',livemode:true});
   }
   if(String(url).includes('api.resend.com/emails')){
@@ -82,7 +82,7 @@ async function sign(payload){
  return 't='+t+',v1='+v;
 }
 const paid={id:'evt_bundle_1234567890',livemode:true,type:'checkout.session.completed',data:{object:{
- id:sid,livemode:true,payment_status:'paid',mode:'payment',currency:'usd',amount_total:1999,
+ id:sid,livemode:true,payment_status:'paid',mode:'payment',currency:'usd',amount_subtotal:1999,amount_total:1999,total_details:{amount_discount:0,amount_tax:0,amount_shipping:0},
  metadata:{order_id:order.id},payment_intent:'pi_bundle_123',customer_details:{email:'buyer@example.org'}}}};
 const raw=JSON.stringify(paid);
 result=await commerce(new Request(root+'/api/stripe/live-webhook',{method:'POST',headers:{'Stripe-Signature':await sign(raw)},body:raw}));
