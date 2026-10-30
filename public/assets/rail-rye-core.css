@@ -19,7 +19,7 @@
 
 .store-card[hidden],.empty[hidden]{display:none!important}
 
-:root{--heritage-navy:#061d2d;--heritage-blue:#0b273c;--heritage-gold:#d4a759;--heritage-cream:#fff1d4;--heritage-ink:#152c37;--heritage-serif:'Cormorant Garamond',var(--heritage-serif);--heritage-sans:Montserrat,'Helvetica Neue',Arial,sans-serif}
+:root{--heritage-navy:#061d2d;--heritage-blue:#0b273c;--heritage-gold:#d4a759;--heritage-cream:#fff1d4;--heritage-ink:#152c37}
 html,body{max-width:100%;overflow-x:clip}.heritage-home{background:#e9dcc3;color:var(--heritage-ink);font-family:var(--heritage-sans);font-size:14px}.heritage-home h1,.heritage-home h2,.heritage-home h3{font-family:var(--heritage-serif)}.heritage-shell{width:min(100%,1940px);padding-inline:clamp(22px,3.2vw,64px);margin-inline:auto}
 .heritage-hero{position:relative;min-height:clamp(450px,31vw,630px);color:white;background:#172735 url('/assets/approved/home/hero.jpg') center 36%/cover no-repeat;isolation:isolate;overflow:hidden}
 .heritage-hero:before{content:'';position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(2,17,28,.98) 0%,rgba(2,18,29,.97) 24%,rgba(4,20,30,.79) 37%,rgba(6,24,34,.43) 59%,rgba(2,16,27,.1) 85%),linear-gradient(180deg,rgba(1,15,27,.85) 0%,rgba(4,16,24,.23) 27%,rgba(4,18,29,.03) 70%,rgba(1,13,22,.28) 100%)}
