@@ -302,10 +302,10 @@ async function listProducts(env){
     const {pdf_key,...publicFields}=p;
     if(pdf_key!==BUNDLE_KEY){products.push({...publicFields,kind:'single'});continue;}
     // Fail closed: a published bundle must still contain 2–12 available PDFs.
-    const children=await env.STORE_DB.prepare(`SELECT c.title,c.status,c.pdf_key FROM bundle_items bi
-      LEFT JOIN products c ON c.id=bi.product_id WHERE bi.bundle_id=? ORDER BY bi.position`).bind(p.id).all();
+    const children=await env.STORE_DB.prepare(`SELECT c.title,c.status,c.pdf_key,a.product_id AS asset_id FROM bundle_items bi
+      LEFT JOIN products c ON c.id=bi.product_id LEFT JOIN bundle_only_assets a ON a.product_id=c.id WHERE bi.bundle_id=? ORDER BY bi.position`).bind(p.id).all();
     const items=children.results||[];
-    if(items.length<2||items.length>12||items.some(c=>c.status!=='published'||!c.pdf_key||c.pdf_key===BUNDLE_KEY))continue;
+    if(items.length<2||items.length>12||items.some(c=>!c.pdf_key||c.pdf_key===BUNDLE_KEY||!(c.status==='published'||(c.status==='draft'&&c.asset_id))))continue;
     products.push({...publicFields,kind:'bundle',bundle_count:items.length,included_titles:items.map(x=>x.title)});
   }
   return reply({products,checkout_ready:stripeReady(env),checkout_mode:checkoutMode(env)});
@@ -327,10 +327,10 @@ async function checkout(request,env){
   const ops=[env.STORE_DB.prepare(`INSERT INTO orders (id,product_id,product_title,pdf_key,amount_cents,status)
     VALUES (?,?,?,?,?,'initiated')`).bind(orderId,p.id,p.title,p.pdf_key,p.price_cents)];
   if(p.pdf_key===BUNDLE_KEY){
-    const children=await env.STORE_DB.prepare(`SELECT c.id,c.title,c.pdf_key,c.status FROM bundle_items bi
-      LEFT JOIN products c ON c.id=bi.product_id WHERE bi.bundle_id=? ORDER BY bi.position`).bind(p.id).all();
+    const children=await env.STORE_DB.prepare(`SELECT c.id,c.title,c.pdf_key,c.status,a.product_id AS asset_id FROM bundle_items bi
+      LEFT JOIN products c ON c.id=bi.product_id LEFT JOIN bundle_only_assets a ON a.product_id=c.id WHERE bi.bundle_id=? ORDER BY bi.position`).bind(p.id).all();
     const items=children.results||[];
-    if(items.length<2||items.length>12||items.some(c=>c.status!=='published'||!c.pdf_key||c.pdf_key===BUNDLE_KEY))
+    if(items.length<2||items.length>12||items.some(c=>!c.pdf_key||c.pdf_key===BUNDLE_KEY||!(c.status==='published'||(c.status==='draft'&&c.asset_id))))
       return error('Bundle contents are currently unavailable',409);
     items.forEach((c,i)=>ops.push(env.STORE_DB.prepare(
       'INSERT INTO bundle_order_items (order_id,product_id,product_title,pdf_key,position) VALUES (?,?,?,?,?)'

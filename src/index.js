@@ -1,5 +1,6 @@
 import { handleCommerce, sendQueuedEmails, checkoutReadiness } from './commerce.js';
 import {handleAdminBundles,BUNDLE_KEY} from './bundles.js';
+import {handleAdminBundleAssets} from './bundle-assets.js';
 /* Rail & Rye admin MVP. Dependencies: Cloudflare Workers, R2, D1, Cloudflare Access.
    Admin routes FAIL CLOSED until ACCESS_TEAM_DOMAIN, ACCESS_AUD and ADMIN_EMAIL
    are configured in Cloudflare Worker runtime variables, and a matching Access
@@ -107,7 +108,7 @@ async function handleAdminAPI(request,env,pathname) {
   if(pathname==="/api/admin/status"&&request.method==="GET") return json({ready:true,categories:[...CATEGORIES],max_pdf_bytes:MAX_PDF,...checkoutReadiness(env)});
   if(pathname==="/api/admin/products") {
     if(request.method==="GET") {
-      const result=await env.STORE_DB.prepare("SELECT * FROM products WHERE pdf_key IS NULL OR pdf_key != '__rr_bundle__' ORDER BY created_at DESC, id DESC LIMIT 250").all();
+      const result=await env.STORE_DB.prepare("SELECT p.* FROM products p WHERE (p.pdf_key IS NULL OR p.pdf_key != '__rr_bundle__') AND NOT EXISTS (SELECT 1 FROM bundle_only_assets a WHERE a.product_id=p.id) ORDER BY p.created_at DESC, p.id DESC LIMIT 250").all();
       return json({products:result.results||[]});
     }
     if(request.method==="POST") {
@@ -125,6 +126,8 @@ async function handleAdminAPI(request,env,pathname) {
   const item=await fetchProduct(env,id);if(!item)return fail("Product not found",404);
   if(item.pdf_key===BUNDLE_KEY)return fail('Edit bundles using the bundle editor',409);
   if(!action&&request.method==="PATCH") {
+    const protectedAsset=await env.STORE_DB.prepare('SELECT product_id FROM bundle_only_assets WHERE product_id=?').bind(id).first();
+    if(protectedAsset)return fail('Edit private PDFs using the bundle-only library',409);
     let data;try{data=readProduct(await parseJSON(request));}catch(e){return fail(e.message);}
     if(data.status==="published"&&!item.pdf_key) return fail("Upload a PDF before publishing");
     await env.STORE_DB.prepare(`UPDATE products SET title=?,category=?,race_date=?,track=?,description=?,price_cents=?,status=? WHERE id=?`)
@@ -194,6 +197,17 @@ export default {
       if(path.startsWith("/api/admin/")||path==="/admin"||path.startsWith("/admin/")) {
         const auth=await verifyAdmin(request,env); if(!auth.ok)return auth.response;
         if(path.startsWith('/api/admin/bundles'))return handleAdminBundles(request,env,path);
+        if(path.startsWith('/api/admin/bundle-assets')){
+          const upload=path.match(/^\/api\/admin\/bundle-assets\/([0-9a-f-]{36})\/pdf$/i);
+          if(upload&&request.method==='PUT'){
+            if(!env.STORE_DB||!env.CARDS_BUCKET)return fail('Database or storage binding missing',503);
+            const asset=await env.STORE_DB.prepare('SELECT p.status FROM products p JOIN bundle_only_assets a ON a.product_id=p.id WHERE p.id=?').bind(upload[1]).first();
+            if(!asset)return fail('Private PDF not found',404);
+            if(asset.status!=='draft')return fail('Archived PDF cannot be edited',409);
+            return handleAdminAPI(request,env,'/api/admin/products/'+upload[1]+'/pdf');
+          }
+          return handleAdminBundleAssets(request,env,path);
+        }
         if(path.startsWith("/api/admin/"))return handleAdminAPI(request,env,path);
         if(request.method!=="GET"&&request.method!=="HEAD")return fail("Method not allowed",405);
         const asset=new URL(url);asset.pathname="/admin/index.html";
