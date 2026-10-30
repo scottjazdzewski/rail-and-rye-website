@@ -526,3 +526,28 @@ body.rr-numbered-hero-page>.rr-racecards-hero>.heritage-header{flex:0 0 auto}
 body.rr-numbered-hero-page>.heritage-inner-hero>.rr-page-intro--hero{flex:0 0 auto}
 body.rr-numbered-hero-page .rr-racecards-hero-grid{align-items:start}
 body.rr-numbered-hero-page>.heritage-footer{flex:0 0 auto;margin-top:auto}
+
+
+/* Match hero canvas height and title baseline across all six numbered pages. */
+body.rr-single-screen-hero{
+ --rr-single-hero-top:clamp(48px,5vw,82px);
+ min-height:100vh;min-height:100svh;display:flex;flex-direction:column
+}
+body.rr-single-screen-hero>.heritage-inner-hero,
+body.rr-single-screen-hero>.rr-racecards-hero{
+ display:flex;flex:1 0 auto;flex-direction:column;min-height:0
+}
+body.rr-single-screen-hero>.heritage-inner-hero>.heritage-header,
+body.rr-single-screen-hero>.rr-racecards-hero>.heritage-header{flex:0 0 auto}
+body.rr-single-screen-hero>.heritage-inner-hero>.rr-page-intro--hero{
+ box-sizing:border-box;width:min(100%,1940px);margin:var(--rr-single-hero-top) auto 0;padding-block:0
+}
+body.rr-single-screen-hero.heritage-store-page{--rr-hero-top-space:var(--rr-single-hero-top)}
+body.rr-single-screen-hero.rr-racecards-page .rr-racecards-hero-grid{
+ align-items:start;padding-top:var(--rr-single-hero-top);padding-bottom:clamp(55px,6vw,92px)
+}
+body.rr-single-screen-hero>.heritage-footer{flex:0 0 auto;margin-top:auto}
+@media(max-width:750px){
+ body.rr-single-screen-hero{--rr-single-hero-top:90px}
+ body.rr-single-screen-hero.rr-racecards-page .rr-racecards-hero-grid{padding-top:var(--rr-single-hero-top);padding-bottom:38px}
+}
