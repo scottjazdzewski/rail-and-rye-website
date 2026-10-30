@@ -39,12 +39,13 @@ async function payload(request) {
     new Set(product_ids).size!==product_ids.length)throw Error('Select 2–12 different published PDFs');
   return {title,description,category,race_date,price_cents,status,product_ids};
 }
+function eligibleChild(p){return !!p&&!!p.pdf_key&&p.pdf_key!==BUNDLE_KEY&&(p.status==='published'||(p.status==='draft'&&!!p.asset_id));}
 async function validatedChildren(env,ids) {
   const rows=[];
   for (const id of ids) {
-    const p=await env.STORE_DB.prepare("SELECT id,title,pdf_key,status FROM products WHERE id=?").bind(id).first();
-    if(!p||p.status!=='published'||!p.pdf_key||p.pdf_key===BUNDLE_KEY)
-      throw Error('All included PDFs must be published individual products');
+    const p=await env.STORE_DB.prepare("SELECT p.id,p.title,p.pdf_key,p.status,a.product_id AS asset_id FROM products p LEFT JOIN bundle_only_assets a ON a.product_id=p.id WHERE p.id=?").bind(id).first();
+    if(!eligibleChild(p))
+      throw Error('Include only published individual PDFs or uploaded bundle-only PDFs');
     rows.push(p);
   }
   return rows;
@@ -59,13 +60,13 @@ async function allBundles(env) {
   const bundles=[];
   for (const b of products.results||[]) {
     const items=await env.STORE_DB.prepare(
-      "SELECT bi.product_id,p.title,p.status,p.pdf_key FROM bundle_items bi LEFT JOIN products p ON p.id=bi.product_id WHERE bi.bundle_id=? ORDER BY bi.position"
+      "SELECT bi.product_id,p.title,p.status,p.pdf_key,a.product_id AS asset_id FROM bundle_items bi LEFT JOIN products p ON p.id=bi.product_id LEFT JOIN bundle_only_assets a ON a.product_id=p.id WHERE bi.bundle_id=? ORDER BY bi.position"
     ).bind(b.id).all();
     bundles.push({...b,product_ids:(items.results||[]).map(x=>x.product_id),
-      components:(items.results||[]).map(x=>({id:x.product_id,title:x.title,status:x.status,available:x.status==='published'&&!!x.pdf_key&&x.pdf_key!==BUNDLE_KEY}))});
+      components:(items.results||[]).map(x=>({id:x.product_id,title:x.title,status:x.status,available:eligibleChild(x),bundle_only:!!x.asset_id}))});
   }
   const singles=await env.STORE_DB.prepare(
-    "SELECT id,title,category,race_date,price_cents FROM products WHERE status='published' AND pdf_key IS NOT NULL AND pdf_key != ? ORDER BY race_date DESC, title LIMIT 250"
+    "SELECT p.id,p.title,p.category,p.race_date,p.price_cents,CASE WHEN a.product_id IS NOT NULL THEN 1 ELSE 0 END AS bundle_only FROM products p LEFT JOIN bundle_only_assets a ON a.product_id=p.id WHERE (p.status='published' OR (p.status='draft' AND a.product_id IS NOT NULL)) AND p.pdf_key IS NOT NULL AND p.pdf_key != ? ORDER BY p.race_date DESC, p.title LIMIT 250"
   ).bind(BUNDLE_KEY).all();
   return out({bundles,available_products:singles.results||[]});
 }
