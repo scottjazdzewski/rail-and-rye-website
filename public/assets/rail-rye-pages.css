@@ -510,3 +510,19 @@ body.heritage-home .rr-page-intro .rr-page-action{margin-top:24px}
 
 /* Keep the Publication Desk filters aligned with the shared hero action spacing. */
 body.heritage-home.heritage-store-page .heritage-inner-filters{margin-top:24px}
+
+
+/* Pages 1–5 follow the Publication Desk's single-screen hero frame. */
+body.rr-numbered-hero-page{
+ min-height:100vh;min-height:100svh;display:flex;flex-direction:column
+}
+body.rr-numbered-hero-page>main{display:none!important}
+body.rr-numbered-hero-page>.heritage-inner-hero,
+body.rr-numbered-hero-page>.rr-racecards-hero{
+ display:flex;flex:1 0 auto;flex-direction:column;min-height:0;border-bottom:0
+}
+body.rr-numbered-hero-page>.heritage-inner-hero>.heritage-header,
+body.rr-numbered-hero-page>.rr-racecards-hero>.heritage-header{flex:0 0 auto}
+body.rr-numbered-hero-page>.heritage-inner-hero>.rr-page-intro--hero{flex:0 0 auto}
+body.rr-numbered-hero-page .rr-racecards-hero-grid{align-items:start}
+body.rr-numbered-hero-page>.heritage-footer{flex:0 0 auto;margin-top:auto}
