@@ -199,8 +199,9 @@ body.heritage-home .rr-delivery-main button:focus-visible{outline:3px solid #e4c
  body.heritage-home .heritage-mobile-nav summary{display:flex;align-items:center;justify-content:center;gap:7px}
 }
 @media(max-width:560px){
- :root{--rr-shared-photo-hero-height:430px}
- body.heritage-home .heritage-lead{padding-top:54px;padding-bottom:26px}
+ :root{--rr-shared-photo-hero-height:410px}
+ body.heritage-home .heritage-lead{padding-top:30px;padding-bottom:18px}
+ body.heritage-home .heritage-lead h1{margin:13px 0}
  body.heritage-home .heritage-header-inner{
   grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto;min-height:112px;
   padding-block:9px 8px;column-gap:10px;row-gap:8px
