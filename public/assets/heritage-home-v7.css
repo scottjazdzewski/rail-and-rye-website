@@ -1,0 +1,33 @@
+/* V7 — owner-approved homepage message and above-the-fold refinement.
+   Homepage styles only. Preserve official brand, live product API and checkout. */
+@media(min-width:1121px){
+ .heritage-home .heritage-hero{min-height:380px}
+ .heritage-home .heritage-header-inner{min-height:94px}
+ .heritage-home .heritage-lead{padding-top:18px;padding-bottom:23px}
+ .heritage-home .heritage-lead h1{
+   font-size:clamp(54px,4.05vw,76px);
+   line-height:.93;
+   margin:11px 0 14px;
+ }
+ .heritage-home .heritage-kicker{font-size:clamp(11px,.82vw,15px);letter-spacing:.15em}
+ .heritage-home .heritage-lead p{
+   font-size:clamp(12px,.88vw,15px);
+   line-height:1.47;max-width:795px;margin-top:10px;
+ }
+ .heritage-home .heritage-feature-grid{padding-top:10px;gap:15px}
+ .heritage-home .heritage-panel{min-height:195px}
+ .heritage-home .heritage-panel-content{padding:clamp(17px,1.65vw,27px)}
+ .heritage-home .heritage-panel h2{font-size:clamp(34px,2.75vw,52px);margin:8px 0 10px}
+ .heritage-home .heritage-more{padding-top:17px}
+ .heritage-home .heritage-section-title{margin-bottom:10px}
+ .heritage-home .heritage-badge{min-height:80px;padding:10px 15px}
+ .heritage-home .badge-emblem{width:48px;height:48px;font-size:24px}
+ .heritage-home .badge-text strong{font-size:clamp(23px,1.7vw,32px)}
+}
+@media(max-width:750px){
+ .heritage-home .heritage-lead p{max-width:410px;line-height:1.58}
+ .heritage-home .heritage-kicker{line-height:1.6}
+}
+@media(prefers-reduced-motion:reduce){
+ .heritage-home .heritage-panel,.heritage-home .heritage-badge{transition:none}
+}
