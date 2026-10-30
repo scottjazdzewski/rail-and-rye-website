@@ -17,8 +17,8 @@ const el=(tag,cls,text)=>{const x=document.createElement(tag);if(cls)x.className
   const ready=Boolean(data.checkout_ready),live=data.checkout_mode==='live';
   cards.slice(0,4).forEach(p=>{
    const card=el('article','rr-racecards-product');
-   const cover=el('div','rr-racecards-product-cover');
-   if(p.image_url){const img=document.createElement('img');img.src=p.image_url;img.alt='';img.loading='lazy';img.decoding='async';cover.append(img)}else{cover.classList.add('rr-racecards-product-cover--brand');const img=document.createElement('img');img.src='/assets/approved/brand/rail-rye-ivory-logo.png';img.alt='Rail & Rye official horseshoe emblem';img.className='rr-racecards-brand-mark';img.loading='lazy';img.decoding='async';cover.append(img)}
+   const cover=el('div','rr-racecards-product-cover rr-purchase-badge');
+   if(p.image_url){const img=document.createElement('img');img.src=p.image_url;img.alt='';img.className='rr-purchase-badge-image';img.loading='lazy';img.decoding='async';cover.append(img)}else{cover.classList.add('rr-racecards-product-cover--brand');const img=document.createElement('img');img.src='/assets/approved/brand/rail-rye-ivory-logo.png';img.alt='Rail & Rye official horseshoe emblem';img.className='rr-purchase-badge-image rr-racecards-brand-mark';img.loading='lazy';img.decoding='async';cover.append(img)}
    const copy=el('div','rr-racecards-product-copy');
    copy.append(el('div','rr-racecards-meta',[p.track,p.race_date].filter(Boolean).join(' · ')||'Rail & Rye Race Card'));
    copy.append(el('h3','',p.title||'Race Card'));
