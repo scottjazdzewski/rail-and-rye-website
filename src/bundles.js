@@ -91,7 +91,7 @@ export async function handleAdminBundles(request,env,path) {
   const id=m[1];
   const original=await env.STORE_DB.prepare("SELECT id FROM products WHERE id=? AND pdf_key=?").bind(id,BUNDLE_KEY).first();
   if(!original)return bad('Bundle not found',404);
-  let b;try{b=await payload(request);if(b.product_ids.includes(id))throw Error('Bundles cannot contain bundles');await validatedChildren(env,b.product_ids);}catch(e){return bad(e.message);}
+  let b;try{b=await payload(request);if(b.product_ids.includes(id))throw Error('Bundles cannot contain bundles');if(b.status!=='archived')await validatedChildren(env,b.product_ids);}catch(e){return bad(e.message);}
   const ops=[
     env.STORE_DB.prepare("UPDATE products SET title=?,category=?,race_date=?,description=?,price_cents=?,status=? WHERE id=? AND pdf_key=?")
       .bind(b.title,b.category,b.race_date,b.description,b.price_cents,b.status,id,BUNDLE_KEY),
