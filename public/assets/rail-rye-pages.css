@@ -559,3 +559,16 @@ body.rr-single-screen-hero>.rr-racecards-hero{flex:1 1 0px;min-height:0}
 body.rr-single-screen-hero>.heritage-inner-hero>.rr-page-intro--hero{
  width:min(100%,1940px);max-width:none;margin-left:auto;margin-right:auto
 }
+
+
+/* Restore the shared shell gutter on #2–#5 and keep hero descriptions within the same text measure. */
+body.rr-single-screen-hero>.heritage-inner-hero>.rr-page-intro--hero{
+ padding-inline:clamp(22px,3.2vw,64px)
+}
+body.rr-single-screen-hero .rr-page-description{width:min(100%,610px);max-width:610px}
+@media(max-width:750px){
+ body.rr-single-screen-hero>.heritage-inner-hero>.rr-page-intro--hero{padding-inline:20px}
+}
+@media(max-width:390px){
+ body.rr-single-screen-hero>.heritage-inner-hero>.rr-page-intro--hero{padding-inline:14px}
+}
