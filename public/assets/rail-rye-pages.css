@@ -344,3 +344,42 @@ body.heritage-home.heritage-store-page .heritage-store-inventory .status-note{co
  body.heritage-home.heritage-store-page .heritage-store-inventory .store-price{font-size:21px}
  body.heritage-home.heritage-store-page .heritage-store-inventory .buy-button{padding:10px 12px;font-size:9px}
 }
+
+
+/* ENGINEERING DEFAULT: pill controls share the Race Cards hero outlined treatment.
+   Preserve semantic color states for selected filters and primary purchase actions. */
+body.heritage-home .text-link,
+body.heritage-home .category-tabs button,
+body.heritage-home .heritage-recovery,
+body.heritage-home .rr-all-pubs,
+body.heritage-home .rr-pub-outline-link,
+body.heritage-home .rr-racecards-all{
+ background:rgba(8,31,45,.82)!important;color:#f2d59a!important;
+ border-color:rgba(226,176,89,.92)!important
+}
+body.heritage-home .category-tabs button[aria-selected=true]{
+ background:rgba(8,31,45,.98)!important;color:#fff5df!important;border-color:#f0c776!important;
+ box-shadow:inset 0 0 0 1px rgba(240,199,118,.22)!important
+}
+body.heritage-home .text-link:hover,
+body.heritage-home .category-tabs button:hover:not([aria-selected=true]),
+body.heritage-home .heritage-recovery:hover,
+body.heritage-home .rr-all-pubs:hover,
+body.heritage-home .rr-pub-outline-link:hover,
+body.heritage-home .rr-racecards-all:hover{
+ background:#183b4d!important;color:#f6dfb4!important;border-color:#e2b059!important
+}
+body.heritage-home .category-tabs button[aria-selected=true]:hover{
+ background:rgba(8,31,45,.98)!important;color:#fff5df!important;transform:none
+}
+/* Reduce oversized hero headings on both product landing pages. */
+body.heritage-home .rr-racecards-intro h1{
+ font-size:clamp(54px,4.6vw,64px);line-height:.98;letter-spacing:-.04em
+}
+body.heritage-home.heritage-store-page .heritage-inner-heading h1{
+ font-size:clamp(44px,4.2vw,60px);line-height:.98
+}
+@media(max-width:750px){
+ body.heritage-home .rr-racecards-intro h1{font-size:clamp(38px,10vw,46px);line-height:.98}
+ body.heritage-home.heritage-store-page .heritage-inner-heading h1{font-size:clamp(38px,9vw,46px);line-height:.98}
+}
