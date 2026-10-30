@@ -118,11 +118,11 @@ img[src^="/assets/approved/saddlecloths/"]{opacity:1!important;mix-blend-mode:no
 
 /* CANONICAL PUBLIC HEADER — one shared layout and typography system across all pages. */
 body.heritage-home .heritage-header{
- position:relative;z-index:4;background:rgba(5,20,31,.62);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)
+ position:relative;z-index:4;background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none
 }
 body.heritage-home .heritage-header-inner{
  position:relative;display:grid;grid-template-columns:max-content minmax(0,1fr) max-content;grid-template-rows:1fr;
- align-items:center;gap:clamp(10px,1.2vw,22px);min-height:104px;padding-block:8px;
+ align-items:center;gap:clamp(10px,1.2vw,22px);min-height:96px;padding-block:8px;
  border-bottom:1px solid rgba(227,185,112,.42)
 }
 body.heritage-home.rr-shell-page .micro-strip{display:none}
@@ -177,7 +177,7 @@ body.heritage-home .heritage-mobile-nav nav a:hover{background:#244656}
  body.heritage-home .heritage-strap .heritage-horse-mini{width:32px;height:36px;flex-basis:32px}
 }
 @media(min-width:751px) and (max-width:1120px){
- body.heritage-home .heritage-header-inner{grid-template-columns:max-content minmax(0,1fr) auto;min-height:94px}
+ body.heritage-home .heritage-header-inner{grid-template-columns:max-content minmax(0,1fr) auto;min-height:96px}
  body.heritage-home .heritage-brand-mark{width:60px;height:60px}
  body.heritage-home .heritage-wordmark{font-size:27px}
  body.heritage-home .heritage-strap{font-size:clamp(11px,1.25vw,14px);letter-spacing:.025em;gap:5px}
