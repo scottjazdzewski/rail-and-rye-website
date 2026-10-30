@@ -454,3 +454,41 @@ body.heritage-home.heritage-store-page .heritage-store-inventory .buy-button{min
  body.heritage-home.heritage-store-page .heritage-store-inventory .store-description{font-size:10px}
  body.heritage-home.heritage-store-page .heritage-store-inventory .buy-button{min-height:36px;padding:8px 10px!important;font-size:9px}
 }
+
+
+/* FINAL BADGE MATCH: the Race Cards and Publication Desk logo tiles share
+   the same 54x62 glass frame and 48px glass emblem. */
+body.heritage-home .rr-racecards-product-cover--brand,
+body.heritage-home.heritage-store-page .heritage-store-inventory .store-cover{
+ width:54px;height:62px;min-height:62px;max-height:62px;max-width:none;padding:0;
+ align-self:center;justify-self:center;display:grid;place-items:center;
+ background:rgba(8,31,45,.68)!important;border:1px solid rgba(226,176,89,.9)!important;
+ border-radius:7px!important;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+ box-shadow:inset 0 1px rgba(255,255,255,.17),0 5px 14px rgba(0,0,0,.17)
+}
+body.heritage-home .rr-racecards-product-cover--brand img.rr-racecards-brand-mark,
+body.heritage-home.heritage-store-page .heritage-store-inventory .store-cover img.rr-official-logo-fallback{
+ width:48px;height:48px;max-width:none;object-fit:contain;object-position:center;padding:6px;box-sizing:border-box;
+ background:rgba(8,31,45,.68)!important;border:1px solid rgba(226,176,89,.9)!important;
+ border-radius:50%;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+ box-shadow:inset 0 1px rgba(255,255,255,.17),0 5px 14px rgba(0,0,0,.17)
+}
+body.heritage-home .rr-racecards-live-mark{
+ background:rgba(8,31,45,.68)!important;border-color:rgba(226,176,89,.9)!important;
+ backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+ box-shadow:inset 0 1px rgba(255,255,255,.17),0 5px 14px rgba(0,0,0,.17)
+}
+body.heritage-home.heritage-store-page .heritage-store-inventory .store-card{
+ grid-template-columns:64px minmax(0,1fr)
+}
+body.heritage-home .rr-racecards-rail-head h2{
+ font-size:clamp(26px,2.3vw,32px);line-height:1.02;margin-top:7px
+}
+@media(max-width:750px){
+ body.heritage-home .rr-racecards-rail-head h2{font-size:clamp(23px,5vw,27px)}
+ body.heritage-home .rr-racecards-product-cover--brand{width:48px;height:54px;min-height:54px;max-height:54px}
+ body.heritage-home .rr-racecards-product-cover--brand img.rr-racecards-brand-mark{width:42px;height:42px;padding:5px}
+ body.heritage-home.heritage-store-page .heritage-store-inventory .store-card{grid-template-columns:58px minmax(0,1fr)}
+ body.heritage-home.heritage-store-page .heritage-store-inventory .store-cover{width:48px;height:54px;min-height:54px;max-height:54px}
+ body.heritage-home.heritage-store-page .heritage-store-inventory .store-cover img.rr-official-logo-fallback{width:42px;height:42px;padding:5px}
+}
