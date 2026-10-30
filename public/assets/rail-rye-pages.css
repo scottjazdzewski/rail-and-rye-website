@@ -25,6 +25,9 @@
 .rr-racecards-product:hover{transform:translateY(-2px);border-color:#e1b86f;background:linear-gradient(90deg,rgba(249,239,215,.17),rgba(255,255,255,.055))}
 .rr-racecards-product-cover{width:64px;height:76px;overflow:hidden;border:1px solid rgba(224,188,123,.72);background:#efe4cc;display:grid;place-items:center;color:#0c3147;font:700 13px var(--heritage-serif)}
 .rr-racecards-product-cover img{width:100%;height:100%;object-fit:cover;display:block}
+.rr-racecards-product-cover--brand{background:#0b2535}
+.rr-racecards-product-cover img.rr-racecards-brand-mark{object-fit:contain;padding:4px;box-sizing:border-box}
+body.heritage-home .heritage-inner-page .store-cover img.rr-official-logo-fallback{width:100%;height:100%;object-fit:contain;object-position:center;padding:0;box-sizing:border-box}
 .rr-racecards-product-copy{min-width:0}
 .rr-racecards-meta{font:800 9px/1.3 var(--heritage-sans);letter-spacing:.08em;text-transform:uppercase;color:#dcb36e;margin-bottom:4px}
 .rr-racecards-product h3{font:500 clamp(19px,1.45vw,27px)/1.05 var(--heritage-serif);color:#fff4e3;margin:0}
