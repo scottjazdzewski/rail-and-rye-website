@@ -206,7 +206,7 @@ body.heritage-home.rr-shell-page .micro-strip{display:none}
 }
 .heritage-mobile-nav nav a:focus,.heritage-mobile-nav nav a:hover{background:#244656}
 .heritage-hero:before,.heritage-inner-hero:before,.rr-racecards-hero:before{
- content:"";position:absolute;inset:var(--rr-header-height) 0 0;z-index:-1;pointer-events:none;
+ content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
  background:
   linear-gradient(90deg,rgba(2,17,28,.96) 0%,rgba(3,18,29,.86) 30%,rgba(3,20,30,.62) 56%,rgba(4,20,29,.18) 100%),
   linear-gradient(180deg,rgba(4,16,26,.18) 0%,transparent 48%,rgba(5,18,28,.38) 100%)
