@@ -403,12 +403,15 @@ body.heritage-home .rr-racecards-all{margin-top:10px}
 /* Canonical shared glass frame for every product purchase badge, with or without artwork. */
 body.heritage-home .rr-purchase-badge{background:rgba(8,31,45,.88)!important;border-color:rgba(226,176,89,.9)!important;border-radius:7px!important;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:inset 0 1px rgba(255,255,255,.17),0 5px 14px rgba(0,0,0,.17)!important}
 body.heritage-home .rr-purchase-badge-image{
- display:block;width:calc(100% - 18px)!important;height:calc(100% - 18px)!important;
+ display:block;width:34px!important;height:42px!important;
  max-width:none!important;max-height:none!important;padding:0!important;
  object-fit:contain!important;object-position:center;box-sizing:border-box;
  background:transparent;border:0;border-radius:0;box-shadow:none
 }
-@media(max-width:750px){body.heritage-home .rr-purchase-badge{width:48px;height:54px;min-height:54px;max-height:54px}}
+@media(max-width:750px){
+ body.heritage-home .rr-purchase-badge{width:48px;height:54px;min-height:54px;max-height:54px}
+ body.heritage-home .rr-purchase-badge-image{width:30px!important;height:36px!important}
+}
 
 
 /* PUBLICATION DESK GLASS CARD + CLEAR HERO HEADER */
