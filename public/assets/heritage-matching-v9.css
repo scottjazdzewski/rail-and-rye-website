@@ -1,0 +1,130 @@
+/* RAIL & RYE V9 - approved vintage images, authentic program chips, restrained publication badges.
+   Shared visual treatment only. Commerce, publication availability and checkout code unchanged. */
+
+/* One image for each category, reused on the home tile and its destination hero. */
+.heritage-home .heritage-panel.race-panel{
+  background-image:url('/assets/heritage-v1/racecards-owner.webp');
+  background-position:center 50%;
+}
+.heritage-home .heritage-panel.journal-panel-heritage{
+  background-image:url('/assets/heritage-v1/home-journal-paddock.webp');
+  background-position:center 52%;
+}
+.heritage-home .heritage-panel:before{
+  background:linear-gradient(90deg,rgba(3,17,26,.97) 0%,rgba(5,22,32,.84) 34%,rgba(4,18,29,.41) 69%,rgba(4,18,29,.10) 100%);
+}
+.heritage-home .heritage-panel:after{
+  border:1px solid rgba(241,207,145,.24);
+  box-shadow:inset 0 0 0 6px rgba(6,26,37,.12);
+}
+.heritage-home .heritage-eyebrow-chip{
+  display:inline-flex;align-items:center;gap:10px;
+  line-height:1.15;letter-spacing:.15em;color:#edc47d;
+}
+.heritage-home .heritage-eyebrow-chip img{
+  display:block;flex:0 0 32px;width:32px;height:32px;object-fit:contain;
+  filter:drop-shadow(0 1px 2px rgba(0,0,0,.55));
+}
+.heritage-home .heritage-panel-content{max-width:81%}
+.heritage-home .heritage-panel h2{margin-top:8px}
+
+/* Preserve authentic publication emblems, but remove the shiny embossed treatment. */
+.heritage-home .heritage-badge{
+  border:1px solid #b18e58;border-radius:10px;
+  box-shadow:0 3px 9px rgba(46,30,12,.18),inset 0 0 0 1px rgba(233,193,121,.12);
+  background-color:#071d2a;
+  transition:border-color .2s,background-color .2s,transform .2s;
+}
+.heritage-home .heritage-badge:hover{
+  border-color:#e0b97b;
+  box-shadow:0 5px 14px rgba(29,24,14,.24),inset 0 0 0 1px rgba(233,193,121,.24);
+}
+.heritage-home .heritage-badge:before{
+  background:linear-gradient(90deg,rgba(6,25,37,.87) 0%,rgba(7,26,37,.66) 69%,rgba(7,24,34,.43) 100%);
+}
+.heritage-home .badge-emblem{
+  width:64px;height:64px;flex:0 0 64px;padding:2px;
+  background:#f7f0df;border:1px solid #c9a268;
+  box-shadow:0 2px 5px rgba(0,0,0,.2);
+}
+.heritage-home .badge-emblem img{background:#f7f0df;border-radius:50%}
+.heritage-home .badge-text strong{color:#f6edda;text-shadow:0 1px 2px #0009}
+.heritage-home .badge-text small{color:#d6b77d}
+.heritage-home .badge-arrow{color:#d9b578}
+
+/* Let the inner store + journal mirror the home hero: exact approved imagery,
+   left navy veil dissolving into bright image on right, and shorter editorial header. */
+.heritage-inner-page .heritage-inner-hero{
+  min-height:clamp(385px,29vw,510px);
+  background-repeat:no-repeat;
+  background-size:cover;
+  background-position:center 50%;
+}
+.heritage-inner-page.heritage-store-page .heritage-inner-hero,
+.heritage-inner-page.heritage-store-page.race-mode .heritage-inner-hero{
+  background-image:url('/assets/heritage-v1/racecards-owner.webp');
+  background-position:center 48%;
+}
+.heritage-inner-page.heritage-journal-page .heritage-inner-hero{
+  background-image:url('/assets/heritage-v1/home-journal-paddock.webp');
+  background-position:center 52%;
+}
+.heritage-inner-page .heritage-inner-hero:before{
+  background:
+    linear-gradient(90deg,rgba(3,17,28,.97) 0%,rgba(3,18,29,.92) 23%,rgba(3,20,30,.74) 42%,rgba(4,20,29,.34) 72%,rgba(5,20,30,.10) 100%),
+    linear-gradient(180deg,rgba(4,16,26,.56),transparent 42%,rgba(5,18,28,.27));
+}
+.heritage-inner-page .heritage-inner-heading{
+  padding-top:clamp(40px,4.3vw,72px);
+  padding-bottom:clamp(39px,4.1vw,67px);
+}
+.heritage-inner-page .heritage-inner-heading h1{
+  font-size:clamp(56px,5.1vw,83px);line-height:.93;
+  letter-spacing:-.035em;text-shadow:0 3px 13px rgba(0,0,0,.68);
+  margin:15px 0 20px;
+}
+.heritage-inner-page .heritage-inner-heading p{
+  max-width:490px;font-size:clamp(12px,.93vw,16px);
+  line-height:1.58;margin-top:14px;
+}
+.heritage-inner-page .heritage-inner-content{
+  border-top:5px solid #bd9357;
+  background:linear-gradient(180deg,rgba(237,215,169,.38),transparent 170px),
+    url('/assets/heritage-v1/parchment.jpg') center top/720px auto repeat;
+}
+.heritage-inner-page .heritage-inner-kicker{
+  color:#e4bc77;letter-spacing:.16em;
+}
+.heritage-inner-page .heritage-journal-edition{
+  display:flex;align-items:center;gap:10px;
+}
+.heritage-inner-page .heritage-journal-edition img{width:25px;height:25px;object-fit:contain}
+
+/* Footer: only one apparel link, retained in the top navigation. */
+@media(min-width:751px){
+ .heritage-inner-page .heritage-inner-hero{min-height:385px}
+}
+@media(max-width:750px){
+ .heritage-home .heritage-eyebrow-chip img{width:29px;height:29px;flex-basis:29px}
+ .heritage-home .heritage-panel-content{max-width:92%}
+ .heritage-home .badge-emblem{width:59px;height:59px;flex-basis:59px}
+ .heritage-inner-page .heritage-inner-hero{min-height:490px;background-position:center 48%}
+ .heritage-inner-page .heritage-inner-hero:before{
+   background:linear-gradient(180deg,rgba(3,17,28,.87) 0%,rgba(5,22,32,.64) 39%,rgba(5,22,32,.48) 67%,rgba(3,17,28,.86) 100%);
+ }
+ .heritage-inner-page .heritage-inner-heading{
+   padding-top:108px;padding-bottom:35px;
+ }
+ .heritage-inner-page .heritage-inner-heading h1{
+   font-size:clamp(48px,11.8vw,69px);line-height:.98;
+ }
+ .heritage-inner-page .heritage-inner-heading p{font-size:12px;max-width:330px}
+ .heritage-inner-page .heritage-inner-content{padding-top:27px}
+}
+@media(max-width:390px){
+ .heritage-home .badge-emblem{width:54px;height:54px;flex-basis:54px}
+ .heritage-home .heritage-panel-content{max-width:95%}
+}
+@media(prefers-reduced-motion:reduce){
+ .heritage-home .heritage-badge{transition:none}
+}
