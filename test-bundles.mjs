@@ -4,11 +4,12 @@ import {readFileSync} from 'node:fs';
 import {webcrypto} from 'node:crypto';
 import {handleCommerce,sendQueuedEmails} from './src/commerce.js';
 import {handleAdminBundles,BUNDLE_KEY} from './src/bundles.js';
+import {handleAdminBundleAssets} from './src/bundle-assets.js';
 
-// Real in-memory SQLite with all four production migrations.
+// Real in-memory SQLite with production migrations, including the private library.
 const db=new DatabaseSync(':memory:');
 db.exec(`CREATE TABLE products (id TEXT PRIMARY KEY,title TEXT,slug TEXT,category TEXT,race_date TEXT,track TEXT,description TEXT,price_cents INTEGER,pdf_key TEXT,image_url TEXT,status TEXT,created_at TEXT DEFAULT CURRENT_TIMESTAMP);`);
-for(const file of ['001_stripe_orders.sql','002_email_delivery.sql','003_live_readiness.sql','004_automatic_bundles.sql'])
+for(const file of ['001_stripe_orders.sql','002_email_delivery.sql','003_live_readiness.sql','004_automatic_bundles.sql','005_bundle_only_assets.sql'])
   db.exec(readFileSync('./migrations/'+file,'utf8'));
 const id1='11111111-1111-4111-8111-111111111111',id2='22222222-2222-4222-8222-222222222222',
   id3='33333333-3333-4333-8333-333333333333';
@@ -122,3 +123,47 @@ assert.equal((await commerce(new Request(root+'/api/stripe/live-webhook',{method
 assert.equal((await commerce(post('/api/delivery/download',{code,item_id:id2}))).status,403,'Refund revokes bundle');
 assert.equal((await commerce(new Request(root+'/api/orders/'+sid+'/download?item_id='+id2))).status,403);
 console.log('PASS automatic bundles: admin validation, single-price checkout, purchase snapshots, signed webhook, buyer email, per-PDF quotas, archived versions, and refund revocation. No real charges.');
+
+const assetAdmin=req=>handleAdminBundleAssets(req,env,new URL(req.url).pathname);
+const bundleOnlyMeta={title:'Private Sunday Notes',category:'Stable Notes',race_date:'2026-11-01',track:'Keeneland'};
+result=await assetAdmin(post('/api/admin/bundle-assets',bundleOnlyMeta));
+assert.equal(result.status,201,'Private PDF record can be created without a product listing');
+const privateId=(await result.json()).id;
+assert.equal(db.prepare('SELECT status FROM products WHERE id=?').get(privateId).status,'draft');
+assert.equal((await assetAdmin(new Request(root+'/api/admin/bundle-assets'))).status,200);
+const privateList=await (await assetAdmin(new Request(root+'/api/admin/bundle-assets'))).json();
+assert.equal(privateList.assets[0].has_pdf,0,'No PDF is ready before upload');
+assert.ok(!privateList.assets[0].pdf_key,'Do not expose R2 keys in private library list');
+assert.equal((await assetAdmin(patch('/api/admin/bundle-assets/'+privateId,{...bundleOnlyMeta,title:'Edited Private Notes'}))).status,200);
+db.prepare('UPDATE products SET pdf_key=? WHERE id=?').run('cards/private/notes-v1.pdf',privateId);
+const available=await (await admin(new Request(root+'/api/admin/bundles'))).json();
+assert.ok(available.available_products.some(p=>p.id===privateId&&p.bundle_only===1),
+  'Uploaded private PDFs appear in bundle selection');
+assert.ok(!available.available_products.some(p=>p.id===id3),'Ordinary unpublished drafts are not eligible');
+assert.ok(!(await (await commerce(new Request(root+'/api/products'))).json()).products.some(p=>p.id===privateId),
+  'Private PDF must never have a standalone listing');
+assert.equal((await commerce(post('/api/checkout',{product_id:privateId}))).status,404,
+  'Bundle-only PDF cannot be purchased as an individual product');
+const privateBundleInput={...basic,title:'Keeneland Private Library Bundle',product_ids:[id1,privateId]};
+result=await admin(post('/api/admin/bundles',privateBundleInput));
+assert.equal(result.status,201,'Published bundle may contain protected PDF and published individual PDF');
+const privateBundleId=(await result.json()).id;
+const pub=await (await commerce(new Request(root+'/api/products'))).json();
+assert.ok(pub.products.some(p=>p.id===privateBundleId&&p.kind==='bundle'));
+assert.ok(!JSON.stringify(pub).includes('cards/private/notes-v1.pdf'));
+const privateSid='cs_live_'+'B'.repeat(50);
+globalThis.fetch=async(url,options)=>{
+  if(!String(url).includes('/checkout/sessions'))throw Error('Unexpected external call');
+  const fields=new URLSearchParams(options.body);
+  assert.equal(fields.get('line_items[0][price_data][unit_amount]'),'1999');
+  return Response.json({id:privateSid,url:'https://checkout.stripe.com/c/pay/privatebundle',livemode:true});
+};
+result=await commerce(post('/api/checkout',{product_id:privateBundleId}));
+assert.equal(result.status,200);
+const privateOrder=db.prepare('SELECT id FROM orders WHERE product_id=?').get(privateBundleId);
+const privateKeys=db.prepare('SELECT pdf_key FROM bundle_order_items WHERE order_id=? ORDER BY position').all(privateOrder.id).map(x=>x.pdf_key);
+assert.deepEqual(privateKeys,['cards/friday/v1.pdf','cards/private/notes-v1.pdf']);
+db.prepare('UPDATE products SET pdf_key=? WHERE id=?').run('cards/private/notes-v2.pdf',privateId);
+assert.equal(db.prepare('SELECT pdf_key FROM bundle_order_items WHERE order_id=? AND product_id=?').get(privateOrder.id,privateId).pdf_key,
+  'cards/private/notes-v1.pdf','Previous buyers retain their purchased private PDF version');
+console.log('PASS bundle-only library: private metadata, public invisibility, no standalone checkout, bundle selection, secure checkout snapshots. No real charges.');
