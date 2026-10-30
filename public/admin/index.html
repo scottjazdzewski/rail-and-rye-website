@@ -68,7 +68,24 @@
   </div>
   <section class="panel" style="margin-top:28px" aria-label="Automatic product bundles">
     <div class="head-row"><h2>Automatic bundles</h2><button type="button" class="secondary mini" id="bundleNew">+ New bundle</button></div>
-    <p class="detail" style="margin-bottom:19px">Choose at least two published PDFs, set one package price, and publish. Customers receive separate secure downloads for every included PDF. Previous buyers keep their purchased versions even if you update or archive an edition later.</p>
+    <p class="detail" style="margin-bottom:19px">Choose at least two published editions or bundle-only PDFs, set one package price, and publish. Customers receive separate secure downloads. Previous buyers keep their purchased PDF versions even after edits.</p>
+    <section aria-label="Bundle-only PDF library" style="margin-bottom:25px;padding:19px;border:1px solid var(--border);border-radius:8px;background:white">
+      <div class="head-row"><h3 style="margin:0">Bundle-only PDF library</h3><button type="button" class="secondary mini" id="assetNew">+ New private PDF</button></div>
+      <p class="detail">Upload a PDF that will be available only inside bundles. It will never have its own public listing or individual purchase button. Files remain in private R2 storage.</p>
+      <div class="row">
+        <div class="field"><label for="assetTitle">PDF title *</label><input id="assetTitle" maxlength="140" placeholder="Keeneland — Bonus Race Notes"></div>
+        <div class="field"><label for="assetDate">Racing date</label><input id="assetDate" type="date"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label for="assetCategory">Collection</label><select id="assetCategory"><option>Race Cards</option><option>Longshot Radar</option><option>Stable Notes</option><option>Target List</option></select></div>
+        <div class="field"><label for="assetTrack">Racetrack (optional)</label><input id="assetTrack" maxlength="100" placeholder="Keeneland"></div>
+      </div>
+      <div class="field"><label for="assetPdf">Private PDF <span id="assetPdfStatus"></span></label><input id="assetPdf" type="file" accept="application/pdf,.pdf"><div class="detail">Maximum 75 MB. A replacement PDF does not revoke files already purchased.</div></div>
+      <div class="actions"><button type="button" class="primary" id="assetSave">Upload bundle-only PDF</button></div>
+      <p id="assetNotice" class="detail" role="status" aria-live="polite"></p>
+      <p class="kicker" style="margin-top:15px">Your private PDFs</p>
+      <div class="list" id="assetInventory"><div class="empty">Loading private PDFs…</div></div>
+    </section>
     <div class="layout" style="margin-top:0">
       <div>
         <div class="field"><label for="bundleTitle">Bundle name *</label><input id="bundleTitle" maxlength="140" required placeholder="Breeders' Cup Weekend Bundle"></div>
@@ -81,7 +98,7 @@
         <div class="actions"><button type="button" class="primary" id="bundleDraft">Save bundle draft</button><button type="button" class="gold" id="bundlePublish">Publish bundle</button><button type="button" class="secondary" id="bundleArchive">Archive bundle</button></div>
       </div>
       <div>
-        <p class="kicker">Include published PDFs</p>
+        <p class="kicker">Include published or bundle-only PDFs</p>
         <div id="bundleCandidates" class="list" style="max-height:320px;overflow:auto;margin-bottom:22px"><div class="empty">Loading published products…</div></div>
         <p class="kicker">Your bundles</p>
         <div id="bundleInventory" class="list"><div class="empty">Loading bundles…</div></div>
@@ -162,11 +179,11 @@
   }
   function drawCandidates(selected=[]){
     const box=$('bundleCandidates');box.replaceChildren();
-    if(!available.length){const e=document.createElement('div');e.className='empty';e.textContent='Publish at least two individual PDFs first.';box.append(e);return;}
+    if(!available.length){const e=document.createElement('div');e.className='empty';e.textContent='Upload private PDFs above or publish individual PDFs first.';box.append(e);return;}
     for(const p of available){
       const label=document.createElement('label');label.style.cssText='display:flex;align-items:center;gap:10px;border:1px solid #e7e1d7;padding:10px;cursor:pointer;';
       const c=document.createElement('input');c.type='checkbox';c.dataset.bundleProduct=p.id;c.value=p.id;c.style.cssText='width:auto;flex:none';c.checked=selected.includes(p.id);
-      const name=document.createElement('span');name.textContent=p.title+' · '+money(p.price_cents);label.append(c,name);box.append(label);
+      const name=document.createElement('span');name.textContent=p.title+(p.bundle_only?' · BUNDLE ONLY':' · '+money(p.price_cents));label.append(c,name);box.append(label);
     }
   }
   function drawBundles(){
@@ -195,7 +212,7 @@
     const ids=[...document.querySelectorAll('[data-bundle-product]:checked')].map(x=>x.value);
     const price=Number($('bundlePrice').value),cents=Math.round(price*100);
     if(!Number.isFinite(price)||price<0||Math.abs(price*100-cents)>1e-5){note('Enter a valid dollar price.');return;}
-    if(status!=='archived'&&(ids.length<2||ids.length>12)){note('Select 2 to 12 published PDFs.');return;}
+    if(status!=='archived'&&(ids.length<2||ids.length>12)){note('Select 2 to 12 published or bundle-only PDFs.');return;}
     const title=$('bundleTitle').value.trim();if(title.length<3){note('Enter a bundle name.');return;}
     const current=bundles.find(x=>x.id===selectedId);
     // Saving edits never silently unpublishes an existing live bundle.
@@ -215,7 +232,77 @@
   $('bundleDraft').addEventListener('click',()=>save('draft'));
   $('bundlePublish').addEventListener('click',()=>save('published'));
   $('bundleArchive').addEventListener('click',()=>{if(selectedId&&confirm('Archive this bundle? Existing buyers retain paid access.'))save('archived');});
+  window.addEventListener('rr-bundle-assets-changed',()=>refresh(selectedId).catch(e=>note(e.message)));
   refresh().catch(e=>note('Bundle setup required: '+e.message));
+})();
+</script>
+
+<script>
+(()=>{'use strict';
+  const $=id=>document.getElementById(id);
+  let assets=[],selectedId=null,busy=false;
+  const notice=x=>{$('assetNotice').textContent=x;};
+  async function api(path,options={}){
+    const r=await fetch(path,{credentials:'same-origin',cache:'no-store',...options});
+    let d;try{d=await r.json();}catch{throw Error('Private PDF server did not respond ('+r.status+').');}
+    if(!r.ok)throw Error(d.error||'Private PDF request failed');
+    return d;
+  }
+  function setBusy(v){busy=v;$('assetSave').disabled=v;$('assetNew').disabled=v;}
+  function reset(){
+    selectedId=null;$('assetTitle').value='';$('assetCategory').value='Race Cards';
+    $('assetDate').value='';$('assetTrack').value='';$('assetPdf').value='';
+    $('assetPdfStatus').textContent='';$('assetSave').textContent='Upload bundle-only PDF';notice('New private PDF.');
+    render();
+  }
+  function edit(a){
+    selectedId=a.id;$('assetTitle').value=a.title;$('assetCategory').value=a.category;
+    $('assetDate').value=a.race_date||'';$('assetTrack').value=a.track||'';
+    $('assetPdf').value='';$('assetPdfStatus').textContent=a.has_pdf?'— Uploaded':'— Missing';
+    $('assetSave').textContent='Save private PDF';notice('Editing '+a.title+'. Older purchases keep their PDF versions.');
+    render();
+  }
+  function render(){
+    const box=$('assetInventory');box.replaceChildren();
+    if(!assets.length){const e=document.createElement('div');e.className='empty';e.textContent='No bundle-only PDFs yet.';box.append(e);return;}
+    for(const a of assets){
+      const b=document.createElement('button');b.type='button';b.className='product'+(a.id===selectedId?' active':'');
+      const name=document.createElement('strong');name.textContent=a.title;
+      const meta=document.createElement('span');meta.textContent=[a.race_date||'No date',a.has_pdf?'Ready for bundles':'PDF missing'].join(' · ');
+      b.append(name,meta);b.addEventListener('click',()=>edit(a));box.append(b);
+    }
+  }
+  async function refresh(id){
+    const x=await api('/api/admin/bundle-assets');assets=x.assets||[];render();
+    if(id){const a=assets.find(a=>a.id===id);if(a)edit(a);}
+  }
+  async function save(){
+    if(busy)return;
+    const title=$('assetTitle').value.trim();
+    const file=$('assetPdf').files[0];
+    if(title.length<3||title.length>140){notice('Enter a PDF title of 3–140 characters.');return;}
+    if(!selectedId&&!file){notice('Choose a PDF before creating a private item.');return;}
+    if(file&&(file.size<5||file.size>75*1024*1024)){notice('PDF must be smaller than 75 MB.');return;}
+    const body={title,category:$('assetCategory').value,race_date:$('assetDate').value||null,track:$('assetTrack').value.trim()};
+    setBusy(true);
+    try{
+      const r=await api(selectedId?'/api/admin/bundle-assets/'+selectedId:'/api/admin/bundle-assets',
+        {method:selectedId?'PATCH':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      const id=selectedId||r.id;
+      if(file){
+        notice('Uploading PDF into private storage…');
+        await api('/api/admin/bundle-assets/'+id+'/pdf',{method:'PUT',body:file,
+          headers:{'Content-Type':'application/pdf','X-File-Size':String(file.size)}});
+      }
+      await refresh(id);
+      notice('Private PDF saved. It is available to select in Automatic bundles, but not sold on its own.');
+      window.dispatchEvent(new Event('rr-bundle-assets-changed'));
+    }catch(e){notice('Private PDF not saved completely: '+e.message+'. If created, select it below to retry.');await refresh(selectedId).catch(()=>{});}
+    finally{setBusy(false);}
+  }
+  $('assetNew').addEventListener('click',reset);
+  $('assetSave').addEventListener('click',save);
+  refresh().catch(e=>notice('Private PDF library setup required: '+e.message));
 })();
 </script>
 </body>
