@@ -200,8 +200,26 @@ body.heritage-home .rr-delivery-main button:focus-visible{outline:3px solid #e4c
 }
 @media(max-width:560px){
  :root{--rr-shared-photo-hero-height:410px}
- body.heritage-home .heritage-lead{padding-top:30px;padding-bottom:18px}
- body.heritage-home .heritage-lead h1{margin:13px 0}
+ body.heritage-home .heritage-hero,
+ body.heritage-home .heritage-inner-hero{
+  background-repeat:no-repeat;background-size:auto var(--rr-shared-photo-hero-height);
+  background-position:center top
+ }
+ body.heritage-home .rr-racecards-hero{
+  background-color:#071a2b;background-repeat:no-repeat;
+  background-size:100% var(--rr-shared-photo-hero-height),auto var(--rr-shared-photo-hero-height);
+  background-position:left top,center top
+ }
+ body.heritage-home .heritage-lead{padding-top:12px;padding-bottom:8px}
+ body.heritage-home .heritage-lead h1{
+  font-size:clamp(44px,10.7vw,48px);line-height:.92;margin:8px 0
+ }
+ body.heritage-home .heritage-lead p{margin-top:8px;line-height:1.5}
+ body.heritage-home .heritage-inner-heading{padding-top:46px;padding-bottom:22px}
+ body.heritage-home .heritage-inner-heading h1{margin:8px 0 12px}
+ body.heritage-home .heritage-inner-heading p{margin-top:8px}
+ body.heritage-home .rr-publication-heading{padding-top:20px;padding-bottom:22px}
+ body.heritage-home .rr-racecards-hero-grid{padding-top:22px;padding-bottom:20px}
  body.heritage-home .heritage-header-inner{
   grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto;min-height:112px;
   padding-block:9px 8px;column-gap:10px;row-gap:8px
