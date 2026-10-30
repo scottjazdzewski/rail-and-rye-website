@@ -1,15 +1,15 @@
 /* RAIL & RYE PRODUCTION COMPONENTS
    Shared panels, publication cards, inner-page components and final homepage card treatment. */
 /* Rail & Rye V4 visual treatment — no commerce changes */
-.heritage-home .heritage-nav{gap:clamp(8px,1vw,17px)}
-.heritage-home .heritage-nav .heritage-nav-pill{display:inline-flex;align-items:center;justify-content:center;min-height:43px;padding:10px clamp(12px,1.1vw,22px);border:1px solid rgba(226,176,89,.92);border-radius:999px;background:linear-gradient(140deg,rgba(5,22,34,.7),rgba(10,28,35,.32));color:#f6eeda;box-shadow:inset 0 1px 0 #fff2c81c,0 4px 14px #0005;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);transition:background .2s,transform .2s}
-.heritage-home .heritage-nav .heritage-nav-pill:hover,.heritage-home .heritage-nav .heritage-nav-pill[aria-current=page]{background:linear-gradient(150deg,#a77b403c,#092432b0);color:#ffe0a2;transform:translateY(-2px)}
-.heritage-home .heritage-mobile-nav nav a{border:1px solid #c79a5b80;border-radius:99px;background:#18313b;margin:4px}
+
+
+
+
 .heritage-inner-page{background:#e9dcc3;font-family:var(--heritage-sans);color:#203541}
 .heritage-inner-hero{min-height:clamp(440px,33vw,590px);color:#f6eeda;position:relative;background:#0c2330 url('/assets/heritage-v1/card-races.jpg') center/cover no-repeat;isolation:isolate;overflow:hidden}
 .heritage-inner-hero:before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,#05131af7 0%,#061825e8 31%,#06192495 61%,#071e2533 100%),linear-gradient(180deg,#051724b5 0%,transparent 50%,#05172480 100%)}
 .heritage-inner-hero:after{content:"";pointer-events:none;position:absolute;inset:0;background:repeating-linear-gradient(5deg,transparent 0 6px,#f4d1a00a 7px,transparent 8px)}
-.heritage-inner-page .heritage-header{position:relative;z-index:4}.heritage-inner-page .heritage-nav{transform:none}.heritage-inner-page .heritage-strap{top:40px}
+
 .heritage-inner-heading{position:relative;z-index:2;padding-block:clamp(55px,6.8vw,104px) clamp(55px,8vw,109px)}
 .heritage-inner-kicker{font:600 14px var(--heritage-serif);letter-spacing:.22em;text-transform:uppercase;color:#e1b66e}
 .heritage-inner-heading h1{font:500 clamp(61px,6.6vw,113px)/.94 var(--heritage-serif);margin:18px 0;color:#f6eeda;letter-spacing:-.025em;text-shadow:0 4px 18px #000b}
@@ -40,10 +40,10 @@
 .heritage-journal-page .journal-illustration h2{font:500 clamp(38px,4vw,65px)/.93 var(--heritage-serif);color:#f7eddb}
 .heritage-inner-page .text-link{border:1px solid #b59563;border-radius:99px;padding:13px 17px}
 .heritage-inner-page .site-footer{background:#061d2d;border-top:2px solid #c39961}
-@media(max-width:1250px){.heritage-home .heritage-nav .heritage-nav-pill{padding:9px 12px}.heritage-inner-page .heritage-strap{display:none}}
-@media(max-width:750px){.heritage-inner-hero{min-height:515px}.heritage-inner-hero:before{background:linear-gradient(180deg,#051623e9,#051623a5 50%,#051623e6)}.heritage-inner-page .heritage-header-inner{min-height:95px}.heritage-inner-page .heritage-nav{display:none}.heritage-inner-page .heritage-mobile-nav{display:block}.heritage-inner-heading{padding-top:122px;padding-bottom:45px}.heritage-inner-heading h1{font-size:clamp(57px,12vw,79px)}.heritage-inner-page .store-cards{grid-template-columns:1fr 1fr}.heritage-journal-page .journal-lead{grid-template-columns:1fr}}
+
+@media(max-width:750px){.heritage-inner-hero{min-height:515px}.heritage-inner-hero:before{background:linear-gradient(180deg,#051623e9,#051623a5 50%,#051623e6)}.heritage-inner-heading{padding-top:122px;padding-bottom:45px}.heritage-inner-heading h1{font-size:clamp(57px,12vw,79px)}.heritage-inner-page .store-cards{grid-template-columns:1fr 1fr}.heritage-journal-page .journal-lead{grid-template-columns:1fr}}
 @media(max-width:560px){.heritage-inner-page .store-cards{grid-template-columns:1fr}.heritage-inner-heading h1{font-size:56px}.heritage-inner-content{padding:25px 0 45px}.heritage-inner-page .store-cover{height:128px}.heritage-inner-page .category-tabs button{font-size:9px;padding:10px 12px}}
-@media(prefers-reduced-motion:reduce){.heritage-home .heritage-nav .heritage-nav-pill,.heritage-inner-page .store-card{transition:none}}
+@media(prefers-reduced-motion:reduce){.heritage-inner-page .store-card{transition:none}}
 
 /* Rail & Rye V8 - actual publication PDF emblems and right-aligned transparent gold social symbols. */
 /* Emblems are direct extracts from owner-supplied publication PDFs. */
@@ -252,7 +252,7 @@
 .heritage-home .rr-saddle-chip{
  display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;
  width:31px;height:31px;border-radius:5px;border:2px solid #11191e;
- font:800 23px/1 Georgia,'Times New Roman',serif;letter-spacing:0;
+ font:800 23px/1 var(--heritage-serif);letter-spacing:0;
  box-shadow:none!important;text-shadow:none!important;filter:none!important;
  background:#fff;color:#111;
 }
@@ -559,43 +559,14 @@
   background-image:url('/assets/approved/journal/hero.webp');
   background-position:center 52%;
 }
-.heritage-home .heritage-strap{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:10px;
-  width:max-content;
-  max-width:none;
-  overflow:visible;
-  left:50%;
-  top:26px;
-  font-size:clamp(12px,.97vw,17px);
-  letter-spacing:.17em;
-  line-height:1.25;
-}
-.heritage-home .heritage-strap span{white-space:nowrap}
-.heritage-home .heritage-strap .heritage-horse-mini{
-  width:49px;
-  height:39px;
-  flex:0 0 auto;
-  object-fit:contain;
-  filter:drop-shadow(0 1px 4px rgba(0,0,0,.45));
-}
-@media (max-width:1250px) and (min-width:751px){
-  .heritage-home .heritage-strap{display:none}
-}
+
+
+
+
 @media(max-width:750px){
   .heritage-home .heritage-hero{min-height:565px}
-  .heritage-home .heritage-strap{
-    display:flex;
-    top:79px;
-    width:calc(100% - 22px);
-    max-width:calc(100% - 22px);
-    gap:7px;
-    font-size:clamp(9px,2.65vw,11px);
-    letter-spacing:.09em;
-  }
-  .heritage-home .heritage-strap .heritage-horse-mini{width:32px;height:28px}
+  
+  
   .heritage-home .heritage-lead{padding-top:102px;padding-bottom:37px}
   .heritage-home .heritage-lead h1{
     font-size:clamp(48px,10.7vw,68px);
@@ -605,15 +576,15 @@
   .heritage-home .heritage-panel{min-height:235px}
 }
 @media(max-width:390px){
-  .heritage-home .heritage-strap{font-size:8.5px;letter-spacing:.055em}
-  .heritage-home .heritage-strap .heritage-horse-mini{width:28px;height:25px}
+  
+  
   .heritage-home .heritage-lead h1{font-size:46px}
 }
 /* V7 — owner-approved homepage message and above-the-fold refinement.
    Homepage styles only. Preserve official brand, live product API and checkout. */
 @media(min-width:1121px){
  .heritage-home .heritage-hero{min-height:380px}
- .heritage-home .heritage-header-inner{min-height:94px}
+ 
  .heritage-home .heritage-lead{padding-top:18px;padding-bottom:23px}
  .heritage-home .heritage-lead h1{
    font-size:clamp(54px,4.05vw,76px);
