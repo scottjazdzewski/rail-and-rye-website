@@ -244,7 +244,7 @@ body.heritage-home.heritage-store-page .heritage-store-layout{
 }
 body.heritage-home.heritage-store-page .heritage-store-copy{min-width:0}
 body.heritage-home.heritage-store-page .heritage-inner-heading{padding:0;max-width:720px}
-body.heritage-home.heritage-store-page .heritage-inner-heading h1{font-size:clamp(54px,5.6vw,88px);line-height:.95;margin:14px 0 16px}
+body.heritage-home.heritage-store-page .heritage-inner-heading h1{font-size:clamp(55px,4.35vw,87px);line-height:.92;letter-spacing:-.035em;margin:16px 0 18px}
 body.heritage-home.heritage-store-page .heritage-inner-heading p{max-width:560px;font-size:clamp(14px,1.18vw,17px);line-height:1.6;margin-top:0}
 body.heritage-home.heritage-store-page .heritage-inner-filters{margin-top:26px}
 body.heritage-home.heritage-store-page .heritage-inner-filters .category-tabs{
@@ -279,7 +279,7 @@ body.heritage-home.heritage-store-page .heritage-store-inventory .status-note{co
 @media(max-width:750px){
  body.heritage-home.heritage-store-page .heritage-store-layout{gap:18px;padding-top:16px;padding-bottom:24px}
  body.heritage-home.heritage-store-page .heritage-inner-heading{padding:0}
- body.heritage-home.heritage-store-page .heritage-inner-heading h1{font-size:clamp(46px,10vw,64px);margin:8px 0 10px}
+ body.heritage-home.heritage-store-page .heritage-inner-heading h1{font-size:clamp(48px,10.7vw,68px);line-height:.95;letter-spacing:-.035em;margin:17px 0}
  body.heritage-home.heritage-store-page .heritage-inner-heading p{font-size:13px;line-height:1.45;max-width:38ch}
  body.heritage-home.heritage-store-page .heritage-inner-filters{margin-top:16px}
  body.heritage-home.heritage-store-page .heritage-inner-filters .category-tabs{gap:7px}
@@ -293,7 +293,7 @@ body.heritage-home.heritage-store-page .heritage-store-inventory .status-note{co
  }
  body.heritage-home.heritage-store-page .heritage-store-layout{gap:16px;padding-top:12px;padding-bottom:20px}
  body.heritage-home.heritage-store-page .heritage-inner-kicker{font-size:9px;letter-spacing:.16em}
- body.heritage-home.heritage-store-page .heritage-inner-heading h1{font-size:clamp(40px,10.8vw,50px);line-height:.98;margin:6px 0 8px}
+ body.heritage-home.heritage-store-page .heritage-inner-heading h1{font-size:clamp(44px,10.7vw,48px);line-height:.92;letter-spacing:-.035em;margin:8px 0}
  body.heritage-home.heritage-store-page .heritage-inner-rule{width:64px}
  body.heritage-home.heritage-store-page .heritage-inner-heading p{font-size:12px;line-height:1.42;margin-top:7px;max-width:35ch}
  body.heritage-home.heritage-store-page .heritage-inner-filters{margin-top:13px}
@@ -339,20 +339,18 @@ body.heritage-home .rr-racecards-all:hover{
 body.heritage-home .category-tabs button[aria-selected=true]:hover{
  background:rgba(8,31,45,.98)!important;color:#fff5df!important;transform:none
 }
-/* Reduce oversized hero headings on both product landing pages. */
+/* Keep inner-page hero titles on the homepage's responsive type scale. */
 body.heritage-home .rr-racecards-intro h1{
  font-size:clamp(54px,4.6vw,64px);line-height:.98;letter-spacing:-.04em
 }
-body.heritage-home.heritage-store-page .heritage-inner-heading h1{
- font-size:clamp(54px,4.05vw,76px);line-height:.93;letter-spacing:-.035em;
- margin:9px 0 12px;text-shadow:0 6px 18px rgba(0,0,0,.68)
+@media(min-width:1121px){
+ body.heritage-home.heritage-store-page .heritage-inner-heading h1{
+  font-size:clamp(54px,4.05vw,76px);line-height:.93;letter-spacing:-.035em;
+  margin:9px 0 12px;text-shadow:0 6px 18px #000000b0
+ }
 }
 @media(max-width:750px){
  body.heritage-home .rr-racecards-intro h1{font-size:clamp(38px,10vw,46px);line-height:.98}
- body.heritage-home.heritage-store-page .heritage-inner-heading h1{
-   font-size:clamp(38px,9vw,46px);line-height:.95;letter-spacing:-.035em;
-   margin:17px 0;text-shadow:0 6px 18px rgba(0,0,0,.68)
-  }
 }
 
 /* ENGINEERING DEFAULT: one shared translucent glass badge for official logo covers. */
@@ -405,12 +403,12 @@ body.heritage-home .rr-racecards-all{margin-top:10px}
 /* Canonical shared glass frame for every product purchase badge, with or without artwork. */
 body.heritage-home .rr-purchase-badge{background:rgba(8,31,45,.88)!important;border-color:rgba(226,176,89,.9)!important;border-radius:7px!important;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:inset 0 1px rgba(255,255,255,.17),0 5px 14px rgba(0,0,0,.17)!important}
 body.heritage-home .rr-purchase-badge-image{
- display:block;width:44px;height:52px;max-width:none;max-height:none;padding:4px;
- object-fit:contain;object-position:center;box-sizing:border-box;background:transparent;
- border:0;border-radius:0;box-shadow:none
+ display:block;width:calc(100% - 18px)!important;height:calc(100% - 18px)!important;
+ max-width:none!important;max-height:none!important;padding:0!important;
+ object-fit:contain!important;object-position:center;box-sizing:border-box;
+ background:transparent;border:0;border-radius:0;box-shadow:none
 }
-@media(max-width:750px){body.heritage-home .rr-purchase-badge{width:48px;height:54px;min-height:54px;max-height:54px}
-  body.heritage-home .rr-purchase-badge-image{width:40px;height:46px;padding:3px}}
+@media(max-width:750px){body.heritage-home .rr-purchase-badge{width:48px;height:54px;min-height:54px;max-height:54px}}
 
 
 /* PUBLICATION DESK GLASS CARD + CLEAR HERO HEADER */
@@ -434,17 +432,24 @@ body.heritage-home.heritage-store-page .heritage-store-inventory .store-price{co
 /* Keep the header on the shared hero plane; remove the Publication Desk's extra stripe texture. */
 body.heritage-home.heritage-store-page .heritage-store-hero:after{display:none}
 
-/* Publication Desk title: match the homepage hero title's type treatment and responsive scale. */
+/* Publication Desk kicker and title use the homepage hero's shared styles. */
 body.heritage-home.heritage-store-page .heritage-inner-kicker{
- font:600 clamp(10px,.82vw,15px)/1.6 var(--heritage-serif);
- letter-spacing:.15em;color:#dfae60
+ color:#dfae60;font:600 clamp(10px,.77vw,15px) var(--heritage-serif);
+ letter-spacing:.22em;text-transform:uppercase
 }
 body.heritage-home.heritage-store-page .heritage-inner-heading h1{
  font-family:var(--heritage-serif);font-weight:500;letter-spacing:-.035em;
- text-shadow:0 6px 18px rgba(0,0,0,.68)
+ text-shadow:0 6px 18px #000000b0
 }
 @media(max-width:750px){
- body.heritage-home.heritage-store-page .heritage-inner-kicker{font-size:10px;letter-spacing:.15em}
+ body.heritage-home.heritage-store-page .heritage-inner-kicker{
+  font-size:11px;line-height:1.7;max-width:310px
+ }
+}
+@media(max-width:560px){
+ body.heritage-home.heritage-store-page .heritage-inner-kicker{
+  width:100%;max-width:none;font-size:10px;line-height:1.45;letter-spacing:.07em
+ }
 }
 
 /* Reserved saddlecloth column for logos and titles on cards 3, 4, and 5. */
