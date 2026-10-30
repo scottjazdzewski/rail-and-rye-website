@@ -1,0 +1,147 @@
+/* RAIL & RYE V11 — owner-approved editorial vintage refinement, 2026-10-29.
+   Authentic saddlecloth numeral font from original 1 and 2 program chips.
+   Gritty Victory Lap = Longshot Radar, Gritty Sunrise = Stable Notes.
+   Flat antique racing-print frames: no metallic emboss/bevel or modern raised cards.
+   The Target List keeps its provisional image until the owner supplies its hero.
+   Presentation only, existing commerce flow untouched. */
+
+/* Original horse-racing saddlecloth numbers, including their authentic typography and color. */
+.heritage-home .heritage-eyebrow-chip img.rr-original-saddle-chip{
+ width:36px;height:36px;flex:0 0 36px;object-fit:contain;
+ filter:none!important;background:none!important;border:none!important;
+ box-shadow:none!important;image-rendering:auto;
+}
+.heritage-journal-page .heritage-journal-edition img.rr-original-saddle-chip{
+ display:block;width:28px;height:28px;object-fit:contain;
+ filter:none!important;box-shadow:none!important;
+}
+
+/* Keep exact PDF-derived publication emblems, but frame as printed paper art, not metal. */
+.heritage-home .heritage-badges{gap:clamp(12px,1.3vw,22px)}
+.heritage-home .heritage-badge{
+ --rr-vintage-ink:rgba(6,24,32,.94);
+ min-height:130px;
+ background-color:#071d28;
+ border:1px solid #ac8954;
+ border-radius:0;
+ clip-path:polygon(12px 0,calc(100% - 12px) 0,100% 12px,100% calc(100% - 12px),calc(100% - 12px) 100%,12px 100%,0 calc(100% - 12px),0 12px);
+ box-shadow:none!important;transform:none!important;
+ padding:17px clamp(18px,1.6vw,29px);
+ gap:clamp(12px,1.2vw,20px);
+ background-size:cover;
+ background-position:center 50%;
+}
+.heritage-home .heritage-badge.badge-longshot{
+ background-image:url('/assets/heritage-v1/longshot-owner-hero-v11.jpg');
+ background-position:57% 44%;
+}
+.heritage-home .heritage-badge.badge-stable{
+ background-image:url('/assets/heritage-v1/stable-owner-hero-v11.jpg');
+ background-position:52% 54%;
+}
+/* The classic framed card is a print plate: an aged overlay, delicate double rules,
+   cut corners and tiny flat rosettes instead of a glossy surface. */
+.heritage-home .heritage-badge:before{
+ background:
+  linear-gradient(90deg,rgba(4,18,27,.96) 0%,rgba(5,20,29,.84) 55%,rgba(7,22,29,.67) 100%),
+  repeating-linear-gradient(5deg,rgba(231,198,132,.025) 0 1px,transparent 1px 5px);
+}
+.heritage-home .heritage-badge:after{
+ content:'';position:absolute;inset:6px;z-index:0;
+ border:3px double #c8a36d;opacity:.85;border-radius:0;
+ background:
+  radial-gradient(circle,#d2af70 0 2px,transparent 2.5px) 12px 12px/26px 26px no-repeat,
+  radial-gradient(circle,#d2af70 0 2px,transparent 2.5px) calc(100% - 12px) 12px/26px 26px no-repeat,
+  linear-gradient(90deg,rgba(225,186,108,.18),transparent 13%,transparent 87%,rgba(225,186,108,.18));
+ pointer-events:none;
+ box-shadow:none!important;
+}
+.heritage-home .heritage-badge:hover{box-shadow:none!important;transform:none!important}
+.heritage-home .heritage-badge:hover:after{border-color:#f0d29d}
+.heritage-home .heritage-badge > *{z-index:1}
+.heritage-home .badge-emblem{
+ width:70px;height:70px;flex:0 0 70px;border-radius:50%;
+ border:1px solid #d7bb87;background:#f6f2e9;padding:2px;
+ box-shadow:none!important;
+}
+.heritage-home .badge-emblem img{
+ border-radius:50%;width:100%;height:100%;object-fit:contain;
+ background:#f6f2e9;filter:none!important;
+}
+.heritage-home .badge-text{gap:5px}
+.heritage-home .badge-text strong{
+ font:500 clamp(26px,1.9vw,35px)/1.05 var(--heritage-serif);
+ letter-spacing:.013em;color:#f9eed9;
+ text-shadow:none!important;
+}
+.heritage-home .badge-text small{
+ font:600 clamp(9px,.6vw,11px)/1.45 var(--heritage-sans);
+ letter-spacing:.08em;color:#dcc18d;
+}
+.heritage-home .badge-arrow{font:30px/1 var(--heritage-serif);color:#e1ba7a}
+
+/* All inner-page buttons: antique printed labels, never glossy or raised.
+   Store category tabs, buy buttons and landing page collection links share the system. */
+.heritage-inner-page .category-tabs button,
+.heritage-inner-page .buy-button,
+.heritage-publication-page .rr-edition-buy,
+.heritage-publication-page .rr-pub-outline-link{
+ border:1px solid #a88a5d!important;
+ border-radius:0!important;
+ box-shadow:none!important;
+ text-shadow:none!important;
+ letter-spacing:.07em;
+ transition:background-color .18s ease,color .18s ease,border-color .18s ease;
+}
+.heritage-inner-page .category-tabs button{
+ background:#eee0c4;
+ color:#183749;
+ border:1px solid #a88a5d;
+ font-family:var(--heritage-serif);
+ font-size:clamp(14px,1.2vw,17px);
+ font-weight:700;
+ text-transform:none;
+}
+.heritage-inner-page .category-tabs button[aria-selected=true]{
+ background:#153343;color:#f5e4bd;
+ border-color:#a88a5d;
+}
+.heritage-inner-page .category-tabs button:hover{background:#e4d1ab}
+.heritage-inner-page .category-tabs button[aria-selected=true]:hover{background:#244b59}
+.heritage-inner-page .buy-button,
+.heritage-publication-page .rr-edition-buy{
+ background:#102d3a;color:#f5e7ce;
+ padding:13px 18px;font-size:11px;
+ text-transform:uppercase;
+}
+.heritage-inner-page .buy-button:hover:not(:disabled),
+.heritage-publication-page .rr-edition-buy:hover:not(:disabled){background:#254653}
+.heritage-publication-page .rr-pub-outline-link{background:#efe2c9;color:#183749}
+.heritage-publication-page .rr-pub-outline-link:hover{background:#d9bb84;color:#142f3e}
+
+/* Finish each owner's dedicated editorial page with their supplied artwork. */
+.heritage-inner-page.heritage-publication-page.rr-pub-longshot-radar .rr-publication-hero{
+ background-image:url('/assets/heritage-v1/longshot-owner-hero-v11.jpg');
+ background-position:55% 47%;
+}
+.heritage-inner-page.heritage-publication-page.rr-pub-stable-notes .rr-publication-hero{
+ background-image:url('/assets/heritage-v1/stable-owner-hero-v11.jpg');
+ background-position:51% 49%;
+}
+@media(max-width:850px){
+ .heritage-home .heritage-badge{min-height:110px}
+ .heritage-home .badge-emblem{width:63px;height:63px;flex-basis:63px}
+}
+@media(max-width:750px){
+ .heritage-home .heritage-eyebrow-chip img.rr-original-saddle-chip{width:33px;height:33px;flex-basis:33px}
+ .heritage-home .heritage-badge{padding:14px 19px;min-height:107px;gap:14px}
+ .heritage-home .heritage-badge:after{inset:5px;border-width:3px}
+ .heritage-home .badge-emblem{width:57px;height:57px;flex-basis:57px}
+ .heritage-home .badge-text strong{font-size:31px}
+ .heritage-inner-page.heritage-publication-page.rr-pub-longshot-radar .rr-publication-hero{background-position:57% 40%}
+ .heritage-inner-page.heritage-publication-page.rr-pub-stable-notes .rr-publication-hero{background-position:54% 45%}
+}
+@media(prefers-reduced-motion:reduce){
+ .heritage-home .heritage-badge,.heritage-inner-page .category-tabs button,
+ .heritage-inner-page .buy-button,.heritage-publication-page .rr-edition-buy{transition:none!important}
+}
