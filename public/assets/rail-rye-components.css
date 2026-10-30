@@ -171,8 +171,8 @@
 }
 .heritage-inner-page.heritage-store-page .heritage-inner-hero,
 .heritage-inner-page.heritage-store-page.race-mode .heritage-inner-hero{
-  background-image:linear-gradient(90deg,rgba(5,23,35,.82) 0%,rgba(5,23,35,.68) 35%,rgba(5,23,35,.34) 68%,rgba(5,23,35,.12) 100%),url('/assets/approved/publication-desk/hero.webp');
-  background-position:center,center 52%;
+  background-image:url('/assets/approved/publication-desk/hero.webp');
+  background-position:center 52%;
 }
 .heritage-inner-page.heritage-journal-page .heritage-inner-hero{
   background-image:url('/assets/approved/journal/hero.webp');
@@ -304,10 +304,7 @@
 .heritage-publication-page.rr-pub-target-list .rr-publication-hero{
  background-image:url('/assets/approved/home/hero.jpg');background-position:center 41%;
 }
-.heritage-publication-page .rr-publication-hero:before{
- background:linear-gradient(90deg,rgba(3,16,25,.97) 0%,rgba(3,17,29,.92) 29%,rgba(3,19,27,.67) 54%,rgba(2,19,27,.19) 100%),
- linear-gradient(180deg,rgba(3,14,23,.54),transparent 52%,rgba(3,14,23,.22));
-}
+
 .heritage-publication-page .rr-publication-heading:not(.rr-page-intro){padding-top:34px;padding-bottom:40px}
 
 
@@ -353,7 +350,7 @@
 .rr-pub-outline-link:hover{color:#fff2d4}
 @media(max-width:750px){
  .heritage-publication-page .rr-publication-hero{min-height:535px;background-position:61% center}
- .heritage-publication-page .rr-publication-hero:before{background:linear-gradient(180deg,rgba(3,16,27,.91) 0%,rgba(3,16,27,.72) 51%,rgba(3,16,27,.86) 100%)}
+ 
  .heritage-publication-page .rr-publication-heading:not(.rr-page-intro){padding-top:103px;padding-bottom:40px}
  
  
