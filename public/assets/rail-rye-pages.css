@@ -5,9 +5,27 @@
 .rr-racecards-page{background:#f4eddd;color:#0a2b3f}
 .rr-racecards-hero-grid{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(420px,.92fr);gap:clamp(42px,6vw,105px);align-items:center;padding-top:clamp(48px,5vw,82px);padding-bottom:clamp(55px,6vw,92px)}
 .rr-racecards-intro{max-width:720px}
-.rr-racecards-kicker{display:flex!important;align-items:center;gap:12px;color:#e8bd72;letter-spacing:.17em}
-.rr-racecards-kicker .rr-chip-solid{display:grid;place-items:center;flex:0 0 40px;width:40px;height:40px;background:#fff;border-radius:6px;overflow:hidden;isolation:isolate}
-.rr-racecards-kicker .rr-chip-solid img{display:block;width:100%;height:100%;object-fit:contain;opacity:1!important;filter:none!important;mix-blend-mode:normal!important}
+.rr-racecards-kicker{color:#e8bd72;letter-spacing:.17em}
+.rr-page-saddle-kicker{
+ display:flex!important;align-items:center;gap:12px;min-height:40px
+}
+.rr-page-saddle-kicker>.rr-chip-solid{
+ display:grid;place-items:center;flex:0 0 40px;width:40px;height:40px;
+ background:#fff;border-radius:6px;overflow:hidden;isolation:isolate
+}
+.rr-page-saddle-kicker>.rr-chip-solid img{
+ display:block;width:100%;height:100%;object-fit:contain;
+ opacity:1!important;filter:none!important;mix-blend-mode:normal!important
+}
+/* Align the page title beneath the same 40px saddlecloth kicker on every inner page. */
+body.heritage-home.heritage-inner-page .heritage-inner-heading>.rr-page-saddle-kicker+h1{margin:16px 0 20px}
+body.heritage-home.heritage-store-page .heritage-inner-heading .rr-store-saddle-kicker>.heritage-kicker{width:auto;max-width:none}
+@media(max-width:440px){
+ .heritage-publication-page .rr-publication-saddle-kicker{gap:8px}
+ .heritage-publication-page .rr-publication-identifier{gap:8px}
+ .heritage-publication-page .rr-publication-identifier>img{width:48px;height:48px;flex-basis:48px}
+ .heritage-publication-page .rr-publication-identifier .heritage-inner-kicker{font-size:9px;letter-spacing:.06em}
+}
 .rr-racecards-intro h1{font:500 clamp(62px,6.4vw,108px)/.9 var(--heritage-serif);letter-spacing:-.045em;margin:16px 0 20px;text-shadow:0 4px 18px #0009;color:#fff7e9}
 .rr-racecards-intro p{max-width:610px;font:500 clamp(14px,1.05vw,18px)/1.65 var(--heritage-sans);color:#f5ead7;margin-top:19px}
 .rr-racecards-desk-link{display:inline-block;margin-top:24px;color:#edc27a;font:800 11px/1.2 var(--heritage-sans);letter-spacing:.08em;text-transform:uppercase;border-bottom:1px solid #ae8145;padding-bottom:7px}
