@@ -32,3 +32,13 @@ html,body{max-width:100%;overflow-x:clip}.heritage-home{background:#e9dcc3;color
  .heritage-brand-mark { width:54px; height:54px; }
  .heritage-brand-mark img { width:53px; height:53px; }
 }
+
+
+/* Rail & Rye heritage social seals — small embossed antique-gold badges. */
+.rr-social-badges{display:inline-flex;align-items:center;gap:9px;vertical-align:middle}
+.heritage-footer .rr-social-badge,.site-footer .rr-social-badge{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;flex:0 0 34px;min-width:34px;padding:0;border:1px solid #e8c780;border-radius:50%;background:linear-gradient(150deg,#f3d999 0%,#c69a4e 50%,#987039 100%);color:#102637;box-shadow:inset 0 1px 1px #fff7c0c7,inset 0 -2px 3px #63451a60,0 3px 9px #0005;transition:transform .2s,filter .2s,box-shadow .2s}
+.rr-social-badge svg{display:block;width:17px;height:17px}
+.heritage-footer .rr-social-badge:hover,.site-footer .rr-social-badge:hover{color:#102637;filter:brightness(1.13);transform:translateY(-2px);box-shadow:inset 0 1px 1px #fff8d4,0 5px 13px #0007}
+.rr-social-badge:focus-visible{outline:2px solid #f6eeda;outline-offset:3px}
+@media(max-width:750px){.rr-social-badges{gap:8px}.heritage-footer .rr-social-badge,.site-footer .rr-social-badge{width:36px;height:36px;flex-basis:36px}}
+@media(prefers-reduced-motion:reduce){.rr-social-badge{transition:none!important}}
