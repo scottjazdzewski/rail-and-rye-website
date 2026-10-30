@@ -410,3 +410,49 @@ body.heritage-home .rr-racecards-all{margin-top:10px}
 body.heritage-home .rr-purchase-badge{background:rgba(8,31,45,.88)!important;border-color:rgba(226,176,89,.9)!important;border-radius:7px!important;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:inset 0 1px rgba(255,255,255,.17),0 5px 14px rgba(0,0,0,.17)!important}
 body.heritage-home .rr-purchase-badge-image{display:block;width:44px;height:52px;max-width:none;max-height:none;padding:0;object-fit:contain;object-position:center;background:transparent;border:0;border-radius:0;box-shadow:none}
 @media(max-width:750px){body.heritage-home .rr-purchase-badge{width:48px;height:54px;min-height:54px;max-height:54px}body.heritage-home .rr-purchase-badge-image{width:40px;height:46px}}
+
+
+/* PUBLICATION DESK GLASS CARD + CLEAR HERO HEADER */
+/* Product cards use the same navy translucent glass treatment as the Race Cards rail. */
+body.heritage-home.heritage-store-page .heritage-store-inventory .store-card{
+ background:linear-gradient(90deg,rgba(249,239,215,.12),rgba(255,255,255,.035));
+ border:1px solid rgba(218,180,111,.5);
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+ -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#f7edda
+}
+body.heritage-home.heritage-store-page .heritage-store-inventory .store-card:hover{
+ transform:translateY(-2px);border-color:#e1b86f;
+ background:linear-gradient(90deg,rgba(249,239,215,.17),rgba(255,255,255,.055))
+}
+body.heritage-home.heritage-store-page .heritage-store-inventory .store-meta{color:#dcb36e}
+body.heritage-home.heritage-store-page .heritage-store-inventory .store-body h2{color:#fff4e3}
+body.heritage-home.heritage-store-page .heritage-store-inventory .store-description{color:#f5ead7}
+body.heritage-home.heritage-store-page .heritage-store-inventory .store-price{color:#f1d196}
+
+/* Keep the Publication Desk header transparent over its hero image like the shared home and Race Cards header. */
+body.heritage-home.heritage-store-page .heritage-store-hero:before,
+body.heritage-home.heritage-store-page .heritage-store-hero:after{
+ top:clamp(112px,8vw,145px)
+}
+
+/* Number the last three home publication cards while retaining each approved publication emblem. */
+.heritage-home .rr-publication-card-number{
+ position:absolute;top:8px;left:clamp(15px,1.5vw,27px);z-index:4;
+ display:inline-grid;place-items:center;flex:0 0 38px;width:38px;height:38px;
+ box-sizing:border-box;border-radius:6px;overflow:hidden;background:#fff;
+ box-shadow:0 2px 6px rgba(0,0,0,.6)
+}
+.heritage-home .rr-publication-card-number img{
+ display:block;width:100%;height:100%;object-fit:contain;
+ opacity:1!important;filter:none!important;mix-blend-mode:normal!important
+}
+.heritage-home .rr-chip-solid--3,
+.heritage-home .rr-chip-solid--4,
+.heritage-home .rr-chip-solid--5{
+ background:#fff!important;opacity:1!important;mix-blend-mode:normal!important
+}
+@media(max-width:750px){
+ body.heritage-home.heritage-store-page .heritage-store-hero:before,
+ body.heritage-home.heritage-store-page .heritage-store-hero:after{top:112px}
+ .heritage-home .rr-publication-card-number{top:4px;left:8px;width:28px;height:28px;flex-basis:28px;border-radius:5px}
+}
