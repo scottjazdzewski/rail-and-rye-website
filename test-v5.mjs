@@ -23,7 +23,7 @@ const origFetch=globalThis.fetch;
 globalThis.fetch=async(url,options)=>{
  if(String(url).includes('api.stripe.com/v1/checkout/sessions')){
    stripeCalls++;assert.equal(options.headers.Authorization,'Bearer rk_live_fake');
-   const form=new URLSearchParams(options.body);assert.equal(form.get('line_items[0][price_data][unit_amount]'),'100');
+   const form=new URLSearchParams(options.body);assert.equal(form.get('line_items[0][price_data][unit_amount]'),'100');assert.equal(form.get('allow_promotion_codes'),'true');
    return Response.json({id:++sessionCounter===1?sid1:sid2,url:'https://checkout.stripe.com/c/pay/live',livemode:true});
  }
  if(String(url).includes('api.resend.com/emails')){
@@ -48,7 +48,7 @@ async function sig(payload,mode='live'){
 async function event(evt,mode='live'){const body=JSON.stringify(evt);return new Request(root+'/api/stripe/'+(mode==='live'?'live-webhook':'webhook'),{method:'POST',headers:{'Stripe-Signature':await sig(body,mode)},body});}
 const launch=await run(post('/api/checkout',{product_id:item}));assert.equal(launch.status,200);assert.equal((await launch.json()).url,'https://checkout.stripe.com/c/pay/live');assert.equal(stripeCalls,1);
 const pending=db.prepare('SELECT * FROM orders').get();assert.equal(pending.stripe_session_id,sid1);
-const payment={id:sid1,livemode:true,payment_status:'paid',mode:'payment',currency:'usd',amount_total:100,metadata:{order_id:pending.id},payment_intent:'pi_live_123',customer_details:{email:'buyer@example.org'}};
+const payment={id:sid1,livemode:true,payment_status:'paid',mode:'payment',currency:'usd',amount_subtotal:100,amount_total:100,total_details:{amount_discount:0,amount_tax:0,amount_shipping:0},metadata:{order_id:pending.id},payment_intent:'pi_live_123',customer_details:{email:'buyer@example.org'}};
 const completed={id:'evt_live_1111111111',livemode:true,type:'checkout.session.completed',data:{object:payment}};
 // Signed test endpoint will reject a live event even if signed with test secret.
 assert.equal((await run(await event(completed,'test'))).status,400);
