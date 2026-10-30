@@ -66,6 +66,29 @@
       <p class="footer">This console is for the business owner only. It uses Cloudflare Access sign-in and verifies the authentication token again on the server.</p>
     </aside>
   </div>
+  <section class="panel" style="margin-top:28px" aria-label="Automatic product bundles">
+    <div class="head-row"><h2>Automatic bundles</h2><button type="button" class="secondary mini" id="bundleNew">+ New bundle</button></div>
+    <p class="detail" style="margin-bottom:19px">Choose at least two published PDFs, set one package price, and publish. Customers receive separate secure downloads for every included PDF. Previous buyers keep their purchased versions even if you update or archive an edition later.</p>
+    <div class="layout" style="margin-top:0">
+      <div>
+        <div class="field"><label for="bundleTitle">Bundle name *</label><input id="bundleTitle" maxlength="140" required placeholder="Breeders' Cup Weekend Bundle"></div>
+        <div class="row">
+          <div class="field"><label for="bundleCategory">Collection</label><select id="bundleCategory"><option>Race Cards</option><option>Longshot Radar</option><option>Stable Notes</option><option>Target List</option></select></div>
+          <div class="field"><label for="bundleDate">Racing date (optional)</label><input id="bundleDate" type="date"></div>
+        </div>
+        <div class="field"><label for="bundlePrice">Bundle price (USD) *</label><input id="bundlePrice" type="number" min="0" max="5000" step="0.01" value="19.99" required></div>
+        <div class="field"><label for="bundleDescription">What buyers receive</label><textarea id="bundleDescription" maxlength="4000" placeholder="Both Friday and Saturday premium race cards for one price."></textarea></div>
+        <div class="actions"><button type="button" class="primary" id="bundleDraft">Save bundle draft</button><button type="button" class="gold" id="bundlePublish">Publish bundle</button><button type="button" class="secondary" id="bundleArchive">Archive bundle</button></div>
+      </div>
+      <div>
+        <p class="kicker">Include published PDFs</p>
+        <div id="bundleCandidates" class="list" style="max-height:320px;overflow:auto;margin-bottom:22px"><div class="empty">Loading published products…</div></div>
+        <p class="kicker">Your bundles</p>
+        <div id="bundleInventory" class="list"><div class="empty">Loading bundles…</div></div>
+        <p id="bundleNotice" class="detail" role="status" aria-live="polite" style="margin-top:15px"></p>
+      </div>
+    </div>
+  </section>
 </main>
 <script>
 (()=>{
@@ -119,6 +142,80 @@
   $('archiveBtn').addEventListener('click',()=>{if(confirm('Archive this product? It will no longer appear in the future storefront.'))save('archive');});
   $('refreshBtn').addEventListener('click',()=>refresh().catch(e=>message(e.message,'error')));
   api('/api/admin/status').then(r=>{paymentMode=r.payment_mode||'test';return refresh();}).catch(e=>message('Admin service unavailable: '+e.message,'error'));
+})();
+</script>
+
+<script>
+(()=>{'use strict';
+  const $=id=>document.getElementById(id);
+  const api=async(path,opts={})=>{const r=await fetch(path,{credentials:'same-origin',cache:'no-store',...opts});
+    let d;try{d=await r.json();}catch{throw Error('Bundle service did not respond');}
+    if(!r.ok)throw Error(d.error||'Unable to save bundle');return d;};
+  const money=c=>(c/100).toLocaleString('en-US',{style:'currency',currency:'USD'});
+  let bundles=[],available=[],selectedId=null,busy=false;
+  const note=(message)=>{$('bundleNotice').textContent=message;};
+  function reset(){
+    selectedId=null;$('bundleTitle').value='';$('bundleCategory').value='Race Cards';$('bundleDate').value='';
+    $('bundlePrice').value='19.99';$('bundleDescription').value='';
+    document.querySelectorAll('[data-bundle-product]').forEach(x=>x.checked=false);
+    drawBundles();note('Creating a new bundle.');
+  }
+  function drawCandidates(selected=[]){
+    const box=$('bundleCandidates');box.replaceChildren();
+    if(!available.length){const e=document.createElement('div');e.className='empty';e.textContent='Publish at least two individual PDFs first.';box.append(e);return;}
+    for(const p of available){
+      const label=document.createElement('label');label.style.cssText='display:flex;align-items:center;gap:10px;border:1px solid #e7e1d7;padding:10px;cursor:pointer;';
+      const c=document.createElement('input');c.type='checkbox';c.dataset.bundleProduct=p.id;c.value=p.id;c.style.cssText='width:auto;flex:none';c.checked=selected.includes(p.id);
+      const name=document.createElement('span');name.textContent=p.title+' · '+money(p.price_cents);label.append(c,name);box.append(label);
+    }
+  }
+  function drawBundles(){
+    const area=$('bundleInventory');area.replaceChildren();
+    if(!bundles.length){let p=document.createElement('div');p.className='empty';p.textContent='No bundles yet.';area.append(p);return;}
+    for(const b of bundles){
+      const btn=document.createElement('button');btn.type='button';btn.className='product'+(b.id===selectedId?' active':'');
+      const title=document.createElement('strong');title.textContent=b.title;
+      const line=document.createElement('span');line.textContent=[b.status,money(b.price_cents),b.product_ids.length+' PDFs'].join(' · ');
+      btn.append(title,line);btn.addEventListener('click',()=>edit(b));area.append(btn);
+    }
+  }
+  function edit(b){
+    selectedId=b.id;$('bundleTitle').value=b.title;$('bundleCategory').value=b.category;
+    $('bundleDate').value=b.race_date||'';$('bundlePrice').value=(b.price_cents/100).toFixed(2);
+    $('bundleDescription').value=b.description||'';drawCandidates(b.product_ids);
+    drawBundles();note('Editing '+b.title+'. Existing buyers retain their original included PDFs.');
+  }
+  async function refresh(id){
+    const x=await api('/api/admin/bundles');bundles=x.bundles||[];available=x.available_products||[];
+    drawCandidates();drawBundles();
+    if(id){const found=bundles.find(x=>x.id===id);if(found)edit(found);}
+  }
+  async function save(status){
+    if(busy)return;
+    const ids=[...document.querySelectorAll('[data-bundle-product]:checked')].map(x=>x.value);
+    const price=Number($('bundlePrice').value),cents=Math.round(price*100);
+    if(!Number.isFinite(price)||price<0||Math.abs(price*100-cents)>1e-5){note('Enter a valid dollar price.');return;}
+    if(status!=='archived'&&(ids.length<2||ids.length>12)){note('Select 2 to 12 published PDFs.');return;}
+    const title=$('bundleTitle').value.trim();if(title.length<3){note('Enter a bundle name.');return;}
+    const current=bundles.find(x=>x.id===selectedId);
+    // Saving edits never silently unpublishes an existing live bundle.
+    if(status==='draft'&&current?.status==='published')status='published';
+    if(status==='archived'&&!selectedId)return;
+    const body={title,category:$('bundleCategory').value,race_date:$('bundleDate').value||null,
+      description:$('bundleDescription').value.trim(),price_cents:cents,status,
+      product_ids:status==='archived'&&current?current.product_ids:ids};
+    busy=true;for(const id of ['bundleDraft','bundlePublish','bundleArchive','bundleNew'])$(id).disabled=true;
+    try{
+      const r=await api(selectedId?'/api/admin/bundles/'+selectedId:'/api/admin/bundles',
+        {method:selectedId?'PATCH':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      await refresh(r.id);note(status==='published'?'Bundle published. It is now available at the current checkout mode.':status==='archived'?'Bundle archived. Existing orders remain accessible.':'Bundle draft saved.');
+    }catch(e){note(e.message);}finally{busy=false;for(const id of ['bundleDraft','bundlePublish','bundleArchive','bundleNew'])$(id).disabled=false;}
+  }
+  $('bundleNew').addEventListener('click',reset);
+  $('bundleDraft').addEventListener('click',()=>save('draft'));
+  $('bundlePublish').addEventListener('click',()=>save('published'));
+  $('bundleArchive').addEventListener('click',()=>{if(selectedId&&confirm('Archive this bundle? Existing buyers retain paid access.'))save('archived');});
+  refresh().catch(e=>note('Bundle setup required: '+e.message));
 })();
 </script>
 </body>

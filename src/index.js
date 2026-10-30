@@ -1,4 +1,5 @@
 import { handleCommerce, sendQueuedEmails, checkoutReadiness } from './commerce.js';
+import {handleAdminBundles,BUNDLE_KEY} from './bundles.js';
 /* Rail & Rye admin MVP. Dependencies: Cloudflare Workers, R2, D1, Cloudflare Access.
    Admin routes FAIL CLOSED until ACCESS_TEAM_DOMAIN, ACCESS_AUD and ADMIN_EMAIL
    are configured in Cloudflare Worker runtime variables, and a matching Access
@@ -106,7 +107,7 @@ async function handleAdminAPI(request,env,pathname) {
   if(pathname==="/api/admin/status"&&request.method==="GET") return json({ready:true,categories:[...CATEGORIES],max_pdf_bytes:MAX_PDF,...checkoutReadiness(env)});
   if(pathname==="/api/admin/products") {
     if(request.method==="GET") {
-      const result=await env.STORE_DB.prepare("SELECT * FROM products ORDER BY created_at DESC, id DESC LIMIT 250").all();
+      const result=await env.STORE_DB.prepare("SELECT * FROM products WHERE pdf_key IS NULL OR pdf_key != '__rr_bundle__' ORDER BY created_at DESC, id DESC LIMIT 250").all();
       return json({products:result.results||[]});
     }
     if(request.method==="POST") {
@@ -122,6 +123,7 @@ async function handleAdminAPI(request,env,pathname) {
   if(!match) return fail("Not found",404);
   const id=match[1], action=match[2];
   const item=await fetchProduct(env,id);if(!item)return fail("Product not found",404);
+  if(item.pdf_key===BUNDLE_KEY)return fail('Edit bundles using the bundle editor',409);
   if(!action&&request.method==="PATCH") {
     let data;try{data=readProduct(await parseJSON(request));}catch(e){return fail(e.message);}
     if(data.status==="published"&&!item.pdf_key) return fail("Upload a PDF before publishing");
@@ -191,6 +193,7 @@ export default {
       if(path==="/api/health"&&request.method==="GET") return json({website:"Rail & Rye",status:"online",storage:env.CARDS_BUCKET?"connected":"not connected",database:env.STORE_DB?"bound":"not bound"});
       if(path.startsWith("/api/admin/")||path==="/admin"||path.startsWith("/admin/")) {
         const auth=await verifyAdmin(request,env); if(!auth.ok)return auth.response;
+        if(path.startsWith('/api/admin/bundles'))return handleAdminBundles(request,env,path);
         if(path.startsWith("/api/admin/"))return handleAdminAPI(request,env,path);
         if(request.method!=="GET"&&request.method!=="HEAD")return fail("Method not allowed",405);
         const asset=new URL(url);asset.pathname="/admin/index.html";
@@ -203,7 +206,7 @@ export default {
       }
       const image=path.match(/^\/media\/cover\/([0-9a-f-]{36})$/i);
       if(image&&request.method==="GET")return publicCover(env,image[1]);
-      if(path==="/api/products"||path==="/api/checkout"||path==="/api/stripe/webhook"||path==="/api/stripe/live-webhook"||path.startsWith("/api/orders/")||path==="/api/delivery/download"||path==="/api/recovery/request")return handleCommerce(request,env,url,ctx);
+      if(path==="/api/products"||path==="/api/checkout"||path==="/api/stripe/webhook"||path==="/api/stripe/live-webhook"||path.startsWith("/api/orders/")||path==="/api/delivery/download"||path==="/api/delivery/items"||path==="/api/recovery/request")return handleCommerce(request,env,url,ctx);
       if(path.startsWith("/api/"))return fail("Not found",404);
       return env.ASSETS.fetch(request);
     }catch(e){console.error("Rail & Rye request error",e);return fail("An internal error occurred",500);}

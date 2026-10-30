@@ -1,3 +1,4 @@
+import {BUNDLE_KEY} from './bundles.js';
 /* Rail & Rye fail-closed checkout. Default sandbox. Live activation is separate,
    requires verified Stripe keys and an explicit control flag; no public R2 URLs.
    Stripe secrets are Cloudflare Worker SECRETS, never source files. */
@@ -177,12 +178,52 @@ export async function sendQueuedEmails(env,limit=8){
   }
   return sent;
 }
+
+// Paid bundle items always use the PDF key snapshotted at checkout. Archiving or
+// updating a product never removes a previously purchased PDF entitlement.
+async function bundleItems(env,orderId) {
+  const rows=await env.STORE_DB.prepare(
+    'SELECT product_id AS id,product_title AS title,download_count FROM bundle_order_items WHERE order_id=? ORDER BY position LIMIT 12'
+  ).bind(orderId).all();
+  return (rows.results||[]).map(p=>({id:p.id,title:p.title,downloads_remaining:Math.max(0,5-p.download_count)}));
+}
+async function downloadBundleItem(env,orderId,itemId) {
+  if(!UUID_RE.test(itemId||''))return error('Select an included PDF',400);
+  const item=await env.STORE_DB.prepare(`SELECT bi.product_title,bi.pdf_key FROM bundle_order_items bi
+    JOIN orders o ON o.id=bi.order_id WHERE bi.order_id=? AND bi.product_id=?
+    AND o.status='paid' AND o.paid_at>=datetime('now','-30 days') AND bi.download_count<5`).bind(orderId,itemId).first();
+  if(!item)return error('Download not available or expired',403);
+  const file=await env.CARDS_BUCKET.get(item.pdf_key);
+  if(!file)return error('PDF temporarily unavailable',503);
+  const change=await env.STORE_DB.prepare(`UPDATE bundle_order_items SET download_count=download_count+1
+    WHERE order_id=? AND product_id=? AND download_count<5
+    AND EXISTS(SELECT 1 FROM orders WHERE id=? AND status='paid' AND paid_at>=datetime('now','-30 days'))`)
+    .bind(orderId,itemId,orderId).run();
+  if(!change.meta?.changes)return error('Download not available',403);
+  const filename=String(item.product_title||'rail-and-rye').normalize('NFKD').replace(/[^a-zA-Z0-9 -]/g,'').trim().replace(/\s+/g,'-').slice(0,70)||'rail-and-rye';
+  return new Response(file.body,{headers:{'Content-Type':'application/pdf',
+    'Content-Disposition':`attachment; filename="${filename}.pdf"`,
+    'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff',
+    'Referrer-Policy':'no-referrer','X-Robots-Tag':'noindex, nofollow'}});
+}
+async function deliveryItems(request,env) {
+  if(request.method!=='POST')return error('Method not allowed',405);
+  if(!sameOrigin(request))return error('Same-origin request required',403);
+  if(!env.STORE_DB)return error('Downloads unavailable',503);
+  if(Number(request.headers.get('content-length')||0)>1000)return error('Request too large',413);
+  let data;try{data=await request.json();}catch{return error('Invalid request',400);}
+  const order=await accessJob(data?.code,env);
+  if(!order)return error('Link invalid, expired, or order unavailable. Request a new link.',403);
+  if(order.pdf_key!==BUNDLE_KEY)return reply({bundle:false,items:[{id:null,title:order.product_title,downloads_remaining:5-order.download_count}]});
+  return reply({bundle:true,items:await bundleItems(env,order.order_id)});
+}
+
 async function accessJob(code,env){
   const m=ACCESS_RE.exec(code||'');if(!m||!deliverySigningKey(env))return null;
   const j=await env.STORE_DB.prepare(`SELECT j.id,j.order_id,j.created_at,o.product_title,o.pdf_key,o.status,o.paid_at,o.download_count
     FROM email_jobs j JOIN orders o ON o.id=j.order_id WHERE j.id=? AND j.state='sent'
     AND j.sent_at>=datetime('now','-24 hours') AND o.status='paid'
-    AND o.paid_at>=datetime('now','-30 days') AND o.download_count<5`).bind(m[1]).first();
+    AND o.paid_at>=datetime('now','-30 days') AND (o.pdf_key='__rr_bundle__' OR o.download_count<5)`).bind(m[1]).first();
   if(!j)return null;
   const supplied=m[2].toLowerCase();
   // V4/V4.1 used the Stripe TEST webhook secret to sign delivery URLs. A new
@@ -201,6 +242,7 @@ async function accessPdf(request,env){
   let data;try{data=await request.json();}catch{return error('Invalid request',400);}
   const j=await accessJob(data?.code,env);
   if(!j)return error('Link invalid, expired, or order unavailable. Request a new link.',403);
+  if(j.pdf_key===BUNDLE_KEY)return downloadBundleItem(env,j.order_id,data?.item_id);
   const object=await env.CARDS_BUCKET.get(j.pdf_key);
   if(!object)return error('PDF temporarily unavailable',503);
   const count=await env.STORE_DB.prepare(`UPDATE orders SET download_count=download_count+1 WHERE id=?
@@ -237,7 +279,7 @@ async function recover(request,env,ctx){
   const allowedEmail=await throttle(env,emailKey,1);
   if(!allowedIp||!allowedEmail)return neutral();
   const paid=await env.STORE_DB.prepare(`SELECT id,stripe_session_id FROM orders WHERE lower(buyer_email)=? AND status='paid'
-    AND paid_at>=datetime('now','-30 days') AND download_count<5 ORDER BY paid_at DESC LIMIT 8`).bind(email).all();
+    AND paid_at>=datetime('now','-30 days') AND (pdf_key='__rr_bundle__' OR download_count<5) ORDER BY paid_at DESC LIMIT 8`).bind(email).all();
   let queued=0;
   for(const order of paid.results||[]){
     // Legacy Stripe sandbox purchases may NEVER send recovery mail to an
@@ -253,9 +295,20 @@ async function recover(request,env,ctx){
 
 async function listProducts(env){
   if(!env.STORE_DB)return error('Catalog temporarily unavailable',503);
-  const records=await env.STORE_DB.prepare(`SELECT id,title,slug,category,race_date,track,description,price_cents,image_url
+  const records=await env.STORE_DB.prepare(`SELECT id,title,slug,category,race_date,track,description,price_cents,image_url,pdf_key
     FROM products WHERE status='published' AND pdf_key IS NOT NULL ORDER BY race_date DESC,created_at DESC LIMIT 150`).all();
-  return reply({products:records.results||[],checkout_ready:stripeReady(env),checkout_mode:checkoutMode(env)});
+  const products=[];
+  for(const p of records.results||[]){
+    const {pdf_key,...publicFields}=p;
+    if(pdf_key!==BUNDLE_KEY){products.push({...publicFields,kind:'single'});continue;}
+    // Fail closed: a published bundle must still contain 2–12 available PDFs.
+    const children=await env.STORE_DB.prepare(`SELECT c.title,c.status,c.pdf_key FROM bundle_items bi
+      LEFT JOIN products c ON c.id=bi.product_id WHERE bi.bundle_id=? ORDER BY bi.position`).bind(p.id).all();
+    const items=children.results||[];
+    if(items.length<2||items.length>12||items.some(c=>c.status!=='published'||!c.pdf_key||c.pdf_key===BUNDLE_KEY))continue;
+    products.push({...publicFields,kind:'bundle',bundle_count:items.length,included_titles:items.map(x=>x.title)});
+  }
+  return reply({products,checkout_ready:stripeReady(env),checkout_mode:checkoutMode(env)});
 }
 async function checkout(request,env){
   if(request.method!=='POST')return error('Method not allowed',405);
@@ -271,8 +324,19 @@ async function checkout(request,env){
   if(!p)return error('Product is not available',404);
   if(!Number.isSafeInteger(p.price_cents)||p.price_cents<50||p.price_cents>500000)return error('Product is not available for purchase',400);
   const orderId=crypto.randomUUID();
-  await env.STORE_DB.prepare(`INSERT INTO orders (id,product_id,product_title,pdf_key,amount_cents,status)
-    VALUES (?,?,?,?,?,'initiated')`).bind(orderId,p.id,p.title,p.pdf_key,p.price_cents).run();
+  const ops=[env.STORE_DB.prepare(`INSERT INTO orders (id,product_id,product_title,pdf_key,amount_cents,status)
+    VALUES (?,?,?,?,?,'initiated')`).bind(orderId,p.id,p.title,p.pdf_key,p.price_cents)];
+  if(p.pdf_key===BUNDLE_KEY){
+    const children=await env.STORE_DB.prepare(`SELECT c.id,c.title,c.pdf_key,c.status FROM bundle_items bi
+      LEFT JOIN products c ON c.id=bi.product_id WHERE bi.bundle_id=? ORDER BY bi.position`).bind(p.id).all();
+    const items=children.results||[];
+    if(items.length<2||items.length>12||items.some(c=>c.status!=='published'||!c.pdf_key||c.pdf_key===BUNDLE_KEY))
+      return error('Bundle contents are currently unavailable',409);
+    items.forEach((c,i)=>ops.push(env.STORE_DB.prepare(
+      'INSERT INTO bundle_order_items (order_id,product_id,product_title,pdf_key,position) VALUES (?,?,?,?,?)'
+    ).bind(orderId,c.id,c.title,c.pdf_key,i)));
+  }
+  await env.STORE_DB.batch(ops);
   const base=new URL(request.url).origin;
   const fields=new URLSearchParams({
     mode:'payment',
@@ -302,17 +366,21 @@ async function checkout(request,env){
 async function orderStatus(url,env){
   const id=orderSessionId(url);if(!id)return error('Invalid session',400);
   if(!env.STORE_DB)return error('Orders unavailable',503);
-  const o=await env.STORE_DB.prepare(`SELECT id,product_title,amount_cents,status,paid_at,download_count
+  const o=await env.STORE_DB.prepare(`SELECT id,product_title,pdf_key,amount_cents,status,paid_at,download_count
     FROM orders WHERE stripe_session_id=?`).bind(id).first();
   if(!o)return error('Order not found',404);
-  return reply({title:o.product_title,amount_cents:o.amount_cents,status:o.status,paid_at:o.paid_at,downloads_remaining:Math.max(0,5-o.download_count),checkout_mode:sessionMode(id)});
+  const bundle=o.pdf_key===BUNDLE_KEY;
+  return reply({title:o.product_title,amount_cents:o.amount_cents,status:o.status,paid_at:o.paid_at,
+    downloads_remaining:bundle?null:Math.max(0,5-o.download_count),bundle,
+    items:bundle&&o.status==='paid'?await bundleItems(env,o.id):[],checkout_mode:sessionMode(id)});
 }
 async function download(url,env){
   const id=orderSessionId(url);if(!id)return error('Invalid session',400);
   if(!env.STORE_DB||!env.CARDS_BUCKET)return error('Downloads unavailable',503);
-  const row=await env.STORE_DB.prepare(`SELECT pdf_key,product_title FROM orders WHERE stripe_session_id=? AND status='paid'
-    AND paid_at>=datetime('now','-30 days') AND download_count<5`).bind(id).first();
+  const row=await env.STORE_DB.prepare(`SELECT id,pdf_key,product_title FROM orders WHERE stripe_session_id=? AND status='paid'
+    AND paid_at>=datetime('now','-30 days') AND (pdf_key=? OR download_count<5)`).bind(id,BUNDLE_KEY).first();
   if(!row)return error('Download not available or expired',403);
+  if(row.pdf_key===BUNDLE_KEY)return downloadBundleItem(env,row.id,url.searchParams.get('item_id'));
   const obj=await env.CARDS_BUCKET.get(row.pdf_key);if(!obj)return error('PDF temporarily unavailable',503);
   const upd=await env.STORE_DB.prepare(`UPDATE orders SET download_count=download_count+1 WHERE stripe_session_id=?
     AND status='paid' AND paid_at>=datetime('now','-30 days') AND download_count<5`).bind(id).run();
@@ -328,6 +396,7 @@ export async function handleCommerce(request,env,url,ctx){
   if(p==='/api/stripe/webhook')return webhook(request,env,ctx,'test');
   if(p==='/api/stripe/live-webhook')return webhook(request,env,ctx,'live');
   if(p==='/api/delivery/download')return accessPdf(request,env);
+  if(p==='/api/delivery/items')return deliveryItems(request,env);
   if(p==='/api/recovery/request')return recover(request,env,ctx);
   if(/^\/api\/orders\/[^/]+\/status$/.test(p)&&request.method==='GET')return orderStatus(url,env);
   if(/^\/api\/orders\/[^/]+\/download$/.test(p)&&request.method==='GET')return download(url,env);
