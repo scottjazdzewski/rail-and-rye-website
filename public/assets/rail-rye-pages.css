@@ -265,3 +265,82 @@ body.heritage-home .rr-delivery-main button:focus-visible{outline:3px solid #e4c
  body.heritage-home .rr-delivery-main .rr-delivery-action,
  body.heritage-home .rr-delivery-main button{transition:none}
 }
+
+
+/* Publication Desk: keep filters and the live catalog together in the opening hero. */
+body.heritage-home.heritage-store-page .heritage-store-hero{min-height:0}
+body.heritage-home.heritage-store-page .heritage-store-layout{
+ display:grid;grid-template-columns:minmax(0,1fr) minmax(430px,.96fr);gap:clamp(30px,4.2vw,68px);
+ align-items:start;position:relative;z-index:2;padding-top:clamp(28px,3.8vw,54px);padding-bottom:clamp(40px,5vw,72px)
+}
+body.heritage-home.heritage-store-page .heritage-store-copy{min-width:0}
+body.heritage-home.heritage-store-page .heritage-inner-heading{padding:0;max-width:720px}
+body.heritage-home.heritage-store-page .heritage-inner-heading h1{font-size:clamp(54px,5.6vw,88px);line-height:.95;margin:14px 0 16px}
+body.heritage-home.heritage-store-page .heritage-inner-heading p{max-width:560px;font-size:clamp(14px,1.18vw,17px);line-height:1.6;margin-top:0}
+body.heritage-home.heritage-store-page .heritage-inner-filters{margin-top:26px}
+body.heritage-home.heritage-store-page .heritage-inner-filters .category-tabs{
+ display:flex;flex-wrap:wrap;align-items:center;gap:9px;padding:0
+}
+body.heritage-home.heritage-store-page .heritage-inner-filters .category-tabs button{
+ display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:10px 15px;text-align:center
+}
+body.heritage-home.heritage-store-page .heritage-inner-filters .heritage-recovery{
+ display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:10px 15px;text-align:center;text-decoration:none;white-space:nowrap
+}
+body.heritage-home.heritage-store-page .heritage-store-inventory{min-width:0;padding-top:8px}
+body.heritage-home.heritage-store-page .heritage-store-inventory .store-cards{
+ grid-template-columns:minmax(0,1fr);gap:12px;padding:0
+}
+body.heritage-home.heritage-store-page .heritage-store-inventory .store-card{
+ display:grid;grid-template-columns:104px minmax(0,1fr);min-height:0;align-items:stretch
+}
+body.heritage-home.heritage-store-page .heritage-store-inventory .store-cover{
+ min-height:142px;height:auto;padding:8px;display:grid;place-items:center
+}
+body.heritage-home.heritage-store-page .heritage-store-inventory .store-cover img{width:100%;height:100%;object-fit:cover}
+body.heritage-home.heritage-store-page .heritage-store-inventory .store-body{min-width:0;padding:15px}
+body.heritage-home.heritage-store-page .heritage-store-inventory .store-body h2{font-size:clamp(20px,2vw,28px);line-height:1.02;margin:6px 0}
+body.heritage-home.heritage-store-page .heritage-store-inventory .store-description{margin:4px 0}
+body.heritage-home.heritage-store-page .heritage-store-inventory .store-bottom{gap:8px;margin-top:10px}
+body.heritage-home.heritage-store-page .heritage-store-inventory .store-banner{margin-top:14px}
+body.heritage-home.heritage-store-page .heritage-store-inventory .status-note{color:#f7e9cf;padding:0 0 9px}
+@media(max-width:960px){
+ body.heritage-home.heritage-store-page .heritage-store-layout{grid-template-columns:1fr;gap:22px;padding-top:26px;padding-bottom:38px}
+ body.heritage-home.heritage-store-page .heritage-inner-heading{max-width:780px}
+ body.heritage-home.heritage-store-page .heritage-store-inventory{padding-top:0}
+}
+@media(max-width:750px){
+ body.heritage-home.heritage-store-page .heritage-store-layout{gap:18px;padding-top:16px;padding-bottom:24px}
+ body.heritage-home.heritage-store-page .heritage-inner-heading{padding:0}
+ body.heritage-home.heritage-store-page .heritage-inner-heading h1{font-size:clamp(46px,10vw,64px);margin:8px 0 10px}
+ body.heritage-home.heritage-store-page .heritage-inner-heading p{font-size:13px;line-height:1.45;max-width:38ch}
+ body.heritage-home.heritage-store-page .heritage-inner-filters{margin-top:16px}
+ body.heritage-home.heritage-store-page .heritage-inner-filters .category-tabs{gap:7px}
+ body.heritage-home.heritage-store-page .heritage-inner-filters .category-tabs button,
+ body.heritage-home.heritage-store-page .heritage-inner-filters .heritage-recovery{min-height:38px;padding:9px 11px;font-size:9px}
+ body.heritage-home.heritage-store-page .heritage-store-inventory .store-cards{grid-template-columns:1fr;gap:10px}
+}
+@media(max-width:560px){
+ body.heritage-home.heritage-store-page .heritage-store-hero{
+  min-height:0;background-color:#071b29;background-position:center top;background-size:100% 490px,auto 490px
+ }
+ body.heritage-home.heritage-store-page .heritage-store-layout{gap:16px;padding-top:12px;padding-bottom:20px}
+ body.heritage-home.heritage-store-page .heritage-inner-kicker{font-size:9px;letter-spacing:.16em}
+ body.heritage-home.heritage-store-page .heritage-inner-heading h1{font-size:clamp(40px,10.8vw,50px);line-height:.98;margin:6px 0 8px}
+ body.heritage-home.heritage-store-page .heritage-inner-rule{width:64px}
+ body.heritage-home.heritage-store-page .heritage-inner-heading p{font-size:12px;line-height:1.42;margin-top:7px;max-width:35ch}
+ body.heritage-home.heritage-store-page .heritage-inner-filters{margin-top:13px}
+ body.heritage-home.heritage-store-page .heritage-inner-filters .category-tabs{gap:6px}
+ body.heritage-home.heritage-store-page .heritage-inner-filters .category-tabs button,
+ body.heritage-home.heritage-store-page .heritage-inner-filters .heritage-recovery{min-height:36px;padding:8px 10px;font-size:8px;letter-spacing:.06em}
+ body.heritage-home.heritage-store-page .heritage-store-layout{padding-inline:14px}
+ body.heritage-home.heritage-store-page .heritage-store-inventory .store-card{grid-template-columns:76px minmax(0,1fr)}
+ body.heritage-home.heritage-store-page .heritage-store-inventory .store-cover{min-height:124px;padding:5px}
+ body.heritage-home.heritage-store-page .heritage-store-inventory .store-body{padding:11px}
+ body.heritage-home.heritage-store-page .heritage-store-inventory .store-meta{font-size:8px;letter-spacing:.07em}
+ body.heritage-home.heritage-store-page .heritage-store-inventory .store-body h2{font-size:clamp(18px,5vw,23px);margin:5px 0}
+ body.heritage-home.heritage-store-page .heritage-store-inventory .store-description{font-size:11px;line-height:1.4}
+ body.heritage-home.heritage-store-page .heritage-store-inventory .store-bottom{flex-wrap:wrap;gap:7px;margin-top:8px}
+ body.heritage-home.heritage-store-page .heritage-store-inventory .store-price{font-size:21px}
+ body.heritage-home.heritage-store-page .heritage-store-inventory .buy-button{padding:10px 12px;font-size:9px}
+}
