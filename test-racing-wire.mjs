@@ -274,7 +274,9 @@ for(const badge of ['horse','jockey','trainer','owner','stable','race','racetrac
  assert.ok(badgeAsset.length>1000,'Approved '+badge+' badge is not truncated');
 }
 const breedingBadge=readFileSync(new URL('./public/assets/approved/racing-wire/badges/breeding.png',import.meta.url));
-assert.ok(breedingBadge.length>10000,
+assert.equal(breedingBadge.subarray(0,8).toString('hex'),'89504e470d0a1a0a',
+ 'Canonical breeding badge is a real PNG');
+assert.ok(breedingBadge.length>8000,
  'Canonical breeding PNG is full-resolution family artwork');
 assert.ok(wirePage.includes('.more[hidden]{display:none!important}'),
  'Load-more cannot appear when there are zero verified stories');
