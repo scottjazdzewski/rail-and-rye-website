@@ -554,9 +554,13 @@ body.rr-single-screen-hero>.heritage-footer{flex:0 0 auto;margin-top:auto}
 }
 
 
-/* Final alignment: avoid centering the #2–#5 intro and make each hero use the same remaining viewport height. */
-body.rr-single-screen-hero>.heritage-inner-hero,
-body.rr-single-screen-hero>.rr-racecards-hero{flex:1 1 0px;min-height:0}
+/* Editorial heroes keep their viewport frame; purchase heroes grow to fit every listing. */
+@media(min-width:751px){
+ body.rr-single-screen-hero:not(.heritage-store-page):not(.rr-racecards-page)>.heritage-inner-hero,
+ body.rr-single-screen-hero:not(.heritage-store-page):not(.rr-racecards-page)>.rr-racecards-hero{flex:1 1 0px;min-height:0}
+ body.rr-single-screen-hero.heritage-store-page>.heritage-inner-hero,
+ body.rr-single-screen-hero.rr-racecards-page>.rr-racecards-hero{flex:1 0 auto;min-height:0}
+}
 body.rr-single-screen-hero>.heritage-inner-hero>.rr-page-intro--hero{
  width:min(100%,1940px);max-width:none;margin-left:auto;margin-right:auto
 }
