@@ -233,18 +233,24 @@ export default {
         headers.set('X-Robots-Tag','noindex, nofollow, noarchive');
         return new Response(response.body,{status:response.status,headers});
       }
-      if(path===previewSlug||path===previewSlug.slice(0,-1)){
+      if(path===previewSlug||path===previewSlug.slice(0,-1)||path===previewSlug+'index.html'){
         if(request.method!=='GET'&&request.method!=='HEAD')return fail('Method not allowed',405);
-        const preview=new URL(url);preview.pathname='/admin/racing-wire-preview.html';preview.search='';
-        const result=await env.ASSETS.fetch(new Request(preview.toString(),{method:request.method}));
+        // Serve the folder's real index.html as a document. Fetching the old
+        // /admin/*.html asset could trigger Cloudflare's canonical URL redirect.
+        const assetUrl=new URL(url);assetUrl.pathname=previewSlug;assetUrl.search='';
+        const result=await env.ASSETS.fetch(new Request(assetUrl.toString(),{method:request.method}));
+        if(!result.ok)return fail('Preview document temporarily unavailable',503);
         const headers=new Headers(result.headers);
+        headers.set('Content-Type','text/html; charset=utf-8');
+        headers.delete('Content-Disposition');
+        headers.delete('Location');
         headers.set('Cache-Control','private, no-store');
         headers.set('X-Robots-Tag','noindex, nofollow, noarchive');
         headers.set('Referrer-Policy','no-referrer');
         headers.set('X-Frame-Options','DENY');
         headers.set('X-Content-Type-Options','nosniff');
         headers.set('Content-Security-Policy',"default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'");
-        return new Response(result.body,{status:result.status,headers});
+        return new Response(request.method==='HEAD'?null:result.body,{status:200,headers});
       }
       const journalImage=path.match(/^\/media\/journal\/([0-9a-f-]{36})$/i);
       if(journalImage&&request.method==="GET")return publicJournalCover(env,journalImage[1]);
