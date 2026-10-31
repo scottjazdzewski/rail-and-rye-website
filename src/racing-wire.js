@@ -36,6 +36,38 @@ export function categorize(title,category=''){
   if(/retire|horse|filly|colt|gelding|champion|injur/.test(s))return 'Horses';
   return 'Industry';
 }
+// The five editorial subjects used by DFO-style pictogram cards.
+// Classifications are labels, not claims about a horse's actual race status.
+export function subjectKind(text,section=''){
+  const category=String(section||'').toLowerCase();
+  if(/^(owner|owners|ownership)$/.test(category))return 'owner';
+  if(/^(jockey|jockeys)$/.test(category))return 'jockey';
+  if(/^(trainer|trainers)$/.test(category))return 'trainer';
+  if(/^(horse|horses|breeding)$/.test(category))return 'horse';
+  if(/^(race|race-day|stakes)$/.test(category))return 'race';
+  const words=String(text||'').toLowerCase();
+  if(/\b(owner|owners|ownership|syndicate|partnership)\b/.test(words))return 'owner';
+  if(/\b(jockey|jockeys|rider|riders|mount|apprentice)\b/.test(words))return 'jockey';
+  if(/\b(trainer|trainers|conditioning|conditioner|barn)\b/.test(words))return 'trainer';
+  if(/\b(scratch|scratched|entries|entry|stakes|derby|classic|race|races|racecourse|racetrack|race-day|post position|purse|breeders.? cup)\b/.test(words))return 'race';
+  if(/\b(horse|horses|colt|filly|gelding|mare|stallion|yearling|foal|sire|retire|retirement|pedigree)\b/.test(words))return 'horse';
+  return 'race'; // Generic racing updates receive a neutral checkered-flag icon.
+}
+// Social posts already contain the reporter's words. Create a short, faithful
+// preview by splitting actual text — never fabricate a report or an allegation.
+export function socialPreview(raw){
+  const text=String(raw||'').replace(/https?:\/\/\S+/g,'').replace(/\s+/g,' ').trim();
+  if(!text)return {title:'',summary:''};
+  if(text.length<=145)return {title:text,summary:''};
+  let breakAt=0;
+  const sentence=/[.!?](?=\s|$)/.exec(text.slice(0,130));
+  if(sentence&&sentence.index>35)breakAt=sentence.index+1;
+  if(!breakAt){breakAt=text.lastIndexOf(' ',120);if(breakAt<55)breakAt=120;}
+  const title=text.slice(0,breakAt).trim()+(breakAt<text.length&&text[breakAt-1]!=='.'?'…':'');
+  const remaining=text.slice(breakAt).trim();
+  const summary=remaining.length>270?remaining.slice(0,267).trimEnd()+'…':remaining;
+  return {title,summary};
+}
 export function parseRacingRss(xml,feed){
   if(typeof xml!=='string'||xml.length>MAX_FEED_BYTES||/<!DOCTYPE|<!ENTITY/i.test(xml))return [];
   const chunks=xml.match(/<item(?:\s[^>]*)?>[\s\S]*?<\/item>/gi)||[];
@@ -94,14 +126,15 @@ export function parseBlueskyAuthorFeed(data,source){
     if(labels.some(x=>['!no-unauthenticated','porn','sexual','graphic-media','nudity'].includes(x.val)))continue;
     if(p.record?.$type!=='app.bsky.feed.post')continue;
     const text=String(p.record.text||'').replace(/\s+/g,' ').trim();
+    const preview=socialPreview(text);
     const match=/^at:\/\/[a-z0-9:._%-]+\/app\.bsky\.feed\.post\/([a-zA-Z0-9]+)$/.exec(p.uri||'');
     const created=p.record.createdAt||p.indexedAt,dt=new Date(created);
-    if(!text||!match||!Number.isFinite(+dt)||dt.getTime()>Date.now()+3600000)continue;
+    if(!preview.title||!match||!Number.isFinite(+dt)||dt.getTime()>Date.now()+3600000)continue;
     out.push({
-      title:text.length>190?text.slice(0,187).trimEnd()+'…':text,
+      title:preview.title,summary:preview.summary,
       url:'https://bsky.app/profile/'+source.handle+'/post/'+match[1],
-      source:source.name+' · '+source.network,category:categorize(text),
-      published_at:dt.toISOString(),summary:'',original:false
+      source:source.name+' · '+source.network,category:categorize(text),subject_kind:subjectKind(text),
+      published_at:dt.toISOString(),original:false
     });
   }
   return out;
@@ -144,6 +177,7 @@ export async function handleRacingWire(request,env){
     originals=(r.results||[]).map(a=>({
       title:a.title.slice(0,240),url:'/journal/'+a.slug+'/',
       source:'Rail & Rye',category:categorize(a.title,a.category),
+      subject_kind:subjectKind(a.title,a.category),
       published_at:a.publish_date+'T12:00:00Z',summary:a.excerpt.slice(0,260),original:true
     }));
   }catch(e){console.warn('Racing Wire journal unavailable',String(e).slice(0,90));}
@@ -155,6 +189,7 @@ export async function handleRacingWire(request,env){
     const allowed=new Set(FEEDS.filter(f=>f.authorized).map(f=>f.name));
     syndicated=(r.results||[]).filter(a=>allowed.has(a.source)).map(a=>({
       title:a.title,url:a.article_url,source:a.source,category:a.category,
+      subject_kind:subjectKind(a.title,a.category),
       published_at:a.published_at,original:false,summary:''
     }));
   }catch(e){console.warn('Racing Wire syndicated cache unavailable',String(e).slice(0,90));}
