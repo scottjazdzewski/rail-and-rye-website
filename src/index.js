@@ -1,4 +1,5 @@
 import { handleCommerce, sendQueuedEmails, checkoutReadiness } from './commerce.js';
+import {handleRacingWire,refreshRacingWire} from './racing-wire.js';
 import {handleAdminBundles,BUNDLE_KEY} from './bundles.js';
 import {handleAdminBundleAssets} from './bundle-assets.js';
 import {handleAdminJournal,handlePublicJournal,publicJournalCover} from './journal.js';
@@ -225,6 +226,7 @@ export default {
       const image=path.match(/^\/media\/cover\/([0-9a-f-]{36})$/i);
       if(image&&request.method==="GET")return publicCover(env,image[1]);
       if(path==="/api/journal/articles"||path.startsWith("/api/journal/articles/"))return handlePublicJournal(request,env,path);
+      if(path==="/api/racing-wire")return handleRacingWire(request,env);
       const journalStory=path.match(/^\/journal\/([a-z0-9]+(?:-[a-z0-9]+)*)\/?$/);
       if(journalStory&&(request.method==="GET"||request.method==="HEAD")){
         const asset=new URL(url);asset.pathname="/journal/";asset.search="";
@@ -237,5 +239,6 @@ export default {
   },
   async scheduled(controller,env,ctx){
     ctx.waitUntil(sendQueuedEmails(env,8));
+    ctx.waitUntil(refreshRacingWire(env));
   }
 };
