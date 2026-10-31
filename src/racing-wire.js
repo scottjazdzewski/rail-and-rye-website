@@ -11,22 +11,16 @@ const FEEDS=Object.freeze([
   //  host:'example.org',authorized:true}
 ]);
 const MAX_FEED_BYTES=350000;
+const PREVIEW_MAX_ITEM_AGE_MS=48*3600000;
 export const PREVIEW_LIVE_FEEDS=Object.freeze([
   {id:'tdn-all',name:'Thoroughbred Daily News',url:'https://www.thoroughbreddailynews.com/feed/',host:'thoroughbreddailynews.com'},
   {id:'past-the-wire-news',name:'Past The Wire',url:'https://pastthewire.com/feed',host:'pastthewire.com'},
   {id:'abr',name:"America's Best Racing",url:'https://www.americasbestracing.net/rss',host:'americasbestracing.net'},
   {id:'us-racing',name:'US Racing',url:'https://usracing.com/feed',host:'usracing.com'},
-  {id:'bloodhorse',name:'BloodHorse',url:'https://www.bloodhorse.com/horse-racing/feeds/news/all-news',host:'bloodhorse.com'},
-  {id:'paulick',name:'Paulick Report',url:'https://paulickreport.com/feed/',host:'paulickreport.com'},
   {id:'hrn',name:'Horse Racing Nation',url:'https://www.horseracingnation.com/rss/newsfeed.aspx',host:'horseracingnation.com'},
   {id:'racing-biz',name:'The Racing Biz',url:'https://www.theracingbiz.com/feed',host:'theracingbiz.com'},
   {id:'woodbine',name:'Woodbine',url:'https://woodbine.com/feed',host:'woodbine.com'},
-  {id:'canadian-thoroughbred',name:'Canadian Thoroughbred',url:'https://canadianthoroughbred.com/feed',host:'canadianthoroughbred.com'},
-  {id:'national-steeplechase',name:'National Steeplechase Association',url:'https://nationalsteeplechase.com/feed',host:'nationalsteeplechase.com'},
-  {id:'american-racehorse',name:'American Racehorse',url:'https://americanracehorse.com/feed',host:'americanracehorse.com'},
-  {id:'obs',name:'Ocala Breeders’ Sales',url:'https://obssales.com/blog/feed/',host:'obssales.com'},
-  {id:'bbc-racing',name:'BBC Horse Racing',url:'https://feeds.bbci.co.uk/sport/horse-racing/rss.xml',host:'bbc.com',link_hosts:['bbc.com','bbc.co.uk']},
-  {id:'timeform',name:'Timeform',url:'https://www.timeform.com/horse-racing/news-feed/rss20',host:'timeform.com'}
+  {id:'obs',name:'Ocala Breeders’ Sales',url:'https://obssales.com/feed/',host:'obssales.com'}
 ]);
 const PREVIEW_DIAGNOSTIC_FEEDS=PREVIEW_LIVE_FEEDS;
 function decode(s){
@@ -130,14 +124,18 @@ async function fetchPreviewFeed(feed,fetchFn=fetch){
   try{
     const response=await fetchFn(feed.url,{headers:{
       Accept:'application/rss+xml,application/xml,text/xml;q=0.9,*/*;q=0.1',
+      'Cache-Control':'no-cache',
+      Pragma:'no-cache',
       'User-Agent':'RailAndRyeRacingWire-Preview/1.0 (+https://railandryeracing.com)'
-    },signal:AbortSignal.timeout(8000)});
+    },cache:'no-store',signal:AbortSignal.timeout(8000)});
     const len=Number(response.headers.get('content-length')||0);
     if(!response.ok||len>MAX_FEED_BYTES)return {feed,items:[],status:response.status,elapsed_ms:Date.now()-started};
     const xml=await response.text();
     if(xml.length>MAX_FEED_BYTES)return {feed,items:[],status:response.status,elapsed_ms:Date.now()-started};
+    const now=Date.now();
     const parsed=parseRacingRss(xml,feed)
       .filter(item=>previewHeadlineRelevant(item.title,item.section))
+      .filter(item=>now-Date.parse(item.published_at)<=PREVIEW_MAX_ITEM_AGE_MS)
       .slice(0,12)
       .map(item=>({
         title:item.title,url:item.link,source:item.source,
@@ -145,7 +143,9 @@ async function fetchPreviewFeed(feed,fetchFn=fetch){
         subject_kind:subjectKind(item.title,item.category),
         published_at:item.published_at,summary:'',original:false,preview_external:true
       }));
-    return {feed,items:parsed,status:response.status,elapsed_ms:Date.now()-started};
+    return {feed,items:parsed,status:response.status,
+      newest_published_at:parsed.map(x=>x.published_at).sort().at(-1)||null,
+      elapsed_ms:Date.now()-started};
   }catch(e){
     return {feed,items:[],status:null,elapsed_ms:Date.now()-started,error:String(e?.message||e).slice(0,120)};
   }
@@ -155,7 +155,8 @@ export async function previewExternalItems(fetchFn=fetch){
   return {
     items:settled.flatMap(x=>x.items).slice(0,120),
     sources:settled.map(x=>({id:x.feed.id,name:x.feed.name,url:x.feed.url,http_status:x.status,
-      parsed_count:x.items.length,elapsed_ms:x.elapsed_ms,error:x.error||null}))
+      parsed_count:x.items.length,newest_published_at:x.newest_published_at||null,
+      elapsed_ms:x.elapsed_ms,error:x.error||null}))
   };
 }
 
