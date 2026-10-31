@@ -20,12 +20,15 @@ a{color:inherit}button,input,select{font:inherit}button{cursor:pointer}
  .rrw-preview-page .heritage-nav a{padding-inline:10px}
  .rrw-preview-page .heritage-strap{font-size:clamp(10px,1vw,14px)}
 }
-.hero{position:relative;overflow:hidden;background:linear-gradient(105deg,#092741 1%,#0b2b49 47%,#e9cb91 100%);color:#fff}
-.hero-inner{max-width:1510px;margin:auto;min-height:225px;display:flex;align-items:center;padding:30px 28px;position:relative}
+.hero{position:relative;overflow:hidden;color:#fff;
+ background:
+  linear-gradient(90deg,rgba(4,20,34,.93) 0%,rgba(4,20,34,.80) 34%,rgba(4,20,34,.38) 62%,rgba(4,20,34,.16) 100%),
+  url('/assets/approved/racing-wire/hero-race.webp') center 48%/cover no-repeat;
+ border-bottom:1px solid rgba(210,168,99,.75)}
+.hero-inner{max-width:1510px;margin:auto;min-height:370px;display:flex;align-items:center;padding:42px 28px;position:relative}
 .hero-copy{max-width:760px;z-index:2}
 .rrw-preview-page .hero .rr-page-title{max-width:760px}
 .rrw-preview-page .hero .rr-page-description{max-width:560px}
-.hero-art{position:absolute;right:0;top:0;height:100%;width:51%;opacity:.96}.hero-art svg{width:100%;height:100%;display:block}
 .wrap{max-width:1500px;margin:auto;padding:24px 24px 90px}
 .tagline{display:flex;gap:15px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:0 0 16px}
 .tagline h2{margin:0;font:650 14px/1.3 Georgia,serif;letter-spacing:.19em;text-transform:uppercase}
@@ -78,8 +81,8 @@ a{color:inherit}button,input,select{font:inherit}button{cursor:pointer}
 .rrw-rss-test{margin:-12px 0 24px;padding:14px 16px;border:1px solid #d8c7aa;border-radius:10px;background:#fff9ee;color:#344b60;font:12px/1.55 system-ui,sans-serif}
 .rrw-rss-test strong{color:#153b58}.rrw-rss-test .ok{color:#23694f;font-weight:800}.rrw-rss-test .bad{color:#9b3f3b;font-weight:800}
 @media(max-width:1160px){.subject-strip{grid-template-columns:repeat(6,1fr)}}
-@media(max-width:800px){.workspace{grid-template-columns:1fr}.sidebar{grid-template-columns:repeat(2,minmax(0,1fr))}.hero-art{opacity:.35;width:75%}.hero-copy{max-width:650px}.wrap{padding:22px 15px 60px}}
-@media(max-width:560px){.sidebar{grid-template-columns:1fr}.subject-strip{grid-template-columns:repeat(4,minmax(0,1fr));row-gap:16px}.emblem{width:50px;height:50px}.emblem svg{width:29px;height:29px}.item{grid-template-columns:66px minmax(0,1fr);gap:13px;padding:15px}.item .emblem{width:62px;height:62px}.item .emblem svg{width:39px;height:39px}.type-pill{grid-column:2;justify-self:start}.item h3{font-size:17px}.hero-inner{min-height:230px}.hero h1{font-size:42px}}
+@media(max-width:800px){.workspace{grid-template-columns:1fr}.sidebar{grid-template-columns:repeat(2,minmax(0,1fr))}.hero{background-position:58% center}.hero-inner{min-height:430px;padding:48px 20px}.hero-copy{max-width:650px}.wrap{padding:22px 15px 60px}}
+@media(max-width:560px){.sidebar{grid-template-columns:1fr}.subject-strip{grid-template-columns:repeat(4,minmax(0,1fr));row-gap:16px}.emblem{width:50px;height:50px}.emblem svg{width:29px;height:29px}.item{grid-template-columns:66px minmax(0,1fr);gap:13px;padding:15px}.item .emblem{width:62px;height:62px}.item .emblem svg{width:39px;height:39px}.type-pill{grid-column:2;justify-self:start}.item h3{font-size:17px}.hero-inner{min-height:430px;padding:44px 18px}.rrw-preview-page .hero .rr-page-title{font-size:clamp(43px,11vw,60px)}}
 </style></head>
 <body class="heritage-home heritage-inner-page rrw-preview-page">
 
@@ -97,24 +100,7 @@ a{color:inherit}button,input,select{font:inherit}button{cursor:pointer}
 <span class="rr-page-rule" aria-hidden="true"></span>
 <p class="rr-page-description">News, updates and insights from around the racing world. Horses. People. Races. The story behind the sport.</p>
 </section>
-<div class="hero-art" aria-hidden="true">
-<svg viewBox="0 0 690 245" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
-<defs><linearGradient id="light" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e8c98c"/><stop offset="1" stop-color="#c9a36b"/></linearGradient><pattern id="grain" width="17" height="17" patternUnits="userSpaceOnUse"><circle cx="3" cy="4" r=".7" fill="#0b2b49" opacity=".23"/><circle cx="12" cy="14" r=".8" fill="#0b2b49" opacity=".17"/></pattern></defs>
-<path d="M0 0H690V245H0z" fill="url(#light)"/><path d="M0 0L225 0 80 245H0z" fill="#092942"/>
-<path d="M460 170V65m-30 105V20m-24 150V100m-38 70V45m-41 125V78m-25 92V10" stroke="#0c2d4b" stroke-width="4" opacity=".42"/><path d="M294 167h370m-405 20h431m-486 16h486" stroke="#092941" stroke-width="4" opacity=".55"/><path d="M417 85h36L441 20h-13z" fill="#0d3550" opacity=".5"/>
-<g transform="translate(210 39) scale(1.35)" fill="#092941" stroke="#092941" stroke-linecap="round" stroke-linejoin="round">
-<path d="M120 62q33-20 71-7l28 22q22 11 42 7l19-18 11 3-7 27-19 15-51-1-23-14-25 8-35-10-23 26-29 30-13-12 20-35-28 8-33 25-12-12 25-39 25-18z"/>
-<path d="M122 61l-20-20 7-23 12 4 17-18 18 11 9 17-23 17z"/><path d="m107 22-10-19 19 11m6 37-27 15-17 24 13 12 26-19 15-3"/>
-<path d="m181 53 6-24 9-13 19 4 11 13-4 17 13 11-10 10-22-12-9 15z" fill="#1a4056"/>
-<path d="m203 19 2-11 13-8 13 8v11l-11 6-9-1z" fill="#092941"/>
-<path d="m196 36-16 11 4 15 10 6 9-15z" fill="#c9a36b"/>
-<path d="m260 82 22 22 25-12 10 10-29 28-42-18-26-1 7-17z"/>
-<path d="m173 99-17 40 18 5 29-34zM128 102l-29 37 13 9 37-33z"/>
-</g>
-<g transform="translate(430 83) scale(.68)" fill="#163c4c" stroke="#163c4c" stroke-linejoin="round"><path d="M22 92 38 53l-9-26 23-14 13 11 39 5 30 19 39 4 14 11-18 27-45-7-29 22-24 43-17-12 13-42-20-11z"/><path d="m37 42-21-5L9 12l17-9 18 25zM123 73l35 48 19-8-24-44z"/><path d="m82 28 12-31 21-10 23 18-7 23-19 19z"/></g>
-<path d="M0 0H690V245H0z" fill="url(#grain)"/>
-</svg>
-</div></div></section>
+</div></section>
 <main class="wrap">
 <div class="tagline"><h2>Racing news by subject</h2><span>Original navy-and-gold pictograms · no photographs or third-party artwork</span></div>
 <div class="subject-strip" id="subjects" role="group" aria-label="Filter by racing subject"></div>
