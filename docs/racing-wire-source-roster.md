@@ -12,26 +12,21 @@ This file distinguishes sources that are **LIVE**, **TEST-ONLY**, **PLANNED**, a
 - **Past The Wire** — RSS.
 - **America's Best Racing** — RSS.
 - **US Racing** — RSS.
-- **BloodHorse** — all-news RSS.
-- **Paulick Report** — RSS.
 - **Horse Racing Nation** — news RSS.
 - **The Racing Biz** — RSS.
 - **Woodbine** — official track RSS.
-- **Canadian Thoroughbred** — RSS.
-- **National Steeplechase Association** — RSS.
-- **American Racehorse** — RSS.
-- **Ocala Breeders’ Sales (OBS)** — blog/news RSS.
-- **BBC Horse Racing** — horse-racing RSS.
-- **Timeform** — horse-racing news RSS.
+- **Ocala Breeders’ Sales (OBS)** — official RSS at `/feed/`.
 
-These external sources are fetched live by the unlisted preview API and are not persisted to D1. Only source name, headline, timestamp, direct URL and Rail & Rye subject classification are displayed. Publisher photos, article bodies and feed descriptions are not copied. Each external source is capped and the editorial relevance gate removes obvious picks, betting guides, promos, TV/streaming guides and other low-value feed clutter before the cross-source dedupe pass.
+These external sources are fetched live by the unlisted preview API and are not persisted to D1. Only source name, headline, timestamp, direct URL and Rail & Rye subject classification are displayed. Publisher photos, article bodies and feed descriptions are not copied. External items older than 48 hours are excluded; each source is capped and the editorial relevance gate removes obvious picks, betting guides, promos, TV/streaming guides and other low-value feed clutter before the cross-source dedupe pass.
 
 ### TEST / DIAGNOSTIC
 The "Test real RSS" control checks the same preview source endpoints and reports HTTP status and parsed item counts.
 
 ### NOT CURRENTLY FEEDING CARDS
+- **BloodHorse** — its first-party RSS returns current headlines but no per-item publication timestamp, so it is not used in the live chronological feed until a reliable date-bearing path is available.
+- **Paulick Report** — current site content is very fresh, but the tested `/feed/` endpoint returns 404 and the site blocks automated discovery; keep on the official social/API queue.
 - **Daily Racing Form** — a feed endpoint is detectable, but automated/commercial reuse remains permission/licensing-sensitive, so it is not enabled in the preview.
-- **Fasig-Tipton** — no clean first-party news RSS endpoint confirmed; keep on the official social/API queue.
+- **Fasig-Tipton** — the site advertises `rss.xml`, but the feed currently contains no items; keep on the official social/API queue.
 - **Keeneland / Keeneland Sales** — active first-party news room, but no clean RSS endpoint confirmed; keep on social/API/structured-source queue.
 - **HISA / HIWU** — active first-party news, but no clean RSS endpoint confirmed; high-priority official social/API sources.
 - **Equibase Race Day Changes** — official live structured data/XML/RSS service exists, but its separate terms and specialized parser need to be handled as a race-day intelligence integration rather than dropped into the generic article RSS parser.
@@ -136,4 +131,4 @@ For each source:
 
 ## Important current limitation
 
-The unlisted Racing Wire preview is now a **real multi-source RSS test feed** using Rail & Rye Journal plus 15 external racing feeds where each endpoint responds successfully. It is still not a finished production newswire: external RSS is preview-only, the production allowlist remains empty, and X/Facebook/Instagram have not yet been connected to the backend.
+The unlisted Racing Wire preview is a **real multi-source RSS test feed** using Rail & Rye Journal plus eight currently useful live RSS endpoints. Dead, blocked, empty and chronically stale feeds are intentionally excluded from the active pool rather than counted as coverage. It is still not a finished production newswire: external RSS is preview-only, the production allowlist remains empty, and X/Facebook/Instagram have not yet been connected to the backend.
