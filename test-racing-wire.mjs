@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
-import {handleRacingWire,parseRacingRss,categorize,refreshRacingWire,groupRacingWireStories,subjectKind,socialPreview} from './src/racing-wire.js';
+import {handleRacingWire,parseRacingRss,categorize,refreshRacingWire,testPreviewRssFeeds,groupRacingWireStories,subjectKind,socialPreview} from './src/racing-wire.js';
 const db=new DatabaseSync(':memory:');
 db.exec("CREATE TABLE journal_articles (id TEXT PRIMARY KEY,slug TEXT,title TEXT,category TEXT,excerpt TEXT,publish_date TEXT,status TEXT,created_at TEXT);");
 db.prepare("INSERT INTO journal_articles VALUES (?,?,?,?,?,?,?,?)").run(
@@ -44,6 +44,25 @@ assert.equal(items[0].title,'Trainer & Jockey updates');
 assert.equal(items[0].link,'https://publisher.example/story/123');
 assert.equal(parseRacingRss('<!DOCTYPE rss [<!ENTITY pwn SYSTEM "http://evil/">]>'+rss,feed).length,0);
 assert.equal(parseRacingRss('<rss><item><title>Bad</title><link>javascript:alert(1)</link><pubDate>Fri, 30 Oct 2026 12:00:00 GMT</pubDate></item></rss>',feed).length,0);
+
+const diagnosticRss='<rss><channel><item><title>Real feed parser test</title>'+
+ '<link>https://www.thoroughbreddailynews.com/story/example/</link>'+
+ '<pubDate>Sat, 31 Oct 2026 12:00:00 GMT</pubDate></item></channel></rss>';
+let diagnosticFetches=0;
+const diagnostic=await testPreviewRssFeeds(async url=>{
+ diagnosticFetches++;
+ assert.ok(String(url)==='https://www.thoroughbreddailynews.com/feed/'||
+  String(url)==='https://www.thoroughbreddailynews.com/category/news/feed/');
+ return new Response(diagnosticRss,{status:200,headers:{'Content-Type':'application/rss+xml'}});
+});
+assert.equal(diagnosticFetches,2,'Both real TDN RSS endpoints are exercised by diagnostic mode');
+assert.equal(diagnostic.diagnostic_only,true);
+assert.equal(diagnostic.results.length,2);
+assert.ok(diagnostic.results.every(x=>x.reachable&&x.http_status===200&&x.parsed_count===1));
+assert.ok(diagnostic.results.every(x=>x.newest_published_at==='2026-10-31T12:00:00.000Z'));
+assert.ok(diagnostic.results.every(x=>!('title' in x)&&!('items' in x)),
+ 'Diagnostic reports connectivity/counts only and does not republish third-party headlines');
+
 
 // Only authorized publisher RSS is eligible for automated site-side ingestion.
 // Social platforms are addressed through official embeds or original-post links.
@@ -106,6 +125,22 @@ assert.ok(wirePage.includes('source')&&wirePage.includes('title')&&wirePage.incl
 assert.ok(wirePage.includes("fetch('/api/preview/racing-wire-5333548f0ffee31ba519b2470ffb'"),'Preview fetches only the unlisted API');
 assert.ok(wirePage.includes('rail-rye-ivory-logo.png'),'Owner-approved Rail & Rye branding reused');
 
+assert.ok(wirePage.includes('/assets/approved/saddlecloths/8.png'),'Racing Wire is numbered Page 8');
+assert.ok(wirePage.includes('rr-page-saddle-kicker')&&wirePage.includes('rr-page-title')&&
+ wirePage.includes('rr-page-rule')&&wirePage.includes('rr-page-description'),
+ 'Page 8 uses the same canonical numbered-page title treatment');
+assert.ok(wirePage.includes('The Latest from the Backstretch.'),'Approved Racing Wire title is present');
+assert.ok(wirePage.includes('id="testFeeds"')&&wirePage.includes('Test real RSS'),
+ 'Unlisted preview exposes real-feed diagnostic control');
+assert.ok(wirePage.includes('/feed-test'),'RSS diagnostic button calls only the unlisted diagnostic route');
+assert.ok(wirePage.includes('.item .emblem{width:86px;height:86px'),
+ 'News-card badges are enlarged on desktop');
+assert.ok(wirePage.includes("horse:'<path fill=\"currentColor\"")&&
+ wirePage.includes("sale:'<path fill=\"currentColor\"")&&
+ wirePage.includes("achievement:'<path fill=\"currentColor\""),
+ 'Approved solid-gold proof badge family is locked into the card renderer');
+
+
 const journalPage=readFileSync(new URL('./public/journal/index.html',import.meta.url),'utf8');
 const journalFooter=journalPage.match(/<footer class="heritage-footer">[\s\S]*?<\/footer>/)?.[0];
 const previewFooter=wirePage.match(/<footer class="heritage-footer">[\s\S]*?<\/footer>/)?.[0];
@@ -157,6 +192,7 @@ assert.equal((await siteWorker.fetch(new Request('https://railandryeracing.com'+
 
 const router=readFileSync(new URL('./src/index.js',import.meta.url),'utf8');
 assert.ok(router.includes("const previewApi='/api/preview/racing-wire-5333548f0ffee31ba519b2470ffb'"),'Only exact unlisted API path exists');
+assert.ok(router.includes("path===previewApi+'/feed-test'")&&router.includes('testPreviewRssFeeds'),'Real-feed test endpoint stays under the unlisted preview namespace');
 assert.ok(router.includes("const previewSlug='/preview/racing-wire-5333548f0ffee31ba519b2470ffb/'"),'Only exact unlisted web path exists');
 assert.ok(router.includes('X-Robots-Tag'),'Preview responses disable search indexing');
 assert.ok(router.includes("headers.set('Content-Type','text/html; charset=utf-8')"),'Preview is served explicitly as HTML, never as a PDF/download');
