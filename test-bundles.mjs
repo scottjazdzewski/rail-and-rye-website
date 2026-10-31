@@ -9,7 +9,7 @@ import {handleAdminBundleAssets} from './src/bundle-assets.js';
 // Real in-memory SQLite with production migrations, including the private library.
 const db=new DatabaseSync(':memory:');
 db.exec(`CREATE TABLE products (id TEXT PRIMARY KEY,title TEXT,slug TEXT,category TEXT,race_date TEXT,track TEXT,description TEXT,price_cents INTEGER,pdf_key TEXT,image_url TEXT,status TEXT,created_at TEXT DEFAULT CURRENT_TIMESTAMP);`);
-for(const file of ['001_stripe_orders.sql','002_email_delivery.sql','003_live_readiness.sql','004_automatic_bundles.sql','005_bundle_only_assets.sql'])
+for(const file of ['001_stripe_orders.sql','002_email_delivery.sql','003_live_readiness.sql','004_automatic_bundles.sql','005_bundle_only_assets.sql','006_seven_day_access.sql'])
   db.exec(readFileSync('./migrations/'+file,'utf8'));
 const id1='11111111-1111-4111-8111-111111111111',id2='22222222-2222-4222-8222-222222222222',
   id3='33333333-3333-4333-8333-333333333333';
@@ -70,6 +70,7 @@ result=await commerce(post('/api/checkout',{product_id:bundleId,price_cents:1}))
 assert.equal(result.status,200);assert.equal(stripeCalls,1);
 const order=db.prepare('SELECT * FROM orders WHERE product_id=?').get(bundleId);
 assert.equal(order.status,'pending');assert.equal(order.pdf_key,BUNDLE_KEY);
+assert.equal(order.access_days,7,'Bundle purchases also get seven-day access');
 let snapshots=db.prepare('SELECT product_id,product_title,pdf_key FROM bundle_order_items WHERE order_id=? ORDER BY position').all(order.id);
 assert.deepEqual(snapshots.map(x=>x.pdf_key),['cards/friday/v1.pdf','cards/saturday/v1.pdf']);
 assert.equal((await commerce(new Request(root+'/api/orders/'+sid+'/download?item_id='+id1))).status,403,'No download before signed payment');
