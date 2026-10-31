@@ -148,8 +148,8 @@ async function resendEmail(env,j,order){
   const title=String(order.product_title||'Race Card');
   const live=sessionMode(order.stripe_session_id)==='live';
   const intro=j.purpose==='recover'?'Here is your requested replacement download link.':live?'Your purchase is confirmed and your PDF is ready.':'Your Stripe sandbox purchase is confirmed and your test PDF is ready.';
-  const textBody=`Rail & Rye Racing\n\n${intro}\n\n${title}\nDownload your PDF: ${link}\n\nThis secure link expires 24 hours after delivery. PDF access is limited to 5 downloads within 30 days of payment and ends when an order is refunded. To request a new link, visit ${RR_SITE}/store/recover.html\n\n${live?'For support: support@railandryeracing.com':'SANDBOX TEST EMAIL - NO REAL PAYMENT WAS TAKEN.'}\n\nRail & Rye Racing`;
-  const html=`<!doctype html><html><body style="background:#f7f5ef;color:#12253c;font-family:Arial,sans-serif;padding:28px"><div style="max-width:560px;margin:auto;background:#fff;border:1px solid #e1d7c9;padding:30px"><p style="font:28px Georgia,serif;letter-spacing:4px;color:#0b203a">RAIL &amp; RYE</p><p style="font-size:11px;color:#987548;letter-spacing:2px">SECURE DIGITAL DELIVERY${live?'':' · SANDBOX'}</p><h1 style="font:30px Georgia,serif;color:#0b203a">Your race card is ready</h1><p>${escapeHtml(intro)}</p><h2 style="font:22px Georgia,serif">${escapeHtml(title)}</h2><p><a style="display:inline-block;padding:17px 20px;background:#0b203a;color:#fff;text-decoration:none" href="${escapeHtml(link)}">ACCESS YOUR PDF</a></p><p style="line-height:1.7;color:#566477;font-size:13px">Link expires 24 hours after delivery. Purchases allow up to 5 downloads within 30 days; refunded orders lose access. <a href="${RR_SITE}/store/recover.html">Request a new link</a>.</p>${live?'<p style="font-size:12px;color:#a36728">Questions? Email support@railandryeracing.com</p>':'<p style="font-size:12px;color:#a36728">SANDBOX ONLY — NO REAL CHARGES</p>'}</div></body></html>`;
+  const textBody=`Rail & Rye Racing\n\n${intro}\n\n${title}\nDownload your PDF: ${link}\n\nThis secure link expires 24 hours after delivery. PDF access is limited to 5 downloads within ${order.access_days} days of payment and ends when an order is refunded. To request a new link, visit ${RR_SITE}/store/recover.html\n\n${live?'For support: support@railandryeracing.com':'SANDBOX TEST EMAIL - NO REAL PAYMENT WAS TAKEN.'}\n\nRail & Rye Racing`;
+  const html=`<!doctype html><html><body style="background:#f7f5ef;color:#12253c;font-family:Arial,sans-serif;padding:28px"><div style="max-width:560px;margin:auto;background:#fff;border:1px solid #e1d7c9;padding:30px"><p style="font:28px Georgia,serif;letter-spacing:4px;color:#0b203a">RAIL &amp; RYE</p><p style="font-size:11px;color:#987548;letter-spacing:2px">SECURE DIGITAL DELIVERY${live?'':' · SANDBOX'}</p><h1 style="font:30px Georgia,serif;color:#0b203a">Your race card is ready</h1><p>${escapeHtml(intro)}</p><h2 style="font:22px Georgia,serif">${escapeHtml(title)}</h2><p><a style="display:inline-block;padding:17px 20px;background:#0b203a;color:#fff;text-decoration:none" href="${escapeHtml(link)}">ACCESS YOUR PDF</a></p><p style="line-height:1.7;color:#566477;font-size:13px">Link expires 24 hours after delivery. Purchases allow up to 5 downloads within ${escapeHtml(order.access_days)} days; refunded orders lose access. <a href="${RR_SITE}/store/recover.html">Request a new link</a>.</p>${live?'<p style="font-size:12px;color:#a36728">Questions? Email support@railandryeracing.com</p>':'<p style="font-size:12px;color:#a36728">SANDBOX ONLY — NO REAL CHARGES</p>'}</div></body></html>`;
   const response=await fetch('https://api.resend.com/emails',{
     method:'POST',headers:{Authorization:`Bearer ${env.RESEND_API_KEY}`,'Content-Type':'application/json','Idempotency-Key':`rr-v3-${j.id}`},
     body:JSON.stringify({from:MAIL_FROM,to:[j.email],subject:`Rail & Rye | ${j.purpose==='recover'?'Your replacement PDF link':'Your race card is ready'}${live?'':' (TEST)'}`,html,text:textBody})
@@ -164,7 +164,7 @@ export async function sendQueuedEmails(env,limit=8){
   if(!env.STORE_DB||!env.RESEND_API_KEY?.startsWith('re_')||!deliverySigningKey(env))return 0;
   const pending=await env.STORE_DB.prepare(`SELECT j.id,j.order_id,j.email,j.purpose,j.attempts,o.stripe_session_id
     FROM email_jobs j JOIN orders o ON o.id=j.order_id
-    WHERE o.status='paid' AND o.paid_at>=datetime('now','-30 days')
+    WHERE o.status='paid' AND datetime(o.paid_at, '+' || o.access_days || ' days') > CURRENT_TIMESTAMP
     AND j.attempts<6 AND ((j.state='queued' AND j.next_attempt_at<=CURRENT_TIMESTAMP)
     OR (j.state='sending' AND j.claimed_at<datetime('now','-3 minutes')))
     ORDER BY j.created_at ASC LIMIT ?`).bind(limit).all();
@@ -177,7 +177,7 @@ export async function sendQueuedEmails(env,limit=8){
       .bind(j.id).run();
     if(!claim.meta?.changes)continue;
     try{
-      const o=await env.STORE_DB.prepare(`SELECT product_title,status,stripe_session_id FROM orders WHERE id=?`).bind(j.order_id).first();
+      const o=await env.STORE_DB.prepare(`SELECT product_title,status,stripe_session_id,access_days FROM orders WHERE id=?`).bind(j.order_id).first();
       if(o?.status!=='paid')continue;
       const providerId=await resendEmail(env,j,o);
       await env.STORE_DB.prepare(`UPDATE email_jobs SET state='sent',provider_id=?,sent_at=CURRENT_TIMESTAMP,last_error=NULL
@@ -207,13 +207,13 @@ async function downloadBundleItem(env,orderId,itemId) {
   if(!UUID_RE.test(itemId||''))return error('Select an included PDF',400);
   const item=await env.STORE_DB.prepare(`SELECT bi.product_title,bi.pdf_key FROM bundle_order_items bi
     JOIN orders o ON o.id=bi.order_id WHERE bi.order_id=? AND bi.product_id=?
-    AND o.status='paid' AND o.paid_at>=datetime('now','-30 days') AND bi.download_count<5`).bind(orderId,itemId).first();
+    AND o.status='paid' AND datetime(o.paid_at, '+' || o.access_days || ' days') > CURRENT_TIMESTAMP AND bi.download_count<5`).bind(orderId,itemId).first();
   if(!item)return error('Download not available or expired',403);
   const file=await env.CARDS_BUCKET.get(item.pdf_key);
   if(!file)return error('PDF temporarily unavailable',503);
   const change=await env.STORE_DB.prepare(`UPDATE bundle_order_items SET download_count=download_count+1
     WHERE order_id=? AND product_id=? AND download_count<5
-    AND EXISTS(SELECT 1 FROM orders WHERE id=? AND status='paid' AND paid_at>=datetime('now','-30 days'))`)
+    AND EXISTS(SELECT 1 FROM orders WHERE id=? AND status='paid' AND datetime(paid_at, '+' || access_days || ' days') > CURRENT_TIMESTAMP)`)
     .bind(orderId,itemId,orderId).run();
   if(!change.meta?.changes)return error('Download not available',403);
   const filename=String(item.product_title||'rail-and-rye').normalize('NFKD').replace(/[^a-zA-Z0-9 -]/g,'').trim().replace(/\s+/g,'-').slice(0,70)||'rail-and-rye';
@@ -239,7 +239,7 @@ async function accessJob(code,env){
   const j=await env.STORE_DB.prepare(`SELECT j.id,j.order_id,j.created_at,o.product_title,o.pdf_key,o.status,o.paid_at,o.download_count
     FROM email_jobs j JOIN orders o ON o.id=j.order_id WHERE j.id=? AND j.state='sent'
     AND j.sent_at>=datetime('now','-24 hours') AND o.status='paid'
-    AND o.paid_at>=datetime('now','-30 days') AND (o.pdf_key='__rr_bundle__' OR o.download_count<5)`).bind(m[1]).first();
+    AND datetime(o.paid_at, '+' || o.access_days || ' days') > CURRENT_TIMESTAMP AND (o.pdf_key='__rr_bundle__' OR o.download_count<5)`).bind(m[1]).first();
   if(!j)return null;
   const supplied=m[2].toLowerCase();
   // V4/V4.1 used the Stripe TEST webhook secret to sign delivery URLs. A new
@@ -262,7 +262,7 @@ async function accessPdf(request,env){
   const object=await env.CARDS_BUCKET.get(j.pdf_key);
   if(!object)return error('PDF temporarily unavailable',503);
   const count=await env.STORE_DB.prepare(`UPDATE orders SET download_count=download_count+1 WHERE id=?
-    AND status='paid' AND paid_at>=datetime('now','-30 days') AND download_count<5`).bind(j.order_id).run();
+    AND status='paid' AND datetime(paid_at, '+' || access_days || ' days') > CURRENT_TIMESTAMP AND download_count<5`).bind(j.order_id).run();
   if(!count.meta?.changes)return error('Download not available',403);
   const name=String(j.product_title||'rail-and-rye').normalize('NFKD').replace(/[^a-zA-Z0-9 -]/g,'').trim().replace(/\s+/g,'-').slice(0,70)||'rail-and-rye';
   return new Response(object.body,{headers:{'Content-Type':'application/pdf','Content-Disposition':`attachment; filename="${name}.pdf"`,
@@ -295,7 +295,7 @@ async function recover(request,env,ctx){
   const allowedEmail=await throttle(env,emailKey,1);
   if(!allowedIp||!allowedEmail)return neutral();
   const paid=await env.STORE_DB.prepare(`SELECT id,stripe_session_id FROM orders WHERE lower(buyer_email)=? AND status='paid'
-    AND paid_at>=datetime('now','-30 days') AND (pdf_key='__rr_bundle__' OR download_count<5) ORDER BY paid_at DESC LIMIT 8`).bind(email).all();
+    AND datetime(paid_at, '+' || access_days || ' days') > CURRENT_TIMESTAMP AND (pdf_key='__rr_bundle__' OR download_count<5) ORDER BY paid_at DESC LIMIT 8`).bind(email).all();
   let queued=0;
   for(const order of paid.results||[]){
     // Legacy Stripe sandbox purchases may NEVER send recovery mail to an
@@ -343,8 +343,8 @@ async function checkout(request,env){
   if(!p)return error('Product is not available',404);
   if(!Number.isSafeInteger(p.price_cents)||p.price_cents<50||p.price_cents>500000)return error('Product is not available for purchase',400);
   const orderId=crypto.randomUUID();
-  const ops=[env.STORE_DB.prepare(`INSERT INTO orders (id,product_id,product_title,pdf_key,amount_cents,status)
-    VALUES (?,?,?,?,?,'initiated')`).bind(orderId,p.id,p.title,p.pdf_key,p.price_cents)];
+  const ops=[env.STORE_DB.prepare(`INSERT INTO orders (id,product_id,product_title,pdf_key,amount_cents,status,access_days)
+    VALUES (?,?,?,?,?,'initiated',7)`).bind(orderId,p.id,p.title,p.pdf_key,p.price_cents)];
   if(p.pdf_key===BUNDLE_KEY){
     const children=await env.STORE_DB.prepare(`SELECT c.id,c.title,c.pdf_key,c.status,a.product_id AS asset_id FROM bundle_items bi
       LEFT JOIN products c ON c.id=bi.product_id LEFT JOIN bundle_only_assets a ON a.product_id=c.id WHERE bi.bundle_id=? ORDER BY bi.position`).bind(p.id).all();
@@ -387,11 +387,12 @@ async function checkout(request,env){
 async function orderStatus(url,env){
   const id=orderSessionId(url);if(!id)return error('Invalid session',400);
   if(!env.STORE_DB)return error('Orders unavailable',503);
-  const o=await env.STORE_DB.prepare(`SELECT id,product_title,pdf_key,amount_cents,status,paid_at,download_count
+  const o=await env.STORE_DB.prepare(`SELECT id,product_title,pdf_key,amount_cents,status,paid_at,download_count,access_days,
+      datetime(paid_at, '+' || access_days || ' days') AS expires_at
     FROM orders WHERE stripe_session_id=?`).bind(id).first();
   if(!o)return error('Order not found',404);
   const bundle=o.pdf_key===BUNDLE_KEY;
-  return reply({title:o.product_title,amount_cents:o.amount_cents,status:o.status,paid_at:o.paid_at,
+  return reply({title:o.product_title,amount_cents:o.amount_cents,status:o.status,paid_at:o.paid_at,access_days:o.access_days,expires_at:o.expires_at,
     downloads_remaining:bundle?null:Math.max(0,5-o.download_count),bundle,
     items:bundle&&o.status==='paid'?await bundleItems(env,o.id):[],checkout_mode:sessionMode(id)});
 }
@@ -399,12 +400,12 @@ async function download(url,env){
   const id=orderSessionId(url);if(!id)return error('Invalid session',400);
   if(!env.STORE_DB||!env.CARDS_BUCKET)return error('Downloads unavailable',503);
   const row=await env.STORE_DB.prepare(`SELECT id,pdf_key,product_title FROM orders WHERE stripe_session_id=? AND status='paid'
-    AND paid_at>=datetime('now','-30 days') AND (pdf_key=? OR download_count<5)`).bind(id,BUNDLE_KEY).first();
+    AND datetime(paid_at, '+' || access_days || ' days') > CURRENT_TIMESTAMP AND (pdf_key=? OR download_count<5)`).bind(id,BUNDLE_KEY).first();
   if(!row)return error('Download not available or expired',403);
   if(row.pdf_key===BUNDLE_KEY)return downloadBundleItem(env,row.id,url.searchParams.get('item_id'));
   const obj=await env.CARDS_BUCKET.get(row.pdf_key);if(!obj)return error('PDF temporarily unavailable',503);
   const upd=await env.STORE_DB.prepare(`UPDATE orders SET download_count=download_count+1 WHERE stripe_session_id=?
-    AND status='paid' AND paid_at>=datetime('now','-30 days') AND download_count<5`).bind(id).run();
+    AND status='paid' AND datetime(paid_at, '+' || access_days || ' days') > CURRENT_TIMESTAMP AND download_count<5`).bind(id).run();
   if(!upd.meta?.changes)return error('Download limit reached',403);
   const name=String(row.product_title||'rail-and-rye').normalize('NFKD').replace(/[^a-zA-Z0-9 -]/g,'').trim().replace(/\s+/g,'-').slice(0,70)||'rail-and-rye';
   return new Response(obj.body,{headers:{'Content-Type':'application/pdf','Content-Disposition':`attachment; filename="${name}.pdf"`,
