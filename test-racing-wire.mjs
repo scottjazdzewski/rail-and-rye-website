@@ -45,6 +45,9 @@ assert.equal(items[0].link,'https://publisher.example/story/123');
 assert.equal(items[0].section,'Breeders Cup');
 assert.equal(items[0].category,'Jockeys');
 assert.equal(categorize('Championship update','Breeders Cup'),'Stakes');
+assert.equal(categorize("Ways and Means Blasts Home in Breeders’ Cup Filly and Mare Sprint"),'Stakes');
+assert.equal(subjectKind("Ways and Means Blasts Home in Breeders’ Cup Filly and Mare Sprint",categorize("Ways and Means Blasts Home in Breeders’ Cup Filly and Mare Sprint")),'race');
+assert.equal(categorize('Champion mare confirmed in foal to leading sire'),'Breeding');
 assert.equal(parseRacingRss('<!DOCTYPE rss [<!ENTITY pwn SYSTEM "http://evil/">]>'+rss,feed).length,0);
 assert.equal(parseRacingRss('<rss><item><title>Bad</title><link>javascript:alert(1)</link><pubDate>Fri, 30 Oct 2026 12:00:00 GMT</pubDate></item></rss>',feed).length,0);
 
@@ -268,9 +271,15 @@ for(const badge of ['horse','jockey','trainer','owner','stable','race','racetrac
  assert.equal(badgeAsset.subarray(0,8).toString('hex'),'89504e470d0a1a0a','Approved '+badge+' badge is a real PNG');
  assert.ok(badgeAsset.length>1000,'Approved '+badge+' badge is not truncated');
 }
-const breedingBadge=readFileSync(new URL('./public/assets/approved/racing-wire/badges/breeding.png',import.meta.url));
-assert.ok(breedingBadge.length>8000,'Breeding DNA badge is a full-resolution clean artwork, not a tiny placeholder');
-assert.ok(wirePage.includes("badges/'+safe+'.png?v=6"),'Badge cache version refreshed for DNA breeding badge');
+const breedingBadgeSvg=readFileSync(new URL('./public/assets/approved/racing-wire/badges/breeding-dna-v2.svg',import.meta.url),'utf8');
+assert.ok(breedingBadgeSvg.includes('<svg')&&breedingBadgeSvg.includes('stroke="#e8b75f"'),
+ 'Breeding badge uses the clean new DNA SVG artwork');
+assert.ok(wirePage.includes("breeding-dna-v2.svg?v=1"),
+ 'Breeding badge uses a new cache-safe asset path');
+assert.ok(!wirePage.includes("breeding.png"),
+ 'Runtime must never request the retired breeding.png asset');
+assert.ok(wirePage.includes("badges/'+kind+'.png?v=6"),
+ 'Other approved badge assets remain unchanged');
 assert.ok(wirePage.includes('.more[hidden]{display:none!important}'),
  'Load-more cannot appear when there are zero verified stories');
 assert.ok(wirePage.includes('setInterval(()=>{if(!document.hidden)loadVerified()},180000)'),
