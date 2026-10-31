@@ -136,7 +136,7 @@ const privateList=await (await assetAdmin(new Request(root+'/api/admin/bundle-as
 assert.equal(privateList.assets[0].has_pdf,0,'No PDF is ready before upload');
 assert.ok(!privateList.assets[0].pdf_key,'Do not expose R2 keys in private library list');
 assert.equal((await assetAdmin(patch('/api/admin/bundle-assets/'+privateId,{...bundleOnlyMeta,title:'Edited Private Notes'}))).status,200);
-db.prepare('UPDATE products SET pdf_key=? WHERE id=?').run('cards/private/notes-v1.pdf',privateId);
+db.prepare('UPDATE products SET pdf_key=? WHERE id=?').run('cards/'+privateId+'/notes-v1.pdf',privateId);
 const available=await (await admin(new Request(root+'/api/admin/bundles'))).json();
 assert.ok(available.available_products.some(p=>p.id===privateId&&p.bundle_only===1),
   'Uploaded private PDFs appear in bundle selection');
@@ -151,7 +151,7 @@ assert.equal(result.status,201,'Published bundle may contain protected PDF and p
 const privateBundleId=(await result.json()).id;
 const pub=await (await commerce(new Request(root+'/api/products'))).json();
 assert.ok(pub.products.some(p=>p.id===privateBundleId&&p.kind==='bundle'));
-assert.ok(!JSON.stringify(pub).includes('cards/private/notes-v1.pdf'));
+assert.ok(!JSON.stringify(pub).includes('cards/'+privateId+'/notes-v1.pdf'));
 const privateSid='cs_live_'+'B'.repeat(50);
 globalThis.fetch=async(url,options)=>{
   if(!String(url).includes('/checkout/sessions'))throw Error('Unexpected external call');
@@ -163,10 +163,10 @@ result=await commerce(post('/api/checkout',{product_id:privateBundleId}));
 assert.equal(result.status,200);
 const privateOrder=db.prepare('SELECT id FROM orders WHERE product_id=?').get(privateBundleId);
 const privateKeys=db.prepare('SELECT pdf_key FROM bundle_order_items WHERE order_id=? ORDER BY position').all(privateOrder.id).map(x=>x.pdf_key);
-assert.deepEqual(privateKeys,['cards/friday/v1.pdf','cards/private/notes-v1.pdf']);
-db.prepare('UPDATE products SET pdf_key=? WHERE id=?').run('cards/private/notes-v2.pdf',privateId);
+assert.deepEqual(privateKeys,['cards/friday/v1.pdf','cards/'+privateId+'/notes-v1.pdf']);
+db.prepare('UPDATE products SET pdf_key=? WHERE id=?').run('cards/'+privateId+'/notes-v2.pdf',privateId);
 assert.equal(db.prepare('SELECT pdf_key FROM bundle_order_items WHERE order_id=? AND product_id=?').get(privateOrder.id,privateId).pdf_key,
-  'cards/private/notes-v1.pdf','Previous buyers retain their purchased private PDF version');
+  'cards/'+privateId+'/notes-v1.pdf','Previous buyers retain their purchased private PDF version');
 console.log('PASS bundle-only library: private metadata, public invisibility, no standalone checkout, bundle selection, secure checkout snapshots. No real charges.');
 
 const denied=await assetAdmin(patch('/api/admin/bundle-assets/'+privateId+'/archive',{}));
@@ -181,7 +181,7 @@ assert.ok(inventory.assets.some(a=>a.id===privateId&&a.status==='archived'));
 const candidates=await (await admin(new Request(root+'/api/admin/bundles'))).json();
 assert.ok(!candidates.available_products.some(a=>a.id===privateId));
 assert.equal((await assetAdmin(patch('/api/admin/bundle-assets/'+privateId,bundleOnlyMeta))).status,409);
-assert.equal(db.prepare('SELECT pdf_key FROM bundle_order_items WHERE order_id=? AND product_id=?').get(privateOrder.id,privateId).pdf_key,'cards/private/notes-v1.pdf');
+assert.equal(db.prepare('SELECT pdf_key FROM bundle_order_items WHERE order_id=? AND product_id=?').get(privateOrder.id,privateId).pdf_key,'cards/'+privateId+'/notes-v1.pdf');
 console.log('PASS private PDF archiving: live bundle protection, retired inventory, buyer snapshots preserved.');
 
 const activeUnpaid=db.prepare('SELECT status FROM orders WHERE id=?').get(privateOrder.id);
@@ -208,6 +208,6 @@ assert.ok(db.prepare('SELECT purged_at FROM bundle_only_assets WHERE product_id=
 const postPurge=await (await assetAdmin(new Request(root+'/api/admin/bundle-assets'))).json();
 assert.ok(!postPurge.assets.some(a=>a.id===privateId),'Permanently deleted PDF disappears from admin inventory');
 assert.equal(db.prepare('SELECT pdf_key FROM bundle_order_items WHERE order_id=? AND product_id=?').get(privateOrder.id,privateId).pdf_key,
- 'cards/private/notes-v1.pdf','Prior order snapshot must be retained for history');
+ 'cards/'+privateId+'/notes-v1.pdf','Prior order snapshot must be retained for history');
 assert.equal((await assetAdmin(post('/api/admin/bundle-assets/'+privateId+'/purge',{}))).status,410);
 console.log('PASS: Seven-day new purchases and guarded R2 purge after checkout/entitlement expiry.');
