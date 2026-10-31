@@ -45,3 +45,24 @@ for(const [name,url] of discovery){
     if(name==='BloodHorse') console.log(JSON.stringify({bloodhorse_feed_prefix:(await (await fetch('https://www.bloodhorse.com/horse-racing/feeds/news/all-news')).text()).slice(0,1200)}));
   }catch(error){console.log(JSON.stringify({discovery:name,url,error:String(error?.message||error)}));}
 }
+
+for(const [name,url] of [
+  ['OBS-correct','https://obssales.com/feed/'],
+  ['FasigTipton-https','https://www.fasigtipton.com/rss.xml']
+]){
+  try{
+    const response=await fetch(url,{headers:{Accept:'application/rss+xml,application/xml,text/xml;q=0.9,*/*;q=0.1','User-Agent':'RailAndRyeFeedDiagnostic/1.0'},cache:'no-store',signal:AbortSignal.timeout(12000)});
+    const body=await response.text();
+    console.log(JSON.stringify({probe:name,url,status:response.status,type:response.headers.get('content-type'),bytes:body.length,prefix:body.slice(0,700)}));
+  }catch(error){console.log(JSON.stringify({probe:name,url,error:String(error?.message||error)}));}
+}
+try{
+ const body=await (await fetch('https://www.bloodhorse.com/horse-racing/feeds/news/all-news')).text();
+ console.log(JSON.stringify({bloodhorse_date_tags:{
+   pubDate:(body.match(/<pubDate>/gi)||[]).length,
+   published:(body.match(/<published>/gi)||[]).length,
+   updated:(body.match(/<updated>/gi)||[]).length,
+   a10updated:(body.match(/<a10:updated>/gi)||[]).length,
+   dcdate:(body.match(/<dc:date>/gi)||[]).length
+ }}));
+}catch{}
