@@ -94,11 +94,36 @@ for(const type of ['horse','owner','trainer','jockey','race','stable','racetrack
  assert.ok(wirePage.includes("'"+type+"'"), 'Subject filter configured: '+type);
 }
 assert.ok(wirePage.includes('Source: '),'Source attribution exists');
-assert.ok(wirePage.includes('UNLISTED TEST PREVIEW'),'Page is clearly labeled as unlisted');
+assert.ok(wirePage.includes('UNLISTED DESIGN PREVIEW'),'Page is clearly labeled as unlisted');
 assert.ok(wirePage.includes('not a real report'),'Demonstration content clearly identified');
 assert.ok(wirePage.includes('source')&&wirePage.includes('title')&&wirePage.includes('summary'),'News cards support original link and faithful source content');
 assert.ok(wirePage.includes("fetch('/api/preview/racing-wire-5333548f0ffee31ba519b2470ffb'"),'Preview fetches only the unlisted API');
 assert.ok(wirePage.includes('rail-rye-ivory-logo.png'),'Owner-approved Rail & Rye branding reused');
+
+const journalPage=readFileSync(new URL('./public/journal/index.html',import.meta.url),'utf8');
+const journalFooter=journalPage.match(/<footer class="heritage-footer">[\s\S]*?<\/footer>/)?.[0];
+const previewFooter=wirePage.match(/<footer class="heritage-footer">[\s\S]*?<\/footer>/)?.[0];
+assert.ok(journalFooter,'Canonical Rail & Rye footer exists');
+assert.equal(previewFooter,journalFooter,'Preview footer, support/legal links and social icons exactly match canonical Journal');
+const journalHeader=journalPage.match(/<header class="heritage-header">[\s\S]*?<\/header>/)?.[0];
+const previewHeader=wirePage.match(/<header class="heritage-header">[\s\S]*?<\/header>/)?.[0];
+assert.ok(previewHeader && journalHeader,'Preview uses the existing production header component');
+assert.ok(previewHeader.includes('heritage-strap') && previewHeader.includes('header-horse.webp'),'Centered production racing strap retained');
+assert.ok(previewHeader.includes('heritage-mobile-nav'),'Production mobile navigation retained');
+assert.ok(previewHeader.includes('heritage-nav-pill') && previewHeader.includes('The Racing Wire'),'Wire preview pill added to the matching nav');
+assert.ok(previewHeader.includes('aria-current="page">The Racing Wire'),'Wire pill is marked current only on preview');
+assert.ok(wirePage.includes('/assets/rail-rye-core.css?v=10') &&
+ wirePage.includes('/assets/rail-rye-components.css?v=8') &&
+ wirePage.includes('/assets/rail-rye-pages.css?v=35'),'Header/footer use actual site stylesheets');
+const normalizedHeader=previewHeader
+ .replace('<a class="heritage-nav-pill" href="/preview/racing-wire-5333548f0ffee31ba519b2470ffb/" aria-current="page">The Racing Wire</a>','')
+ .replace('<a href="/preview/racing-wire-5333548f0ffee31ba519b2470ffb/" aria-current="page">The Racing Wire</a>','')
+ .replace('<a class="heritage-nav-pill" href="/journal/">The Journal</a>', '<a class="heritage-nav-pill" href="/journal/" aria-current="page">The Journal</a>')
+ .replace('<a href="/journal/">The Journal</a>', '<a href="/journal/" aria-current="page">The Journal</a>');
+assert.equal(normalizedHeader,journalHeader,'Header markup exactly matches canonical Journal after removal of preview-only pill');
+assert.ok(!wirePage.includes('<header><div class="header-inner">'),'Custom mock header removed');
+assert.ok(!wirePage.includes('<footer>THE RACING WIRE'),'Short mock footer removed');
+
 assert.ok(!/<img\b[^>]+src=['"]https?:\/\//i.test(wirePage),'No borrowed publisher images');
 const clientJs=wirePage.match(/<script>([\s\S]*?)<\/script>/);
 assert.ok(clientJs,'Preview contains interactive JavaScript');
