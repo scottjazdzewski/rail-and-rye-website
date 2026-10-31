@@ -126,6 +126,9 @@ assert.ok(wirePage.includes("fetch('/api/preview/racing-wire-5333548f0ffee31ba51
 assert.ok(wirePage.includes('rail-rye-ivory-logo.png'),'Owner-approved Rail & Rye branding reused');
 
 assert.ok(wirePage.includes('/assets/approved/saddlecloths/8.png'),'Racing Wire is numbered Page 8');
+assert.ok(wirePage.includes("/assets/approved/racing-wire/hero-race.webp"),
+ 'Owner-edited racing artwork is the Page 8 hero');
+assert.ok(!wirePage.includes('class="hero-art"'),'Temporary SVG hero artwork removed');
 assert.ok(wirePage.includes('rr-page-saddle-kicker')&&wirePage.includes('rr-page-title')&&
  wirePage.includes('rr-page-rule')&&wirePage.includes('rr-page-description'),
  'Page 8 uses the same canonical numbered-page title treatment');
