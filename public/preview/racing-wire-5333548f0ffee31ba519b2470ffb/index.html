@@ -13,22 +13,10 @@
 :root{--navy:#071e35;--navy2:#0b2d4b;--gold:#cfa661;--cream:#faf8f3;--ink:#142944;--muted:#5b6b80;--line:#e8e2d7}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:#faf9f5;color:var(--ink);font:14px/1.5 Georgia,"Times New Roman",serif}
 a{color:inherit}button,input,select{font:inherit}button{cursor:pointer}
-.rrw-masthead{background:#071e35}
 .rrw-preview-note{padding:10px 20px;background:#e8cf9d;color:#142d44;text-align:center;font:750 11px/1.5 system-ui,sans-serif;letter-spacing:.075em}
-@media(min-width:1121px) and (max-width:1400px){
- .rrw-preview-page .heritage-nav{gap:6px}
- .rrw-preview-page .heritage-nav a{padding-inline:10px}
- .rrw-preview-page .heritage-strap{font-size:clamp(10px,1vw,14px)}
-}
-.hero{position:relative;overflow:hidden;color:#fff;background:#071e35;border-bottom:1px solid rgba(210,168,99,.75)}
-.rrw-hero-media,.rrw-hero-shade{position:absolute;inset:0;pointer-events:none}
-.rrw-hero-media{z-index:0}
-.rrw-hero-image{display:block;width:100%;height:100%;object-fit:cover;object-position:center 48%}
-.rrw-hero-shade{z-index:1;background:linear-gradient(90deg,rgba(4,20,34,.94) 0%,rgba(4,20,34,.82) 34%,rgba(4,20,34,.40) 63%,rgba(4,20,34,.15) 100%)}
-.hero-inner{max-width:1510px;margin:auto;min-height:370px;display:flex;align-items:center;padding:42px 28px;position:relative;z-index:2}
-.hero-copy{max-width:760px;position:relative;z-index:3}
-.rrw-preview-page .hero .rr-page-title{max-width:760px}
-.rrw-preview-page .hero .rr-page-description{max-width:560px}
+.rrw-wire-hero{position:relative;background-color:#071e35}
+.rrw-wire-hero .rrw-hero-media{position:absolute;inset:0;z-index:-2;pointer-events:none}
+.rrw-wire-hero .rrw-hero-image{display:block;width:100%;height:100%;object-fit:cover;object-position:center 48%}
 .wrap{max-width:1500px;margin:auto;padding:24px 24px 90px}
 .tagline{display:flex;gap:15px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:0 0 16px}
 .tagline h2{margin:0;font:650 14px/1.3 Georgia,serif;letter-spacing:.19em;text-transform:uppercase}
@@ -63,29 +51,27 @@ a{color:inherit}button,input,select{font:inherit}button{cursor:pointer}
 .rrw-rss-test{margin:-12px 0 24px;padding:14px 16px;border:1px solid #d8c7aa;border-radius:10px;background:#fff9ee;color:#344b60;font:12px/1.55 system-ui,sans-serif}
 .rrw-rss-test strong{color:#153b58}.rrw-rss-test .ok{color:#23694f;font-weight:800}.rrw-rss-test .bad{color:#9b3f3b;font-weight:800}
 @media(max-width:1160px){.subject-strip{grid-template-columns:repeat(6,1fr)}}
-@media(max-width:800px){.rrw-hero-image{object-position:58% center}.hero-inner{min-height:430px;padding:48px 20px}.hero-copy{max-width:650px}.wrap{padding:22px 15px 60px}}
-@media(max-width:560px){.subject-strip{grid-template-columns:repeat(4,minmax(0,1fr));row-gap:16px}.emblem{width:50px;height:50px}.item{grid-template-columns:70px minmax(0,1fr);gap:13px;padding:15px}.item .emblem{width:66px;height:66px}.type-pill{grid-column:2;justify-self:start}.item h3{font-size:17px}.hero-inner{min-height:430px;padding:44px 18px}.rrw-preview-page .hero .rr-page-title{font-size:clamp(43px,11vw,60px)}}
+@media(max-width:800px){.wrap{padding:22px 15px 60px}}
+@media(max-width:560px){.subject-strip{grid-template-columns:repeat(4,minmax(0,1fr));row-gap:16px}.emblem{width:50px;height:50px}.item{grid-template-columns:70px minmax(0,1fr);gap:13px;padding:15px}.item .emblem{width:66px;height:66px}.type-pill{grid-column:2;justify-self:start}.item h3{font-size:17px}}
 </style></head>
-<body class="heritage-home heritage-inner-page rrw-preview-page">
+<body class="heritage-home heritage-inner-page rr-single-screen-hero rrw-preview-page">
 
-<div class="rrw-masthead"><header class="heritage-header"><div class="heritage-shell heritage-header-inner">
+<div class="heritage-inner-hero rrw-wire-hero">
+<div class="rrw-hero-media" aria-hidden="true"><img class="rrw-hero-image" src="/assets/approved/racing-wire/hero-race.webp?v=3" alt="" width="1100" height="471" loading="eager" decoding="async"></div>
+<header class="heritage-header"><div class="heritage-shell heritage-header-inner">
   <a class="heritage-brand" href="/" aria-label="Rail and Rye home"><span class="heritage-brand-mark"><img src="/assets/approved/brand/rail-rye-ivory-logo.png" alt="Rail & Rye official ivory horseshoe emblem" width="80" height="80" decoding="async"></span><span class="heritage-wordmark">RAIL &amp; RYE</span></a>
   <div class="heritage-strap"><img class="heritage-horse-mini" src="/assets/approved/brand/header-horse.webp" alt="" aria-hidden="true" width="66" height="76"><span>Thoroughbred Racing Intelligence</span></div>
-  <nav class="heritage-nav" aria-label="Main navigation"><a class="heritage-nav-pill" href="/race-cards/">Race Cards</a><a class="heritage-nav-pill" href="/journal/">The Journal</a><a class="heritage-nav-pill" href="/preview/racing-wire-5333548f0ffee31ba519b2470ffb/" aria-current="page">The Racing Wire</a><a class="heritage-nav-pill" href="https://rail-rye-shop.fourthwall.com/" target="_blank" rel="noopener noreferrer" aria-label="Shop Rail and Rye apparel (opens in a new tab)">Apparel</a></nav>
-  <details class="heritage-mobile-nav"><summary aria-label="Open navigation">Menu <span aria-hidden="true">☰</span></summary><nav aria-label="Mobile navigation"><a href="/race-cards/">Race Cards</a><a href="/journal/">The Journal</a><a href="/preview/racing-wire-5333548f0ffee31ba519b2470ffb/" aria-current="page">The Racing Wire</a><a href="https://rail-rye-shop.fourthwall.com/" target="_blank" rel="noopener noreferrer">Apparel ↗</a></nav></details>
- </div></header></div>
-<div class="rrw-preview-note">UNLISTED DESIGN PREVIEW · NOT IN PUBLIC NAVIGATION · SHAREABLE LINK</div>
-<section class="hero">
-<div class="rrw-hero-media" aria-hidden="true"><img class="rrw-hero-image" src="/assets/approved/racing-wire/hero-race.webp?v=3" alt="" width="1100" height="471" loading="eager" decoding="async"></div>
-<div class="rrw-hero-shade" aria-hidden="true"></div>
-<div class="hero-inner">
-<section class="hero-copy rr-page-intro rr-page-intro--grid" aria-labelledby="rrw-title">
+  <nav class="heritage-nav" aria-label="Main navigation"><a class="heritage-nav-pill" href="/race-cards/">Race Cards</a><a class="heritage-nav-pill" href="/journal/">The Journal</a><a class="heritage-nav-pill" href="https://rail-rye-shop.fourthwall.com/" target="_blank" rel="noopener noreferrer" aria-label="Shop Rail and Rye apparel (opens in a new tab)">Apparel</a></nav>
+  <details class="heritage-mobile-nav"><summary aria-label="Open navigation">Menu <span aria-hidden="true">☰</span></summary><nav aria-label="Mobile navigation"><a href="/race-cards/">Race Cards</a><a href="/journal/">The Journal</a><a href="https://rail-rye-shop.fourthwall.com/" target="_blank" rel="noopener noreferrer">Apparel ↗</a></nav></details>
+ </div></header>
+<section class="heritage-shell heritage-inner-heading rr-page-intro rr-page-intro--hero" aria-labelledby="rrw-title">
 <div class="rr-page-saddle-kicker"><span class="rr-chip-solid"><img src="/assets/approved/saddlecloths/8.png" width="38" height="38" alt="Saddlecloth 8" decoding="async"></span><span class="rr-page-kicker-label">THE RACING WIRE</span></div>
 <h1 class="rr-page-title" id="rrw-title">The Latest from the Backstretch.</h1>
 <span class="rr-page-rule" aria-hidden="true"></span>
 <p class="rr-page-description">News, updates and insights from around the racing world. Horses. People. Races. The story behind the sport.</p>
 </section>
-</div></section>
+</div>
+<div class="rrw-preview-note">UNLISTED DESIGN PREVIEW · NOT IN PUBLIC NAVIGATION · SHAREABLE LINK</div>
 <main class="wrap">
 <div class="tagline"><h2>Racing news by subject</h2><span>Approved Rail &amp; Rye navy-and-gold badge family</span></div>
 <div class="subject-strip" id="subjects" role="group" aria-label="Filter by racing subject"></div>

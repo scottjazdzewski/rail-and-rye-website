@@ -237,6 +237,15 @@ assert.ok(!wirePage.includes('class="hero-art"'),'Temporary SVG hero artwork rem
 assert.ok(wirePage.includes('rr-page-saddle-kicker')&&wirePage.includes('rr-page-title')&&
  wirePage.includes('rr-page-rule')&&wirePage.includes('rr-page-description'),
  'Page 8 uses the same canonical numbered-page title treatment');
+assert.ok(wirePage.includes('class="heritage-inner-hero rrw-wire-hero"')&&wirePage.includes('rr-page-intro rr-page-intro--hero'),
+ 'Racing Wire uses the exact shared production inner-hero frame and intro layout');
+assert.ok(wirePage.includes('rr-single-screen-hero'),'Racing Wire uses the same shared hero viewport/layout system as the other numbered pages');
+assert.ok(!wirePage.includes('rrw-masthead')&&!wirePage.includes('class="hero"')&&!wirePage.includes('hero-inner')&&!wirePage.includes('rrw-hero-shade'),
+ 'Old custom masthead, hero frame and competing overlay are completely removed');
+assert.ok(wirePage.indexOf('<header class="heritage-header">')>wirePage.indexOf('class="heritage-inner-hero rrw-wire-hero"'),
+ 'Production header sits inside the hero image frame exactly like the other pages');
+assert.ok(wirePage.indexOf('UNLISTED DESIGN PREVIEW')>wirePage.indexOf('</div>\n<div class="rrw-preview-note"'),
+ 'Unlisted notice is outside the production header/hero frame so it cannot alter hero geometry');
 assert.ok(wirePage.includes('The Latest from the Backstretch.'),'Approved Racing Wire title is present');
 assert.ok(wirePage.includes('id="testFeeds"')&&wirePage.includes('Test real RSS'),
  'Unlisted preview exposes real-feed diagnostic control');
@@ -277,17 +286,15 @@ const previewHeader=wirePage.match(/<header class="heritage-header">[\s\S]*?<\/h
 assert.ok(previewHeader && journalHeader,'Preview uses the existing production header component');
 assert.ok(previewHeader.includes('heritage-strap') && previewHeader.includes('header-horse.webp'),'Centered production racing strap retained');
 assert.ok(previewHeader.includes('heritage-mobile-nav'),'Production mobile navigation retained');
-assert.ok(previewHeader.includes('heritage-nav-pill') && previewHeader.includes('The Racing Wire'),'Wire preview pill added to the matching nav');
-assert.ok(previewHeader.includes('aria-current="page">The Racing Wire'),'Wire pill is marked current only on preview');
+assert.ok(!previewHeader.includes('The Racing Wire'),'Unlisted preview does not add a fourth nav pill or change production header spacing');
+assert.equal((previewHeader.match(/class="heritage-nav-pill"/g)||[]).length,3,'Desktop header has the exact three public navigation pills');
 assert.ok(wirePage.includes('/assets/rail-rye-core.css?v=10') &&
  wirePage.includes('/assets/rail-rye-components.css?v=8') &&
  wirePage.includes('/assets/rail-rye-pages.css?v=35'),'Header/footer use actual site stylesheets');
-const normalizedHeader=previewHeader
- .replace('<a class="heritage-nav-pill" href="/preview/racing-wire-5333548f0ffee31ba519b2470ffb/" aria-current="page">The Racing Wire</a>','')
- .replace('<a href="/preview/racing-wire-5333548f0ffee31ba519b2470ffb/" aria-current="page">The Racing Wire</a>','')
+const normalizedPreviewHeader=previewHeader
  .replace('<a class="heritage-nav-pill" href="/journal/">The Journal</a>', '<a class="heritage-nav-pill" href="/journal/" aria-current="page">The Journal</a>')
  .replace('<a href="/journal/">The Journal</a>', '<a href="/journal/" aria-current="page">The Journal</a>');
-assert.equal(normalizedHeader,journalHeader,'Header markup exactly matches canonical Journal after removal of preview-only pill');
+assert.equal(normalizedPreviewHeader,journalHeader,'Header markup/layout exactly matches canonical Journal aside from current-page semantics');
 assert.ok(!wirePage.includes('<header><div class="header-inner">'),'Custom mock header removed');
 assert.ok(!wirePage.includes('<footer>THE RACING WIRE'),'Short mock footer removed');
 
