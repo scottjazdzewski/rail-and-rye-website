@@ -122,63 +122,62 @@ export async function refreshRacingWire(env){
   return {checked,added};
 }
 
-/* Bluesky's documented public read API allows public author feeds without
- * login. Only show short post previews, attribution and links; no media copies.
- * Respect author/post !no-unauthenticated labels and use a 10-minute cache.
+/* Editorial deduplication: preserve distinct developments for the same horse.
+ * Merge only strongly overlapping accounts of the SAME development within
+ * 48 hours; preserve every original publisher link in also_reported_by.
+ * Editorially assigned event_key can later identify reworded reports exactly.
  */
-const SOCIAL_SOURCES=Object.freeze([
-  {handle:'paulickreport.bsky.social',name:'Paulick Report',network:'Bluesky'}
-]);
-export function parseBlueskyAuthorFeed(data,source){
-  if(!data||!Array.isArray(data.feed))return [];
-  const out=[];
-  for(const item of data.feed.slice(0,35)){
-    const p=item?.post,author=p?.author||{};
-    if(item?.reason||author.handle!==source.handle||author.viewer?.blockedBy)continue;
-    const labels=[...(author.labels||[]),...(p.labels||[])];
-    if(labels.some(x=>['!no-unauthenticated','porn','sexual','graphic-media','nudity'].includes(x.val)))continue;
-    if(p.record?.$type!=='app.bsky.feed.post')continue;
-    const text=String(p.record.text||'').replace(/\s+/g,' ').trim();
-    const preview=socialPreview(text);
-    const match=/^at:\/\/[a-z0-9:._%-]+\/app\.bsky\.feed\.post\/([a-zA-Z0-9]+)$/.exec(p.uri||'');
-    const created=p.record.createdAt||p.indexedAt,dt=new Date(created);
-    if(!preview.title||!match||!Number.isFinite(+dt)||dt.getTime()>Date.now()+3600000)continue;
-    out.push({
-      title:preview.title,summary:preview.summary,
-      url:'https://bsky.app/profile/'+source.handle+'/post/'+match[1],
-      source:source.name+' · '+source.network,category:categorize(text),subject_kind:subjectKind(text),
-      published_at:dt.toISOString(),original:false
-    });
-  }
-  return out;
+const FILLER_WORDS=new Set(['the','a','an','at','in','on','by','to','of','from','for','with','after',
+ 'before','is','are','was','were','and','or','as','will','has','have','now','says','reports',
+ 'new','latest','today','update','news','horse','horse-racing','racing']);
+function storyTokens(title){
+ return [...new Set(String(title||'').toLowerCase()
+  .normalize('NFKD').replace(/[\u0300-\u036f]/g,'')
+  .replace(/breeders['’]?\s+cup/g,'breederscup')
+  .replace(/\b(scratched|scratches)\b/g,'scratch')
+  .replace(/\b(won|wins|winning)\b/g,'win')
+  .replace(/\b(entered|entries)\b/g,'entry')
+  .replace(/\b(worked|workouts)\b/g,'workout')
+  .replace(/[^a-z0-9]+/g,' ').split(' ')
+  .filter(w=>w.length>2&&!FILLER_WORDS.has(w)))];
 }
-async function publicSocialItems(env){
-  if(env.RR_SOCIAL_FEEDS==='off')return [];
-  const out=[];
-  const store=typeof caches!=='undefined'&&caches.default?caches.default:null;
-  for(const source of SOCIAL_SOURCES){
-    const cacheKey=new Request('https://railandryeracing.com/__rr_wire_cache/'+source.handle);
-    try{
-      let cached=store?await store.match(cacheKey):null;
-      if(!cached){
-        const url='https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor='+encodeURIComponent(source.handle)+'&filter=posts_no_replies&limit=30';
-        const response=await fetch(url,{headers:{Accept:'application/json'},signal:AbortSignal.timeout(5500)});
-        if(!response.ok)continue;
-        const length=Number(response.headers.get('content-length')||0);
-        if(length>400000)continue;
-        const raw=await response.text();if(raw.length>400000)continue;
-        const parsed=JSON.parse(raw);
-        const records=parseBlueskyAuthorFeed(parsed,source);
-        cached=new Response(JSON.stringify(records),{headers:{'Content-Type':'application/json','Cache-Control':'public, max-age=600'}});
-        if(store)await store.put(cacheKey,cached.clone());
-      }
-      const parsed=await cached.json();
-      if(Array.isArray(parsed))out.push(...parsed.slice(0,30));
-    }catch(e){console.warn('Racing Wire public social feed unavailable',source.handle,String(e).slice(0,75));}
-  }
-  return out;
+function eventType(title){
+ const t=String(title||'').toLowerCase();
+ if(/\b(scratch|scratched|scratches)\b/.test(t))return 'scratch';
+ if(/\b(injury|injured|illness|surgery|colic)\b/.test(t))return 'health';
+ if(/\b(workout|worked|breeze|breezed)\b/.test(t))return 'workout';
+ if(/\b(sale|auction|sold|consigned|purchased)\b/.test(t))return 'sale';
+ if(/\b(entry|entered|entries|draw|post position)\b/.test(t))return 'entry';
+ if(/\b(retire|retired|retirement)\b/.test(t))return 'retirement';
+ if(/\b(win|won|victory|triumph|result)\b/.test(t))return 'result';
+ if(/\b(ruling|suspended|suspension|regulatory)\b/.test(t))return 'regulatory';
+ return 'other';
 }
-
+function canGroup(a,b){
+ if(a.event_key&&b.event_key&&a.event_key===b.event_key)return true;
+ if(a.url===b.url)return true;
+ if(Math.abs(Date.parse(a.published_at)-Date.parse(b.published_at))>48*3600000)return false;
+ if(eventType(a.title)!==eventType(b.title))return false;
+ if(a.subject_kind!==b.subject_kind)return false;
+ const at=storyTokens(a.title),bt=storyTokens(b.title);
+ const setB=new Set(bt),common=at.filter(x=>setB.has(x)).length;
+ const ratio=common/Math.max(at.length,bt.length,1);
+ return common>=3&&ratio>=.78;
+}
+export function groupRacingWireStories(stories){
+ const ordered=[...stories].filter(x=>Number.isFinite(Date.parse(x.published_at)))
+  .sort((a,b)=>Date.parse(b.published_at)-Date.parse(a.published_at));
+ const groups=[];
+ for(const candidate of ordered){
+  const existing=groups.find(g=>canGroup(g,candidate));
+  if(existing){
+   existing.also_reported_by ||= [];
+   if(existing.url!==candidate.url&&!existing.also_reported_by.some(x=>x.url===candidate.url))
+    existing.also_reported_by.push({source:candidate.source,url:candidate.url});
+  }else groups.push({...candidate,also_reported_by:[]});
+ }
+ return groups;
+}
 export async function handleRacingWire(request,env){
   if(request.method!=='GET')return reply({error:'Method not allowed'},405);
   if(!env.STORE_DB)return reply({error:'Racing Wire is temporarily unavailable'},503);
@@ -206,9 +205,8 @@ export async function handleRacingWire(request,env){
       published_at:a.published_at,original:false,summary:''
     }));
   }catch(e){console.warn('Racing Wire syndicated cache unavailable',String(e).slice(0,90));}
-  const social=await publicSocialItems(env);
-  const items=[...originals,...syndicated,...social].filter(x=>Number.isFinite(Date.parse(x.published_at)))
-    .sort((a,b)=>Date.parse(b.published_at)-Date.parse(a.published_at)).slice(0,150);
-  return reply({items,source_count:FEEDS.filter(f=>f.authorized).length+(env.RR_SOCIAL_FEEDS==='off'?0:SOCIAL_SOURCES.length),
+  const items=groupRacingWireStories([...originals,...syndicated]).slice(0,150);
+  return reply({items,source_count:FEEDS.filter(f=>f.authorized).length,
+    social_sources:[],social_policy:'X official embeds; Facebook/Instagram official links or embeds only after verification; no Bluesky/TikTok',
     headline_only:true,generated_at:new Date().toISOString()});
 }
