@@ -289,7 +289,7 @@ export function scoreRacingWireItem(item){
  if(INDUSTRY_RE.test(context))score+=24;
  if(SALES_RE.test(context))score+=18;
  if(BREEDING_RE.test(context))score+=18;
- if(MILESTONE_RE.test(context))score+=16;
+ if(MILESTONE_RE.test(context))score+=24;
  if(RESULT_RE.test(context))score+=(MAJOR_EVENT_RE.test(context)||GRADED_RE.test(context)||/\bstakes\b/i.test(context))?10:-10;
  if(/\b(entry|entries|draw|post position|field set|nominations?)\b/i.test(context))score+=MAJOR_EVENT_RE.test(context)?14:3;
  if(LOW_VALUE_RE.test(context))score-=18;
