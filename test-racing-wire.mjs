@@ -116,8 +116,10 @@ assert.ok(!wirePage.includes('bsky.app'),'Preview contains no Blue Sky source li
 assert.ok(wirePage.includes('Also reported by:'),'UI offers linked alternate sources when one event has several reports');
 assert.ok(!wirePage.includes('TRENDING TOPICS'),'Trending Topics sidebar removed');
 assert.ok(!wirePage.includes('NEWS SOURCE DESK'),'Source directory sidebar removed');
-assert.ok(wirePage.includes('UPCOMING STAKES'),'Upcoming Stakes sidebar present');
-assert.equal((wirePage.match(/class="rrw-stake-row"/g)||[]).length,4,'Preview shows four verified upcoming stakes');
+assert.ok(!wirePage.includes('UPCOMING STAKES')&&!wirePage.includes('rrw-stake-row'),
+ 'Upcoming Stakes block is removed from the Racing Wire news page');
+assert.ok(wirePage.includes('.workspace{display:block}'),
+ 'News feed uses the full content width after sidebar removal');
 assert.ok(wirePage.includes('Twilight Derby (GII)')&&wirePage.includes('Forty Niner S. (GIII)'),'Verified graded stakes shown');
 assert.ok(wirePage.includes('UNLISTED DESIGN PREVIEW'),'Page is clearly labeled as unlisted');
 assert.ok(!wirePage.includes('const samples=[')&&!wirePage.includes('DEMO ONLY')&&!wirePage.includes('not a real report')&&!wirePage.includes('Example:'),
