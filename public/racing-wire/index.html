@@ -59,7 +59,7 @@
 <section class="rrw-head" aria-labelledby="wire-title"><div>
 <div class="rrw-overline">THE BACKSTRETCH DISPATCH · RAIL &amp; RYE</div>
 <h1 id="wire-title" class="rrw-title">The Racing Wire.</h1>
-<p class="rrw-description">Racing stories worth following, in one clear stream. Browse Rail &amp; Rye's own latest reports and jump straight to established racing newsrooms. No recycled articles. No noise.</p>
+<p class="rrw-description">Racing stories worth following, in one clear stream. Social updates from reputable racing accounts, new Rail &amp; Rye reports and direct links to their original sources.</p>
 </div><div class="rrw-status" id="wireStatus" role="status"><span></span>Loading recent dispatches…</div></section>
 <div class="rrw-layout">
 <section class="rrw-panel" aria-labelledby="dispatches-heading">
@@ -79,12 +79,17 @@
 <div class="rrw-more-wrap"><button id="wireMore" type="button" class="rrw-more" hidden>Load more updates</button></div>
 </section>
 <aside class="rrw-side" aria-label="Racing newsrooms">
-<section class="rrw-side-card"><h2>From the publishers</h2><p>Open the original newsrooms directly. Outside feeds will appear in the live wire only when republication permission is established.</p>
+<section class="rrw-side-card"><h2>From the publishers</h2><p>Updates from Paulick Report's public Bluesky account appear in the wire using Bluesky's official API. For other publishers, visit the original newsrooms directly.</p>
+<a class="rrw-source-link" href="https://bsky.app/profile/paulickreport.bsky.social" target="_blank" rel="noopener noreferrer">Paulick Report on Bluesky ↗</a>
 <a class="rrw-source-link" href="https://www.thoroughbreddailynews.com/" target="_blank" rel="noopener noreferrer">Thoroughbred Daily News ↗</a>
 <a class="rrw-source-link" href="https://paulickreport.com/" target="_blank" rel="noopener noreferrer">Paulick Report ↗</a>
 <a class="rrw-source-link" href="https://www.bloodhorse.com/horse-racing" target="_blank" rel="noopener noreferrer">BloodHorse ↗</a>
 <a class="rrw-source-link" href="https://www.americasbestracing.net/" target="_blank" rel="noopener noreferrer">America's Best Racing ↗</a>
 </section>
+<section class="rrw-side-card"><h2>Live posts from X</h2><p>View Paulick Report's public timeline with X's official widget. The feed loads only when you open it.</p>
+<details id="rrwXFeed"><summary style="color:#f2d3a0;cursor:pointer;font-weight:800;padding:8px 0">Show X timeline</summary>
+<a class="twitter-timeline" data-height="450" data-theme="dark" data-chrome="noheader nofooter" href="https://x.com/paulickreport">Read @paulickreport on X</a>
+</details><a class="rrw-source-link" href="https://x.com/paulickreport" target="_blank" rel="noopener noreferrer">Open on X ↗</a></section>
 <section class="rrw-side-card"><h2>From our desk</h2><p>Every story published in The Journal automatically joins The Racing Wire. No duplicate posts or extra work.</p><a class="rrw-source-link" href="/journal/">Read The Journal ↗</a><a class="rrw-source-link" href="/race-cards/">Browse race cards ↗</a></section>
 <p class="rrw-footnote">Third-party headlines will link to their original publishers. This wire does not currently provide independently verified live scratches or official entry changes. Always confirm race-day information with the track or official racing authority.</p>
 </aside>
@@ -128,6 +133,13 @@ async function load(){
  draw();
  }catch(e){$('wireStatus').textContent='Connection unavailable';list.replaceChildren(make('p','rrw-empty','Unable to load dispatches. Please try again shortly.'));more.hidden=true;}
 }
+$('rrwXFeed').addEventListener('toggle',function(){
+ if(!this.open||this.dataset.loaded)return;
+ this.dataset.loaded='1';
+ const script=document.createElement('script');
+ script.async=true;script.src='https://platform.twitter.com/widgets.js';script.charset='utf-8';
+ document.body.appendChild(script);
+});
 load();
 })();
 </script></body></html>
