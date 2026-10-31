@@ -582,3 +582,37 @@ body.rr-single-screen-hero .rr-page-description{width:min(100%,610px);max-width:
  body.rr-single-screen-hero>.rr-racecards-hero{display:flex;flex:0 0 auto;min-height:0;height:auto;overflow:visible}
  body.rr-single-screen-hero>.heritage-footer{margin-top:0}
 }
+
+
+/* Mobile-only viewport fit: raise the home Race Cards panel, restore an opaque store masthead, and keep short-page footers at the viewport edge. */
+@media(max-width:750px){
+ body.heritage-home:not(.heritage-inner-page):not(.heritage-store-page)>.heritage-hero{
+  min-height:0!important;height:auto!important
+ }
+ body.heritage-home:not(.heritage-inner-page):not(.heritage-store-page)>.heritage-hero>.heritage-lead{
+  padding-bottom:0!important
+ }
+ body.heritage-home:not(.heritage-inner-page):not(.heritage-store-page)>.heritage-body>.heritage-feature-grid{
+  padding-top:8px
+ }
+ body.heritage-home:not(.heritage-inner-page):not(.heritage-store-page)>.heritage-body>.heritage-feature-grid>.race-panel>.heritage-panel-content{
+  padding-top:12px
+ }
+ body.heritage-home.heritage-store-page .heritage-header{
+  background:#071a2c!important
+ }
+ body.rr-single-screen-hero{
+  min-height:100vh;min-height:100svh;min-height:100dvh;
+  display:flex;flex-direction:column
+ }
+ body.rr-single-screen-hero>.heritage-inner-hero,
+ body.rr-single-screen-hero>.rr-racecards-hero{
+  display:flex;flex:1 0 auto;min-height:0;height:auto;overflow:visible
+ }
+ body.rr-single-screen-hero.heritage-inner-page:not(.heritage-store-page)>.heritage-inner-hero{
+  background-size:auto 100%
+ }
+ body.rr-single-screen-hero>.heritage-footer{
+  margin-top:auto
+ }
+}
