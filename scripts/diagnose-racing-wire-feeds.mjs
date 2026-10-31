@@ -28,3 +28,20 @@ for(const feed of PREVIEW_LIVE_FEEDS){
     console.log(JSON.stringify({id:feed.id,name:feed.name,url:feed.url,error:String(error?.message||error),elapsedMs:Date.now()-started}));
   }
 }
+
+const discovery=[
+  ['Paulick Report','https://paulickreport.com/'],
+  ['BloodHorse','https://www.bloodhorse.com/'],
+  ['OBS','https://obssales.com/'],
+  ['Fasig-Tipton','https://www.fasigtipton.com/']
+];
+for(const [name,url] of discovery){
+  try{
+    const response=await fetch(url,{headers:{'User-Agent':'Mozilla/5.0 RailAndRyeFeedDiscovery/1.0'},cache:'no-store',signal:AbortSignal.timeout(12000)});
+    const body=await response.text();
+    const rss=[...body.matchAll(/<link[^>]+(?:type=["']application\/(?:rss\+xml|atom\+xml)["'][^>]+href=["']([^"']+)["']|href=["']([^"']+)["'][^>]+type=["']application\/(?:rss\+xml|atom\+xml)["'])[^>]*>/gi)]
+      .map(m=>m[1]||m[2]).filter(Boolean);
+    console.log(JSON.stringify({discovery:name,url,status:response.status,rss:[...new Set(rss)].slice(0,10),bytes:body.length}));
+    if(name==='BloodHorse') console.log(JSON.stringify({bloodhorse_feed_prefix:(await (await fetch('https://www.bloodhorse.com/horse-racing/feeds/news/all-news')).text()).slice(0,1200)}));
+  }catch(error){console.log(JSON.stringify({discovery:name,url,error:String(error?.message||error)}));}
+}
