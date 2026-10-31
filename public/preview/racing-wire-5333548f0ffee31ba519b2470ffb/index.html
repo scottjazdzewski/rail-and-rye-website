@@ -196,17 +196,24 @@ $('testFeeds').addEventListener('click',async()=>{
   }
  }catch(error){box.replaceChildren();const e=document.createElement('span');e.className='bad';e.textContent='RSS test unavailable: '+error.message;box.append(e);}
 });
+let feedLoading=false;
 async function loadVerified(){
- $('count').textContent='Loading verified updates…';
+ if(feedLoading)return;
+ feedLoading=true;
+ $('count').textContent='Loading live updates…';
  try{
-  const response=await fetch('/api/preview/racing-wire-5333548f0ffee31ba519b2470ffb',{cache:'no-store'});
+  const response=await fetch('/api/preview/racing-wire-5333548f0ffee31ba519b2470ffb?refresh='+Date.now(),{cache:'no-store'});
   const result=await response.json();if(!response.ok)throw Error(result.error||'Unavailable');
   data=Array.isArray(result.items)?result.items:[];render();
+  const stamp=new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+  $('count').textContent+= ' · refreshed '+stamp;
  }catch(error){
   data=[];render();$('count').textContent='Unable to retrieve live updates';
- }
+ }finally{feedLoading=false}
 }
 loadVerified();
+setInterval(()=>{if(!document.hidden)loadVerified()},180000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)loadVerified()});
 })();
 </script>
 </body></html>
