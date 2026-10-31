@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
-import {handleRacingWire,parseRacingRss,categorize,refreshRacingWire,parseBlueskyAuthorFeed,subjectKind,socialPreview} from './src/racing-wire.js';
+import {handleRacingWire,parseRacingRss,categorize,refreshRacingWire,groupRacingWireStories,subjectKind,socialPreview} from './src/racing-wire.js';
 const db=new DatabaseSync(':memory:');
 db.exec("CREATE TABLE journal_articles (id TEXT PRIMARY KEY,slug TEXT,title TEXT,category TEXT,excerpt TEXT,publish_date TEXT,status TEXT,created_at TEXT);");
 db.prepare("INSERT INTO journal_articles VALUES (?,?,?,?,?,?,?,?)").run(
@@ -45,35 +45,34 @@ assert.equal(items[0].link,'https://publisher.example/story/123');
 assert.equal(parseRacingRss('<!DOCTYPE rss [<!ENTITY pwn SYSTEM "http://evil/">]>'+rss,feed).length,0);
 assert.equal(parseRacingRss('<rss><item><title>Bad</title><link>javascript:alert(1)</link><pubDate>Fri, 30 Oct 2026 12:00:00 GMT</pubDate></item></rss>',feed).length,0);
 
-const source={handle:'paulickreport.bsky.social',name:'Paulick Report',network:'Bluesky'};
-const bsPost=(uri,text,labels=[])=>({
-  post:{author:{handle:source.handle,labels:[]},uri,labels,
-   record:{$type:'app.bsky.feed.post',text,createdAt:'2026-10-31T04:12:00Z'}}
-});
-const sample={feed:[
- bsPost('at://did:plc:aumf3d42f75rnk3pv6qxbre7/app.bsky.feed.post/3kx123abc','Horse workout at Keeneland this morning'),
- bsPost('at://did:plc:aumf3d42f75rnk3pv6qxbre7/app.bsky.feed.post/3kx456abc','Hidden post',[{val:'!no-unauthenticated'}]),
- {...bsPost('at://did:plc:aumf3d42f75rnk3pv6qxbre7/app.bsky.feed.post/3kx789abc','Spoof'),post:{
-   ...bsPost('at://did:plc:aumf3d42f75rnk3pv6qxbre7/app.bsky.feed.post/3kx789abc','Spoof').post,
-   author:{handle:'impersonator.bsky.social',labels:[]}}}
-]};
-const socials=parseBlueskyAuthorFeed(sample,source);
-assert.equal(socials.length,1,'Only public posts from matching author are displayed');
-assert.equal(socials[0].url,'https://bsky.app/profile/paulickreport.bsky.social/post/3kx123abc');
-assert.equal(socials[0].category,'Race-Day');
-assert.ok(!JSON.stringify(socials).includes('Hidden post'));
-assert.ok(!JSON.stringify(socials).includes('Spoof'));
-globalThis.fetch=async url=>{
- assert.ok(String(url).startsWith('https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?'));
- return Response.json(sample);
-};
-env.RR_SOCIAL_FEEDS='on';
-const combined=await (await handleRacingWire(req,env)).json();
-assert.equal(combined.items.length,2,'Live social posts combine with first-party articles');
-assert.equal(combined.source_count,1);
-assert.ok(combined.items.some(i=>i.source==='Paulick Report · Bluesky'&&i.original===false));
-console.log('PASS verified public Bluesky author feed, source links, no-unauthenticated and impersonation protections.');
-
+// Only authorized publisher RSS is eligible for automated site-side ingestion.
+// Social platforms are addressed through official embeds or original-post links.
+assert.deepEqual(body.social_sources,[]);
+assert.equal(body.source_count,0);
+const date='2026-10-31T12:00:00Z';
+const articles=[
+ {title:'Forever Young scratched from Breeders Cup Classic',url:'https://publisher1.example/news/1',
+  source:'Publisher 1',subject_kind:'race',published_at:date},
+ {title:'Breeders Cup Classic: Forever Young scratched',url:'https://publisher2.example/story/2',
+  source:'Publisher 2',subject_kind:'race',published_at:'2026-10-31T11:30:00Z'},
+ {title:'Forever Young wins Breeders Cup Classic',url:'https://publisher3.example/story/3',
+  source:'Publisher 3',subject_kind:'race',published_at:'2026-10-31T11:00:00Z'},
+ {title:'Another horse scratched from Breeders Cup Classic',url:'https://publisher4.example/story/4',
+  source:'Publisher 4',subject_kind:'race',published_at:'2026-10-31T10:00:00Z'}
+];
+const grouped=groupRacingWireStories(articles);
+assert.equal(grouped.length,3,'Same event deduplicates, different horses/developments do not');
+const matched=grouped.find(x=>x.title.includes('scratched from Breeders Cup Classic'));
+assert.equal(matched.also_reported_by.length,1);
+assert.equal(matched.also_reported_by[0].source,'Publisher 2');
+assert.equal(matched.also_reported_by[0].url,'https://publisher2.example/story/2');
+assert.equal(groupRacingWireStories(articles.slice(0,1)).length,1);
+assert.equal(groupRacingWireStories([
+ ...articles.slice(0,1),{...articles[1],published_at:'2026-10-28T09:00:00Z'}
+]).length,2,'Old developments remain separately dated for review');
+const backend=readFileSync(new URL('./src/racing-wire.js',import.meta.url),'utf8');
+assert.ok(!backend.includes('bsky.app')&&!backend.includes('Bluesky')&&!backend.includes('publicSocialItems'),
+ 'No Blue Sky API or network calls exist in production scorer');
 assert.equal(subjectKind('A horse retires after a win'),'horse');
 assert.equal(subjectKind('Ownership group buys shares'),'owner');
 assert.equal(subjectKind('Trainer sends two to the gate'),'trainer');
@@ -94,11 +93,39 @@ for(const type of ['horse','owner','trainer','jockey','race','stable','racetrack
  assert.ok(wirePage.includes("'"+type+"'"), 'Subject filter configured: '+type);
 }
 assert.ok(wirePage.includes('Source: '),'Source attribution exists');
-assert.ok(wirePage.includes('UNLISTED TEST PREVIEW'),'Page is clearly labeled as unlisted');
+assert.ok(!wirePage.includes('bsky.app'),'Preview contains no Blue Sky source links');
+assert.ok(wirePage.includes('Also reported by:'),'UI offers linked alternate sources when one event has several reports');
+assert.ok(wirePage.includes('News Source Desk')||wirePage.includes('NEWS SOURCE DESK'),'Source status desk shown');
+assert.ok(wirePage.includes('UNLISTED DESIGN PREVIEW'),'Page is clearly labeled as unlisted');
 assert.ok(wirePage.includes('not a real report'),'Demonstration content clearly identified');
 assert.ok(wirePage.includes('source')&&wirePage.includes('title')&&wirePage.includes('summary'),'News cards support original link and faithful source content');
 assert.ok(wirePage.includes("fetch('/api/preview/racing-wire-5333548f0ffee31ba519b2470ffb'"),'Preview fetches only the unlisted API');
 assert.ok(wirePage.includes('rail-rye-ivory-logo.png'),'Owner-approved Rail & Rye branding reused');
+
+const journalPage=readFileSync(new URL('./public/journal/index.html',import.meta.url),'utf8');
+const journalFooter=journalPage.match(/<footer class="heritage-footer">[\s\S]*?<\/footer>/)?.[0];
+const previewFooter=wirePage.match(/<footer class="heritage-footer">[\s\S]*?<\/footer>/)?.[0];
+assert.ok(journalFooter,'Canonical Rail & Rye footer exists');
+assert.equal(previewFooter,journalFooter,'Preview footer, support/legal links and social icons exactly match canonical Journal');
+const journalHeader=journalPage.match(/<header class="heritage-header">[\s\S]*?<\/header>/)?.[0];
+const previewHeader=wirePage.match(/<header class="heritage-header">[\s\S]*?<\/header>/)?.[0];
+assert.ok(previewHeader && journalHeader,'Preview uses the existing production header component');
+assert.ok(previewHeader.includes('heritage-strap') && previewHeader.includes('header-horse.webp'),'Centered production racing strap retained');
+assert.ok(previewHeader.includes('heritage-mobile-nav'),'Production mobile navigation retained');
+assert.ok(previewHeader.includes('heritage-nav-pill') && previewHeader.includes('The Racing Wire'),'Wire preview pill added to the matching nav');
+assert.ok(previewHeader.includes('aria-current="page">The Racing Wire'),'Wire pill is marked current only on preview');
+assert.ok(wirePage.includes('/assets/rail-rye-core.css?v=10') &&
+ wirePage.includes('/assets/rail-rye-components.css?v=8') &&
+ wirePage.includes('/assets/rail-rye-pages.css?v=35'),'Header/footer use actual site stylesheets');
+const normalizedHeader=previewHeader
+ .replace('<a class="heritage-nav-pill" href="/preview/racing-wire-5333548f0ffee31ba519b2470ffb/" aria-current="page">The Racing Wire</a>','')
+ .replace('<a href="/preview/racing-wire-5333548f0ffee31ba519b2470ffb/" aria-current="page">The Racing Wire</a>','')
+ .replace('<a class="heritage-nav-pill" href="/journal/">The Journal</a>', '<a class="heritage-nav-pill" href="/journal/" aria-current="page">The Journal</a>')
+ .replace('<a href="/journal/">The Journal</a>', '<a href="/journal/" aria-current="page">The Journal</a>');
+assert.equal(normalizedHeader,journalHeader,'Header markup exactly matches canonical Journal after removal of preview-only pill');
+assert.ok(!wirePage.includes('<header><div class="header-inner">'),'Custom mock header removed');
+assert.ok(!wirePage.includes('<footer>THE RACING WIRE'),'Short mock footer removed');
+
 assert.ok(!/<img\b[^>]+src=['"]https?:\/\//i.test(wirePage),'No borrowed publisher images');
 const clientJs=wirePage.match(/<script>([\s\S]*?)<\/script>/);
 assert.ok(clientJs,'Preview contains interactive JavaScript');
