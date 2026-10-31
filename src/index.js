@@ -1,5 +1,5 @@
 import { handleCommerce, sendQueuedEmails, checkoutReadiness } from './commerce.js';
-import {handleRacingWire,testPreviewRssFeeds} from './racing-wire.js';
+import {handleRacingWire,handlePreviewRacingWire,testPreviewRssFeeds} from './racing-wire.js';
 import {handleAdminBundles,BUNDLE_KEY} from './bundles.js';
 import {handleAdminBundleAssets} from './bundle-assets.js';
 import {handleAdminJournal,handlePublicJournal,publicJournalCover} from './journal.js';
@@ -236,7 +236,7 @@ export default {
       }
       if(path===previewApi){
         if(request.method!=='GET')return fail('Method not allowed',405);
-        const response=await handleRacingWire(request,env);
+        const response=await handlePreviewRacingWire(request,env);
         const headers=new Headers(response.headers);
         headers.set('Cache-Control','no-store');
         headers.set('X-Robots-Tag','noindex, nofollow, noarchive');
