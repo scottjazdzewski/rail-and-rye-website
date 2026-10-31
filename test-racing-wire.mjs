@@ -103,6 +103,27 @@ assert.ok(!/<img\b[^>]+src=['"]https?:\/\//i.test(wirePage),'No borrowed publish
 const clientJs=wirePage.match(/<script>([\s\S]*?)<\/script>/);
 assert.ok(clientJs,'Preview contains interactive JavaScript');
 new vm.Script(clientJs[1],{filename:'racing-wire-preview.js'});
+// Exercise the actual Worker route with a deliberately bad asset MIME type.
+// Prevent regression to iOS downloading the preview as an attachment.
+const {default:siteWorker}=await import('./src/index.js');
+const livePreviewPath='/preview/racing-wire-5333548f0ffee31ba519b2470ffb/';
+const mockAssets={fetch:async input=>{
+ assert.equal(new URL(input.url).pathname,livePreviewPath);
+ return new Response('<!doctype html><html><body>Rendered preview</body></html>',{
+  status:200,headers:{'Content-Type':'application/octet-stream',
+  'Content-Disposition':'attachment; filename="racing-wire-preview"'}
+ });
+}};
+const html=await siteWorker.fetch(new Request('https://railandryeracing.com'+livePreviewPath),
+  {ASSETS:mockAssets},{});
+assert.equal(html.status,200);
+assert.match(html.headers.get('content-type'),/text\/html/i);
+assert.equal(html.headers.get('content-disposition'),null);
+assert.match(html.headers.get('x-robots-tag'),/noindex/i);
+assert.match(await html.text(),/Rendered preview/);
+assert.equal((await siteWorker.fetch(new Request('https://railandryeracing.com'+livePreviewPath,
+ {method:'HEAD'}),{ASSETS:mockAssets},{})).status,200);
+
 const router=readFileSync(new URL('./src/index.js',import.meta.url),'utf8');
 assert.ok(router.includes("const previewApi='/api/preview/racing-wire-5333548f0ffee31ba519b2470ffb'"),'Only exact unlisted API path exists');
 assert.ok(router.includes("const previewSlug='/preview/racing-wire-5333548f0ffee31ba519b2470ffb/'"),'Only exact unlisted web path exists');
