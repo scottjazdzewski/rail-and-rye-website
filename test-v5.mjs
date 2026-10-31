@@ -5,7 +5,7 @@ import {webcrypto} from 'node:crypto';
 import {handleCommerce,checkoutReadiness} from './src/commerce.js';
 const db=new DatabaseSync(':memory:');
 db.exec(`CREATE TABLE products (id TEXT PRIMARY KEY,title TEXT,slug TEXT,category TEXT,race_date TEXT,track TEXT,description TEXT,price_cents INTEGER,pdf_key TEXT,image_url TEXT,status TEXT,created_at TEXT DEFAULT CURRENT_TIMESTAMP);`);
-for (const file of ['001_stripe_orders.sql','002_email_delivery.sql','003_live_readiness.sql','005_bundle_only_assets.sql']) db.exec(readFileSync('./migrations/'+file,'utf8'));
+for (const file of ['001_stripe_orders.sql','002_email_delivery.sql','003_live_readiness.sql','005_bundle_only_assets.sql','006_seven_day_access.sql']) db.exec(readFileSync('./migrations/'+file,'utf8'));
 const item='ceb80f18-4e0d-4363-8323-0cdbe12d51de';
 db.prepare('INSERT INTO products (id,title,slug,category,race_date,track,description,price_cents,pdf_key,status) VALUES (?,?,?,?,?,?,?,?,?,?)')
  .run(item,'Live Card','test','Race Cards','2026-10-28','Keeneland','Paid item',100,'cards/'+item+'/test.pdf','published');
@@ -48,6 +48,7 @@ async function sig(payload,mode='live'){
 async function event(evt,mode='live'){const body=JSON.stringify(evt);return new Request(root+'/api/stripe/'+(mode==='live'?'live-webhook':'webhook'),{method:'POST',headers:{'Stripe-Signature':await sig(body,mode)},body});}
 const launch=await run(post('/api/checkout',{product_id:item}));assert.equal(launch.status,200);assert.equal((await launch.json()).url,'https://checkout.stripe.com/c/pay/live');assert.equal(stripeCalls,1);
 const pending=db.prepare('SELECT * FROM orders').get();assert.equal(pending.stripe_session_id,sid1);
+assert.equal(pending.access_days,7,'All new purchases get seven-day access');
 const payment={id:sid1,livemode:true,payment_status:'paid',mode:'payment',currency:'usd',amount_subtotal:100,amount_total:100,total_details:{amount_discount:0,amount_tax:0,amount_shipping:0},metadata:{order_id:pending.id},payment_intent:'pi_live_123',customer_details:{email:'buyer@example.org'}};
 const completed={id:'evt_live_1111111111',livemode:true,type:'checkout.session.completed',data:{object:payment}};
 // Signed test endpoint will reject a live event even if signed with test secret.
