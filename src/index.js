@@ -1,4 +1,5 @@
 import { handleCommerce, sendQueuedEmails, checkoutReadiness } from './commerce.js';
+import {handleRacingWire} from './racing-wire.js';
 import {handleAdminBundles,BUNDLE_KEY} from './bundles.js';
 import {handleAdminBundleAssets} from './bundle-assets.js';
 import {handleAdminJournal,handlePublicJournal,publicJournalCover} from './journal.js';
@@ -208,6 +209,17 @@ export default {
             return handleAdminAPI(request,env,'/api/admin/products/'+upload[1]+'/pdf');
           }
           return handleAdminBundleAssets(request,env,path);
+        }
+        if(path==='/api/admin/racing-wire-preview')return handleRacingWire(request,env);
+        if(path==='/admin/racing-wire-preview' || path==='/admin/racing-wire-preview/' || path==='/admin/racing-wire-preview.html'){
+          if(request.method!=='GET'&&request.method!=='HEAD')return fail('Method not allowed',405);
+          const preview=new URL(url);preview.pathname='/admin/racing-wire-preview.html';preview.search='';
+          const result=await env.ASSETS.fetch(new Request(preview.toString(),{method:request.method}));
+          const headers=new Headers(result.headers);
+          headers.set('Cache-Control','private, no-store');headers.set('X-Robots-Tag','noindex, nofollow, noarchive');
+          headers.set('Referrer-Policy','no-referrer');headers.set('X-Frame-Options','DENY');
+          headers.set('Content-Security-Policy',"default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'");
+          return new Response(result.body,{status:result.status,headers});
         }
         if(path.startsWith("/api/admin/articles"))return handleAdminJournal(request,env,path);
         if(path.startsWith("/api/admin/"))return handleAdminAPI(request,env,path);
