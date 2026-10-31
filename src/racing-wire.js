@@ -95,10 +95,12 @@ export function parseRacingRss(xml,feed){
   for(const item of chunks.slice(0,35)){
     const title=field(item,'title').slice(0,240);
     const link=safeUrl(field(item,'link'),feed.host);
+    const section=field(item,'category').slice(0,120);
     const published=field(item,'pubDate')||field(item,'published')||field(item,'updated');
     const dt=new Date(published);
     if(!title||!link||!Number.isFinite(+dt)||dt.getTime()>Date.now()+3600000)continue;
-    results.push({source:feed.name,title,link,published_at:dt.toISOString(),category:categorize(title)});
+    results.push({source:feed.name,title,link,published_at:dt.toISOString(),
+      section,category:categorize(title,section)});
   }
   return results;
 }
@@ -115,7 +117,8 @@ async function fetchPreviewFeed(feed,fetchFn=fetch){
     if(xml.length>MAX_FEED_BYTES)return {feed,items:[],status:response.status,elapsed_ms:Date.now()-started};
     const parsed=parseRacingRss(xml,feed).slice(0,30).map(item=>({
       title:item.title,url:item.link,source:item.source,
-      category:item.category,subject_kind:subjectKind(item.title,item.category),
+      category:item.category,section:item.section||'',
+      subject_kind:subjectKind(item.title,item.category),
       published_at:item.published_at,summary:'',original:false,preview_external:true
     }));
     return {feed,items:parsed,status:response.status,elapsed_ms:Date.now()-started};
@@ -126,7 +129,7 @@ async function fetchPreviewFeed(feed,fetchFn=fetch){
 export async function previewExternalItems(fetchFn=fetch){
   const settled=await Promise.all(PREVIEW_LIVE_FEEDS.map(feed=>fetchPreviewFeed(feed,fetchFn)));
   return {
-    items:groupRacingWireStories(settled.flatMap(x=>x.items)).slice(0,120),
+    items:settled.flatMap(x=>x.items).slice(0,120),
     sources:settled.map(x=>({id:x.feed.id,name:x.feed.name,url:x.feed.url,http_status:x.status,
       parsed_count:x.items.length,elapsed_ms:x.elapsed_ms,error:x.error||null}))
   };
@@ -254,6 +257,66 @@ export function groupRacingWireStories(stories){
  }
  return groups;
 }
+const HARD_REJECT_PATTERNS=[
+ /\bhow to (?:watch|bet|wager|stream)\b/i,
+ /\b(?:tv|television|streaming|broadcast) schedule\b/i,
+ /\bwhere to watch\b/i,
+ /\b(?:picks?|predictions?|best bets?|betting picks?|expert analysis|handicapping|wagering guide|betting guide)\b/i,
+ /\b(?:betting odds?|odds and|favorites? and how to bet|how to bet)\b/i,
+ /\b(?:promo code|bonus bets?|sportsbook|parlay)\b/i,
+ /\bhistory:\s*(?:winners?|losers?|betting|odds)/i
+];
+const MAJOR_EVENT_RE=/\b(breeders.? cup|kentucky derby|preakness|belmont stakes|travers|pegasus world cup|dubai world cup|melbourne cup|prix de l.?arc de triomphe|japan cup|cox plate|eclipse stakes|royal ascot|kentucky oaks)\b/i;
+const GRADED_RE=/\b(group|grade)\s*[123i]+\b|\bG[123]\b/i;
+const MATERIAL_RE=/\b(scratch(?:ed|es)?|withdrawn?|ruled out|injur(?:y|ed)|illness|surgery|colic|retir(?:e|ed|ement)|suspend(?:ed|sion)?|ruling|disqualif(?:ied|ication)|ban(?:ned)?|cancel(?:led|ed)|postpon(?:ed|ement)|stewards?|positive test|appeal)\b/i;
+const RESULT_RE=/\b(wins?|won|victory|triumph|scores?|takes?|captures?|proves best|remains perfect|completes .*timer)\b/i;
+const SALES_RE=/\b(sale|auction|sold for|brings? \$|hammer price|consign(?:ed|ment)|yearling|weanling)\b/i;
+const BREEDING_RE=/\b(stallion|stud fee|retired to stud|breeding|sire|dam|foal|foaled|broodmare|cover(?:ed|ing))\b/i;
+const INDUSTRY_RE=/\b(HISA|HIWU|racing commission|commissioners?|rule change|policy|legislation|licensing|integrity|medication rule)\b/i;
+const MILESTONE_RE=/\b(milestone|hall of fame|career win|career victori(?:es|y)|record[- ]breaking|record setter|\d{3,4}(?:st|nd|rd|th) win|four-timer|five-timer|six-timer|thousand career victories)\b/i;
+const LOW_VALUE_RE=/\b(preview|opinion|podcast|photo gallery|look back|what to know|guide to|attendance|handle|ratings|viewership)\b/i;
+
+export function scoreRacingWireItem(item){
+ const title=String(item?.title||'').trim();
+ const context=(title+' '+String(item?.section||'')+' '+String(item?.category||'')).trim();
+ if(!title)return {score:0,reject:true,reason:'empty'};
+ if(HARD_REJECT_PATTERNS.some(rx=>rx.test(context)))
+   return {score:0,reject:true,reason:'betting-or-service-content'};
+ let score=item?.original?74:42;
+ if(MATERIAL_RE.test(context))score+=34;
+ if(MAJOR_EVENT_RE.test(context))score+=22;
+ if(GRADED_RE.test(context)||/\bstakes\b/i.test(context))score+=12;
+ if(INDUSTRY_RE.test(context))score+=24;
+ if(SALES_RE.test(context))score+=18;
+ if(BREEDING_RE.test(context))score+=18;
+ if(MILESTONE_RE.test(context))score+=24;
+ if(RESULT_RE.test(context))score+=(MAJOR_EVENT_RE.test(context)||GRADED_RE.test(context)||/\bstakes\b/i.test(context))?10:-10;
+ if(/\b(entry|entries|draw|post position|field set|nominations?)\b/i.test(context))score+=MAJOR_EVENT_RE.test(context)?14:3;
+ if(LOW_VALUE_RE.test(context))score-=18;
+ if(/\b(odds?|betting|wager(?:ing)?|picks?)\b/i.test(context))score-=24;
+ if(item?.source==='Thoroughbred Daily News')score+=4;
+ if(item?.source==='US Racing')score-=5;
+ const corroboration=Math.min(10,4*(item?.also_reported_by?.length||0));
+ score+=corroboration;
+ return {score:Math.max(0,Math.min(100,score)),reject:false,reason:'scored'};
+}
+
+export function curateRacingWireStories(stories,{threshold=62,maxItems=24,maxPerSource=4}={}){
+ const grouped=groupRacingWireStories(stories);
+ const accepted=[];
+ const sourceCounts=new Map();
+ for(const item of grouped){
+   const assessment=scoreRacingWireItem(item);
+   if(assessment.reject||assessment.score<threshold)continue;
+   const source=String(item.source||'Unknown');
+   const used=sourceCounts.get(source)||0;
+   if(!item.original&&used>=maxPerSource)continue;
+   sourceCounts.set(source,used+1);
+   accepted.push({...item,editorial_score:assessment.score});
+   if(accepted.length>=maxItems)break;
+ }
+ return accepted;
+}
 export async function handlePreviewRacingWire(request,env,fetchFn=fetch){
   if(request.method!=='GET')return reply({error:'Method not allowed'},405);
   let originals=[];
@@ -269,7 +332,7 @@ export async function handlePreviewRacingWire(request,env,fetchFn=fetch){
     }));
   }catch(e){console.warn('Racing Wire preview journal unavailable',String(e).slice(0,90));}
   const external=await previewExternalItems(fetchFn);
-  const items=groupRacingWireStories([...originals,...external.items]).slice(0,150);
+  const items=curateRacingWireStories([...originals,...external.items],{threshold:62,maxItems:24,maxPerSource:4});
   return reply({
     items,
     source_count:external.sources.filter(x=>x.parsed_count>0).length+(originals.length?1:0),
@@ -309,7 +372,7 @@ export async function handleRacingWire(request,env){
       published_at:a.published_at,original:false,summary:''
     }));
   }catch(e){console.warn('Racing Wire syndicated cache unavailable',String(e).slice(0,90));}
-  const items=groupRacingWireStories([...originals,...syndicated]).slice(0,150);
+  const items=curateRacingWireStories([...originals,...syndicated],{threshold:62,maxItems:24,maxPerSource:4});
   return reply({items,source_count:FEEDS.filter(f=>f.authorized).length,
     social_sources:[],social_policy:'Publisher-authorized RSS; X official embeds; Facebook/Instagram verified official links or embeds',
     headline_only:true,generated_at:new Date().toISOString()});

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
-import {handleRacingWire,handlePreviewRacingWire,previewExternalItems,parseRacingRss,categorize,refreshRacingWire,testPreviewRssFeeds,groupRacingWireStories,subjectKind,socialPreview} from './src/racing-wire.js';
+import {handleRacingWire,handlePreviewRacingWire,previewExternalItems,parseRacingRss,categorize,refreshRacingWire,testPreviewRssFeeds,groupRacingWireStories,curateRacingWireStories,scoreRacingWireItem,subjectKind,socialPreview} from './src/racing-wire.js';
 const db=new DatabaseSync(':memory:');
 db.exec("CREATE TABLE journal_articles (id TEXT PRIMARY KEY,slug TEXT,title TEXT,category TEXT,excerpt TEXT,publish_date TEXT,status TEXT,created_at TEXT);");
 db.prepare("INSERT INTO journal_articles VALUES (?,?,?,?,?,?,?,?)").run(
@@ -36,12 +36,15 @@ assert.equal(categorize('Horse workout reported'),'Race-Day');
 assert.equal(categorize('Yearling sale underway'),'Breeding');
 const feed={name:'Authorized Publisher',host:'publisher.example'};
 const rss='<rss><channel><item><title><![CDATA[Trainer &amp; Jockey updates]]></title>'+
- '<link>https://publisher.example/story/123</link><pubDate>Fri, 30 Oct 2026 12:00:00 GMT</pubDate></item>'+
+ '<link>https://publisher.example/story/123</link><category>Breeders Cup</category><pubDate>Fri, 30 Oct 2026 12:00:00 GMT</pubDate></item>'+
  '<item><title>Bad URL</title><link>https://attacker.example/phishing</link><pubDate>Fri, 30 Oct 2026 12:00:00 GMT</pubDate></item></channel></rss>';
 const items=parseRacingRss(rss,feed);
 assert.equal(items.length,1);
 assert.equal(items[0].title,'Trainer & Jockey updates');
 assert.equal(items[0].link,'https://publisher.example/story/123');
+assert.equal(items[0].section,'Breeders Cup');
+assert.equal(items[0].category,'Jockeys');
+assert.equal(categorize('Championship update','Breeders Cup'),'Stakes');
 assert.equal(parseRacingRss('<!DOCTYPE rss [<!ENTITY pwn SYSTEM "http://evil/">]>'+rss,feed).length,0);
 assert.equal(parseRacingRss('<rss><item><title>Bad</title><link>javascript:alert(1)</link><pubDate>Fri, 30 Oct 2026 12:00:00 GMT</pubDate></item></rss>',feed).length,0);
 
@@ -97,6 +100,7 @@ assert.ok(previewBody.items.some(x=>x.source==='Past The Wire'));
 assert.ok(previewBody.items.some(x=>x.source==="America's Best Racing"));
 assert.ok(previewBody.items.some(x=>x.source==='US Racing'));
 assert.ok(previewBody.items.some(x=>x.source==='Thoroughbred Daily News'));
+assert.ok(previewBody.items.every(x=>x.editorial_score>=62),'Preview emits only editorially relevant items');
 assert.equal((await handlePreviewRacingWire(new Request('https://railandryeracing.com/api/preview/racing-wire-test',{method:'POST'}),env,previewFetch)).status,405);
 
 // Only authorized publisher RSS is eligible for automated site-side ingestion.
@@ -124,6 +128,51 @@ assert.equal(groupRacingWireStories(articles.slice(0,1)).length,1);
 assert.equal(groupRacingWireStories([
  ...articles.slice(0,1),{...articles[1],published_at:'2026-10-28T09:00:00Z'}
 ]).length,2,'Old developments remain separately dated for review');
+
+const irrelevantHeadlines=[
+ 'Breeders Cup Classic 2026: Can Forever Young Win Again? Picks',
+ "How to Watch the 2026 Breeders' Cup Schedule, Date, Field Odds, and Expert Analysis",
+ "Breeders' Cup TV Schedule Today: Post Times, Favorites and How to Bet",
+ "Breeders' Cup Dirt Mile History: Winners, Losers, Betting, Odds"
+];
+for(const title of irrelevantHeadlines){
+ const assessment=scoreRacingWireItem({title,source:'US Racing',published_at:date,category:'Stakes'});
+ assert.equal(assessment.reject,true,'Service/betting content is hard rejected: '+title);
+}
+assert.ok(scoreRacingWireItem({
+ title:'Defiantly Rules Out Of Melbourne Cup; Kizlyar Draws In',source:'Thoroughbred Daily News',
+ category:'Stakes',published_at:date
+}).score>=80,'Material major-race availability news ranks highly');
+assert.ok(scoreRacingWireItem({
+ title:"Breeders' Cup 2026 Scratches: Magnitude, Splendora Out",source:'US Racing',
+ category:'Stakes',published_at:date
+}).score>=80,'Major-race scratches rank highly');
+assert.ok(scoreRacingWireItem({
+ title:'Sun Goddess Completes Group 1 Four-Timer on Breeders Cup Friday for Record-Breaking O’Brien',
+ source:'Thoroughbred Daily News',category:'Stakes',published_at:date
+}).score>=70,'Major result/achievement remains relevant');
+assert.ok(scoreRacingWireItem({
+ title:'Attendance Up, Handle Down On Future Stars Friday',source:'Thoroughbred Daily News',
+ category:'Industry',published_at:date
+}).score<62,'Routine attendance/handle story stays below feed threshold');
+
+const floodTitles=[
+ 'Horse A scratched from Breeders Cup Classic',
+ 'Horse B injured before Breeders Cup Turf',
+ 'Champion Stallion C retires to stud',
+ 'Fasig Tipton yearling sells for $2 million at auction',
+ 'Trainer D suspended by racing commission',
+ 'Breeders Cup Distaff field set with post positions',
+ 'Jockey F earns 5000th career victory'
+];
+const sourceFlood=floodTitles.map((title,i)=>({
+ title,url:'https://flood.example/'+i,source:'Flood Publisher',
+ subject_kind:subjectKind(title),category:categorize(title),
+ published_at:new Date(Date.parse(date)-i*60000).toISOString()
+}));
+assert.equal(curateRacingWireStories(sourceFlood,{threshold:62,maxItems:24,maxPerSource:4}).length,4,
+ 'Per-source cap prevents one publisher from dominating the wire');
+
 const backend=readFileSync(new URL('./src/racing-wire.js',import.meta.url),'utf8');
 assert.ok(!backend.includes('bsky.app')&&!backend.includes('Bluesky')&&!backend.includes('publicSocialItems'),
  'No Blue Sky API or network calls exist in production scorer');
@@ -185,7 +234,7 @@ assert.ok(wirePage.includes('.item .emblem{width:88px;height:88px'),
  'News-card badges are enlarged on desktop');
 assert.ok(!wirePage.includes('const shapes={')&&!wirePage.includes("el.innerHTML='<svg"),
  'Temporary inline SVG badge system is completely removed');
-assert.ok(wirePage.includes("/assets/approved/racing-wire/badges/'+safe+'.png?v=4"),
+assert.ok(wirePage.includes("/assets/approved/racing-wire/badges/'+safe+'.png?v=5"),
  'Approved individual proof badges are the only runtime badge artwork source');
 assert.ok(!wirePage.includes('badges.webp')&&!wirePage.includes('.badge-horse{background-position')&&!wirePage.includes('.badge-achievement{background-position'),
  'Old badge sprite and badge-specific sprite-position rules are removed');
@@ -194,6 +243,9 @@ for(const badge of ['horse','jockey','trainer','owner','stable','race','racetrac
  assert.equal(badgeAsset.subarray(0,8).toString('hex'),'89504e470d0a1a0a','Approved '+badge+' badge is a real PNG');
  assert.ok(badgeAsset.length>1000,'Approved '+badge+' badge is not truncated');
 }
+const breedingBadge=readFileSync(new URL('./public/assets/approved/racing-wire/badges/breeding.png',import.meta.url));
+assert.ok(breedingBadge.length>10000,'Breeding DNA badge is the full approved artwork, not a tiny placeholder');
+assert.ok(wirePage.includes("badges/'+safe+'.png?v=5"),'Badge cache version refreshed for DNA breeding badge');
 assert.ok(wirePage.includes('.more[hidden]{display:none!important}'),
  'Load-more cannot appear when there are zero verified stories');
 
