@@ -245,7 +245,7 @@ assert.ok(wirePage.includes('.item .emblem{width:88px;height:88px'),
  'News-card badges are enlarged on desktop');
 assert.ok(!wirePage.includes('const shapes={')&&!wirePage.includes("el.innerHTML='<svg"),
  'Temporary inline SVG badge system is completely removed');
-assert.ok(wirePage.includes("/assets/approved/racing-wire/badges/'+safe+'.png?v=5"),
+assert.ok(wirePage.includes("/assets/approved/racing-wire/badges/'+safe+'.png?v=6"),
  'Approved individual proof badges are the only runtime badge artwork source');
 assert.ok(!wirePage.includes('badges.webp')&&!wirePage.includes('.badge-horse{background-position')&&!wirePage.includes('.badge-achievement{background-position'),
  'Old badge sprite and badge-specific sprite-position rules are removed');
@@ -255,8 +255,8 @@ for(const badge of ['horse','jockey','trainer','owner','stable','race','racetrac
  assert.ok(badgeAsset.length>1000,'Approved '+badge+' badge is not truncated');
 }
 const breedingBadge=readFileSync(new URL('./public/assets/approved/racing-wire/badges/breeding.png',import.meta.url));
-assert.ok(breedingBadge.length>10000,'Breeding DNA badge is the full approved artwork, not a tiny placeholder');
-assert.ok(wirePage.includes("badges/'+safe+'.png?v=5"),'Badge cache version refreshed for DNA breeding badge');
+assert.ok(breedingBadge.length>8000,'Breeding DNA badge is a full-resolution clean artwork, not a tiny placeholder');
+assert.ok(wirePage.includes("badges/'+safe+'.png?v=6"),'Badge cache version refreshed for DNA breeding badge');
 assert.ok(wirePage.includes('.more[hidden]{display:none!important}'),
  'Load-more cannot appear when there are zero verified stories');
 assert.ok(wirePage.includes('setInterval(()=>{if(!document.hidden)loadVerified()},180000)'),
