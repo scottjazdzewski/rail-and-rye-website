@@ -36,15 +36,13 @@ a{color:inherit}button,input,select{font:inherit}button{cursor:pointer}
 .subject-strip{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:12px;padding:5px 0 24px}
 .subject-option{display:flex;flex-direction:column;align-items:center;gap:8px;border:0;background:transparent;padding:0;min-width:0;color:var(--ink)}
 .subject-option:hover .emblem,.subject-option[aria-pressed="true"] .emblem{box-shadow:0 0 0 4px #f4e9d6,0 0 0 6px #c29754}
-.emblem{display:block;flex:none;width:61px;height:61px;border:0;border-radius:50%;background-image:url('/assets/approved/racing-wire/badges.webp?v=3');background-repeat:no-repeat;background-size:400% 300%;box-shadow:none}
-.badge-horse{background-position:0 0}.badge-jockey{background-position:33.333% 0}.badge-trainer{background-position:66.667% 0}.badge-owner{background-position:100% 0}
-.badge-stable{background-position:0 50%}.badge-race{background-position:33.333% 50%}.badge-racetrack{background-position:66.667% 50%}.badge-breeding{background-position:100% 50%}
-.badge-sale{background-position:0 100%}.badge-industry{background-position:33.333% 100%}.badge-regulatory{background-position:66.667% 100%}.badge-achievement{background-position:100% 100%}
+.emblem{display:block;flex:none;width:61px;height:61px;border:0;border-radius:50%;background:transparent;box-shadow:none;overflow:visible}
+.emblem img{display:block;width:100%;height:100%;object-fit:contain}
 .subject-name{font:700 10px/1.25 Georgia,serif;text-align:center;white-space:normal;max-width:100%}
 .controls{display:flex;gap:11px;flex-wrap:wrap;align-items:center;margin:4px 0 26px}
 .searchbox{flex:1 1 350px;border:1px solid #ded7ca;border-radius:25px;background:#fff;padding:12px 18px;color:var(--ink);min-width:200px}
 .select,.pill,.mode{border:1px solid #d7cbb7;background:#fff;color:#1e3952;border-radius:25px;padding:11px 16px;font:700 12px/1.15 system-ui,sans-serif}
-.workspace{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:23px;align-items:start}
+.workspace{display:block}
 .section-head{display:flex;gap:12px;justify-content:space-between;align-items:center;border-bottom:1px solid #d7b37b;margin-bottom:10px;padding-bottom:12px}
 .section-head h2{margin:0;font:650 20px/1.2 Georgia,serif;letter-spacing:.14em}
 .subtle{font:11px/1.4 system-ui,sans-serif;color:#708092}
@@ -60,29 +58,13 @@ a{color:inherit}button,input,select{font:inherit}button{cursor:pointer}
 .type-pill[data-kind="Entry"]{background:#1974ad;color:#fff}.type-pill[data-kind="Achievement"]{background:#bb8540;color:#fff}
 .type-pill[data-kind="Sale"]{background:#7763a7;color:#fff}.type-pill[data-kind="Health"]{background:#a72e3c;color:#fff}
 .type-pill[data-kind="Barn Change"]{background:#546179;color:#fff}
-.sidebar{display:grid;gap:14px}.side{border:1px solid #e9e2d7;background:#fff;border-radius:12px;padding:19px 17px}
-.side h3{display:flex;align-items:center;gap:8px;margin:0 0 12px;font:650 16px Georgia,serif;letter-spacing:.12em}
-.side p{margin:0 0 13px;color:#53667a;font-size:13px;line-height:1.55}
-.side a{display:flex;justify-content:space-between;gap:9px;border-top:1px solid #ede8df;padding:12px 0;text-decoration:none;font:13px/1.3 Georgia,serif;color:#204263}
-.side a:hover{text-decoration:underline}.list-note{font:11px/1.5 system-ui,sans-serif;color:#84919f}
-.rrw-stakes-card{padding:20px 18px 16px}
-.rrw-stakes-intro{margin-bottom:12px!important}
-.rrw-stakes-list{display:grid;gap:0;border-top:1px solid #e7dfd2}
-.side .rrw-stake-row{display:grid;grid-template-columns:52px minmax(0,1fr) 16px;align-items:center;gap:10px;padding:13px 0;border-top:0;border-bottom:1px solid #eee8df;text-decoration:none}
-.side .rrw-stake-row:hover strong{text-decoration:underline;text-underline-offset:3px}
-.rrw-stake-date{display:inline-flex;align-items:center;justify-content:center;min-height:34px;border-radius:8px;background:#0b2c49;color:#f0d29e;font:800 10px/1 system-ui,sans-serif;letter-spacing:.05em}
-.rrw-stake-copy{min-width:0}.rrw-stake-copy strong{display:block;color:#183750;font:650 14px/1.25 Georgia,serif}
-.rrw-stake-copy small{display:block;margin-top:4px;color:#6b7987;font:11px/1.35 system-ui,sans-serif}
-.rrw-stake-arrow{color:#a67839;font-size:16px;text-align:right}
-.rrw-stakes-foot{padding-top:11px;color:#83909c;font:10px/1.45 system-ui,sans-serif}
-
 .info{padding:25px;text-align:center;border:1px dashed #cdbf9e;border-radius:12px;background:#fff;color:#637184;line-height:1.8}
 .more{display:block;margin:19px auto 0;padding:12px 22px;border:1px solid #c9a067;background:#fff;border-radius:6px;color:#173b58;font-weight:700}.more[hidden]{display:none!important}
 .rrw-rss-test{margin:-12px 0 24px;padding:14px 16px;border:1px solid #d8c7aa;border-radius:10px;background:#fff9ee;color:#344b60;font:12px/1.55 system-ui,sans-serif}
 .rrw-rss-test strong{color:#153b58}.rrw-rss-test .ok{color:#23694f;font-weight:800}.rrw-rss-test .bad{color:#9b3f3b;font-weight:800}
 @media(max-width:1160px){.subject-strip{grid-template-columns:repeat(6,1fr)}}
-@media(max-width:800px){.rrw-hero-image{object-position:58% center}.workspace{grid-template-columns:1fr}.sidebar{grid-template-columns:repeat(2,minmax(0,1fr))}.hero{background-position:58% center}.hero-inner{min-height:430px;padding:48px 20px}.hero-copy{max-width:650px}.wrap{padding:22px 15px 60px}}
-@media(max-width:560px){.sidebar{grid-template-columns:1fr}.subject-strip{grid-template-columns:repeat(4,minmax(0,1fr));row-gap:16px}.emblem{width:50px;height:50px}.emblem svg{width:29px;height:29px}.item{grid-template-columns:70px minmax(0,1fr);gap:13px;padding:15px}.item .emblem{width:66px;height:66px}.type-pill{grid-column:2;justify-self:start}.item h3{font-size:17px}.hero-inner{min-height:430px;padding:44px 18px}.rrw-preview-page .hero .rr-page-title{font-size:clamp(43px,11vw,60px)}}
+@media(max-width:800px){.rrw-hero-image{object-position:58% center}.hero-inner{min-height:430px;padding:48px 20px}.hero-copy{max-width:650px}.wrap{padding:22px 15px 60px}}
+@media(max-width:560px){.subject-strip{grid-template-columns:repeat(4,minmax(0,1fr));row-gap:16px}.emblem{width:50px;height:50px}.item{grid-template-columns:70px minmax(0,1fr);gap:13px;padding:15px}.item .emblem{width:66px;height:66px}.type-pill{grid-column:2;justify-self:start}.item h3{font-size:17px}.hero-inner{min-height:430px;padding:44px 18px}.rrw-preview-page .hero .rr-page-title{font-size:clamp(43px,11vw,60px)}}
 </style></head>
 <body class="heritage-home heritage-inner-page rrw-preview-page">
 
@@ -117,27 +99,7 @@ a{color:inherit}button,input,select{font:inherit}button{cursor:pointer}
 <section aria-labelledby="feedHeading"><div class="section-head"><h2 id="feedHeading">LATEST NEWS</h2><span class="subtle" id="count">Loading verified updates…</span></div>
 <div id="feed" class="feed-list" aria-live="polite"></div>
 <button id="more" class="more" type="button" hidden>Load more news</button></section>
-<aside class="sidebar" aria-label="Upcoming stakes races">
-<section class="side rrw-stakes-card">
-<h3>UPCOMING STAKES</h3>
-<p class="rrw-stakes-intro">A quick look at notable stakes coming up next. Preview schedule verified from official Equibase entries.</p>
-<div class="rrw-stakes-list">
-<a class="rrw-stake-row" href="https://tvg.equibase.com/static/entry/SA110126USA4-EQB.html" target="_blank" rel="noopener noreferrer">
- <span class="rrw-stake-date">NOV 1</span><span class="rrw-stake-copy"><strong>Twilight Derby (GII)</strong><small>Santa Anita · $200K · 1:30 PM PT</small></span><span class="rrw-stake-arrow">↗</span>
-</a>
-<a class="rrw-stake-row" href="https://tvg.equibase.com/static/entry/BEL110126USA8-EQB.html" target="_blank" rel="noopener noreferrer">
- <span class="rrw-stake-date">NOV 1</span><span class="rrw-stake-copy"><strong>Turnback the Alarm S.</strong><small>Belmont · $175K · 2:53 PM ET</small></span><span class="rrw-stake-arrow">↗</span>
-</a>
-<a class="rrw-stake-row" href="https://tvg.equibase.com/static/entry/BEL110126USA9-EQB.html" target="_blank" rel="noopener noreferrer">
- <span class="rrw-stake-date">NOV 1</span><span class="rrw-stake-copy"><strong>Forty Niner S. (GIII)</strong><small>Belmont · $200K · 3:22 PM ET</small></span><span class="rrw-stake-arrow">↗</span>
-</a>
-<a class="rrw-stake-row" href="https://tvg.equibase.com/static/entry/BEL110126USA10-EQB.html" target="_blank" rel="noopener noreferrer">
- <span class="rrw-stake-date">NOV 1</span><span class="rrw-stake-copy"><strong>Casa Creed S.</strong><small>Belmont · $175K · 3:51 PM ET</small></span><span class="rrw-stake-arrow">↗</span>
-</a>
-</div>
-<div class="rrw-stakes-foot">Preview only · final version will use a permitted schedule source and automatically remove completed races.</div>
-</section>
-</aside></div></main>
+</div></main>
 <footer class="heritage-footer"><div class="heritage-shell heritage-footer-inner"><span class="heritage-footmark">RAIL &amp; RYE</span><nav aria-label="Footer"><a href="/store/">Publications</a><a href="/journal/">Journal</a><a href="mailto:support@railandryeracing.com">Support</a><a href="/policies/refunds.html">Refunds</a><a href="/policies/terms.html">Terms</a><a href="/policies/privacy.html">Privacy</a></nav><small>Independent research. No guarantees.</small><span class="rr-social-links" role="group" aria-label="Rail and Rye social media"><a class="rr-social-icon" href="https://www.facebook.com/share/1A41v513oT/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer" aria-label="Rail and Rye on Facebook" title="Facebook"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M15.25 4H12.5C9.4 4 8 5.9 8 8.7V11H5v3.5h3V22h3.7v-7.5h3.1l.5-3.5h-3.6V9c0-.95.25-1.5 1.7-1.5h1.85V4z"/></svg></a><a class="rr-social-icon" href="https://www.instagram.com/rail_and_rye/" target="_blank" rel="noopener noreferrer" aria-label="Rail and Rye on Instagram" title="Instagram"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="2.5" width="19" height="19" rx="5.5"/><circle cx="12" cy="12" r="4.3"/><circle cx="17.6" cy="6.5" r=".9" fill="currentColor" stroke="none"/></svg></a><a class="rr-social-icon" href="https://x.com/Rail_Rye" target="_blank" rel="noopener noreferrer" aria-label="Rail and Rye on X" title="X"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M18.901 1.154h3.68l-8.04 9.19L24 22.846h-7.406l-5.801-7.584-6.64 7.584H.47l8.6-9.83L0 1.154h7.594l5.243 6.933 6.064-6.933zm-1.29 19.49h2.04L6.486 3.24H4.298l13.314 17.404z"/></svg></a></span></div></footer>
 <script>
 (()=>{'use strict';
@@ -150,8 +112,14 @@ const badgeKinds=new Set(['horse','jockey','trainer','owner','stable','race','ra
 function icon(kind){
  const safe=badgeKinds.has(kind)?kind:'industry';
  const el=document.createElement('span');
- el.className='emblem badge-'+safe;
+ el.className='emblem';
  el.setAttribute('aria-hidden','true');
+ const img=document.createElement('img');
+ img.src='/assets/approved/racing-wire/badges/'+safe+'.png?v=4';
+ img.alt='';
+ img.width=96;img.height=96;
+ img.decoding='async';
+ el.append(img);
  return el;
 }
 function labelTime(iso){

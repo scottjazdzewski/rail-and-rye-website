@@ -116,9 +116,10 @@ assert.ok(!wirePage.includes('bsky.app'),'Preview contains no Blue Sky source li
 assert.ok(wirePage.includes('Also reported by:'),'UI offers linked alternate sources when one event has several reports');
 assert.ok(!wirePage.includes('TRENDING TOPICS'),'Trending Topics sidebar removed');
 assert.ok(!wirePage.includes('NEWS SOURCE DESK'),'Source directory sidebar removed');
-assert.ok(wirePage.includes('UPCOMING STAKES'),'Upcoming Stakes sidebar present');
-assert.equal((wirePage.match(/class="rrw-stake-row"/g)||[]).length,4,'Preview shows four verified upcoming stakes');
-assert.ok(wirePage.includes('Twilight Derby (GII)')&&wirePage.includes('Forty Niner S. (GIII)'),'Verified graded stakes shown');
+assert.ok(!wirePage.includes('UPCOMING STAKES')&&!wirePage.includes('rrw-stake-row'),
+ 'Upcoming Stakes block is removed from the Racing Wire news page');
+assert.ok(wirePage.includes('.workspace{display:block}'),
+ 'News feed uses the full content width after sidebar removal');
 assert.ok(wirePage.includes('UNLISTED DESIGN PREVIEW'),'Page is clearly labeled as unlisted');
 assert.ok(!wirePage.includes('const samples=[')&&!wirePage.includes('DEMO ONLY')&&!wirePage.includes('not a real report')&&!wirePage.includes('Example:'),
  'All fake/demo stories are permanently removed from the preview code');
@@ -149,14 +150,15 @@ assert.ok(wirePage.includes('.item .emblem{width:88px;height:88px'),
  'News-card badges are enlarged on desktop');
 assert.ok(!wirePage.includes('const shapes={')&&!wirePage.includes("el.innerHTML='<svg"),
  'Temporary inline SVG badge system is completely removed');
-assert.ok(wirePage.includes("/assets/approved/racing-wire/badges.webp?v=3")&&
- wirePage.includes('.badge-horse{background-position:0 0}')&&
- wirePage.includes('.badge-achievement{background-position:100% 100%}'),
- 'Approved proof-set badge sprite is the only badge artwork source');
-const badgeAsset=readFileSync(new URL('./public/assets/approved/racing-wire/badges.webp',import.meta.url));
-assert.equal(badgeAsset.subarray(0,4).toString(),'RIFF','Badge sprite has valid RIFF header');
-assert.equal(badgeAsset.subarray(8,12).toString(),'WEBP','Badge sprite is a real WebP');
-assert.ok(badgeAsset.length>20000,'Badge proof sprite is not truncated');
+assert.ok(wirePage.includes("/assets/approved/racing-wire/badges/'+safe+'.png?v=4"),
+ 'Approved individual proof badges are the only runtime badge artwork source');
+assert.ok(!wirePage.includes('badges.webp')&&!wirePage.includes('.badge-horse{background-position')&&!wirePage.includes('.badge-achievement{background-position'),
+ 'Old badge sprite and badge-specific sprite-position rules are removed');
+for(const badge of ['horse','jockey','trainer','owner','stable','race','racetrack','breeding','sale','industry','regulatory','achievement']){
+ const badgeAsset=readFileSync(new URL('./public/assets/approved/racing-wire/badges/'+badge+'.png',import.meta.url));
+ assert.equal(badgeAsset.subarray(0,8).toString('hex'),'89504e470d0a1a0a','Approved '+badge+' badge is a real PNG');
+ assert.ok(badgeAsset.length>1000,'Approved '+badge+' badge is not truncated');
+}
 assert.ok(wirePage.includes('.more[hidden]{display:none!important}'),
  'Load-more cannot appear when there are zero verified stories');
 
