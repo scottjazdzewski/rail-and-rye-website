@@ -53,8 +53,11 @@ export function categorize(title,category=''){
   if(/jockey|rider|apprentice|irad ortiz|prat\b/.test(s))return 'Jockeys';
   if(/trainer|barn|stable|assistant trainer/.test(s))return 'Trainers';
   if(/scratch|entry|entries|post position|racing secretary|stewards|workout|track condition|race day/.test(s))return 'Race-Day';
-  if(/breeding|stallion|sire|foal|stud fee|yearling|mare|auction|sale|keeneland november|fasig.tipton/.test(s))return 'Breeding';
-  if(/stakes|derby|breeders.? cup|grade [i123]|\bg[123]\b|classic|preakness|belmont stakes/.test(s))return 'Stakes';
+  // Race/event language must win before breeding terms. Race names such as
+  // "Breeders' Cup Filly & Mare Sprint" contain words like mare/breeders but
+  // are race coverage, not breeding news.
+  if(/stakes|derby|breeders.? cup|grade [i123]|\bg[123]\b|classic|preakness|belmont stakes|distaff|juvenile|sprint|turf mile|turf sprint/.test(s))return 'Stakes';
+  if(/breeding|stallion|sire|foal|stud fee|yearling|broodmare|mare bred|in foal|auction|sale|keeneland november|fasig.tipton/.test(s))return 'Breeding';
   if(/retire|horse|filly|colt|gelding|champion|injur/.test(s))return 'Horses';
   return 'Industry';
 }
