@@ -47,7 +47,7 @@ assert.equal(parseRacingRss('<rss><item><title>Bad</title><link>javascript:alert
 
 const diagnosticRss='<rss><channel><item><title>Real feed parser test</title>'+
  '<link>https://www.thoroughbreddailynews.com/story/example/</link>'+
- '<pubDate>Sat, 31 Oct 2026 12:00:00 GMT</pubDate></item></channel></rss>';
+ '<pubDate>Fri, 30 Oct 2026 12:00:00 GMT</pubDate></item></channel></rss>';
 let diagnosticFetches=0;
 const diagnostic=await testPreviewRssFeeds(async url=>{
  diagnosticFetches++;
@@ -59,7 +59,7 @@ assert.equal(diagnosticFetches,2,'Both real TDN RSS endpoints are exercised by d
 assert.equal(diagnostic.diagnostic_only,true);
 assert.equal(diagnostic.results.length,2);
 assert.ok(diagnostic.results.every(x=>x.reachable&&x.http_status===200&&x.parsed_count===1));
-assert.ok(diagnostic.results.every(x=>x.newest_published_at==='2026-10-31T12:00:00.000Z'));
+assert.ok(diagnostic.results.every(x=>x.newest_published_at==='2026-10-30T12:00:00.000Z'));
 assert.ok(diagnostic.results.every(x=>!('title' in x)&&!('items' in x)),
  'Diagnostic reports connectivity/counts only and does not republish third-party headlines');
 
