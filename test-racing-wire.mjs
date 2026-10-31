@@ -88,7 +88,7 @@ assert.ok(preview.summary.includes('workout'));
 assert.ok(!preview.summary.includes('imagined'));
 assert.equal(socialPreview('Short original post').title,'Short original post');
 assert.equal(socialPreview('Short original post').summary,'');
-const wirePage=readFileSync(new URL('./public/admin/racing-wire-preview.html',import.meta.url),'utf8');
+const wirePage=readFileSync(new URL('./public/preview/racing-wire-5333548f0ffee31ba519b2470ffb/index.html',import.meta.url),'utf8');
 for(const type of ['horse','owner','trainer','jockey','race','stable','racetrack','breeding','sale','regulatory','achievement','industry']){
  assert.ok(wirePage.includes(type+':'), 'Original subject pictogram exists: '+type);
  assert.ok(wirePage.includes("'"+type+"'"), 'Subject filter configured: '+type);
@@ -107,6 +107,11 @@ const router=readFileSync(new URL('./src/index.js',import.meta.url),'utf8');
 assert.ok(router.includes("const previewApi='/api/preview/racing-wire-5333548f0ffee31ba519b2470ffb'"),'Only exact unlisted API path exists');
 assert.ok(router.includes("const previewSlug='/preview/racing-wire-5333548f0ffee31ba519b2470ffb/'"),'Only exact unlisted web path exists');
 assert.ok(router.includes('X-Robots-Tag'),'Preview responses disable search indexing');
+assert.ok(router.includes("headers.set('Content-Type','text/html; charset=utf-8')"),'Preview is served explicitly as HTML, never as a PDF/download');
+assert.ok(router.includes("assetUrl.pathname=previewSlug"),'Preview is resolved using its real index.html folder');
+assert.ok(!router.includes("preview.pathname='/admin/racing-wire-preview.html'"),'No legacy admin-asset redirect which can break mobile');
+assert.ok(router.includes("headers.delete('Content-Disposition')"),'No attachment download header');
+
 assert.ok(router.includes("headers.set('Referrer-Policy','no-referrer')"),'Preview URL not sent as HTTP referrer');
 assert.ok(!router.includes("if(path==='/api/admin/racing-wire-preview')"),'No unnecessary admin API alias');
 assert.ok(!router.includes('if(path==="/api/racing-wire")'),'No public news endpoint');
