@@ -225,10 +225,10 @@ assert.ok(wirePage.includes("/api/preview/racing-wire-5333548f0ffee31ba519b2470f
 assert.ok(wirePage.includes('rail-rye-ivory-logo.png'),'Owner-approved Rail & Rye branding reused');
 
 assert.ok(wirePage.includes('/assets/approved/saddlecloths/8.png'),'Racing Wire is numbered Page 8');
-assert.ok(wirePage.includes('class="rrw-hero-image"')&&wirePage.includes('/assets/approved/racing-wire/hero-race.webp?v=3'),
- 'Owner-edited racing artwork is a real versioned hero img element');
-assert.ok(!wirePage.includes("url('/assets/approved/racing-wire/hero-race.webp')"),
- 'No legacy CSS background competes with the hero image layer');
+assert.ok(wirePage.includes("background-image:url('/assets/approved/racing-wire/hero-race.webp?v=4')"),
+ 'Racing Wire hero uses the same background-image rendering mechanism as the Journal');
+assert.ok(!wirePage.includes('rrw-hero-media')&&!wirePage.includes('rrw-hero-image'),
+ 'No separate hero media layer competes with the shared production hero');
 const heroAsset=readFileSync(new URL('./public/assets/approved/racing-wire/hero-race.webp',import.meta.url));
 assert.equal(heroAsset.subarray(0,4).toString(),'RIFF','Hero asset has valid RIFF header');
 assert.equal(heroAsset.subarray(8,12).toString(),'WEBP','Hero asset is a real WebP');
@@ -241,11 +241,10 @@ assert.ok(wirePage.includes('class="heritage-inner-hero rrw-wire-hero"')&&wirePa
  'Racing Wire uses the exact shared production inner-hero frame and intro layout');
 assert.ok(!wirePage.includes('rr-single-screen-hero'),
  'Racing Wire does not use the single-screen flex mode that collapses when a live feed is present');
-assert.ok(wirePage.includes('min-height:var(--rr-shared-photo-hero-height,600px)'),
- 'Racing Wire uses the shared production photo-hero height without collapsing');
-assert.ok(wirePage.includes('.rrw-wire-hero .rrw-hero-media{position:absolute;inset:0;z-index:0')&&
- wirePage.includes('.rrw-wire-hero:before{z-index:1}'),
- 'Hero image and shared production overlay use visible non-negative stacking layers');
+assert.ok(!wirePage.includes('rrw-hero-media')&&!wirePage.includes('rrw-hero-image')&&!wirePage.includes('rrw-wire-hero:before{z-index'),
+ 'Racing Wire has no custom media/overlay stacking path');
+assert.ok(!wirePage.includes('min-height:var(--rr-shared-photo-hero-height,600px)'),
+ 'Shared stylesheet, not page-local CSS, owns hero height');
 assert.ok(!wirePage.includes('rrw-masthead')&&!wirePage.includes('class="hero"')&&!wirePage.includes('hero-inner')&&!wirePage.includes('rrw-hero-shade'),
  'Old custom masthead, hero frame and competing overlay are completely removed');
 assert.ok(wirePage.indexOf('<header class="heritage-header">')>wirePage.indexOf('class="heritage-inner-hero rrw-wire-hero"'),
