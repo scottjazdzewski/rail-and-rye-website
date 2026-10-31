@@ -156,9 +156,18 @@ assert.ok(scoreRacingWireItem({
  category:'Industry',published_at:date
 }).score<62,'Routine attendance/handle story stays below feed threshold');
 
-const sourceFlood=Array.from({length:7},(_,i)=>({
- title:'Horse '+i+' scratched from Breeders Cup Classic',url:'https://flood.example/'+i,
- source:'Flood Publisher',subject_kind:'race',category:'Stakes',
+const floodTitles=[
+ 'Horse A scratched from Breeders Cup Classic',
+ 'Horse B injured before Breeders Cup Turf',
+ 'Champion Stallion C retires to stud',
+ 'Fasig Tipton yearling sells for $2 million at auction',
+ 'Trainer D suspended by racing commission',
+ 'Breeders Cup Distaff field set with post positions',
+ 'Jockey F earns 5000th career victory'
+];
+const sourceFlood=floodTitles.map((title,i)=>({
+ title,url:'https://flood.example/'+i,source:'Flood Publisher',
+ subject_kind:subjectKind(title),category:categorize(title),
  published_at:new Date(Date.parse(date)-i*60000).toISOString()
 }));
 assert.equal(curateRacingWireStories(sourceFlood,{threshold:62,maxItems:24,maxPerSource:4}).length,4,
