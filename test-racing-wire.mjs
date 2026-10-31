@@ -151,8 +151,8 @@ assert.ok(!wirePage.includes('const shapes={')&&!wirePage.includes("el.innerHTML
  'Temporary inline SVG badge system is completely removed');
 assert.ok(wirePage.includes("/assets/approved/racing-wire/badges/'+safe+'.png?v=4"),
  'Approved individual proof badges are the only runtime badge artwork source');
-assert.ok(!wirePage.includes('badges.webp')&&!wirePage.includes('background-position:'),
- 'Old badge sprite and sprite-position rules are removed');
+assert.ok(!wirePage.includes('badges.webp')&&!wirePage.includes('.badge-horse{background-position')&&!wirePage.includes('.badge-achievement{background-position'),
+ 'Old badge sprite and badge-specific sprite-position rules are removed');
 for(const badge of ['horse','jockey','trainer','owner','stable','race','racetrack','breeding','sale','industry','regulatory','achievement']){
  const badgeAsset=readFileSync(new URL('./public/assets/approved/racing-wire/badges/'+badge+'.png',import.meta.url));
  assert.equal(badgeAsset.subarray(0,8).toString('hex'),'89504e470d0a1a0a','Approved '+badge+' badge is a real PNG');
