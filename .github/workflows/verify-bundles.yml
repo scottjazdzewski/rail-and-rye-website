@@ -21,3 +21,5 @@ jobs:
         run: node --experimental-sqlite test-v5.mjs
       - name: Bundle purchases, download protection and refund tests
         run: node --experimental-sqlite test-bundles.mjs
+      - name: Free public PDF without exposing paid or bundle-only files
+        run: node --experimental-sqlite test-free-downloads.mjs
