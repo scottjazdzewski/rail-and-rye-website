@@ -20,13 +20,13 @@ a{color:inherit}button,input,select{font:inherit}button{cursor:pointer}
  .rrw-preview-page .heritage-nav a{padding-inline:10px}
  .rrw-preview-page .heritage-strap{font-size:clamp(10px,1vw,14px)}
 }
-.hero{position:relative;overflow:hidden;color:#fff;
- background:
-  linear-gradient(90deg,rgba(4,20,34,.93) 0%,rgba(4,20,34,.80) 34%,rgba(4,20,34,.38) 62%,rgba(4,20,34,.16) 100%),
-  url('/assets/approved/racing-wire/hero-race.webp') center 48%/cover no-repeat;
- border-bottom:1px solid rgba(210,168,99,.75)}
-.hero-inner{max-width:1510px;margin:auto;min-height:370px;display:flex;align-items:center;padding:42px 28px;position:relative}
-.hero-copy{max-width:760px;z-index:2}
+.hero{position:relative;overflow:hidden;color:#fff;background:#071e35;border-bottom:1px solid rgba(210,168,99,.75)}
+.rrw-hero-media,.rrw-hero-shade{position:absolute;inset:0;pointer-events:none}
+.rrw-hero-media{z-index:0}
+.rrw-hero-image{display:block;width:100%;height:100%;object-fit:cover;object-position:center 48%}
+.rrw-hero-shade{z-index:1;background:linear-gradient(90deg,rgba(4,20,34,.94) 0%,rgba(4,20,34,.82) 34%,rgba(4,20,34,.40) 63%,rgba(4,20,34,.15) 100%)}
+.hero-inner{max-width:1510px;margin:auto;min-height:370px;display:flex;align-items:center;padding:42px 28px;position:relative;z-index:2}
+.hero-copy{max-width:760px;position:relative;z-index:3}
 .rrw-preview-page .hero .rr-page-title{max-width:760px}
 .rrw-preview-page .hero .rr-page-description{max-width:560px}
 .wrap{max-width:1500px;margin:auto;padding:24px 24px 90px}
@@ -37,20 +37,18 @@ a{color:inherit}button,input,select{font:inherit}button{cursor:pointer}
 .subject-option{display:flex;flex-direction:column;align-items:center;gap:8px;border:0;background:transparent;padding:0;min-width:0;color:var(--ink)}
 .subject-option:hover .emblem,.subject-option[aria-pressed="true"] .emblem{box-shadow:0 0 0 4px #f4e9d6,0 0 0 6px #c29754}
 .emblem{border-radius:50%;width:61px;height:61px;background:linear-gradient(140deg,#143c58,#071f3b);color:#edc476;border:3px solid #d5ac6f;display:flex;align-items:center;justify-content:center;flex:none;box-shadow:inset 0 0 0 2px #102944}
-.emblem svg{width:39px;height:39px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.emblem svg{display:block;width:39px;height:39px;overflow:visible}
 .subject-name{font:700 10px/1.25 Georgia,serif;text-align:center;white-space:normal;max-width:100%}
 .controls{display:flex;gap:11px;flex-wrap:wrap;align-items:center;margin:4px 0 26px}
 .searchbox{flex:1 1 350px;border:1px solid #ded7ca;border-radius:25px;background:#fff;padding:12px 18px;color:var(--ink);min-width:200px}
 .select,.pill,.mode{border:1px solid #d7cbb7;background:#fff;color:#1e3952;border-radius:25px;padding:11px 16px;font:700 12px/1.15 system-ui,sans-serif}
-.pill[aria-pressed="true"],.mode[aria-pressed="true"]{background:#092a48;color:#fff;border-color:#092a48}
-.mode-group{display:flex;gap:6px}
 .workspace{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:23px;align-items:start}
 .section-head{display:flex;gap:12px;justify-content:space-between;align-items:center;border-bottom:1px solid #d7b37b;margin-bottom:10px;padding-bottom:12px}
 .section-head h2{margin:0;font:650 20px/1.2 Georgia,serif;letter-spacing:.14em}
 .subtle{font:11px/1.4 system-ui,sans-serif;color:#708092}
 .feed-list{display:grid;gap:11px}
-.item{background:#fff;border:1px solid var(--line);border-radius:12px;display:grid;grid-template-columns:92px minmax(0,1fr) auto;gap:18px;padding:20px 19px;align-items:start}
-.item .emblem{width:86px;height:86px;border-width:3px}.item .emblem svg{width:54px;height:54px}
+.item{background:#fff;border:1px solid var(--line);border-radius:12px;display:grid;grid-template-columns:94px minmax(0,1fr) auto;gap:18px;padding:20px 19px;align-items:start}
+.item .emblem{width:88px;height:88px;border-width:3px}.item .emblem svg{width:56px;height:56px}
 .meta{font:700 10px/1.5 system-ui,sans-serif;letter-spacing:.07em;color:#566d80;text-transform:uppercase}
 .item h3{font:600 19px/1.25 Georgia,serif;margin:3px 0 5px}.item h3 a{text-decoration:none}.item h3 a:hover{text-decoration:underline;text-underline-offset:3px}
 .item p{font:14px/1.48 Georgia,serif;color:#3f5369;margin:0 0 7px;white-space:pre-wrap}
@@ -82,7 +80,7 @@ a{color:inherit}button,input,select{font:inherit}button{cursor:pointer}
 .rrw-rss-test strong{color:#153b58}.rrw-rss-test .ok{color:#23694f;font-weight:800}.rrw-rss-test .bad{color:#9b3f3b;font-weight:800}
 @media(max-width:1160px){.subject-strip{grid-template-columns:repeat(6,1fr)}}
 @media(max-width:800px){.workspace{grid-template-columns:1fr}.sidebar{grid-template-columns:repeat(2,minmax(0,1fr))}.hero{background-position:58% center}.hero-inner{min-height:430px;padding:48px 20px}.hero-copy{max-width:650px}.wrap{padding:22px 15px 60px}}
-@media(max-width:560px){.sidebar{grid-template-columns:1fr}.subject-strip{grid-template-columns:repeat(4,minmax(0,1fr));row-gap:16px}.emblem{width:50px;height:50px}.emblem svg{width:29px;height:29px}.item{grid-template-columns:66px minmax(0,1fr);gap:13px;padding:15px}.item .emblem{width:62px;height:62px}.item .emblem svg{width:39px;height:39px}.type-pill{grid-column:2;justify-self:start}.item h3{font-size:17px}.hero-inner{min-height:430px;padding:44px 18px}.rrw-preview-page .hero .rr-page-title{font-size:clamp(43px,11vw,60px)}}
+@media(max-width:560px){.sidebar{grid-template-columns:1fr}.subject-strip{grid-template-columns:repeat(4,minmax(0,1fr));row-gap:16px}.emblem{width:50px;height:50px}.emblem svg{width:29px;height:29px}.item{grid-template-columns:70px minmax(0,1fr);gap:13px;padding:15px}.item .emblem{width:66px;height:66px}.item .emblem svg{width:42px;height:42px}.type-pill{grid-column:2;justify-self:start}.item h3{font-size:17px}.hero-inner{min-height:430px;padding:44px 18px}.rrw-preview-page .hero .rr-page-title{font-size:clamp(43px,11vw,60px)}}
 </style></head>
 <body class="heritage-home heritage-inner-page rrw-preview-page">
 
@@ -93,7 +91,10 @@ a{color:inherit}button,input,select{font:inherit}button{cursor:pointer}
   <details class="heritage-mobile-nav"><summary aria-label="Open navigation">Menu <span aria-hidden="true">☰</span></summary><nav aria-label="Mobile navigation"><a href="/race-cards/">Race Cards</a><a href="/journal/">The Journal</a><a href="/preview/racing-wire-5333548f0ffee31ba519b2470ffb/" aria-current="page">The Racing Wire</a><a href="https://rail-rye-shop.fourthwall.com/" target="_blank" rel="noopener noreferrer">Apparel ↗</a></nav></details>
  </div></header></div>
 <div class="rrw-preview-note">UNLISTED DESIGN PREVIEW · NOT IN PUBLIC NAVIGATION · SHAREABLE LINK</div>
-<section class="hero"><div class="hero-inner">
+<section class="hero">
+<div class="rrw-hero-media" aria-hidden="true"><img class="rrw-hero-image" src="/assets/approved/racing-wire/hero-race.webp" alt="" width="1536" height="658" loading="eager" decoding="async"></div>
+<div class="rrw-hero-shade" aria-hidden="true"></div>
+<div class="hero-inner">
 <section class="hero-copy rr-page-intro rr-page-intro--grid" aria-labelledby="rrw-title">
 <div class="rr-page-saddle-kicker"><span class="rr-chip-solid"><img src="/assets/approved/saddlecloths/8.png" width="38" height="38" alt="Saddlecloth 8" decoding="async"></span><span class="rr-page-kicker-label">THE RACING WIRE</span></div>
 <h1 class="rr-page-title" id="rrw-title">The Latest from the Backstretch.</h1>
@@ -102,19 +103,16 @@ a{color:inherit}button,input,select{font:inherit}button{cursor:pointer}
 </section>
 </div></section>
 <main class="wrap">
-<div class="tagline"><h2>Racing news by subject</h2><span>Original navy-and-gold pictograms · no photographs or third-party artwork</span></div>
+<div class="tagline"><h2>Racing news by subject</h2><span>Approved Rail &amp; Rye navy-and-gold badge family</span></div>
 <div class="subject-strip" id="subjects" role="group" aria-label="Filter by racing subject"></div>
 <div class="controls">
 <input class="searchbox" type="search" id="search" aria-label="Search racing news" placeholder="⌕  Search horses, people, races, or keywords...">
-<div class="mode-group" aria-label="Preview feed mode">
-<button class="mode" id="showExamples" type="button" aria-pressed="true">Design examples</button>
-<button class="mode" id="showActual" type="button" aria-pressed="false">Verified updates</button>
-<button class="mode" id="testFeeds" type="button" aria-pressed="false">Test real RSS</button></div>
+<button class="mode" id="testFeeds" type="button">Test real RSS</button>
 <select class="select" id="sort" aria-label="Sort news"><option value="newest">Newest first</option><option value="oldest">Oldest first</option></select>
 </div>
 <div id="rssDiagnostic" class="rrw-rss-test" hidden aria-live="polite"></div>
 <div class="workspace">
-<section aria-labelledby="feedHeading"><div class="section-head"><h2 id="feedHeading">LATEST NEWS</h2><span class="subtle" id="count">Prototype feed</span></div>
+<section aria-labelledby="feedHeading"><div class="section-head"><h2 id="feedHeading">LATEST NEWS</h2><span class="subtle" id="count">Loading verified updates…</span></div>
 <div id="feed" class="feed-list" aria-live="polite"></div>
 <button id="more" class="more" type="button" hidden>Load more news</button></section>
 <aside class="sidebar" aria-label="Upcoming stakes races">
@@ -157,21 +155,8 @@ regulatory:'<path fill="currentColor" d="M11 5h22l7 7v31H11V5zm21 3v8h8"/><rect 
 achievement:'<path fill="currentColor" d="m24 9 4 8 9 1-7 6 2 9-8-4-8 4 2-9-7-6 9-1 4-8z"/><path d="M9 13c-6 9-5 20 3 28M39 13c6 9 5 20-3 28M12 16l-5-3m4 9-6-1m7 8-6 2m8 5-5 4m25-24 5-3m-4 9 6-1m-7 8 6 2m-8 5 5 4" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>',
 industry:'<circle cx="24" cy="24" r="18" fill="none" stroke="currentColor" stroke-width="3"/><path d="M6 24h36M24 6c-10 9-10 27 0 36M24 6c10 9 10 27 0 36M9 15h30M9 33h30" fill="none" stroke="currentColor" stroke-width="2.3"/>'};
 const actionMap={horse:'Workout',jockey:'Entry',trainer:'News',owner:'News',stable:'Barn Change',race:'Race Update',racetrack:'Race Update',breeding:'News',sale:'Sale',regulatory:'News',achievement:'Achievement',industry:'News'};
-const samples=[
- {subject_kind:'horse',title:'Example: Three-year-old resumes training after a short break',summary:'Illustrative reporting format: connections describe a routine return to work and outline the next training step.'},
- {subject_kind:'jockey',title:'Example: Jockey receives a new stakes-race mount',summary:'Sample of a rider announcement with a concise statement of what changed and where to find the original post.'},
- {subject_kind:'race',title:'Example: Final field and post positions are announced',summary:'A sample stakes update explaining the race, the entry update and the official source to confirm.'},
- {subject_kind:'stable',title:'Example: Barn outlines its plans for a pair of runners',summary:'Illustrative stable news covering two horses and their intended next starts.'},
- {subject_kind:'breeding',title:'Example: First-crop yearlings attract interest at sale',summary:'A sample pedigree and breeding development, without claims about any actual stallion or horse.'},
- {subject_kind:'sale',title:'Example: Thoroughbred auction posts strong opening session',summary:'Illustrative sale-market coverage with a short description of auction activity.'},
- {subject_kind:'regulatory',title:'Example: Racing commission announces a rule update',summary:'A sample regulatory notice with a clear pointer to where the official ruling would appear.'},
- {subject_kind:'achievement',title:'Example: Racing professional reaches a career milestone',summary:'Illustrative record-and-milestone coverage. All live achievement claims would require verification.'},
- {subject_kind:'owner',title:'Example: Ownership partnership reveals season plans',summary:'A sample news item about an ownership group discussing future racing objectives.'},
- {subject_kind:'trainer',title:'Example: Trainer evaluates upcoming stakes options',summary:'A model trainer update focused on planned starts and preparation.'},
- {subject_kind:'racetrack',title:'Example: Racetrack announces a program adjustment',summary:'A sample track-operations alert, with the official source available when connected.'},
- {subject_kind:'industry',title:'Example: Industry association announces an initiative',summary:'Illustrative industry coverage formatted as a short wire report.'}
-];
-let subject='all',mode='demo',data=[],shown=8;
+let subject='all',data=[],shown=8;
+
 function icon(kind){
  const el=document.createElement('span');el.className='emblem';
  el.innerHTML='<svg aria-hidden="true" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">'+(shapes[kind]||shapes.industry)+'</svg>';
@@ -182,23 +167,27 @@ function labelTime(iso){
 }
 function render(){
  const q=$('search').value.trim().toLowerCase();
- let records=(mode==='demo'?samples:data).filter(x=>(subject==='all'||x.subject_kind===subject)&&(!q||(x.title+' '+(x.summary||'')+' '+(x.source||'')).toLowerCase().includes(q)));
- if(mode==='live')records=records.slice().sort((a,b)=>$('sort').value==='oldest'?new Date(a.published_at)-new Date(b.published_at):new Date(b.published_at)-new Date(a.published_at));
- else if($('sort').value==='oldest')records=records.slice().reverse();
- $('count').textContent=records.length+(mode==='demo'?' design examples':' available items');
+ let records=data.filter(x=>(subject==='all'||x.subject_kind===subject)&&(!q||(x.title+' '+(x.summary||'')+' '+(x.source||'')).toLowerCase().includes(q)));
+ records=records.slice().sort((a,b)=>$('sort').value==='oldest'?new Date(a.published_at)-new Date(b.published_at):new Date(b.published_at)-new Date(a.published_at));
+ $('count').textContent=records.length+' verified item'+(records.length===1?'':'s');
  const feed=$('feed');feed.replaceChildren();
- if(!records.length){const p=document.createElement('p');p.className='info';p.textContent=mode==='demo'?'No examples match these filters.':'No verified items available for this filter yet. This preview does not invent live reports.';feed.append(p);$('more').hidden=true;return;}
+ if(!records.length){
+  const p=document.createElement('p');p.className='info';
+  p.textContent='No verified Racing Wire items are available yet. New real items will appear here automatically.';
+  feed.append(p);$('more').hidden=true;return;
+ }
  for(const x of records.slice(0,shown)){
   const row=document.createElement('article');row.className='item';row.append(icon(x.subject_kind));
-  const content=document.createElement('div'),meta=document.createElement('div');meta.className='meta';meta.textContent=(x.subject_kind||'Industry').toUpperCase()+' · '+(mode==='demo'?'DEMO ONLY':labelTime(x.published_at));
+  const content=document.createElement('div'),meta=document.createElement('div');meta.className='meta';meta.textContent=(x.subject_kind||'Industry').toUpperCase()+' · '+labelTime(x.published_at);
   const heading=document.createElement('h3');
-  const isLive=mode==='live'&&typeof x.url==='string'&&(/^\x2fjournal\x2f[a-z0-9-]+\x2f$/.test(x.url)||/^https:\/\/[a-z0-9.-]+\//i.test(x.url));
+  const isLive=typeof x.url==='string'&&(/^\x2fjournal\x2f[a-z0-9-]+\x2f$/.test(x.url)||/^https:\/\/[a-z0-9.-]+\//i.test(x.url));
   if(isLive){const link=document.createElement('a');link.href=x.url;link.textContent=x.title;if(!x.original){link.rel='noopener noreferrer external';link.target='_blank';}heading.append(link);}
   else heading.textContent=x.title;
   const summary=document.createElement('p');summary.textContent=x.summary||'Open the original source for the full update.';
   const src=document.createElement('div');src.className='attr';
-  if(isLive){src.append(document.createTextNode('Source: '));const a=document.createElement('a');a.href=x.url;a.textContent=x.source||'Original publication';if(!x.original){a.rel='noopener noreferrer external';a.target='_blank';}src.append(a);}
-  else src.textContent='Source: Demonstration item — not a real report';
+  src.append(document.createTextNode('Source: '));
+  if(isLive){const a=document.createElement('a');a.href=x.url;a.textContent=x.source||'Original publication';if(!x.original){a.rel='noopener noreferrer external';a.target='_blank';}src.append(a);}
+  else src.append(document.createTextNode(x.source||'Verified source'));
   content.append(meta,heading,summary,src);
   if(isLive&&Array.isArray(x.also_reported_by)&&x.also_reported_by.length){
     const others=document.createElement('div');others.className='attr';
@@ -214,7 +203,7 @@ function render(){
   }
   row.append(content);
   const typ=document.createElement('span');typ.className='type-pill';
-  let kind=x.type||actionMap[x.subject_kind]||'News';typ.textContent=kind;typ.dataset.kind=kind;
+  const kind=x.type||actionMap[x.subject_kind]||'News';typ.textContent=kind;typ.dataset.kind=kind;
   row.append(typ);feed.append(row);
  }
  $('more').hidden=records.length<=shown;
@@ -229,7 +218,6 @@ for(const [kind,label] of cats){if(kind==='all')continue;
 $('search').addEventListener('input',()=>{shown=8;render();});
 $('sort').addEventListener('change',render);
 $('more').addEventListener('click',()=>{shown+=8;render();});
-$('showExamples').addEventListener('click',()=>{mode='demo';shown=8;$('showExamples').setAttribute('aria-pressed','true');$('showActual').setAttribute('aria-pressed','false');render();});
 $('testFeeds').addEventListener('click',async()=>{
  const box=$('rssDiagnostic');box.hidden=false;box.replaceChildren();
  const loading=document.createElement('strong');loading.textContent='Testing live RSS endpoints from the Rail & Rye worker…';box.append(loading);
@@ -248,15 +236,17 @@ $('testFeeds').addEventListener('click',async()=>{
   }
  }catch(error){box.replaceChildren();const e=document.createElement('span');e.className='bad';e.textContent='RSS test unavailable: '+error.message;box.append(e);}
 });
-$('showActual').addEventListener('click',async()=>{
- mode='live';shown=8;$('showExamples').setAttribute('aria-pressed','false');$('showActual').setAttribute('aria-pressed','true');
- $('count').textContent='Loading sources…';
- try{const response=await fetch('/api/preview/racing-wire-5333548f0ffee31ba519b2470ffb',{cache:'no-store'});
- const result=await response.json();if(!response.ok)throw Error(result.error||'Unavailable');
- data=Array.isArray(result.items)?result.items:[];render();
- }catch(error){data=[];render();$('count').textContent='Unable to retrieve sources';}
-});
-render();
+async function loadVerified(){
+ $('count').textContent='Loading verified updates…';
+ try{
+  const response=await fetch('/api/preview/racing-wire-5333548f0ffee31ba519b2470ffb',{cache:'no-store'});
+  const result=await response.json();if(!response.ok)throw Error(result.error||'Unavailable');
+  data=Array.isArray(result.items)?result.items:[];render();
+ }catch(error){
+  data=[];render();$('count').textContent='Unable to retrieve verified updates';
+ }
+}
+loadVerified();
 })();
 </script>
 </body></html>
