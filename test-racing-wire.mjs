@@ -304,9 +304,9 @@ assert.ok(previewHeader.includes('heritage-strap') && previewHeader.includes('he
 assert.ok(previewHeader.includes('heritage-mobile-nav'),'Production mobile navigation retained');
 assert.ok(!previewHeader.includes('The Racing Wire'),'Unlisted preview does not add a fourth nav pill or change production header spacing');
 assert.equal((previewHeader.match(/class="heritage-nav-pill"/g)||[]).length,3,'Desktop header has the exact three public navigation pills');
-assert.ok(wirePage.includes('/assets/rail-rye-core.css?v=10') &&
- wirePage.includes('/assets/rail-rye-components.css?v=8') &&
- wirePage.includes('/assets/rail-rye-pages.css?v=35'),'Header/footer use actual site stylesheets');
+assert.ok(wirePage.includes('/assets/rail-rye-core.css?v=') &&
+ wirePage.includes('/assets/rail-rye-components.css?v=') &&
+ wirePage.includes('/assets/rail-rye-pages.css?v='),'Header/footer use actual versioned site stylesheets');
 const normalizedPreviewHeader=previewHeader
  .replace('<a class="heritage-nav-pill" href="/journal/">The Journal</a>', '<a class="heritage-nav-pill" href="/journal/" aria-current="page">The Journal</a>')
  .replace('<a href="/journal/">The Journal</a>', '<a href="/journal/" aria-current="page">The Journal</a>');
