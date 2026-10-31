@@ -262,25 +262,20 @@ assert.ok(wirePage.includes('.item .emblem{width:88px;height:88px'),
  'News-card badges are enlarged on desktop');
 assert.ok(!wirePage.includes('const shapes={')&&!wirePage.includes("el.innerHTML='<svg"),
  'Temporary inline SVG badge system is completely removed');
-assert.ok(wirePage.includes("kind==='breeding'")&&wirePage.includes("breeding-dna-v2.svg?v=1")&&
- wirePage.includes("/assets/approved/racing-wire/badges/'+kind+'.png?v=6"),
- 'Runtime uses the dedicated DNA SVG only for breeding and approved PNGs for all other badges');
+assert.ok(wirePage.includes("/assets/approved/racing-wire/badges/'+safe+'.png?v=7"),
+ 'All twelve badges, including breeding, use the same approved PNG rendering path');
+assert.ok(!wirePage.includes('breeding-dna-v2.svg')&&!wirePage.includes("kind==='breeding'"),
+ 'No custom breeding badge renderer or replacement SVG can override the approved family');
 assert.ok(!wirePage.includes('badges.webp')&&!wirePage.includes('.badge-horse{background-position')&&!wirePage.includes('.badge-achievement{background-position'),
  'Old badge sprite and badge-specific sprite-position rules are removed');
-for(const badge of ['horse','jockey','trainer','owner','stable','race','racetrack','sale','industry','regulatory','achievement']){
+for(const badge of ['horse','jockey','trainer','owner','stable','race','racetrack','breeding','sale','industry','regulatory','achievement']){
  const badgeAsset=readFileSync(new URL('./public/assets/approved/racing-wire/badges/'+badge+'.png',import.meta.url));
  assert.equal(badgeAsset.subarray(0,8).toString('hex'),'89504e470d0a1a0a','Approved '+badge+' badge is a real PNG');
  assert.ok(badgeAsset.length>1000,'Approved '+badge+' badge is not truncated');
 }
-const breedingBadgeSvg=readFileSync(new URL('./public/assets/approved/racing-wire/badges/breeding-dna-v2.svg',import.meta.url),'utf8');
-assert.ok(breedingBadgeSvg.includes('<svg')&&breedingBadgeSvg.includes('stroke="#e8b75f"'),
- 'Breeding badge uses the clean new DNA SVG artwork');
-assert.ok(wirePage.includes("breeding-dna-v2.svg?v=1"),
- 'Breeding badge uses a new cache-safe asset path');
-assert.ok(!wirePage.includes("breeding.png"),
- 'Runtime must never request the retired breeding.png asset');
-assert.ok(wirePage.includes("badges/'+kind+'.png?v=6"),
- 'Other approved badge assets remain unchanged');
+const breedingBadge=readFileSync(new URL('./public/assets/approved/racing-wire/badges/breeding.png',import.meta.url));
+assert.ok(breedingBadge.length>10000,
+ 'Approved DNA breeding PNG is restored at full family-quality resolution');
 assert.ok(wirePage.includes('.more[hidden]{display:none!important}'),
  'Load-more cannot appear when there are zero verified stories');
 assert.ok(wirePage.includes('setInterval(()=>{if(!document.hidden)loadVerified()},180000)'),
