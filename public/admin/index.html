@@ -72,7 +72,7 @@
     <p class="detail" style="margin-bottom:19px">Choose at least two published editions or bundle-only PDFs, set one package price, and publish. Customers receive separate secure downloads. Previous buyers keep their purchased PDF versions even after edits.</p>
     <section aria-label="Bundle-only PDF library" style="margin-bottom:25px;padding:19px;border:1px solid var(--border);border-radius:8px;background:white">
       <div class="head-row"><h3 style="margin:0">Bundle-only PDF library</h3><button type="button" class="secondary mini" id="assetNew">+ New private PDF</button></div>
-      <p class="detail">Upload a PDF that will be available only inside bundles. It will never have its own public listing or individual purchase button. Archive older PDFs when their published bundles have been archived; old customer downloads remain protected in private R2 storage.</p>
+      <p class="detail">Upload a PDF that will be available only inside bundles. It will never have its own public listing or individual purchase button. Archive older PDFs when their published bundles have been archived. After all customer access expires, you can permanently delete archived PDFs to reclaim storage. Historical order records are retained.</p>
       <div class="row">
         <div class="field"><label for="assetTitle">PDF title *</label><input id="assetTitle" maxlength="140" placeholder="Keeneland — Bonus Race Notes"></div>
         <div class="field"><label for="assetDate">Racing date</label><input id="assetDate" type="date"></div>
@@ -82,7 +82,7 @@
         <div class="field"><label for="assetTrack">Racetrack (optional)</label><input id="assetTrack" maxlength="100" placeholder="Keeneland"></div>
       </div>
       <div class="field"><label for="assetPdf">Private PDF <span id="assetPdfStatus"></span></label><input id="assetPdf" type="file" accept="application/pdf,.pdf"><div class="detail">Maximum 75 MB. A replacement PDF does not revoke files already purchased.</div></div>
-      <div class="actions"><button type="button" class="primary" id="assetSave">Upload bundle-only PDF</button><button type="button" class="secondary" id="assetArchive" disabled>Archive private PDF</button></div>
+      <div class="actions"><button type="button" class="primary" id="assetSave">Upload bundle-only PDF</button><button type="button" class="secondary" id="assetArchive" disabled>Archive private PDF</button><button type="button" class="secondary" id="assetPurge" disabled>Permanently delete PDF</button></div>
       <p id="assetNotice" class="detail" role="status" aria-live="polite"></p>
       <p class="kicker" style="margin-top:15px">Your private PDFs</p>
       <div class="list" id="assetInventory"><div class="empty">Loading private PDFs…</div></div>
@@ -287,6 +287,7 @@
     $('assetSave').disabled=v||selected()?.status==='archived';
     $('assetNew').disabled=v;
     $('assetArchive').disabled=v||!selectedId||selected()?.status!=='draft';
+    $('assetPurge').disabled=v||!selectedId||selected()?.status!=='archived';
   }
   function lockEditor(v){for(const id of ['assetTitle','assetCategory','assetDate','assetTrack','assetPdf'])$(id).disabled=v;}
   function reset(){
@@ -362,6 +363,23 @@
   $('assetNew').addEventListener('click',reset);
   $('assetSave').addEventListener('click',save);
   $('assetArchive').addEventListener('click',archive);
+  async function purge(){
+    if(busy||!selectedId||selected()?.status!=='archived')return;
+    const item=selected();
+    const typed=prompt('PERMANENT DELETION: This deletes every stored PDF version and frees R2 storage. Only archived PDFs whose bundles are retired and customer access expired can be deleted.\\n\\nType DELETE to permanently remove: '+item.title);
+    if(typed!=='DELETE'){notice('Deletion cancelled. Type DELETE exactly to confirm.');return;}
+    const id=selectedId;
+    setBusy(true);
+    try{
+      const result=await api('/api/admin/bundle-assets/'+id+'/purge',{method:'POST'});
+      reset();await refresh();
+      const mb=((result.bytes_deleted||0)/1048576).toFixed(2);
+      notice('Permanently removed '+result.files_deleted+' stored PDF version(s), reclaiming about '+mb+' MB. The audit record is retained.');
+      window.dispatchEvent(new Event('rr-bundle-assets-changed'));
+    }catch(e){notice(e.message);}
+    finally{setBusy(false);}
+  }
+  $('assetPurge').addEventListener('click',purge);
   refresh().catch(e=>notice('Private PDF library setup required: '+e.message));
 })();
 </script>
