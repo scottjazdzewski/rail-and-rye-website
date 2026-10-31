@@ -312,7 +312,9 @@ async function recover(request,env,ctx){
 async function listProducts(env){
   if(!env.STORE_DB)return error('Catalog temporarily unavailable',503);
   const records=await env.STORE_DB.prepare(`SELECT id,title,slug,category,race_date,track,description,price_cents,image_url,pdf_key
-    FROM products WHERE status='published' AND pdf_key IS NOT NULL ORDER BY race_date DESC,created_at DESC LIMIT 150`).all();
+    FROM products WHERE status='published' AND pdf_key IS NOT NULL
+    AND NOT EXISTS(SELECT 1 FROM bundle_only_assets a WHERE a.product_id=products.id)
+    ORDER BY race_date DESC,created_at DESC LIMIT 150`).all();
   const products=[];
   for(const p of records.results||[]){
     const {pdf_key,...publicFields}=p;
@@ -336,7 +338,8 @@ async function checkout(request,env){
   let data;try{data=await request.json();}catch{return error('Invalid JSON',400);}
   if(!UUID_RE.test(data?.product_id||''))return error('Invalid product',400);
   const p=await env.STORE_DB.prepare(`SELECT id,title,description,price_cents,pdf_key,category,status
-    FROM products WHERE id=? AND status='published' AND pdf_key IS NOT NULL`).bind(data.product_id).first();
+    FROM products WHERE id=? AND status='published' AND pdf_key IS NOT NULL
+    AND NOT EXISTS(SELECT 1 FROM bundle_only_assets a WHERE a.product_id=products.id)`).bind(data.product_id).first();
   if(!p)return error('Product is not available',404);
   if(!Number.isSafeInteger(p.price_cents)||p.price_cents<50||p.price_cents>500000)return error('Product is not available for purchase',400);
   const orderId=crypto.randomUUID();
