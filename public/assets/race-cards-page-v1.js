@@ -23,9 +23,11 @@ const el=(tag,cls,text)=>{const x=document.createElement(tag);if(cls)x.className
    copy.append(el('div','rr-purchase-meta',[p.track,p.race_date].filter(Boolean).join(' · ')||'Rail & Rye Race Card'));
    copy.append(el('h3','rr-purchase-title',p.title||'Race Card'));
    copy.append(el('div','rr-purchase-price',money(p.price_cents)));
-   const buy=el('button','rr-purchase-buy',ready?(live?'Purchase':'Test purchase'):'Unavailable');
-   buy.type='button';buy.disabled=!ready||!Number.isFinite(Number(p.price_cents))||Number(p.price_cents)<50;
+   const free=Number(p.price_cents)===0;
+   const buy=el('button','rr-purchase-buy',free?'Download free PDF':ready?(live?'Purchase':'Test purchase'):'Unavailable');
+   buy.type='button';buy.disabled=free?false:(!ready||!Number.isFinite(Number(p.price_cents))||Number(p.price_cents)<50);
    buy.addEventListener('click',async()=>{
+    if(free){location.assign('/api/free-download/'+encodeURIComponent(p.id));return;}
     buy.disabled=true;const old=buy.textContent;buy.textContent='Opening…';
     try{
      const res=await fetch('/api/checkout',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_id:p.id})});
