@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
-import {handleRacingWire,parseRacingRss,categorize,refreshRacingWire,testPreviewRssFeeds,groupRacingWireStories,subjectKind,socialPreview} from './src/racing-wire.js';
+import {handleRacingWire,handlePreviewRacingWire,previewExternalItems,parseRacingRss,categorize,refreshRacingWire,testPreviewRssFeeds,groupRacingWireStories,subjectKind,socialPreview} from './src/racing-wire.js';
 const db=new DatabaseSync(':memory:');
 db.exec("CREATE TABLE journal_articles (id TEXT PRIMARY KEY,slug TEXT,title TEXT,category TEXT,excerpt TEXT,publish_date TEXT,status TEXT,created_at TEXT);");
 db.prepare("INSERT INTO journal_articles VALUES (?,?,?,?,?,?,?,?)").run(
@@ -45,24 +45,59 @@ assert.equal(items[0].link,'https://publisher.example/story/123');
 assert.equal(parseRacingRss('<!DOCTYPE rss [<!ENTITY pwn SYSTEM "http://evil/">]>'+rss,feed).length,0);
 assert.equal(parseRacingRss('<rss><item><title>Bad</title><link>javascript:alert(1)</link><pubDate>Fri, 30 Oct 2026 12:00:00 GMT</pubDate></item></rss>',feed).length,0);
 
-const diagnosticRss='<rss><channel><item><title>Real feed parser test</title>'+
- '<link>https://www.thoroughbreddailynews.com/story/example/</link>'+
- '<pubDate>Fri, 30 Oct 2026 12:00:00 GMT</pubDate></item></channel></rss>';
+const previewFeedFixtures={
+ 'https://www.thoroughbreddailynews.com/feed/':{
+  host:'www.thoroughbreddailynews.com',title:'TDN real feed parser test',link:'https://www.thoroughbreddailynews.com/tdn-story/'
+ },
+ 'https://pastthewire.com/category/news/feed/':{
+  host:'pastthewire.com',title:'Past The Wire real feed parser test',link:'https://pastthewire.com/ptw-story/'
+ },
+ 'https://www.americasbestracing.net/rss':{
+  host:'www.americasbestracing.net',title:'ABR real feed parser test',link:'https://www.americasbestracing.net/abr-story'
+ },
+ 'https://usracing.com/feed':{
+  host:'usracing.com',title:'US Racing real feed parser test',link:'https://usracing.com/us-story/'
+ }
+};
 let diagnosticFetches=0;
-const diagnostic=await testPreviewRssFeeds(async url=>{
+const previewFetch=async url=>{
  diagnosticFetches++;
- assert.ok(String(url)==='https://www.thoroughbreddailynews.com/feed/'||
-  String(url)==='https://www.thoroughbreddailynews.com/category/news/feed/');
- return new Response(diagnosticRss,{status:200,headers:{'Content-Type':'application/rss+xml'}});
-});
-assert.equal(diagnosticFetches,2,'Both real TDN RSS endpoints are exercised by diagnostic mode');
+ const fixture=previewFeedFixtures[String(url)];
+ assert.ok(fixture,'Only allowlisted preview RSS endpoints are requested: '+url);
+ const xml='<rss><channel><item><title>'+fixture.title+'</title><link>'+fixture.link+'</link>'+
+  '<pubDate>Fri, 30 Oct 2026 12:00:00 GMT</pubDate></item></channel></rss>';
+ return new Response(xml,{status:200,headers:{'Content-Type':'application/rss+xml'}});
+};
+const diagnostic=await testPreviewRssFeeds(previewFetch);
+assert.equal(diagnosticFetches,4,'All preview RSS endpoints are exercised by diagnostic mode');
 assert.equal(diagnostic.diagnostic_only,true);
-assert.equal(diagnostic.results.length,2);
+assert.equal(diagnostic.results.length,4);
 assert.ok(diagnostic.results.every(x=>x.reachable&&x.http_status===200&&x.parsed_count===1));
 assert.ok(diagnostic.results.every(x=>x.newest_published_at==='2026-10-30T12:00:00.000Z'));
 assert.ok(diagnostic.results.every(x=>!('title' in x)&&!('items' in x)),
  'Diagnostic reports connectivity/counts only and does not republish third-party headlines');
 
+diagnosticFetches=0;
+const previewExternal=await previewExternalItems(previewFetch);
+assert.equal(diagnosticFetches,4,'Preview live aggregator checks all four RSS sources');
+assert.equal(previewExternal.items.length,4);
+assert.equal(previewExternal.sources.filter(x=>x.parsed_count===1).length,4);
+assert.ok(previewExternal.items.every(x=>x.preview_external===true&&x.summary===''&&!x.original));
+
+diagnosticFetches=0;
+const previewResponse=await handlePreviewRacingWire(new Request('https://railandryeracing.com/api/preview/racing-wire-test'),env,previewFetch);
+assert.equal(previewResponse.status,200);
+const previewBody=await previewResponse.json();
+assert.equal(diagnosticFetches,4);
+assert.equal(previewBody.external_test_only,true);
+assert.equal(previewBody.items.length,5,'Rail & Rye Journal plus four live external feed items');
+assert.equal(previewBody.source_count,5);
+assert.equal(previewBody.external_sources.length,4);
+assert.ok(previewBody.items.some(x=>x.source==='Past The Wire'));
+assert.ok(previewBody.items.some(x=>x.source==="America's Best Racing"));
+assert.ok(previewBody.items.some(x=>x.source==='US Racing'));
+assert.ok(previewBody.items.some(x=>x.source==='Thoroughbred Daily News'));
+assert.equal((await handlePreviewRacingWire(new Request('https://railandryeracing.com/api/preview/racing-wire-test',{method:'POST'}),env,previewFetch)).status,405);
 
 // Only authorized publisher RSS is eligible for automated site-side ingestion.
 // Social platforms are addressed through official embeds or original-post links.
