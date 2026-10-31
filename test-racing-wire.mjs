@@ -47,16 +47,16 @@ assert.equal(parseRacingRss('<rss><item><title>Bad</title><link>javascript:alert
 
 const previewFeedFixtures={
  'https://www.thoroughbreddailynews.com/feed/':{
-  host:'www.thoroughbreddailynews.com',title:'TDN real feed parser test',link:'https://www.thoroughbreddailynews.com/tdn-story/'
+  host:'www.thoroughbreddailynews.com',title:'Champion colt retires to stud after Breeders Cup campaign',link:'https://www.thoroughbreddailynews.com/tdn-story/'
  },
  'https://pastthewire.com/category/news/feed/':{
-  host:'pastthewire.com',title:'Past The Wire real feed parser test',link:'https://pastthewire.com/ptw-story/'
+  host:'pastthewire.com',title:'Jockey reaches six thousand career victories',link:'https://pastthewire.com/ptw-story/'
  },
  'https://www.americasbestracing.net/rss':{
-  host:'www.americasbestracing.net',title:'ABR real feed parser test',link:'https://www.americasbestracing.net/abr-story'
+  host:'www.americasbestracing.net',title:'Fasig Tipton yearling sells for seven figures at auction',link:'https://www.americasbestracing.net/abr-story'
  },
  'https://usracing.com/feed':{
-  host:'usracing.com',title:'US Racing real feed parser test',link:'https://usracing.com/us-story/'
+  host:'usracing.com',title:'Trainer announces scratch from Saturday stakes race',link:'https://usracing.com/us-story/'
  }
 };
 let diagnosticFetches=0;
