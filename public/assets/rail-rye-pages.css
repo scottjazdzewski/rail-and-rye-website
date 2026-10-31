@@ -635,7 +635,7 @@ body.rr-single-screen-hero.heritage-journal-page>.heritage-inner-hero{flex:1 1 0
 }
 .rr-journal-hero-grid>.rr-page-intro{align-self:start;width:100%;max-width:720px}
 .rr-journal-feature-rail{
- align-self:stretch;display:flex;flex-direction:column;min-width:0;min-height:0;box-sizing:border-box;
+ align-self:start;display:flex;flex-direction:column;min-width:0;min-height:0;max-height:min(580px,65vh);box-sizing:border-box;
  padding:clamp(20px,2.3vw,34px);background:rgba(4,24,36,.88);
  border:1px solid rgba(226,185,111,.72);border-radius:12px;
  box-shadow:inset 0 0 0 5px rgba(232,195,124,.055),0 18px 44px rgba(0,0,0,.25);
@@ -644,7 +644,7 @@ body.rr-single-screen-hero.heritage-journal-page>.heritage-inner-hero{flex:1 1 0
 .rr-journal-feature-head{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;padding-bottom:17px;border-bottom:1px solid rgba(215,174,100,.35)}
 .rr-journal-feature-head .rr-journal-overline{color:#dcb16a;font:800 10px/1 var(--heritage-sans);letter-spacing:.18em;text-transform:uppercase}
 .rr-journal-feature-head h2{margin:9px 0 0;color:#fff0dc;font:500 clamp(32px,2.7vw,44px)/1 var(--heritage-serif)}
-.rr-journal-feature-list{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain}
+.rr-journal-feature-list{flex:0 1 auto;min-height:0;max-height:min(390px,44vh);overflow-y:auto;overscroll-behavior:contain}
 .rr-journal-feature-card{padding:15px 0;border-bottom:1px solid rgba(215,174,100,.25)}
 .rr-journal-feature-meta{display:flex;align-items:center;flex-wrap:wrap;gap:7px;color:#e4c17d;font:700 10px/1.2 var(--heritage-sans);letter-spacing:.08em;text-transform:uppercase}
 .rr-journal-feature-meta time{opacity:.95}
@@ -668,7 +668,7 @@ body.rr-journal-archive-view .rr-journal-feature-rail{display:none}
 @media(max-width:750px){
  .rr-journal-hero-grid{padding-top:90px;padding-bottom:38px}
  .rr-journal-feature-list{flex:none;max-height:none;overflow:visible}
- .rr-journal-feature-rail{padding:20px 16px}
+ .rr-journal-feature-rail{padding:20px 16px;max-height:none}
 }
 
 .rr-journal-shell{width:min(100%,1240px);margin:0 auto;padding:clamp(38px,5vw,72px) clamp(22px,4vw,58px) clamp(52px,7vw,92px)}
