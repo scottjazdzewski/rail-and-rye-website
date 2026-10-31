@@ -35,7 +35,7 @@
     if(!data.bundle)return;
     original.style.display='none';original.disabled=true;
     const area=original.parentElement,lead=area.querySelector('p');
-    if(lead)lead.textContent='Choose an included PDF to download. Each has five downloads within 30 days of payment.';
+    if(lead)lead.textContent='Choose an included PDF to download. Each has five downloads within the access period stated in your purchase email.';
     for(const item of data.items||[]){
       const b=document.createElement('button');b.type='button';b.className='rr-delivery-action';
       b.textContent='Download '+item.title+' ('+item.downloads_remaining+' remaining)';

@@ -4,14 +4,14 @@
   <div class="heritage-strap"><img class="heritage-horse-mini" src="/assets/approved/brand/header-horse.webp" alt="" aria-hidden="true" width="66" height="76"><span>Thoroughbred Racing Intelligence</span></div>
   <nav class="heritage-nav" aria-label="Main navigation"><a class="heritage-nav-pill" href="/race-cards/">Race Cards</a><a class="heritage-nav-pill" href="/journal/">The Journal</a><a class="heritage-nav-pill" href="https://rail-rye-shop.fourthwall.com/" target="_blank" rel="noopener noreferrer" aria-label="Shop Rail and Rye apparel (opens in a new tab)">Apparel</a></nav>
   <details class="heritage-mobile-nav"><summary aria-label="Open navigation">Menu <span aria-hidden="true">☰</span></summary><nav aria-label="Mobile navigation"><a href="/race-cards/">Race Cards</a><a href="/journal/">The Journal</a><a href="https://rail-rye-shop.fourthwall.com/" target="_blank" rel="noopener noreferrer">Apparel ↗</a></nav></details>
- </div></header><main class="rr-delivery-main"><span class="rr-delivery-overline">Secure digital delivery</span><h1>Your publication.</h1><div class="rr-delivery-card"><div id="panel" role="status" aria-live="polite">Confirming your payment…</div><a id="download" class="rr-delivery-action" href="#" rel="noreferrer" style="display:none">Download PDF</a></div><p class="rr-delivery-note">Keep this order link private: its secure session ID also grants access to your purchase. Downloads are limited to five within 30 days, and refunded orders lose access. You may receive a separate email delivery link or <a href="/store/recover.html">request a replacement link</a>.</p><p><a href="/store/">Return to the Publication Desk</a></p></main>
+ </div></header><main class="rr-delivery-main"><span class="rr-delivery-overline">Secure digital delivery</span><h1>Your publication.</h1><div class="rr-delivery-card"><div id="panel" role="status" aria-live="polite">Confirming your payment…</div><a id="download" class="rr-delivery-action" href="#" rel="noreferrer" style="display:none">Download PDF</a></div><p class="rr-delivery-note">Keep this order link private: its secure session ID also grants access to your purchase. Downloads are limited to five within the purchase access period, and refunded orders lose access. You may receive a separate email delivery link or <a href="/store/recover.html">request a replacement link</a>.</p><p><a href="/store/">Return to the Publication Desk</a></p></main>
 <script>
 (async()=>{'use strict';const panel=document.getElementById('panel'),link=document.getElementById('download');const id=new URL(location.href).searchParams.get('session_id')||'';if(!/^cs_(?:test|live)_[A-Za-z0-9_]{10,200}$/.test(id)){panel.textContent='No valid Checkout Session was provided.';return;}
 const root='/api/orders/'+encodeURIComponent(id);let tries=0;
 while(tries++<12){try{const r=await fetch(root+'/status',{cache:'no-store'}),v=await r.json();if(!r.ok)throw Error(v.error||'Order lookup failed');
 if(v.status==='paid'){
   if(v.bundle){
-    panel.textContent='Payment confirmed for '+v.title+'. Your included publications are available below (five downloads per PDF within 30 days).';
+    panel.textContent='Payment confirmed for '+v.title+'. Your included publications are available below (five downloads per PDF within '+v.access_days+' days).';
     const area=link.parentElement;
     for(const item of v.items||[]){
       const a=document.createElement('a');a.className='rr-delivery-action';
@@ -21,7 +21,7 @@ if(v.status==='paid'){
     }
     return;
   }
-  panel.textContent='Payment confirmed for '+v.title+'. You may now download your PDF. Remaining downloads: '+v.downloads_remaining;
+  panel.textContent='Payment confirmed for '+v.title+'. Downloads are available for '+v.access_days+' days after purchase. Remaining downloads: '+v.downloads_remaining;
   link.href=root+'/download';link.style.display='inline-block';return;
 }
 if(['refunded','revoked','failed'].includes(v.status)){panel.textContent='This order is '+v.status+'. A download is not available.';return;}

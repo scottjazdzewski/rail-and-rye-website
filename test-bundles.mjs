@@ -9,7 +9,7 @@ import {handleAdminBundleAssets} from './src/bundle-assets.js';
 // Real in-memory SQLite with production migrations, including the private library.
 const db=new DatabaseSync(':memory:');
 db.exec(`CREATE TABLE products (id TEXT PRIMARY KEY,title TEXT,slug TEXT,category TEXT,race_date TEXT,track TEXT,description TEXT,price_cents INTEGER,pdf_key TEXT,image_url TEXT,status TEXT,created_at TEXT DEFAULT CURRENT_TIMESTAMP);`);
-for(const file of ['001_stripe_orders.sql','002_email_delivery.sql','003_live_readiness.sql','004_automatic_bundles.sql','005_bundle_only_assets.sql'])
+for(const file of ['001_stripe_orders.sql','002_email_delivery.sql','003_live_readiness.sql','004_automatic_bundles.sql','005_bundle_only_assets.sql','006_seven_day_access.sql'])
   db.exec(readFileSync('./migrations/'+file,'utf8'));
 const id1='11111111-1111-4111-8111-111111111111',id2='22222222-2222-4222-8222-222222222222',
   id3='33333333-3333-4333-8333-333333333333';
@@ -70,6 +70,7 @@ result=await commerce(post('/api/checkout',{product_id:bundleId,price_cents:1}))
 assert.equal(result.status,200);assert.equal(stripeCalls,1);
 const order=db.prepare('SELECT * FROM orders WHERE product_id=?').get(bundleId);
 assert.equal(order.status,'pending');assert.equal(order.pdf_key,BUNDLE_KEY);
+assert.equal(order.access_days,7,'Bundle purchases also get seven-day access');
 let snapshots=db.prepare('SELECT product_id,product_title,pdf_key FROM bundle_order_items WHERE order_id=? ORDER BY position').all(order.id);
 assert.deepEqual(snapshots.map(x=>x.pdf_key),['cards/friday/v1.pdf','cards/saturday/v1.pdf']);
 assert.equal((await commerce(new Request(root+'/api/orders/'+sid+'/download?item_id='+id1))).status,403,'No download before signed payment');
@@ -135,7 +136,7 @@ const privateList=await (await assetAdmin(new Request(root+'/api/admin/bundle-as
 assert.equal(privateList.assets[0].has_pdf,0,'No PDF is ready before upload');
 assert.ok(!privateList.assets[0].pdf_key,'Do not expose R2 keys in private library list');
 assert.equal((await assetAdmin(patch('/api/admin/bundle-assets/'+privateId,{...bundleOnlyMeta,title:'Edited Private Notes'}))).status,200);
-db.prepare('UPDATE products SET pdf_key=? WHERE id=?').run('cards/private/notes-v1.pdf',privateId);
+db.prepare('UPDATE products SET pdf_key=? WHERE id=?').run('cards/'+privateId+'/notes-v1.pdf',privateId);
 const available=await (await admin(new Request(root+'/api/admin/bundles'))).json();
 assert.ok(available.available_products.some(p=>p.id===privateId&&p.bundle_only===1),
   'Uploaded private PDFs appear in bundle selection');
@@ -150,7 +151,7 @@ assert.equal(result.status,201,'Published bundle may contain protected PDF and p
 const privateBundleId=(await result.json()).id;
 const pub=await (await commerce(new Request(root+'/api/products'))).json();
 assert.ok(pub.products.some(p=>p.id===privateBundleId&&p.kind==='bundle'));
-assert.ok(!JSON.stringify(pub).includes('cards/private/notes-v1.pdf'));
+assert.ok(!JSON.stringify(pub).includes('cards/'+privateId+'/notes-v1.pdf'));
 const privateSid='cs_live_'+'B'.repeat(50);
 globalThis.fetch=async(url,options)=>{
   if(!String(url).includes('/checkout/sessions'))throw Error('Unexpected external call');
@@ -162,10 +163,10 @@ result=await commerce(post('/api/checkout',{product_id:privateBundleId}));
 assert.equal(result.status,200);
 const privateOrder=db.prepare('SELECT id FROM orders WHERE product_id=?').get(privateBundleId);
 const privateKeys=db.prepare('SELECT pdf_key FROM bundle_order_items WHERE order_id=? ORDER BY position').all(privateOrder.id).map(x=>x.pdf_key);
-assert.deepEqual(privateKeys,['cards/friday/v1.pdf','cards/private/notes-v1.pdf']);
-db.prepare('UPDATE products SET pdf_key=? WHERE id=?').run('cards/private/notes-v2.pdf',privateId);
+assert.deepEqual(privateKeys,['cards/friday/v1.pdf','cards/'+privateId+'/notes-v1.pdf']);
+db.prepare('UPDATE products SET pdf_key=? WHERE id=?').run('cards/'+privateId+'/notes-v2.pdf',privateId);
 assert.equal(db.prepare('SELECT pdf_key FROM bundle_order_items WHERE order_id=? AND product_id=?').get(privateOrder.id,privateId).pdf_key,
-  'cards/private/notes-v1.pdf','Previous buyers retain their purchased private PDF version');
+  'cards/'+privateId+'/notes-v1.pdf','Previous buyers retain their purchased private PDF version');
 console.log('PASS bundle-only library: private metadata, public invisibility, no standalone checkout, bundle selection, secure checkout snapshots. No real charges.');
 
 const denied=await assetAdmin(patch('/api/admin/bundle-assets/'+privateId+'/archive',{}));
@@ -180,5 +181,37 @@ assert.ok(inventory.assets.some(a=>a.id===privateId&&a.status==='archived'));
 const candidates=await (await admin(new Request(root+'/api/admin/bundles'))).json();
 assert.ok(!candidates.available_products.some(a=>a.id===privateId));
 assert.equal((await assetAdmin(patch('/api/admin/bundle-assets/'+privateId,bundleOnlyMeta))).status,409);
-assert.equal(db.prepare('SELECT pdf_key FROM bundle_order_items WHERE order_id=? AND product_id=?').get(privateOrder.id,privateId).pdf_key,'cards/private/notes-v1.pdf');
+assert.equal(db.prepare('SELECT pdf_key FROM bundle_order_items WHERE order_id=? AND product_id=?').get(privateOrder.id,privateId).pdf_key,'cards/'+privateId+'/notes-v1.pdf');
 console.log('PASS private PDF archiving: live bundle protection, retired inventory, buyer snapshots preserved.');
+
+const activeUnpaid=db.prepare('SELECT status FROM orders WHERE id=?').get(privateOrder.id);
+assert.equal(activeUnpaid.status,'pending');
+let deletion=await assetAdmin(post('/api/admin/bundle-assets/'+privateId+'/purge',{}));
+assert.equal(deletion.status,409,'Incomplete Stripe checkout blocks physical deletion');
+db.prepare("UPDATE orders SET status='paid',paid_at=CURRENT_TIMESTAMP,access_days=7 WHERE id=?").run(privateOrder.id);
+assert.equal((await commerce(new Request(root+'/api/orders/'+privateSid+'/download?item_id='+privateId))).status,200,
+ 'Buyer can download the private PDF inside the seven-day window');
+deletion=await assetAdmin(post('/api/admin/bundle-assets/'+privateId+'/purge',{}));
+assert.equal(deletion.status,409,'Paid order within seven days blocks physical deletion');
+db.prepare("UPDATE orders SET paid_at=datetime('now','-8 days') WHERE id=?").run(privateOrder.id);
+assert.equal((await commerce(new Request(root+'/api/orders/'+privateSid+'/download?item_id='+privateId))).status,403,
+ 'At eight days, paid customer no longer has download entitlement');
+const deletedKeys=[];
+env.CARDS_BUCKET.list=async ({prefix})=>({objects:[
+ {key:prefix+'notes-v1.pdf',size:2000},{key:prefix+'notes-v2.pdf',size:3000}
+],truncated:false});
+env.CARDS_BUCKET.delete=async keys=>{deletedKeys.push(...(Array.isArray(keys)?keys:[keys]));};
+deletion=await assetAdmin(post('/api/admin/bundle-assets/'+privateId+'/purge',{}));
+assert.equal(deletion.status,200,'Expired, archived PDF may be physically purged');
+const purgeResult=await deletion.json();
+assert.equal(purgeResult.files_deleted,2);
+assert.equal(purgeResult.bytes_deleted,5000);
+assert.equal(deletedKeys.length,2,'All uploaded versions removed from R2');
+assert.equal(db.prepare('SELECT pdf_key FROM products WHERE id=?').get(privateId).pdf_key,null);
+assert.ok(db.prepare('SELECT purged_at FROM bundle_only_assets WHERE product_id=?').get(privateId).purged_at);
+const postPurge=await (await assetAdmin(new Request(root+'/api/admin/bundle-assets'))).json();
+assert.ok(!postPurge.assets.some(a=>a.id===privateId),'Permanently deleted PDF disappears from admin inventory');
+assert.equal(db.prepare('SELECT pdf_key FROM bundle_order_items WHERE order_id=? AND product_id=?').get(privateOrder.id,privateId).pdf_key,
+ 'cards/'+privateId+'/notes-v1.pdf','Prior order snapshot must be retained for history');
+assert.equal((await assetAdmin(post('/api/admin/bundle-assets/'+privateId+'/purge',{}))).status,410);
+console.log('PASS: Seven-day new purchases and guarded R2 purge after checkout/entitlement expiry.');
