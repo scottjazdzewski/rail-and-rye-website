@@ -407,9 +407,36 @@ async function download(url,env){
   return new Response(obj.body,{headers:{'Content-Type':'application/pdf','Content-Disposition':`attachment; filename="${name}.pdf"`,
     'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','X-Robots-Tag':'noindex, nofollow'}});
 }
+// Free publications are explicitly public. Require a currently published $0
+// individual product on EVERY request; never expose R2 object keys or paid PDFs.
+// No order, payment method, account or buyer email is required.
+async function freeDownload(request,env,url){
+  if(request.method!=='GET')return error('Method not allowed',405);
+  const match=url.pathname.match(/^\/api\/free-download\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i);
+  if(!match)return error('Not found',404);
+  if(!env.STORE_DB||!env.CARDS_BUCKET)return error('Downloads unavailable',503);
+  const product=await env.STORE_DB.prepare(`SELECT p.id,p.title,p.pdf_key FROM products p
+    WHERE p.id=? AND p.status='published' AND p.price_cents=0
+    AND p.pdf_key IS NOT NULL AND p.pdf_key!=?
+    AND NOT EXISTS(SELECT 1 FROM bundle_only_assets a WHERE a.product_id=p.id)`
+  ).bind(match[1],BUNDLE_KEY).first();
+  if(!product)return error('Free publication not found',404);
+  const object=await env.CARDS_BUCKET.get(product.pdf_key);
+  if(!object)return error('PDF temporarily unavailable',503);
+  const name=String(product.title||'rail-and-rye').normalize('NFKD')
+    .replace(/[^a-zA-Z0-9 -]/g,'').trim().replace(/\s+/g,'-').slice(0,70)||'rail-and-rye';
+  return new Response(object.body,{headers:{
+    'Content-Type':'application/pdf',
+    'Content-Disposition':`attachment; filename="${name}.pdf"`,
+    'Cache-Control':'no-store',
+    'X-Content-Type-Options':'nosniff',
+    'Referrer-Policy':'no-referrer'
+  }});
+}
 export async function handleCommerce(request,env,url,ctx){
   const p=url.pathname;
   if(p==='/api/products'&&request.method==='GET')return listProducts(env);
+  if(p.startsWith('/api/free-download/'))return freeDownload(request,env,url);
   if(p==='/api/checkout')return checkout(request,env);
   if(p==='/api/stripe/webhook')return webhook(request,env,ctx,'test');
   if(p==='/api/stripe/live-webhook')return webhook(request,env,ctx,'live');
