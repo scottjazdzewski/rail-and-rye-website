@@ -1,0 +1,17 @@
+name: Diagnose Racing Wire feeds
+on:
+  pull_request:
+    paths:
+      - 'scripts/diagnose-racing-wire-feeds.mjs'
+      - '.github/workflows/diagnose-racing-wire-feeds.yml'
+      - 'src/racing-wire.js'
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/diagnose-racing-wire-feeds.mjs
