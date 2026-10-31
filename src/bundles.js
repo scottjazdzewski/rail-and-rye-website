@@ -39,7 +39,7 @@ async function payload(request) {
     new Set(product_ids).size!==product_ids.length)throw Error('Select 2–12 different published PDFs');
   return {title,description,category,race_date,price_cents,status,product_ids};
 }
-function eligibleChild(p){return !!p&&!!p.pdf_key&&p.pdf_key!==BUNDLE_KEY&&(p.status==='published'||(p.status==='draft'&&!!p.asset_id));}
+function eligibleChild(p){return !!p&&!!p.pdf_key&&p.pdf_key!==BUNDLE_KEY&&(p.status==='published'||p.status==='draft');}
 async function validatedChildren(env,ids) {
   const rows=[];
   for (const id of ids) {
@@ -66,7 +66,7 @@ async function allBundles(env) {
       components:(items.results||[]).map(x=>({id:x.product_id,title:x.title,status:x.status,available:eligibleChild(x),bundle_only:!!x.asset_id}))});
   }
   const singles=await env.STORE_DB.prepare(
-    "SELECT p.id,p.title,p.category,p.race_date,p.price_cents,CASE WHEN a.product_id IS NOT NULL THEN 1 ELSE 0 END AS bundle_only FROM products p LEFT JOIN bundle_only_assets a ON a.product_id=p.id WHERE (p.status='published' OR (p.status='draft' AND a.product_id IS NOT NULL)) AND p.pdf_key IS NOT NULL AND p.pdf_key != ? ORDER BY p.race_date DESC, p.title LIMIT 250"
+    "SELECT p.id,p.title,p.category,p.race_date,p.price_cents,CASE WHEN a.product_id IS NOT NULL THEN 1 ELSE 0 END AS bundle_only FROM products p LEFT JOIN bundle_only_assets a ON a.product_id=p.id WHERE p.status IN ('published','draft') AND p.pdf_key IS NOT NULL AND p.pdf_key != ? ORDER BY p.race_date DESC, p.title LIMIT 250"
   ).bind(BUNDLE_KEY).all();
   return out({bundles,available_products:singles.results||[]});
 }
