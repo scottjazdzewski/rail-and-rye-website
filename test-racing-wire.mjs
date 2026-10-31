@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
-import {handleRacingWire,handlePreviewRacingWire,previewExternalItems,parseRacingRss,categorize,refreshRacingWire,testPreviewRssFeeds,groupRacingWireStories,curateRacingWireStories,scoreRacingWireItem,subjectKind,socialPreview} from './src/racing-wire.js';
+import {PREVIEW_LIVE_FEEDS,handleRacingWire,handlePreviewRacingWire,previewExternalItems,parseRacingRss,categorize,refreshRacingWire,testPreviewRssFeeds,groupRacingWireStories,curateRacingWireStories,scoreRacingWireItem,subjectKind,socialPreview} from './src/racing-wire.js';
 const db=new DatabaseSync(':memory:');
 db.exec("CREATE TABLE journal_articles (id TEXT PRIMARY KEY,slug TEXT,title TEXT,category TEXT,excerpt TEXT,publish_date TEXT,status TEXT,created_at TEXT);");
 db.prepare("INSERT INTO journal_articles VALUES (?,?,?,?,?,?,?,?)").run(
@@ -48,20 +48,28 @@ assert.equal(categorize('Championship update','Breeders Cup'),'Stakes');
 assert.equal(parseRacingRss('<!DOCTYPE rss [<!ENTITY pwn SYSTEM "http://evil/">]>'+rss,feed).length,0);
 assert.equal(parseRacingRss('<rss><item><title>Bad</title><link>javascript:alert(1)</link><pubDate>Fri, 30 Oct 2026 12:00:00 GMT</pubDate></item></rss>',feed).length,0);
 
-const previewFeedFixtures={
- 'https://www.thoroughbreddailynews.com/feed/':{
-  host:'www.thoroughbreddailynews.com',title:'Champion colt retires to stud after Breeders Cup campaign',link:'https://www.thoroughbreddailynews.com/tdn-story/'
- },
- 'https://pastthewire.com/category/news/feed/':{
-  host:'pastthewire.com',title:'Jockey reaches six thousand career victories',link:'https://pastthewire.com/ptw-story/'
- },
- 'https://www.americasbestracing.net/rss':{
-  host:'www.americasbestracing.net',title:'Fasig Tipton yearling sells for seven figures at auction',link:'https://www.americasbestracing.net/abr-story'
- },
- 'https://usracing.com/feed':{
-  host:'usracing.com',title:'Trainer announces scratch from Saturday stakes race',link:'https://usracing.com/us-story/'
- }
-};
+const fixtureTitles=[
+ 'Champion colt retires to stud after Breeders Cup campaign',
+ 'Jockey reaches six thousand career victories',
+ 'Fasig Tipton yearling sells for seven figures at auction',
+ 'Trainer announces scratch from Saturday stakes race',
+ 'HISA issues suspension ruling after positive test',
+ 'Grade 1 winner sidelined by injury and surgery',
+ 'Filly wins Grade 2 stakes in track-record performance',
+ 'Yearling by leading sire tops major bloodstock sale',
+ 'Woodbine stakes runner scratched by veterinarian',
+ 'Broodmare delivers first foal by champion stallion',
+ 'National Steeplechase stakes race cancelled after weather change',
+ 'Trainer records one thousandth career victory',
+ 'OBS yearling sale posts record average and median',
+ 'Kentucky Derby winner retired to stud after injury',
+ 'Arc contender ruled out of Group 1 with illness'
+];
+assert.equal(PREVIEW_LIVE_FEEDS.length,15,'Expanded preview source roster contains 15 feeds');
+const previewFeedFixtures=Object.fromEntries(PREVIEW_LIVE_FEEDS.map((feed,i)=>{
+ const host=(feed.link_hosts?.[0]||feed.host);
+ return [feed.url,{host,title:fixtureTitles[i],link:'https://www.'+host+'/rr-preview-story-'+(i+1)}];
+}));
 let diagnosticFetches=0;
 const previewFetch=async url=>{
  diagnosticFetches++;
@@ -72,9 +80,9 @@ const previewFetch=async url=>{
  return new Response(xml,{status:200,headers:{'Content-Type':'application/rss+xml'}});
 };
 const diagnostic=await testPreviewRssFeeds(previewFetch);
-assert.equal(diagnosticFetches,4,'All preview RSS endpoints are exercised by diagnostic mode');
+assert.equal(diagnosticFetches,15,'All expanded preview RSS endpoints are exercised by diagnostic mode');
 assert.equal(diagnostic.diagnostic_only,true);
-assert.equal(diagnostic.results.length,4);
+assert.equal(diagnostic.results.length,15);
 assert.ok(diagnostic.results.every(x=>x.reachable&&x.http_status===200&&x.parsed_count===1));
 assert.ok(diagnostic.results.every(x=>x.newest_published_at==='2026-10-30T12:00:00.000Z'));
 assert.ok(diagnostic.results.every(x=>!('title' in x)&&!('items' in x)),
@@ -82,24 +90,24 @@ assert.ok(diagnostic.results.every(x=>!('title' in x)&&!('items' in x)),
 
 diagnosticFetches=0;
 const previewExternal=await previewExternalItems(previewFetch);
-assert.equal(diagnosticFetches,4,'Preview live aggregator checks all four RSS sources');
-assert.equal(previewExternal.items.length,4);
-assert.equal(previewExternal.sources.filter(x=>x.parsed_count===1).length,4);
+assert.equal(diagnosticFetches,15,'Preview live aggregator checks all fifteen RSS sources');
+assert.equal(previewExternal.items.length,15);
+assert.equal(previewExternal.sources.filter(x=>x.parsed_count===1).length,15);
 assert.ok(previewExternal.items.every(x=>x.preview_external===true&&x.summary===''&&!x.original));
 
 diagnosticFetches=0;
 const previewResponse=await handlePreviewRacingWire(new Request('https://railandryeracing.com/api/preview/racing-wire-test'),env,previewFetch);
 assert.equal(previewResponse.status,200);
 const previewBody=await previewResponse.json();
-assert.equal(diagnosticFetches,4);
+assert.equal(diagnosticFetches,15);
 assert.equal(previewBody.external_test_only,true);
-assert.equal(previewBody.items.length,5,'Rail & Rye Journal plus four live external feed items');
-assert.equal(previewBody.source_count,5);
-assert.equal(previewBody.external_sources.length,4);
-assert.ok(previewBody.items.some(x=>x.source==='Past The Wire'));
-assert.ok(previewBody.items.some(x=>x.source==="America's Best Racing"));
-assert.ok(previewBody.items.some(x=>x.source==='US Racing'));
-assert.ok(previewBody.items.some(x=>x.source==='Thoroughbred Daily News'));
+assert.equal(previewBody.items.length,16,'Rail & Rye Journal plus fifteen distinct relevant external feed items');
+assert.equal(previewBody.source_count,16);
+assert.equal(previewBody.external_sources.length,15);
+for(const source of ['BloodHorse','Paulick Report','Horse Racing Nation','The Racing Biz','Woodbine',
+ 'Canadian Thoroughbred','National Steeplechase Association','American Racehorse','Ocala Breeders’ Sales',
+ 'BBC Horse Racing','Timeform','Past The Wire',"America's Best Racing",'US Racing','Thoroughbred Daily News'])
+ assert.ok(previewBody.items.some(x=>x.source===source),'Expected source in curated preview: '+source);
 assert.ok(previewBody.items.every(x=>x.editorial_score>=62),'Preview emits only editorially relevant items');
 assert.equal((await handlePreviewRacingWire(new Request('https://railandryeracing.com/api/preview/racing-wire-test',{method:'POST'}),env,previewFetch)).status,405);
 
