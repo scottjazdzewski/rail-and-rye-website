@@ -1,4 +1,4 @@
-import { handleCommerce, sendQueuedEmails, checkoutReadiness } from './commerce.js';
+import { handleCommerce, sendQueuedEmails, checkoutReadiness, replacePublishedProductPdf } from './commerce.js';
 import {handleRacingWire,handlePreviewRacingWire,testPreviewRssFeeds} from './racing-wire.js';
 import {handleAdminBundles,BUNDLE_KEY} from './bundles.js';
 import {handleAdminBundleAssets} from './bundle-assets.js';
@@ -103,7 +103,7 @@ function trustedOrigin(request) {
 }
 function slugFor(title,id) {return (title.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,70)||"product")+"-"+id.slice(0,8);}
 async function fetchProduct(env,id) {return env.STORE_DB.prepare("SELECT * FROM products WHERE id = ?").bind(id).first();}
-async function handleAdminAPI(request,env,pathname) {
+async function handleAdminAPI(request,env,pathname,ctx) {
   if(!env.STORE_DB||!env.CARDS_BUCKET) return fail("Database or storage binding missing",503);
   if(!["GET","POST","PATCH","PUT"].includes(request.method)) return fail("Method not allowed",405);
   if(request.method!=="GET"&&!trustedOrigin(request)) return fail("Same-origin request required",403);
@@ -160,7 +160,10 @@ async function handleAdminAPI(request,env,pathname) {
     })();
     try{
       await Promise.all([pump,env.CARDS_BUCKET.put(key,readable,{httpMetadata:{contentType:"application/pdf"}})]);
-      await env.STORE_DB.prepare("UPDATE products SET pdf_key=? WHERE id=?").bind(key,id).run();
+      if(item.status==="published"&&item.pdf_key){
+        await replacePublishedProductPdf(env,item,key);
+        if(ctx?.waitUntil)ctx.waitUntil(sendQueuedEmails(env,8).catch(e=>console.warn('Queued PDF update notices deferred',String(e))));
+      }else await env.STORE_DB.prepare("UPDATE products SET pdf_key=? WHERE id=?").bind(key,id).run();
       // Preserve older PDF versions: existing paid orders may still reference them.
       // Cleanup requires checking unexpired D1 entitlements first.
     }catch(e){await env.CARDS_BUCKET.delete(key).catch(()=>{});console.error("PDF upload failed",e);return fail("PDF upload failed; check size and retry",500);}
@@ -206,12 +209,12 @@ export default {
             const asset=await env.STORE_DB.prepare('SELECT p.status FROM products p JOIN bundle_only_assets a ON a.product_id=p.id WHERE p.id=?').bind(upload[1]).first();
             if(!asset)return fail('Private PDF not found',404);
             if(asset.status!=='draft')return fail('Archived PDF cannot be edited',409);
-            return handleAdminAPI(request,env,'/api/admin/products/'+upload[1]+'/pdf');
+            return handleAdminAPI(request,env,'/api/admin/products/'+upload[1]+'/pdf',ctx);
           }
           return handleAdminBundleAssets(request,env,path);
         }
         if(path.startsWith("/api/admin/articles"))return handleAdminJournal(request,env,path);
-        if(path.startsWith("/api/admin/"))return handleAdminAPI(request,env,path);
+        if(path.startsWith("/api/admin/"))return handleAdminAPI(request,env,path,ctx);
         if(request.method!=="GET"&&request.method!=="HEAD")return fail("Method not allowed",405);
         const asset=new URL(url);asset.pathname="/admin/index.html";
         const result=await env.ASSETS.fetch(new Request(asset.toString(),{method:request.method}));

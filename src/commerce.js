@@ -11,8 +11,8 @@ const UUID_RE=/^[0-9a-f-]{36}$/i;
 const MAX_BODY=128*1024;
 const RR_SITE='https://railandryeracing.com';
 const MAIL_FROM='Rail & Rye Racing <orders@railandryeracing.com>';
-const JOB_RE=/^(purchase|recover)-[0-9a-f-]{36}$/i;
-const ACCESS_RE=/^((?:purchase|recover)-[0-9a-f-]{36})\.([a-f0-9]{64})$/i;
+const JOB_RE=/^(purchase|recover|update)-[0-9a-f-]{36}$/i;
+const ACCESS_RE=/^((?:purchase|recover|update)-[0-9a-f-]{36})\.([a-f0-9]{64})$/i;
 const EMAIL_RE=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 function testEmailAllowed(env,email){ // Test-only checkout: never email arbitrary Stripe test-card users.
   return !!env.ADMIN_EMAIL&&String(email||'').trim().toLowerCase()===String(env.ADMIN_EMAIL).trim().toLowerCase();
@@ -192,6 +192,59 @@ export async function sendQueuedEmails(env,limit=8){
       console.warn('Delivery job retry queued',j.id,String(e).slice(0,100));
     }
   }
+  sent += await sendQueuedProductUpdateEmails(env,Math.max(0,limit-sent));
+  return sent;
+}
+
+async function sendProductUpdateEmail(env,j,order){
+  if(!env.RESEND_API_KEY?.startsWith('re_')||!deliverySigningKey(env))throw Error('Email integration is not configured');
+  if(!recipientAllowed(env,j.email,order.stripe_session_id))throw Error('Delivery recipient not eligible');
+  const link=await deliveryLink(env,j),title=String(j.product_title||'your publication');
+  const live=sessionMode(order.stripe_session_id)==='live';
+  const textBody='Rail & Rye Racing\n\nA revised PDF is ready for '+title+', which you previously purchased.\nDownload the updated PDF: '+link+'\n\nThis secure link expires 24 hours after delivery. Your purchase access remains active until its original expiration date, with up to 5 downloads of this revised PDF. Refunded orders lose access.\n\n'+(live?'For support: support@railandryeracing.com':'SANDBOX TEST EMAIL - NO REAL PAYMENT WAS TAKEN.')+'\n\nRail & Rye Racing';
+  const html='<!doctype html><html><body style="background:#f7f5ef;color:#12253c;font-family:Arial,sans-serif;padding:28px"><div style="max-width:560px;margin:auto;background:#fff;border:1px solid #e1d7c9;padding:30px"><p style="font:28px Georgia,serif;letter-spacing:4px;color:#0b203a">RAIL &amp; RYE</p><p style="font-size:11px;color:#987548;letter-spacing:2px">PRODUCT UPDATE'+(live?'':' · SANDBOX')+'</p><h1 style="font:30px Georgia,serif;color:#0b203a">An updated PDF is ready</h1><p>A revised PDF is available for a publication you previously purchased.</p><h2 style="font:22px Georgia,serif">'+escapeHtml(title)+'</h2><p><a style="display:inline-block;padding:17px 20px;background:#0b203a;color:#fff;text-decoration:none" href="'+escapeHtml(link)+'">DOWNLOAD UPDATED PDF</a></p><p style="line-height:1.7;color:#566477;font-size:13px">This secure link expires 24 hours after delivery. Your original purchase access window remains in effect, with up to 5 downloads of this revised PDF. Refunded orders lose access.</p>'+(live?'<p style="font-size:12px;color:#a36728">Questions? Email support@railandryeracing.com</p>':'<p style="font-size:12px;color:#a36728">SANDBOX ONLY — NO REAL CHARGES</p>')+'</div></body></html>';
+  const response=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:'Bearer '+env.RESEND_API_KEY,'Content-Type':'application/json','Idempotency-Key':'rr-update-'+j.id},body:JSON.stringify({from:MAIL_FROM,to:[j.email],subject:'Rail & Rye | Updated PDF: '+title+(live?'':' (TEST)'),html,text:textBody})});
+  const body=await response.json().catch(()=>({}));
+  if(!response.ok||!body.id){console.warn('Resend update notice failed',response.status,body?.name||'unknown');throw Error('Email provider request failed');}
+  return String(body.id).slice(0,120);
+}
+
+// Publish a replacement and enqueue notices in the same D1 batch.
+export async function replacePublishedProductPdf(env,item,pdfKey){
+  await env.STORE_DB.prepare("CREATE TABLE IF NOT EXISTS product_update_jobs (id TEXT PRIMARY KEY,order_id TEXT NOT NULL,product_id TEXT NOT NULL,email TEXT NOT NULL,product_title TEXT NOT NULL,updated_pdf_key TEXT NOT NULL,state TEXT NOT NULL DEFAULT 'queued' CHECK(state IN ('queued','sending','sent')),attempts INTEGER NOT NULL DEFAULT 0,download_count INTEGER NOT NULL DEFAULT 0 CHECK(download_count>=0),created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,next_attempt_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,claimed_at TEXT,sent_at TEXT,provider_id TEXT,last_error TEXT,UNIQUE(order_id,product_id,updated_pdf_key),FOREIGN KEY(order_id) REFERENCES orders(id))").run();
+  await env.STORE_DB.prepare('CREATE INDEX IF NOT EXISTS idx_product_update_jobs_due ON product_update_jobs(state,next_attempt_at)').run();
+  const purchases=await env.STORE_DB.prepare("SELECT o.id AS order_id,o.buyer_email AS email,o.stripe_session_id FROM orders o WHERE o.status='paid' AND o.buyer_email IS NOT NULL AND datetime(o.paid_at, '+' || o.access_days || ' days') > CURRENT_TIMESTAMP AND (o.product_id=? OR EXISTS(SELECT 1 FROM bundle_order_items bi WHERE bi.order_id=o.id AND bi.product_id=?))").bind(item.id,item.id).all();
+  const statements=[env.STORE_DB.prepare('UPDATE products SET pdf_key=? WHERE id=?').bind(pdfKey,item.id)];
+  for(const order of purchases.results||[]){
+    if(!recipientAllowed(env,order.email,order.stripe_session_id))continue;
+    statements.push(env.STORE_DB.prepare('INSERT OR IGNORE INTO product_update_jobs (id,order_id,product_id,email,product_title,updated_pdf_key) VALUES (?,?,?,?,?,?)').bind('update-'+crypto.randomUUID(),order.order_id,item.id,normalizeEmail(order.email),item.title,pdfKey));
+  }
+  await env.STORE_DB.batch(statements);
+  return statements.length-1;
+}
+
+async function sendQueuedProductUpdateEmails(env,limit=8){
+  if(!env.STORE_DB||!env.RESEND_API_KEY?.startsWith('re_')||!deliverySigningKey(env))return 0;
+  let pending;
+  try{pending=await env.STORE_DB.prepare("SELECT j.id,j.order_id,j.email,j.product_title,j.attempts,o.stripe_session_id FROM product_update_jobs j JOIN orders o ON o.id=j.order_id WHERE o.status='paid' AND datetime(o.paid_at, '+' || o.access_days || ' days') > CURRENT_TIMESTAMP AND j.attempts<6 AND ((j.state='queued' AND j.next_attempt_at<=CURRENT_TIMESTAMP) OR (j.state='sending' AND j.claimed_at<datetime('now','-3 minutes'))) ORDER BY j.created_at ASC LIMIT ?").bind(limit).all();}
+  catch{return 0;}
+  let sent=0;
+  for(const j of pending.results||[]){
+    if(!/^update-[0-9a-f-]{36}$/i.test(j.id)||!recipientAllowed(env,j.email,j.stripe_session_id))continue;
+    const claim=await env.STORE_DB.prepare("UPDATE product_update_jobs SET state='sending',claimed_at=CURRENT_TIMESTAMP,attempts=attempts+1 WHERE id=? AND attempts<6 AND ((state='queued' AND next_attempt_at<=CURRENT_TIMESTAMP) OR (state='sending' AND claimed_at<datetime('now','-3 minutes')))").bind(j.id).run();
+    if(!claim.meta?.changes)continue;
+    try{
+      const order=await env.STORE_DB.prepare('SELECT status,stripe_session_id,access_days FROM orders WHERE id=?').bind(j.order_id).first();
+      if(order?.status!=='paid')continue;
+      const providerId=await sendProductUpdateEmail(env,j,order);
+      await env.STORE_DB.prepare("UPDATE product_update_jobs SET state='sent',provider_id=?,sent_at=CURRENT_TIMESTAMP,last_error=NULL WHERE id=? AND state='sending'").bind(providerId,j.id).run();
+      sent++;
+    }catch(e){
+      const minutes=Math.min(60,2**Math.min(6,(j.attempts||0)+1));
+      await env.STORE_DB.prepare("UPDATE product_update_jobs SET state='queued',last_error='Delivery temporarily unavailable',next_attempt_at=datetime('now',?||' minutes') WHERE id=? AND state='sending'").bind('+'+minutes,j.id).run();
+      console.warn('Product update notice retry queued',j.id,String(e).slice(0,100));
+    }
+  }
   return sent;
 }
 
@@ -230,16 +283,23 @@ async function deliveryItems(request,env) {
   let data;try{data=await request.json();}catch{return error('Invalid request',400);}
   const order=await accessJob(data?.code,env);
   if(!order)return error('Link invalid, expired, or order unavailable. Request a new link.',403);
+  if(order.purpose==='update')return reply({bundle:false,items:[{id:null,title:order.product_title,downloads_remaining:Math.max(0,5-order.download_count)}]});
   if(order.pdf_key!==BUNDLE_KEY)return reply({bundle:false,items:[{id:null,title:order.product_title,downloads_remaining:5-order.download_count}]});
   return reply({bundle:true,items:await bundleItems(env,order.order_id)});
 }
 
 async function accessJob(code,env){
   const m=ACCESS_RE.exec(code||'');if(!m||!deliverySigningKey(env))return null;
-  const j=await env.STORE_DB.prepare(`SELECT j.id,j.order_id,j.created_at,o.product_title,o.pdf_key,o.status,o.paid_at,o.download_count
-    FROM email_jobs j JOIN orders o ON o.id=j.order_id WHERE j.id=? AND j.state='sent'
-    AND j.sent_at>=datetime('now','-24 hours') AND o.status='paid'
-    AND datetime(o.paid_at, '+' || o.access_days || ' days') > CURRENT_TIMESTAMP AND (o.pdf_key='__rr_bundle__' OR o.download_count<5)`).bind(m[1]).first();
+  const isUpdate=m[1].startsWith('update-');
+  const j=isUpdate
+    ? await env.STORE_DB.prepare(`SELECT j.id,j.order_id,j.created_at,j.product_title,j.updated_pdf_key AS pdf_key,j.download_count,'update' AS purpose,o.status,o.paid_at,o.stripe_session_id
+      FROM product_update_jobs j JOIN orders o ON o.id=j.order_id WHERE j.id=? AND j.state='sent'
+      AND j.sent_at>=datetime('now','-24 hours') AND j.download_count<5 AND o.status='paid'
+      AND datetime(o.paid_at, '+' || o.access_days || ' days') > CURRENT_TIMESTAMP`).bind(m[1]).first()
+    : await env.STORE_DB.prepare(`SELECT j.id,j.order_id,j.created_at,j.purpose,o.product_title,o.pdf_key,o.status,o.paid_at,o.download_count,o.stripe_session_id
+      FROM email_jobs j JOIN orders o ON o.id=j.order_id WHERE j.id=? AND j.state='sent'
+      AND j.sent_at>=datetime('now','-24 hours') AND o.status='paid'
+      AND datetime(o.paid_at, '+' || o.access_days || ' days') > CURRENT_TIMESTAMP AND (o.pdf_key='__rr_bundle__' OR o.download_count<5)`).bind(m[1]).first();
   if(!j)return null;
   const supplied=m[2].toLowerCase();
   // V4/V4.1 used the Stripe TEST webhook secret to sign delivery URLs. A new
@@ -261,8 +321,12 @@ async function accessPdf(request,env){
   if(j.pdf_key===BUNDLE_KEY)return downloadBundleItem(env,j.order_id,data?.item_id);
   const object=await env.CARDS_BUCKET.get(j.pdf_key);
   if(!object)return error('PDF temporarily unavailable',503);
-  const count=await env.STORE_DB.prepare(`UPDATE orders SET download_count=download_count+1 WHERE id=?
-    AND status='paid' AND datetime(paid_at, '+' || access_days || ' days') > CURRENT_TIMESTAMP AND download_count<5`).bind(j.order_id).run();
+  const count=j.purpose==='update'
+    ? await env.STORE_DB.prepare(`UPDATE product_update_jobs SET download_count=download_count+1
+      WHERE id=? AND download_count<5 AND EXISTS(SELECT 1 FROM orders WHERE id=? AND status='paid'
+      AND datetime(paid_at, '+' || access_days || ' days') > CURRENT_TIMESTAMP)`).bind(j.id,j.order_id).run()
+    : await env.STORE_DB.prepare(`UPDATE orders SET download_count=download_count+1 WHERE id=?
+      AND status='paid' AND datetime(paid_at, '+' || access_days || ' days') > CURRENT_TIMESTAMP AND download_count<5`).bind(j.order_id).run();
   if(!count.meta?.changes)return error('Download not available',403);
   const name=String(j.product_title||'rail-and-rye').normalize('NFKD').replace(/[^a-zA-Z0-9 -]/g,'').trim().replace(/\s+/g,'-').slice(0,70)||'rail-and-rye';
   return new Response(object.body,{headers:{'Content-Type':'application/pdf','Content-Disposition':`attachment; filename="${name}.pdf"`,
