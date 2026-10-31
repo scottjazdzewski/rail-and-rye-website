@@ -227,7 +227,7 @@ export default {
       if(path==="/api/journal/articles"||path.startsWith("/api/journal/articles/"))return handlePublicJournal(request,env,path);
       const journalStory=path.match(/^\/journal\/([a-z0-9]+(?:-[a-z0-9]+)*)\/?$/);
       if(journalStory&&(request.method==="GET"||request.method==="HEAD")){
-        const asset=new URL(url);asset.pathname="/journal/index.html";asset.search="";
+        const asset=new URL(url);asset.pathname="/journal/";asset.search="";
         return env.ASSETS.fetch(new Request(asset.toString(),request));
       }
       if(path==="/api/products"||path==="/api/checkout"||path==="/api/stripe/webhook"||path==="/api/stripe/live-webhook"||path.startsWith("/api/orders/")||path==="/api/delivery/download"||path==="/api/delivery/items"||path==="/api/recovery/request")return handleCommerce(request,env,url,ctx);
