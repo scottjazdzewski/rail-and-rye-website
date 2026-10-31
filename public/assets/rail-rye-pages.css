@@ -757,7 +757,6 @@ body.heritage-home.heritage-inner-page.heritage-journal-page.rr-journal-archive-
 .rr-journal-archive-pill{display:inline-flex;align-items:center;justify-content:center;gap:10px;align-self:flex-start;margin-top:18px;padding:13px 19px;border:1px solid #b88d4b;border-radius:999px;background:rgba(4,24,36,.5);color:#edc27a;font:800 10px/1.2 var(--heritage-sans);letter-spacing:.08em;text-decoration:none;text-transform:uppercase}
 .rr-journal-archive-pill:hover{background:rgba(226,185,111,.12);color:#fff0dc}
 .rr-journal-explore{display:none}
-body.rr-journal-landing-view .rr-journal-explore{display:inline-flex}
 body.rr-journal-archive-view .rr-journal-archive-pill{display:none}
 @media(max-width:980px){
  .rr-journal-hero-grid{grid-template-columns:1fr;gap:30px}
