@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#071a2c">
+<meta name="description" content="The Racing Wire at Rail & Rye — a searchable horse-racing news desk featuring original updates and direct links to trusted racing publishers.">
+<title>The Racing Wire | Rail & Rye Racing</title><link rel="icon" href="/favicon.png" type="image/png">
+<link rel="stylesheet" href="/assets/rail-rye-core.css?v=10"><link rel="stylesheet" href="/assets/rail-rye-components.css?v=8"><link rel="stylesheet" href="/assets/rail-rye-pages.css?v=28">
+<style>
+.rrw-main{max-width:1250px;margin:0 auto;padding:54px 28px 110px}
+.rrw-head{display:flex;justify-content:space-between;align-items:flex-end;gap:28px;margin:0 0 30px;flex-wrap:wrap}
+.rrw-overline{font-size:11px;letter-spacing:.23em;font-weight:800;color:#bda47c;text-transform:uppercase}
+.rrw-title{font-family:Georgia,serif;font-size:clamp(44px,6.8vw,77px);line-height:1.02;color:#f5f0e7;letter-spacing:-.04em;font-weight:500;margin:10px 0 14px}
+.rrw-description{color:#c3cbd4;max-width:640px;line-height:1.7;font-size:15px;margin:0}
+.rrw-status{font-size:12px;color:#b4bfcb;border:1px solid rgba(206,184,144,.32);border-radius:40px;padding:10px 16px;white-space:nowrap}
+.rrw-status span{display:inline-block;width:7px;height:7px;border-radius:50%;background:#caa767;margin-right:8px}
+.rrw-layout{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:26px;align-items:start}
+.rrw-panel{background:#f8f6f1;color:#152943;border:1px solid #d8d3c7;border-radius:14px;box-shadow:0 15px 32px rgba(0,0,0,.12);overflow:hidden}
+.rrw-tools{padding:22px 24px;border-bottom:1px solid #dcd6c9}
+.rrw-tools-top{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:16px;flex-wrap:wrap}
+.rrw-tools-title{font-family:Georgia,serif;font-size:25px;margin:0;font-weight:500}
+.rrw-count{font-size:12px;color:#66758a}
+.rrw-search{display:block;width:100%;border:1px solid #cbd2d6;background:#fff;color:#142b44;font-size:15px;border-radius:8px;padding:13px 15px;outline-offset:3px}
+.rrw-filters{display:flex;gap:7px;flex-wrap:wrap;margin-top:15px}
+.rrw-filter{border:1px solid #d6d2c9;border-radius:20px;background:#fff;color:#284059;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer}
+.rrw-filter[aria-pressed="true"]{background:#0a2542;color:#f5f1e8;border-color:#0a2542}
+.rrw-item{display:grid;grid-template-columns:76px minmax(0,1fr);column-gap:21px;padding:24px 26px;border-top:1px solid #e6e1d7;transition:background-color .16s}
+.rrw-item:hover{background:#fffdf9}
+.rrw-item:first-child{border-top:0}
+.rrw-portrait{width:76px;height:78px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:#102f50;border:2px solid #d5b379;border-radius:10px;box-shadow:inset 0 0 0 3px #102f50,inset 0 0 0 4px rgba(237,209,163,.31);color:#f3d9ad}
+.rrw-portrait svg{width:42px;height:42px;display:block;stroke:currentColor;stroke-width:2;stroke-linejoin:round;stroke-linecap:round;fill:none}
+.rrw-portrait-label{font-size:9px;letter-spacing:.13em;text-transform:uppercase;font-weight:850;line-height:1;color:#f7e7ce}
+.rrw-item-body{min-width:0}
+.rrw-item-head{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:9px}
+.rrw-category{font-size:10px;text-transform:uppercase;letter-spacing:.12em;font-weight:850;color:#916f42}
+.rrw-source{font-size:11px;font-weight:700;color:#5e7182}
+.rrw-dot{color:#a7a6a1}
+.rrw-time{font-size:12px;color:#6b7782}
+.rrw-link{font-family:Georgia,serif;color:#0c2b4f;font-size:clamp(18px,1.9vw,22px);line-height:1.3;font-weight:600;text-decoration:none}
+.rrw-link:hover,.rrw-link:focus{color:#9c7439;text-decoration:underline;text-underline-offset:4px}
+.rrw-summary{font-size:14px;line-height:1.6;color:#4e5f70;margin:8px 0 0;overflow-wrap:anywhere}
+.rrw-attribution{display:flex;gap:7px;flex-wrap:wrap;align-items:baseline;font-size:12px;margin-top:14px;padding-top:11px;border-top:1px solid #ede7dc}
+.rrw-attribution-label{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#738195;font-weight:800}
+.rrw-attribution a{color:#76592e;font-weight:800;text-decoration:underline;text-underline-offset:3px}
+.rrw-attribution a:hover{color:#112e4c}
+.rrw-portrait[data-kind="owner"]{background:#243d51}
+.rrw-portrait[data-kind="trainer"]{background:#203b55}
+.rrw-portrait[data-kind="jockey"]{background:#152e50}
+.rrw-portrait[data-kind="race"]{background:#0d284b}
+.rrw-read{display:inline-block;margin-top:12px;font-size:12px;color:#85632f;font-weight:800;text-decoration:none;letter-spacing:.03em}
+.rrw-empty{padding:42px 28px;text-align:center;color:#617080;line-height:1.8}
+.rrw-more-wrap{padding:20px;text-align:center;border-top:1px solid #e6e1d7}
+.rrw-more{padding:11px 25px;border:1px solid #b5a17e;border-radius:7px;background:#fff;color:#203c58;font-weight:800;cursor:pointer}
+.rrw-more[hidden]{display:none}
+.rrw-side{display:grid;gap:18px}
+.rrw-side-card{border:1px solid rgba(209,183,142,.35);border-radius:12px;padding:24px;color:#e8e4db;background:rgba(8,27,48,.68)}
+.rrw-side-card h2{font-family:Georgia,serif;font-size:24px;font-weight:500;margin:0 0 10px;color:#fff3dc}
+.rrw-side-card p{font-size:13px;line-height:1.7;color:#c6cbd3;margin:0 0 15px}
+.rrw-source-link{display:block;padding:13px 0;border-top:1px solid rgba(209,183,142,.22);color:#f3d7a9;font-weight:750;font-size:13px;text-decoration:none}
+.rrw-source-link:hover{text-decoration:underline}
+.rrw-footnote{font-size:12px;line-height:1.8;color:#adb8c3}
+.rrw-footnote a{color:#d2b17c}
+@media(max-width:870px){.rrw-layout{grid-template-columns:1fr}.rrw-main{padding:38px 18px 70px}.rrw-head{margin-bottom:24px}.rrw-item{padding:20px 19px}.rrw-tools{padding:20px}.rrw-side{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:590px){.rrw-side{grid-template-columns:1fr}.rrw-title{font-size:48px}.rrw-description{font-size:14px}.rrw-item{grid-template-columns:58px minmax(0,1fr);column-gap:13px;padding:17px 14px}.rrw-portrait{width:58px;height:62px;border-radius:8px}.rrw-portrait svg{width:31px;height:31px}.rrw-portrait-label{font-size:8px}.rrw-item-head{gap:7px}.rrw-status{white-space:normal}}
+</style></head>
+<body class="heritage-home heritage-inner-page">
+<!-- Original Rail & Rye subject pictograms: horse, ownership, trainer, jockey and race -->
+<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden">
+<symbol id="rrw-icon-horse" viewBox="0 0 48 48"><path d="M11 39c2-8 6-12 10-15l-2-7 3-10 4 5 6-3 5 9-3 9 4 5-5 5-7-2-3-5-5 9z"/><path d="M23 13l3 5m9 4h-4m-5 1h1"/><path d="M16 36l6-4"/></symbol>
+<symbol id="rrw-icon-owner" viewBox="0 0 48 48"><path d="M24 5 39 11v12c0 11-6 16-15 21C15 39 9 34 9 23V11Z"/><path d="m24 13 3.2 6.4 7.1 1-5.1 5 1.2 7-6.4-3.4-6.4 3.4 1.2-7-5.1-5 7.1-1z"/></symbol>
+<symbol id="rrw-icon-trainer" viewBox="0 0 48 48"><path d="M15 9h18m-9 0v5M17 13l-4-3m18 3 4-3"/><circle cx="24" cy="28" r="14"/><path d="M24 28l8-7m-8 7v-8m-9 17 3-3m12 1 3 3"/></symbol>
+<symbol id="rrw-icon-jockey" viewBox="0 0 48 48"><path d="M11 25c0-10 6-17 14-17s14 7 14 17H11Z"/><path d="M7 25h34m-9-11c-4 1-8 5-8 11m-11 6 5-5m15 0 5 5"/><path d="M17 33l7 8 7-8m-12-6 5 4 5-4"/></symbol>
+<symbol id="rrw-icon-race" viewBox="0 0 48 48"><path d="M12 44V5l7 3 8-3 9 4v22l-9-4-8 4-7-3"/><path d="m13 13 6 2 8-3 8 3M13 21l6 3 8-4 8 3M19 8v23m8-26v22"/></symbol>
+</svg>
+<div class="heritage-inner-hero"><header class="heritage-header"><div class="heritage-shell heritage-header-inner">
+<a class="heritage-brand" href="/" aria-label="Rail and Rye home"><span class="heritage-brand-mark"><img src="/assets/approved/brand/rail-rye-ivory-logo.png" alt="Rail & Rye official horseshoe emblem" width="80" height="80" decoding="async"></span><span class="heritage-wordmark">RAIL &amp; RYE</span></a>
+<div class="heritage-strap"><img class="heritage-horse-mini" src="/assets/approved/brand/header-horse.webp" alt="" aria-hidden="true" width="66" height="76"><span>Thoroughbred Racing Intelligence</span></div>
+<nav class="heritage-nav" aria-label="Main navigation"><a class="heritage-nav-pill" href="/race-cards/">Race Cards</a><a class="heritage-nav-pill" href="/journal/">The Journal</a><a class="heritage-nav-pill" href="/racing-wire/" aria-current="page">Racing Wire</a><a class="heritage-nav-pill" href="https://rail-rye-shop.fourthwall.com/" target="_blank" rel="noopener noreferrer">Apparel</a></nav>
+<details class="heritage-mobile-nav"><summary aria-label="Open navigation">Menu <span aria-hidden="true">☰</span></summary><nav aria-label="Mobile navigation"><a href="/race-cards/">Race Cards</a><a href="/journal/">The Journal</a><a href="/racing-wire/" aria-current="page">Racing Wire</a><a href="https://rail-rye-shop.fourthwall.com/" target="_blank" rel="noopener noreferrer">Apparel ↗</a></nav></details>
+</div></header></div>
+<main class="rrw-main">
+<section class="rrw-head" aria-labelledby="wire-title"><div>
+<div class="rrw-overline">THE BACKSTRETCH DISPATCH · RAIL &amp; RYE</div>
+<h1 id="wire-title" class="rrw-title">The Racing Wire.</h1>
+<p class="rrw-description">Racing stories worth following, in one clear stream. Social updates from reputable racing accounts, new Rail &amp; Rye reports and direct links to their original sources.</p>
+</div><div class="rrw-status" id="wireStatus" role="status"><span></span>Loading recent dispatches…</div></section>
+<div class="rrw-layout">
+<section class="rrw-panel" aria-labelledby="dispatches-heading">
+<div class="rrw-tools"><div class="rrw-tools-top"><h2 id="dispatches-heading" class="rrw-tools-title">Latest dispatches</h2><span class="rrw-count" id="wireCount"></span></div>
+<label for="wireSearch" class="sr-only">Search news headlines</label><input class="rrw-search" id="wireSearch" type="search" placeholder="Search horses, jockeys, trainers, topics…" autocomplete="off">
+<div class="rrw-filters" role="group" aria-label="News categories" id="wireFilters">
+<button type="button" class="rrw-filter" data-kind="all" aria-pressed="true">All</button>
+<button type="button" class="rrw-filter" data-kind="horse" aria-pressed="false">Horse</button>
+<button type="button" class="rrw-filter" data-kind="owner" aria-pressed="false">Owner</button>
+<button type="button" class="rrw-filter" data-kind="trainer" aria-pressed="false">Trainer</button>
+<button type="button" class="rrw-filter" data-kind="jockey" aria-pressed="false">Jockey</button>
+<button type="button" class="rrw-filter" data-kind="race" aria-pressed="false">Race</button>
+</div></div>
+<div id="wireList" aria-live="polite"><p class="rrw-empty">Loading news…</p></div>
+<div class="rrw-more-wrap"><button id="wireMore" type="button" class="rrw-more" hidden>Load more updates</button></div>
+</section>
+<aside class="rrw-side" aria-label="Racing newsrooms">
+<section class="rrw-side-card"><h2>From the publishers</h2><p>Updates from Paulick Report's public Bluesky account appear in the wire using Bluesky's official API. For other publishers, visit the original newsrooms directly.</p>
+<a class="rrw-source-link" href="https://bsky.app/profile/paulickreport.bsky.social" target="_blank" rel="noopener noreferrer">Paulick Report on Bluesky ↗</a>
+<a class="rrw-source-link" href="https://www.thoroughbreddailynews.com/" target="_blank" rel="noopener noreferrer">Thoroughbred Daily News ↗</a>
+<a class="rrw-source-link" href="https://paulickreport.com/" target="_blank" rel="noopener noreferrer">Paulick Report ↗</a>
+<a class="rrw-source-link" href="https://www.bloodhorse.com/horse-racing" target="_blank" rel="noopener noreferrer">BloodHorse ↗</a>
+<a class="rrw-source-link" href="https://www.americasbestracing.net/" target="_blank" rel="noopener noreferrer">America's Best Racing ↗</a>
+</section>
+<section class="rrw-side-card"><h2>Live posts from X</h2><p>View Paulick Report's public timeline with X's official widget. The feed loads only when you open it.</p>
+<details id="rrwXFeed"><summary style="color:#f2d3a0;cursor:pointer;font-weight:800;padding:8px 0">Show X timeline</summary>
+<a class="twitter-timeline" data-height="450" data-theme="dark" data-chrome="noheader nofooter" href="https://x.com/paulickreport">Read @paulickreport on X</a>
+</details><a class="rrw-source-link" href="https://x.com/paulickreport" target="_blank" rel="noopener noreferrer">Open on X ↗</a></section>
+<section class="rrw-side-card"><h2>From our desk</h2><p>Every story published in The Journal automatically joins The Racing Wire. No duplicate posts or extra work.</p><a class="rrw-source-link" href="/journal/">Read The Journal ↗</a><a class="rrw-source-link" href="/race-cards/">Browse race cards ↗</a></section>
+<p class="rrw-footnote">Third-party headlines will link to their original publishers. This wire does not currently provide independently verified live scratches or official entry changes. Always confirm race-day information with the track or official racing authority.</p>
+</aside>
+</div></main>
+<footer class="heritage-footer"><div class="heritage-shell heritage-footer-inner"><span class="heritage-footmark">RAIL &amp; RYE</span><nav aria-label="Footer"><a href="/store/">Publications</a><a href="/journal/">Journal</a><a href="/racing-wire/">Racing Wire</a><a href="mailto:support@railandryeracing.com">Support</a><a href="/policies/terms.html">Terms</a><a href="/policies/privacy.html">Privacy</a></nav><small>Independent research. No guarantees.</small></div></footer>
+<script>
+(()=>{'use strict';
+const $=id=>document.getElementById(id);
+let items=[],kind='all',shown=20;
+const list=$('wireList'),search=$('wireSearch'),more=$('wireMore');
+const kinds=new Set(['horse','owner','trainer','jockey','race']);
+const svgNS='http://www.w3.org/2000/svg';
+function make(tag,className,value){const el=document.createElement(tag);if(className)el.className=className;if(value!==undefined)el.textContent=String(value);return el;}
+function stamp(value,original){const d=new Date(value);if(!Number.isFinite(+d))return 'Date unavailable';
+ return new Intl.DateTimeFormat('en-US',original?
+ {month:'short',day:'numeric',year:'numeric'}:
+ {month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZone:'America/New_York',timeZoneName:'short'}).format(d);
+}
+function hrefFor(a){
+ if(a.original)return /^\/journal\/[a-z0-9-]+\/$/.test(a.url)?a.url:null;
+ try{const u=new URL(a.url);return u.protocol==='https:'?u.href:null;}catch{return null;}
+}
+function portrait(subject){
+ const name=kinds.has(subject)?subject:'race';
+ const badge=make('div','rrw-portrait');badge.dataset.kind=name;
+ badge.setAttribute('role','img');badge.setAttribute('aria-label',name+' news');
+ const vector=document.createElementNS(svgNS,'svg'),use=document.createElementNS(svgNS,'use');
+ vector.setAttribute('viewBox','0 0 48 48');vector.setAttribute('aria-hidden','true');
+ use.setAttribute('href','#rrw-icon-'+name);vector.append(use);
+ badge.append(vector,make('span','rrw-portrait-label',name));return badge;
+}
+function draw(){
+ const query=search.value.trim().toLowerCase();
+ const found=items.filter(a=>(kind==='all'||(a.subject_kind||'race')===kind)&&
+  (!query||(a.title+' '+(a.summary||'')+' '+a.source+' '+(a.category||'')).toLowerCase().includes(query)));
+ $('wireCount').textContent=found.length+' update'+(found.length===1?'':'s');
+ list.replaceChildren();
+ if(!found.length){list.append(make('p','rrw-empty',items.length?
+   'No updates match this search. Try another subject or keyword.':
+   'No dispatches yet. Our published Journal stories and linked social sources will appear here.'));more.hidden=true;return;}
+ for(const a of found.slice(0,shown)){
+   const url=hrefFor(a);if(!url)continue;
+   const article=make('article','rrw-item'),body=make('div','rrw-item-body');
+   const head=make('div','rrw-item-head');
+   head.append(make('span','rrw-category',a.category||a.subject_kind||'Racing'),
+     make('span','rrw-dot','·'),make('time','rrw-time',stamp(a.published_at,!!a.original)));
+   head.lastChild.dateTime=a.published_at;
+   const heading=make('h3','');heading.style.margin='0';
+   const link=make('a','rrw-link',a.title);link.href=url;
+   if(!a.original){link.target='_blank';link.rel='noopener noreferrer external';}
+   heading.append(link);body.append(head,heading);
+   if(a.summary)body.append(make('p','rrw-summary',a.summary));
+   const attribution=make('div','rrw-attribution');
+   const sourceLabel=make('span','rrw-attribution-label','Source:');
+   const sourceLink=make('a','',a.source||'Original report');sourceLink.href=url;
+   if(!a.original){sourceLink.target='_blank';sourceLink.rel='noopener noreferrer external';}
+   attribution.append(sourceLabel,sourceLink,make('span','rrw-dot','·'),
+     make('span','rrw-time',a.original?'Read original story':'View original post ↗'));
+   body.append(attribution);article.append(portrait(a.subject_kind),body);list.append(article);
+ }
+ more.hidden=found.length<=shown;
+}
+search.addEventListener('input',()=>{shown=20;draw();});
+$('wireFilters').addEventListener('click',e=>{
+ const btn=e.target.closest('button[data-kind]');if(!btn)return;
+ kind=btn.dataset.kind;shown=20;
+ for(const b of $('wireFilters').querySelectorAll('button'))b.setAttribute('aria-pressed',String(b===btn));
+ draw();
+});
+more.addEventListener('click',()=>{shown+=20;draw();});
+async function load(){
+ try{
+ const response=await fetch('/api/racing-wire',{cache:'no-store'}),data=await response.json();
+ if(!response.ok)throw Error(data.error||'Feed temporarily unavailable');
+ items=Array.isArray(data.items)?data.items:[];$('wireStatus').innerHTML='<span></span>'+ (data.source_count?'Publisher headlines and Rail & Rye stories':'Rail & Rye dispatches');
+ draw();
+ }catch(e){$('wireStatus').textContent='Connection unavailable';list.replaceChildren(make('p','rrw-empty','Unable to load dispatches. Please try again shortly.'));more.hidden=true;}
+}
+$('rrwXFeed').addEventListener('toggle',function(){
+ if(!this.open||this.dataset.loaded)return;
+ this.dataset.loaded='1';
+ const script=document.createElement('script');
+ script.async=true;script.src='https://platform.twitter.com/widgets.js';script.charset='utf-8';
+ document.body.appendChild(script);
+});
+load();
+})();
+</script></body></html>
