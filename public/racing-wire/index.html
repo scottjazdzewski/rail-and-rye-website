@@ -117,32 +117,67 @@
 <script>
 (()=>{'use strict';
 const $=id=>document.getElementById(id);
-let items=[],category='All',shown=20;
+let items=[],kind='all',shown=20;
 const list=$('wireList'),search=$('wireSearch'),more=$('wireMore');
+const kinds=new Set(['horse','owner','trainer','jockey','race']);
+const svgNS='http://www.w3.org/2000/svg';
 function make(tag,className,value){const el=document.createElement(tag);if(className)el.className=className;if(value!==undefined)el.textContent=String(value);return el;}
-function stamp(value){const d=new Date(value);return Number.isFinite(+d)?new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',year:'numeric'}).format(d):'Date unavailable';}
+function stamp(value,original){const d=new Date(value);if(!Number.isFinite(+d))return 'Date unavailable';
+ return new Intl.DateTimeFormat('en-US',original?
+ {month:'short',day:'numeric',year:'numeric'}:
+ {month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZone:'America/New_York',timeZoneName:'short'}).format(d);
+}
+function hrefFor(a){
+ if(a.original)return /^\/journal\/[a-z0-9-]+\/$/.test(a.url)?a.url:null;
+ try{const u=new URL(a.url);return u.protocol==='https:'?u.href:null;}catch{return null;}
+}
+function portrait(subject){
+ const name=kinds.has(subject)?subject:'race';
+ const badge=make('div','rrw-portrait');badge.dataset.kind=name;
+ badge.setAttribute('role','img');badge.setAttribute('aria-label',name+' news');
+ const vector=document.createElementNS(svgNS,'svg'),use=document.createElementNS(svgNS,'use');
+ vector.setAttribute('viewBox','0 0 48 48');vector.setAttribute('aria-hidden','true');
+ use.setAttribute('href','#rrw-icon-'+name);vector.append(use);
+ badge.append(vector,make('span','rrw-portrait-label',name));return badge;
+}
 function draw(){
  const query=search.value.trim().toLowerCase();
- const found=items.filter(a=>(category==='All'||a.category===category)&&(!query||(a.title+' '+a.summary+' '+a.source).toLowerCase().includes(query)));
- $('wireCount').textContent=found.length+' dispatch'+(found.length===1?'':'es');
+ const found=items.filter(a=>(kind==='all'||(a.subject_kind||'race')===kind)&&
+  (!query||(a.title+' '+(a.summary||'')+' '+a.source+' '+(a.category||'')).toLowerCase().includes(query)));
+ $('wireCount').textContent=found.length+' update'+(found.length===1?'':'s');
  list.replaceChildren();
- if(!found.length){list.append(make('p','rrw-empty',items.length?'Nothing matches this search. Try another category or keyword.':'No published Rail & Rye dispatches yet. Visit the original newsrooms in the panel alongside.'));more.hidden=true;return;}
+ if(!found.length){list.append(make('p','rrw-empty',items.length?
+   'No updates match this search. Try another subject or keyword.':
+   'No dispatches yet. Our published Journal stories and linked social sources will appear here.'));more.hidden=true;return;}
  for(const a of found.slice(0,shown)){
-   const article=make('article','rrw-item'),head=make('div','rrw-item-head');
-   head.append(make('span','rrw-category',a.category||'Industry'),make('span','rrw-source',a.source),make('span','rrw-dot','·'),make('time','rrw-time',stamp(a.published_at)));
+   const url=hrefFor(a);if(!url)continue;
+   const article=make('article','rrw-item'),body=make('div','rrw-item-body');
+   const head=make('div','rrw-item-head');
+   head.append(make('span','rrw-category',a.category||a.subject_kind||'Racing'),
+     make('span','rrw-dot','·'),make('time','rrw-time',stamp(a.published_at,!!a.original)));
    head.lastChild.dateTime=a.published_at;
    const heading=make('h3','');heading.style.margin='0';
-   const link=make('a','rrw-link',a.title);link.href=a.url;if(!a.original){link.target='_blank';link.rel='noopener noreferrer external';}heading.append(link);
-   article.append(head,heading);
-   if(a.summary)article.append(make('p','rrw-summary',a.summary));
-   const read=make('a','rrw-read',a.original?'READ RAIL & RYE STORY →':'READ AT SOURCE ↗');read.href=a.url;
-   if(!a.original){read.target='_blank';read.rel='noopener noreferrer external';}article.append(read);
-   list.append(article);
+   const link=make('a','rrw-link',a.title);link.href=url;
+   if(!a.original){link.target='_blank';link.rel='noopener noreferrer external';}
+   heading.append(link);body.append(head,heading);
+   if(a.summary)body.append(make('p','rrw-summary',a.summary));
+   const attribution=make('div','rrw-attribution');
+   const sourceLabel=make('span','rrw-attribution-label','Source:');
+   const sourceLink=make('a','',a.source||'Original report');sourceLink.href=url;
+   if(!a.original){sourceLink.target='_blank';sourceLink.rel='noopener noreferrer external';}
+   attribution.append(sourceLabel,sourceLink,make('span','rrw-dot','·'),
+     make('span','rrw-time',a.original?'Read original story':'View original post ↗'));
+   body.append(attribution);article.append(portrait(a.subject_kind),body);list.append(article);
  }
  more.hidden=found.length<=shown;
 }
 search.addEventListener('input',()=>{shown=20;draw();});
-$('wireFilters').addEventListener('click',e=>{const btn=e.target.closest('button[data-category]');if(!btn)return;category=btn.dataset.category;shown=20;for(const b of $('wireFilters').querySelectorAll('button'))b.setAttribute('aria-pressed',String(b===btn));draw();});
+$('wireFilters').addEventListener('click',e=>{
+ const btn=e.target.closest('button[data-kind]');if(!btn)return;
+ kind=btn.dataset.kind;shown=20;
+ for(const b of $('wireFilters').querySelectorAll('button'))b.setAttribute('aria-pressed',String(b===btn));
+ draw();
+});
 more.addEventListener('click',()=>{shown+=20;draw();});
 async function load(){
  try{
