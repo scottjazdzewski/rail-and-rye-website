@@ -95,7 +95,11 @@ for(const type of ['horse','owner','trainer','jockey','race','stable','racetrack
 assert.ok(wirePage.includes('Source: '),'Source attribution exists');
 assert.ok(!wirePage.includes('bsky.app'),'Preview contains no Blue Sky source links');
 assert.ok(wirePage.includes('Also reported by:'),'UI offers linked alternate sources when one event has several reports');
-assert.ok(wirePage.includes('News Source Desk')||wirePage.includes('NEWS SOURCE DESK'),'Source status desk shown');
+assert.ok(!wirePage.includes('TRENDING TOPICS'),'Trending Topics sidebar removed');
+assert.ok(!wirePage.includes('NEWS SOURCE DESK'),'Source directory sidebar removed');
+assert.ok(wirePage.includes('UPCOMING STAKES'),'Upcoming Stakes sidebar present');
+assert.equal((wirePage.match(/class="rrw-stake-row"/g)||[]).length,4,'Preview shows four verified upcoming stakes');
+assert.ok(wirePage.includes('Twilight Derby (GII)')&&wirePage.includes('Forty Niner S. (GIII)'),'Verified graded stakes shown');
 assert.ok(wirePage.includes('UNLISTED DESIGN PREVIEW'),'Page is clearly labeled as unlisted');
 assert.ok(wirePage.includes('not a real report'),'Demonstration content clearly identified');
 assert.ok(wirePage.includes('source')&&wirePage.includes('title')&&wirePage.includes('summary'),'News cards support original link and faithful source content');
