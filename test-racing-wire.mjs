@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import {readFileSync} from 'node:fs';
+import vm from 'node:vm';
 import {handleRacingWire,parseRacingRss,categorize,refreshRacingWire,parseBlueskyAuthorFeed,subjectKind,socialPreview} from './src/racing-wire.js';
 const db=new DatabaseSync(':memory:');
 db.exec("CREATE TABLE journal_articles (id TEXT PRIMARY KEY,slug TEXT,title TEXT,category TEXT,excerpt TEXT,publish_date TEXT,status TEXT,created_at TEXT);");
@@ -87,14 +88,29 @@ assert.ok(preview.summary.includes('workout'));
 assert.ok(!preview.summary.includes('imagined'));
 assert.equal(socialPreview('Short original post').title,'Short original post');
 assert.equal(socialPreview('Short original post').summary,'');
-const wirePage=readFileSync(new URL('./public/racing-wire/index.html',import.meta.url),'utf8');
-for(const type of ['horse','owner','trainer','jockey','race']){
- assert.ok(wirePage.includes('id="rrw-icon-'+type+'"'),'Custom icon exists: '+type);
- assert.ok(wirePage.includes('data-kind="'+type+'"'),'News filter exists: '+type);
+const wirePage=readFileSync(new URL('./public/admin/racing-wire-preview.html',import.meta.url),'utf8');
+for(const type of ['horse','owner','trainer','jockey','race','stable','racetrack','breeding','sale','regulatory','achievement','industry']){
+ assert.ok(wirePage.includes(type+':'), 'Original subject pictogram exists: '+type);
+ assert.ok(wirePage.includes("'"+type+"'"), 'Subject filter configured: '+type);
 }
-assert.ok(wirePage.includes('rrw-attribution-label'),'Source attribution row exists');
-assert.ok(wirePage.includes('View original post'),'Original social link is clearly labeled');
-assert.ok(wirePage.includes('a.summary'),'News summaries are rendered when actually supplied');
-assert.ok(!wirePage.includes('innerHTML=a.title'),'No unsafe source-content HTML injection');
+assert.ok(wirePage.includes('Source: '),'Source attribution exists');
+assert.ok(wirePage.includes('PRIVATE DESIGN PREVIEW'),'Page clearly indicates private preview');
+assert.ok(wirePage.includes('not a real report'),'Demonstration content clearly identified');
+assert.ok(wirePage.includes('source')&&wirePage.includes('title')&&wirePage.includes('summary'),'News cards support original link and faithful source content');
+assert.ok(wirePage.includes("fetch('/api/admin/racing-wire-preview'"),'Live feed requests the protected admin API, not a public endpoint');
+assert.ok(wirePage.includes('rail-rye-ivory-logo.png'),'Owner-approved Rail & Rye branding reused');
+assert.ok(!/<img\b[^>]+src=['"]https?:\/\//i.test(wirePage),'No borrowed publisher images');
+const clientJs=wirePage.match(/<script>([\s\S]*?)<\/script>/);
+assert.ok(clientJs,'Preview contains interactive JavaScript');
+new vm.Script(clientJs[1],{filename:'racing-wire-preview.js'});
+const router=readFileSync(new URL('./src/index.js',import.meta.url),'utf8');
+assert.ok(router.includes("if(path==='/api/admin/racing-wire-preview')"),'Preview API sits after admin authentication');
+assert.ok(router.includes("if(path==='/admin/racing-wire-preview'"),'Preview page sits after admin authentication');
+assert.ok(!router.includes('if(path==="/api/racing-wire")'),'No public news endpoint');
+const home=readFileSync(new URL('./public/index.html',import.meta.url),'utf8');
+assert.ok(!home.includes('/racing-wire/'),'No public navigation pill until explicit launch approval');
+assert.equal(subjectKind('A stallion retires to stud','Breeding'),'breeding');
+assert.equal(subjectKind('New sales figures','Sales / Auctions'),'sale');
+assert.equal(subjectKind('Racing commission announces rule change','Regulatory'),'regulatory');
 
 console.log('PASS Racing Wire: original published-only news, archive/draft secrecy, approved-only RSS source gate, safe publisher links, XML safety, categorization.');
