@@ -76,6 +76,63 @@ export async function refreshRacingWire(env){
   await env.STORE_DB.prepare("DELETE FROM racing_wire_items WHERE published_at<datetime('now','-45 days')").run();
   return {checked,added};
 }
+
+/* Bluesky's documented public read API allows public author feeds without
+ * login. Only show short post previews, attribution and links; no media copies.
+ * Respect author/post !no-unauthenticated labels and use a 10-minute cache.
+ */
+const SOCIAL_SOURCES=Object.freeze([
+  {handle:'paulickreport.bsky.social',name:'Paulick Report',network:'Bluesky'}
+]);
+export function parseBlueskyAuthorFeed(data,source){
+  if(!data||!Array.isArray(data.feed))return [];
+  const out=[];
+  for(const item of data.feed.slice(0,35)){
+    const p=item?.post,author=p?.author||{};
+    if(item?.reason||author.handle!==source.handle||author.viewer?.blockedBy)continue;
+    const labels=[...(author.labels||[]),...(p.labels||[])];
+    if(labels.some(x=>['!no-unauthenticated','porn','sexual','graphic-media','nudity'].includes(x.val)))continue;
+    if(p.record?.$type!=='app.bsky.feed.post')continue;
+    const text=String(p.record.text||'').replace(/\s+/g,' ').trim();
+    const match=/^at:\/\/[a-z0-9:._%-]+\/app\.bsky\.feed\.post\/([a-zA-Z0-9]+)$/.exec(p.uri||'');
+    const created=p.record.createdAt||p.indexedAt,dt=new Date(created);
+    if(!text||!match||!Number.isFinite(+dt)||dt.getTime()>Date.now()+3600000)continue;
+    out.push({
+      title:text.length>190?text.slice(0,187).trimEnd()+'…':text,
+      url:'https://bsky.app/profile/'+source.handle+'/post/'+match[1],
+      source:source.name+' · '+source.network,category:categorize(text),
+      published_at:dt.toISOString(),summary:'',original:false
+    });
+  }
+  return out;
+}
+async function publicSocialItems(env){
+  if(env.RR_SOCIAL_FEEDS==='off')return [];
+  const out=[];
+  const store=typeof caches!=='undefined'&&caches.default?caches.default:null;
+  for(const source of SOCIAL_SOURCES){
+    const cacheKey=new Request('https://railandryeracing.com/__rr_wire_cache/'+source.handle);
+    try{
+      let cached=store?await store.match(cacheKey):null;
+      if(!cached){
+        const url='https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor='+encodeURIComponent(source.handle)+'&filter=posts_no_replies&limit=30';
+        const response=await fetch(url,{headers:{Accept:'application/json'},signal:AbortSignal.timeout(5500)});
+        if(!response.ok)continue;
+        const length=Number(response.headers.get('content-length')||0);
+        if(length>400000)continue;
+        const raw=await response.text();if(raw.length>400000)continue;
+        const parsed=JSON.parse(raw);
+        const records=parseBlueskyAuthorFeed(parsed,source);
+        cached=new Response(JSON.stringify(records),{headers:{'Content-Type':'application/json','Cache-Control':'public, max-age=600'}});
+        if(store)await store.put(cacheKey,cached.clone());
+      }
+      const parsed=await cached.json();
+      if(Array.isArray(parsed))out.push(...parsed.slice(0,30));
+    }catch(e){console.warn('Racing Wire public social feed unavailable',source.handle,String(e).slice(0,75));}
+  }
+  return out;
+}
+
 export async function handleRacingWire(request,env){
   if(request.method!=='GET')return reply({error:'Method not allowed'},405);
   if(!env.STORE_DB)return reply({error:'Racing Wire is temporarily unavailable'},503);
@@ -101,8 +158,9 @@ export async function handleRacingWire(request,env){
       published_at:a.published_at,original:false,summary:''
     }));
   }catch(e){console.warn('Racing Wire syndicated cache unavailable',String(e).slice(0,90));}
-  const items=[...originals,...syndicated].filter(x=>Number.isFinite(Date.parse(x.published_at)))
+  const social=await publicSocialItems(env);
+  const items=[...originals,...syndicated,...social].filter(x=>Number.isFinite(Date.parse(x.published_at)))
     .sort((a,b)=>Date.parse(b.published_at)-Date.parse(a.published_at)).slice(0,150);
-  return reply({items,source_count:FEEDS.filter(f=>f.authorized).length,
+  return reply({items,source_count:FEEDS.filter(f=>f.authorized).length+(env.RR_SOCIAL_FEEDS==='off'?0:SOCIAL_SOURCES.length),
     headline_only:true,generated_at:new Date().toISOString()});
 }
