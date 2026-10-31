@@ -707,3 +707,9 @@ body.rr-journal-archive-view .rr-journal-feature-rail{display:none}
   .rr-journal-article-title{font-size:clamp(36px,10vw,54px)}
   .rr-journal-article-copy{font-size:14px;line-height:1.8}
 }
+
+/* Page 7 uses the supplied vintage ephemera hero; the Journal landing keeps its existing image. */
+body.heritage-home.heritage-inner-page.heritage-journal-page.rr-journal-archive-view>.heritage-inner-hero{
+ background-image:url('/assets/approved/journal/archive-ephemera.webp');
+ background-position:center 50%;
+}
