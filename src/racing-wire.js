@@ -40,12 +40,25 @@ export function categorize(title,category=''){
 // Classifications are labels, not claims about a horse's actual race status.
 export function subjectKind(text,section=''){
   const category=String(section||'').toLowerCase();
+  if(/^(stable|stables|barn)$/.test(category))return 'stable';
+  if(/^(racetrack|track|tracks)$/.test(category))return 'racetrack';
+  if(/^(breeding|breeder|breeders)$/.test(category))return 'breeding';
+  if(/^(sale|sales|sales \/ auctions|auction|auctions)$/.test(category))return 'sale';
+  if(/^(regulatory|rules|rulings)$/.test(category))return 'regulatory';
+  if(/^(achievement|achievements|milestones)$/.test(category))return 'achievement';
+  if(/^(industry|industry news)$/.test(category))return 'industry';
   if(/^(owner|owners|ownership)$/.test(category))return 'owner';
   if(/^(jockey|jockeys)$/.test(category))return 'jockey';
   if(/^(trainer|trainers)$/.test(category))return 'trainer';
   if(/^(horse|horses|breeding)$/.test(category))return 'horse';
   if(/^(race|race-day|stakes)$/.test(category))return 'race';
   const words=String(text||'').toLowerCase();
+  if(/\b(auction|yearling sale|bloodstock sale|sold for|consignment|hammer price)\b/.test(words))return 'sale';
+  if(/\b(breeding|pedigree|stallion|stud fee|foal|sire|dam)\b/.test(words))return 'breeding';
+  if(/\b(racing commission|licensing|suspension|ruling|regulatory)\b/.test(words))return 'regulatory';
+  if(/\b(milestone|hall of fame|career record|award|achievement)\b/.test(words))return 'achievement';
+  if(/\b(racetrack|racecourse|track surface|track management)\b/.test(words))return 'racetrack';
+  if(/\b(barn|stable|training center)\b/.test(words))return 'stable';
   if(/\b(owner|owners|ownership|syndicate|partnership)\b/.test(words))return 'owner';
   if(/\b(jockey|jockeys|rider|riders|mount|apprentice)\b/.test(words))return 'jockey';
   if(/\b(trainer|trainers|conditioning|conditioner|barn)\b/.test(words))return 'trainer';
