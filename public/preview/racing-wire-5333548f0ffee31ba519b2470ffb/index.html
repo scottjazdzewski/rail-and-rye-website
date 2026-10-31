@@ -96,7 +96,7 @@ a{color:inherit}button,input,select{font:inherit}button{cursor:pointer}
 </div>
 <div id="rssDiagnostic" class="rrw-rss-test" hidden aria-live="polite"></div>
 <div class="workspace">
-<section aria-labelledby="feedHeading"><div class="section-head"><h2 id="feedHeading">LATEST NEWS</h2><span class="subtle" id="count">Loading verified updates…</span></div>
+<section aria-labelledby="feedHeading"><div class="section-head"><h2 id="feedHeading">LATEST NEWS</h2><span class="subtle" id="count">Loading live updates…</span></div>
 <div id="feed" class="feed-list" aria-live="polite"></div>
 <button id="more" class="more" type="button" hidden>Load more news</button></section>
 </div></main>
@@ -129,11 +129,11 @@ function render(){
  const q=$('search').value.trim().toLowerCase();
  let records=data.filter(x=>(subject==='all'||x.subject_kind===subject)&&(!q||(x.title+' '+(x.summary||'')+' '+(x.source||'')).toLowerCase().includes(q)));
  records=records.slice().sort((a,b)=>$('sort').value==='oldest'?new Date(a.published_at)-new Date(b.published_at):new Date(b.published_at)-new Date(a.published_at));
- $('count').textContent=records.length+' verified item'+(records.length===1?'':'s');
+ $('count').textContent=records.length+' live item'+(records.length===1?'':'s');
  const feed=$('feed');feed.replaceChildren();
  if(!records.length){
   const p=document.createElement('p');p.className='info';
-  p.textContent='No verified Racing Wire items are available yet. New real items will appear here automatically.';
+  p.textContent='No live Racing Wire items are available yet. New real items will appear here automatically.';
   feed.append(p);$('more').hidden=true;return;
  }
  for(const x of records.slice(0,shown)){
@@ -203,7 +203,7 @@ async function loadVerified(){
   const result=await response.json();if(!response.ok)throw Error(result.error||'Unavailable');
   data=Array.isArray(result.items)?result.items:[];render();
  }catch(error){
-  data=[];render();$('count').textContent='Unable to retrieve verified updates';
+  data=[];render();$('count').textContent='Unable to retrieve live updates';
  }
 }
 loadVerified();

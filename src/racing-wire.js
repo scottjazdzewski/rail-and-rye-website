@@ -11,10 +11,13 @@ const FEEDS=Object.freeze([
   //  host:'example.org',authorized:true}
 ]);
 const MAX_FEED_BYTES=350000;
-const PREVIEW_DIAGNOSTIC_FEEDS=Object.freeze([
-  {id:'tdn-all',name:'TDN · All News',url:'https://www.thoroughbreddailynews.com/feed/',host:'thoroughbreddailynews.com'},
-  {id:'tdn-top',name:'TDN · Top News',url:'https://www.thoroughbreddailynews.com/category/news/feed/',host:'thoroughbreddailynews.com'}
+const PREVIEW_LIVE_FEEDS=Object.freeze([
+  {id:'tdn-all',name:'Thoroughbred Daily News',url:'https://www.thoroughbreddailynews.com/feed/',host:'thoroughbreddailynews.com'},
+  {id:'past-the-wire-news',name:'Past The Wire',url:'https://pastthewire.com/category/news/feed/',host:'pastthewire.com'},
+  {id:'abr',name:"America's Best Racing",url:'https://www.americasbestracing.net/rss',host:'americasbestracing.net'},
+  {id:'us-racing',name:'US Racing',url:'https://usracing.com/feed',host:'usracing.com'}
 ]);
+const PREVIEW_DIAGNOSTIC_FEEDS=PREVIEW_LIVE_FEEDS;
 function decode(s){
   return String(s||'').replace(/^<!\[CDATA\[|\]\]>$/g,'')
     .replace(/&#(x[0-9a-f]+|\d+);/gi,(_,n)=>{const x=n[0].toLowerCase()==='x'?parseInt(n.slice(1),16):Number(n);return x>0&&x<=0x10ffff?String.fromCodePoint(x):'';})
@@ -99,6 +102,36 @@ export function parseRacingRss(xml,feed){
   }
   return results;
 }
+async function fetchPreviewFeed(feed,fetchFn=fetch){
+  const started=Date.now();
+  try{
+    const response=await fetchFn(feed.url,{headers:{
+      Accept:'application/rss+xml,application/xml,text/xml;q=0.9,*/*;q=0.1',
+      'User-Agent':'RailAndRyeRacingWire-Preview/1.0 (+https://railandryeracing.com)'
+    },signal:AbortSignal.timeout(8000)});
+    const len=Number(response.headers.get('content-length')||0);
+    if(!response.ok||len>MAX_FEED_BYTES)return {feed,items:[],status:response.status,elapsed_ms:Date.now()-started};
+    const xml=await response.text();
+    if(xml.length>MAX_FEED_BYTES)return {feed,items:[],status:response.status,elapsed_ms:Date.now()-started};
+    const parsed=parseRacingRss(xml,feed).slice(0,30).map(item=>({
+      title:item.title,url:item.link,source:item.source,
+      category:item.category,subject_kind:subjectKind(item.title,item.category),
+      published_at:item.published_at,summary:'',original:false,preview_external:true
+    }));
+    return {feed,items:parsed,status:response.status,elapsed_ms:Date.now()-started};
+  }catch(e){
+    return {feed,items:[],status:null,elapsed_ms:Date.now()-started,error:String(e?.message||e).slice(0,120)};
+  }
+}
+export async function previewExternalItems(fetchFn=fetch){
+  const settled=await Promise.all(PREVIEW_LIVE_FEEDS.map(feed=>fetchPreviewFeed(feed,fetchFn)));
+  return {
+    items:groupRacingWireStories(settled.flatMap(x=>x.items)).slice(0,120),
+    sources:settled.map(x=>({id:x.feed.id,name:x.feed.name,url:x.feed.url,http_status:x.status,
+      parsed_count:x.items.length,elapsed_ms:x.elapsed_ms,error:x.error||null}))
+  };
+}
+
 export async function testPreviewRssFeeds(fetchFn=fetch){
   const tested_at=new Date().toISOString(),results=[];
   for(const feed of PREVIEW_DIAGNOSTIC_FEEDS){
@@ -221,6 +254,34 @@ export function groupRacingWireStories(stories){
  }
  return groups;
 }
+export async function handlePreviewRacingWire(request,env,fetchFn=fetch){
+  if(request.method!=='GET')return reply({error:'Method not allowed'},405);
+  let originals=[];
+  if(env.STORE_DB)try{
+    const r=await env.STORE_DB.prepare(
+      "SELECT title,slug,category,excerpt,publish_date FROM journal_articles WHERE status='published' ORDER BY publish_date DESC,created_at DESC LIMIT 120"
+    ).all();
+    originals=(r.results||[]).map(a=>({
+      title:a.title.slice(0,240),url:'/journal/'+a.slug+'/',
+      source:'Rail & Rye',category:categorize(a.title,a.category),
+      subject_kind:subjectKind(a.title,a.category),
+      published_at:a.publish_date+'T12:00:00Z',summary:a.excerpt.slice(0,260),original:true
+    }));
+  }catch(e){console.warn('Racing Wire preview journal unavailable',String(e).slice(0,90));}
+  const external=await previewExternalItems(fetchFn);
+  const items=groupRacingWireStories([...originals,...external.items]).slice(0,150);
+  return reply({
+    items,
+    source_count:external.sources.filter(x=>x.parsed_count>0).length+(originals.length?1:0),
+    external_test_only:true,
+    external_sources:external.sources,
+    social_sources:[],
+    social_policy:'Preview RSS only for technical testing; X/Meta not connected yet',
+    headline_only:true,
+    generated_at:new Date().toISOString()
+  });
+}
+
 export async function handleRacingWire(request,env){
   if(request.method!=='GET')return reply({error:'Method not allowed'},405);
   if(!env.STORE_DB)return reply({error:'Racing Wire is temporarily unavailable'},503);
