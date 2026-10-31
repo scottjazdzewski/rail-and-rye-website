@@ -6,17 +6,20 @@ This file distinguishes sources that are **LIVE**, **TEST-ONLY**, **PLANNED**, a
 
 ## Current state
 
-### LIVE
-- **Rail & Rye Journal** — published articles only. This is the only source currently producing Racing Wire cards.
+### LIVE ON THE UNLISTED PREVIEW
+- **Rail & Rye Journal** — published articles.
+- **Thoroughbred Daily News (TDN)** — official All News RSS endpoint, preview-only live fetch.
+- **Past The Wire** — News RSS endpoint, preview-only live fetch.
+- **America's Best Racing** — RSS endpoint, preview-only live fetch.
+- **US Racing** — RSS endpoint, preview-only live fetch.
 
-### TEST-ONLY
-- **Thoroughbred Daily News (TDN) official RSS**
-  - All News: https://www.thoroughbreddailynews.com/feed/
-  - Top News: https://www.thoroughbreddailynews.com/category/news/feed/
-  - Used only by the unlisted "Test real RSS" diagnostic. Headlines are not republished until commercial reuse permission is established.
+These external sources are fetched live by the unlisted preview API and are not persisted to D1. Only source name, headline, timestamp, direct URL and Rail & Rye subject classification are displayed. Publisher photos, article bodies and feed descriptions are not copied.
+
+### TEST / DIAGNOSTIC
+The "Test real RSS" control checks the same preview source endpoints and reports HTTP status and parsed item counts.
 
 ### NOT CURRENTLY FEEDING CARDS
-All external publishers, X, Facebook and Instagram sources below are not yet live in the normalized Racing Wire feed.
+X, Facebook and Instagram are not yet connected to the backend. The production/public syndication allowlist remains empty; the live external RSS set above is an unlisted-preview test path only.
 
 ## Source strategy
 
@@ -114,4 +117,4 @@ For each source:
 
 ## Important current limitation
 
-The Racing Wire is **not yet a multi-source real-time feed**. Today it displays published Rail & Rye Journal items only. TDN RSS is diagnostic-only. X/Facebook/Instagram have not yet been connected to the backend.
+The unlisted Racing Wire preview is now a **real multi-source RSS test feed** using Rail & Rye Journal plus TDN, Past The Wire, America's Best Racing and US Racing where each endpoint responds successfully. It is still not a finished production newswire: external RSS is preview-only, the production allowlist remains empty, and X/Facebook/Instagram have not yet been connected to the backend.
