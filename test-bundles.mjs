@@ -183,3 +183,31 @@ assert.ok(!candidates.available_products.some(a=>a.id===privateId));
 assert.equal((await assetAdmin(patch('/api/admin/bundle-assets/'+privateId,bundleOnlyMeta))).status,409);
 assert.equal(db.prepare('SELECT pdf_key FROM bundle_order_items WHERE order_id=? AND product_id=?').get(privateOrder.id,privateId).pdf_key,'cards/private/notes-v1.pdf');
 console.log('PASS private PDF archiving: live bundle protection, retired inventory, buyer snapshots preserved.');
+
+const activeUnpaid=db.prepare('SELECT status FROM orders WHERE id=?').get(privateOrder.id);
+assert.equal(activeUnpaid.status,'pending');
+let deletion=await assetAdmin(post('/api/admin/bundle-assets/'+privateId+'/purge',{}));
+assert.equal(deletion.status,409,'Incomplete Stripe checkout blocks physical deletion');
+db.prepare("UPDATE orders SET status='paid',paid_at=CURRENT_TIMESTAMP,access_days=7 WHERE id=?").run(privateOrder.id);
+deletion=await assetAdmin(post('/api/admin/bundle-assets/'+privateId+'/purge',{}));
+assert.equal(deletion.status,409,'Paid order within seven days blocks physical deletion');
+db.prepare("UPDATE orders SET paid_at=datetime('now','-8 days') WHERE id=?").run(privateOrder.id);
+const deletedKeys=[];
+env.CARDS_BUCKET.list=async ({prefix})=>({objects:[
+ {key:prefix+'notes-v1.pdf',size:2000},{key:prefix+'notes-v2.pdf',size:3000}
+],truncated:false});
+env.CARDS_BUCKET.delete=async keys=>{deletedKeys.push(...(Array.isArray(keys)?keys:[keys]));};
+deletion=await assetAdmin(post('/api/admin/bundle-assets/'+privateId+'/purge',{}));
+assert.equal(deletion.status,200,'Expired, archived PDF may be physically purged');
+const purgeResult=await deletion.json();
+assert.equal(purgeResult.files_deleted,2);
+assert.equal(purgeResult.bytes_deleted,5000);
+assert.equal(deletedKeys.length,2,'All uploaded versions removed from R2');
+assert.equal(db.prepare('SELECT pdf_key FROM products WHERE id=?').get(privateId).pdf_key,null);
+assert.ok(db.prepare('SELECT purged_at FROM bundle_only_assets WHERE product_id=?').get(privateId).purged_at);
+const postPurge=await (await assetAdmin(new Request(root+'/api/admin/bundle-assets'))).json();
+assert.ok(!postPurge.assets.some(a=>a.id===privateId),'Permanently deleted PDF disappears from admin inventory');
+assert.equal(db.prepare('SELECT pdf_key FROM bundle_order_items WHERE order_id=? AND product_id=?').get(privateOrder.id,privateId).pdf_key,
+ 'cards/private/notes-v1.pdf','Prior order snapshot must be retained for history');
+assert.equal((await assetAdmin(post('/api/admin/bundle-assets/'+privateId+'/purge',{}))).status,410);
+console.log('PASS: Seven-day new purchases and guarded R2 purge after checkout/entitlement expiry.');
