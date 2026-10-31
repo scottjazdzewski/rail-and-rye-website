@@ -129,10 +129,14 @@ assert.ok(wirePage.includes("fetch('/api/preview/racing-wire-5333548f0ffee31ba51
 assert.ok(wirePage.includes('rail-rye-ivory-logo.png'),'Owner-approved Rail & Rye branding reused');
 
 assert.ok(wirePage.includes('/assets/approved/saddlecloths/8.png'),'Racing Wire is numbered Page 8');
-assert.ok(wirePage.includes('class="rrw-hero-image"')&&wirePage.includes('src="/assets/approved/racing-wire/hero-race.webp"'),
- 'Owner-edited racing artwork is a real hero img element, not a competing CSS background');
+assert.ok(wirePage.includes('class="rrw-hero-image"')&&wirePage.includes('/assets/approved/racing-wire/hero-race.webp?v=3'),
+ 'Owner-edited racing artwork is a real versioned hero img element');
 assert.ok(!wirePage.includes("url('/assets/approved/racing-wire/hero-race.webp')"),
  'No legacy CSS background competes with the hero image layer');
+const heroAsset=readFileSync(new URL('./public/assets/approved/racing-wire/hero-race.webp',import.meta.url));
+assert.equal(heroAsset.subarray(0,4).toString(),'RIFF','Hero asset has valid RIFF header');
+assert.equal(heroAsset.subarray(8,12).toString(),'WEBP','Hero asset is a real WebP');
+assert.ok(heroAsset.length>50000,'Hero asset is not a truncated placeholder');
 assert.ok(!wirePage.includes('class="hero-art"'),'Temporary SVG hero artwork removed');
 assert.ok(wirePage.includes('rr-page-saddle-kicker')&&wirePage.includes('rr-page-title')&&
  wirePage.includes('rr-page-rule')&&wirePage.includes('rr-page-description'),
@@ -143,12 +147,18 @@ assert.ok(wirePage.includes('id="testFeeds"')&&wirePage.includes('Test real RSS'
 assert.ok(wirePage.includes('/feed-test'),'RSS diagnostic button calls only the unlisted diagnostic route');
 assert.ok(wirePage.includes('.item .emblem{width:88px;height:88px'),
  'News-card badges are enlarged on desktop');
-assert.ok(!wirePage.includes('.emblem svg{width:39px;height:39px;stroke:currentColor;fill:none'),
- 'Legacy global fill:none rule cannot suppress approved solid badge artwork');
-assert.ok(wirePage.includes("horse:'<path fill=\"currentColor\"")&&
- wirePage.includes("sale:'<path fill=\"currentColor\"")&&
- wirePage.includes("achievement:'<path fill=\"currentColor\""),
- 'Approved solid-gold proof badge family is locked into the card renderer');
+assert.ok(!wirePage.includes('const shapes={')&&!wirePage.includes("el.innerHTML='<svg"),
+ 'Temporary inline SVG badge system is completely removed');
+assert.ok(wirePage.includes("/assets/approved/racing-wire/badges.webp?v=3")&&
+ wirePage.includes('.badge-horse{background-position:0 0}')&&
+ wirePage.includes('.badge-achievement{background-position:100% 100%}'),
+ 'Approved proof-set badge sprite is the only badge artwork source');
+const badgeAsset=readFileSync(new URL('./public/assets/approved/racing-wire/badges.webp',import.meta.url));
+assert.equal(badgeAsset.subarray(0,4).toString(),'RIFF','Badge sprite has valid RIFF header');
+assert.equal(badgeAsset.subarray(8,12).toString(),'WEBP','Badge sprite is a real WebP');
+assert.ok(badgeAsset.length>20000,'Badge proof sprite is not truncated');
+assert.ok(wirePage.includes('.more[hidden]{display:none!important}'),
+ 'Load-more cannot appear when there are zero verified stories');
 
 
 const journalPage=readFileSync(new URL('./public/journal/index.html',import.meta.url),'utf8');
