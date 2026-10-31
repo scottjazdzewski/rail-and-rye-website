@@ -5,7 +5,7 @@ import {webcrypto} from 'node:crypto';
 import {handleCommerce,checkoutReadiness} from './src/commerce.js';
 const db=new DatabaseSync(':memory:');
 db.exec(`CREATE TABLE products (id TEXT PRIMARY KEY,title TEXT,slug TEXT,category TEXT,race_date TEXT,track TEXT,description TEXT,price_cents INTEGER,pdf_key TEXT,image_url TEXT,status TEXT,created_at TEXT DEFAULT CURRENT_TIMESTAMP);`);
-for (const file of ['001_stripe_orders.sql','002_email_delivery.sql','003_live_readiness.sql']) db.exec(readFileSync('./migrations/'+file,'utf8'));
+for (const file of ['001_stripe_orders.sql','002_email_delivery.sql','003_live_readiness.sql','005_bundle_only_assets.sql']) db.exec(readFileSync('./migrations/'+file,'utf8'));
 const item='ceb80f18-4e0d-4363-8323-0cdbe12d51de';
 db.prepare('INSERT INTO products (id,title,slug,category,race_date,track,description,price_cents,pdf_key,status) VALUES (?,?,?,?,?,?,?,?,?,?)')
  .run(item,'Live Card','test','Race Cards','2026-10-28','Keeneland','Paid item',100,'cards/'+item+'/test.pdf','published');
