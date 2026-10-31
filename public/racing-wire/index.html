@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#071a2c">
+<meta name="description" content="The Racing Wire at Rail & Rye — a searchable horse-racing news desk featuring original updates and direct links to trusted racing publishers.">
+<title>The Racing Wire | Rail & Rye Racing</title><link rel="icon" href="/favicon.png" type="image/png">
+<link rel="stylesheet" href="/assets/rail-rye-core.css?v=10"><link rel="stylesheet" href="/assets/rail-rye-components.css?v=8"><link rel="stylesheet" href="/assets/rail-rye-pages.css?v=28">
+<style>
+.rrw-main{max-width:1250px;margin:0 auto;padding:54px 28px 110px}
+.rrw-head{display:flex;justify-content:space-between;align-items:flex-end;gap:28px;margin:0 0 30px;flex-wrap:wrap}
+.rrw-overline{font-size:11px;letter-spacing:.23em;font-weight:800;color:#bda47c;text-transform:uppercase}
+.rrw-title{font-family:Georgia,serif;font-size:clamp(44px,6.8vw,77px);line-height:1.02;color:#f5f0e7;letter-spacing:-.04em;font-weight:500;margin:10px 0 14px}
+.rrw-description{color:#c3cbd4;max-width:640px;line-height:1.7;font-size:15px;margin:0}
+.rrw-status{font-size:12px;color:#b4bfcb;border:1px solid rgba(206,184,144,.32);border-radius:40px;padding:10px 16px;white-space:nowrap}
+.rrw-status span{display:inline-block;width:7px;height:7px;border-radius:50%;background:#caa767;margin-right:8px}
+.rrw-layout{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:26px;align-items:start}
+.rrw-panel{background:#f8f6f1;color:#152943;border:1px solid #d8d3c7;border-radius:14px;box-shadow:0 15px 32px rgba(0,0,0,.12);overflow:hidden}
+.rrw-tools{padding:22px 24px;border-bottom:1px solid #dcd6c9}
+.rrw-tools-top{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:16px;flex-wrap:wrap}
+.rrw-tools-title{font-family:Georgia,serif;font-size:25px;margin:0;font-weight:500}
+.rrw-count{font-size:12px;color:#66758a}
+.rrw-search{display:block;width:100%;border:1px solid #cbd2d6;background:#fff;color:#142b44;font-size:15px;border-radius:8px;padding:13px 15px;outline-offset:3px}
+.rrw-filters{display:flex;gap:7px;flex-wrap:wrap;margin-top:15px}
+.rrw-filter{border:1px solid #d6d2c9;border-radius:20px;background:#fff;color:#284059;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer}
+.rrw-filter[aria-pressed="true"]{background:#0a2542;color:#f5f1e8;border-color:#0a2542}
+.rrw-item{padding:23px 26px;border-top:1px solid #e6e1d7}
+.rrw-item:first-child{border-top:0}
+.rrw-item-head{display:flex;align-items:center;flex-wrap:wrap;gap:9px;margin-bottom:10px}
+.rrw-category{font-size:10px;text-transform:uppercase;letter-spacing:.11em;font-weight:800;color:#8c6c3c;background:#eee7da;padding:5px 8px;border-radius:4px}
+.rrw-source{font-size:12px;font-weight:700;color:#586b7e}
+.rrw-dot{color:#a7a6a1}
+.rrw-time{font-size:12px;color:#6b7782}
+.rrw-link{font-family:Georgia,serif;color:#0c2b4f;font-size:clamp(19px,2.1vw,24px);line-height:1.3;font-weight:600;text-decoration:none}
+.rrw-link:hover,.rrw-link:focus{color:#9c7439;text-decoration:underline;text-underline-offset:4px}
+.rrw-summary{font-size:14px;line-height:1.7;color:#4e5f70;margin:9px 0 0}
+.rrw-read{display:inline-block;margin-top:12px;font-size:12px;color:#85632f;font-weight:800;text-decoration:none;letter-spacing:.03em}
+.rrw-empty{padding:42px 28px;text-align:center;color:#617080;line-height:1.8}
+.rrw-more-wrap{padding:20px;text-align:center;border-top:1px solid #e6e1d7}
+.rrw-more{padding:11px 25px;border:1px solid #b5a17e;border-radius:7px;background:#fff;color:#203c58;font-weight:800;cursor:pointer}
+.rrw-more[hidden]{display:none}
+.rrw-side{display:grid;gap:18px}
+.rrw-side-card{border:1px solid rgba(209,183,142,.35);border-radius:12px;padding:24px;color:#e8e4db;background:rgba(8,27,48,.68)}
+.rrw-side-card h2{font-family:Georgia,serif;font-size:24px;font-weight:500;margin:0 0 10px;color:#fff3dc}
+.rrw-side-card p{font-size:13px;line-height:1.7;color:#c6cbd3;margin:0 0 15px}
+.rrw-source-link{display:block;padding:13px 0;border-top:1px solid rgba(209,183,142,.22);color:#f3d7a9;font-weight:750;font-size:13px;text-decoration:none}
+.rrw-source-link:hover{text-decoration:underline}
+.rrw-footnote{font-size:12px;line-height:1.8;color:#adb8c3}
+.rrw-footnote a{color:#d2b17c}
+@media(max-width:870px){.rrw-layout{grid-template-columns:1fr}.rrw-main{padding:38px 18px 70px}.rrw-head{margin-bottom:24px}.rrw-item{padding:20px 19px}.rrw-tools{padding:20px}.rrw-side{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:590px){.rrw-side{grid-template-columns:1fr}.rrw-title{font-size:48px}.rrw-description{font-size:14px}.rrw-item-head{gap:7px}.rrw-status{white-space:normal}}
+</style></head>
+<body class="heritage-home heritage-inner-page">
+<div class="heritage-inner-hero"><header class="heritage-header"><div class="heritage-shell heritage-header-inner">
+<a class="heritage-brand" href="/" aria-label="Rail and Rye home"><span class="heritage-brand-mark"><img src="/assets/approved/brand/rail-rye-ivory-logo.png" alt="Rail & Rye official horseshoe emblem" width="80" height="80" decoding="async"></span><span class="heritage-wordmark">RAIL &amp; RYE</span></a>
+<div class="heritage-strap"><img class="heritage-horse-mini" src="/assets/approved/brand/header-horse.webp" alt="" aria-hidden="true" width="66" height="76"><span>Thoroughbred Racing Intelligence</span></div>
+<nav class="heritage-nav" aria-label="Main navigation"><a class="heritage-nav-pill" href="/race-cards/">Race Cards</a><a class="heritage-nav-pill" href="/journal/">The Journal</a><a class="heritage-nav-pill" href="/racing-wire/" aria-current="page">Racing Wire</a><a class="heritage-nav-pill" href="https://rail-rye-shop.fourthwall.com/" target="_blank" rel="noopener noreferrer">Apparel</a></nav>
+<details class="heritage-mobile-nav"><summary aria-label="Open navigation">Menu <span aria-hidden="true">☰</span></summary><nav aria-label="Mobile navigation"><a href="/race-cards/">Race Cards</a><a href="/journal/">The Journal</a><a href="/racing-wire/" aria-current="page">Racing Wire</a><a href="https://rail-rye-shop.fourthwall.com/" target="_blank" rel="noopener noreferrer">Apparel ↗</a></nav></details>
+</div></header></div>
+<main class="rrw-main">
+<section class="rrw-head" aria-labelledby="wire-title"><div>
+<div class="rrw-overline">THE BACKSTRETCH DISPATCH · RAIL &amp; RYE</div>
+<h1 id="wire-title" class="rrw-title">The Racing Wire.</h1>
+<p class="rrw-description">Racing stories worth following, in one clear stream. Browse Rail &amp; Rye's own latest reports and jump straight to established racing newsrooms. No recycled articles. No noise.</p>
+</div><div class="rrw-status" id="wireStatus" role="status"><span></span>Loading recent dispatches…</div></section>
+<div class="rrw-layout">
+<section class="rrw-panel" aria-labelledby="dispatches-heading">
+<div class="rrw-tools"><div class="rrw-tools-top"><h2 id="dispatches-heading" class="rrw-tools-title">Latest dispatches</h2><span class="rrw-count" id="wireCount"></span></div>
+<label for="wireSearch" class="sr-only">Search news headlines</label><input class="rrw-search" id="wireSearch" type="search" placeholder="Search horses, jockeys, trainers, topics…" autocomplete="off">
+<div class="rrw-filters" role="group" aria-label="News categories" id="wireFilters">
+<button type="button" class="rrw-filter" data-category="All" aria-pressed="true">All</button>
+<button type="button" class="rrw-filter" data-category="Horses" aria-pressed="false">Horses</button>
+<button type="button" class="rrw-filter" data-category="Race-Day" aria-pressed="false">Race-Day</button>
+<button type="button" class="rrw-filter" data-category="Jockeys" aria-pressed="false">Jockeys</button>
+<button type="button" class="rrw-filter" data-category="Trainers" aria-pressed="false">Trainers</button>
+<button type="button" class="rrw-filter" data-category="Stakes" aria-pressed="false">Stakes</button>
+<button type="button" class="rrw-filter" data-category="Breeding" aria-pressed="false">Breeding</button>
+<button type="button" class="rrw-filter" data-category="Industry" aria-pressed="false">Industry</button>
+</div></div>
+<div id="wireList" aria-live="polite"><p class="rrw-empty">Loading news…</p></div>
+<div class="rrw-more-wrap"><button id="wireMore" type="button" class="rrw-more" hidden>Load more updates</button></div>
+</section>
+<aside class="rrw-side" aria-label="Racing newsrooms">
+<section class="rrw-side-card"><h2>From the publishers</h2><p>Open the original newsrooms directly. Outside feeds will appear in the live wire only when republication permission is established.</p>
+<a class="rrw-source-link" href="https://www.thoroughbreddailynews.com/" target="_blank" rel="noopener noreferrer">Thoroughbred Daily News ↗</a>
+<a class="rrw-source-link" href="https://paulickreport.com/" target="_blank" rel="noopener noreferrer">Paulick Report ↗</a>
+<a class="rrw-source-link" href="https://www.bloodhorse.com/horse-racing" target="_blank" rel="noopener noreferrer">BloodHorse ↗</a>
+<a class="rrw-source-link" href="https://www.americasbestracing.net/" target="_blank" rel="noopener noreferrer">America's Best Racing ↗</a>
+</section>
+<section class="rrw-side-card"><h2>From our desk</h2><p>Every story published in The Journal automatically joins The Racing Wire. No duplicate posts or extra work.</p><a class="rrw-source-link" href="/journal/">Read The Journal ↗</a><a class="rrw-source-link" href="/race-cards/">Browse race cards ↗</a></section>
+<p class="rrw-footnote">Third-party headlines will link to their original publishers. This wire does not currently provide independently verified live scratches or official entry changes. Always confirm race-day information with the track or official racing authority.</p>
+</aside>
+</div></main>
+<footer class="heritage-footer"><div class="heritage-shell heritage-footer-inner"><span class="heritage-footmark">RAIL &amp; RYE</span><nav aria-label="Footer"><a href="/store/">Publications</a><a href="/journal/">Journal</a><a href="/racing-wire/">Racing Wire</a><a href="mailto:support@railandryeracing.com">Support</a><a href="/policies/terms.html">Terms</a><a href="/policies/privacy.html">Privacy</a></nav><small>Independent research. No guarantees.</small></div></footer>
+<script>
+(()=>{'use strict';
+const $=id=>document.getElementById(id);
+let items=[],category='All',shown=20;
+const list=$('wireList'),search=$('wireSearch'),more=$('wireMore');
+function make(tag,className,value){const el=document.createElement(tag);if(className)el.className=className;if(value!==undefined)el.textContent=String(value);return el;}
+function stamp(value){const d=new Date(value);return Number.isFinite(+d)?new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',year:'numeric'}).format(d):'Date unavailable';}
+function draw(){
+ const query=search.value.trim().toLowerCase();
+ const found=items.filter(a=>(category==='All'||a.category===category)&&(!query||(a.title+' '+a.summary+' '+a.source).toLowerCase().includes(query)));
+ $('wireCount').textContent=found.length+' dispatch'+(found.length===1?'':'es');
+ list.replaceChildren();
+ if(!found.length){list.append(make('p','rrw-empty',items.length?'Nothing matches this search. Try another category or keyword.':'No published Rail & Rye dispatches yet. Visit the original newsrooms in the panel alongside.'));more.hidden=true;return;}
+ for(const a of found.slice(0,shown)){
+   const article=make('article','rrw-item'),head=make('div','rrw-item-head');
+   head.append(make('span','rrw-category',a.category||'Industry'),make('span','rrw-source',a.source),make('span','rrw-dot','·'),make('time','rrw-time',stamp(a.published_at)));
+   head.lastChild.dateTime=a.published_at;
+   const heading=make('h3','');heading.style.margin='0';
+   const link=make('a','rrw-link',a.title);link.href=a.url;if(!a.original){link.target='_blank';link.rel='noopener noreferrer external';}heading.append(link);
+   article.append(head,heading);
+   if(a.summary)article.append(make('p','rrw-summary',a.summary));
+   const read=make('a','rrw-read',a.original?'READ RAIL & RYE STORY →':'READ AT SOURCE ↗');read.href=a.url;
+   if(!a.original){read.target='_blank';read.rel='noopener noreferrer external';}article.append(read);
+   list.append(article);
+ }
+ more.hidden=found.length<=shown;
+}
+search.addEventListener('input',()=>{shown=20;draw();});
+$('wireFilters').addEventListener('click',e=>{const btn=e.target.closest('button[data-category]');if(!btn)return;category=btn.dataset.category;shown=20;for(const b of $('wireFilters').querySelectorAll('button'))b.setAttribute('aria-pressed',String(b===btn));draw();});
+more.addEventListener('click',()=>{shown+=20;draw();});
+async function load(){
+ try{
+ const response=await fetch('/api/racing-wire',{cache:'no-store'}),data=await response.json();
+ if(!response.ok)throw Error(data.error||'Feed temporarily unavailable');
+ items=Array.isArray(data.items)?data.items:[];$('wireStatus').innerHTML='<span></span>'+ (data.source_count?'Publisher headlines and Rail & Rye stories':'Rail & Rye dispatches');
+ draw();
+ }catch(e){$('wireStatus').textContent='Connection unavailable';list.replaceChildren(make('p','rrw-empty','Unable to load dispatches. Please try again shortly.'));more.hidden=true;}
+}
+load();
+})();
+</script></body></html>
