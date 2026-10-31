@@ -11,6 +11,10 @@ const FEEDS=Object.freeze([
   //  host:'example.org',authorized:true}
 ]);
 const MAX_FEED_BYTES=350000;
+const PREVIEW_DIAGNOSTIC_FEEDS=Object.freeze([
+  {id:'tdn-all',name:'TDN · All News',url:'https://www.thoroughbreddailynews.com/feed/',host:'thoroughbreddailynews.com'},
+  {id:'tdn-top',name:'TDN · Top News',url:'https://www.thoroughbreddailynews.com/category/news/feed/',host:'thoroughbreddailynews.com'}
+]);
 function decode(s){
   return String(s||'').replace(/^<!\[CDATA\[|\]\]>$/g,'')
     .replace(/&#(x[0-9a-f]+|\d+);/gi,(_,n)=>{const x=n[0].toLowerCase()==='x'?parseInt(n.slice(1),16):Number(n);return x>0&&x<=0x10ffff?String.fromCodePoint(x):'';})
@@ -95,6 +99,45 @@ export function parseRacingRss(xml,feed){
   }
   return results;
 }
+export async function testPreviewRssFeeds(fetchFn=fetch){
+  const tested_at=new Date().toISOString(),results=[];
+  for(const feed of PREVIEW_DIAGNOSTIC_FEEDS){
+    const started=Date.now();
+    try{
+      const response=await fetchFn(feed.url,{headers:{
+        Accept:'application/rss+xml,application/xml,text/xml;q=0.9,*/*;q=0.1',
+        'User-Agent':'RailAndRyeRacingWire-Preview/1.0 (+https://railandryeracing.com)'
+      },signal:AbortSignal.timeout(9000)});
+      const type=String(response.headers.get('content-type')||'').slice(0,120);
+      const len=Number(response.headers.get('content-length')||0);
+      if(!response.ok){
+        results.push({id:feed.id,source:feed.name,url:feed.url,reachable:false,http_status:response.status,
+          content_type:type,parsed_count:0,newest_published_at:null,elapsed_ms:Date.now()-started,
+          note:'Feed responded but could not be read by the preview worker.'});
+        continue;
+      }
+      if(len>MAX_FEED_BYTES){
+        results.push({id:feed.id,source:feed.name,url:feed.url,reachable:true,http_status:response.status,
+          content_type:type,parsed_count:0,newest_published_at:null,elapsed_ms:Date.now()-started,
+          note:'Feed exceeded the preview safety limit.'});
+        continue;
+      }
+      const xml=await response.text();
+      if(xml.length>MAX_FEED_BYTES)throw Error('Feed exceeded preview safety limit');
+      const parsed=parseRacingRss(xml,feed);
+      const newest=parsed.map(x=>x.published_at).sort().at(-1)||null;
+      results.push({id:feed.id,source:feed.name,url:feed.url,reachable:true,http_status:response.status,
+        content_type:type,bytes:xml.length,parsed_count:parsed.length,newest_published_at:newest,
+        elapsed_ms:Date.now()-started,note:'Diagnostic only — headlines are not republished.'});
+    }catch(e){
+      results.push({id:feed.id,source:feed.name,url:feed.url,reachable:false,http_status:null,
+        content_type:'',parsed_count:0,newest_published_at:null,elapsed_ms:Date.now()-started,
+        note:'Network or parser error: '+String(e?.message||e).slice(0,120)});
+    }
+  }
+  return {tested_at,diagnostic_only:true,permission_status:'RSS endpoints are being technically tested only; third-party headlines remain disabled pending reuse permission.',results};
+}
+
 export async function refreshRacingWire(env){
   if(!env.STORE_DB||!FEEDS.some(f=>f.authorized))return {checked:0,added:0};
   let added=0,checked=0;
