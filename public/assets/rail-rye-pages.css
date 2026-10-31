@@ -491,6 +491,40 @@ body.heritage-home .heritage-store-inventory .store-cards{
 }
 @media(max-width:750px){}
 
+
+/* Race Cards: track and full date get their own unwrapped, full-width row.
+   On narrow screens only the track may ellipsize; never abbreviate the date. */
+body.rr-racecards-page .rr-racecards-products .rr-glass-purchase-card{
+ grid-template-rows:auto auto;row-gap:8px
+}
+body.rr-racecards-page .rr-racecards-products .rr-purchase-meta{
+ grid-column:1 / -1;grid-row:1;display:flex;align-items:baseline;
+ gap:6px;min-width:0;overflow:hidden;white-space:nowrap
+}
+body.rr-racecards-page .rr-racecards-products .rr-racecards-meta-track{
+ min-width:0;overflow:hidden;text-overflow:ellipsis
+}
+body.rr-racecards-page .rr-racecards-products .rr-racecards-meta-divider,
+body.rr-racecards-page .rr-racecards-products .rr-racecards-meta-date{
+ flex:0 0 auto;white-space:nowrap
+}
+body.rr-racecards-page .rr-racecards-products .rr-purchase-brand-mark{grid-column:1;grid-row:2}
+body.rr-racecards-page .rr-racecards-products .rr-purchase-copy{grid-column:2;grid-row:2}
+body.rr-racecards-page .rr-racecards-products .rr-purchase-buy{grid-column:3;grid-row:2}
+@media(max-width:650px){
+ body.rr-racecards-page .rr-racecards-products .rr-glass-purchase-card{
+  grid-template-columns:56px minmax(0,1fr);grid-template-rows:auto auto auto
+ }
+ body.rr-racecards-page .rr-racecards-products .rr-purchase-brand-mark{
+  width:56px;height:66px;min-width:56px;min-height:66px;max-width:56px;max-height:66px;
+  grid-column:1;grid-row:2;padding:7px
+ }
+ body.rr-racecards-page .rr-racecards-products .rr-purchase-copy{grid-column:2;grid-row:2}
+ body.rr-racecards-page .rr-racecards-products .rr-purchase-buy{
+  grid-column:2;grid-row:3;justify-self:start
+ }
+}
+
 /* Product list spacing, shared across the two publication sales rails. */
 .rr-racecards-products{display:grid;gap:10px}
 @media(max-width:750px){.rr-racecards-products{gap:10px}}

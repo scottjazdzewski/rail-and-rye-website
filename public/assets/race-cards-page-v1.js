@@ -19,8 +19,12 @@ const el=(tag,cls,text)=>{const x=document.createElement(tag);if(cls)x.className
    const card=el('article','rr-glass-purchase-card');
    const cover=el('div','rr-purchase-brand-mark');
    const img=document.createElement('img');img.src='/assets/approved/brand/rail-rye-ivory-logo.png';img.alt='Rail & Rye official horseshoe emblem';img.className='rr-purchase-brand-logo';img.loading='lazy';img.decoding='async';cover.append(img);
+   const meta=el('div','rr-purchase-meta');
+   if(p.track)meta.append(el('span','rr-racecards-meta-track',p.track));
+   if(p.track&&p.race_date)meta.append(el('span','rr-racecards-meta-divider','·'));
+   if(p.race_date)meta.append(el('span','rr-racecards-meta-date',p.race_date));
+   if(!meta.childNodes.length)meta.textContent='Rail & Rye Race Card';
    const copy=el('div','rr-purchase-copy');
-   copy.append(el('div','rr-purchase-meta',[p.track,p.race_date].filter(Boolean).join(' · ')||'Rail & Rye Race Card'));
    copy.append(el('h3','rr-purchase-title',p.title||'Race Card'));
    copy.append(el('div','rr-purchase-price',money(p.price_cents)));
    const free=Number(p.price_cents)===0;
@@ -37,7 +41,7 @@ const el=(tag,cls,text)=>{const x=document.createElement(tag);if(cls)x.className
      location.assign(result.url);
     }catch(error){status.textContent=error.message||'Checkout could not be started.';buy.disabled=false;buy.textContent=old}
    });
-   card.append(cover,copy,buy);products.append(card);
+   card.append(meta,cover,copy,buy);products.append(card);
   });
  }catch(error){status.textContent='Unable to load Race Cards right now. The Publication Desk is still available.'}
 })();
