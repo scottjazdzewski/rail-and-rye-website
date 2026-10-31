@@ -713,3 +713,24 @@ body.heritage-home.heritage-inner-page.heritage-journal-page.rr-journal-archive-
  background-image:url('/assets/approved/journal/archive-ephemera.webp');
  background-position:center 50%;
 }
+
+/* Page 7 keeps the supplied collage as a full-screen archive cover. */
+body.heritage-home.heritage-inner-page.heritage-journal-page.rr-journal-content-view.rr-journal-archive-view>.heritage-inner-hero{
+ box-sizing:border-box;
+ height:100vh;height:100svh;min-height:640px;
+ flex:0 0 auto
+}
+body.heritage-home.heritage-inner-page.heritage-journal-page.rr-journal-content-view.rr-journal-archive-view>.heritage-inner-hero>.rr-journal-hero-grid{
+ display:grid;flex:1 0 auto;min-height:0
+}
+body.heritage-home.heritage-inner-page.heritage-journal-page.rr-journal-content-view.rr-journal-archive-view>.heritage-inner-hero .rr-page-intro{
+ display:block;visibility:visible
+}
+@media(max-width:750px){
+ body.heritage-home.heritage-inner-page.heritage-journal-page.rr-journal-content-view.rr-journal-archive-view>.heritage-inner-hero{
+  height:auto;min-height:100dvh;flex:0 0 auto
+ }
+ body.heritage-home.heritage-inner-page.heritage-journal-page.rr-journal-content-view.rr-journal-archive-view>.heritage-inner-hero>.rr-journal-hero-grid{
+  flex:1 0 auto;min-height:0
+ }
+}
