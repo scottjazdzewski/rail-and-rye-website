@@ -221,7 +221,7 @@ assert.ok(!wirePage.includes('const samples=[')&&!wirePage.includes('DEMO ONLY')
 assert.ok(!wirePage.includes('showExamples')&&!wirePage.includes('showActual'),
  'Fake/live mode switch is removed; verified items are the only news stream');
 assert.ok(wirePage.includes('source')&&wirePage.includes('title')&&wirePage.includes('summary'),'News cards support original link and faithful source content');
-assert.ok(wirePage.includes("fetch('/api/preview/racing-wire-5333548f0ffee31ba519b2470ffb'"),'Preview fetches only the unlisted API');
+assert.ok(wirePage.includes("/api/preview/racing-wire-5333548f0ffee31ba519b2470ffb?refresh="),'Preview fetches only the unlisted API with cache-busting');
 assert.ok(wirePage.includes('rail-rye-ivory-logo.png'),'Owner-approved Rail & Rye branding reused');
 
 assert.ok(wirePage.includes('/assets/approved/saddlecloths/8.png'),'Racing Wire is numbered Page 8');
