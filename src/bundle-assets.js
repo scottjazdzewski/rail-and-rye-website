@@ -40,6 +40,7 @@ export async function handleAdminBundleAssets(request,env,path){
       `SELECT p.id,p.title,p.category,p.race_date,p.track,p.status,
          CASE WHEN p.pdf_key IS NOT NULL THEN 1 ELSE 0 END AS has_pdf
        FROM products p JOIN bundle_only_assets a ON a.product_id=p.id
+       WHERE a.purged_at IS NULL
        ORDER BY a.created_at DESC,p.id DESC LIMIT 250`).all();
     return json({assets:rows.results||[]});
   }
@@ -53,6 +54,60 @@ export async function handleAdminBundleAssets(request,env,path){
       env.STORE_DB.prepare('INSERT INTO bundle_only_assets (product_id) VALUES (?)').bind(id)
     ]);
     return json({id,created:true},201);
+  }
+  // Physically remove every stored version of an archived private PDF, after
+  // checking active bundles, paid entitlements and unfinished checkouts.
+  // Keep a tiny D1 tombstone for audit/history and foreign-key stability.
+  const purge=path.match(/^\/api\/admin\/bundle-assets\/([0-9a-f-]{36})\/purge$/i);
+  if(purge&&request.method==='POST'&&UUID.test(purge[1])){
+    const id=purge[1], prefix='cards/'+id+'/';
+    const asset=await env.STORE_DB.prepare(
+      'SELECT p.status,p.pdf_key,a.purged_at FROM products p JOIN bundle_only_assets a ON a.product_id=p.id WHERE p.id=?'
+    ).bind(id).first();
+    if(!asset)return fail('Private PDF not found',404);
+    if(asset.purged_at)return fail('This private PDF has already been permanently deleted',410);
+    if(asset.status!=='archived')return fail('Archive the private PDF first',409);
+    if(asset.pdf_key&&!asset.pdf_key.startsWith(prefix))
+      return fail('Unexpected storage key; manual review required before deletion',409);
+    const activeBundle=await env.STORE_DB.prepare(
+      `SELECT b.title FROM bundle_items bi JOIN products b ON b.id=bi.bundle_id
+       WHERE bi.product_id=? AND b.status IN ('draft','published') AND b.pdf_key='__rr_bundle__' LIMIT 1`
+    ).bind(id).first();
+    if(activeBundle)return fail('Archive the bundle "'+activeBundle.title+'" before permanently deleting this PDF',409);
+    // Pending Checkout Sessions can still complete. Do not remove their files.
+    const dependent=await env.STORE_DB.prepare(
+      `SELECT o.id FROM orders o
+       LEFT JOIN bundle_order_items bi ON bi.order_id=o.id
+       WHERE (bi.product_id=? OR o.pdf_key LIKE ?)
+         AND ((o.status='paid' AND datetime(o.paid_at, '+' || o.access_days || ' days')>CURRENT_TIMESTAMP)
+           OR (o.status IN ('initiated','pending') AND o.created_at>=datetime('now','-2 days')))
+       LIMIT 1`
+    ).bind(id,prefix+'%').first();
+    if(dependent)return fail('This PDF is still within a customer access window or an unfinished checkout. Try again after access expires.',409);
+    // List all versions, not just the latest pdf_key. Previous uploads may
+    // remain in R2 to honor an older purchased version.
+    const keys=[];let cursor,round=0,bytes=0;
+    do{
+      if(++round>10)return fail('Too many PDF versions for direct deletion; use manual review',409);
+      const batch=await env.CARDS_BUCKET.list({prefix,limit:500,...(cursor?{cursor}:{})});
+      for(const item of batch.objects||[]){
+        if(!item.key.startsWith(prefix))return fail('Unexpected R2 listing; deletion cancelled',500);
+        keys.push(item.key);bytes+=(item.size||0);
+      }
+      if(batch.truncated&&!batch.cursor)return fail('Incomplete R2 listing; deletion cancelled',503);
+      cursor=batch.truncated?batch.cursor:null;
+    }while(cursor);
+    // A failure retains the archived metadata so the owner can safely retry.
+    for(let i=0;i<keys.length;i+=500)await env.CARDS_BUCKET.delete(keys.slice(i,i+500));
+    await env.STORE_DB.batch([
+      env.STORE_DB.prepare(
+        "UPDATE products SET pdf_key=NULL WHERE id=? AND status='archived'"
+      ).bind(id),
+      env.STORE_DB.prepare(
+        'UPDATE bundle_only_assets SET purged_at=CURRENT_TIMESTAMP WHERE product_id=? AND purged_at IS NULL'
+      ).bind(id)
+    ]);
+    return json({deleted:true,files_deleted:keys.length,bytes_deleted:bytes});
   }
   // Archive is reversible at the data level but never deletes R2 PDFs or
   // paid buyer snapshots. Refuse while a published bundle still depends on it.
