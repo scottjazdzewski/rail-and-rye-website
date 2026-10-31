@@ -91,7 +91,7 @@ export async function handleRacingWire(request,env){
     }));
   }catch(e){console.warn('Racing Wire journal unavailable',String(e).slice(0,90));}
   let syndicated=[];
-  try{
+  if(FEEDS.some(f=>f.authorized))try{
     const r=await env.STORE_DB.prepare(
       'SELECT source,category,title,article_url,published_at FROM racing_wire_items ORDER BY published_at DESC LIMIT 200'
     ).all();
