@@ -80,7 +80,7 @@ assert.equal(subjectKind('Jockey makes return'),'jockey');
 assert.equal(subjectKind('Scratch in Breeders Cup Classic'),'race');
 assert.equal(subjectKind('New York racing update'),'race');
 assert.equal(subjectKind('Update','Owners'),'owner');
-const longPost='Trainer confirms the colt has arrived at the track. A final workout is planned for the morning and a decision will follow.';
+const longPost='Trainer confirms the colt has arrived at the track. A final workout is planned for the morning and a decision will follow. Further information about the horse will be shared after the next examination.';
 const preview=socialPreview(longPost);
 assert.ok(preview.title.startsWith('Trainer confirms the colt'));
 assert.ok(preview.summary.includes('workout'));
