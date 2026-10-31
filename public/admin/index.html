@@ -150,7 +150,11 @@
   const safeText=v=>String(v||'');
   const api=async(path,options={})=>{
     const r=await fetch(path,{credentials:'same-origin',cache:'no-store',...options});
-    let data;try{data=await r.json();}catch{throw Error('Unexpected server response ('+r.status+').');}
+    const raw=await r.text();
+    let data;try{data=JSON.parse(raw);}catch{
+      const detail=raw.replace(/<[^>]*>/g,' ').replace(/\\s+/g,' ').trim().slice(0,240);
+      throw Error('Server returned '+r.status+(detail?': '+detail:'')+'.');
+    }
     if(!r.ok)throw Error(data.error||('Request failed ('+r.status+')'));
     return data;
   };
