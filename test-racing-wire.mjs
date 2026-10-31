@@ -120,14 +120,19 @@ assert.ok(wirePage.includes('UPCOMING STAKES'),'Upcoming Stakes sidebar present'
 assert.equal((wirePage.match(/class="rrw-stake-row"/g)||[]).length,4,'Preview shows four verified upcoming stakes');
 assert.ok(wirePage.includes('Twilight Derby (GII)')&&wirePage.includes('Forty Niner S. (GIII)'),'Verified graded stakes shown');
 assert.ok(wirePage.includes('UNLISTED DESIGN PREVIEW'),'Page is clearly labeled as unlisted');
-assert.ok(wirePage.includes('not a real report'),'Demonstration content clearly identified');
+assert.ok(!wirePage.includes('const samples=[')&&!wirePage.includes('DEMO ONLY')&&!wirePage.includes('not a real report')&&!wirePage.includes('Example:'),
+ 'All fake/demo stories are permanently removed from the preview code');
+assert.ok(!wirePage.includes('showExamples')&&!wirePage.includes('showActual'),
+ 'Fake/live mode switch is removed; verified items are the only news stream');
 assert.ok(wirePage.includes('source')&&wirePage.includes('title')&&wirePage.includes('summary'),'News cards support original link and faithful source content');
 assert.ok(wirePage.includes("fetch('/api/preview/racing-wire-5333548f0ffee31ba519b2470ffb'"),'Preview fetches only the unlisted API');
 assert.ok(wirePage.includes('rail-rye-ivory-logo.png'),'Owner-approved Rail & Rye branding reused');
 
 assert.ok(wirePage.includes('/assets/approved/saddlecloths/8.png'),'Racing Wire is numbered Page 8');
-assert.ok(wirePage.includes("/assets/approved/racing-wire/hero-race.webp"),
- 'Owner-edited racing artwork is the Page 8 hero');
+assert.ok(wirePage.includes('class="rrw-hero-image"')&&wirePage.includes('src="/assets/approved/racing-wire/hero-race.webp"'),
+ 'Owner-edited racing artwork is a real hero img element, not a competing CSS background');
+assert.ok(!wirePage.includes("url('/assets/approved/racing-wire/hero-race.webp')"),
+ 'No legacy CSS background competes with the hero image layer');
 assert.ok(!wirePage.includes('class="hero-art"'),'Temporary SVG hero artwork removed');
 assert.ok(wirePage.includes('rr-page-saddle-kicker')&&wirePage.includes('rr-page-title')&&
  wirePage.includes('rr-page-rule')&&wirePage.includes('rr-page-description'),
@@ -136,8 +141,10 @@ assert.ok(wirePage.includes('The Latest from the Backstretch.'),'Approved Racing
 assert.ok(wirePage.includes('id="testFeeds"')&&wirePage.includes('Test real RSS'),
  'Unlisted preview exposes real-feed diagnostic control');
 assert.ok(wirePage.includes('/feed-test'),'RSS diagnostic button calls only the unlisted diagnostic route');
-assert.ok(wirePage.includes('.item .emblem{width:86px;height:86px'),
+assert.ok(wirePage.includes('.item .emblem{width:88px;height:88px'),
  'News-card badges are enlarged on desktop');
+assert.ok(!wirePage.includes('.emblem svg{width:39px;height:39px;stroke:currentColor;fill:none'),
+ 'Legacy global fill:none rule cannot suppress approved solid badge artwork');
 assert.ok(wirePage.includes("horse:'<path fill=\"currentColor\"")&&
  wirePage.includes("sale:'<path fill=\"currentColor\"")&&
  wirePage.includes("achievement:'<path fill=\"currentColor\""),
