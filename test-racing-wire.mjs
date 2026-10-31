@@ -43,7 +43,8 @@ assert.equal(items.length,1);
 assert.equal(items[0].title,'Trainer & Jockey updates');
 assert.equal(items[0].link,'https://publisher.example/story/123');
 assert.equal(items[0].section,'Breeders Cup');
-assert.equal(items[0].category,'Stakes');
+assert.equal(items[0].category,'Jockeys');
+assert.equal(categorize('Championship update','Breeders Cup'),'Stakes');
 assert.equal(parseRacingRss('<!DOCTYPE rss [<!ENTITY pwn SYSTEM "http://evil/">]>'+rss,feed).length,0);
 assert.equal(parseRacingRss('<rss><item><title>Bad</title><link>javascript:alert(1)</link><pubDate>Fri, 30 Oct 2026 12:00:00 GMT</pubDate></item></rss>',feed).length,0);
 
