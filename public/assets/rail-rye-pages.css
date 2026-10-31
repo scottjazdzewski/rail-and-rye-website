@@ -416,24 +416,69 @@ body.heritage-home .rr-purchase-buy{
 body.heritage-home .rr-purchase-buy:hover:not(:disabled){background:#ffefcf;border-color:#f0c779}
 body.heritage-home .rr-purchase-buy:disabled{opacity:.56;cursor:not-allowed}
 body.heritage-home .rr-glass-purchase-card:focus-within{outline:2px solid #f0c779;outline-offset:3px}
+
+/* Edition cards on category pages and the Publication Desk use one clear reading order. */
+body.heritage-home .rr-publication-product-grid .rr-publication-latest-card,
+body.heritage-home .heritage-store-inventory .store-card.rr-glass-purchase-card{
+ grid-template-columns:72px minmax(0,1fr);grid-template-rows:auto auto;
+ align-items:start;gap:10px 16px
+}
+body.heritage-home .rr-publication-product-grid .rr-publication-latest-card .rr-purchase-brand-mark,
+body.heritage-home .heritage-store-inventory .store-card.rr-glass-purchase-card .rr-purchase-brand-mark{
+ grid-column:1;grid-row:1 / span 2;align-self:center
+}
+body.heritage-home .rr-publication-product-grid .rr-publication-latest-card .rr-purchase-copy,
+body.heritage-home .heritage-store-inventory .store-card.rr-glass-purchase-card .rr-purchase-copy{
+ grid-column:2;grid-row:1;gap:6px
+}
+body.heritage-home .rr-publication-product-grid .rr-publication-latest-card .rr-purchase-title,
+body.heritage-home .heritage-store-inventory .store-card.rr-glass-purchase-card .rr-purchase-title{
+ font-size:clamp(21px,1.3vw,25px);line-height:1.14;letter-spacing:0;overflow-wrap:anywhere
+}
+body.heritage-home .rr-publication-product-grid .rr-publication-latest-card .rr-purchase-description,
+body.heritage-home .heritage-store-inventory .store-card.rr-glass-purchase-card .rr-purchase-description{
+ max-width:72ch;font-size:14px;line-height:1.48;overflow-wrap:anywhere
+}
+body.heritage-home .rr-publication-product-grid .rr-publication-latest-card .rr-purchase-includes,
+body.heritage-home .heritage-store-inventory .store-card.rr-glass-purchase-card .rr-purchase-includes{
+ max-width:72ch;margin-top:3px;padding-top:7px;border-top:1px solid rgba(218,180,111,.28);
+ color:rgba(245,234,215,.88);font-size:13px;line-height:1.48
+}
+body.heritage-home .rr-publication-product-grid .rr-publication-latest-card .rr-purchase-price,
+body.heritage-home .heritage-store-inventory .store-card.rr-glass-purchase-card .rr-purchase-price{
+ margin-top:2px;font-size:23px
+}
+body.heritage-home .rr-publication-product-grid .rr-publication-latest-card .rr-purchase-buy,
+body.heritage-home .heritage-store-inventory .store-card.rr-glass-purchase-card .rr-purchase-buy{
+ grid-column:2;grid-row:2;justify-self:start;min-width:156px;min-height:42px;margin:0
+}
 @media(max-width:750px){
- body.heritage-home .rr-glass-purchase-card{grid-template-columns:56px minmax(0,1fr);gap:8px;padding:9px}
- body.heritage-home .rr-purchase-brand-mark{
-  grid-column:1;grid-row:1;width:56px;height:66px;min-width:56px;min-height:66px;max-width:56px;max-height:66px;padding:7px
+ body.heritage-home .rr-publication-product-grid .rr-publication-latest-card,
+ body.heritage-home .heritage-store-inventory .store-card.rr-glass-purchase-card{
+  grid-template-columns:56px minmax(0,1fr);grid-template-rows:auto auto;gap:8px 12px
  }
- body.heritage-home .rr-purchase-copy{grid-column:2;grid-row:1}
- body.heritage-home .rr-purchase-title{font-size:clamp(19px,5vw,23px)}
- body.heritage-home .rr-purchase-description{font-size:12px}
- body.heritage-home .rr-purchase-price{font-size:22px}
- body.heritage-home .rr-purchase-buy{grid-column:2;grid-row:2;justify-self:start;min-width:128px;min-height:38px;margin-top:2px;padding:8px 12px;font-size:10px}
+ body.heritage-home .rr-publication-product-grid .rr-publication-latest-card .rr-purchase-brand-mark,
+ body.heritage-home .heritage-store-inventory .store-card.rr-glass-purchase-card .rr-purchase-brand-mark{
+  grid-column:1;grid-row:1 / span 2;width:56px;height:66px;min-width:56px;min-height:66px;max-width:56px;max-height:66px;padding:7px
+ }
+ body.heritage-home .rr-publication-product-grid .rr-publication-latest-card .rr-purchase-copy,
+ body.heritage-home .heritage-store-inventory .store-card.rr-glass-purchase-card .rr-purchase-copy{grid-column:2;grid-row:1}
+ body.heritage-home .rr-publication-product-grid .rr-publication-latest-card .rr-purchase-title,
+ body.heritage-home .heritage-store-inventory .store-card.rr-glass-purchase-card .rr-purchase-title{font-size:clamp(19px,5vw,23px)}
+ body.heritage-home .rr-publication-product-grid .rr-publication-latest-card .rr-purchase-description,
+ body.heritage-home .heritage-store-inventory .store-card.rr-glass-purchase-card .rr-purchase-description{font-size:12px}
+ body.heritage-home .rr-publication-product-grid .rr-publication-latest-card .rr-purchase-includes,
+ body.heritage-home .heritage-store-inventory .store-card.rr-glass-purchase-card .rr-purchase-includes{font-size:11px}
+ body.heritage-home .rr-publication-product-grid .rr-publication-latest-card .rr-purchase-price,
+ body.heritage-home .heritage-store-inventory .store-card.rr-glass-purchase-card .rr-purchase-price{font-size:22px}
+ body.heritage-home .rr-publication-product-grid .rr-publication-latest-card .rr-purchase-buy,
+ body.heritage-home .heritage-store-inventory .store-card.rr-glass-purchase-card .rr-purchase-buy{
+  grid-column:2;grid-row:2;min-width:128px;min-height:38px;margin-top:2px;padding:8px 12px;font-size:10px
+ }
 }
 @media(prefers-reduced-motion:reduce){
  body.heritage-home .rr-glass-purchase-card{transition:none}
 }
-@media(max-width:750px){
-}
-
-
 /* Shared hero frames and the single source for product rail surfaces. */
 body.heritage-home .heritage-inner-hero,body.heritage-home .rr-racecards-hero{
  min-height:var(--rr-shared-photo-hero-height,600px)

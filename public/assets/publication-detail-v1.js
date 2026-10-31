@@ -8,6 +8,25 @@ const status=document.getElementById('rr-pub-status');
 if(!category||!latestGrid||!latestStatus)return;
 const txt=(tag,value,cls)=>{const el=document.createElement(tag);if(cls)el.className=cls;el.textContent=String(value??'');return el};
 const price=cents=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format((Number(cents)||0)/100);
+const editionDate=value=>{
+ const match=String(value||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+ if(!match)return '';
+ return new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',year:'numeric',timeZone:'UTC'})
+  .format(new Date(Date.UTC(Number(match[1]),Number(match[2])-1,Number(match[3]))))
+};
+const displayTitle=value=>{
+ const title=String(value||category).trim();
+ if(!title||title!==title.toLocaleUpperCase('en-US'))return title||category;
+ return title.toLocaleLowerCase('en-US').replace(/(^|[\s:([{—–-])([a-z])/g,(_,prefix,letter)=>prefix+letter.toLocaleUpperCase('en-US'))
+};
+const latestMeta=p=>{
+ const parts=[],track=String(p.track||'').trim(),title=String(p.title||'');
+ if(track&&!/^(all|any)$/i.test(track))parts.push(track);
+ const titleHasDate=/\b(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+\d{1,2}(?:st|nd|rd|th)?\b/i.test(title);
+ const date=titleHasDate?'':editionDate(p.race_date);
+ if(date)parts.push(date);
+ return parts.join(' · ')
+};
 const freeProduct=p=>p.kind==='single'&&Number(p.price_cents)===0;
 const makePurchaseButton=(p,data,onError)=>{
  const free=freeProduct(p),ready=Boolean(data.checkout_ready),live=data.checkout_mode==='live';
@@ -28,13 +47,19 @@ const makePurchaseButton=(p,data,onError)=>{
  return buy
 };
 const makeGlassCard=(p,data,onError)=>{
- const card=document.createElement('article');card.className='rr-glass-purchase-card';
+ const card=document.createElement('article');card.className='rr-glass-purchase-card rr-publication-latest-card';
  const cover=document.createElement('div');cover.className='rr-purchase-brand-mark';
  const logo=document.createElement('img');logo.src='/assets/approved/brand/rail-rye-ivory-logo.png';logo.alt='Rail & Rye official horseshoe emblem';logo.className='rr-purchase-brand-logo';logo.loading='lazy';logo.decoding='async';cover.append(logo);
  const copy=document.createElement('div');copy.className='rr-purchase-copy';
- copy.append(txt('div',[p.category,p.race_date,p.track].filter(Boolean).join(' · ')||'Rail & Rye publication','rr-purchase-meta'));
- copy.append(txt('h3',p.title||category,'rr-purchase-title'));
+ const meta=latestMeta(p);
+ if(meta)copy.append(txt('div',meta,'rr-purchase-meta'));
+ copy.append(txt('h3',displayTitle(p.title||category),'rr-purchase-title'));
  copy.append(txt('p',p.description||'Digital racing publication.','rr-purchase-description'));
+ const included=Array.isArray(p.included_titles)?p.included_titles.filter(Boolean):[];
+ if(p.kind==='bundle'&&included.length){
+  const count=Number(p.bundle_count)||included.length;
+  copy.append(txt('p','Includes '+count+' PDFs: '+included.map(displayTitle).join(' · '),'rr-purchase-description rr-purchase-includes'));
+ }
  copy.append(txt('div',freeProduct(p)?'FREE':price(p.price_cents),'rr-purchase-price'));
  card.append(cover,copy,makePurchaseButton(p,data,onError));
  return card
@@ -64,7 +89,7 @@ const makeEditionCard=(p,data,onError)=>{
    if(status)status.textContent='No editions are currently published in this collection.';
    return
   }
-  latestStatus.textContent='Latest of '+products.length+(products.length===1?' published edition':' published editions');
+  latestStatus.textContent=products.length===1?'1 edition available':products.length+' editions available · latest shown';
   const showError=error=>{latestStatus.textContent=error.message||'Checkout could not be started.';latestStatus.classList.add('rr-status-error')};
   latestGrid.replaceChildren(makeGlassCard(products[0],data,showError));
   if(grid&&status){
