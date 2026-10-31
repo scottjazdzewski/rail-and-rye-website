@@ -662,10 +662,10 @@ body.rr-single-screen-hero .rr-page-description{width:min(100%,610px);max-width:
 }
 
 
-/* Desktop homepage fold: keep the More from Rail & Rye heading at the foot of the first view. */
+/* Desktop homepage fold: stable compact spacing keeps the More from Rail & Rye title visible beneath the feature cards. */
 @media(min-width:1121px){
  body.heritage-home:not(.heritage-inner-page):not(.heritage-store-page)>.heritage-body>.heritage-more{
-  padding-top:clamp(36px,4vh,46px)
+  padding-top:8px
  }
 }
 
