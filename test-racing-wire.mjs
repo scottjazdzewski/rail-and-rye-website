@@ -65,7 +65,8 @@ const fixtureTitles=[
  'Kentucky Derby winner retired to stud after injury',
  'Arc contender ruled out of Group 1 with illness'
 ];
-assert.equal(PREVIEW_LIVE_FEEDS.length,15,'Expanded preview source roster contains 15 feeds');
+const previewFeedCount=PREVIEW_LIVE_FEEDS.length;
+assert.equal(previewFeedCount,8,'Live preview keeps only eight currently useful/fresh feed endpoints');
 const previewFeedFixtures=Object.fromEntries(PREVIEW_LIVE_FEEDS.map((feed,i)=>{
  const host=(feed.link_hosts?.[0]||feed.host);
  return [feed.url,{host,title:fixtureTitles[i],link:'https://www.'+host+'/rr-preview-story-'+(i+1)}];
@@ -80,9 +81,9 @@ const previewFetch=async url=>{
  return new Response(xml,{status:200,headers:{'Content-Type':'application/rss+xml'}});
 };
 const diagnostic=await testPreviewRssFeeds(previewFetch);
-assert.equal(diagnosticFetches,15,'All expanded preview RSS endpoints are exercised by diagnostic mode');
+assert.equal(diagnosticFetches,previewFeedCount,'All expanded preview RSS endpoints are exercised by diagnostic mode');
 assert.equal(diagnostic.diagnostic_only,true);
-assert.equal(diagnostic.results.length,15);
+assert.equal(diagnostic.results.length,previewFeedCount);
 assert.ok(diagnostic.results.every(x=>x.reachable&&x.http_status===200&&x.parsed_count===1));
 assert.ok(diagnostic.results.every(x=>x.newest_published_at==='2026-10-30T12:00:00.000Z'));
 assert.ok(diagnostic.results.every(x=>!('title' in x)&&!('items' in x)),
@@ -90,27 +91,26 @@ assert.ok(diagnostic.results.every(x=>!('title' in x)&&!('items' in x)),
 
 diagnosticFetches=0;
 const previewExternal=await previewExternalItems(previewFetch);
-assert.equal(diagnosticFetches,15,'Preview live aggregator checks all fifteen RSS sources');
-assert.equal(previewExternal.items.length,15);
-assert.equal(previewExternal.sources.filter(x=>x.parsed_count===1).length,15);
+assert.equal(diagnosticFetches,previewFeedCount,'Preview live aggregator checks all fifteen RSS sources');
+assert.equal(previewExternal.items.length,previewFeedCount);
+assert.equal(previewExternal.sources.filter(x=>x.parsed_count===1).length,previewFeedCount);
 assert.ok(previewExternal.items.every(x=>x.preview_external===true&&x.summary===''&&!x.original));
 
 diagnosticFetches=0;
 const previewResponse=await handlePreviewRacingWire(new Request('https://railandryeracing.com/api/preview/racing-wire-test'),env,previewFetch);
 assert.equal(previewResponse.status,200);
 const previewBody=await previewResponse.json();
-assert.equal(diagnosticFetches,15);
+assert.equal(diagnosticFetches,previewFeedCount);
 assert.equal(previewBody.external_test_only,true);
-assert.equal(previewBody.source_count,16,'Rail & Rye Journal plus fifteen reachable preview feed sources');
-assert.equal(previewBody.external_sources.length,15);
+assert.equal(previewBody.source_count,previewFeedCount+1,'Rail & Rye Journal plus current live preview feed sources');
+assert.equal(previewBody.external_sources.length,previewFeedCount);
 assert.ok(previewBody.external_sources.every(x=>x.parsed_count===1),
- 'All fifteen preview feeds parse successfully before editorial filtering');
-assert.ok(previewBody.items.length>=10&&previewBody.items.length<16,
+ 'All active preview feeds parse successfully before editorial filtering');
+assert.ok(previewBody.items.length>=5&&previewBody.items.length<=previewFeedCount+1,
  'Editorial relevance/dedupe gate may suppress low-value or overlapping feed items');
-assert.ok(previewBody.items.some(x=>x.source==='BloodHorse'),'BloodHorse can reach curated preview');
-assert.ok(previewBody.items.some(x=>x.source==='Paulick Report'),'Paulick Report can reach curated preview');
-assert.ok(previewBody.items.some(x=>x.source==='Ocala Breeders’ Sales'),'OBS can reach curated preview');
+assert.ok(previewBody.items.some(x=>x.source==='Ocala Breeders’ Sales'),'Correct OBS feed can reach curated preview');
 assert.ok(previewBody.items.some(x=>x.source==="America's Best Racing"),'ABR can reach curated preview');
+assert.ok(previewBody.external_sources.every(x=>'newest_published_at' in x),'Source diagnostics expose newest accepted item timestamps');
 assert.ok(previewBody.items.every(x=>x.editorial_score>=62),'Preview emits only editorially relevant items');
 assert.equal((await handlePreviewRacingWire(new Request('https://railandryeracing.com/api/preview/racing-wire-test',{method:'POST'}),env,previewFetch)).status,405);
 
@@ -259,6 +259,12 @@ assert.ok(breedingBadge.length>10000,'Breeding DNA badge is the full approved ar
 assert.ok(wirePage.includes("badges/'+safe+'.png?v=5"),'Badge cache version refreshed for DNA breeding badge');
 assert.ok(wirePage.includes('.more[hidden]{display:none!important}'),
  'Load-more cannot appear when there are zero verified stories');
+assert.ok(wirePage.includes('setInterval(()=>{if(!document.hidden)loadVerified()},180000)'),
+ 'Racing Wire auto-refreshes every three minutes while visible');
+assert.ok(wirePage.includes("document.addEventListener('visibilitychange'"),
+ 'Returning to the Racing Wire tab forces a fresh update');
+assert.ok(wirePage.includes("?refresh='+Date.now()"),
+ 'Each refresh uses a cache-busting API request');
 
 
 const journalPage=readFileSync(new URL('./public/journal/index.html',import.meta.url),'utf8');
