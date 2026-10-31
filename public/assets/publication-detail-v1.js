@@ -55,11 +55,6 @@ const makeGlassCard=(p,data,onError)=>{
  if(meta)copy.append(txt('div',meta,'rr-purchase-meta'));
  copy.append(txt('h3',displayTitle(p.title||category),'rr-purchase-title'));
  copy.append(txt('p',p.description||'Digital racing publication.','rr-purchase-description'));
- const included=Array.isArray(p.included_titles)?p.included_titles.filter(Boolean):[];
- if(p.kind==='bundle'&&included.length){
-  const count=Number(p.bundle_count)||included.length;
-  copy.append(txt('p','Includes '+count+' PDFs: '+included.map(displayTitle).join(' · '),'rr-purchase-description rr-purchase-includes'));
- }
  copy.append(txt('div',freeProduct(p)?'FREE':price(p.price_cents),'rr-purchase-price'));
  card.append(cover,copy,makePurchaseButton(p,data,onError));
  return card

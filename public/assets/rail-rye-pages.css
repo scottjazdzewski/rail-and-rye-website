@@ -439,11 +439,6 @@ body.heritage-home .rr-publication-product-grid .rr-publication-latest-card .rr-
 body.heritage-home .heritage-store-inventory .store-card.rr-glass-purchase-card .rr-purchase-description{
  max-width:72ch;font-size:14px;line-height:1.48;overflow-wrap:anywhere
 }
-body.heritage-home .rr-publication-product-grid .rr-publication-latest-card .rr-purchase-includes,
-body.heritage-home .heritage-store-inventory .store-card.rr-glass-purchase-card .rr-purchase-includes{
- max-width:72ch;margin-top:3px;padding-top:7px;border-top:1px solid rgba(218,180,111,.28);
- color:rgba(245,234,215,.88);font-size:13px;line-height:1.48
-}
 body.heritage-home .rr-publication-product-grid .rr-publication-latest-card .rr-purchase-price,
 body.heritage-home .heritage-store-inventory .store-card.rr-glass-purchase-card .rr-purchase-price{
  margin-top:2px;font-size:23px
@@ -467,8 +462,6 @@ body.heritage-home .heritage-store-inventory .store-card.rr-glass-purchase-card 
  body.heritage-home .heritage-store-inventory .store-card.rr-glass-purchase-card .rr-purchase-title{font-size:clamp(19px,5vw,23px)}
  body.heritage-home .rr-publication-product-grid .rr-publication-latest-card .rr-purchase-description,
  body.heritage-home .heritage-store-inventory .store-card.rr-glass-purchase-card .rr-purchase-description{font-size:12px}
- body.heritage-home .rr-publication-product-grid .rr-publication-latest-card .rr-purchase-includes,
- body.heritage-home .heritage-store-inventory .store-card.rr-glass-purchase-card .rr-purchase-includes{font-size:11px}
  body.heritage-home .rr-publication-product-grid .rr-publication-latest-card .rr-purchase-price,
  body.heritage-home .heritage-store-inventory .store-card.rr-glass-purchase-card .rr-purchase-price{font-size:22px}
  body.heritage-home .rr-publication-product-grid .rr-publication-latest-card .rr-purchase-buy,
@@ -668,6 +661,13 @@ body.rr-single-screen-hero .rr-page-description{width:min(100%,610px);max-width:
  }
 }
 
+
+/* Desktop homepage fold: keep the More from Rail & Rye heading at the foot of the first view. */
+@media(min-width:1121px){
+ body.heritage-home:not(.heritage-inner-page):not(.heritage-store-page)>.heritage-body>.heritage-more{
+  padding-top:clamp(36px,4vh,46px)
+ }
+}
 
 /* The Journal archive and long-form article view. */
 body.heritage-home.heritage-journal-page.rr-journal-content-view:not(.rr-journal-archive-view) .rr-journal-main{
