@@ -172,7 +172,7 @@ body.heritage-home .rr-delivery-main button:focus-visible{outline:3px solid #e4c
  
  
  body.heritage-home .heritage-kicker{width:100%;max-width:none;font-size:10px;line-height:1.45;letter-spacing:.07em}
- body.heritage-home .heritage-feature-grid{row-gap:12px}
+ body.heritage-home .heritage-feature-grid{row-gap:36px}
 }
 @media(prefers-reduced-motion:reduce){
  body.heritage-home .btn,

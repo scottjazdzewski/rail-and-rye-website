@@ -35,3 +35,7 @@ Both suites passed locally with a true in-memory SQLite schema, simulated Stripe
 ## Do not change
 
 Do not paste API keys into GitHub, email, screenshots or public pages. Do not delete the old test webhook or replace its secret with the live one. Do not alter Cloudflare Access admin security. Do not run old 001/002 migrations again; those were already applied.
+
+## Engineering must: supersede, don’t stack
+
+When an existing behavior changes, revise or remove its current source-of-truth declaration in place. Do not append another CSS override, duplicate selector, parallel JavaScript path, markup variant, or configuration value just to beat stale behavior. Remove obsolete or competing declarations within the change’s scope. Keep a compatibility layer only when it is required, and document why. Update cache versions for every page that consumes a changed asset, then review the diff to confirm the new rule replaces the old behavior without unrelated changes.
