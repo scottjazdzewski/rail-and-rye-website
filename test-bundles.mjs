@@ -189,9 +189,13 @@ assert.equal(activeUnpaid.status,'pending');
 let deletion=await assetAdmin(post('/api/admin/bundle-assets/'+privateId+'/purge',{}));
 assert.equal(deletion.status,409,'Incomplete Stripe checkout blocks physical deletion');
 db.prepare("UPDATE orders SET status='paid',paid_at=CURRENT_TIMESTAMP,access_days=7 WHERE id=?").run(privateOrder.id);
+assert.equal((await commerce(new Request(root+'/api/orders/'+privateSid+'/download?item_id='+privateId))).status,200,
+ 'Buyer can download the private PDF inside the seven-day window');
 deletion=await assetAdmin(post('/api/admin/bundle-assets/'+privateId+'/purge',{}));
 assert.equal(deletion.status,409,'Paid order within seven days blocks physical deletion');
 db.prepare("UPDATE orders SET paid_at=datetime('now','-8 days') WHERE id=?").run(privateOrder.id);
+assert.equal((await commerce(new Request(root+'/api/orders/'+privateSid+'/download?item_id='+privateId))).status,403,
+ 'At eight days, paid customer no longer has download entitlement');
 const deletedKeys=[];
 env.CARDS_BUCKET.list=async ({prefix})=>({objects:[
  {key:prefix+'notes-v1.pdf',size:2000},{key:prefix+'notes-v2.pdf',size:3000}
