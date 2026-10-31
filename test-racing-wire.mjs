@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
-import {handleRacingWire,parseRacingRss,categorize,refreshRacingWire,parseBlueskyAuthorFeed} from './src/racing-wire.js';
+import {readFileSync} from 'node:fs';
+import {handleRacingWire,parseRacingRss,categorize,refreshRacingWire,parseBlueskyAuthorFeed,subjectKind,socialPreview} from './src/racing-wire.js';
 const db=new DatabaseSync(':memory:');
 db.exec("CREATE TABLE journal_articles (id TEXT PRIMARY KEY,slug TEXT,title TEXT,category TEXT,excerpt TEXT,publish_date TEXT,status TEXT,created_at TEXT);");
 db.prepare("INSERT INTO journal_articles VALUES (?,?,?,?,?,?,?,?)").run(
@@ -71,4 +72,29 @@ assert.equal(combined.items.length,2,'Live social posts combine with first-party
 assert.equal(combined.source_count,1);
 assert.ok(combined.items.some(i=>i.source==='Paulick Report · Bluesky'&&i.original===false));
 console.log('PASS verified public Bluesky author feed, source links, no-unauthenticated and impersonation protections.');
+
+assert.equal(subjectKind('A horse retires after a win'),'horse');
+assert.equal(subjectKind('Ownership group buys shares'),'owner');
+assert.equal(subjectKind('Trainer sends two to the gate'),'trainer');
+assert.equal(subjectKind('Jockey makes return'),'jockey');
+assert.equal(subjectKind('Scratch in Breeders Cup Classic'),'race');
+assert.equal(subjectKind('New York racing update'),'race');
+assert.equal(subjectKind('Update','Owners'),'owner');
+const longPost='Trainer confirms the colt has arrived at the track. A final workout is planned for the morning and a decision will follow.';
+const preview=socialPreview(longPost);
+assert.ok(preview.title.startsWith('Trainer confirms the colt'));
+assert.ok(preview.summary.includes('workout'));
+assert.ok(!preview.summary.includes('imagined'));
+assert.equal(socialPreview('Short original post').title,'Short original post');
+assert.equal(socialPreview('Short original post').summary,'');
+const wirePage=readFileSync(new URL('./public/racing-wire/index.html',import.meta.url),'utf8');
+for(const type of ['horse','owner','trainer','jockey','race']){
+ assert.ok(wirePage.includes('id="rrw-icon-'+type+'"'),'Custom icon exists: '+type);
+ assert.ok(wirePage.includes('data-kind="'+type+'"'),'News filter exists: '+type);
+}
+assert.ok(wirePage.includes('rrw-attribution-label'),'Source attribution row exists');
+assert.ok(wirePage.includes('View original post'),'Original social link is clearly labeled');
+assert.ok(wirePage.includes('a.summary'),'News summaries are rendered when actually supplied');
+assert.ok(!wirePage.includes('innerHTML=a.title'),'No unsafe source-content HTML injection');
+
 console.log('PASS Racing Wire: original published-only news, archive/draft secrecy, approved-only RSS source gate, safe publisher links, XML safety, categorization.');
