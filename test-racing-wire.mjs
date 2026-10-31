@@ -120,7 +120,6 @@ assert.ok(!wirePage.includes('UPCOMING STAKES')&&!wirePage.includes('rrw-stake-r
  'Upcoming Stakes block is removed from the Racing Wire news page');
 assert.ok(wirePage.includes('.workspace{display:block}'),
  'News feed uses the full content width after sidebar removal');
-assert.ok(wirePage.includes('Twilight Derby (GII)')&&wirePage.includes('Forty Niner S. (GIII)'),'Verified graded stakes shown');
 assert.ok(wirePage.includes('UNLISTED DESIGN PREVIEW'),'Page is clearly labeled as unlisted');
 assert.ok(!wirePage.includes('const samples=[')&&!wirePage.includes('DEMO ONLY')&&!wirePage.includes('not a real report')&&!wirePage.includes('Example:'),
  'All fake/demo stories are permanently removed from the preview code');
