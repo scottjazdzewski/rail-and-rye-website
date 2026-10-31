@@ -1,6 +1,7 @@
 import { handleCommerce, sendQueuedEmails, checkoutReadiness } from './commerce.js';
 import {handleAdminBundles,BUNDLE_KEY} from './bundles.js';
 import {handleAdminBundleAssets} from './bundle-assets.js';
+import {handleAdminJournal,handlePublicJournal,publicJournalCover} from './journal.js';
 /* Rail & Rye admin MVP. Dependencies: Cloudflare Workers, R2, D1, Cloudflare Access.
    Admin routes FAIL CLOSED until ACCESS_TEAM_DOMAIN, ACCESS_AUD and ADMIN_EMAIL
    are configured in Cloudflare Worker runtime variables, and a matching Access
@@ -208,6 +209,7 @@ export default {
           }
           return handleAdminBundleAssets(request,env,path);
         }
+        if(path.startsWith("/api/admin/articles"))return handleAdminJournal(request,env,path);
         if(path.startsWith("/api/admin/"))return handleAdminAPI(request,env,path);
         if(request.method!=="GET"&&request.method!=="HEAD")return fail("Method not allowed",405);
         const asset=new URL(url);asset.pathname="/admin/index.html";
@@ -218,8 +220,16 @@ export default {
         headers.set("Content-Security-Policy","default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'");
         return new Response(result.body,{status:result.status,headers});
       }
+      const journalImage=path.match(/^\/media\/journal\/([0-9a-f-]{36})$/i);
+      if(journalImage&&request.method==="GET")return publicJournalCover(env,journalImage[1]);
       const image=path.match(/^\/media\/cover\/([0-9a-f-]{36})$/i);
       if(image&&request.method==="GET")return publicCover(env,image[1]);
+      if(path==="/api/journal/articles"||path.startsWith("/api/journal/articles/"))return handlePublicJournal(request,env,path);
+      const journalStory=path.match(/^\/journal\/([a-z0-9]+(?:-[a-z0-9]+)*)\/?$/);
+      if(journalStory&&(request.method==="GET"||request.method==="HEAD")){
+        const asset=new URL(url);asset.pathname="/journal/index.html";asset.search="";
+        return env.ASSETS.fetch(new Request(asset.toString(),request));
+      }
       if(path==="/api/products"||path==="/api/checkout"||path==="/api/stripe/webhook"||path==="/api/stripe/live-webhook"||path.startsWith("/api/orders/")||path==="/api/delivery/download"||path==="/api/delivery/items"||path==="/api/recovery/request")return handleCommerce(request,env,url,ctx);
       if(path.startsWith("/api/"))return fail("Not found",404);
       return env.ASSETS.fetch(request);
