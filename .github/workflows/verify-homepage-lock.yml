@@ -1,0 +1,28 @@
+name: Verify approved homepage lock
+on:
+  pull_request:
+    paths:
+      - 'public/**'
+      - 'test-homepage-lock.mjs'
+      - '.github/workflows/verify-homepage-lock.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'public/**'
+      - 'test-homepage-lock.mjs'
+      - '.github/workflows/verify-homepage-lock.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  approved-homepage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Homepage visual baseline and asset integrity
+        run: node test-homepage-lock.mjs
