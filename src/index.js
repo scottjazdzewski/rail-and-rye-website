@@ -1,5 +1,5 @@
 import { handleCommerce, sendQueuedEmails, checkoutReadiness } from './commerce.js';
-import {handleRacingWire} from './racing-wire.js';
+import {handleRacingWire,testPreviewRssFeeds} from './racing-wire.js';
 import {handleAdminBundles,BUNDLE_KEY} from './bundles.js';
 import {handleAdminBundleAssets} from './bundle-assets.js';
 import {handleAdminJournal,handlePublicJournal,publicJournalCover} from './journal.js';
@@ -225,6 +225,15 @@ export default {
       // Anyone possessing the URL may access it; this is NOT authentication.
       const previewSlug='/preview/racing-wire-5333548f0ffee31ba519b2470ffb/';
       const previewApi='/api/preview/racing-wire-5333548f0ffee31ba519b2470ffb';
+      if(path===previewApi+'/feed-test'){
+        if(request.method!=='GET')return fail('Method not allowed',405);
+        const data=await testPreviewRssFeeds();
+        const response=json(data);
+        const headers=new Headers(response.headers);
+        headers.set('Cache-Control','no-store');
+        headers.set('X-Robots-Tag','noindex, nofollow, noarchive');
+        return new Response(response.body,{status:response.status,headers});
+      }
       if(path===previewApi){
         if(request.method!=='GET')return fail('Method not allowed',405);
         const response=await handleRacingWire(request,env);
