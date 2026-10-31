@@ -32,7 +32,7 @@ The unlisted preview can be shared by URL but is not in the main site navigation
 - Facebook and Instagram: Meta's official embeddable public content and terms apply. The Meta-maintained https://github.com/facebook/meta-embeds-for-wordpress demonstrates official post embed methods. Do not treat it as permission to extract/cache other account content. Some accounts disable embeds; then use an ordinary direct link. Identify official accounts before use.
 - Avoid embeds automatically loading trackers on every news card; use user-triggered reveal or a clearly labeled direct source link when appropriate.
 - No Bluesky or TikTok at any stage.
-- When no verified source is enabled, **do not invent live news**. Display Rail & Rye published Journal stories and clearly labeled examples only in demo mode.
+- When no verified external source is enabled, **do not invent live news**. Display only real published Rail & Rye Journal items; if none exist, show the empty state.
 
 ## Dedup / story grouping contract
 
@@ -45,6 +45,6 @@ The unlisted preview can be shared by URL but is not in the main site navigation
 ## Implementation gate
 
 - \`src/racing-wire.js\`: publisher RSS importer exists but has **FEEDS=[]**, so no publisher content is imported until license/permission is verified; social scraping is not enabled.
-- Current preview \`/preview/racing-wire-5333548f0ffee31ba519b2470ffb/\` includes mock stories explicitly marked fictional and a “Verified updates” mode based on Rail & Rye Journal. This isn't a full third-party headline aggregation yet.
+- Current preview \`/preview/racing-wire-5333548f0ffee31ba519b2470ffb/\` contains **no fake/demo stories**. It auto-loads real published Rail & Rye Journal items only. TDN RSS is diagnostic-only and no social backend is connected yet.
 - The live site header **must not** acquire the Racing Wire pill until separate explicit approval.
 - Adding any real X/Facebook/Instagram automation requires provider permission/appropriate official API or embeds and quality-control testing. Never silently substitute Bluesky.
