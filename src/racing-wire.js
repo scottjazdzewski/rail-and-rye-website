@@ -207,6 +207,6 @@ export async function handleRacingWire(request,env){
   }catch(e){console.warn('Racing Wire syndicated cache unavailable',String(e).slice(0,90));}
   const items=groupRacingWireStories([...originals,...syndicated]).slice(0,150);
   return reply({items,source_count:FEEDS.filter(f=>f.authorized).length,
-    social_sources:[],social_policy:'X official embeds; Facebook/Instagram official links or embeds only after verification; no Bluesky/TikTok',
+    social_sources:[],social_policy:'Publisher-authorized RSS; X official embeds; Facebook/Instagram verified official links or embeds',
     headline_only:true,generated_at:new Date().toISOString()});
 }
