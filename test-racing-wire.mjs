@@ -239,7 +239,13 @@ assert.ok(wirePage.includes('rr-page-saddle-kicker')&&wirePage.includes('rr-page
  'Page 8 uses the same canonical numbered-page title treatment');
 assert.ok(wirePage.includes('class="heritage-inner-hero rrw-wire-hero"')&&wirePage.includes('rr-page-intro rr-page-intro--hero'),
  'Racing Wire uses the exact shared production inner-hero frame and intro layout');
-assert.ok(wirePage.includes('rr-single-screen-hero'),'Racing Wire uses the same shared hero viewport/layout system as the other numbered pages');
+assert.ok(!wirePage.includes('rr-single-screen-hero'),
+ 'Racing Wire does not use the single-screen flex mode that collapses when a live feed is present');
+assert.ok(wirePage.includes('min-height:var(--rr-shared-photo-hero-height,600px)'),
+ 'Racing Wire uses the shared production photo-hero height without collapsing');
+assert.ok(wirePage.includes('.rrw-wire-hero .rrw-hero-media{position:absolute;inset:0;z-index:0')&&
+ wirePage.includes('.rrw-wire-hero:before{z-index:1}'),
+ 'Hero image and shared production overlay use visible non-negative stacking layers');
 assert.ok(!wirePage.includes('rrw-masthead')&&!wirePage.includes('class="hero"')&&!wirePage.includes('hero-inner')&&!wirePage.includes('rrw-hero-shade'),
  'Old custom masthead, hero frame and competing overlay are completely removed');
 assert.ok(wirePage.indexOf('<header class="heritage-header">')>wirePage.indexOf('class="heritage-inner-hero rrw-wire-hero"'),
