@@ -26,7 +26,7 @@
       setTimeout(()=>URL.revokeObjectURL(href),30000);result.textContent='Download started.';
     }catch(e){result.textContent=e.message;}finally{button.disabled=false;}
   }
-  if(!/^(purchase|recover)-[0-9a-f-]{36}\.[a-f0-9]{64}$/i.test(code)){
+  if(!/^(purchase|recover|update)-[0-9a-f-]{36}\.[a-f0-9]{64}$/i.test(code)){
     original.disabled=true;result.textContent='Missing or invalid link. Request a new one by email.';return;
   }
   original.addEventListener('click',()=>download(null,original));
