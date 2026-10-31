@@ -155,6 +155,7 @@ body.heritage-home .rr-delivery-main button:focus-visible{outline:3px solid #e4c
   background-repeat:no-repeat;background-size:auto var(--rr-shared-photo-hero-height);
   background-position:center top
  }
+ body.heritage-home .heritage-hero{background-size:auto 100%}
  body.heritage-home .heritage-lead{padding-top:12px;padding-bottom:8px}
  body.heritage-home .heritage-lead h1{
   font-size:clamp(44px,10.7vw,48px);line-height:.92;margin:8px 0
@@ -171,7 +172,7 @@ body.heritage-home .rr-delivery-main button:focus-visible{outline:3px solid #e4c
  
  
  body.heritage-home .heritage-kicker{width:100%;max-width:none;font-size:10px;line-height:1.45;letter-spacing:.07em}
- body.heritage-home .heritage-feature-grid{row-gap:62px}
+ body.heritage-home .heritage-feature-grid{row-gap:12px}
 }
 @media(prefers-reduced-motion:reduce){
  body.heritage-home .btn,
@@ -571,4 +572,13 @@ body.rr-single-screen-hero .rr-page-description{width:min(100%,610px);max-width:
 }
 @media(max-width:390px){
  body.rr-single-screen-hero>.heritage-inner-hero>.rr-page-intro--hero{padding-inline:14px}
+}
+
+
+/* Mobile pages scroll naturally so product lists are not clipped by the desktop viewport frame. */
+@media(max-width:750px){
+ body.rr-single-screen-hero{min-height:100vh;min-height:100svh;display:block}
+ body.rr-single-screen-hero>.heritage-inner-hero,
+ body.rr-single-screen-hero>.rr-racecards-hero{display:flex;flex:0 0 auto;min-height:0;height:auto;overflow:visible}
+ body.rr-single-screen-hero>.heritage-footer{margin-top:0}
 }
