@@ -54,6 +54,36 @@ export async function handleAdminBundleAssets(request,env,path){
     ]);
     return json({id,created:true},201);
   }
+  // Archive is reversible at the data level but never deletes R2 PDFs or
+  // paid buyer snapshots. Refuse while a published bundle still depends on it.
+  const archive=path.match(/^\/api\/admin\/bundle-assets\/([0-9a-f-]{36})\/archive$/i);
+  if(archive&&request.method==='PATCH'&&UUID.test(archive[1])){
+    const id=archive[1];
+    const asset=await env.STORE_DB.prepare(
+      'SELECT p.status FROM products p JOIN bundle_only_assets a ON a.product_id=p.id WHERE p.id=?'
+    ).bind(id).first();
+    if(!asset)return fail('Bundle-only PDF not found',404);
+    if(asset.status==='archived')return json({id,archived:true,already_archived:true});
+    if(asset.status!=='draft')return fail('Only private draft PDFs can be archived',409);
+    const active=await env.STORE_DB.prepare(
+      `SELECT b.title FROM bundle_items bi JOIN products b ON b.id=bi.bundle_id
+       WHERE bi.product_id=? AND b.status='published' AND b.pdf_key='__rr_bundle__'
+       ORDER BY b.title LIMIT 1`
+    ).bind(id).first();
+    if(active)return fail('This PDF is included in the published bundle "'+active.title+'". Archive that bundle first, then archive this private PDF.',409);
+    // The same active-bundle condition is rechecked atomically in the update.
+    const result=await env.STORE_DB.prepare(
+      `UPDATE products SET status='archived'
+       WHERE id=? AND status='draft'
+         AND EXISTS(SELECT 1 FROM bundle_only_assets a WHERE a.product_id=products.id)
+         AND NOT EXISTS(
+           SELECT 1 FROM bundle_items bi JOIN products b ON b.id=bi.bundle_id
+           WHERE bi.product_id=products.id AND b.status='published' AND b.pdf_key='__rr_bundle__'
+         )`
+    ).bind(id).run();
+    if(!result.meta?.changes)return fail('Unable to archive: check whether a published bundle still uses this PDF.',409);
+    return json({id,archived:true});
+  }
   const m=path.match(/^\/api\/admin\/bundle-assets\/([0-9a-f-]{36})$/i);
   if(!m||request.method!=='PATCH'||!UUID.test(m[1]))return fail('Not found',404);
   const id=m[1];
