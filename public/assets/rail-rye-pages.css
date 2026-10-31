@@ -717,7 +717,7 @@ body.rr-single-screen-hero.heritage-journal-page>.heritage-inner-hero{flex:1 1 0
  padding-top:var(--rr-single-hero-top);padding-bottom:clamp(48px,5vw,82px)
 }
 .rr-journal-hero-grid>.rr-page-intro{align-self:start;width:100%;max-width:720px}
-/* Page 7 uses the supplied vintage ephemera hero; the Journal landing keeps its existing image. */
+/* Page 9 (Journal Archive) temporarily uses the existing archive hero until the approved replacement arrives; Page 2 keeps its original image. */
 body.heritage-home.heritage-inner-page.heritage-journal-page.rr-journal-archive-view>.heritage-inner-hero{
  background-image:url('/assets/approved/journal/archive-ephemera.webp');
  background-position:center 50%;
