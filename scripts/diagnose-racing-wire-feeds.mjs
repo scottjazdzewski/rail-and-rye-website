@@ -1,4 +1,4 @@
-import {PREVIEW_LIVE_FEEDS,parseRacingRss} from '../src/racing-wire.js';
+import {PREVIEW_LIVE_FEEDS,parseRacingRss,scoreRacingWireItem,subjectKind} from '../src/racing-wire.js';
 
 const now=Date.now();
 for(const feed of PREVIEW_LIVE_FEEDS){
@@ -16,6 +16,12 @@ for(const feed of PREVIEW_LIVE_FEEDS){
       id:feed.id,name:feed.name,url:feed.url,status:response.status,
       contentType:response.headers.get('content-type'),bytes:text.length,
       parsed:items.length,newest,ageHours:ageHours===null?null:Number(ageHours.toFixed(2)),
+      top:items.slice(0,5).map(item=>{
+        const probe={title:item.title,section:item.section,category:item.category,source:item.source,
+          subject_kind:subjectKind(item.title,item.category),published_at:item.published_at,original:false};
+        const score=scoreRacingWireItem(probe);
+        return {title:item.title,published_at:item.published_at,category:item.category,score:score.score,reject:score.reject,reason:score.reason};
+      }),
       elapsedMs:Date.now()-started
     }));
   }catch(error){
