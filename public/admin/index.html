@@ -28,11 +28,12 @@
     .notice{margin:20px 0 0;background:white;border-left:4px solid var(--navy);padding:13px 18px;white-space:pre-wrap;display:none}.notice.error{border-color:var(--error);color:var(--error)}.notice.good{border-color:var(--success);color:var(--success)}
     .pill{font-size:10px;display:inline-block;margin-left:8px;padding:2px 7px;border-radius:2px;text-transform:uppercase;letter-spacing:.08em;background:#f0ede5;color:#746047}.pill.published{background:#e3f3e9;color:var(--success)}
     .empty{padding:25px 12px;text-align:center;border:1px dashed var(--border);color:var(--muted)}.footer{margin-top:30px;font-size:12px;color:var(--muted)}
+    .article-panel{scroll-margin-top:20px}.article-body-input{min-height:380px;line-height:1.7}.article-inventory{max-height:720px;overflow:auto}.article-notice{min-height:24px;margin-top:12px}
     @media(max-width:900px){.layout{grid-template-columns:1fr}.panel{padding:20px}}@media(max-width:560px){.top{padding:18px}.logo{font-size:19px}main{padding:28px 14px}.row{grid-template-columns:1fr}}
   </style>
 <link rel="icon" href="/favicon.png" type="image/png"></head>
 <body>
-<header><div class="top"><div class="logo">RAIL &amp; RYE <small>The Publisher's Desk</small></div><a href="/store/" style="margin-right:16px">Publication desk ↗</a> <a href="/">View website ↗</a></div></header>
+<header><div class="top"><div class="logo">RAIL &amp; RYE <small>The Publisher's Desk</small></div><nav aria-label="Publisher tools" style="display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:14px"><a href="#journal-editor">Journal articles ↓</a><a href="/store/">Publication desk ↗</a><a href="/">View website ↗</a></nav></div></header>
 <main>
   <div class="kicker">Independent thoroughbred racing intelligence</div>
   <h1>Publisher's Desk</h1>
@@ -103,6 +104,38 @@
         <p class="kicker">Your bundles</p>
         <div id="bundleInventory" class="list"><div class="empty">Loading bundles…</div></div>
         <p id="bundleNotice" class="detail" role="status" aria-live="polite" style="margin-top:15px"></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel article-panel" id="journal-editor" style="margin-top:28px" aria-label="Journal article editor">
+    <div class="head-row">
+      <div><h2>Journal articles</h2><p class="detail">Write a story, save it as a draft, or publish it to The Journal.</p></div>
+      <button type="button" class="secondary mini" id="articleNew">+ New article</button>
+    </div>
+    <div class="layout" style="margin-top:0">
+      <div>
+        <form id="articleForm">
+          <div class="field"><label for="articleTitle">Article title *</label><input id="articleTitle" maxlength="140" required placeholder="A name worth remembering"></div>
+          <div class="row">
+            <div class="field"><label for="articleCategory">Category *</label><input id="articleCategory" maxlength="60" required value="Race Analysis" placeholder="Racing history, Horse profile…"></div>
+            <div class="field"><label for="articleDate">Publication date *</label><input id="articleDate" type="date" required></div>
+          </div>
+          <div class="field"><label for="articleExcerpt">Short summary</label><textarea id="articleExcerpt" maxlength="500" placeholder="A short preview for the Journal archive. Add at least 20 characters before publishing."></textarea></div>
+          <div class="field"><label for="articleBody">Article text</label><textarea id="articleBody" class="article-body-input" maxlength="80000" placeholder="Write your article in plain text. Leave a blank line between paragraphs."></textarea><div class="detail">Drafts can be incomplete. Published stories appear newest first. Article text is saved as plain writing, so pasted formatting stays safe and readable.</div></div>
+          <div class="field"><label for="articleCover">Cover image <span id="articleCoverStatus"></span></label><input id="articleCover" type="file" accept="image/jpeg,image/png,image/webp"><div class="detail">Optional JPG, PNG, or WebP image, up to 6 MB. The image is visible only while the article is published.</div></div>
+          <div class="actions">
+            <button type="button" class="primary" id="articleDraft">Save draft</button>
+            <button type="button" class="gold" id="articlePublish">Publish article</button>
+            <button type="button" class="secondary" id="articleArchive">Archive</button>
+            <button type="button" class="secondary" id="articleRefresh">Refresh list</button>
+          </div>
+        </form>
+        <p id="articleNotice" class="detail article-notice" role="status" aria-live="polite"></p>
+      </div>
+      <div>
+        <p class="kicker">Your stories · newest activity</p>
+        <div id="articleList" class="list article-inventory"><div class="empty">Loading articles…</div></div>
       </div>
     </div>
   </section>
@@ -305,5 +338,130 @@
   refresh().catch(e=>notice('Private PDF library setup required: '+e.message));
 })();
 </script>
+
+<script>
+(()=>{'use strict';
+  const $=id=>document.getElementById(id);
+  let articles=[],currentId=null,busy=false;
+  const note=(message,type='')=>{const el=$('articleNotice');el.textContent=message;el.className='detail article-notice '+type;};
+  async function api(path,options={}){
+    const response=await fetch(path,{credentials:'same-origin',cache:'no-store',...options});
+    let data;try{data=await response.json();}catch{throw Error('The Journal service did not respond ('+response.status+').');}
+    if(!response.ok)throw Error(data.error||'The article could not be saved');
+    return data;
+  }
+  function setBusy(value){
+    busy=value;
+    ['articleDraft','articlePublish','articleArchive','articleNew','articleRefresh'].forEach(id=>{
+      $(id).disabled=value||(id==='articleArchive'&&!currentId);
+    });
+  }
+  function reset(){
+    currentId=null;
+    $('articleForm').reset();
+    $('articleDate').value=new Date().toISOString().slice(0,10);
+    $('articleCategory').value='Race Analysis';
+    $('articleCoverStatus').textContent='';
+    note('New article. Save a draft whenever you want to continue later.');
+    setBusy(false);
+    render();
+  }
+  function render(){
+    const list=$('articleList');list.replaceChildren();
+    if(!articles.length){const empty=document.createElement('div');empty.className='empty';empty.textContent='No articles yet. Start with a draft when you are ready.';list.append(empty);return;}
+    for(const article of articles){
+      const button=document.createElement('button');button.type='button';button.className='product'+(article.id===currentId?' active':'');
+      const title=document.createElement('strong');title.textContent=article.title;
+      const status=document.createElement('em');status.className='pill '+(article.status==='published'?'published':'');status.textContent=article.status;title.append(status);
+      const meta=document.createElement('span');meta.textContent=[article.category,article.publish_date].join(' · ');
+      button.append(title,meta);button.addEventListener('click',()=>edit(article).catch(error=>note(error.message,'error')));list.append(button);
+    }
+  }
+  async function edit(article){
+    setBusy(true);
+    try{
+      const result=await api('/api/admin/articles/'+article.id);
+      const item=result.article;
+      currentId=item.id;
+      $('articleTitle').value=item.title||'';
+      $('articleCategory').value=item.category||'Race Analysis';
+      $('articleDate').value=item.publish_date||'';
+      $('articleExcerpt').value=item.excerpt||'';
+      $('articleBody').value=item.body_text||'';
+      $('articleCover').value='';
+      $('articleCoverStatus').textContent=item.cover_url?'— Image attached':'';
+      note('Editing '+item.title+'. Save draft keeps a published story live; Archive removes it from the Journal.');
+      render();
+      $('journal-editor').scrollIntoView({behavior:'smooth',block:'start'});
+    }finally{setBusy(false);}
+  }
+  async function refresh(){
+    const result=await api('/api/admin/articles');articles=result.articles||[];render();
+  }
+  function payload(status){
+    return {
+      title:$('articleTitle').value.trim(),
+      category:$('articleCategory').value.trim(),
+      publish_date:$('articleDate').value,
+      excerpt:$('articleExcerpt').value.trim(),
+      body_text:$('articleBody').value.trim(),
+      status
+    };
+  }
+  async function uploadCover(id,file){
+    if(!file)return;
+    if(file.size<8||file.size>6*1024*1024)throw Error('Choose a cover image smaller than 6 MB.');
+    await api('/api/admin/articles/'+id+'/cover',{method:'PUT',body:file,headers:{'Content-Type':file.type,'X-File-Size':String(file.size)}});
+  }
+  async function save(action){
+    if(busy)return;
+    if(action==='archive'&&!currentId)return;
+    $('articleForm').reportValidity();
+    if(!$('articleForm').checkValidity())return;
+    const item=articles.find(article=>article.id===currentId);
+    const finalStatus=action==='publish'?'published':action==='archive'?'archived':(item?.status==='published'?'published':'draft');
+    if(action==='publish'){
+      if($('articleExcerpt').value.trim().length<20){note('Add a short summary of at least 20 characters before publishing.','error');return;}
+      if($('articleBody').value.trim().length<80){note('Add the article text before publishing.','error');return;}
+    }
+    if(action==='archive'&&!confirm('Archive this article? It will no longer appear in The Journal.'))return;
+    setBusy(true);
+    try{
+      let id=currentId;
+      const data=payload('draft');
+      const initialStatus=action==='archive'?'archived':(item?.status==='published'?'published':'draft');
+      data.status=initialStatus;
+      if(!id){
+        const created=await api('/api/admin/articles',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+        id=created.article.id;currentId=id;
+      }else{
+        await api('/api/admin/articles/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+      }
+      const cover=$('articleCover').files[0];
+      if(cover){note('Uploading cover image…');await uploadCover(id,cover);}
+      if(finalStatus!==initialStatus){
+        data.status=finalStatus;
+        await api('/api/admin/articles/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+      }
+      await refresh();
+      const selected=articles.find(article=>article.id===id);
+      if(selected)await edit(selected);
+      $('articleCover').value='';
+      note(action==='publish'?'Article published to The Journal.':action==='archive'?'Article archived.':'Draft saved.','good');
+    }catch(error){
+      note(error.message,'error');
+      await refresh().catch(()=>{});
+    }finally{setBusy(false);}
+  }
+  $('articleNew').addEventListener('click',reset);
+  $('articleDraft').addEventListener('click',()=>save('draft'));
+  $('articlePublish').addEventListener('click',()=>save('publish'));
+  $('articleArchive').addEventListener('click',()=>save('archive'));
+  $('articleRefresh').addEventListener('click',()=>refresh().then(()=>note('Article list refreshed.')).catch(error=>note(error.message,'error')));
+  $('articleDate').value=new Date().toISOString().slice(0,10);
+  refresh().catch(error=>note('Journal service unavailable: '+error.message,'error'));
+})();
+</script>
+
 </body>
 </html>
