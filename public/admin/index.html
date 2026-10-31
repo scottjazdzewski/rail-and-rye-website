@@ -72,7 +72,7 @@
     <p class="detail" style="margin-bottom:19px">Choose at least two published editions or bundle-only PDFs, set one package price, and publish. Customers receive separate secure downloads. Previous buyers keep their purchased PDF versions even after edits.</p>
     <section aria-label="Bundle-only PDF library" style="margin-bottom:25px;padding:19px;border:1px solid var(--border);border-radius:8px;background:white">
       <div class="head-row"><h3 style="margin:0">Bundle-only PDF library</h3><button type="button" class="secondary mini" id="assetNew">+ New private PDF</button></div>
-      <p class="detail">Upload a PDF that will be available only inside bundles. It will never have its own public listing or individual purchase button. Files remain in private R2 storage.</p>
+      <p class="detail">Upload a PDF that will be available only inside bundles. It will never have its own public listing or individual purchase button. Archive older PDFs when their published bundles have been archived; old customer downloads remain protected in private R2 storage.</p>
       <div class="row">
         <div class="field"><label for="assetTitle">PDF title *</label><input id="assetTitle" maxlength="140" placeholder="Keeneland — Bonus Race Notes"></div>
         <div class="field"><label for="assetDate">Racing date</label><input id="assetDate" type="date"></div>
@@ -82,7 +82,7 @@
         <div class="field"><label for="assetTrack">Racetrack (optional)</label><input id="assetTrack" maxlength="100" placeholder="Keeneland"></div>
       </div>
       <div class="field"><label for="assetPdf">Private PDF <span id="assetPdfStatus"></span></label><input id="assetPdf" type="file" accept="application/pdf,.pdf"><div class="detail">Maximum 75 MB. A replacement PDF does not revoke files already purchased.</div></div>
-      <div class="actions"><button type="button" class="primary" id="assetSave">Upload bundle-only PDF</button></div>
+      <div class="actions"><button type="button" class="primary" id="assetSave">Upload bundle-only PDF</button><button type="button" class="secondary" id="assetArchive" disabled>Archive private PDF</button></div>
       <p id="assetNotice" class="detail" role="status" aria-live="polite"></p>
       <p class="kicker" style="margin-top:15px">Your private PDFs</p>
       <div class="list" id="assetInventory"><div class="empty">Loading private PDFs…</div></div>
@@ -281,18 +281,28 @@
     if(!r.ok)throw Error(d.error||'Private PDF request failed');
     return d;
   }
-  function setBusy(v){busy=v;$('assetSave').disabled=v;$('assetNew').disabled=v;}
+  function selected(){return assets.find(a=>a.id===selectedId);}
+  function setBusy(v){
+    busy=v;
+    $('assetSave').disabled=v||selected()?.status==='archived';
+    $('assetNew').disabled=v;
+    $('assetArchive').disabled=v||!selectedId||selected()?.status!=='draft';
+  }
+  function lockEditor(v){for(const id of ['assetTitle','assetCategory','assetDate','assetTrack','assetPdf'])$(id).disabled=v;}
   function reset(){
     selectedId=null;$('assetTitle').value='';$('assetCategory').value='Race Cards';
     $('assetDate').value='';$('assetTrack').value='';$('assetPdf').value='';
     $('assetPdfStatus').textContent='';$('assetSave').textContent='Upload bundle-only PDF';notice('New private PDF.');
-    render();
+    lockEditor(false);setBusy(false);render();
   }
   function edit(a){
     selectedId=a.id;$('assetTitle').value=a.title;$('assetCategory').value=a.category;
     $('assetDate').value=a.race_date||'';$('assetTrack').value=a.track||'';
     $('assetPdf').value='';$('assetPdfStatus').textContent=a.has_pdf?'— Uploaded':'— Missing';
-    $('assetSave').textContent='Save private PDF';notice('Editing '+a.title+'. Older purchases keep their PDF versions.');
+    $('assetSave').textContent=a.status==='archived'?'Archived PDF':'Save private PDF';
+    lockEditor(a.status==='archived');setBusy(false);
+    notice(a.status==='archived'?'This PDF is archived. Previous customer downloads are preserved.':
+      'Editing '+a.title+'. Older purchases keep their PDF versions.');
     render();
   }
   function render(){
@@ -301,7 +311,8 @@
     for(const a of assets){
       const b=document.createElement('button');b.type='button';b.className='product'+(a.id===selectedId?' active':'');
       const name=document.createElement('strong');name.textContent=a.title;
-      const meta=document.createElement('span');meta.textContent=[a.race_date||'No date',a.has_pdf?'Ready for bundles':'PDF missing'].join(' · ');
+      const meta=document.createElement('span');meta.textContent=[a.race_date||'No date',
+        a.status==='archived'?'ARCHIVED':a.has_pdf?'Ready for bundles':'PDF missing'].join(' · ');
       b.append(name,meta);b.addEventListener('click',()=>edit(a));box.append(b);
     }
   }
@@ -311,6 +322,7 @@
   }
   async function save(){
     if(busy)return;
+    if(selected()?.status==='archived'){notice('Archived PDFs cannot be edited. Upload a new private PDF instead.');return;}
     const title=$('assetTitle').value.trim();
     const file=$('assetPdf').files[0];
     if(title.length<3||title.length>140){notice('Enter a PDF title of 3–140 characters.');return;}
@@ -333,8 +345,23 @@
     }catch(e){notice('Private PDF not saved completely: '+e.message+'. If created, select it below to retry.');await refresh(selectedId).catch(()=>{});}
     finally{setBusy(false);}
   }
+  async function archive(){
+    if(busy||!selectedId||selected()?.status!=='draft')return;
+    const asset=selected();
+    if(!confirm('Archive "'+asset.title+'"? It will no longer be selectable for new bundles. Published bundles containing this PDF must be archived first. Existing buyers keep access.'))return;
+    const id=selectedId;
+    setBusy(true);
+    try{
+      await api('/api/admin/bundle-assets/'+id+'/archive',{method:'PATCH'});
+      await refresh(id);
+      notice('Private PDF archived. It is removed from future bundle selections. Past buyers keep access.');
+      window.dispatchEvent(new Event('rr-bundle-assets-changed'));
+    }catch(e){notice(e.message);}
+    finally{setBusy(false);}
+  }
   $('assetNew').addEventListener('click',reset);
   $('assetSave').addEventListener('click',save);
+  $('assetArchive').addEventListener('click',archive);
   refresh().catch(e=>notice('Private PDF library setup required: '+e.message));
 })();
 </script>
