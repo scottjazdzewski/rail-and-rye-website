@@ -11,11 +11,22 @@ const FEEDS=Object.freeze([
   //  host:'example.org',authorized:true}
 ]);
 const MAX_FEED_BYTES=350000;
-const PREVIEW_LIVE_FEEDS=Object.freeze([
+export const PREVIEW_LIVE_FEEDS=Object.freeze([
   {id:'tdn-all',name:'Thoroughbred Daily News',url:'https://www.thoroughbreddailynews.com/feed/',host:'thoroughbreddailynews.com'},
-  {id:'past-the-wire-news',name:'Past The Wire',url:'https://pastthewire.com/category/news/feed/',host:'pastthewire.com'},
+  {id:'past-the-wire-news',name:'Past The Wire',url:'https://pastthewire.com/feed',host:'pastthewire.com'},
   {id:'abr',name:"America's Best Racing",url:'https://www.americasbestracing.net/rss',host:'americasbestracing.net'},
-  {id:'us-racing',name:'US Racing',url:'https://usracing.com/feed',host:'usracing.com'}
+  {id:'us-racing',name:'US Racing',url:'https://usracing.com/feed',host:'usracing.com'},
+  {id:'bloodhorse',name:'BloodHorse',url:'https://www.bloodhorse.com/horse-racing/feeds/news/all-news',host:'bloodhorse.com'},
+  {id:'paulick',name:'Paulick Report',url:'https://paulickreport.com/feed/',host:'paulickreport.com'},
+  {id:'hrn',name:'Horse Racing Nation',url:'https://www.horseracingnation.com/rss/newsfeed.aspx',host:'horseracingnation.com'},
+  {id:'racing-biz',name:'The Racing Biz',url:'https://www.theracingbiz.com/feed',host:'theracingbiz.com'},
+  {id:'woodbine',name:'Woodbine',url:'https://woodbine.com/feed',host:'woodbine.com'},
+  {id:'canadian-thoroughbred',name:'Canadian Thoroughbred',url:'https://canadianthoroughbred.com/feed',host:'canadianthoroughbred.com'},
+  {id:'national-steeplechase',name:'National Steeplechase Association',url:'https://nationalsteeplechase.com/feed',host:'nationalsteeplechase.com'},
+  {id:'american-racehorse',name:'American Racehorse',url:'https://americanracehorse.com/feed',host:'americanracehorse.com'},
+  {id:'obs',name:'Ocala Breeders’ Sales',url:'https://obssales.com/blog/feed/',host:'obssales.com'},
+  {id:'bbc-racing',name:'BBC Horse Racing',url:'https://feeds.bbci.co.uk/sport/horse-racing/rss.xml',host:'bbc.com',link_hosts:['bbc.com','bbc.co.uk']},
+  {id:'timeform',name:'Timeform',url:'https://www.timeform.com/horse-racing/news-feed/rss20',host:'timeform.com'}
 ]);
 const PREVIEW_DIAGNOSTIC_FEEDS=PREVIEW_LIVE_FEEDS;
 function decode(s){
@@ -28,10 +39,20 @@ function field(xml,tag){
   const m=new RegExp('<'+tag+'(?:\\s[^>]*)?>([\\s\\S]*?)<\\/'+tag+'>','i').exec(xml);
   return decode(m?.[1]||'');
 }
-function safeUrl(candidate,host){
-  try{const u=new URL(candidate);if(u.protocol!=='https:'||u.username||u.password)return null;
-    const h=u.hostname.toLowerCase();if(h!==host&&h!=='www.'+host)return null;
-    u.hash='';return u.toString().slice(0,1900);}catch{return null;}
+function safeUrl(candidate,hosts){
+  try{
+    const u=new URL(candidate);if(u.protocol!=='https:'||u.username||u.password)return null;
+    const allowed=(Array.isArray(hosts)?hosts:[hosts]).filter(Boolean).map(x=>String(x).toLowerCase());
+    const h=u.hostname.toLowerCase();
+    if(!allowed.some(host=>h===host||h==='www.'+host))return null;
+    u.hash='';return u.toString().slice(0,1900);
+  }catch{return null;}
+}
+function previewHeadlineRelevant(title,section=''){
+  const text=(String(title||'')+' '+String(section||'')).toLowerCase();
+  if(/\b(best bets?|picks?|selections?|odds|free bets?|betting guide|wagering tips?|promo code|bonus offer|merch|merchandise|tickets? on sale|photo gallery|quiz)\b/.test(text))return false;
+  if(/\b(listen now|podcast episode|watch live|where to watch|tv schedule)\b/.test(text))return false;
+  return true;
 }
 export function categorize(title,category=''){
   const s=(title+' '+category).toLowerCase();
@@ -94,7 +115,7 @@ export function parseRacingRss(xml,feed){
   const results=[];
   for(const item of chunks.slice(0,35)){
     const title=field(item,'title').slice(0,240);
-    const link=safeUrl(field(item,'link'),feed.host);
+    const link=safeUrl(field(item,'link'),feed.link_hosts||feed.host);
     const section=field(item,'category').slice(0,120);
     const published=field(item,'pubDate')||field(item,'published')||field(item,'updated');
     const dt=new Date(published);
@@ -115,12 +136,15 @@ async function fetchPreviewFeed(feed,fetchFn=fetch){
     if(!response.ok||len>MAX_FEED_BYTES)return {feed,items:[],status:response.status,elapsed_ms:Date.now()-started};
     const xml=await response.text();
     if(xml.length>MAX_FEED_BYTES)return {feed,items:[],status:response.status,elapsed_ms:Date.now()-started};
-    const parsed=parseRacingRss(xml,feed).slice(0,30).map(item=>({
-      title:item.title,url:item.link,source:item.source,
-      category:item.category,section:item.section||'',
-      subject_kind:subjectKind(item.title,item.category),
-      published_at:item.published_at,summary:'',original:false,preview_external:true
-    }));
+    const parsed=parseRacingRss(xml,feed)
+      .filter(item=>previewHeadlineRelevant(item.title,item.section))
+      .slice(0,12)
+      .map(item=>({
+        title:item.title,url:item.link,source:item.source,
+        category:item.category,section:item.section||'',
+        subject_kind:subjectKind(item.title,item.category),
+        published_at:item.published_at,summary:'',original:false,preview_external:true
+      }));
     return {feed,items:parsed,status:response.status,elapsed_ms:Date.now()-started};
   }catch(e){
     return {feed,items:[],status:null,elapsed_ms:Date.now()-started,error:String(e?.message||e).slice(0,120)};
