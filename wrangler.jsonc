@@ -8,7 +8,8 @@
     "run_worker_first": [
       "/admin*",
       "/api/*",
-      "/media/*"
+      "/media/*",
+      "/journal/*"
     ]
   },
   "r2_buckets": [
