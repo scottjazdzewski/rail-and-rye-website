@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex,nofollow,noarchive"><meta name="referrer" content="no-referrer">
 <meta name="theme-color" content="#061e35">
-<title>Private Preview — The Racing Wire | Rail &amp; Rye</title>
+<title>Unlisted Preview — The Racing Wire | Rail &amp; Rye</title>
 <link rel="icon" href="/favicon.png" type="image/png">
 <style>
 :root{--navy:#071e35;--navy2:#0b2d4b;--gold:#cfa661;--cream:#faf8f3;--ink:#142944;--muted:#5b6b80;--line:#e8e2d7}
@@ -72,12 +72,12 @@ footer a{color:#e8c78e}
 @media(max-width:560px){.sidebar{grid-template-columns:1fr}.subject-strip{grid-template-columns:repeat(4,minmax(0,1fr));row-gap:16px}.emblem{width:50px;height:50px}.emblem svg{width:29px;height:29px}.item{grid-template-columns:47px minmax(0,1fr);gap:12px;padding:14px}.item .emblem{width:47px;height:47px}.item .emblem svg{width:29px;height:29px}.type-pill{grid-column:2;justify-self:start}.item h3{font-size:17px}.nav a{font-size:9px;padding:8px 10px}.hero-inner{min-height:230px}.hero h1{font-size:42px}.wordmark{font-size:21px}}
 </style></head>
 <body>
-<div class="topline">PRIVATE DESIGN PREVIEW · NOT PUBLISHED · OWNER ACCESS ONLY</div>
+<div class="topline">UNLISTED TEST PREVIEW · NOT IN PUBLIC NAVIGATION · SHAREABLE LINK</div>
 <header><div class="header-inner">
-<a class="brand" href="/admin/" aria-label="Return to Publisher's Desk">
+<a class="brand" href="/" aria-label="Rail & Rye home">
 <img src="/assets/approved/brand/rail-rye-ivory-logo.png" width="60" height="60" alt="Rail & Rye original logo">
 <span class="wordmark">RAIL &amp; RYE <span>R A C I N G</span></span></a>
-<nav class="nav" aria-label="Preview of future site navigation"><a href="/race-cards/">RACE CARDS</a><a href="/journal/">THE JOURNAL</a><a href="/admin/racing-wire-preview/" class="active preview-link" aria-current="page">THE RACING WIRE</a><a href="https://rail-rye-shop.fourthwall.com/" target="_blank" rel="noopener noreferrer">APPAREL</a></nav>
+<nav class="nav" aria-label="Preview of future site navigation"><a href="/race-cards/">RACE CARDS</a><a href="/journal/">THE JOURNAL</a><a href="/preview/racing-wire-5333548f0ffee31ba519b2470ffb/" class="active preview-link" aria-current="page">THE RACING WIRE</a><a href="https://rail-rye-shop.fourthwall.com/" target="_blank" rel="noopener noreferrer">APPAREL</a></nav>
 </div></header>
 <section class="hero"><div class="hero-inner">
 <div class="hero-copy"><div class="eyebrow">THE LATEST FROM THE BACKSTRETCH</div>
@@ -125,9 +125,9 @@ footer a{color:#e8c78e}
 <a href="https://www.bloodhorse.com/horse-racing" target="_blank" rel="noopener noreferrer">BloodHorse <span>↗</span></a>
 <a href="https://www.drf.com/" target="_blank" rel="noopener noreferrer">Daily Racing Form <span>↗</span></a>
 <a href="https://paulickreport.com/" target="_blank" rel="noopener noreferrer">Paulick Report <span>↗</span></a></section>
-<section class="side"><h3>DESIGN NOTES</h3><p>This preview is private. The example news below is fictitious UI-test content and is never presented as verified reporting.</p><span class="list-note">Access is restricted by Publisher's Desk authentication. Public launch remains on hold.</span></section>
+<section class="side"><h3>DESIGN NOTES</h3><p>This unlisted page is a working design test. Example news is fictitious UI-test content, never verified reporting.</p><span class="list-note">Anyone with the shared link can view this page. It is not in the public navigation; public launch remains on hold.</span></section>
 </aside></div></main>
-<footer>THE RACING WIRE · PRIVATE DESIGN PREVIEW · <a href="/admin/">BACK TO PUBLISHER'S DESK</a></footer>
+<footer>THE RACING WIRE · UNLISTED DESIGN PREVIEW · <a href="/">RAIL &amp; RYE HOME</a></footer>
 <script>
 (()=>{'use strict';
 const $=id=>document.getElementById(id);
@@ -209,7 +209,7 @@ $('showExamples').addEventListener('click',()=>{mode='demo';shown=8;$('showExamp
 $('showActual').addEventListener('click',async()=>{
  mode='live';shown=8;$('showExamples').setAttribute('aria-pressed','false');$('showActual').setAttribute('aria-pressed','true');
  $('count').textContent='Loading sources…';
- try{const response=await fetch('/api/admin/racing-wire-preview',{cache:'no-store'});
+ try{const response=await fetch('/api/preview/racing-wire-5333548f0ffee31ba519b2470ffb',{cache:'no-store'});
  const result=await response.json();if(!response.ok)throw Error(result.error||'Unavailable');
  data=Array.isArray(result.items)?result.items:[];render();
  }catch(error){data=[];render();$('count').textContent='Unable to retrieve sources';}
