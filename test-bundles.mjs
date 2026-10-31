@@ -167,3 +167,18 @@ db.prepare('UPDATE products SET pdf_key=? WHERE id=?').run('cards/private/notes-
 assert.equal(db.prepare('SELECT pdf_key FROM bundle_order_items WHERE order_id=? AND product_id=?').get(privateOrder.id,privateId).pdf_key,
   'cards/private/notes-v1.pdf','Previous buyers retain their purchased private PDF version');
 console.log('PASS bundle-only library: private metadata, public invisibility, no standalone checkout, bundle selection, secure checkout snapshots. No real charges.');
+
+const denied=await assetAdmin(patch('/api/admin/bundle-assets/'+privateId+'/archive',{}));
+assert.equal(denied.status,409,'A live bundle prevents private PDF archiving');
+assert.equal(db.prepare('SELECT status FROM products WHERE id=?').get(privateId).status,'draft');
+await admin(patch('/api/admin/bundles/'+privateBundleId,{...privateBundleInput,status:'archived'}));
+const archived=await assetAdmin(patch('/api/admin/bundle-assets/'+privateId+'/archive',{}));
+assert.equal(archived.status,200);
+assert.equal(db.prepare('SELECT status FROM products WHERE id=?').get(privateId).status,'archived');
+const inventory=await (await assetAdmin(new Request(root+'/api/admin/bundle-assets'))).json();
+assert.ok(inventory.assets.some(a=>a.id===privateId&&a.status==='archived'));
+const candidates=await (await admin(new Request(root+'/api/admin/bundles'))).json();
+assert.ok(!candidates.available_products.some(a=>a.id===privateId));
+assert.equal((await assetAdmin(patch('/api/admin/bundle-assets/'+privateId,bundleOnlyMeta))).status,409);
+assert.equal(db.prepare('SELECT pdf_key FROM bundle_order_items WHERE order_id=? AND product_id=?').get(privateOrder.id,privateId).pdf_key,'cards/private/notes-v1.pdf');
+console.log('PASS private PDF archiving: live bundle protection, retired inventory, buyer snapshots preserved.');
