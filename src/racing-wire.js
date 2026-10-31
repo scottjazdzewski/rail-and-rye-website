@@ -273,7 +273,7 @@ const RESULT_RE=/\b(wins?|won|victory|triumph|scores?|takes?|captures?|proves be
 const SALES_RE=/\b(sale|auction|sold for|brings? \$|hammer price|consign(?:ed|ment)|yearling|weanling)\b/i;
 const BREEDING_RE=/\b(stallion|stud fee|retired to stud|breeding|sire|dam|foal|foaled|broodmare|cover(?:ed|ing))\b/i;
 const INDUSTRY_RE=/\b(HISA|HIWU|racing commission|commissioners?|rule change|policy|legislation|licensing|integrity|medication rule)\b/i;
-const MILESTONE_RE=/\b(milestone|hall of fame|career win|career victory|record[- ]breaking|record setter|\d{3,4}(?:st|nd|rd|th) win|four-timer|five-timer|six-timer)\b/i;
+const MILESTONE_RE=/\b(milestone|hall of fame|career win|career victori(?:es|y)|record[- ]breaking|record setter|\d{3,4}(?:st|nd|rd|th) win|four-timer|five-timer|six-timer|thousand career victories)\b/i;
 const LOW_VALUE_RE=/\b(preview|opinion|podcast|photo gallery|look back|what to know|guide to|attendance|handle|ratings|viewership)\b/i;
 
 export function scoreRacingWireItem(item){
