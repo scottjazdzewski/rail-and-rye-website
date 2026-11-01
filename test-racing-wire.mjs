@@ -130,8 +130,12 @@ const fixtureTitles=[
  'Kentucky Derby winner retired to stud after injury',
  'Arc contender ruled out of Group 1 with illness'
 ];
+assert.ok(!PREVIEW_LIVE_FEEDS.some(feed=>/us racing|usracing/i.test(feed.name+' '+feed.url)),'Wagering-focused US Racing is excluded at the source level');
+assert.equal(scoreRacingWireItem({title:'Best bets and wagering tips for Saturday stakes',source:'Editorial Outlet'}).reject,true,'Betting/wagering editorial is rejected even from an otherwise allowed publication');
+assert.equal(scoreRacingWireItem({title:'Standardbred champion wins harness stakes',source:'Editorial Outlet'}).reject,true,'Harness/Standardbred coverage is excluded');
+assert.equal(scoreRacingWireItem({title:'National Hunt star wins steeplechase feature',source:'Editorial Outlet'}).reject,true,'Steeplechase/National Hunt coverage is excluded');
 const previewFeedCount=PREVIEW_LIVE_FEEDS.length;
-assert.equal(previewFeedCount,8,'Live preview keeps only eight currently useful/fresh feed endpoints');
+assert.equal(previewFeedCount,7,'Live preview excludes wagering-site feeds and keeps only seven currently useful/fresh editorial endpoints');
 const previewFeedFixtures=Object.fromEntries(PREVIEW_LIVE_FEEDS.map((feed,i)=>{
  const host=(feed.link_hosts?.[0]||feed.host);
  return [feed.url,{host,title:fixtureTitles[i],link:'https://www.'+host+'/rr-preview-story-'+(i+1)}];
