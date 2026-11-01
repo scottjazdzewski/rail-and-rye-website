@@ -2,7 +2,6 @@
 (()=>{
 "use strict";
 const msg=document.querySelector("#message"),status=document.querySelector("#status"),form=document.querySelector("#plan-form"),save=document.querySelector("#save");
-const labels={weekly:"weekly",monthly:"monthly",yearly:"yearly"};
 const set=(el,v)=>{if(el)el.textContent=v;};
 async function request(url,options={}){
  const r=await fetch(url,{credentials:"same-origin",cache:"no-store",...options});
@@ -34,7 +33,7 @@ form?.addEventListener("submit",async event=>{
  try{
   const cents=slug=>Math.round(Number(document.querySelector("#"+slug).value)*100);
   const data=await request("/api/admin/membership-plans",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({weekly_cents:cents("weekly"),monthly_cents:cents("monthly"),yearly_cents:cents("yearly")})});
-  set(msg,data.saved?"Rates saved. Your current checkout mode is configured.":"Rates were saved where possible, but the current checkout mode still needs Stripe setup.");
+  set(msg,data.saved?(data.mode==="live"?"Rates saved. Live membership checkout is configured.":"Test prices saved. Public membership checkout remains off until live mode is enabled."):"Rates were saved where possible, but the current checkout mode still needs Stripe setup.");
   updateRows(data.plans||[]);
   for(const plan of data.plans||[]){const el=document.querySelector("#"+plan.slug);if(el)el.value=dollars(plan.amount_cents_live??plan.amount_cents_test);}
   if(data.failures?.length)set(status,data.failures.map(x=>x.plan+" ("+x.mode+"): "+x.error).join(" · "));
