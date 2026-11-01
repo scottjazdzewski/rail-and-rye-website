@@ -1,9 +1,9 @@
-import { handleCommerce, sendQueuedEmails, checkoutReadiness, replacePdfAndNotifyBuyers } from './commerce.js';
+import { handleCommerce, sendQueuedEmails, checkoutReadiness, replacePdfAndNotifyBuyers, publicProductForShare } from './commerce.js';
 import {handleRacingWire,handlePreviewRacingWire,testPreviewRssFeeds,handleAdminRacingWire} from './racing-wire.js';
 import {handleAdminBundles,BUNDLE_KEY} from './bundles.js';
 import {handleAdminBundleAssets} from './bundle-assets.js';
 import {handleAdminJournal,handlePublicJournal,publicJournalCover} from './journal.js';
-import {handleSitemap,serveJournalDocument} from './seo.js';
+import {handleSitemap,serveJournalDocument,serveProductDocument} from './seo.js';
 import {ensureReleaseSchedule,validReleaseAt} from './publication-schedule.js';
 /* Rail & Rye admin MVP. Dependencies: Cloudflare Workers, R2, D1, Cloudflare Access.
    Admin routes FAIL CLOSED until ACCESS_TEAM_DOMAIN, ACCESS_AUD and ADMIN_EMAIL
@@ -312,6 +312,16 @@ export default {
         const original=await env.ASSETS.fetch(new Request(asset.toString(),{method:"GET"}));
         const response=await serveJournalDocument(original,{article,archive:journalArchive});
         return request.method==="HEAD"?new Response(null,{status:response.status,headers:response.headers}):response;
+      }
+      const sharedEdition=(path==='/store/'||path==='/store')?url.searchParams.get('edition'):null;
+      if(sharedEdition!==null&&(request.method==='GET'||request.method==='HEAD')){
+        if(!/^[0-9a-f-]{36}$/i.test(sharedEdition))return fail('Edition not found',404);
+        const product=await publicProductForShare(env,sharedEdition);
+        if(!product)return new Response('Published edition not found',{status:404,headers:{'Content-Type':'text/plain; charset=utf-8','X-Content-Type-Options':'nosniff'}});
+        const asset=new URL(url);asset.pathname='/store/';asset.search='';asset.hash='';
+        const original=await env.ASSETS.fetch(new Request(asset.toString(),{method:'GET'}));
+        const response=await serveProductDocument(original,{product});
+        return request.method==='HEAD'?new Response(null,{status:response.status,headers:response.headers}):response;
       }
       if(path.startsWith("/api/free-download/")||path==="/api/products"||path==="/api/checkout"||path==="/api/stripe/webhook"||path==="/api/stripe/live-webhook"||path.startsWith("/api/orders/")||path==="/api/delivery/download"||path==="/api/delivery/items"||path==="/api/recovery/request")return handleCommerce(request,env,url,ctx);
       if(path.startsWith("/api/"))return fail("Not found",404);

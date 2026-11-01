@@ -11,6 +11,7 @@
       "/api/*",
       "/media/*",
       "/journal/*",
+      "/store/",
       "/sitemap.xml"
     ]
   },

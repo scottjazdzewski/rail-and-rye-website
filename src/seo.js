@@ -133,3 +133,71 @@ export async function serveJournalDocument(assetResponse,{article=null,archive=f
   headers.set('X-Content-Type-Options','nosniff');
   return new Response(html,{status:assetResponse.status,headers});
 }
+
+
+const PUBLICATION_SHARE_IMAGES={
+  'Race Cards':'/assets/approved/race-cards/hero.webp',
+  'Longshot Radar':'/assets/approved/publications/longshot-hero.jpg',
+  'Stable Notes':'/assets/approved/publications/stable-hero.jpg',
+  'Target List':'/assets/approved/publications/target-hero.jpg'
+};
+export async function serveProductDocument(assetResponse,{product}={}){
+  if(!assetResponse.ok)return assetResponse;
+  if(!product||!slugValid(String(product.id||'')))return responseText('Edition not found',404,'text/plain; charset=utf-8');
+  const id=String(product.id);
+  let html=await assetResponse.text();
+  const category=String(product.category||'Publication');
+  const title=String(product.title||category);
+  const pageTitle=title+' | '+category+' | Rail & Rye Racing';
+  const description=String(product.description||('Digital '+category.toLowerCase()+' edition from Rail & Rye Racing.'))
+    .replace(/\s+/g,' ').trim().slice(0,300);
+  const pathname='/store/?edition='+encodeURIComponent(id);
+  const pageUrl=canonical(pathname);
+  const imagePath=product.image_url==='/media/cover/'+id
+    ? product.image_url
+    : product.kind==='bundle'
+      ? '/assets/approved/publication-desk/hero.webp'
+      : (PUBLICATION_SHARE_IMAGES[category]||'/assets/approved/publication-desk/hero.webp');
+  const imageUrl=canonical(imagePath);
+  const meta=(attribute,name,value)=>'<meta '+attribute+'="'+name+'" content="'+htmlEscape(value)+'">';
+  html=html.replace(/<title>[^<]*<\/title>/,'<title>'+htmlEscape(pageTitle)+'</title>');
+  html=html.replace(/<meta name="description" content="[^"]*">/,
+    '<meta name="description" content="'+htmlEscape(description)+'">');
+  html=html.replace(/<link rel="canonical" href="[^"]*">/g,'');
+  html=html.replace(/<meta (?:property="(?:og:[^"]+|product:[^"]+)"|name="twitter:[^"]+") content="[^"]*">/g,'');
+  const canonicalLink='<link rel="canonical" href="'+htmlEscape(pageUrl)+'">';
+  const social=[
+    meta('property','og:type','product'),
+    meta('property','og:site_name','Rail & Rye Racing'),
+    meta('property','og:title',pageTitle),
+    meta('property','og:description',description),
+    meta('property','og:url',pageUrl),
+    meta('property','og:image',imageUrl),
+    meta('property','og:image:secure_url',imageUrl),
+    meta('property','og:image:alt',title),
+    meta('property','product:price:amount',(Math.max(0,Number(product.price_cents)||0)/100).toFixed(2)),
+    meta('property','product:price:currency','USD'),
+    meta('name','twitter:card','summary_large_image'),
+    meta('name','twitter:title',pageTitle),
+    meta('name','twitter:description',description),
+    meta('name','twitter:image',imageUrl),
+    meta('name','twitter:image:alt',title)
+  ].join('');
+  const structured={
+    '@context':'https://schema.org','@type':'Product',
+    name:title,description:description,image:imageUrl,url:pageUrl,
+    category:category,brand:{'@type':'Brand',name:'Rail & Rye Racing'},
+    offers:{'@type':'Offer',url:pageUrl,priceCurrency:'USD',
+      price:(Math.max(0,Number(product.price_cents)||0)/100).toFixed(2),
+      availability:'https://schema.org/InStock'}
+  };
+  const jsonld='<script type="application/ld+json">'
+    +JSON.stringify(structured).replace(/</g,'\\u003c').replace(/>/g,'\\u003e').replace(/&/g,'\\u0026')
+    +'</script>';
+  html=html.replace('</head>',canonicalLink+social+jsonld+'</head>');
+  const headers=new Headers(assetResponse.headers);
+  headers.set('Content-Type','text/html; charset=utf-8');
+  headers.set('Cache-Control','public, max-age=60');
+  headers.set('X-Content-Type-Options','nosniff');
+  return new Response(html,{status:assetResponse.status,headers});
+}

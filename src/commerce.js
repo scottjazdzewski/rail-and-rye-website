@@ -401,6 +401,25 @@ async function listProducts(env){
   }
   return reply({products,checkout_ready:stripeReady(env),checkout_mode:checkoutMode(env)});
 }
+export async function publicProductForShare(env,id){
+  if(!env.STORE_DB||! /^[0-9a-f-]{36}$/i.test(String(id||'')))return null;
+  await ensureReleaseSchedule(env);
+  const product=await env.STORE_DB.prepare(`SELECT id,title,slug,category,race_date,track,description,price_cents,image_url,pdf_key
+    FROM products WHERE id=? AND status='published' AND pdf_key IS NOT NULL
+    AND NOT EXISTS(SELECT 1 FROM product_release_schedule s WHERE s.product_id=products.id AND s.release_at>CURRENT_TIMESTAMP)
+    AND NOT EXISTS(SELECT 1 FROM bundle_only_assets a WHERE a.product_id=products.id)`).bind(id).first();
+  if(!product)return null;
+  const {pdf_key,...publicFields}=product;
+  if(pdf_key!==BUNDLE_KEY)return {...publicFields,kind:'single'};
+  const children=await env.STORE_DB.prepare(`SELECT c.title,c.category,c.status,c.pdf_key,a.product_id AS asset_id,
+    CASE WHEN s.release_at>CURRENT_TIMESTAMP THEN 1 ELSE 0 END AS pending_release FROM bundle_items bi
+    LEFT JOIN products c ON c.id=bi.product_id LEFT JOIN bundle_only_assets a ON a.product_id=c.id
+    LEFT JOIN product_release_schedule s ON s.product_id=c.id WHERE bi.bundle_id=? ORDER BY bi.position`).bind(id).all();
+  const items=children.results||[];
+  if(items.length<2||items.length>12||items.some(c=>!c.pdf_key||c.pdf_key===BUNDLE_KEY||c.pending_release||!(c.status==='published'||(c.status==='draft'&&c.asset_id))))return null;
+  return {...publicFields,kind:'bundle',bundle_count:items.length};
+}
+
 async function checkout(request,env){
   if(request.method!=='POST')return error('Method not allowed',405);
   const mode=checkoutMode(env);

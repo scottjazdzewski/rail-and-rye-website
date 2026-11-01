@@ -3,6 +3,8 @@ const SVG_NS='http://www.w3.org/2000/svg';
 function absoluteUrl(value){
  const url=new URL(value||window.location.href,window.location.origin);
  if(url.origin!==window.location.origin)throw Error('Only Rail & Rye pages can be shared.');
+ const edition=url.hash.match(/^#edition-([0-9a-f-]{36})$/i);
+ if(url.pathname==='/store/'&&edition)url.searchParams.set('edition',edition[1]);
  return url.href;
 }
 function closeAll(except){
