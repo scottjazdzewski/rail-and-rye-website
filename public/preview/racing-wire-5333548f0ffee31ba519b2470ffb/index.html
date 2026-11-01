@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex,nofollow,noarchive"><meta name="referrer" content="no-referrer">
 <meta name="theme-color" content="#061e35">
-<title>Unlisted Preview — The Racing Wire | Rail &amp; Rye</title>
+<title>The Racing Wire | Rail &amp; Rye</title>
 <link rel="icon" href="/favicon.png" type="image/png">
 <link rel="stylesheet" href="/assets/rail-rye-core.css?v=11">
 <link rel="stylesheet" href="/assets/rail-rye-components.css?v=9">
@@ -13,12 +13,12 @@
 :root{--navy:#071e35;--navy2:#0b2d4b;--gold:#cfa661;--cream:#faf8f3;--ink:#142944;--muted:#5b6b80;--line:#e8e2d7}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:#faf9f5;color:var(--ink);font:14px/1.5 Georgia,"Times New Roman",serif}
 a{color:inherit}button,input,select{font:inherit}button{cursor:pointer}
-.rrw-preview-note{padding:10px 20px;background:#e8cf9d;color:#142d44;text-align:center;font:750 11px/1.5 system-ui,sans-serif;letter-spacing:.075em}
 .rrw-wire-hero{background-image:url('/assets/approved/racing-wire/hero-race.webp?v=4')}
-.wrap{max-width:1500px;margin:auto;padding:24px 24px 90px}
+.wrap{margin-inline:auto;padding-top:24px;padding-bottom:90px}
 .tagline{display:flex;gap:15px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:0 0 16px}
 .tagline h2{margin:0;font:650 14px/1.3 Georgia,serif;letter-spacing:.19em;text-transform:uppercase}
-.tagline span{font:12px/1.5 system-ui,sans-serif;color:var(--muted)}
+.all-news-filter{border:1px solid #c9a067;background:#fff;color:#173b58;border-radius:999px;padding:9px 16px;font:800 10px/1.1 system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;box-shadow:0 2px 8px #26384b12}
+.all-news-filter[aria-pressed="true"]{background:#102f48;color:#fff5df;border-color:#b98a49;box-shadow:inset 0 0 0 1px #e5c7834d}
 .subject-strip{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:12px;padding:5px 0 24px}
 .subject-option{display:flex;flex-direction:column;align-items:center;gap:8px;border:0;background:transparent;padding:0;min-width:0;color:var(--ink)}
 .subject-option:hover .emblem,.subject-option[aria-pressed="true"] .emblem{box-shadow:0 0 0 4px #f4e9d6,0 0 0 6px #c29754}
@@ -27,12 +27,23 @@ a{color:inherit}button,input,select{font:inherit}button{cursor:pointer}
 .subject-name{font:700 10px/1.25 Georgia,serif;text-align:center;white-space:normal;max-width:100%}
 .controls{display:flex;gap:11px;flex-wrap:wrap;align-items:center;margin:4px 0 26px}
 .searchbox{flex:1 1 350px;border:1px solid #ded7ca;border-radius:25px;background:#fff;padding:12px 18px;color:var(--ink);min-width:200px}
-.select,.pill,.mode{border:1px solid #d7cbb7;background:#fff;color:#1e3952;border-radius:25px;padding:11px 16px;font:700 12px/1.15 system-ui,sans-serif}
+.select{border:1px solid #d7cbb7;background:#fff;color:#1e3952;border-radius:25px;padding:11px 16px;font:700 12px/1.15 system-ui,sans-serif}
 .workspace{display:block}
 .section-head{display:flex;gap:12px;justify-content:space-between;align-items:center;border-bottom:1px solid #d7b37b;margin-bottom:10px;padding-bottom:12px}
 .section-head h2{margin:0;font:650 20px/1.2 Georgia,serif;letter-spacing:.14em}
 .subtle{font:11px/1.4 system-ui,sans-serif;color:#708092}
+.lead-section{margin:2px 0 28px}
+.lead-section[hidden]{display:none!important}
+.lead-kicker{display:flex;align-items:center;gap:10px;margin:0 0 9px;color:#8d642d;font:800 10px/1.2 system-ui,sans-serif;letter-spacing:.16em;text-transform:uppercase}
+.lead-kicker:after{content:"";height:1px;flex:1;background:#caa56c}
+.lead-card{background:linear-gradient(135deg,#fff 0%,#fbf6eb 100%);border:1px solid #cba56b;border-radius:14px;display:grid;grid-template-columns:128px minmax(0,1fr) auto;gap:24px;padding:27px 26px;align-items:start;box-shadow:0 10px 30px #25394b16}
+.lead-card .emblem{width:118px;height:118px}
+.lead-card h3{font:600 clamp(25px,2.2vw,36px)/1.12 Georgia,serif;margin:5px 0 8px}
+.lead-card h3 a{text-decoration:none}.lead-card h3 a:hover{text-decoration:underline;text-underline-offset:4px}
+.lead-card p{font:15px/1.55 Georgia,serif;color:#3f5369;margin:0 0 9px}
 .feed-list{display:grid;gap:11px}
+.day-divider{display:flex;align-items:center;gap:12px;margin:12px 0 2px;color:#8a6739;font:800 10px/1.2 system-ui,sans-serif;letter-spacing:.14em;text-transform:uppercase}
+.day-divider:after{content:"";height:1px;flex:1;background:#dfcda9}
 .item{background:#fff;border:1px solid var(--line);border-radius:12px;display:grid;grid-template-columns:94px minmax(0,1fr) auto;gap:18px;padding:20px 19px;align-items:start}
 .item .emblem{width:88px;height:88px}
 .meta{font:700 10px/1.5 system-ui,sans-serif;letter-spacing:.07em;color:#566d80;text-transform:uppercase}
@@ -46,11 +57,9 @@ a{color:inherit}button,input,select{font:inherit}button{cursor:pointer}
 .type-pill[data-kind="Barn Change"]{background:#546179;color:#fff}
 .info{padding:25px;text-align:center;border:1px dashed #cdbf9e;border-radius:12px;background:#fff;color:#637184;line-height:1.8}
 .more{display:block;margin:19px auto 0;padding:12px 22px;border:1px solid #c9a067;background:#fff;border-radius:6px;color:#173b58;font-weight:700}.more[hidden]{display:none!important}
-.rrw-rss-test{margin:-12px 0 24px;padding:14px 16px;border:1px solid #d8c7aa;border-radius:10px;background:#fff9ee;color:#344b60;font:12px/1.55 system-ui,sans-serif}
-.rrw-rss-test strong{color:#153b58}.rrw-rss-test .ok{color:#23694f;font-weight:800}.rrw-rss-test .bad{color:#9b3f3b;font-weight:800}
 @media(max-width:1160px){.subject-strip{grid-template-columns:repeat(6,1fr)}}
-@media(max-width:800px){.wrap{padding:22px 15px 60px}}
-@media(max-width:560px){.subject-strip{grid-template-columns:repeat(4,minmax(0,1fr));row-gap:16px}.emblem{width:50px;height:50px}.item{grid-template-columns:70px minmax(0,1fr);gap:13px;padding:15px}.item .emblem{width:66px;height:66px}.type-pill{grid-column:2;justify-self:start}.item h3{font-size:17px}}
+@media(max-width:800px){.wrap{padding-top:22px;padding-bottom:60px}}
+@media(max-width:560px){.subject-strip{grid-template-columns:repeat(4,minmax(0,1fr));row-gap:16px}.emblem{width:50px;height:50px}.lead-card{grid-template-columns:76px minmax(0,1fr);gap:14px;padding:17px 15px}.lead-card .emblem{width:72px;height:72px}.lead-card h3{font-size:23px}.lead-card .type-pill{grid-column:2;justify-self:start}.item{grid-template-columns:70px minmax(0,1fr);gap:13px;padding:15px}.item .emblem{width:66px;height:66px}.type-pill{grid-column:2;justify-self:start}.item h3{font-size:17px}}
 </style></head>
 <body class="heritage-home heritage-inner-page rrw-preview-page">
 
@@ -70,16 +79,17 @@ a{color:inherit}button,input,select{font:inherit}button{cursor:pointer}
 </section>
 </div>
 </div>
-<div class="rrw-preview-note">UNLISTED DESIGN PREVIEW · NOT IN PUBLIC NAVIGATION · SHAREABLE LINK</div>
-<main class="wrap">
-<div class="tagline"><h2>Racing news by subject</h2><span>Approved Rail &amp; Rye navy-and-gold badge family</span></div>
+<main class="wrap heritage-shell">
+<div class="tagline"><h2>Browse by Topic</h2><button class="all-news-filter" id="allNews" type="button" aria-pressed="true">All News</button></div>
 <div class="subject-strip" id="subjects" role="group" aria-label="Filter by racing subject"></div>
 <div class="controls">
 <input class="searchbox" type="search" id="search" aria-label="Search racing news" placeholder="⌕  Search horses, people, races, or keywords...">
-<button class="mode" id="testFeeds" type="button">Test real RSS</button>
 <select class="select" id="sort" aria-label="Sort news"><option value="newest">Newest first</option><option value="oldest">Oldest first</option></select>
 </div>
-<div id="rssDiagnostic" class="rrw-rss-test" hidden aria-live="polite"></div>
+<section class="lead-section" id="leadSection" aria-labelledby="leadHeading" hidden>
+<div class="lead-kicker" id="leadHeading">Top Story</div>
+<div id="leadStory"></div>
+</section>
 <div class="workspace">
 <section aria-labelledby="feedHeading"><div class="section-head"><h2 id="feedHeading">LATEST NEWS</h2><span class="subtle" id="count">Loading live updates…</span></div>
 <div id="feed" class="feed-list" aria-live="polite"></div>
@@ -90,7 +100,6 @@ a{color:inherit}button,input,select{font:inherit}button{cursor:pointer}
 (()=>{'use strict';
 const $=id=>document.getElementById(id);
 const cats=[['all','ALL NEWS'],['horse','HORSE'],['jockey','JOCKEY'],['trainer','TRAINER'],['owner','OWNER'],['stable','STABLE'],['race','RACE / STAKES'],['racetrack','RACETRACK'],['breeding','BREEDING'],['sale','SALES / AUCTIONS'],['regulatory','REGULATORY'],['achievement','ACHIEVEMENT'],['industry','INDUSTRY']];
-const actionMap={horse:'Horse Update',jockey:'Jockey Update',trainer:'Trainer Update',owner:'Owner Update',stable:'Stable Update',race:'Race Update',racetrack:'Track Update',breeding:'Breeding',sale:'Auction / Sale',regulatory:'Regulatory',achievement:'Achievement',industry:'Industry'};
 const subjectLabels=Object.fromEntries(cats);
 let subject='all',data=[],shown=8;
 
@@ -111,77 +120,82 @@ function icon(kind){
 function labelTime(iso){
  const d=new Date(iso);return Number.isFinite(+d)?new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}).format(d):'TIME UNAVAILABLE';
 }
+function dayKey(iso){
+ const d=new Date(iso);if(!Number.isFinite(+d))return 'unknown';
+ return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
+}
+function dayLabel(iso){
+ const d=new Date(iso);if(!Number.isFinite(+d))return 'Earlier';
+ const now=new Date(),today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+ const then=new Date(d.getFullYear(),d.getMonth(),d.getDate());
+ const diff=Math.round((today-then)/86400000);
+ if(diff===0)return 'Today';if(diff===1)return 'Yesterday';
+ return new Intl.DateTimeFormat('en-US',{month:'long',day:'numeric'}).format(d);
+}
+function storyCard(x,lead=false){
+ const row=document.createElement('article');row.className=lead?'lead-card':'item';row.append(icon(x.subject_kind));
+ const content=document.createElement('div'),meta=document.createElement('div');meta.className='meta';meta.textContent=labelTime(x.published_at);
+ const heading=document.createElement('h3');
+ const isLive=typeof x.url==='string'&&(/^\x2fjournal\x2f[a-z0-9-]+\x2f$/.test(x.url)||/^https:\/\/[a-z0-9.-]+\//i.test(x.url));
+ if(isLive){const link=document.createElement('a');link.href=x.url;link.textContent=x.title;if(!x.original){link.rel='noopener noreferrer external';link.target='_blank';}heading.append(link);}
+ else heading.textContent=x.title;
+ content.append(meta,heading);
+ if(x.summary){const summary=document.createElement('p');summary.textContent=x.summary;content.append(summary);}
+ const src=document.createElement('div');src.className='attr';src.append(document.createTextNode('Source: '));
+ if(isLive){const a=document.createElement('a');a.href=x.url;a.textContent=x.source||'Original publication';if(!x.original){a.rel='noopener noreferrer external';a.target='_blank';}src.append(a);}
+ else src.append(document.createTextNode(x.source||'Verified source'));
+ content.append(src);
+ if(isLive&&Array.isArray(x.also_reported_by)&&x.also_reported_by.length){
+   const others=document.createElement('div');others.className='attr';others.style.marginTop='6px';others.append(document.createTextNode('Also reported by: '));
+   for(const report of x.also_reported_by.slice(0,8)){
+     if(typeof report.url!=='string'||!/^https:\/\/[a-z0-9.-]+\//i.test(report.url))continue;
+     const alt=document.createElement('a');alt.href=report.url;alt.target='_blank';alt.rel='noopener noreferrer external';alt.textContent=report.source||'Original report';
+     if(others.querySelector('a'))others.append(document.createTextNode(' · '));others.append(alt);
+   }
+   content.append(others);
+ }
+ row.append(content);
+ if(x.type){const typ=document.createElement('span');typ.className='type-pill';typ.textContent=x.type;typ.dataset.kind=x.type;row.append(typ);}
+ return row;
+}
 function render(){
  const q=$('search').value.trim().toLowerCase();
  let records=data.filter(x=>(subject==='all'||x.subject_kind===subject)&&(!q||(x.title+' '+(x.summary||'')+' '+(x.source||'')).toLowerCase().includes(q)));
  records=records.slice().sort((a,b)=>$('sort').value==='oldest'?new Date(a.published_at)-new Date(b.published_at):new Date(b.published_at)-new Date(a.published_at));
- $('count').textContent=records.length+' live item'+(records.length===1?'':'s');
+ $('count').textContent=records.length+' stor'+(records.length===1?'y':'ies');
+ const leadSection=$('leadSection'),leadStory=$('leadStory');
+ let lead=null;
+ if(subject==='all'&&!q&&$('sort').value==='newest'){
+   lead=records.filter(x=>Number(x.editorial_score)>=82)
+     .sort((a,b)=>(Number(b.editorial_score)-Number(a.editorial_score))||(new Date(b.published_at)-new Date(a.published_at)))[0]||null;
+ }
+ leadStory.replaceChildren();
+ if(lead){leadStory.append(storyCard(lead,true));leadSection.hidden=false;}else leadSection.hidden=true;
  const feed=$('feed');feed.replaceChildren();
- if(!records.length){
-  const p=document.createElement('p');p.className='info';
-  p.textContent='No live Racing Wire items are available yet. New real items will appear here automatically.';
-  feed.append(p);$('more').hidden=true;return;
+ const remaining=lead?records.filter(x=>x!==lead):records;
+ if(!remaining.length){
+  if(!lead){const p=document.createElement('p');p.className='info';p.textContent='No Racing Wire stories match this view.';feed.append(p);}
+  $('more').hidden=true;return;
  }
- for(const x of records.slice(0,shown)){
-  const row=document.createElement('article');row.className='item';row.append(icon(x.subject_kind));
-  const content=document.createElement('div'),meta=document.createElement('div');meta.className='meta';meta.textContent=(subjectLabels[x.subject_kind]||'INDUSTRY')+' · '+labelTime(x.published_at);
-  const heading=document.createElement('h3');
-  const isLive=typeof x.url==='string'&&(/^\x2fjournal\x2f[a-z0-9-]+\x2f$/.test(x.url)||/^https:\/\/[a-z0-9.-]+\//i.test(x.url));
-  if(isLive){const link=document.createElement('a');link.href=x.url;link.textContent=x.title;if(!x.original){link.rel='noopener noreferrer external';link.target='_blank';}heading.append(link);}
-  else heading.textContent=x.title;
-  const summary=document.createElement('p');summary.textContent=x.summary||'Open the original source for the full update.';
-  const src=document.createElement('div');src.className='attr';
-  src.append(document.createTextNode('Source: '));
-  if(isLive){const a=document.createElement('a');a.href=x.url;a.textContent=x.source||'Original publication';if(!x.original){a.rel='noopener noreferrer external';a.target='_blank';}src.append(a);}
-  else src.append(document.createTextNode(x.source||'Verified source'));
-  content.append(meta,heading,summary,src);
-  if(isLive&&Array.isArray(x.also_reported_by)&&x.also_reported_by.length){
-    const others=document.createElement('div');others.className='attr';
-    others.style.marginTop='6px';others.append(document.createTextNode('Also reported by: '));
-    for(const report of x.also_reported_by.slice(0,8)){
-      if(typeof report.url!=='string'||!/^https:\/\/[a-z0-9.-]+\//i.test(report.url))continue;
-      const alt=document.createElement('a');alt.href=report.url;alt.target='_blank';alt.rel='noopener noreferrer external';
-      alt.textContent=report.source||'Original report';
-      if(others.querySelector('a'))others.append(document.createTextNode(' · '));
-      others.append(alt);
-    }
-    content.append(others);
-  }
-  row.append(content);
-  const typ=document.createElement('span');typ.className='type-pill';
-  const kind=x.type||actionMap[x.subject_kind]||'News';typ.textContent=kind;typ.dataset.kind=kind;
-  row.append(typ);feed.append(row);
+ let lastDay='';
+ for(const x of remaining.slice(0,shown)){
+   const key=dayKey(x.published_at);
+   if(key!==lastDay){const divider=document.createElement('div');divider.className='day-divider';divider.textContent=dayLabel(x.published_at);feed.append(divider);lastDay=key;}
+   feed.append(storyCard(x,false));
  }
- $('more').hidden=records.length<=shown;
+ $('more').hidden=remaining.length<=shown;
 }
 const panel=$('subjects');
 for(const [kind,label] of cats){if(kind==='all')continue;
  const button=document.createElement('button');button.type='button';button.className='subject-option';button.dataset.kind=kind;button.setAttribute('aria-pressed','false');button.append(icon(kind));
  const text=document.createElement('span');text.className='subject-name';text.textContent=label;button.append(text);
- button.addEventListener('click',()=>{subject=subject===kind?'all':kind;shown=8;for(const x of panel.querySelectorAll('button'))x.setAttribute('aria-pressed',String(x.dataset.kind===subject));render();});
+ button.addEventListener('click',()=>{subject=subject===kind?'all':kind;shown=8;$('allNews').setAttribute('aria-pressed',String(subject==='all'));for(const x of panel.querySelectorAll('button'))x.setAttribute('aria-pressed',String(x.dataset.kind===subject));render();});
  panel.append(button);
 }
+$('allNews').addEventListener('click',()=>{subject='all';shown=8;$('allNews').setAttribute('aria-pressed','true');for(const x of panel.querySelectorAll('button'))x.setAttribute('aria-pressed','false');render();});
 $('search').addEventListener('input',()=>{shown=8;render();});
 $('sort').addEventListener('change',render);
 $('more').addEventListener('click',()=>{shown+=8;render();});
-$('testFeeds').addEventListener('click',async()=>{
- const box=$('rssDiagnostic');box.hidden=false;box.replaceChildren();
- const loading=document.createElement('strong');loading.textContent='Testing live RSS endpoints from the Rail & Rye worker…';box.append(loading);
- try{
-  const response=await fetch('/api/preview/racing-wire-5333548f0ffee31ba519b2470ffb/feed-test',{cache:'no-store'});
-  const result=await response.json();if(!response.ok)throw Error(result.error||'Test failed');
-  box.replaceChildren();
-  const intro=document.createElement('div');intro.textContent='Technical connectivity test only — third-party headlines are not republished.';
-  box.append(intro);
-  for(const feed of result.results||[]){
-   const line=document.createElement('div');line.style.marginTop='7px';
-   const state=document.createElement('span');state.className=feed.reachable&&feed.parsed_count>0?'ok':'bad';
-   state.textContent=(feed.reachable&&feed.parsed_count>0?'PASS':'CHECK')+' · ';
-   line.append(state,document.createTextNode(feed.source+' · HTTP '+(feed.http_status??'—')+' · '+feed.parsed_count+' items parsed'+(feed.newest_published_at?' · newest '+labelTime(feed.newest_published_at):'')));
-   box.append(line);
-  }
- }catch(error){box.replaceChildren();const e=document.createElement('span');e.className='bad';e.textContent='RSS test unavailable: '+error.message;box.append(e);}
-});
 let feedLoading=false;
 async function loadVerified(){
  if(feedLoading)return;
