@@ -51,3 +51,9 @@ CREATE TABLE IF NOT EXISTS membership_sessions (
   created_at INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_membership_sessions_email ON membership_sessions(lower(email),expires_at);
+
+CREATE TABLE IF NOT EXISTS membership_signin_limits (
+  email TEXT PRIMARY KEY,
+  window_start INTEGER NOT NULL,
+  request_count INTEGER NOT NULL
+);

@@ -46,7 +46,8 @@ async function ensureMembershipSchema(env){
     env.STORE_DB.prepare("CREATE TABLE IF NOT EXISTS membership_magic_links (token_hash TEXT PRIMARY KEY,email TEXT NOT NULL,expires_at INTEGER NOT NULL,created_at INTEGER NOT NULL)"),
     env.STORE_DB.prepare("CREATE INDEX IF NOT EXISTS idx_membership_magic_email ON membership_magic_links(lower(email),expires_at)"),
     env.STORE_DB.prepare("CREATE TABLE IF NOT EXISTS membership_sessions (token_hash TEXT PRIMARY KEY,email TEXT NOT NULL,expires_at INTEGER NOT NULL,created_at INTEGER NOT NULL)"),
-    env.STORE_DB.prepare("CREATE INDEX IF NOT EXISTS idx_membership_sessions_email ON membership_sessions(lower(email),expires_at)")
+    env.STORE_DB.prepare("CREATE INDEX IF NOT EXISTS idx_membership_sessions_email ON membership_sessions(lower(email),expires_at)"),
+    env.STORE_DB.prepare("CREATE TABLE IF NOT EXISTS membership_signin_limits (email TEXT PRIMARY KEY,window_start INTEGER NOT NULL,request_count INTEGER NOT NULL)")
   ]);
   const inserts=PLAN_DEFS.map(p=>env.STORE_DB.prepare("INSERT OR IGNORE INTO membership_plans (slug,title,billing_interval,updated_at) VALUES (?,?,?,?)").bind(p.slug,p.title,p.interval,nowSeconds()));
   await env.STORE_DB.batch(inserts);
@@ -374,9 +375,12 @@ async function requestMagicLink(request,env){
   if(member.stripe_mode==="test"&&email!==emailOf(env.ADMIN_EMAIL))return json({sent:true});
   if(!env.RESEND_API_KEY?.startsWith("re_"))return error("Email sign-in is temporarily unavailable.",503);
   const now=nowSeconds();
+  const limit=await env.STORE_DB.prepare(
+    "INSERT INTO membership_signin_limits (email,window_start,request_count) VALUES (?,?,1) ON CONFLICT(email) DO UPDATE SET request_count=CASE WHEN membership_signin_limits.window_start<=? THEN 1 ELSE membership_signin_limits.request_count+1 END,window_start=CASE WHEN membership_signin_limits.window_start<=? THEN excluded.window_start ELSE membership_signin_limits.window_start END RETURNING request_count"
+  ).bind(email,now,now-15*60,now-15*60).first();
+  if(Number(limit?.request_count||0)>3)return json({sent:true});
   await env.STORE_DB.prepare("DELETE FROM membership_magic_links WHERE expires_at<=?").bind(now).run();
-  const recent=await env.STORE_DB.prepare("SELECT COUNT(*) AS count FROM membership_magic_links WHERE lower(email)=? AND created_at>?").bind(email,now-15*60).first();
-  if(Number(recent?.count||0)>=3)return json({sent:true});
+  await env.STORE_DB.prepare("DELETE FROM membership_signin_limits WHERE window_start<?").bind(now-24*60*60).run();
   const raw=randomHex(),tokenHash=await digest(raw),expires=now+MAGIC_SECONDS;
   await env.STORE_DB.prepare("INSERT INTO membership_magic_links (token_hash,email,expires_at,created_at) VALUES (?,?,?,?)").bind(tokenHash,email,expires,now).run();
   await env.STORE_DB.prepare("DELETE FROM membership_sessions WHERE expires_at<?").bind(nowSeconds()).run();
