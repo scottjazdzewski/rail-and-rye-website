@@ -165,15 +165,15 @@ body.heritage-home.rr-shell-page .micro-strip{display:none}
 .heritage-nav{
  position:relative;z-index:22;grid-column:3;grid-row:1;justify-self:end;
  display:flex;align-items:center;justify-content:flex-end;
- gap:clamp(7px,.8vw,14px);margin:0
+ gap:clamp(5px,.55vw,10px);margin:0
 }
 .heritage-nav a{
  display:inline-flex;align-items:center;justify-content:center;text-align:center;
- white-space:nowrap;color:#fef7e9;font:700 clamp(9px,.65vw,12px)/1.1 var(--heritage-sans);
- letter-spacing:.12em;text-transform:uppercase;text-shadow:0 2px 9px #0716228c
+ white-space:nowrap;color:#fef7e9;font:700 clamp(9px,.62vw,11px)/1.1 var(--heritage-sans);
+ letter-spacing:.1em;text-transform:uppercase;text-shadow:0 2px 9px #0716228c
 }
 .heritage-nav .heritage-nav-pill{
- min-height:42px;padding:9px clamp(10px,.82vw,16px);
+ min-height:42px;padding:9px clamp(8px,.62vw,12px);
  border:1px solid rgba(226,176,89,.92);border-radius:999px;
  background:linear-gradient(140deg,rgba(5,22,34,.7),rgba(10,28,35,.32));
  box-shadow:inset 0 1px 0 #fff2c81c,0 4px 14px #0005;
@@ -184,11 +184,11 @@ body.heritage-home.rr-shell-page .micro-strip{display:none}
 .heritage-nav .heritage-nav-pill[aria-current=page]{
  background:linear-gradient(150deg,#a77b403c,#092432b0);color:#ffe0a2
 }
-/* Four aligned header pills without disturbing the central brand strapline. */
+/* Five aligned header pills without disturbing the central brand strapline. */
 @media(min-width:1121px) and (max-width:1450px){
- .heritage-nav{gap:5px}
- .heritage-nav a{font-size:9px;letter-spacing:.055em}
- .heritage-nav .heritage-nav-pill{padding:9px 8px;min-height:40px}
+ .heritage-nav{gap:4px}
+ .heritage-nav a{font-size:9px;letter-spacing:.045em}
+ .heritage-nav .heritage-nav-pill{padding:9px 7px;min-height:40px}
 }
 .heritage-mobile-nav{display:none}
 .heritage-mobile-nav summary{
