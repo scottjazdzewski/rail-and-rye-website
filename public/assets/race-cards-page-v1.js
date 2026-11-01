@@ -87,6 +87,7 @@ const sortByTrack=(a,b)=>{
    const free=!bundle&&Number(p.price_cents)===0;
    copy.append(el('div','rr-purchase-price',free?'FREE':money(p.price_cents)));
    copy.append(el('span','rr-racecards-access',free?'Direct PDF download · No checkout':bundle?'7-day access · 5 downloads per PDF':'7-day access · Up to 5 downloads'));
+   if(window.RRShare)copy.append(window.RRShare.button({title:p.title||'Race Card',text:p.description||'Rail & Rye race-day research and analysis.',url:'/store/#edition-'+encodeURIComponent(p.id),compact:true}));
    const buyText=free?'Download free PDF':ready?(live?(bundle?'Purchase bundle':'Purchase PDF'):'Test purchase'):'Unavailable';
    const buy=el('button','rr-purchase-buy',buyText);
    buy.type='button';buy.disabled=free?false:(!ready||!Number.isFinite(Number(p.price_cents))||Number(p.price_cents)<50);

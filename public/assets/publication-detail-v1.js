@@ -76,6 +76,7 @@ const makeGlassCard=(p,data,onError)=>{
  }
  copy.append(txt('p',p.description||'Digital racing publication.','rr-purchase-description'));
  copy.append(txt('div',freeProduct(p)?'FREE':price(p.price_cents),'rr-purchase-price'));
+ if(window.RRShare)copy.append(window.RRShare.button({title:displayTitle(p.title||category),text:p.description||'Rail & Rye digital racing publication.',url:'/store/#edition-'+encodeURIComponent(p.id),compact:true}));
  card.append(cover,copy,makePurchaseButton(p,data,onError),editionLink);
  return card
 };
@@ -87,11 +88,14 @@ const renderRecent=products=>{
  recentList.hidden=false;
  recentList.append(txt('div','RECENT EDITIONS','rr-pub-recent-kicker'));
  for(const item of other){
+  const row=document.createElement('div');row.className='rr-pub-recent-row';
   const link=document.createElement('a');link.className='rr-pub-recent-link';
   link.href=editionHref(item);
   const label=txt('span',displayTitle(item.title||category),'rr-pub-recent-title');
   const meta=txt('small',latestMeta(item)||'View edition','rr-pub-recent-meta');
-  link.append(label,meta);recentList.append(link);
+  link.append(label,meta);row.append(link);
+  if(window.RRShare)row.append(window.RRShare.button({title:displayTitle(item.title||category),text:item.description||'Rail & Rye digital racing publication.',url:'/store/#edition-'+encodeURIComponent(item.id),compact:true,iconOnly:true}));
+  recentList.append(row);
  }
 };
 const makeEditionCard=(p,data,onError)=>{
@@ -101,6 +105,7 @@ const makeEditionCard=(p,data,onError)=>{
  if(meta)info.append(txt('span',meta,'rr-edition-meta'));
  info.append(txt('h3',p.title||category));
  if(p.description)info.append(txt('p',p.description,'rr-edition-description'));
+ if(window.RRShare)info.append(window.RRShare.button({title:displayTitle(p.title||category),text:p.description||'Rail & Rye digital racing publication.',url:'/store/#edition-'+encodeURIComponent(p.id),compact:true}));
  const bottom=document.createElement('div');bottom.className='rr-edition-actions';
  bottom.append(txt('strong',freeProduct(p)?'FREE':price(p.price_cents),'rr-edition-price'));
  const buy=makePurchaseButton(p,data,onError);buy.classList.add('rr-edition-buy');
