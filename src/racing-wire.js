@@ -1,7 +1,8 @@
 /* Rail & Rye Racing Wire: original editorial first, publisher-authorized feeds only.
  * A public RSS URL is not a republication license. Outside feeds remain OFF
  * until website/commercial syndication permission has been documented.
- * Never copy article bodies, publisher images or feed descriptions.
+ * Never copy article bodies, publisher images or feed descriptions into Rail & Rye storage.
+ * The private preview may render a publisher-supplied RSS image by its original HTTPS URL.
  */
 const HEADERS={'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'};
 const reply=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:HEADERS});
@@ -41,6 +42,29 @@ function safeUrl(candidate,hosts){
     if(!allowed.some(host=>h===host||h==='www.'+host))return null;
     u.hash='';return u.toString().slice(0,1900);
   }catch{return null;}
+}
+function safeMediaUrl(candidate,feed){
+  try{
+    const u=new URL(decode(candidate));if(u.protocol!=='https:'||u.username||u.password)return null;
+    const allowed=[feed?.host,...(Array.isArray(feed?.image_hosts)?feed.image_hosts:[])]
+      .filter(Boolean).map(x=>String(x).toLowerCase().replace(/^www\\./,''));
+    const h=u.hostname.toLowerCase().replace(/^www\\./,'');
+    if(!allowed.some(host=>h===host||h.endsWith('.'+host)))return null;
+    u.hash='';return u.toString().slice(0,1900);
+  }catch{return null;}
+}
+function tagAttr(xml,tag,attr){
+  const m=new RegExp('<'+tag+'\\b[^>]*\\b'+attr+'\\s*=\\s*["\\\']([^"\\\']+)["\\\'][^>]*>','i').exec(xml);
+  return m?.[1]||'';
+}
+function feedImage(item,feed){
+  const direct=[tagAttr(item,'media:content','url'),tagAttr(item,'media:thumbnail','url')];
+  const enclosure=/<enclosure\\b[^>]*>/i.exec(item)?.[0]||'';
+  if(/\\btype\\s*=\\s*["\\']image\\//i.test(enclosure))direct.push(tagAttr(enclosure,'enclosure','url'));
+  const body=/<(?:content:encoded|description)(?:\\s[^>]*)?>([\\s\\S]*?)<\\/(?:content:encoded|description)>/i.exec(item)?.[1]||'';
+  direct.push(/<img\\b[^>]*\\bsrc\\s*=\\s*["\\']([^"\\']+)["\\']/i.exec(body)?.[1]||'');
+  for(const candidate of direct){const safe=safeMediaUrl(candidate,feed);if(safe)return safe;}
+  return '';
 }
 function previewHeadlineRelevant(title,section=''){
   const text=(String(title||'')+' '+String(section||'')).toLowerCase();
@@ -165,7 +189,7 @@ export function parseRacingRss(xml,feed){
     const dt=new Date(published);
     if(!title||!link||!Number.isFinite(+dt)||dt.getTime()>Date.now()+3600000)continue;
     results.push({source:feed.name,title,link,published_at:dt.toISOString(),
-      section,category:categorize(title,section,feed.name)});
+      section,category:categorize(title,section,feed.name),image_url:feedImage(item,feed)});
   }
   return results;
 }
@@ -191,7 +215,8 @@ async function fetchPreviewFeed(feed,fetchFn=fetch){
         title:item.title,url:item.link,source:item.source,
         category:item.category,section:item.section||'',
         subject_kind:subjectKind(item.title,item.category),
-        published_at:item.published_at,summary:'',original:false,preview_external:true
+        published_at:item.published_at,summary:'',image_url:item.image_url||'',
+        original:false,preview_external:true
       }));
     return {feed,items:parsed,status:response.status,
       newest_published_at:parsed.map(x=>x.published_at).sort().at(-1)||null,
