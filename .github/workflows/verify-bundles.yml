@@ -31,6 +31,19 @@ jobs:
         run: node --experimental-sqlite test-racing-wire.mjs
       - name: Live Racing Wire health
         run: curl -sS --max-time 120 https://railandryeracing.com/api/preview/racing-wire-5333548f0ffee31ba519b2470ffb/feed-test
+      - name: Probe official Racing Wire newsrooms
+        run: |
+          node --input-type=module <<'NODE'
+          import {PREVIEW_OFFICIAL_NEWS_PAGES,parseOfficialNewsPage} from './src/racing-wire.js';
+          for (const source of PREVIEW_OFFICIAL_NEWS_PAGES) {
+            try {
+              const r=await fetch(source.url,{headers:{'User-Agent':'Mozilla/5.0 (compatible; RailAndRyeRacingWire/1.0; +https://railandryeracing.com)','Accept':'text/html,application/xhtml+xml;q=0.9,*/*;q=0.1'},redirect:'follow'});
+              const html=await r.text();
+              const items=parseOfficialNewsPage(html.slice(0,650000),source);
+              console.log(JSON.stringify({id:source.id,status:r.status,bytes:html.length,parsed:items.length,newest:items.map(x=>x.published_at).sort().at(-1)||null,sample:items.slice(0,2).map(x=>x.title)}));
+            } catch(e) { console.log(JSON.stringify({id:source.id,error:String(e)})); }
+          }
+          NODE
       - name: Multi-collection bundle listing tests
         run: node --experimental-sqlite test-bundle-category-placement.mjs
       - name: Compact Publisher desktop layout and control regression
