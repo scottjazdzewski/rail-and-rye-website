@@ -394,7 +394,12 @@
     for(const p of available){
       const label=document.createElement('label');label.style.cssText='display:flex;align-items:center;gap:10px;border:1px solid #e7e1d7;padding:10px;cursor:pointer;';
       const c=document.createElement('input');c.type='checkbox';c.dataset.bundleProduct=p.id;c.value=p.id;c.style.cssText='width:auto;flex:none';c.checked=selected.includes(p.id);
-      const name=document.createElement('span');name.textContent=p.title+(p.bundle_only?' · BUNDLE ONLY':p.status==='draft'?' · DRAFT PDF':' · '+money(p.price_cents));label.append(c,name);box.append(label);
+      const name=document.createElement('span');name.style.cssText='flex:1;min-width:0;line-height:1.35;overflow-wrap:anywhere';name.textContent=p.title+(p.bundle_only?' · BUNDLE ONLY':p.status==='draft'?' · DRAFT PDF':' · '+money(p.price_cents));
+      const match=String(p.race_date||'').match(/^(\d{4})-(\d{2})-(\d{2})/);
+      const date=document.createElement('span');date.style.cssText='flex:none;margin-left:auto;white-space:nowrap;color:#64748b;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums';
+      date.textContent=match?match[2]+'/'+match[3]+'/'+match[1]:'No date';
+      date.setAttribute('aria-label',match?'Racing date '+date.textContent:'No racing date assigned');
+      label.append(c,name,date);box.append(label);
     }
   }
   function drawBundles(){
