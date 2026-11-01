@@ -74,9 +74,6 @@ a{color:inherit}button,input,select{font:inherit}button{cursor:pointer}
 .item h3{font:600 19px/1.25 Georgia,serif;margin:3px 0 5px}.item h3 a{text-decoration:none}.item h3 a:hover{text-decoration:underline;text-underline-offset:3px}
 .item p{font:14px/1.48 Georgia,serif;color:#3f5369;margin:0 0 7px;white-space:pre-wrap}
 .attr{font:12px/1.4 Georgia,serif;color:#405773}.attr a{color:#183f65;text-decoration:underline;text-underline-offset:3px}
-.why-matters{margin:14px 0 12px;padding-top:12px;border-top:1px solid #dfcfaf;max-width:720px}
-.why-matters-label{display:block;margin:0 0 5px;color:#9a6b2f;font:800 9px/1.2 system-ui,sans-serif;letter-spacing:.16em;text-transform:uppercase}
-.why-matters-text{margin:0!important;color:#314b62!important;font:italic 14px/1.5 Georgia,serif!important}
 .story-tags{display:flex;flex-direction:column;align-items:flex-end;gap:6px;justify-self:end}
 .category-pill{border-radius:15px;background:#f3ead8;color:#6d4a1c;border:1px solid #d6bd8d;padding:6px 11px;font:800 10px/1 system-ui,sans-serif;white-space:nowrap}
 .type-pill{border-radius:15px;background:#dce7f0;color:#173950;padding:6px 11px;font:800 9px/1 system-ui,sans-serif;white-space:nowrap}
@@ -90,7 +87,6 @@ a{color:inherit}button,input,select{font:inherit}button{cursor:pointer}
 @media(max-width:800px){.wrap{padding-top:22px;padding-bottom:60px}}
 @media(max-width:560px){.subject-strip{grid-template-columns:repeat(4,minmax(0,1fr));row-gap:16px}.emblem{width:50px;height:50px}.lead-card{grid-template-columns:76px minmax(0,1fr);gap:14px;padding:17px 15px}.lead-card .emblem{width:72px;height:72px}.lead-card h3{font-size:23px}.lead-card .story-tags{grid-column:2;justify-self:start;align-items:flex-start}.lead-card.has-image{grid-template-columns:1fr;padding:0}.lead-card.has-image .story-media-link{height:190px;min-height:0}.lead-card.has-image>div{padding:17px 15px 0}.lead-card.has-image>.story-tags{grid-column:1;margin:0 15px 15px;justify-self:start;align-items:flex-start}.secondary-story.item{grid-template-columns:112px minmax(0,1fr);padding:10px 12px;align-items:center}.secondary-story.item .story-media-link{width:96px;height:84px;min-height:0;border:1px solid #d8cab2;border-radius:8px;justify-self:center;align-self:center}.secondary-story.item>div{padding:4px 0}.secondary-story.item>.story-tags{grid-column:2;margin:0;justify-self:start;align-items:flex-start}.secondary-story.item h3{font-size:18px}.secondary-story.item:not(.has-image){grid-template-columns:84px minmax(0,1fr);padding:14px}.secondary-story.item:not(.has-image) .emblem{width:72px;height:72px}.secondary-story.item:not(.has-image)>div{padding:0}.item{grid-template-columns:70px minmax(0,1fr);gap:13px;padding:15px}.item.has-image{grid-template-columns:104px minmax(0,1fr)}.item.has-image .story-media-link{width:104px;height:76px}.item .emblem{width:66px;height:66px}.type-pill{grid-column:2;justify-self:start}.item h3{font-size:17px}}
 </style></head>
-<!-- why-it-matters-preview-v1 -->
 <body class="heritage-home heritage-inner-page rrw-preview-page">
 
 <div class="heritage-inner-hero rrw-wire-hero">
@@ -165,12 +161,6 @@ function dayLabel(iso){
  if(diff===0)return 'Today';if(diff===1)return 'Yesterday';
  return new Intl.DateTimeFormat('en-US',{month:'long',day:'numeric'}).format(d);
 }
-function previewWhyItMatters(x){
- const title=String(x?.title||'');
- if(/sovereignty/i.test(title)&&/breeders.? cup classic/i.test(title))
-   return "Sovereignty’s Classic victory caps the season’s defining campaign and strengthens his claim as the year’s championship standard.";
- return '';
-}
 function storyVisual(x,isLive,lead,row){
  if(isLive&&typeof x.image_url==='string'&&/^https:\/\/[a-z0-9.-]+\//i.test(x.image_url)){
    const media=document.createElement('a');media.className='story-media-link';media.href=x.url;
@@ -192,13 +182,6 @@ function storyCard(x,lead=false,allowImage=true){
  else heading.textContent=x.title;
  content.append(meta,heading);
  if(x.summary){const summary=document.createElement('p');summary.textContent=x.summary;content.append(summary);}
- const why=lead?previewWhyItMatters(x):'';
- if(why){
-   const note=document.createElement('div');note.className='why-matters';
-   const label=document.createElement('span');label.className='why-matters-label';label.textContent='Why it matters';
-   const copy=document.createElement('p');copy.className='why-matters-text';copy.textContent=why;
-   note.append(label,copy);content.append(note);
- }
  const src=document.createElement('div');src.className='attr';src.append(document.createTextNode('Source: '));
  if(isLive){const a=document.createElement('a');a.href=x.url;a.textContent=x.source||'Original publication';if(!x.original){a.rel='noopener noreferrer external';a.target='_blank';}src.append(a);}
  else src.append(document.createTextNode(x.source||'Verified source'));
