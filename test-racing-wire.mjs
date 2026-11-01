@@ -33,7 +33,7 @@ assert.deepEqual(await refreshRacingWire(env),{checked:0,added:0},
  'No external feed requests are made without explicit publisher authorization');
 assert.equal(categorize('Jockey loses mount'),'Jockeys');
 assert.equal(categorize('Horse workout reported'),'Race-Day');
-assert.equal(categorize('Yearling sale underway'),'Breeding');
+assert.equal(categorize('Yearling sale underway'),'Sales / Auctions');
 const feed={name:'Authorized Publisher',host:'publisher.example'};
 const rss='<rss><channel><item><title><![CDATA[Trainer &amp; Jockey updates]]></title>'+
  '<link>https://publisher.example/story/123</link><category>Breeders Cup</category><pubDate>Fri, 30 Oct 2026 12:00:00 GMT</pubDate></item>'+
@@ -48,6 +48,15 @@ assert.equal(categorize('Championship update','Breeders Cup'),'Stakes');
 assert.equal(categorize("Ways and Means Blasts Home in Breeders’ Cup Filly and Mare Sprint"),'Stakes');
 assert.equal(subjectKind("Ways and Means Blasts Home in Breeders’ Cup Filly and Mare Sprint",categorize("Ways and Means Blasts Home in Breeders’ Cup Filly and Mare Sprint")),'race');
 assert.equal(categorize('Champion mare confirmed in foal to leading sire'),'Breeding');
+assert.equal(categorize("OBS Grad Further Ado Up in Time in Breeders’ Cup Dirt Mile",'',"Ocala Breeders’ Sales"),'Sales / Auctions');
+assert.equal(subjectKind("OBS Grad Further Ado Up in Time in Breeders’ Cup Dirt Mile",
+  categorize("OBS Grad Further Ado Up in Time in Breeders’ Cup Dirt Mile",'',"Ocala Breeders’ Sales")),'sale');
+assert.equal(categorize("Two-Day Breeders’ Cup Attendance Up, Handle Down Over 2025"),'Industry');
+assert.equal(subjectKind("Two-Day Breeders’ Cup Attendance Up, Handle Down Over 2025",
+  categorize("Two-Day Breeders’ Cup Attendance Up, Handle Down Over 2025")),'industry');
+assert.equal(categorize('Keeneland announces turf course rail setting and track surface update'),'Racetrack');
+assert.equal(subjectKind('Keeneland announces turf course rail setting and track surface update','Racetrack'),'racetrack');
+assert.equal(categorize("Sovereignty Rules Breeders’ Cup Classic; Forever Young Denied"),'Stakes');
 assert.equal(parseRacingRss('<!DOCTYPE rss [<!ENTITY pwn SYSTEM "http://evil/">]>'+rss,feed).length,0);
 assert.equal(parseRacingRss('<rss><item><title>Bad</title><link>javascript:alert(1)</link><pubDate>Fri, 30 Oct 2026 12:00:00 GMT</pubDate></item></rss>',feed).length,0);
 
@@ -112,7 +121,8 @@ assert.ok(previewBody.external_sources.every(x=>x.parsed_count===1),
 assert.ok(previewBody.items.length>=5&&previewBody.items.length<=previewFeedCount+1,
  'Editorial relevance/dedupe gate may suppress low-value or overlapping feed items');
 assert.ok(previewBody.items.some(x=>x.source==='Ocala Breeders’ Sales'),'Correct OBS feed can reach curated preview');
-assert.ok(previewBody.items.some(x=>x.source==="America's Best Racing"),'ABR can reach curated preview');
+assert.ok(previewBody.external_sources.some(x=>x.name==="America's Best Racing"&&x.parsed_count===1),
+ 'ABR feed health is verified independently of whether a synthetic headline clears editorial curation');
 assert.ok(previewBody.external_sources.every(x=>'newest_published_at' in x),'Source diagnostics expose newest accepted item timestamps');
 assert.ok(previewBody.items.every(x=>x.editorial_score>=62),'Preview emits only editorially relevant items');
 assert.equal((await handlePreviewRacingWire(new Request('https://railandryeracing.com/api/preview/racing-wire-test',{method:'POST'}),env,previewFetch)).status,405);
@@ -168,7 +178,11 @@ assert.ok(scoreRacingWireItem({
 assert.ok(scoreRacingWireItem({
  title:'Attendance Up, Handle Down On Future Stars Friday',source:'Thoroughbred Daily News',
  category:'Industry',published_at:date
-}).score<62,'Routine attendance/handle story stays below feed threshold');
+}).score<62,'Routine non-major attendance/handle story stays below feed threshold');
+assert.ok(scoreRacingWireItem({
+ title:"Two-Day Breeders’ Cup Attendance Up, Handle Down Over 2025",source:'Thoroughbred Daily News',
+ category:'Industry',published_at:date
+}).score>=70,'Breeders Cup attendance/handle metrics qualify as material industry news');
 
 const floodTitles=[
  'Horse A scratched from Breeders Cup Classic',
@@ -290,6 +304,10 @@ assert.ok(wirePage.includes("document.addEventListener('visibilitychange'"),
  'Returning to the Racing Wire tab forces a fresh update');
 assert.ok(wirePage.includes("?refresh='+Date.now()"),
  'Each refresh uses a cache-busting API request');
+assert.ok(wirePage.includes("const subjectLabels=Object.fromEntries(cats)"),
+ 'Story cards use the same full subject labels as the filter strip');
+assert.ok(wirePage.includes("sale:'Auction / Sale'")&&wirePage.includes("racetrack:'Track Update'")&&wirePage.includes("industry:'Industry'"),
+ 'Story action pills distinguish sales, track and industry coverage instead of generic race updates');
 
 
 const journalPage=readFileSync(new URL('./public/journal/index.html',import.meta.url),'utf8');
