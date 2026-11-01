@@ -651,16 +651,37 @@ function canGroup(a,b){
  const ratio=common/Math.max(at.length,bt.length,1);
  return common>=3&&ratio>=.72;
 }
+function hasPublisherImage(item){
+ return typeof item?.image_url==='string'&&/^https:\/\/[a-z0-9.-]+\//i.test(item.image_url);
+}
+function primaryStoryRank(item){
+ const image=hasPublisherImage(item)?1:0;
+ const score=scoreRacingWireItem({...item,also_reported_by:[]}).score;
+ const recency=Number.isFinite(Date.parse(item?.published_at))?Date.parse(item.published_at):0;
+ return {image,score,recency};
+}
+function preferPrimary(candidate,existing){
+ const a=primaryStoryRank(candidate),b=primaryStoryRank(existing);
+ if(a.image!==b.image)return a.image>b.image;
+ if(a.score!==b.score)return a.score>b.score;
+ return a.recency>b.recency;
+}
 export function groupRacingWireStories(stories){
  const ordered=[...stories].filter(x=>Number.isFinite(Date.parse(x.published_at)))
   .sort((a,b)=>Date.parse(b.published_at)-Date.parse(a.published_at));
  const groups=[];
  for(const candidate of ordered){
-  const existing=groups.find(g=>canGroup(g,candidate));
-  if(existing){
-   existing.also_reported_by ||= [];
-   if(existing.url!==candidate.url&&!existing.also_reported_by.some(x=>x.url===candidate.url))
-    existing.also_reported_by.push({source:candidate.source,url:candidate.url});
+  const index=groups.findIndex(g=>canGroup(g,candidate));
+  if(index>=0){
+   const existing=groups[index],alternates=[...(existing.also_reported_by||[])];
+   if(preferPrimary(candidate,existing)){
+     const next={...candidate,also_reported_by:[]};
+     if(existing.url!==candidate.url)next.also_reported_by.push({source:existing.source,url:existing.url});
+     for(const alt of alternates)if(alt.url!==next.url&&!next.also_reported_by.some(x=>x.url===alt.url))next.also_reported_by.push(alt);
+     groups[index]=next;
+   }else if(existing.url!==candidate.url&&!alternates.some(x=>x.url===candidate.url)){
+     existing.also_reported_by=[...alternates,{source:candidate.source,url:candidate.url}];
+   }
   }else groups.push({...candidate,also_reported_by:[]});
  }
  return groups;
