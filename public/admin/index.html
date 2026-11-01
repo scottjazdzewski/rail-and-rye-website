@@ -97,7 +97,8 @@
         </div>
         <div class="field"><label for="bundlePrice">Bundle price (USD) *</label><input id="bundlePrice" type="number" min="0" max="5000" step="0.01" value="19.99" required></div>
         <div class="field"><label for="bundleDescription">What buyers receive</label><textarea id="bundleDescription" maxlength="4000" placeholder="Both Friday and Saturday premium race cards for one price."></textarea></div>
-        <div class="actions"><button type="button" class="primary" id="bundleDraft">Save bundle draft</button><button type="button" class="gold" id="bundlePublish">Publish bundle</button><button type="button" class="secondary" id="bundleArchive">Archive bundle</button></div>
+        <div class="field"><label for="bundleReleaseAt">Bundle release date &amp; time · Eastern Time</label><input id="bundleReleaseAt" type="datetime-local" step="60"><div class="detail">Set an automatic future release in New York time. The bundle stays hidden from every collection and unavailable for checkout until then. Avoid 1:00–1:59 AM on the fall daylight-saving change night.</div></div>
+        <div class="actions"><button type="button" class="primary" id="bundleDraft">Save bundle draft</button><button type="button" class="gold" id="bundlePublish">Publish bundle now</button><button type="button" class="gold" id="bundleSchedule">Schedule bundle</button><button type="button" class="secondary" id="bundleCancelSchedule" hidden>Cancel scheduled release</button><button type="button" class="secondary" id="bundleArchive">Archive bundle</button></div>
       </div>
       <div>
         <p class="kicker">Include published or bundle-only PDFs</p>
@@ -210,6 +211,8 @@
     if(scheduled>Date.now()+366*86400*1000)throw Error('Set the release within the next year.');
     return matches[0].toISOString().slice(0,19).replace('T',' ');
   };
+  window.rrLocalRelease=localRelease;
+  window.rrReleaseUTC=releaseUTC;
   const safeText=v=>String(v||'');
   const api=async(path,options={})=>{
     const r=await fetch(path,{credentials:'same-origin',cache:'no-store',...options});
@@ -296,11 +299,15 @@
     let d;try{d=await r.json();}catch{throw Error('Bundle service did not respond');}
     if(!r.ok)throw Error(d.error||'Unable to save bundle');return d;};
   const money=c=>(c/100).toLocaleString('en-US',{style:'currency',currency:'USD'});
+  const pendingBundle=b=>Boolean(b&&b.status==='published'&&b.release_at&&Date.parse(b.release_at.replace(' ','T')+'Z')>Date.now());
+  const localRelease=window.rrLocalRelease;
+  const releaseUTC=window.rrReleaseUTC;
   let bundles=[],available=[],selectedId=null,busy=false;
   const note=(message)=>{$('bundleNotice').textContent=message;};
   function reset(){
     selectedId=null;$('bundleTitle').value='';$('bundleCategory').value='Race Cards';rrPrefillRacingDate('bundleDate');
-    $('bundlePrice').value='19.99';$('bundleDescription').value='';
+    $('bundlePrice').value='19.99';$('bundleDescription').value='';$('bundleReleaseAt').value='';
+    $('bundleCancelSchedule').hidden=true;
     document.querySelectorAll('[data-bundle-product]').forEach(x=>x.checked=false);
     drawBundles();note('Creating a new bundle.');
   }
@@ -319,45 +326,67 @@
     for(const b of bundles){
       const btn=document.createElement('button');btn.type='button';btn.className='product'+(b.id===selectedId?' active':'');
       const title=document.createElement('strong');title.textContent=b.title;
-      const line=document.createElement('span');line.textContent=[b.status,money(b.price_cents),b.product_ids.length+' PDFs','Appears in: '+(Array.isArray(b.categories)?b.categories.join(', '):b.category)].join(' · ');
+      const line=document.createElement('span');line.textContent=[pendingBundle(b)?'SCHEDULED':b.status,pendingBundle(b)?'Releases '+localRelease(b.release_at).replace('T',' ')+' ET':null,money(b.price_cents),b.product_ids.length+' PDFs','Appears in: '+(Array.isArray(b.categories)?b.categories.join(', '):b.category)].filter(Boolean).join(' · ');
       btn.append(title,line);btn.addEventListener('click',()=>edit(b));area.append(btn);
     }
   }
   function edit(b){
     selectedId=b.id;$('bundleTitle').value=b.title;$('bundleCategory').value=b.category;
     rrRestoreRacingDate('bundleDate',b.race_date);$('bundlePrice').value=(b.price_cents/100).toFixed(2);
-    $('bundleDescription').value=b.description||'';drawCandidates(b.product_ids);
-    drawBundles();note('Editing '+b.title+'. Existing buyers retain their original included PDFs.');
+    $('bundleDescription').value=b.description||'';$('bundleReleaseAt').value=localRelease(b.release_at);drawCandidates(b.product_ids);
+    $('bundleCancelSchedule').hidden=!pendingBundle(b);
+    drawBundles();note(pendingBundle(b)?'Scheduled bundle: '+localRelease(b.release_at).replace('T',' ')+' ET. You may reschedule or cancel.':'Editing '+b.title+'. Existing buyers retain their original included PDFs.');
   }
   async function refresh(id){
     const x=await api('/api/admin/bundles');bundles=x.bundles||[];available=x.available_products||[];
     drawCandidates();drawBundles();
     if(id){const found=bundles.find(x=>x.id===id);if(found)edit(found);}
   }
-  async function save(status){
+  async function save(action){
     if(busy)return;
     const ids=[...document.querySelectorAll('[data-bundle-product]:checked')].map(x=>x.value);
     const price=Number($('bundlePrice').value),cents=Math.round(price*100);
     if(!Number.isFinite(price)||price<0||Math.abs(price*100-cents)>1e-5){note('Enter a valid dollar price.');return;}
-    if(status!=='archived'&&(ids.length<2||ids.length>12)){note('Select 2 to 12 PDFs with files attached. Draft PDFs can be included without publishing them separately.');return;}
-    const title=$('bundleTitle').value.trim();if(title.length<3){note('Enter a bundle name.');return;}
+    const title=$('bundleTitle').value.trim();
+    if(title.length<3){note('Enter a bundle name.');return;}
     const current=bundles.find(x=>x.id===selectedId);
-    // Saving edits never silently unpublishes an existing live bundle.
-    if(status==='draft'&&current?.status==='published')status='published';
-    if(status==='archived'&&!selectedId)return;
+    if((action==='archived'||action==='cancel')&&!current)return;
+    if(action==='scheduled'&&current?.status==='published'&&!pendingBundle(current)){
+      note('A bundle already live for sale cannot be scheduled again. Create a new draft bundle.');return;
+    }
+    if(action!=='archived'&&action!=='cancel'&&(ids.length<2||ids.length>12)){
+      note('Select 2 to 12 eligible PDFs.');return;
+    }
+    let release_at=null;
+    if(action==='scheduled'){
+      try{release_at=releaseUTC($('bundleReleaseAt').value);}
+      catch(error){note(error.message);return;}
+    }else if(action==='draft'&&current?.status==='published'){
+      release_at=current.release_at||null;
+    }
+    let status=action==='cancel'?'draft':action==='archived'?'archived':action==='draft'?(current?.status==='published'?'published':'draft'):'published';
     const body={title,category:$('bundleCategory').value,race_date:$('bundleDate').value||null,
-      description:$('bundleDescription').value.trim(),price_cents:cents,status,
-      product_ids:status==='archived'&&current?current.product_ids:ids};
-    busy=true;for(const id of ['bundleDraft','bundlePublish','bundleArchive','bundleNew'])$(id).disabled=true;
+      description:$('bundleDescription').value.trim(),price_cents:cents,status,release_at,
+      product_ids:(action==='archived'||action==='cancel')&&current?current.product_ids:ids};
+    busy=true;
+    for(const id of ['bundleDraft','bundlePublish','bundleSchedule','bundleCancelSchedule','bundleArchive','bundleNew'])$(id).disabled=true;
     try{
-      const r=await api(selectedId?'/api/admin/bundles/'+selectedId:'/api/admin/bundles',
+      const result=await api(selectedId?'/api/admin/bundles/'+selectedId:'/api/admin/bundles',
         {method:selectedId?'PATCH':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-      await refresh(r.id);note(status==='published'?'Bundle published. It is now available at the current checkout mode.':status==='archived'?'Bundle archived. Existing orders remain accessible.':'Bundle draft saved.');
-    }catch(e){note(e.message);}finally{busy=false;for(const id of ['bundleDraft','bundlePublish','bundleArchive','bundleNew'])$(id).disabled=false;}
+      await refresh(result.id);
+      note(action==='scheduled'?'Bundle scheduled for '+$('bundleReleaseAt').value.replace('T',' ')+' ET. It will appear automatically at release time.':
+        action==='cancel'?'Scheduled release cancelled. Bundle returned to a private draft.':
+        action==='archived'?'Bundle archived. Existing orders remain accessible.':
+        action==='published'?'Bundle published now. It is available under all its categories.':
+        pendingBundle(bundles.find(b=>b.id===result.id))?'Scheduled bundle updated; its release time is unchanged.':'Bundle draft saved.');
+    }catch(error){note(error.message);}
+    finally{busy=false;for(const id of ['bundleDraft','bundlePublish','bundleSchedule','bundleCancelSchedule','bundleArchive','bundleNew'])$(id).disabled=false;}
   }
   $('bundleNew').addEventListener('click',reset);
   $('bundleDraft').addEventListener('click',()=>save('draft'));
   $('bundlePublish').addEventListener('click',()=>save('published'));
+  $('bundleSchedule').addEventListener('click',()=>save('scheduled'));
+  $('bundleCancelSchedule').addEventListener('click',()=>{if(selectedId&&confirm('Cancel this scheduled bundle and return it to a private draft?'))save('cancel');});
   $('bundleArchive').addEventListener('click',()=>{if(selectedId&&confirm('Archive this bundle? Existing buyers retain paid access.'))save('archived');});
   window.addEventListener('rr-bundle-assets-changed',()=>refresh(selectedId).catch(e=>note(e.message)));
   refresh().catch(e=>note('Bundle setup required: '+e.message));

@@ -221,3 +221,61 @@ assert.equal(db.prepare('SELECT pdf_key FROM bundle_order_items WHERE order_id=?
  'cards/'+privateId+'/notes-v1.pdf','Prior order snapshot must be retained for history');
 assert.equal((await assetAdmin(post('/api/admin/bundle-assets/'+privateId+'/purge',{}))).status,410);
 console.log('PASS: Seven-day new purchases and guarded R2 purge after checkout/entitlement expiry.');
+
+
+// Timed bundle releases use the same embargo table as scheduled single PDFs.
+// Exercise every endpoint with real SQLite, keeping the live checkout fixture fake.
+const scheduledChild='55555555-5555-4555-8555-555555555555';
+add.run(scheduledChild,'Sunday Stable Notes','sunday-stable','Stable Notes','2026-11-01','Keeneland','Stable Notes research',799,'cards/sunday-stable/v1.pdf','published');
+const futureRelease=new Date(Date.now()+2*86400000).toISOString().slice(0,19).replace('T',' ');
+const laterRelease=new Date(Date.now()+3*86400000).toISOString().slice(0,19).replace('T',' ');
+const pastRelease=new Date(Date.now()-3600000).toISOString().slice(0,19).replace('T',' ');
+const timed={...basic,title:'Scheduled Racing Intelligence Package',category:'Race Cards',
+  product_ids:[id1,scheduledChild],race_date:'2026-11-01',release_at:futureRelease};
+assert.equal((await admin(post('/api/admin/bundles',{...timed,release_at:'2026-02-30 12:00:00'}))).status,400,
+  'Malformed dates must never schedule a bundle');
+assert.equal((await admin(post('/api/admin/bundles',{...timed,status:'draft'}))).status,400,
+  'Private bundle drafts cannot masquerade as scheduled published releases');
+assert.equal((await admin(post('/api/admin/bundles',{...timed,release_at:pastRelease}))).status,400,
+  'Past release times are not accepted at bundle creation');
+result=await admin(post('/api/admin/bundles',timed));
+assert.equal(result.status,201,'Bundle with future release can be created atomically');
+const timedId=(await result.json()).id;
+let scheduleRow=db.prepare('SELECT release_at FROM product_release_schedule WHERE product_id=?').get(timedId);
+assert.equal(scheduleRow?.release_at,futureRelease,'Schedule is committed with bundle and its PDF membership');
+let timedAdmin=(await (await admin(new Request(root+'/api/admin/bundles'))).json()).bundles.find(b=>b.id===timedId);
+assert.equal(timedAdmin.release_at,futureRelease,'Publisher can see the scheduled release');
+assert.deepEqual(timedAdmin.categories,['Race Cards','Stable Notes'],'Mixed-category listing retains all placements');
+assert.ok(!(await (await commerce(new Request(root+'/api/products'))).json()).products.some(p=>p.id===timedId),
+  'Scheduled bundle absent from every public collection before release');
+const ordersBefore=db.prepare('SELECT count(*) AS count FROM orders').get().count;
+assert.equal((await commerce(post('/api/checkout',{product_id:timedId}))).status,404,
+  'Direct Stripe checkout is unavailable before bundle release');
+assert.equal(db.prepare('SELECT count(*) AS count FROM orders').get().count,ordersBefore,
+  'Scheduled bundle cannot create a pending payment before release');
+result=await admin(patch('/api/admin/bundles/'+timedId,{...timed,release_at:laterRelease}));
+assert.equal(result.status,200,'Can reschedule a pending bundle');
+assert.equal(db.prepare('SELECT release_at FROM product_release_schedule WHERE product_id=?').get(timedId).release_at,laterRelease);
+result=await admin(patch('/api/admin/bundles/'+timedId,{...timed,title:'Updated scheduled package',release_at:undefined}));
+assert.equal(result.status,200,'Updating scheduled bundle details without release_at must preserve embargo');
+assert.equal(db.prepare('SELECT release_at FROM product_release_schedule WHERE product_id=?').get(timedId).release_at,laterRelease);
+result=await admin(patch('/api/admin/bundles/'+timedId,{...timed,status:'draft',release_at:null}));
+assert.equal(result.status,200,'Cancel scheduled bundle returns it to a private draft');
+assert.equal(db.prepare('SELECT status FROM products WHERE id=?').get(timedId).status,'draft');
+assert.equal(db.prepare('SELECT release_at FROM product_release_schedule WHERE product_id=?').get(timedId),undefined,
+  'Cancelling removes the release gate');
+assert.ok(!(await (await commerce(new Request(root+'/api/products'))).json()).products.some(p=>p.id===timedId));
+result=await admin(patch('/api/admin/bundles/'+timedId,{...timed,release_at:futureRelease}));
+assert.equal(result.status,200,'A cancelled private bundle may be scheduled again');
+db.prepare('UPDATE product_release_schedule SET release_at=? WHERE product_id=?').run(pastRelease,timedId);
+const availableAfterRelease=(await (await commerce(new Request(root+'/api/products'))).json()).products;
+const visible=availableAfterRelease.find(p=>p.id===timedId);
+assert.equal(visible?.kind,'bundle','Bundle appears automatically once clock passes release');
+assert.deepEqual(visible.categories,['Race Cards','Stable Notes']);
+assert.equal(visible.bundle_count,2);
+assert.equal((await admin(patch('/api/admin/bundles/'+timedId,{...timed,release_at:laterRelease}))).status,400,
+  'An already-live bundle may not be hidden again under a new future schedule');
+assert.equal((await admin(patch('/api/admin/bundles/'+timedId,{...timed,status:'archived',release_at:null}))).status,200,
+  'Archiving a bundle clears any old release record');
+assert.equal(db.prepare('SELECT release_at FROM product_release_schedule WHERE product_id=?').get(timedId),undefined);
+console.log('PASS scheduled bundles: future release, secure embargo, cross-category listing, rescheduling, cancel, archive, and no early Stripe orders.');
