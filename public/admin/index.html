@@ -70,7 +70,7 @@
   </div>
   <section class="panel" style="margin-top:28px" aria-label="Automatic product bundles">
     <div class="head-row"><h2>Automatic bundles</h2><button type="button" class="secondary mini" id="bundleNew">+ New bundle</button></div>
-    <p class="detail" style="margin-bottom:19px">Choose at least two published editions or bundle-only PDFs, set one package price, and publish. Customers receive separate secure downloads. Previous buyers keep their purchased PDF versions even after edits.</p>
+    <p class="detail" style="margin-bottom:19px">Choose at least two published editions or bundle-only PDFs, set one package price, and publish. The bundle automatically appears in each collection represented by its included PDFs. Customers receive separate secure downloads. Previous buyers keep their purchased PDF versions even after edits.</p>
     <section aria-label="Bundle-only PDF library" style="margin-bottom:25px;padding:19px;border:1px solid var(--border);border-radius:8px;background:white">
       <div class="head-row"><h3 style="margin:0">Bundle-only PDF library</h3><button type="button" class="secondary mini" id="assetNew">+ New private PDF</button></div>
       <p class="detail">Upload a PDF that will be available only inside bundles. It will never have its own public listing or individual purchase button. Archive older PDFs when their published bundles have been archived. After all customer access expires, you can permanently delete archived PDFs to reclaim storage. Historical order records are retained.</p>
@@ -92,7 +92,7 @@
       <div>
         <div class="field"><label for="bundleTitle">Bundle name *</label><input id="bundleTitle" maxlength="140" required placeholder="Breeders' Cup Weekend Bundle"></div>
         <div class="row">
-          <div class="field"><label for="bundleCategory">Collection</label><select id="bundleCategory"><option>Race Cards</option><option>Longshot Radar</option><option>Stable Notes</option><option>Target List</option></select></div>
+          <div class="field"><label for="bundleCategory">Primary collection</label><select id="bundleCategory"><option>Race Cards</option><option>Longshot Radar</option><option>Stable Notes</option><option>Target List</option></select></div>
           <div class="field"><label for="bundleDate">Racing date (optional)</label><input id="bundleDate" type="date"></div>
         </div>
         <div class="field"><label for="bundlePrice">Bundle price (USD) *</label><input id="bundlePrice" type="number" min="0" max="5000" step="0.01" value="19.99" required></div>
@@ -276,7 +276,7 @@
     for(const b of bundles){
       const btn=document.createElement('button');btn.type='button';btn.className='product'+(b.id===selectedId?' active':'');
       const title=document.createElement('strong');title.textContent=b.title;
-      const line=document.createElement('span');line.textContent=[b.status,money(b.price_cents),b.product_ids.length+' PDFs'].join(' · ');
+      const line=document.createElement('span');line.textContent=[b.status,money(b.price_cents),b.product_ids.length+' PDFs','Appears in: '+(Array.isArray(b.categories)?b.categories.join(', '):b.category)].join(' · ');
       btn.append(title,line);btn.addEventListener('click',()=>edit(b));area.append(btn);
     }
   }

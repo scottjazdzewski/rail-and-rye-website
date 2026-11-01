@@ -47,6 +47,7 @@ assert.deepEqual(adminList.bundles[0].product_ids,[id1,id2]);
 const catalog=await (await commerce(new Request(root+'/api/products'))).json();
 const bundle=catalog.products.find(x=>x.id===bundleId);
 assert.equal(bundle?.kind,'bundle');assert.equal(bundle.bundle_count,2);
+assert.deepEqual(bundle.categories,['Race Cards'],'Same-category bundle has no duplicate categories');
 assert.deepEqual(bundle.included_titles,['Friday Card','Saturday Card']);
 assert.ok(!JSON.stringify(catalog).includes('cards/friday/v1.pdf'),'Never expose R2 storage keys');
 
@@ -151,6 +152,11 @@ assert.equal(result.status,201,'Published bundle may contain protected PDF and p
 const privateBundleId=(await result.json()).id;
 const pub=await (await commerce(new Request(root+'/api/products'))).json();
 assert.ok(pub.products.some(p=>p.id===privateBundleId&&p.kind==='bundle'));
+assert.deepEqual(pub.products.find(p=>p.id===privateBundleId).categories,['Race Cards','Stable Notes'],
+  'Bundle containing Race Cards and Stable Notes appears in both collections under one product ID');
+assert.deepEqual((await (await admin(new Request(root+'/api/admin/bundles'))).json()).bundles
+ .find(b=>b.id===privateBundleId).categories,['Race Cards','Stable Notes'],
+  'Admin preview shows every automatic collection placement');
 assert.ok(!JSON.stringify(pub).includes('cards/'+privateId+'/notes-v1.pdf'));
 const privateSid='cs_live_'+'B'.repeat(50);
 globalThis.fetch=async(url,options)=>{

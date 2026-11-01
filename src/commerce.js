@@ -385,15 +385,17 @@ async function listProducts(env){
   const products=[];
   for(const p of records.results||[]){
     const {pdf_key,...publicFields}=p;
-    if(pdf_key!==BUNDLE_KEY){products.push({...publicFields,kind:'single'});continue;}
+    if(pdf_key!==BUNDLE_KEY){products.push({...publicFields,kind:'single',categories:[p.category]});continue;}
     // Fail closed: a published bundle must still contain 2–12 available PDFs.
-    const children=await env.STORE_DB.prepare(`SELECT c.title,c.status,c.pdf_key,a.product_id AS asset_id,
+    const children=await env.STORE_DB.prepare(`SELECT c.title,c.category,c.status,c.pdf_key,a.product_id AS asset_id,
       CASE WHEN s.release_at>CURRENT_TIMESTAMP THEN 1 ELSE 0 END AS pending_release FROM bundle_items bi
       LEFT JOIN products c ON c.id=bi.product_id LEFT JOIN bundle_only_assets a ON a.product_id=c.id
       LEFT JOIN product_release_schedule s ON s.product_id=c.id WHERE bi.bundle_id=? ORDER BY bi.position`).bind(p.id).all();
     const items=children.results||[];
     if(items.length<2||items.length>12||items.some(c=>!c.pdf_key||c.pdf_key===BUNDLE_KEY||c.pending_release||!(c.status==='published'||(c.status==='draft'&&c.asset_id))))continue;
-    products.push({...publicFields,kind:'bundle',bundle_count:items.length,included_titles:items.map(x=>x.title)});
+    // A bundle is one SKU, listed under its primary category and every included PDF category.
+    const categories=[...new Set([p.category,...items.map(x=>x.category)].filter(Boolean))];
+    products.push({...publicFields,kind:'bundle',categories,bundle_count:items.length,included_titles:items.map(x=>x.title)});
   }
   return reply({products,checkout_ready:stripeReady(env),checkout_mode:checkoutMode(env)});
 }

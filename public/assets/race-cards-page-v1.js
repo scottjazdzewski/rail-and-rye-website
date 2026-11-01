@@ -26,7 +26,7 @@ const sortByTrack=(a,b)=>{
   const data=await response.json();
   if(!response.ok)throw Error(data.error||'Unable to load published Race Cards.');
   const today=raceDateToday();
-  const catalog=(Array.isArray(data.products)?data.products:[]).filter(p=>p.category==='Race Cards');
+  const catalog=(Array.isArray(data.products)?data.products:[]).filter(p=>Array.isArray(p.categories)?p.categories.includes('Race Cards'):p.category==='Race Cards');
   // Cards with no racing date stay in the full Publication Desk, not "today".
   const dated=catalog.filter(p=>/^\d{4}-\d{2}-\d{2}$/.test(String(p.race_date||'')));
   const current=dated.filter(p=>p.race_date===today);

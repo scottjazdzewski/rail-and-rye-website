@@ -77,7 +77,7 @@ const makeEditionCard=(p,data,onError)=>{
   const data=await response.json();
   if(!response.ok)throw Error(data.error||'Products are temporarily unavailable.');
   const products=(Array.isArray(data.products)?data.products:[])
-   .filter(p=>p.category===category)
+   .filter(p=>Array.isArray(p.categories)?p.categories.includes(category):p.category===category)
    .sort((a,b)=>String(b.race_date||'').localeCompare(String(a.race_date||'')));
   if(!products.length){
    latestStatus.textContent='No editions are currently published in this collection.';
