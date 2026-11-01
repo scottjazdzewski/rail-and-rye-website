@@ -147,10 +147,14 @@ assert.equal(previewFeedCount,10,'Only approved non-competing RSS sources partic
 assert.equal(diagnosticFeedCount,16,'Health diagnostics retry sixteen approved non-competing Thoroughbred source candidates');
 assert.ok(['bloodhorse','tattersalls','fair-grounds','laurel'].every(id=>PREVIEW_LIVE_FEEDS.some(feed=>feed.id===id)),'Live RSS pool includes confirmed newsroom, sales and track sources');
 assert.ok(['paulick','drf-headlines','ntra','toba','national-hbpa','remington'].every(id=>PREVIEW_DIAGNOSTIC_FEEDS.some(feed=>feed.id===id&&!PREVIEW_LIVE_FEEDS.some(live=>live.id===id))),'Blocked or empty RSS sources stay in diagnostics without slowing Page 8');
-assert.deepEqual(PREVIEW_OFFICIAL_NEWS_PAGES.map(x=>x.id),['hisa','hiwu'],'HISA and HIWU use first-party official news adapters instead of fake RSS');
+assert.deepEqual(PREVIEW_OFFICIAL_NEWS_PAGES.map(x=>x.id),['hisa','hiwu','breeders-cup','fasig-tipton','keeneland','churchill-downs','santa-anita','del-mar','gulfstream'],'Approved first-party Thoroughbred newsrooms use official-page adapters instead of fake RSS');
 assert.ok(PREVIEW_LIVE_FEEDS.filter(feed=>feed.require_racing_context).every(feed=>['fair-grounds','laurel'].includes(feed.id)),'Mixed-use live track feeds require explicit racing context');
-const officialFixture='<html><body><a href="/news/regulatory-update"><article><div>October 31, 2026</div><h3>Official Thoroughbred regulatory update</h3></article></a></body></html>';
-assert.equal(parseOfficialNewsPage(officialFixture,{name:'HISA',host:'hisaus.org',url:'https://www.hisaus.org/news'}).length,1,'Official news-page adapter extracts only dated headline/link metadata');
+const officialFixtureFor=source=>{
+ const prefix=source.path_prefix||'/news';
+ return '<html><body><a href="'+prefix+'/regulatory-update"><article><div>October 31, 2026</div><h3>Official Thoroughbred regulatory update</h3></article></a></body></html>';
+};
+assert.equal(parseOfficialNewsPage(officialFixtureFor({path_prefix:'/news'}),{name:'HISA',host:'hisaus.org',url:'https://www.hisaus.org/news',path_prefix:'/news'}).length,1,'Official news-page adapter extracts only dated headline/link metadata');
+assert.equal(parseOfficialNewsPage(officialFixtureFor({path_prefix:'/media/news'}),{name:'Keeneland',host:'keeneland.com',url:'https://www.keeneland.com/media/news',path_prefix:'/media/news'}).length,1,'Official news-page adapter supports nested newsroom paths');
 const previewFeedFixtures=Object.fromEntries(PREVIEW_DIAGNOSTIC_FEEDS.map((feed,i)=>{
  const host=(feed.link_hosts?.[0]||feed.host);
  return [feed.url,{host,title:fixtureTitles[i],link:'https://www.'+host+'/rr-preview-story-'+(i+1)}];
@@ -159,7 +163,7 @@ let diagnosticFetches=0;
 const previewFetch=async url=>{
  diagnosticFetches++;
  const official=PREVIEW_OFFICIAL_NEWS_PAGES.find(source=>source.url===String(url));
- if(official)return new Response(officialFixture,{status:200,headers:{'Content-Type':'text/html'}});
+ if(official)return new Response(officialFixtureFor(official),{status:200,headers:{'Content-Type':'text/html'}});
  const fixture=previewFeedFixtures[String(url)];
  assert.ok(fixture,'Only allowlisted Racing Wire endpoints are requested: '+url);
  const xml='<rss><channel><item><title>'+fixture.title+'</title><link>'+fixture.link+'</link>'+
@@ -167,18 +171,18 @@ const previewFetch=async url=>{
  return new Response(xml,{status:200,headers:{'Content-Type':'application/rss+xml'}});
 };
 const diagnostic=await testPreviewRssFeeds(previewFetch);
-assert.equal(diagnosticFetches,diagnosticFeedCount+PREVIEW_OFFICIAL_NEWS_PAGES.length,'Diagnostics exercise every RSS candidate plus HISA and HIWU official pages');
+assert.equal(diagnosticFetches,diagnosticFeedCount+PREVIEW_OFFICIAL_NEWS_PAGES.length,'Diagnostics exercise every RSS candidate plus every approved official newsroom');
 assert.equal(diagnostic.diagnostic_only,true);
 assert.equal(diagnostic.results.length,diagnosticFeedCount+PREVIEW_OFFICIAL_NEWS_PAGES.length);
 assert.ok(diagnostic.results.every(x=>x.reachable&&x.http_status===200&&x.parsed_count===1));
-assert.ok(diagnostic.results.filter(x=>x.source_type==='official-page').every(x=>['HISA','HIWU'].includes(x.source)),'Official-page health entries are distinguished from RSS');
+assert.equal(diagnostic.results.filter(x=>x.source_type==='official-page').length,PREVIEW_OFFICIAL_NEWS_PAGES.length,'Official-page health entries are distinguished from RSS');
 assert.ok(diagnostic.results.every(x=>x.newest_published_at==='2026-10-31T12:00:00.000Z'));
 assert.ok(diagnostic.results.every(x=>!('title' in x)&&!('items' in x)),
  'Diagnostic reports connectivity/counts only and does not republish third-party headlines');
 
 diagnosticFetches=0;
 const previewExternal=await previewExternalItems(previewFetch);
-assert.equal(diagnosticFetches,previewFeedCount+PREVIEW_OFFICIAL_NEWS_PAGES.length,'Preview aggregator checks live RSS plus official HISA/HIWU news pages');
+assert.equal(diagnosticFetches,previewFeedCount+PREVIEW_OFFICIAL_NEWS_PAGES.length,'Preview aggregator checks live RSS plus all approved official newsrooms');
 assert.equal(previewExternal.items.length,previewFeedCount+PREVIEW_OFFICIAL_NEWS_PAGES.length);
 assert.equal(previewExternal.sources.filter(x=>x.parsed_count===1).length,previewFeedCount+PREVIEW_OFFICIAL_NEWS_PAGES.length);
 assert.ok(previewExternal.items.every(x=>x.preview_external===true&&x.summary===''&&!x.original));
