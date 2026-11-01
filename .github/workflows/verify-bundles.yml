@@ -58,6 +58,36 @@ jobs:
             echo "sample news links:"
             grep -Eio 'href=["'"'"'][^"'"'"']*(news|press|article)[^"'"'"']*["'"'"']' /tmp/page | head -20 || true
           done
+      - name: Retry failed Racing Wire feeds
+        run: |
+          probe () {
+            label="$1"; url="$2";
+            echo "=== $label :: $url ===";
+            curl -L -sS --max-time 20 -A 'Mozilla/5.0 (compatible; RailAndRye/1.0)' -H 'Accept: application/rss+xml, application/xml, text/xml, text/html;q=0.8,*/*;q=0.1' -o /tmp/probe -w 'HTTP=%{http_code} TYPE=%{content_type} BYTES=%{size_download} FINAL=%{url_effective}\n' "$url" || true;
+            head -c 700 /tmp/probe 2>/dev/null | tr '\n' ' ' || true; echo; echo;
+          }
+          probe bloodhorse-main 'https://www.bloodhorse.com/horse-racing/feeds/news/all-news'
+          echo 'BloodHorse date tags:'; curl -L -sS --max-time 20 'https://www.bloodhorse.com/horse-racing/feeds/news/all-news' | grep -Eio '<(pubDate|published|updated|a10:updated)>[^<]+' | head -20 || true
+          probe paulick-feed 'https://paulickreport.com/feed/'
+          probe paulick-rss 'https://paulickreport.com/rss'
+          probe paulick-rssxml 'https://paulickreport.com/rss.xml'
+          probe paulick-feedxml 'https://paulickreport.com/feed.xml'
+          probe paulick-news-feed 'https://paulickreport.com/news/feed/'
+          probe drf-legacy 'https://www.drf.com/feeds/all-articles-of-track'
+          probe drf-rss 'https://www.drf.com/rss'
+          probe drf-rssxml 'https://www.drf.com/rss.xml'
+          probe ntra-feed 'https://www.ntra.com/feed/'
+          probe ntra-news-feed 'https://www.ntra.com/news/feed/'
+          probe ntra-category-news 'https://www.ntra.com/category/news/feed/'
+          probe toba-feed 'https://toba.org/feed/'
+          probe toba-news-feed 'https://toba.org/news/feed/'
+          probe toba-category-news 'https://toba.org/category/news/feed/'
+          probe hbpa-feed 'https://nationalhbpa.com/feed/'
+          probe hbpa-news-feed 'https://nationalhbpa.com/news/feed/'
+          probe hbpa-category-news 'https://nationalhbpa.com/category/news/feed/'
+          probe remington-feed 'https://www.remingtonpark.com/feed/'
+          probe remington-racing-feed 'https://www.remingtonpark.com/category/racing/feed/'
+          probe remington-news-feed 'https://www.remingtonpark.com/category/news/feed/'
       - name: Racing Wire expanded source validation
         run: node --experimental-sqlite test-racing-wire.mjs
       - name: Multi-collection bundle listing tests
