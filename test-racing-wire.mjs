@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import {readFileSync,readdirSync} from 'node:fs';
 import vm from 'node:vm';
-import {PREVIEW_LIVE_FEEDS,handleRacingWire,handlePreviewRacingWire,handleAdminRacingWire,previewExternalItems,parseRacingRss,categorize,refreshRacingWire,testPreviewRssFeeds,groupRacingWireStories,curateRacingWireStories,scoreRacingWireItem,subjectKind,socialPreview} from './src/racing-wire.js';
+import {PREVIEW_LIVE_FEEDS,PREVIEW_DIAGNOSTIC_FEEDS,handleRacingWire,handlePreviewRacingWire,handleAdminRacingWire,previewExternalItems,parseRacingRss,categorize,refreshRacingWire,testPreviewRssFeeds,groupRacingWireStories,curateRacingWireStories,scoreRacingWireItem,subjectKind,socialPreview} from './src/racing-wire.js';
 const db=new DatabaseSync(':memory:');
 db.exec("CREATE TABLE journal_articles (id TEXT PRIMARY KEY,slug TEXT,title TEXT,category TEXT,excerpt TEXT,publish_date TEXT,status TEXT,created_at TEXT);");
 db.prepare("INSERT INTO journal_articles VALUES (?,?,?,?,?,?,?,?)").run(
@@ -90,6 +90,10 @@ assert.equal(items[0].category,'Jockeys');
 assert.equal(items[0].image_url,'https://publisher.example/images/story-123.jpg','Publisher-supplied RSS image URL is preserved without copying the image');
 const badImage=parseRacingRss('<rss><item><title>Valid story</title><link>https://publisher.example/story/2</link><media:thumbnail url="https://attacker.example/stolen.jpg"/><pubDate>Fri, 30 Oct 2026 12:00:00 GMT</pubDate></item></rss>',feed);
 assert.equal(badImage[0].image_url,'','Off-domain feed images are rejected');
+const undatedBloodHorse=parseRacingRss('<rss><item><title>BloodHorse current headline</title><link>https://www.bloodhorse.com/horse-racing/articles/1/test</link></item></rss>',{name:'BloodHorse',host:'bloodhorse.com',allow_undated:true});
+assert.equal(undatedBloodHorse.length,1,'BloodHorse latest-headline feed can be accepted without fabricating a publisher timestamp');
+assert.equal(undatedBloodHorse[0].published_at,null);
+assert.equal(undatedBloodHorse[0].undated,true);
 assert.equal(categorize('Championship update','Breeders Cup'),'Stakes');
 assert.equal(categorize("Ways and Means Blasts Home in Breeders’ Cup Filly and Mare Sprint"),'Stakes');
 assert.equal(subjectKind("Ways and Means Blasts Home in Breeders’ Cup Filly and Mare Sprint",categorize("Ways and Means Blasts Home in Breeders’ Cup Filly and Mare Sprint")),'race');
@@ -137,11 +141,13 @@ assert.equal(scoreRacingWireItem({title:'Best bets and wagering tips for Saturda
 assert.equal(scoreRacingWireItem({title:'Standardbred champion wins harness stakes',source:'Editorial Outlet'}).reject,true,'Harness/Standardbred coverage is excluded');
 assert.equal(scoreRacingWireItem({title:'National Hunt star wins steeplechase feature',source:'Editorial Outlet'}).reject,true,'Steeplechase/National Hunt coverage is excluded');
 const previewFeedCount=PREVIEW_LIVE_FEEDS.length;
-assert.equal(previewFeedCount,17,'Private Racing Wire test pool contains seventeen Thoroughbred editorial/official RSS sources');
-assert.ok(['bloodhorse','paulick','drf-headlines','ntra','toba','tattersalls','national-hbpa','fair-grounds','remington','laurel'].every(id=>PREVIEW_LIVE_FEEDS.some(feed=>feed.id===id)),'Expanded private pool includes the approved newsroom, industry, sales and track sources');
-assert.ok(PREVIEW_LIVE_FEEDS.filter(feed=>feed.candidate).every(feed=>['paulick','drf-headlines'].includes(feed.id)),'Only Paulick and legacy DRF RSS endpoints are marked as diagnostic candidates');
-assert.ok(PREVIEW_LIVE_FEEDS.filter(feed=>feed.require_racing_context).every(feed=>['fair-grounds','remington','laurel'].includes(feed.id)),'Mixed-use track feeds require explicit racing context');
-const previewFeedFixtures=Object.fromEntries(PREVIEW_LIVE_FEEDS.map((feed,i)=>{
+const diagnosticFeedCount=PREVIEW_DIAGNOSTIC_FEEDS.length;
+assert.equal(previewFeedCount,13,'Only proven or repaired sources participate in the live private preview');
+assert.equal(diagnosticFeedCount,17,'Health diagnostics continue retrying all seventeen approved Thoroughbred source candidates');
+assert.ok(['bloodhorse','toba','tattersalls','national-hbpa','fair-grounds','laurel'].every(id=>PREVIEW_LIVE_FEEDS.some(feed=>feed.id===id)),'Live pool includes repaired and confirmed newsroom, industry, sales and track sources');
+assert.ok(['paulick','drf-headlines','ntra','remington'].every(id=>PREVIEW_DIAGNOSTIC_FEEDS.some(feed=>feed.id===id&&!PREVIEW_LIVE_FEEDS.some(live=>live.id===id))),'Blocked or empty sources stay in diagnostics without slowing Page 8');
+assert.ok(PREVIEW_LIVE_FEEDS.filter(feed=>feed.require_racing_context).every(feed=>['fair-grounds','laurel'].includes(feed.id)),'Mixed-use live track feeds require explicit racing context');
+const previewFeedFixtures=Object.fromEntries(PREVIEW_DIAGNOSTIC_FEEDS.map((feed,i)=>{
  const host=(feed.link_hosts?.[0]||feed.host);
  return [feed.url,{host,title:fixtureTitles[i],link:'https://www.'+host+'/rr-preview-story-'+(i+1)}];
 }));
@@ -155,9 +161,9 @@ const previewFetch=async url=>{
  return new Response(xml,{status:200,headers:{'Content-Type':'application/rss+xml'}});
 };
 const diagnostic=await testPreviewRssFeeds(previewFetch);
-assert.equal(diagnosticFetches,previewFeedCount,'All expanded preview RSS endpoints are exercised by diagnostic mode');
+assert.equal(diagnosticFetches,diagnosticFeedCount,'All expanded preview RSS endpoints are exercised by diagnostic mode');
 assert.equal(diagnostic.diagnostic_only,true);
-assert.equal(diagnostic.results.length,previewFeedCount);
+assert.equal(diagnostic.results.length,diagnosticFeedCount);
 assert.ok(diagnostic.results.every(x=>x.reachable&&x.http_status===200&&x.parsed_count===1));
 assert.ok(diagnostic.results.every(x=>x.newest_published_at==='2026-10-31T12:00:00.000Z'));
 assert.ok(diagnostic.results.every(x=>!('title' in x)&&!('items' in x)),
@@ -340,6 +346,7 @@ assert.ok(wirePage.includes('<main class="wrap heritage-shell">'),'News body use
 assert.ok(wirePage.includes('id="allNews"')&&wirePage.includes('aria-pressed="true">All News</button>'),'All News has an explicit filter control');
 assert.ok(wirePage.includes('id="leadSection"')&&wirePage.includes('Top Story'),'High-value stories have a lead-story presentation');
 assert.ok(wirePage.includes('id="secondarySection"')&&wirePage.includes('More to Know'),'Racing Wire has a secondary visual-story tier beneath the lead story');
+assert.ok(wirePage.includes("x.published_at_estimated?'Recent':labelTime(x.published_at)"),'Undated publisher headlines are labeled Recent instead of receiving a fabricated time');
 assert.ok(wirePage.includes("x.editorial?.placement==='top'")&&wirePage.includes("x.editorial?.placement==='more'"),'Page 8 honors owner Top Story and More to Know overrides');
 assert.ok(wirePage.includes(".slice(0,3)")&&wirePage.includes("secondary-story"),'Secondary tier promotes at most three image-backed stories');
 assert.ok(wirePage.includes("storyCard(x,false,false)"),'Stories below the promoted tier return to compact badge cards');
