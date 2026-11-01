@@ -48,22 +48,45 @@ function updateHead(html,title,description,path,article){
     '<meta name="description" content="'+htmlEscape(description)+'">');
   const link='<link rel="canonical" href="'+htmlEscape(canonical(path))+'">';
   let structured='';
+  let social='';
   if(article){
+    const articleTitle=article.title+' | The Journal | Rail & Rye Racing';
+    const articleDescription=article.excerpt||article.title;
+    const articleUrl=canonical(path);
+    const imagePath=article.cover_url?.startsWith('/media/journal/')
+      ? article.cover_url : '/assets/approved/journal/hero.webp';
+    const imageUrl=canonical(imagePath);
+    const meta=(attribute,name,value)=>'<meta '+attribute+'="'+name+'" content="'+htmlEscape(value)+'">';
+    social=[
+      meta('property','og:type','article'),
+      meta('property','og:site_name','Rail & Rye Racing'),
+      meta('property','og:title',articleTitle),
+      meta('property','og:description',articleDescription),
+      meta('property','og:url',articleUrl),
+      meta('property','og:image',imageUrl),
+      meta('property','og:image:alt',article.title),
+      meta('property','article:published_time',article.publish_date),
+      meta('name','twitter:card','summary_large_image'),
+      meta('name','twitter:title',articleTitle),
+      meta('name','twitter:description',articleDescription),
+      meta('name','twitter:image',imageUrl),
+      meta('name','twitter:image:alt',article.title)
+    ].join('');
     const obj={
       '@context':'https://schema.org','@type':'BlogPosting',
       headline:article.title,description:article.excerpt,
-      mainEntityOfPage:canonical(path),datePublished:article.publish_date,
+      mainEntityOfPage:articleUrl,datePublished:article.publish_date,
       author:{'@type':'Organization',name:'Rail & Rye Racing',url:ORIGIN},
-      publisher:{'@type':'Organization',name:'Rail & Rye Racing',url:ORIGIN}
+      publisher:{'@type':'Organization',name:'Rail & Rye Racing',url:ORIGIN},
+      image:imageUrl
     };
-    if(article.cover_url?.startsWith('/media/journal/'))obj.image=canonical(article.cover_url);
     structured='<script type="application/ld+json">'
       +JSON.stringify(obj).replace(/</g,'\\u003c').replace(/>/g,'\\u003e').replace(/&/g,'\\u0026')
       +'</script>';
   }
   // Archive and story routes replace the Journal landing canonical, never duplicate it.
   html=html.replace(/<link rel="canonical" href="[^"]*">/,'');
-  return html.replace('</head>',link+structured+'</head>');
+  return html.replace('</head>',link+social+structured+'</head>');
 }
 function bodyParagraphs(body){
   return String(body||'').split(/\n[ \t]*\n+/).map(p=>p.trim()).filter(Boolean)
