@@ -24,7 +24,6 @@ function renderPlans(data){
   const h=document.createElement("h2");h.textContent=plan.label+" All-Access";card.append(h);
   const period=document.createElement("p");period.className="rr-plan-period";period.textContent=plan.slug==="weekly"?"Billed every 7 days":plan.slug==="monthly"?"Billed monthly":"Billed yearly";card.append(period);
   const price=document.createElement("p");price.className="rr-plan-price";price.textContent=plan.amount_cents==null?"Pricing soon":money(plan.amount_cents);card.append(price);
-  const note=document.createElement("p");note.className="rr-plan-note";note.textContent="Full access to Rail & Rye digital publications while your membership is active.";card.append(note);
   const button=document.createElement("button");button.type="button";button.className="rr-member-button";button.textContent=plan.checkout_ready?"Join "+plan.label:"Not available yet";button.disabled=!plan.checkout_ready;
   button.addEventListener("click",async()=>{
    const email=q("#join-email"),terms=q("#join-terms");if(!email?.reportValidity())return;if(!terms?.reportValidity())return;
