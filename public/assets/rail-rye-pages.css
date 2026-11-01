@@ -1265,3 +1265,18 @@ body.heritage-home.heritage-publication-page .rr-publication-product-grid .rr-pu
   min-width:128px;min-height:38px;margin:0;padding:8px 12px;font-size:10px
  }
 }
+
+
+/* Pages 3–5 keep the approved footer layout while tall edition rails extend the page naturally. */
+body.rr-publication-scroll-page{
+ min-height:100vh;min-height:100svh;min-height:100dvh;display:flex;flex-direction:column
+}
+body.rr-publication-scroll-page>.heritage-inner-hero{
+ display:flex;flex:0 0 auto;flex-direction:column;min-height:var(--rr-shared-photo-hero-height,600px);height:auto;overflow:visible
+}
+body.rr-publication-scroll-page>.heritage-inner-hero>.rr-publication-product-grid{flex:0 0 auto}
+body.rr-publication-scroll-page>.heritage-inner-hero>.heritage-header{flex:0 0 auto}
+body.rr-publication-scroll-page>.heritage-footer{flex:0 0 auto;margin-top:auto}
+body.rr-publication-scroll-page .rr-publication-product-grid .rr-racecards-purchase-rail{
+ max-height:none;overflow:visible
+}
