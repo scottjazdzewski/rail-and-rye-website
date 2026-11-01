@@ -17,7 +17,7 @@ for(const [slug,category,chip] of expected){
  assert.ok(page.includes('/assets/approved/saddlecloths/'+chip+'.png'), 'Preserve approved saddlecloth '+chip);
  assert.ok(page.includes('id="rr-pub-recent"'),category+' needs recent-edition links');
  assert.ok(page.includes('publication-detail-v1.js?v=8'), 'New linked-edition script not cache-stale');
- assert.ok(page.includes('rail-rye-pages.css?v=43'), 'New scoped layout not cache-stale');
+ assert.ok(page.includes('rail-rye-pages.css?v=50'), 'New scoped layout not cache-stale');
  assert.ok(page.includes('class="rr-racecards-purchase-rail"'), 'Keep the approved hero rail');
  assert.ok(page.includes('href="/store/?category='+category.replaceAll(' ','%20')+'"'), 'Keep category browse link');
 }
@@ -47,7 +47,7 @@ assert.ok(css.includes('position:relative;z-index:1;flex:0 0 auto;'),'Footer no 
 
 assert.ok(journal.includes("if(archiveRoute){"), 'Archive counts are conditional, avoiding Page 2 changes');
 assert.ok(journal.includes('/assets/approved/saddlecloths/9.png'), 'Keep Page 9 numbered saddlecloth');
-assert.ok(journal.includes('rail-rye-pages.css?v=49'), 'Journal landing, archive and articles load updated shared stylesheet');
+assert.ok(journal.includes('rail-rye-pages.css?v=50'), 'Journal landing, archive and articles load updated shared stylesheet');
 assert.ok(css.includes('body.heritage-journal-page.rr-journal-archive-view .rr-journal-archive-pill'),
   'Page 9 archive return link is visible, without changing Page 2');
 for(const code of [pageJs,catalog.split('<script>').slice(-1)[0].split('</script>')[0],
