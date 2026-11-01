@@ -29,7 +29,6 @@ export const PREVIEW_LIVE_FEEDS=Object.freeze([
   {id:'tdn-all',name:'Thoroughbred Daily News',url:'https://www.thoroughbreddailynews.com/feed/',host:'thoroughbreddailynews.com'},
   {id:'past-the-wire-news',name:'Past The Wire',url:'https://pastthewire.com/feed',host:'pastthewire.com'},
   {id:'abr',name:"America's Best Racing",url:'https://www.americasbestracing.net/rss',host:'americasbestracing.net'},
-  {id:'us-racing',name:'US Racing',url:'https://usracing.com/feed',host:'usracing.com'},
   {id:'hrn',name:'Horse Racing Nation',url:'https://www.horseracingnation.com/rss/newsfeed.aspx',host:'horseracingnation.com'},
   {id:'racing-biz',name:'The Racing Biz',url:'https://www.theracingbiz.com/feed',host:'theracingbiz.com'},
   {id:'woodbine',name:'Woodbine',url:'https://woodbine.com/feed',host:'woodbine.com'},
@@ -83,6 +82,7 @@ function previewHeadlineRelevant(title,section=''){
   const text=(String(title||'')+' '+String(section||'')).toLowerCase();
   if(/\b(best bets?|picks?|selections?|odds|free bets?|betting guide|wagering tips?|promo code|bonus offer|merch|merchandise|tickets? on sale|photo gallery|quiz)\b/.test(text))return false;
   if(/\b(listen now|podcast episode|watch live|where to watch|tv schedule)\b/.test(text))return false;
+  if(/\b(harness|standardbred|steeplechase|steeplechaser|jump racing|national hunt)\b/.test(text))return false;
   return true;
 }
 export function categorize(title,category='',source=''){
@@ -376,7 +376,9 @@ const HARD_REJECT_PATTERNS=[
  /\bwhere to watch\b/i,
  /\b(?:picks?|predictions?|best bets?|betting picks?|expert analysis|handicapping|wagering guide|betting guide)\b/i,
  /\b(?:betting odds?|odds and|favorites? and how to bet|how to bet)\b/i,
- /\b(?:promo code|bonus bets?|sportsbook|parlay)\b/i,
+ /\b(?:promo code|bonus bets?|sportsbook|racebook|off[- ]?track betting|otb|advance deposit wagering|\badw\b|parlay|rebates?)\b/i,
+ /\b(?:handicapper|handicapping plays?|wagering tips?|betting strategy|how to wager|how to bet)\b/i,
+ /\b(?:harness|standardbred|steeplechase|steeplechaser|jump racing|national hunt)\b/i,
  /\bhistory:\s*(?:winners?|losers?|betting|odds)/i
 ];
 const MAJOR_EVENT_RE=/\b(breeders.? cup|kentucky derby|preakness|belmont stakes|travers|pegasus world cup|dubai world cup|melbourne cup|prix de l.?arc de triomphe|japan cup|cox plate|eclipse stakes|royal ascot|kentucky oaks)\b/i;
@@ -423,7 +425,6 @@ export function scoreRacingWireItem(item){
  if(LOW_VALUE_RE.test(context))score-=18;
  if(/\b(odds?|betting|wager(?:ing)?|picks?)\b/i.test(context))score-=24;
  if(item?.source==='Thoroughbred Daily News')score+=4;
- if(item?.source==='US Racing')score-=5;
  const corroboration=Math.min(10,4*(item?.also_reported_by?.length||0));
  score+=corroboration;
  return {score:Math.max(0,Math.min(100,score)),reject:false,reason:'scored'};
