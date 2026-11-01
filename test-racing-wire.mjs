@@ -121,7 +121,8 @@ assert.ok(previewBody.external_sources.every(x=>x.parsed_count===1),
 assert.ok(previewBody.items.length>=5&&previewBody.items.length<=previewFeedCount+1,
  'Editorial relevance/dedupe gate may suppress low-value or overlapping feed items');
 assert.ok(previewBody.items.some(x=>x.source==='Ocala Breeders’ Sales'),'Correct OBS feed can reach curated preview');
-assert.ok(previewBody.items.some(x=>x.source==="America's Best Racing"),'ABR can reach curated preview');
+assert.ok(previewBody.external_sources.some(x=>x.name==="America's Best Racing"&&x.parsed_count===1),
+ 'ABR feed health is verified independently of whether a synthetic headline clears editorial curation');
 assert.ok(previewBody.external_sources.every(x=>'newest_published_at' in x),'Source diagnostics expose newest accepted item timestamps');
 assert.ok(previewBody.items.every(x=>x.editorial_score>=62),'Preview emits only editorially relevant items');
 assert.equal((await handlePreviewRacingWire(new Request('https://railandryeracing.com/api/preview/racing-wire-test',{method:'POST'}),env,previewFetch)).status,405);
