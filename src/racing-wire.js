@@ -116,6 +116,9 @@ function absoluteNewsUrl(source,slug){
     return safeUrl(u.toString(),source.host);
   }catch{return null;}
 }
+function decodeHtmlText(value){
+  return decode(String(value||'').replace(/<[^>]+>/g,' '));
+}
 export function parseOfficialNewsPage(html,source){
   if(typeof html!=='string'||html.length>MAX_OFFICIAL_PAGE_BYTES)return [];
   const items=[],seen=new Set();
@@ -125,8 +128,8 @@ export function parseOfficialNewsPage(html,source){
     if(!slug||seen.has(slug))continue;
     const body=match[2];
     const heading=/<h[1-6]\b[^>]*>([\s\S]*?)<\/h[1-6]>/i.exec(body)?.[1]||'';
-    let title=decode(heading);
-    const plain=decode(body),dateText=plain.match(NEWS_DATE_RE)?.[0]||'';
+    let title=decodeHtmlText(heading);
+    const plain=decodeHtmlText(body),dateText=plain.match(NEWS_DATE_RE)?.[0]||'';
     if(!title){
       const withoutDate=plain.replace(NEWS_DATE_RE,'').replace(/^(?:Press Releases?|Operational Bulletins?|Newsletters?|Metrics Reports?|Meeting Minutes?|Announcements?|Appointments?|General|Outreach)\s*/i,'').trim();
       title=withoutDate.split(/(?<=[.!?])\s/)[0].slice(0,240);
