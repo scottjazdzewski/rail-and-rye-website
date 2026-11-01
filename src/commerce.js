@@ -1,5 +1,6 @@
 import {BUNDLE_KEY} from './bundles.js';
 import {ensureReleaseSchedule} from './publication-schedule.js';
+import {processMembershipStripeEvent} from './memberships.js';
 /* Rail & Rye fail-closed checkout. Default sandbox. Live activation is separate,
    requires verified Stripe keys and an explicit control flag; no public R2 URLs.
    Stripe secrets are Cloudflare Worker SECRETS, never source files. */
@@ -100,6 +101,8 @@ async function webhook(request,env,ctx,mode){
   const obj=evt.data?.object||{};
   const put=env.STORE_DB.prepare('INSERT OR IGNORE INTO stripe_events (event_id,event_type) VALUES (?,?)').bind(evt.id,evt.type);
   let ops=[put];
+  try{ops.push(...await processMembershipStripeEvent(env,evt,mode));}
+  catch(e){console.error('Membership webhook processing failed',String(e).slice(0,120));return error('Membership event could not be processed',500);}
   if(['checkout.session.completed','checkout.session.async_payment_succeeded'].includes(evt.type)){
     // Stripe, not the browser, calculates the promotion discount. Match the
     // original catalog subtotal to D1 and verify the exact discounted total.

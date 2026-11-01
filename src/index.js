@@ -5,6 +5,7 @@ import {handleAdminBundleAssets} from './bundle-assets.js';
 import {handleAdminJournal,handlePublicJournal,publicJournalCover} from './journal.js';
 import {handleSitemap,serveJournalDocument,serveProductDocument} from './seo.js';
 import {ensureReleaseSchedule,validReleaseAt} from './publication-schedule.js';
+import {handleMembershipApi,handleAdminMembershipPlans,reconcileMemberships} from './memberships.js';
 /* Rail & Rye admin MVP. Dependencies: Cloudflare Workers, R2, D1, Cloudflare Access.
    Admin routes FAIL CLOSED until ACCESS_TEAM_DOMAIN, ACCESS_AUD and ADMIN_EMAIL
    are configured in Cloudflare Worker runtime variables, and a matching Access
@@ -228,6 +229,7 @@ export default {
       if(path==="/sitemap.xml")return handleSitemap(env,request.method);
       if(path.startsWith("/api/admin/")||path==="/admin"||path.startsWith("/admin/")) {
         const auth=await verifyAdmin(request,env); if(!auth.ok)return auth.response;
+        if(path==='/api/admin/membership-plans')return handleAdminMembershipPlans(request,env);
         if(path.startsWith('/api/admin/bundles'))return handleAdminBundles(request,env,path);
         if(path.startsWith('/api/admin/bundle-assets')){
           const upload=path.match(/^\/api\/admin\/bundle-assets\/([0-9a-f-]{36})\/pdf$/i);
@@ -244,7 +246,7 @@ export default {
         if(path==="/api/admin/racing-wire-editorial")return handleAdminRacingWire(request,env);
         if(path.startsWith("/api/admin/"))return handleAdminAPI(request,env,path,ctx);
         if(request.method!=="GET"&&request.method!=="HEAD")return fail("Method not allowed",405);
-        const asset=new URL(url);asset.pathname="/admin/index.html";
+        const asset=new URL(url);asset.pathname=(path==="/admin/membership-plans"||path==="/admin/membership-plans/"||path==="/admin/membership-plans.html")?"/admin/membership-plans.html":"/admin/index.html";
         const result=await env.ASSETS.fetch(new Request(asset.toString(),{method:request.method}));
         const headers=new Headers(result.headers);
         headers.set("Cache-Control","no-store");headers.set("X-Frame-Options","DENY");headers.set("X-Content-Type-Options","nosniff");
@@ -323,6 +325,7 @@ export default {
         const response=await serveProductDocument(original,{product});
         return request.method==='HEAD'?new Response(null,{status:response.status,headers:response.headers}):response;
       }
+      if(path.startsWith("/api/membership/"))return handleMembershipApi(request,env,url);
       if(path.startsWith("/api/free-download/")||path==="/api/products"||path==="/api/checkout"||path==="/api/stripe/webhook"||path==="/api/stripe/live-webhook"||path.startsWith("/api/orders/")||path==="/api/delivery/download"||path==="/api/delivery/download-all"||path==="/api/delivery/items"||path==="/api/recovery/request")return handleCommerce(request,env,url,ctx);
       if(path.startsWith("/api/"))return fail("Not found",404);
       return env.ASSETS.fetch(request);
@@ -330,5 +333,6 @@ export default {
   },
   async scheduled(controller,env,ctx){
     ctx.waitUntil(sendQueuedEmails(env,8));
+    ctx.waitUntil(reconcileMemberships(env,25));
   }
 };

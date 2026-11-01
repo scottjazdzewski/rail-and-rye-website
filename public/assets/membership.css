@@ -1,0 +1,49 @@
+
+:root{--rr-navy:#082334;--rr-navy2:#0d3042;--rr-gold:#d2a454;--rr-ivory:#f7f0df;--rr-ink:#123247;--rr-muted:#526b7b}
+.rr-member-page{margin:0;background:#f7f0df;color:var(--rr-ink)}
+.rr-member-header{background:#071c2a;color:#f8f0df;border-bottom:2px solid var(--rr-gold)}
+.rr-member-header .heritage-shell{min-height:88px;display:flex;align-items:center;justify-content:space-between;gap:24px}
+.rr-member-brand{display:flex;align-items:center;gap:12px;color:#f8f0df;text-decoration:none;font:26px Georgia,serif;letter-spacing:3px}
+.rr-member-brand img{width:60px;height:60px;object-fit:contain}
+.rr-member-nav{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.rr-member-nav a,.rr-member-button{display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--rr-gold);border-radius:999px;padding:12px 17px;color:#f7e5bd;background:#0a2535;text-decoration:none;font:700 12px/1.2 Inter,system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase}
+.rr-member-nav a:hover,.rr-member-button:hover{background:#173d50}
+.rr-member-main{max-width:1180px;margin:0 auto;padding:clamp(38px,7vw,86px) 28px 90px}
+.rr-member-kicker{color:#a87933;font:800 12px/1.4 Inter,system-ui,sans-serif;letter-spacing:.2em;text-transform:uppercase}
+.rr-member-title{max-width:900px;margin:12px 0 14px;color:#0b3045;font:clamp(42px,6vw,76px)/1.04 Georgia,"Times New Roman",serif;letter-spacing:-.025em}
+.rr-member-lede{max-width:800px;margin:0;color:#415d70;font:19px/1.65 Inter,system-ui,sans-serif}
+.rr-member-rule{width:110px;height:4px;margin:26px 0 30px;background:var(--rr-gold)}
+.rr-member-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin:38px 0 22px}
+.rr-plan-card{display:flex;flex-direction:column;min-height:245px;padding:26px;border:1px solid #b58a4b;border-radius:14px;background:linear-gradient(145deg,#0a2535,#0e3042);color:#f6efdf;box-shadow:0 12px 32px #0b23321a}
+.rr-plan-card h2{margin:0;color:#f4e6ca;font:29px/1.2 Georgia,serif}
+.rr-plan-period{margin:7px 0 20px;color:#e0b96f;font:700 12px/1.4 Inter,system-ui,sans-serif;letter-spacing:.14em;text-transform:uppercase}
+.rr-plan-price{margin:auto 0 8px;color:#f5d58e;font:36px/1.1 Georgia,serif}
+.rr-plan-note{margin:0 0 18px;color:#d3dbe0;font:14px/1.5 Inter,system-ui,sans-serif}
+.rr-plan-card .rr-member-button{width:100%;min-height:48px;background:#f7e9ca;color:#0a2a3b;border-color:#d2a454}
+.rr-member-notice{min-height:30px;margin:18px 0;color:#4b6474;font:15px/1.6 Inter,system-ui,sans-serif}
+.rr-member-note{max-width:820px;color:#536a78;font:14px/1.65 Inter,system-ui,sans-serif}
+.rr-member-section{margin-top:28px;padding:clamp(24px,4vw,42px);border:1px solid #c8a66e;border-radius:14px;background:#fffaf0}
+.rr-member-section h2{margin:0 0 12px;color:#12384c;font:34px/1.2 Georgia,serif}
+.rr-member-form{display:flex;gap:10px;max-width:620px;flex-wrap:wrap;margin-top:18px}
+.rr-member-form input{flex:1 1 260px;min-width:0;padding:14px 15px;border:1px solid #c9b58f;border-radius:6px;background:white;color:#102f42;font:16px Inter,system-ui,sans-serif}
+.rr-member-form button{cursor:pointer}
+.rr-member-account-actions{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0 28px}
+.rr-member-library{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:18px}
+.rr-library-item{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:17px 18px;border:1px solid #b99b68;border-radius:10px;background:#0b2839;color:#f6efdf}
+.rr-library-item h3{margin:0;color:#f5e7c9;font:21px/1.25 Georgia,serif}
+.rr-library-item p{margin:5px 0 0;color:#d9c8a8;font:12px/1.4 Inter,system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase}
+.rr-library-item button{white-space:nowrap;cursor:pointer}
+.rr-member-status{min-height:24px;color:#4e6878;font:15px/1.55 Inter,system-ui,sans-serif}
+.rr-member-footer{padding:28px 0;background:#071c2a;border-top:2px solid var(--rr-gold);color:#e8d7b5}
+.rr-member-footer .heritage-shell{display:flex;gap:20px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.rr-member-footer a{color:#e8d7b5}
+.rr-member-footer .heritage-footmark{font:28px Georgia,serif;letter-spacing:4px}
+@media(max-width:760px){.rr-member-grid{grid-template-columns:1fr}.rr-member-library{grid-template-columns:1fr}.rr-member-header .heritage-shell{align-items:flex-start;padding-top:14px;padding-bottom:14px;flex-direction:column}.rr-member-nav a{padding:10px 12px}.rr-member-main{padding-left:18px;padding-right:18px}}
+@media(max-width:480px){.rr-library-item{align-items:flex-start;flex-direction:column}.rr-member-title{font-size:44px}.rr-member-lede{font-size:16px}}
+
+.rr-join-email{max-width:620px;margin:28px 0 8px;padding:18px 20px}
+.rr-join-email label{display:block;margin-bottom:8px;color:#17374a;font:800 12px/1.4 Inter,system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase}
+.rr-join-email input{width:100%;max-width:440px;padding:13px 14px;border:1px solid #c8b48b;border-radius:6px;background:white;color:#123247;font:16px Inter,system-ui,sans-serif}
+.rr-join-email .rr-member-note{margin:8px 0 0}
+
+.rr-member-consent{max-width:820px;margin:22px 0 0;color:#40596b;font:14px/1.65 Inter,system-ui,sans-serif}.rr-member-consent label{display:flex;align-items:flex-start;gap:11px}.rr-member-consent input{width:18px;height:18px;margin:3px 0 0;accent-color:#a87933;flex:0 0 auto}.rr-member-consent a{color:#80551e;text-decoration:underline;text-underline-offset:3px}

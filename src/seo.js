@@ -2,7 +2,7 @@
 const ORIGIN = 'https://railandryeracing.com';
 const INDEXABLE = ['/', '/race-cards/', '/publications/longshot-radar/',
   '/publications/stable-notes/', '/publications/target-list/', '/store/',
-  '/our-approach/', '/journal/', '/journal/archive/',
+  '/our-approach/', '/journal/', '/journal/archive/', '/membership/',
   '/policies/privacy.html', '/policies/terms.html', '/policies/refunds.html'];
 const htmlEscape = value => String(value ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;')
   .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
