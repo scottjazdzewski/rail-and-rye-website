@@ -1,7 +1,7 @@
 /* Automatic bundles: only server-authorized admin users can edit memberships.
    Buyer entitlements are captured at checkout, not resolved from the live catalog
    after payment. R2 keys are never exposed in an API response. */
-import {ensureReleaseSchedule} from './publication-schedule.js';
+import {ensureReleaseSchedule,validReleaseAt} from './publication-schedule.js';
 export const BUNDLE_KEY = '__rr_bundle__';
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const CATEGORIES=new Set(['Race Cards','Longshot Radar','Stable Notes','Target List']);
@@ -28,6 +28,7 @@ async function payload(request) {
   const price_cents=Number(data?.price_cents);
   const status=String(data?.status||'draft');
   const product_ids=data?.product_ids;
+  const release_at=data?.release_at===undefined?undefined:(data.release_at||null);
   if(title.length<3||title.length>140)throw Error('Bundle name must contain 3–140 characters');
   if(description.length>4000)throw Error('Bundle description too long');
   if(!CATEGORIES.has(category))throw Error('Invalid collection');
@@ -35,10 +36,16 @@ async function payload(request) {
   if(!Number.isSafeInteger(price_cents)||price_cents<0||price_cents>500000)throw Error('Invalid price');
   if(!['draft','published','archived'].includes(status))throw Error('Invalid status');
   if(status==='published'&&price_cents<50)throw Error('Bundles must cost at least $0.50 to publish');
+  if(!validReleaseAt(release_at))throw Error('Invalid scheduled release timestamp');
+  if(release_at&&status!=='published')throw Error('Scheduled bundles must have published status');
   if(!Array.isArray(product_ids)||product_ids.length<2||product_ids.length>12||
     product_ids.some(x=>typeof x!=='string'||!UUID.test(x))||
     new Set(product_ids).size!==product_ids.length)throw Error('Select 2–12 different published PDFs');
-  return {title,description,category,race_date,price_cents,status,product_ids};
+  return {title,description,category,race_date,price_cents,status,product_ids,release_at};
+}
+function releaseWindowValid(utc){
+  const time=Date.parse(utc.replace(' ','T')+'Z');
+  return time>=Date.now()+60000&&time<=Date.now()+366*86400000;
 }
 function eligibleChild(p){return !!p&&!!p.pdf_key&&p.pdf_key!==BUNDLE_KEY&&!p.pending_release&&(p.status==='published'||(p.status==='draft'&&!!p.asset_id));}
 async function validatedChildren(env,ids) {
@@ -56,7 +63,7 @@ function slugFor(title,id) {
 }
 async function allBundles(env) {
   const products=await env.STORE_DB.prepare(
-    "SELECT id,title,category,race_date,description,price_cents,status FROM products WHERE pdf_key=? ORDER BY created_at DESC LIMIT 100"
+    "SELECT p.id,p.title,p.category,p.race_date,p.description,p.price_cents,p.status,s.release_at FROM products p LEFT JOIN product_release_schedule s ON s.product_id=p.id WHERE p.pdf_key=? ORDER BY p.created_at DESC LIMIT 100"
   ).bind(BUNDLE_KEY).all();
   const bundles=[];
   for (const b of products.results||[]) {
@@ -78,7 +85,11 @@ export async function handleAdminBundles(request,env,path) {
   if(request.method!=='GET'&&!originOk(request))return bad('Same-origin request required',403);
   if(path==='/api/admin/bundles'&&request.method==='GET')return allBundles(env);
   if(path==='/api/admin/bundles'&&request.method==='POST') {
-    let b;try{b=await payload(request);await validatedChildren(env,b.product_ids);}catch(e){return bad(e.message);}
+    let b;try{
+      b=await payload(request);
+      if(b.release_at&&!releaseWindowValid(b.release_at))throw Error('Choose a release at least one minute ahead, within the next year');
+      await validatedChildren(env,b.product_ids);
+    }catch(e){return bad(e.message);}
     const id=crypto.randomUUID();
     const ops=[env.STORE_DB.prepare(
       "INSERT INTO products (id,title,slug,category,race_date,track,description,price_cents,pdf_key,image_url,status) VALUES (?,?,?,?,?,?,?,?,?,?,?)"
@@ -86,15 +97,29 @@ export async function handleAdminBundles(request,env,path) {
     b.product_ids.forEach((p,i)=>ops.push(env.STORE_DB.prepare(
       'INSERT INTO bundle_items (bundle_id,product_id,position) VALUES (?,?,?)'
     ).bind(id,p,i)));
+    if(b.release_at)ops.push(env.STORE_DB.prepare(
+      'INSERT INTO product_release_schedule(product_id,release_at) VALUES (?,?)'
+    ).bind(id,b.release_at));
     await env.STORE_DB.batch(ops);
     return out({id,created:true},201);
   }
   const m=path.match(/^\/api\/admin\/bundles\/([0-9a-f-]{36})$/i);
   if(!m||request.method!=='PATCH')return bad('Not found',404);
   const id=m[1];
-  const original=await env.STORE_DB.prepare("SELECT id FROM products WHERE id=? AND pdf_key=?").bind(id,BUNDLE_KEY).first();
+  const original=await env.STORE_DB.prepare("SELECT p.id,p.status,s.release_at FROM products p LEFT JOIN product_release_schedule s ON s.product_id=p.id WHERE p.id=? AND p.pdf_key=?").bind(id,BUNDLE_KEY).first();
   if(!original)return bad('Bundle not found',404);
-  let b;try{b=await payload(request);if(b.product_ids.includes(id))throw Error('Bundles cannot contain bundles');if(b.status!=='archived')await validatedChildren(env,b.product_ids);}catch(e){return bad(e.message);}
+  let b,release_at;
+  try{
+    b=await payload(request);
+    if(b.product_ids.includes(id))throw Error('Bundles cannot contain bundles');
+    release_at=b.status==='published'?(b.release_at===undefined?(original.release_at||null):b.release_at):null;
+    if(release_at&&release_at!==original.release_at){
+      if(!releaseWindowValid(release_at))throw Error('Choose a release at least one minute ahead, within the next year');
+      if(original.status==='published'&&(!original.release_at||Date.parse(original.release_at.replace(' ','T')+'Z')<=Date.now()))
+        throw Error('An already-live bundle cannot be scheduled again. Create a new draft');
+    }
+    if(b.status!=='archived')await validatedChildren(env,b.product_ids);
+  }catch(e){return bad(e.message);}
   const ops=[
     env.STORE_DB.prepare("UPDATE products SET title=?,category=?,race_date=?,description=?,price_cents=?,status=? WHERE id=? AND pdf_key=?")
       .bind(b.title,b.category,b.race_date,b.description,b.price_cents,b.status,id,BUNDLE_KEY),
@@ -103,6 +128,11 @@ export async function handleAdminBundles(request,env,path) {
   b.product_ids.forEach((p,i)=>ops.push(env.STORE_DB.prepare(
     'INSERT INTO bundle_items (bundle_id,product_id,position) VALUES (?,?,?)'
   ).bind(id,p,i)));
+  if(release_at){
+    ops.push(env.STORE_DB.prepare('INSERT INTO product_release_schedule(product_id,release_at) VALUES (?,?) ON CONFLICT(product_id) DO UPDATE SET release_at=excluded.release_at').bind(id,release_at));
+  }else{
+    ops.push(env.STORE_DB.prepare('DELETE FROM product_release_schedule WHERE product_id=?').bind(id));
+  }
   await env.STORE_DB.batch(ops);
   return out({id,updated:true});
 }

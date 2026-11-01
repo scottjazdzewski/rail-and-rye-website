@@ -9,6 +9,15 @@ assert.ok(catalog.includes("JSON.parse(c.dataset.categories||'[]').includes(visi
 assert.ok(detail.includes('p.categories.includes(category)'),'Three publication categories use all placements');
 assert.ok(race.includes("p.categories.includes('Race Cards')"),'Race Cards considers bundle placement');
 assert.ok(admin.includes('Appears in:'),'Admin shows each collection containing the bundle');
+assert.ok(admin.includes('id="bundleReleaseAt"')&&admin.includes('id="bundleSchedule"')&&admin.includes('id="bundleCancelSchedule"'),
+ 'Publisher offers schedule and cancel actions for bundles');
+assert.ok(admin.includes('window.rrReleaseUTC=releaseUTC')&&admin.includes('window.rrLocalRelease=localRelease'),
+ 'Bundle schedule uses the existing Eastern Time daylight-saving conversion');
+assert.ok(admin.includes("pendingBundle(b)?'SCHEDULED'"),'Scheduled bundles are marked in admin inventory');
+for(const fragment of admin.split('<script>').slice(1)){
+ const code=fragment.split('</script>')[0];
+ if(code)new Function(code);
+}
 for(const category of ['longshot-radar','stable-notes','target-list']){
  assert.ok(read('public/publications/'+category+'/index.html').includes('publication-detail-v1.js?v=5'));
 }
