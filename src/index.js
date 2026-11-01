@@ -286,7 +286,7 @@ export default {
         headers.set('Referrer-Policy','no-referrer');
         headers.set('X-Frame-Options','DENY');
         headers.set('X-Content-Type-Options','nosniff');
-        headers.set('Content-Security-Policy',"default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'");
+        headers.set('Content-Security-Policy',"default-src 'self'; img-src 'self' data: https://thoroughbreddailynews.com https://*.thoroughbreddailynews.com https://pastthewire.com https://*.pastthewire.com https://americasbestracing.net https://*.americasbestracing.net https://usracing.com https://*.usracing.com https://horseracingnation.com https://*.horseracingnation.com https://theracingbiz.com https://*.theracingbiz.com https://woodbine.com https://*.woodbine.com https://obssales.com https://*.obssales.com; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'");
         return new Response(request.method==='HEAD'?null:result.body,{status:200,headers});
       }
       const journalImage=path.match(/^\/media\/journal\/([0-9a-f-]{36})$/i);
