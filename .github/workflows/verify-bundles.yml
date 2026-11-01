@@ -27,6 +27,83 @@ jobs:
         run: node --experimental-sqlite test-free-downloads.mjs
       - name: Scheduled publication embargo and automatic release tests
         run: node --experimental-sqlite test-scheduled-publications.mjs
+      - name: Live Racing Wire feed health
+        run: curl -sS --max-time 120 https://railandryeracing.com/api/preview/racing-wire-5333548f0ffee31ba519b2470ffb/feed-test
+      - name: Inspect problematic racing feeds
+        run: |
+          echo '--- BLOODHORSE ---'
+          curl -L -sS --max-time 20 'https://www.bloodhorse.com/horse-racing/feeds/news/all-news' | head -c 5000 || true
+          echo
+          echo '--- REMINGTON ---'
+          curl -L -sS --max-time 20 'https://www.remingtonpark.com/feed/' | head -c 5000 || true
+          echo
+          echo '--- PAULICK FEED DISCOVERY ---'
+          curl -L -sS --max-time 20 'https://paulickreport.com/' | grep -Eio '<link[^>]+(rss|atom)[^>]*>|https?://[^" ]+(feed|rss)[^" <]*' | head -20 || true
+          echo '--- DRF HEADERS ---'
+          curl -L -sSI --max-time 20 'https://www.drf.com/feeds/all-articles-of-track' | head -30 || true
+          echo '--- NTRA/TOBA/HBPA STATUS WITH BROWSER UA ---'
+          for u in 'https://www.ntra.com/feed/' 'https://toba.org/feed/' 'https://nationalhbpa.com/feed/'; do
+            echo "$u"
+            curl -L -sS -A 'Mozilla/5.0' -o /tmp/feed -w '%{http_code} %{content_type} %{size_download}\n' --max-time 20 "$u" || true
+            head -c 400 /tmp/feed || true
+            echo
+          done
+      - name: Discover official Paulick HISA HIWU data endpoints
+        run: |
+          for u in 'https://paulickreport.com/' 'https://www.hisaus.org/news' 'https://www.hiwu.org/news'; do
+            echo "=== $u ==="
+            curl -L -sS --max-time 25 "$u" -o /tmp/page || true
+            echo "bytes $(wc -c </tmp/page)"
+            grep -Eio 'https?://[^"'"'"' ]+(wp-json|api|graphql)[^"'"'"' <]*|/(wp-json|api|graphql)/[^"'"'"' <]*|__NEXT_DATA__|application/ld\+json|application/json' /tmp/page | head -40 || true
+            echo "sample news links:"
+            grep -Eio 'href=["'"'"'][^"'"'"']*(news|press|article)[^"'"'"']*["'"'"']' /tmp/page | head -20 || true
+          done
+      - name: Retry failed Racing Wire feeds
+        run: |
+          probe () {
+            label="$1"; url="$2";
+            echo "=== $label :: $url ===";
+            curl -L -sS --max-time 20 -A 'Mozilla/5.0 (compatible; RailAndRye/1.0)' -H 'Accept: application/rss+xml, application/xml, text/xml, text/html;q=0.8,*/*;q=0.1' -o /tmp/probe -w 'HTTP=%{http_code} TYPE=%{content_type} BYTES=%{size_download} FINAL=%{url_effective}\n' "$url" || true;
+            head -c 700 /tmp/probe 2>/dev/null | tr '\n' ' ' || true; echo; echo;
+          }
+          probe bloodhorse-main 'https://www.bloodhorse.com/horse-racing/feeds/news/all-news'
+          echo 'BloodHorse date tags:'; curl -L -sS --max-time 20 'https://www.bloodhorse.com/horse-racing/feeds/news/all-news' | grep -Eio '<(pubDate|published|updated|a10:updated)>[^<]+' | head -20 || true
+          probe paulick-feed 'https://paulickreport.com/feed/'
+          probe paulick-rss 'https://paulickreport.com/rss'
+          probe paulick-rssxml 'https://paulickreport.com/rss.xml'
+          probe paulick-feedxml 'https://paulickreport.com/feed.xml'
+          probe paulick-news-feed 'https://paulickreport.com/news/feed/'
+          probe drf-legacy 'https://www.drf.com/feeds/all-articles-of-track'
+          probe drf-rss 'https://www.drf.com/rss'
+          probe drf-rssxml 'https://www.drf.com/rss.xml'
+          probe ntra-feed 'https://www.ntra.com/feed/'
+          probe ntra-news-feed 'https://www.ntra.com/news/feed/'
+          probe ntra-category-news 'https://www.ntra.com/category/news/feed/'
+          probe toba-feed 'https://toba.org/feed/'
+          probe toba-news-feed 'https://toba.org/news/feed/'
+          probe toba-category-news 'https://toba.org/category/news/feed/'
+          probe hbpa-feed 'https://nationalhbpa.com/feed/'
+          probe hbpa-news-feed 'https://nationalhbpa.com/news/feed/'
+          probe hbpa-category-news 'https://nationalhbpa.com/category/news/feed/'
+          probe remington-feed 'https://www.remingtonpark.com/feed/'
+          probe remington-racing-feed 'https://www.remingtonpark.com/category/racing/feed/'
+          probe remington-news-feed 'https://www.remingtonpark.com/category/news/feed/'
+      - name: Inspect first-party metadata fallbacks
+        run: |
+          echo '=== BLOODHORSE ARTICLE DATE METADATA ==='
+          curl -L -sS --max-time 20 'https://www.bloodhorse.com/horse-racing/articles/295752/sovereignty-caps-career-with-breeders-cup-classic-win' | grep -Eio '.{0,100}(datePublished|article:published_time|publishDate).{0,180}' | head -12 || true
+          echo '=== PAULICK ROBOTS/SITEMAPS ==='
+          for u in 'https://paulickreport.com/robots.txt' 'https://paulickreport.com/sitemap.xml' 'https://paulickreport.com/news-sitemap.xml' 'https://paulickreport.com/sitemap_index.xml'; do echo "$u"; curl -L -sS --max-time 15 "$u" | head -c 1200 || true; echo; done
+          echo '=== DRF ROBOTS/SITEMAPS ==='
+          for u in 'https://www.drf.com/robots.txt' 'https://www.drf.com/sitemap.xml' 'https://www.drf.com/news-sitemap.xml'; do echo "$u"; curl -L -sS --max-time 15 "$u" | head -c 1200 || true; echo; done
+          echo '=== HISA NEWS STRUCTURED DATA ==='
+          curl -L -sS --max-time 20 'https://www.hisaus.org/news' -o /tmp/hisa || true
+          grep -Eio '.{0,100}(hisa-hires-in-house-counsel-reduces-legal-costs|datePublished|publishedAt|createdAt).{0,220}' /tmp/hisa | head -30 || true
+          echo '=== HIWU NEWS STRUCTURED DATA ==='
+          curl -L -sS --max-time 20 'https://www.hiwu.org/news' -o /tmp/hiwu || true
+          grep -Eio '.{0,100}(Michelle-Pujals-Retires|datePublished|publishedAt|createdAt).{0,220}' /tmp/hiwu | head -30 || true
+      - name: Racing Wire expanded source validation
+        run: node --experimental-sqlite test-racing-wire.mjs
       - name: Multi-collection bundle listing tests
         run: node --experimental-sqlite test-bundle-category-placement.mjs
       - name: Compact Publisher desktop layout and control regression
