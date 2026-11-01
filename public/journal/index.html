@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#072B67"><meta name="description" content="The Journal from Rail & Rye Racing — racing history, analysis, horses and the stories behind the sport."><title>The Journal | Rail & Rye Racing</title><link rel="icon" href="/favicon.png" type="image/png"><link rel="stylesheet" href="/assets/rail-rye-core.css?v=11"><link rel="stylesheet" href="/assets/rail-rye-components.css?v=9"><link rel="stylesheet" href="/assets/rail-rye-pages.css?v=41"></head><body class="heritage-home heritage-inner-page heritage-journal-page rr-numbered-hero-page rr-single-screen-hero"><div class="heritage-inner-hero"><header class="heritage-header"><div class="heritage-shell heritage-header-inner">
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#072B67"><meta name="description" content="The Journal from Rail & Rye Racing — racing history, analysis, horses and the stories behind the sport."><title>The Journal | Rail & Rye Racing</title><link rel="icon" href="/favicon.png" type="image/png"><link rel="stylesheet" href="/assets/rail-rye-core.css?v=11"><link rel="stylesheet" href="/assets/rail-rye-components.css?v=9"><link rel="stylesheet" href="/assets/rail-rye-pages.css?v=43"></head><body class="heritage-home heritage-inner-page heritage-journal-page rr-numbered-hero-page rr-single-screen-hero"><div class="heritage-inner-hero"><header class="heritage-header"><div class="heritage-shell heritage-header-inner">
   <a class="heritage-brand" href="/" aria-label="Rail and Rye home"><span class="heritage-brand-mark"><img src="/assets/approved/brand/rail-rye-ivory-logo.png" alt="Rail & Rye official ivory horseshoe emblem" width="80" height="80" decoding="async"></span><span class="heritage-wordmark">RAIL &amp; RYE</span></a>
   <div class="heritage-strap"><img class="heritage-horse-mini" src="/assets/approved/brand/header-horse.webp" alt="" aria-hidden="true" width="66" height="76"><span>Thoroughbred Racing Intelligence</span></div>
   <nav class="heritage-nav" aria-label="Main navigation"><a class="heritage-nav-pill" href="/race-cards/">Race Cards</a><a class="heritage-nav-pill" href="/our-approach/">Our Approach</a><a class="heritage-nav-pill" href="/journal/" aria-current="page">The Journal</a><a class="heritage-nav-pill" href="https://rail-rye-shop.fourthwall.com/" target="_blank" rel="noopener noreferrer" aria-label="Shop Rail and Rye apparel (opens in a new tab)">Apparel</a></nav>
@@ -54,6 +54,10 @@
     if(subtitle)subtitle.textContent='Every published story from Rail & Rye, arranged by date with the newest first.';
     if(railOverline)railOverline.textContent='THE ARCHIVE · NEWEST FIRST';
     if(railTitle)railTitle.textContent='Published stories';
+    const returnLink=document.querySelector('.rr-journal-archive-pill');
+    if(returnLink){returnLink.href='/journal/';returnLink.textContent='← Back to The Journal';returnLink.setAttribute('aria-label','Return to The Journal');}
+    const archivePills=document.getElementById('rrJournalFeatureList');
+    if(archivePills)archivePills.setAttribute('aria-label','All published Journal stories, newest first');
     document.title='The Journal Archive | Rail & Rye Racing';
     if(description)description.content='Browse every published story from the Rail & Rye Journal, arranged by publication date.';
     const intro=document.querySelector('.rr-journal-hero-grid>.rr-page-intro');
@@ -118,8 +122,12 @@
     featureList.replaceChildren();
     const filtered=archiveRoute&&activeArchiveCategory?articles.filter(item=>categoryOf(item).toLocaleLowerCase()===activeArchiveCategory.toLocaleLowerCase()):articles;
     const stories=ordered(filtered).slice(0,limit);
+    if(archiveRoute){
+      const heading=document.getElementById('rr-journal-feature-title');
+      if(heading)heading.textContent=activeArchiveCategory?activeArchiveCategory+' · '+stories.length:'Published stories · '+stories.length;
+    }
     if(!stories.length){
-      const emptyText=archiveRoute?'No stories have been published yet. Check back soon.':'New stories will appear here as they are published.';
+      const emptyText=archiveRoute?(activeArchiveCategory?'No stories in this category. Choose All stories to see the full archive.':'No stories have been published yet. Check back soon.'):'New stories will appear here as they are published.';
       message(featureList,emptyText,'rr-journal-feature-message');
       return;
     }

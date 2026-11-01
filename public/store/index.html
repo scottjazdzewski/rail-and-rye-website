@@ -10,7 +10,7 @@ try{const r=await fetch('/api/products',{cache:'no-store'});const data=await r.j
 const live=data.checkout_mode==='live',paused=data.checkout_mode==='paused';document.getElementById('paymentBanner').textContent=paused?'PURCHASES TEMPORARILY UNAVAILABLE. Existing customers can still recover purchased PDFs.':live?'Secure checkout via Stripe. Digital PDF access is limited to 5 downloads within 7 days of purchase.':'TEST CHECKOUT ONLY. No real charges can be processed.';
 if(!data.products?.length){cards.append(el('div','empty',live?'No publications are available at this time.':'No publications are available for testing. Products saved as drafts remain private.'));return;}
 for(const p of data.products){
- const card=el('article','store-card rr-glass-purchase-card');card.dataset.category=p.category;card.dataset.categories=JSON.stringify(Array.isArray(p.categories)?p.categories:[p.category]);
+ const card=el('article','store-card rr-glass-purchase-card');card.dataset.category=p.category;card.dataset.categories=JSON.stringify(Array.isArray(p.categories)?p.categories:[p.category]);if(/^[0-9a-f-]{36}$/i.test(String(p.id||'')))card.id='edition-'+p.id;
  const cover=el('div','rr-purchase-brand-mark');
  const logo=document.createElement('img');logo.src='/assets/approved/brand/rail-rye-ivory-logo.png';logo.alt='Rail & Rye official horseshoe emblem';logo.className='rr-purchase-brand-logo';logo.loading='lazy';logo.decoding='async';cover.append(logo);
  const body=el('div','rr-purchase-copy');
@@ -40,6 +40,13 @@ for(const p of data.products){
  b.addEventListener('click',async()=>{if(free){location.assign('/api/free-download/'+encodeURIComponent(p.id));return;}
     b.disabled=true;b.textContent='Opening secure checkout…';try{const res=await fetch('/api/checkout',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_id:p.id})});const obj=await res.json();if(!res.ok)throw Error(obj.error||'Unable to start checkout');location.assign(obj.url);}catch(e){info(e.message);b.disabled=false;b.textContent=live?(p.kind==='bundle'?'Purchase bundle':'Purchase PDF'):'Test purchase';}});
  if(meta)body.append(meta);body.append(h,desc);if(inclusions)body.append(inclusions);body.append(terms,price);card.append(cover,body,b);cards.append(card);
-}function applyFilter(){syncHero();let count=0;for(const c of cards.querySelectorAll('.store-card')){const show=visibleCategory==='All'||JSON.parse(c.dataset.categories||'[]').includes(visibleCategory);c.hidden=!show;if(show)count++;}let msg=document.getElementById('filter-empty');if(!count){if(!msg){msg=el('div','empty','No published editions in this category yet. Check back for new releases.');msg.id='filter-empty';cards.append(msg);}msg.hidden=false;}else if(msg)msg.hidden=true;tabs.forEach(b=>b.setAttribute('aria-selected',String(b.dataset.category===visibleCategory)));}tabs.forEach(b=>b.addEventListener('click',()=>{visibleCategory=b.dataset.category;history.replaceState(null,'',visibleCategory==='All'?'/store/':'?category='+encodeURIComponent(visibleCategory));applyFilter();}));if(!tabs.some(b=>b.dataset.category===visibleCategory))visibleCategory='All';applyFilter();}catch(e){cards.replaceChildren(el('div','empty',e.message));}
+}function applyFilter(){syncHero();let count=0;for(const c of cards.querySelectorAll('.store-card')){const show=visibleCategory==='All'||JSON.parse(c.dataset.categories||'[]').includes(visibleCategory);c.hidden=!show;if(show)count++;}let msg=document.getElementById('filter-empty');if(!count){if(!msg){msg=el('div','empty','No published editions in this category yet. Check back for new releases.');msg.id='filter-empty';cards.append(msg);}msg.hidden=false;}else if(msg)msg.hidden=true;tabs.forEach(b=>b.setAttribute('aria-selected',String(b.dataset.category===visibleCategory)));}tabs.forEach(b=>b.addEventListener('click',()=>{visibleCategory=b.dataset.category;history.replaceState(null,'',visibleCategory==='All'?'/store/':'?category='+encodeURIComponent(visibleCategory));applyFilter();}));if(!tabs.some(b=>b.dataset.category===visibleCategory))visibleCategory='All';applyFilter();
+ // Deep links from category pages focus the exact edition after async catalog load.
+ const editionHash=location.hash.match(/^#edition-[0-9a-f-]{36}$/i);
+ if(editionHash)requestAnimationFrame(()=>{
+  const target=document.getElementById(editionHash[0].slice(1));
+  if(target&&!target.hidden){target.style.outline='2px solid #e1b86f';target.style.outlineOffset='3px';target.scrollIntoView({block:'center'});}
+ });
+}catch(e){cards.replaceChildren(el('div','empty',e.message));}
 })();
 </script></body></html>
