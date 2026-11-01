@@ -73,7 +73,7 @@ export function categorize(title,category='',source=''){
     return 'Industry';
 
   // Facility, venue and meet-operation stories are Racetrack.
-  if(/\b(racetrack|racecourse|track surface|turf course|dirt course|track renovation|track management|racing dates|meet dates|meet opens|meet closes|rail setting|course configuration|host track|host site|host venue|venue change|moves to|returns to)\b/.test(s))
+  if(/\b(racetrack|racecourse|track surface|turf course|dirt course|track renovation|track management|racing dates|meet dates|meet opens|meet closes|rail setting|course configuration|host track|host site|host venue|venue change|race moved to|meet moves to|meet returns to|racing returns to)\b/.test(s))
     return 'Racetrack';
 
   // Sales language is stronger than race/event language.
@@ -352,6 +352,19 @@ const MILESTONE_RE=/\b(milestone|hall of fame|career win|career victori(?:es|y)|
 const INDUSTRY_METRICS_RE=/\b(attendance|handle|wagering handle|turnover|revenue|viewership|television ratings|tv ratings|economic impact|market share|crowd)\b/i;
 const LOW_VALUE_RE=/\b(preview|opinion|podcast|photo gallery|look back|what to know|guide to)\b/i;
 
+function displayType(title){
+ switch(eventType(title)){
+  case 'scratch': return 'Scratch';
+  case 'health': return 'Health';
+  case 'workout': return 'Workout';
+  case 'sale': return 'Sale';
+  case 'entry': return 'Entry';
+  case 'retirement': return 'Retirement';
+  case 'result': return 'Result';
+  case 'regulatory': return 'Ruling';
+  default: return '';
+ }
+}
 export function scoreRacingWireItem(item){
  const title=String(item?.title||'').trim();
  const context=(title+' '+String(item?.section||'')+' '+String(item?.category||'')).trim();
@@ -389,7 +402,7 @@ export function curateRacingWireStories(stories,{threshold=62,maxItems=24,maxPer
    const used=sourceCounts.get(source)||0;
    if(!item.original&&used>=maxPerSource)continue;
    sourceCounts.set(source,used+1);
-   accepted.push({...item,editorial_score:assessment.score});
+   accepted.push({...item,type:item.type||displayType(item.title),editorial_score:assessment.score});
    if(accepted.length>=maxItems)break;
  }
  return accepted;
