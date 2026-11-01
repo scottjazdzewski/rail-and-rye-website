@@ -289,10 +289,8 @@ assert.ok(wirePage.includes('id="allNews"')&&wirePage.includes('aria-pressed="tr
 assert.ok(wirePage.includes('id="leadSection"')&&wirePage.includes('Top Story'),'High-value stories have a lead-story presentation');
 assert.ok(wirePage.includes('id="secondarySection"')&&wirePage.includes('More to Know'),'Racing Wire has a secondary visual-story tier beneath the lead story');
 assert.ok(wirePage.includes(".slice(0,3)")&&wirePage.includes("secondary-story"),'Secondary tier promotes at most three image-backed stories');
-assert.ok(wirePage.includes("storyCard(x,false,false,true)"),'Stories below the promoted tier return to compact badge cards with urgency labels');
-assert.ok(wirePage.includes('function priorityFor(x)')&&wirePage.includes("['Scratch','Health','Ruling']"),'Compact wire classifies immediate scratches, health developments and rulings as urgent');
-assert.ok(wirePage.includes("wire-urgent")&&wirePage.includes("wire-important")&&wirePage.includes("wire-news"),'Compact wire exposes urgent, important and standard visual states');
-assert.ok(wirePage.includes("priority-label")&&wirePage.includes("data-priority"),'Urgency state is visible in text as well as color');
+assert.ok(wirePage.includes("storyCard(x,false,false)"),'Stories below the promoted tier return to compact badge cards');
+assert.ok(!wirePage.includes('function priorityFor(x)')&&!wirePage.includes('wire-urgent')&&!wirePage.includes('priority-label'),'Urgency experiment is fully removed from the compact wire');
 assert.ok(wirePage.includes('function storyVisual(')&&wirePage.includes('x.image_url')&&wirePage.includes("className='story-media'"),'Story cards can render publisher-supplied RSS photography');
 assert.ok(wirePage.includes('media.replaceWith(icon(x.subject_kind))'),'Approved category badge remains the fallback when an external image fails');
 assert.ok(wirePage.includes("img.referrerPolicy='no-referrer'"),'External feed images do not receive the private preview URL as referrer');
