@@ -373,6 +373,7 @@ assert.equal(html.status,200);
 assert.match(html.headers.get('content-type'),/text\/html/i);
 assert.equal(html.headers.get('content-disposition'),null);
 assert.match(html.headers.get('x-robots-tag'),/noindex/i);
+assert.match(html.headers.get('content-security-policy'),/thoroughbreddailynews\.com/,'Preview CSP permits trusted publisher-supplied feed images');
 assert.match(await html.text(),/Rendered preview/);
 assert.equal((await siteWorker.fetch(new Request('https://railandryeracing.com'+livePreviewPath,
  {method:'HEAD'}),{ASSETS:mockAssets},{})).status,200);
