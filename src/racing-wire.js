@@ -47,7 +47,7 @@ const PREVIEW_RETRY_FEEDS=Object.freeze([
   {id:'ntra',name:'NTRA',url:'https://www.ntra.com/feed/',host:'ntra.com',candidate:true},
   {id:'remington',name:'Remington Park',url:'https://www.remingtonpark.com/feed/',host:'remingtonpark.com',candidate:true,require_racing_context:true}
 ]);
-const PREVIEW_DIAGNOSTIC_FEEDS=Object.freeze([...PREVIEW_LIVE_FEEDS,...PREVIEW_RETRY_FEEDS]);
+export const PREVIEW_DIAGNOSTIC_FEEDS=Object.freeze([...PREVIEW_LIVE_FEEDS,...PREVIEW_RETRY_FEEDS]);
 function decode(s){
   return String(s||'').replace(/^<!\[CDATA\[|\]\]>$/g,'')
     .replace(/&#(x[0-9a-f]+|\d+);/gi,(_,n)=>{const x=n[0].toLowerCase()==='x'?parseInt(n.slice(1),16):Number(n);return x>0&&x<=0x10ffff?String.fromCodePoint(x):'';})
