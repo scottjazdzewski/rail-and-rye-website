@@ -27,6 +27,39 @@ jobs:
         run: node --experimental-sqlite test-free-downloads.mjs
       - name: Scheduled publication embargo and automatic release tests
         run: node --experimental-sqlite test-scheduled-publications.mjs
+      - name: Probe final Racing Wire gaps
+        run: |
+          node --input-type=module <<'NODE'
+          import {parseOfficialNewsPage} from './src/racing-wire.js';
+          for(const source of [
+            {id:'santa',url:'https://www.santaanita.com/news/',host:'santaanita.com',path_prefix:'/news'},
+            {id:'gulf',url:'https://www.gulfstreampark.com/news/',host:'gulfstreampark.com',path_prefix:'/news'}
+          ]){
+            const r=await fetch(source.url,{headers:{'User-Agent':'Mozilla/5.0 (compatible; RailAndRyeRacingWire/1.0; +https://railandryeracing.com)','Accept':'text/html,*/*;q=0.1'}});
+            const html=await r.text();
+            console.log(JSON.stringify({kind:'len',id:source.id,status:r.status,content_length:r.headers.get('content-length'),bytes:html.length,parsed:parseOfficialNewsPage(html,source).length}));
+          }
+          for(const [id,url] of [
+            ['bc-home','https://www.breederscup.com/'],
+            ['bc-news','https://www.breederscup.com/news'],
+            ['bc-sitemap','https://www.breederscup.com/sitemap.xml'],
+            ['bc-sitemap-index','https://www.breederscup.com/sitemap_index.xml'],
+            ['paulick-home','https://paulickreport.com/'],
+            ['paulick-sitemap','https://paulickreport.com/sitemap.xml'],
+            ['paulick-index','https://paulickreport.com/sitemap_index.xml'],
+            ['ntra-sitemap','https://www.ntra.com/wp-sitemap.xml'],
+            ['ntra-index','https://www.ntra.com/sitemap_index.xml'],
+            ['hbpa-sitemap','https://nationalhbpa.com/wp-sitemap.xml'],
+            ['hbpa-index','https://nationalhbpa.com/sitemap_index.xml']
+          ]){
+            try{
+              const r=await fetch(url,{headers:{'User-Agent':'Mozilla/5.0 (compatible; RailAndRyeRacingWire/1.0; +https://railandryeracing.com)','Accept':'text/html,application/xml,text/xml,*/*;q=0.1'},redirect:'follow'});
+              const body=await r.text();
+              const bcLinks=[...body.matchAll(/https?:\\?\/\\?\/[^\"'<> ]+|href=["']([^"']+)["']/gi)].map(m=>m[1]||m[0]).filter(x=>/(news|press|api|graphql|sitemap|2026)/i.test(x)).slice(0,30);
+              console.log(JSON.stringify({kind:'fallback',id,status:r.status,type:r.headers.get('content-type'),bytes:body.length,links:bcLinks,head:body.slice(0,350).replace(/\s+/g,' ')}));
+            }catch(e){console.log(JSON.stringify({kind:'fallback',id,error:String(e)}));}
+          }
+          NODE
       - name: Multi-collection bundle listing tests
         run: node --experimental-sqlite test-bundle-category-placement.mjs
       - name: Compact Publisher desktop layout and control regression
