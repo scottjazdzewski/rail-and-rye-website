@@ -1135,3 +1135,31 @@ body.heritage-home.heritage-journal-page.rr-journal-article-view .rr-journal-rel
   transition:none
  }
 }
+
+
+/* Page 9 mobile archive: content, not the viewport, determines hero height.
+   Its article list may grow as new stories are added; never let the footer
+   begin until the complete archive rail has finished. */
+@media(max-width:750px){
+ body.heritage-home.heritage-journal-page.rr-journal-archive-view{
+  min-height:100vh;min-height:100svh;min-height:100dvh;
+  display:flex;flex-direction:column
+ }
+ body.heritage-home.heritage-journal-page.rr-journal-archive-view>.heritage-inner-hero{
+  flex:0 0 auto!important;
+  min-height:0!important;height:auto!important;
+  overflow:visible;background-size:cover;
+ }
+ body.heritage-home.heritage-journal-page.rr-journal-archive-view .rr-journal-hero-grid{
+  flex:0 0 auto!important;min-height:max-content;height:auto;
+  align-items:start;padding-bottom:clamp(36px,7vw,56px)
+ }
+ body.heritage-home.heritage-journal-page.rr-journal-archive-view .rr-journal-feature-rail{
+  position:relative;max-height:none!important;overflow:visible;
+  flex:0 0 auto;margin-bottom:0
+ }
+ body.heritage-home.heritage-journal-page.rr-journal-archive-view>.heritage-footer{
+  position:relative;z-index:1;flex:0 0 auto;
+  margin-top:auto;clear:both
+ }
+}
