@@ -12,6 +12,7 @@ const FEEDS=Object.freeze([
   //  host:'example.org',authorized:true}
 ]);
 const MAX_FEED_BYTES=350000;
+const MAX_OFFICIAL_PAGE_BYTES=650000;
 const PREVIEW_MAX_ITEM_AGE_MS=48*3600000;
 const EDITORIAL_CATEGORIES=Object.freeze(['Horses','Jockeys','Trainers','Owners','Stable','Stakes','Race-Day','Racetrack','Breeding','Sales / Auctions','Regulatory','Achievement','Industry']);
 let editorialSchemaPromise=null;
@@ -35,9 +36,7 @@ export const PREVIEW_LIVE_FEEDS=Object.freeze([
   {id:'woodbine',name:'Woodbine',url:'https://woodbine.com/feed',host:'woodbine.com'},
   {id:'obs',name:'Ocala Breeders’ Sales',url:'https://obssales.com/feed/',host:'obssales.com'},
   {id:'bloodhorse',name:'BloodHorse',url:'https://www.bloodhorse.com/horse-racing/feeds/news/all-news',host:'bloodhorse.com',allow_undated:true},
-  {id:'toba',name:'TOBA',url:'https://toba.org/feed/',host:'toba.org',user_agent:BROWSER_FEED_UA},
   {id:'tattersalls',name:'Tattersalls',url:'https://www.tattersalls.com/feed/',host:'tattersalls.com'},
-  {id:'national-hbpa',name:'National HBPA',url:'https://nationalhbpa.com/feed/',host:'nationalhbpa.com',user_agent:BROWSER_FEED_UA},
   {id:'fair-grounds',name:'Fair Grounds',url:'https://www.fairgroundsracecourse.com/feed/',host:'fairgroundsracecourse.com',require_racing_context:true},
   {id:'laurel',name:'Laurel Park',url:'https://www.laurelpark.com/feed/',host:'laurelpark.com',require_racing_context:true}
 ]);
@@ -45,9 +44,15 @@ const PREVIEW_RETRY_FEEDS=Object.freeze([
   {id:'paulick',name:'Paulick Report',url:'https://paulickreport.com/feed/',host:'paulickreport.com',candidate:true},
   {id:'drf-headlines',name:'Daily Racing Form',url:'https://www.drf.com/feeds/all-articles-of-track',host:'drf.com',candidate:true},
   {id:'ntra',name:'NTRA',url:'https://www.ntra.com/feed/',host:'ntra.com',candidate:true},
+  {id:'toba',name:'TOBA',url:'https://toba.org/feed/',host:'toba.org',candidate:true},
+  {id:'national-hbpa',name:'National HBPA',url:'https://nationalhbpa.com/feed/',host:'nationalhbpa.com',candidate:true},
   {id:'remington',name:'Remington Park',url:'https://www.remingtonpark.com/feed/',host:'remingtonpark.com',candidate:true,require_racing_context:true}
 ]);
 export const PREVIEW_DIAGNOSTIC_FEEDS=Object.freeze([...PREVIEW_LIVE_FEEDS,...PREVIEW_RETRY_FEEDS]);
+export const PREVIEW_OFFICIAL_NEWS_PAGES=Object.freeze([
+  {id:'hisa',name:'HISA',url:'https://www.hisaus.org/news',host:'hisaus.org'},
+  {id:'hiwu',name:'HIWU',url:'https://www.hiwu.org/news',host:'hiwu.org'}
+]);
 function decode(s){
   return String(s||'').replace(/^<!\[CDATA\[|\]\]>$/g,'')
     .replace(/&#(x[0-9a-f]+|\d+);/gi,(_,n)=>{const x=n[0].toLowerCase()==='x'?parseInt(n.slice(1),16):Number(n);return x>0&&x<=0x10ffff?String.fromCodePoint(x):'';})
@@ -103,6 +108,59 @@ function hasRacingContext(title,section=''){
   const text=(String(title||'')+' '+String(section||'')).toLowerCase();
   return /\b(thoroughbred|race|racing|racetrack|stakes|derby|oaks|jockey|trainer|horse|filly|colt|gelding|mare|stallion|yearling|foal|purse|meet|breeders.? cup|claiming|maiden|allowance|graded|grade [123i]|\bg[123]\b)\b/.test(text);
 }
+
+const NEWS_DATE_RE=/\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2},\s+\d{4}\b/i;
+function absoluteNewsUrl(source,slug){
+  try{
+    const u=new URL('/news/'+slug.replace(/^\/+/,''),source.url);
+    return safeUrl(u.toString(),source.host);
+  }catch{return null;}
+}
+export function parseOfficialNewsPage(html,source){
+  if(typeof html!=='string'||html.length>MAX_OFFICIAL_PAGE_BYTES)return [];
+  const items=[],seen=new Set();
+  const anchor=/<a\b[^>]*href=["']\/news\/([^"'?#]+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+  for(const match of html.matchAll(anchor)){
+    const slug=decode(match[1]).trim();
+    if(!slug||seen.has(slug))continue;
+    const body=match[2];
+    const heading=/<h[1-6]\b[^>]*>([\s\S]*?)<\/h[1-6]>/i.exec(body)?.[1]||'';
+    let title=decode(heading);
+    const plain=decode(body),dateText=plain.match(NEWS_DATE_RE)?.[0]||'';
+    if(!title){
+      const withoutDate=plain.replace(NEWS_DATE_RE,'').replace(/^(?:Press Releases?|Operational Bulletins?|Newsletters?|Metrics Reports?|Meeting Minutes?|Announcements?|Appointments?|General|Outreach)\s*/i,'').trim();
+      title=withoutDate.split(/(?<=[.!?])\s/)[0].slice(0,240);
+    }
+    if(!title||!dateText)continue;
+    const dt=new Date(dateText+' 12:00:00 UTC');
+    const url=absoluteNewsUrl(source,slug);
+    if(!url||!Number.isFinite(+dt))continue;
+    seen.add(slug);
+    items.push({title,url,source:source.name,category:'Regulatory',section:'Regulatory',
+      subject_kind:'regulatory',published_at:dt.toISOString(),published_date_only:true,
+      summary:'',image_url:'',original:false,preview_external:true});
+  }
+  return items;
+}
+async function fetchOfficialNewsPage(source,fetchFn=fetch){
+  const started=Date.now();
+  try{
+    const response=await fetchFn(source.url,{headers:{Accept:'text/html,application/xhtml+xml;q=0.9,*/*;q=0.1',
+      'User-Agent':BROWSER_FEED_UA},cache:'no-store',signal:AbortSignal.timeout(9000)});
+    const len=Number(response.headers.get('content-length')||0);
+    if(!response.ok||len>MAX_OFFICIAL_PAGE_BYTES)return {source,items:[],all_items:[],status:response.status,elapsed_ms:Date.now()-started};
+    const html=await response.text();
+    if(html.length>MAX_OFFICIAL_PAGE_BYTES)throw Error('Official news page exceeded preview safety limit');
+    const all=parseOfficialNewsPage(html,source);
+    const now=Date.now();
+    const items=all.filter(item=>now-Date.parse(item.published_at)<=PREVIEW_MAX_ITEM_AGE_MS).slice(0,12);
+    return {source,items,all_items:all,status:response.status,
+      newest_published_at:all.map(x=>x.published_at).sort().at(-1)||null,elapsed_ms:Date.now()-started};
+  }catch(e){
+    return {source,items:[],all_items:[],status:null,elapsed_ms:Date.now()-started,error:String(e?.message||e).slice(0,120)};
+  }
+}
+
 export function categorize(title,category='',source=''){
   const s=(String(title||'')+' '+String(category||'')).toLowerCase();
   const publisher=String(source||'').toLowerCase();
@@ -260,13 +318,21 @@ async function fetchPreviewFeed(feed,fetchFn=fetch){
   }
 }
 export async function previewExternalItems(fetchFn=fetch){
-  const settled=await Promise.all(PREVIEW_LIVE_FEEDS.map(feed=>fetchPreviewFeed(feed,fetchFn)));
+  const [rssSettled,pageSettled]=await Promise.all([
+    Promise.all(PREVIEW_LIVE_FEEDS.map(feed=>fetchPreviewFeed(feed,fetchFn))),
+    Promise.all(PREVIEW_OFFICIAL_NEWS_PAGES.map(source=>fetchOfficialNewsPage(source,fetchFn)))
+  ]);
   return {
-    items:settled.flatMap(x=>x.items).slice(0,120),
-    sources:settled.map(x=>({id:x.feed.id,name:x.feed.name,url:x.feed.url,http_status:x.status,
-      parsed_count:x.items.length,newest_published_at:x.newest_published_at||null,
-      elapsed_ms:x.elapsed_ms,error:x.error||null,candidate:Boolean(x.feed.candidate),
-      require_racing_context:Boolean(x.feed.require_racing_context)}))
+    items:[...rssSettled.flatMap(x=>x.items),...pageSettled.flatMap(x=>x.items)].slice(0,140),
+    sources:[
+      ...rssSettled.map(x=>({id:x.feed.id,name:x.feed.name,url:x.feed.url,http_status:x.status,
+        parsed_count:x.items.length,newest_published_at:x.newest_published_at||null,
+        elapsed_ms:x.elapsed_ms,error:x.error||null,candidate:Boolean(x.feed.candidate),
+        require_racing_context:Boolean(x.feed.require_racing_context),source_type:'rss'})),
+      ...pageSettled.map(x=>({id:x.source.id,name:x.source.name,url:x.source.url,http_status:x.status,
+        parsed_count:x.items.length,available_count:x.all_items.length,newest_published_at:x.newest_published_at||null,
+        elapsed_ms:x.elapsed_ms,error:x.error||null,candidate:false,require_racing_context:false,source_type:'official-page'}))
+    ]
   };
 }
 
@@ -306,7 +372,14 @@ export async function testPreviewRssFeeds(fetchFn=fetch){
         note:'Network or parser error: '+String(e?.message||e).slice(0,120)});
     }
   }
-  return {tested_at,diagnostic_only:true,permission_status:'RSS endpoints are being technically tested only; third-party headlines remain disabled pending reuse permission.',results};
+  for(const source of PREVIEW_OFFICIAL_NEWS_PAGES){
+    const result=await fetchOfficialNewsPage(source,fetchFn);
+    results.push({id:source.id,source:source.name,url:source.url,reachable:result.status===200,
+      http_status:result.status,content_type:'text/html',parsed_count:result.all_items.length,
+      newest_published_at:result.newest_published_at||null,elapsed_ms:result.elapsed_ms,
+      source_type:'official-page',note:result.error?'Official news page error: '+result.error:'Official first-party news listing; headline/date/link metadata only.'});
+  }
+  return {tested_at,diagnostic_only:true,permission_status:'RSS and official first-party news endpoints are being technically tested only; third-party headline reuse remains disabled pending permission.',results};
 }
 
 export async function refreshRacingWire(env){
