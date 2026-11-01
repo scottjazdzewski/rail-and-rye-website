@@ -116,12 +116,7 @@ function hasRacingContext(title,section=''){
 }
 
 const NEWS_DATE_RE=/\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2},\s+\d{4}\b/i;
-function regexEscape(value){return String(value||'').replace(/[.*+?^${}()|[\]\\]/g,'\\function absoluteNewsUrl(source,slug){
-  try{
-    const u=new URL('/news/'+slug.replace(/^\/+/,''),source.url);
-    return safeUrl(u.toString(),source.host);
-  }catch{return null;}
-}');}
+function regexEscape(value){return String(value||'').replace(/[.*+?^$\{\}()|[\]\\]/g,'\\$&');}
 function newsPathPrefix(source){
   const raw=String(source?.path_prefix||'/news').trim();
   return ('/'+raw.replace(/^\/+|\/+$/g,'')).replace(/\/{2,}/g,'/');
