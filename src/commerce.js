@@ -210,8 +210,10 @@ async function sendProductUpdateEmail(env,j,order){
   return String(body.id).slice(0,120);
 }
 
-// Publish a replacement and enqueue notices in the same D1 batch.
-export async function replacePublishedProductPdf(env,item,pdfKey){
+// Replace a published PDF or bundle-only PDF. Entitlements include standalone
+// buyers and bundle snapshots; queue one secure update link per active paid
+// order. Historical PDF snapshots remain untouched.
+export async function replacePdfAndNotifyBuyers(env,item,pdfKey){
   await env.STORE_DB.prepare("CREATE TABLE IF NOT EXISTS product_update_jobs (id TEXT PRIMARY KEY,order_id TEXT NOT NULL,product_id TEXT NOT NULL,email TEXT NOT NULL,product_title TEXT NOT NULL,updated_pdf_key TEXT NOT NULL,state TEXT NOT NULL DEFAULT 'queued' CHECK(state IN ('queued','sending','sent')),attempts INTEGER NOT NULL DEFAULT 0,download_count INTEGER NOT NULL DEFAULT 0 CHECK(download_count>=0),created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,next_attempt_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,claimed_at TEXT,sent_at TEXT,provider_id TEXT,last_error TEXT,UNIQUE(order_id,product_id,updated_pdf_key),FOREIGN KEY(order_id) REFERENCES orders(id))").run();
   await env.STORE_DB.prepare('CREATE INDEX IF NOT EXISTS idx_product_update_jobs_due ON product_update_jobs(state,next_attempt_at)').run();
   const purchases=await env.STORE_DB.prepare("SELECT o.id AS order_id,o.buyer_email AS email,o.stripe_session_id FROM orders o WHERE o.status='paid' AND o.buyer_email IS NOT NULL AND datetime(o.paid_at, '+' || o.access_days || ' days') > CURRENT_TIMESTAMP AND (o.product_id=? OR EXISTS(SELECT 1 FROM bundle_order_items bi WHERE bi.order_id=o.id AND bi.product_id=?))").bind(item.id,item.id).all();

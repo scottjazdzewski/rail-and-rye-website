@@ -70,7 +70,7 @@
   </div>
   <section class="panel" style="margin-top:28px" aria-label="Automatic product bundles">
     <div class="head-row"><h2>Automatic bundles</h2><button type="button" class="secondary mini" id="bundleNew">+ New bundle</button></div>
-    <p class="detail" style="margin-bottom:19px">Choose at least two published editions or bundle-only PDFs, set one package price, and publish. The bundle automatically appears in each collection represented by its included PDFs. Customers receive separate secure downloads. Previous buyers keep their purchased PDF versions even after edits.</p>
+    <p class="detail" style="margin-bottom:19px">Choose at least two published editions or bundle-only PDFs, set one package price, and publish. The bundle automatically appears in each collection represented by its included PDFs. Customers receive separate secure downloads. Replacing any included PDF notifies eligible active purchasers, while preserving their original purchased PDF versions.</p>
     <section aria-label="Bundle-only PDF library" style="margin-bottom:25px;padding:19px;border:1px solid var(--border);border-radius:8px;background:white">
       <div class="head-row"><h3 style="margin:0">Bundle-only PDF library</h3><button type="button" class="secondary mini" id="assetNew">+ New private PDF</button></div>
       <p class="detail">Upload a PDF that will be available only inside bundles. It will never have its own public listing or individual purchase button. Archive older PDFs when their published bundles have been archived. After all customer access expires, you can permanently delete archived PDFs to reclaim storage. Historical order records are retained.</p>
@@ -82,7 +82,7 @@
         <div class="field"><label for="assetCategory">Collection</label><select id="assetCategory"><option>Race Cards</option><option>Longshot Radar</option><option>Stable Notes</option><option>Target List</option></select></div>
         <div class="field"><label for="assetTrack">Racetrack (optional)</label><input id="assetTrack" maxlength="100" placeholder="Keeneland"></div>
       </div>
-      <div class="field"><label for="assetPdf">Private PDF <span id="assetPdfStatus"></span></label><input id="assetPdf" type="file" accept="application/pdf,.pdf"><div class="detail">Maximum 75 MB. A replacement PDF does not revoke files already purchased.</div></div>
+      <div class="field"><label for="assetPdf">Private PDF <span id="assetPdfStatus"></span></label><input id="assetPdf" type="file" accept="application/pdf,.pdf"><div class="detail">Maximum 75 MB. Replacing a bundle-only PDF emails buyers with active bundle access a secure link to the revised PDF. Their original purchased PDF is preserved.</div></div>
       <div class="actions"><button type="button" class="primary" id="assetSave">Upload bundle-only PDF</button><button type="button" class="secondary" id="assetArchive" disabled>Archive private PDF</button><button type="button" class="secondary" id="assetPurge" disabled>Permanently delete PDF</button></div>
       <p id="assetNotice" class="detail" role="status" aria-live="polite"></p>
       <p class="kicker" style="margin-top:15px">Your private PDFs</p>
