@@ -27,6 +27,28 @@ jobs:
         run: node --experimental-sqlite test-free-downloads.mjs
       - name: Scheduled publication embargo and automatic release tests
         run: node --experimental-sqlite test-scheduled-publications.mjs
+      - name: Diagnose remaining Racing Wire sources
+        run: |
+          node --input-type=module <<'NODE'
+          const probes=[
+            ['churchill-rss','https://www.churchilldowns.com/horses/news/feed/'],
+            ['drf','https://www.drf.com/feeds/all-articles-of-track'],
+            ['ntra-news','https://www.ntra.com/news/'],
+            ['toba-news','https://toba.org/news/'],
+            ['hbpa-news','https://nationalhbpa.com/news/'],
+            ['remington-news','https://www.remingtonpark.com/news/'],
+            ['remington-racing','https://www.remingtonpark.com/racing/']
+          ];
+          for(const [id,url] of probes){
+            try{
+              const r=await fetch(url,{headers:{'User-Agent':'Mozilla/5.0 (compatible; RailAndRyeRacingWire/1.0; +https://railandryeracing.com)','Accept':'application/rss+xml,application/xml,text/xml,text/html;q=0.8,*/*;q=0.1'},redirect:'follow'});
+              const text=await r.text();
+              const rss=(text.match(/<item(?:\s[^>]*)?>[\s\S]*?<\/item>/gi)||[]).length;
+              const links=[...text.matchAll(/href=["']([^"']+)["']/gi)].map(m=>m[1]).filter(h=>/(news|press|racing|article|story)/i.test(h)).slice(0,20);
+              console.log(JSON.stringify({id,url,status:r.status,type:r.headers.get('content-type'),bytes:text.length,rss_items:rss,links:links.slice(0,12),head:text.slice(0,500).replace(/\s+/g,' ')}));
+            }catch(e){console.log(JSON.stringify({id,url,error:String(e)}));}
+          }
+          NODE
       - name: Multi-collection bundle listing tests
         run: node --experimental-sqlite test-bundle-category-placement.mjs
       - name: Compact Publisher desktop layout and control regression
