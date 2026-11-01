@@ -1,4 +1,4 @@
-// Rail & Rye homepage production lock: approved October 31, 2026.
+// Rail & Rye homepage production lock: owner-approved current homepage, November 1, 2026.
 // This guards the HOME PAGE, not commerce/product availability or the other pages.
 // Intentional homepage redesigns require the owner's explicit approval before
 // updating these baselines. See docs/HOMEPAGE_PRODUCTION_LOCK.md.
@@ -6,7 +6,7 @@ import fs from 'node:fs';
 import { createHash } from 'node:crypto';
 
 const approvedBlobs = {
-  'public/index.html': 'e0975ddeb04f7b430309e0f2963dcfd6e8cd3bdf',
+  'public/index.html': '3ae6330161bf1c2e5969709129847fe1ad37fd89',
   'public/assets/approved/brand/header-horse.webp': 'c6a7ed8882a6b42dd96af9a621fe80a88da96f8a',
   'public/assets/approved/brand/rail-rye-ivory-logo.png': '974905e392779b081e784ca55d43205c80fef126',
   'public/assets/approved/home/hero-dust-charged-finish.jpg': 'aa2e5b276969e2b65c7e3b1fd099bd541d32ea21',

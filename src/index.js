@@ -323,7 +323,7 @@ export default {
         const response=await serveProductDocument(original,{product});
         return request.method==='HEAD'?new Response(null,{status:response.status,headers:response.headers}):response;
       }
-      if(path.startsWith("/api/free-download/")||path==="/api/products"||path==="/api/checkout"||path==="/api/stripe/webhook"||path==="/api/stripe/live-webhook"||path.startsWith("/api/orders/")||path==="/api/delivery/download"||path==="/api/delivery/items"||path==="/api/recovery/request")return handleCommerce(request,env,url,ctx);
+      if(path.startsWith("/api/free-download/")||path==="/api/products"||path==="/api/checkout"||path==="/api/stripe/webhook"||path==="/api/stripe/live-webhook"||path.startsWith("/api/orders/")||path==="/api/delivery/download"||path==="/api/delivery/download-all"||path==="/api/delivery/items"||path==="/api/recovery/request")return handleCommerce(request,env,url,ctx);
       if(path.startsWith("/api/"))return fail("Not found",404);
       return env.ASSETS.fetch(request);
     }catch(e){console.error("Rail & Rye request error",e);return fail("An internal error occurred",500);}

@@ -2,7 +2,7 @@
 
 **Status: OWNER APPROVED / DO NOT REDESIGN**  
 **Approved:** October 31, 2026  
-**Frozen homepage source:** `cff3435ac37acfbbf2643ce36f4f6cd7fd6c8910`  
+**Frozen homepage HTML blob:** `3ae6330161bf1c2e5969709129847fe1ad37fd89` (owner-approved source in main commit `bf3513a0c8e42302c6605c5ac54bcd4659481cf7`)  
 **Recovery snapshot branch:** `approved-homepage-2026-10-31`  
 **Website:** https://railandryeracing.com/
 
