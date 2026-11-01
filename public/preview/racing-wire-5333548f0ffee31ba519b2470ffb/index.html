@@ -165,7 +165,7 @@ function storyVisual(x,isLive,lead,row){
    if(!x.original){media.target='_blank';media.rel='noopener noreferrer external';}
    const img=document.createElement('img');img.className='story-media';img.src=x.image_url;img.alt='';
    img.decoding='async';img.loading=lead?'eager':'lazy';img.referrerPolicy='no-referrer';
-   img.addEventListener('error',()=>{row.classList.remove('has-image');media.replaceWith(icon(x.subject_kind));},{once:true});
+   img.addEventListener('error',()=>{failedImages.add(x.image_url);render();},{once:true});
    media.append(img);row.classList.add('has-image');return media;
  }
  return icon(x.subject_kind);
@@ -207,7 +207,7 @@ function render(){
  let lead=null,secondary=[];
  const editorialView=subject==='all'&&!q&&$('sort').value==='newest';
  if(editorialView){
-   const hasStoryImage=x=>typeof x.image_url==='string'&&/^https:\/\/[a-z0-9.-]+\//i.test(x.image_url);
+   const hasStoryImage=x=>typeof x.image_url==='string'&&/^https:\/\/[a-z0-9.-]+\//i.test(x.image_url)&&!failedImages.has(x.image_url);
    lead=records.find(x=>x.editorial?.placement==='top'&&hasStoryImage(x))||
      records.filter(x=>hasStoryImage(x)&&Number(x.editorial_score)>=82)
        .sort((a,b)=>(Number(b.editorial_score)-Number(a.editorial_score))||(new Date(b.published_at)-new Date(a.published_at)))[0]||null;
@@ -216,10 +216,10 @@ function render(){
  if(lead){leadStory.append(storyCard(lead,true,true));leadSection.hidden=false;}else leadSection.hidden=true;
  secondaryStories.replaceChildren();
  if(editorialView){
-   const manual=records.filter(x=>x!==lead&&x.editorial?.placement==='more'&&typeof x.image_url==='string'&&/^https:\/\/[a-z0-9.-]+\//i.test(x.image_url))
+   const manual=records.filter(x=>x!==lead&&x.editorial?.placement==='more'&&typeof x.image_url==='string'&&/^https:\/\/[a-z0-9.-]+\//i.test(x.image_url)&&!failedImages.has(x.image_url))
      .sort((a,b)=>new Date(b.published_at)-new Date(a.published_at)).slice(0,3);
    const manualSet=new Set(manual);
-   const automatic=records.filter(x=>x!==lead&&!manualSet.has(x)&&x.editorial?.placement!=='top'&&typeof x.image_url==='string'&&/^https:\/\/[a-z0-9.-]+\//i.test(x.image_url))
+   const automatic=records.filter(x=>x!==lead&&!manualSet.has(x)&&x.editorial?.placement!=='top'&&typeof x.image_url==='string'&&/^https:\/\/[a-z0-9.-]+\//i.test(x.image_url)&&!failedImages.has(x.image_url))
      .sort((a,b)=>(Number(b.editorial_score)-Number(a.editorial_score))||(new Date(b.published_at)-new Date(a.published_at)))
      .slice(0,Math.max(0,3-manual.length));
    secondary=[...manual,...automatic];
@@ -252,6 +252,7 @@ $('allNews').addEventListener('click',()=>{subject='all';shown=8;$('allNews').se
 $('search').addEventListener('input',()=>{shown=8;render();});
 $('sort').addEventListener('change',render);
 $('more').addEventListener('click',()=>{shown+=8;render();});
+const failedImages=new Set();
 let feedLoading=false;
 async function loadVerified(){
  if(feedLoading)return;
