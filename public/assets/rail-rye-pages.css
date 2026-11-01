@@ -875,3 +875,17 @@ body.heritage-home.heritage-store-page .rr-store-access-terms{
  body.heritage-home.heritage-store-page .rr-store-bundle-list{font-size:11px}
  body.heritage-home.heritage-store-page .rr-store-access-terms{font-size:10px}
 }
+
+/* Only Race Cards: compact type/access details without moving the approved hero or footer. */
+body.rr-racecards-page .rr-racecards-product-kind{display:block;color:#efc47e;font:800 10px/1.3 var(--heritage-sans);letter-spacing:.08em;text-transform:uppercase}
+body.rr-racecards-page .rr-racecards-access{display:block;color:#d6c3a3;font:500 10px/1.4 var(--heritage-sans)}
+body.rr-racecards-page .rr-racecards-bundle-details{min-width:0;max-width:100%;margin:1px 0;color:#f4e4c6}
+body.rr-racecards-page .rr-racecards-bundle-summary{display:list-item;cursor:pointer;color:#e6bc76;font:700 10px/1.4 var(--heritage-sans)}
+body.rr-racecards-page .rr-racecards-bundle-summary:hover{color:#fff0d5}
+body.rr-racecards-page .rr-racecards-bundle-summary:focus-visible{outline:2px solid #efc47e;outline-offset:3px}
+body.rr-racecards-page .rr-racecards-bundle-list{margin:5px 0 0;padding:0 0 0 18px;color:#f4e4c6;font:400 11px/1.45 var(--heritage-sans);overflow-wrap:anywhere}
+body.rr-racecards-page .rr-racecards-bundle-list li{padding:2px 0}
+@media(max-width:650px){
+ body.rr-racecards-page .rr-racecards-access{font-size:9px}
+ body.rr-racecards-page .rr-racecards-product-kind{font-size:9px}
+}
