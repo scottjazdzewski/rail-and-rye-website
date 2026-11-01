@@ -1163,3 +1163,29 @@ body.heritage-home.heritage-journal-page.rr-journal-article-view .rr-journal-rel
   margin-top:auto;clear:both
  }
 }
+
+/* Quiet editorial bridge from Journal stories to the paid race-day research. */
+body.heritage-home.heritage-journal-page.rr-journal-article-view .rr-journal-racecards-note{
+ margin:34px 0 0;padding:24px 28px;border:1px solid rgba(177,140,83,.58);
+ background:rgba(7,26,44,.045)
+}
+body.heritage-home.heritage-journal-page.rr-journal-article-view .rr-journal-racecards-kicker{
+ color:#8a6d43;font:800 10px/1.5 var(--heritage-sans);letter-spacing:.12em;text-transform:uppercase
+}
+body.heritage-home.heritage-journal-page.rr-journal-article-view .rr-journal-racecards-note h2{
+ margin:8px 0;color:#15384b;font:500 clamp(25px,3vw,34px)/1.12 var(--heritage-serif)
+}
+body.heritage-home.heritage-journal-page.rr-journal-article-view .rr-journal-racecards-note p{
+ margin:0 0 16px;color:#53656b;font:400 14px/1.65 var(--heritage-sans)
+}
+body.heritage-home.heritage-journal-page.rr-journal-article-view .rr-journal-racecards-note a{
+ display:inline-block;padding:11px 16px;border:1px solid #a58149;border-radius:999px;
+ color:#15384b;font:800 10px/1.4 var(--heritage-sans);letter-spacing:.07em;text-decoration:none;text-transform:uppercase
+}
+body.heritage-home.heritage-journal-page.rr-journal-article-view .rr-journal-racecards-note a:hover,
+body.heritage-home.heritage-journal-page.rr-journal-article-view .rr-journal-racecards-note a:focus-visible{
+ background:#15384b;color:#f5ead2
+}
+@media(max-width:750px){
+ body.heritage-home.heritage-journal-page.rr-journal-article-view .rr-journal-racecards-note{padding:20px}
+}
