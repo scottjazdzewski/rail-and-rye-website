@@ -49,8 +49,15 @@ const PREVIEW_RETRY_FEEDS=Object.freeze([
 ]);
 export const PREVIEW_DIAGNOSTIC_FEEDS=Object.freeze([...PREVIEW_LIVE_FEEDS,...PREVIEW_RETRY_FEEDS]);
 export const PREVIEW_OFFICIAL_NEWS_PAGES=Object.freeze([
-  {id:'hisa',name:'HISA',url:'https://www.hisaus.org/news',host:'hisaus.org'},
-  {id:'hiwu',name:'HIWU',url:'https://www.hiwu.org/news',host:'hiwu.org'}
+  {id:'hisa',name:'HISA',url:'https://www.hisaus.org/news',host:'hisaus.org',category:'Regulatory'},
+  {id:'hiwu',name:'HIWU',url:'https://www.hiwu.org/news',host:'hiwu.org',category:'Regulatory'},
+  {id:'breeders-cup',name:"Breeders' Cup",url:'https://www.breederscup.com/news',host:'breederscup.com',path_prefix:'/news'},
+  {id:'fasig-tipton',name:'Fasig-Tipton',url:'https://www.fasigtipton.com/news',host:'fasigtipton.com',path_prefix:'/news',category:'Sales / Auctions'},
+  {id:'keeneland',name:'Keeneland',url:'https://www.keeneland.com/media/news',host:'keeneland.com',path_prefix:'/media/news'},
+  {id:'churchill-downs',name:'Churchill Downs',url:'https://www.churchilldowns.com/horses/news/',host:'churchilldowns.com',path_prefix:'/horses/news'},
+  {id:'santa-anita',name:'Santa Anita',url:'https://www.santaanita.com/news/',host:'santaanita.com',path_prefix:'/news'},
+  {id:'del-mar',name:'Del Mar',url:'https://www.dmtc.com/media/news',host:'dmtc.com',path_prefix:'/media/news'},
+  {id:'gulfstream',name:'Gulfstream Park',url:'https://www.gulfstreampark.com/news/',host:'gulfstreampark.com',path_prefix:'/news'}
 ]);
 function decode(s){
   return String(s||'').replace(/^<!\[CDATA\[|\]\]>$/g,'')
@@ -109,9 +116,19 @@ function hasRacingContext(title,section=''){
 }
 
 const NEWS_DATE_RE=/\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2},\s+\d{4}\b/i;
-function absoluteNewsUrl(source,slug){
+function regexEscape(value){return String(value||'').replace(/[.*+?^${}()|[\]\\]/g,'\\function absoluteNewsUrl(source,slug){
   try{
     const u=new URL('/news/'+slug.replace(/^\/+/,''),source.url);
+    return safeUrl(u.toString(),source.host);
+  }catch{return null;}
+}');}
+function newsPathPrefix(source){
+  const raw=String(source?.path_prefix||'/news').trim();
+  return ('/'+raw.replace(/^\/+|\/+$/g,'')).replace(/\/{2,}/g,'/');
+}
+function absoluteNewsUrl(source,slug){
+  try{
+    const u=new URL(newsPathPrefix(source)+'/'+slug.replace(/^\/+/,''),source.url);
     return safeUrl(u.toString(),source.host);
   }catch{return null;}
 }
@@ -134,8 +151,8 @@ function structuredMetaNearSlug(html,slug){
 }
 export function parseOfficialNewsPage(html,source){
   if(typeof html!=='string'||html.length>MAX_OFFICIAL_PAGE_BYTES)return [];
-  const items=[],seen=new Set();
-  const anchor=/<a\b[^>]*href=["']\/news\/([^"'?#]+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+  const items=[],seen=new Set(),prefix=regexEscape(newsPathPrefix(source));
+  const anchor=new RegExp('<a\\b[^>]*href=["\\\']'+prefix+'\\/([^"\\\'?#]+)["\\\'][^>]*>([\\s\\S]*?)<\\/a>','gi');
   for(const match of html.matchAll(anchor)){
     const slug=decode(match[1]).trim();
     if(!slug||seen.has(slug))continue;
@@ -156,8 +173,9 @@ export function parseOfficialNewsPage(html,source){
     const url=absoluteNewsUrl(source,slug);
     if(!url||!Number.isFinite(+dt))continue;
     seen.add(slug);
-    items.push({title,url,source:source.name,category:'Regulatory',section:'Regulatory',
-      subject_kind:'regulatory',published_at:dt.toISOString(),published_date_only:true,
+    const category=source.category||categorize(title,'',source.name);
+    items.push({title,url,source:source.name,category,section:category,
+      subject_kind:subjectKind(title,category),published_at:dt.toISOString(),published_date_only:true,
       summary:'',image_url:'',original:false,preview_external:true});
   }
   return items;
@@ -173,7 +191,11 @@ async function fetchOfficialNewsPage(source,fetchFn=fetch){
     if(html.length>MAX_OFFICIAL_PAGE_BYTES)throw Error('Official news page exceeded preview safety limit');
     const all=parseOfficialNewsPage(html,source);
     const now=Date.now();
-    const items=all.filter(item=>now-Date.parse(item.published_at)<=PREVIEW_MAX_ITEM_AGE_MS).slice(0,12);
+    const items=all
+      .filter(item=>previewHeadlineRelevant(item.title,item.section))
+      .filter(item=>!source.require_racing_context||hasRacingContext(item.title,item.section))
+      .filter(item=>now-Date.parse(item.published_at)<=PREVIEW_MAX_ITEM_AGE_MS)
+      .slice(0,12);
     return {source,items,all_items:all,status:response.status,
       newest_published_at:all.map(x=>x.published_at).sort().at(-1)||null,elapsed_ms:Date.now()-started};
   }catch(e){
