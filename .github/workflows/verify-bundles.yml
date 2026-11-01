@@ -39,6 +39,16 @@ jobs:
           const curatedSov=curated.find(x=>/sovereignty/i.test(x.title)&&/classic/i.test(x.title));
           console.log('SOVEREIGNTY_GROUP '+JSON.stringify(sov?{source:sov.source,title:sov.title,image_url:sov.image_url||'',also:sov.also_reported_by||[],score:curatedSov?.editorial_score||null}:null));
           NODE
+      - name: Confirm Racing Wire automatic lead
+        run: |
+          node --input-type=module <<'NODE'
+          import {previewExternalItems,curateRacingWireStories} from './src/racing-wire.js';
+          const external=await previewExternalItems(fetch);
+          const curated=curateRacingWireStories(external.items);
+          const lead=curated.filter(x=>typeof x.image_url==='string'&&x.image_url.startsWith('https://')&&Number(x.editorial_score)>=82)
+            .sort((a,b)=>(Number(b.editorial_score)-Number(a.editorial_score))||(Date.parse(b.published_at)-Date.parse(a.published_at)))[0]||null;
+          console.log('AUTO_LEAD '+JSON.stringify(lead?{source:lead.source,title:lead.title,score:lead.editorial_score,image_url:lead.image_url,also:lead.also_reported_by||[]}:null));
+          NODE
       - name: Multi-collection bundle listing tests
         run: node --experimental-sqlite test-bundle-category-placement.mjs
       - name: Compact Publisher desktop layout and control regression
