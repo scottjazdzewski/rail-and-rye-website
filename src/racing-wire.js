@@ -51,15 +51,15 @@ export const PREVIEW_LIVE_OFFICIAL_NEWS_PAGES=Object.freeze([
   {id:'hiwu',name:'HIWU',url:'https://www.hiwu.org/news',host:'hiwu.org',category:'Regulatory'},
   {id:'keeneland',name:'Keeneland',url:'https://www.keeneland.com/media/news',host:'keeneland.com',path_prefix:'/media/news'},
   {id:'drf',name:'Daily Racing Form',url:'https://www.drf.com/news/all-news',host:'drf.com',path_prefix:'/news'},
-  {id:'santa-anita',name:'Santa Anita',url:'https://www.santaanita.com/news/',host:'santaanita.com',path_prefix:'/news',require_racing_context:true},
-  {id:'del-mar',name:'Del Mar',url:'https://www.dmtc.com/media/news',host:'dmtc.com',path_prefix:'/media/news',require_racing_context:true},
-  {id:'gulfstream',name:'Gulfstream Park',url:'https://www.gulfstreampark.com/news/',host:'gulfstreampark.com',path_prefix:'/news',require_racing_context:true},
-  {id:'remington',name:'Remington Park',url:'https://www.remingtonpark.com/press-releases/',host:'remingtonpark.com',path_prefix:'/press',require_racing_context:true}
+  {id:'santa-anita',name:'Santa Anita',url:'https://www.santaanita.com/news/',host:'santaanita.com',path_prefix:'/news',adapter:'one-st'},
+  {id:'del-mar',name:'Del Mar',url:'https://www.dmtc.com/media/news',host:'dmtc.com',path_prefix:'/media/news'},
+  {id:'gulfstream',name:'Gulfstream Park',url:'https://www.gulfstreampark.com/news/',host:'gulfstreampark.com',path_prefix:'/news',adapter:'one-st'},
+  {id:'remington',name:'Remington Park',url:'https://www.remingtonpark.com/press-releases/',host:'remingtonpark.com',path_prefix:'/press',require_racing_context:true},
+  {id:'breeders-cup',name:"Breeders' Cup",url:'https://www.breederscup.com/news',host:'breederscup.com',path_prefix:'/news',adapter:'breeders-cup'},
+  {id:'fasig-tipton',name:'Fasig-Tipton',url:'https://www.fasigtipton.com/archive/2026',host:'fasigtipton.com',category:'Sales / Auctions',adapter:'fasig'}
 ]);
 const PREVIEW_RETRY_OFFICIAL_NEWS_PAGES=Object.freeze([
-  {id:'paulick',name:'Paulick Report',url:'https://paulickreport.com/news',host:'paulickreport.com',path_prefix:'/news'},
-  {id:'breeders-cup',name:"Breeders' Cup",url:'https://www.breederscup.com/news',host:'breederscup.com',path_prefix:'/news'},
-  {id:'fasig-tipton',name:'Fasig-Tipton',url:'https://www.fasigtipton.com/archive/2026',host:'fasigtipton.com',category:'Sales / Auctions',adapter:'fasig'}
+  {id:'paulick',name:'Paulick Report',url:'https://paulickreport.com/news',host:'paulickreport.com',path_prefix:'/news'}
 ]);
 export const PREVIEW_OFFICIAL_NEWS_PAGES=Object.freeze([...PREVIEW_LIVE_OFFICIAL_NEWS_PAGES,...PREVIEW_RETRY_OFFICIAL_NEWS_PAGES]);
 export const PREVIEW_LIVE_JSON_SOURCES=Object.freeze([
@@ -196,6 +196,49 @@ export function parseOfficialNewsPage(html,source){
   }
   return items;
 }
+function parseNewsDateText(value){
+  let dateText=String(value||'').trim().replace(/(\d{1,2})(?:st|nd|rd|th)(,\s+\d{4})/i,'$1$2');
+  const dt=/^\d{4}-\d{2}-\d{2}/.test(dateText)?new Date(dateText):
+    /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(dateText)?new Date(dateText+' 12:00:00 UTC'):
+    new Date(dateText+' 12:00:00 UTC');
+  return Number.isFinite(+dt)?dt:null;
+}
+export function parseOneStNewsPage(html,source){
+  if(typeof html!=='string'||html.length>MAX_OFFICIAL_PAGE_BYTES)return [];
+  const items=[],seen=new Set(),cards=html.match(/<article\b[^>]*class=["'][^"']*tile-inner[^"']*["'][^>]*>[\s\S]*?<\/article>/gi)||[];
+  for(const card of cards.slice(0,60)){
+    const heading=/<h2\b[^>]*class=["'][^"']*post-title[^"']*["'][^>]*>[\s\S]*?<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>[\s\S]*?<\/h2>/i.exec(card);
+    const image=/<a\b[^>]*href=["']([^"']+)["'][^>]*>[\s\S]*?<img\b[^>]*alt=["']([^"']+)["']/i.exec(card);
+    const rawHref=heading?.[1]||image?.[1]||'',title=decodeHtmlText(heading?.[2]||image?.[2]||'').slice(0,240);
+    let resolved;try{resolved=new URL(rawHref,source.url);}catch{continue;}
+    const url=safeUrl(resolved.toString(),source.host);if(!url||seen.has(url)||title.length<12)continue;
+    const plain=decodeHtmlText(card),dateText=plain.match(NEWS_NUMERIC_DATE_RE)?.[0]||plain.match(NEWS_DATE_RE)?.[0]||'';
+    const dt=parseNewsDateText(dateText);if(!dt)continue;
+    seen.add(url);
+    const category=source.category||categorize(title,'',source.name);
+    items.push({title,url,source:source.name,category,section:category,subject_kind:subjectKind(title,category),
+      published_at:dt.toISOString(),published_date_only:true,summary:'',image_url:'',original:false,preview_external:true});
+  }
+  return items;
+}
+function decodeJsonLiteral(value){
+  try{return JSON.parse('"'+String(value||'').replace(/"/g,'\\"')+'"');}catch{return decode(String(value||''));}
+}
+export function parseBreedersCupNewsPage(html,source){
+  if(typeof html!=='string'||html.length>MAX_OFFICIAL_PAGE_BYTES)return [];
+  const items=[],seen=new Set();
+  const rx=/"title":"((?:\\.|[^"\\])+)","url":"(\/news\/[^"]+)"[\s\S]{0,1200}?"publishDate":"([^"]+)"/g;
+  for(const match of html.matchAll(rx)){
+    const title=decodeJsonLiteral(match[1]).replace(/\\u0026/g,'&').slice(0,240);
+    const url=safeUrl(new URL(match[2],source.url).toString(),source.host),dt=new Date(match[3]);
+    if(!title||!url||!Number.isFinite(+dt)||seen.has(url))continue;
+    seen.add(url);
+    const category=categorize(title,'',source.name);
+    items.push({title,url,source:source.name,category,section:category,subject_kind:subjectKind(title,category),
+      published_at:dt.toISOString(),published_date_only:false,summary:'',image_url:'',original:false,preview_external:true});
+  }
+  return items;
+}
 export function parseFasigNewsArchive(html,source){
   if(typeof html!=='string'||html.length>MAX_OFFICIAL_PAGE_BYTES)return [];
   const items=[],seen=new Set(),anchor=/<a\b([^>]*?)href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
@@ -259,7 +302,10 @@ async function fetchOfficialNewsPage(source,fetchFn=fetch){
     if(!response.ok||len>MAX_OFFICIAL_PAGE_BYTES)return {source,items:[],all_items:[],status:response.status,elapsed_ms:Date.now()-started};
     const html=await response.text();
     if(html.length>MAX_OFFICIAL_PAGE_BYTES)throw Error('Official news page exceeded preview safety limit');
-    const all=source.adapter==='fasig'?parseFasigNewsArchive(html,source):parseOfficialNewsPage(html,source);
+    const all=source.adapter==='fasig'?parseFasigNewsArchive(html,source):
+      source.adapter==='one-st'?parseOneStNewsPage(html,source):
+      source.adapter==='breeders-cup'?parseBreedersCupNewsPage(html,source):
+      parseOfficialNewsPage(html,source);
     const now=Date.now();
     const items=all
       .filter(item=>previewHeadlineRelevant(item.title,item.section))
