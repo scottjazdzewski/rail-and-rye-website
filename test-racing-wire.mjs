@@ -466,7 +466,7 @@ assert.ok(wirePage.includes('failedImages.add(x.image_url);render()'),'Failed fe
 assert.ok(wirePage.includes("img.referrerPolicy='no-referrer'"),'External feed images do not receive the private preview URL as referrer');
 assert.ok(!wirePage.includes('Open the original source for the full update.'),'External stories never repeat generic filler summaries');
 assert.ok(!wirePage.includes('const actionMap='),'Generic duplicate category pills are removed');
-assert.ok(wirePage.includes('if(x.type){'),'Only meaningful event labels create a story pill');
+assert.ok(wirePage.includes("if(x.type&&x.type!==x.category)"),'Only meaningful non-duplicate event labels create the secondary story pill');
 assert.ok(wirePage.includes('.item .emblem{width:88px;height:88px'),
  'News-card badges are enlarged on desktop');
 assert.ok(!wirePage.includes('const shapes={')&&!wirePage.includes("el.innerHTML='<svg"),
