@@ -13,6 +13,7 @@ const FEEDS=Object.freeze([
 ]);
 const MAX_FEED_BYTES=350000;
 const MAX_OFFICIAL_PAGE_BYTES=650000;
+const MAX_JSON_BYTES=250000;
 const PREVIEW_MAX_ITEM_AGE_MS=48*3600000;
 const EDITORIAL_CATEGORIES=Object.freeze(['Horses','Jockeys','Trainers','Owners','Stable','Stakes','Race-Day','Racetrack','Breeding','Sales / Auctions','Regulatory','Achievement','Industry']);
 let editorialSchemaPromise=null;
@@ -37,31 +38,33 @@ export const PREVIEW_LIVE_FEEDS=Object.freeze([
   {id:'bloodhorse',name:'BloodHorse',url:'https://www.bloodhorse.com/horse-racing/feeds/news/all-news',host:'bloodhorse.com',allow_undated:true},
   {id:'tattersalls',name:'Tattersalls',url:'https://www.tattersalls.com/feed/',host:'tattersalls.com'},
   {id:'fair-grounds',name:'Fair Grounds',url:'https://www.fairgroundsracecourse.com/feed/',host:'fairgroundsracecourse.com',require_racing_context:true},
-  {id:'laurel',name:'Laurel Park',url:'https://www.laurelpark.com/feed/',host:'laurelpark.com',require_racing_context:true}
+  {id:'laurel',name:'Laurel Park',url:'https://www.laurelpark.com/feed/',host:'laurelpark.com',require_racing_context:true},
+  {id:'churchill-downs',name:'Churchill Downs',url:'https://www.churchilldowns.com/horses/news/feed/',host:'churchilldowns.com',require_racing_context:true}
 ]);
 const PREVIEW_RETRY_FEEDS=Object.freeze([
-  {id:'paulick',name:'Paulick Report',url:'https://paulickreport.com/feed/',host:'paulickreport.com',candidate:true},
-  {id:'drf-headlines',name:'Daily Racing Form',url:'https://www.drf.com/feeds/all-articles-of-track',host:'drf.com',candidate:true},
   {id:'ntra',name:'NTRA',url:'https://www.ntra.com/feed/',host:'ntra.com',candidate:true},
-  {id:'toba',name:'TOBA',url:'https://toba.org/feed/',host:'toba.org',candidate:true},
-  {id:'national-hbpa',name:'National HBPA',url:'https://nationalhbpa.com/feed/',host:'nationalhbpa.com',candidate:true},
-  {id:'remington',name:'Remington Park',url:'https://www.remingtonpark.com/feed/',host:'remingtonpark.com',candidate:true,require_racing_context:true}
+  {id:'national-hbpa',name:'National HBPA',url:'https://nationalhbpa.com/feed/',host:'nationalhbpa.com',candidate:true}
 ]);
 export const PREVIEW_DIAGNOSTIC_FEEDS=Object.freeze([...PREVIEW_LIVE_FEEDS,...PREVIEW_RETRY_FEEDS]);
 export const PREVIEW_LIVE_OFFICIAL_NEWS_PAGES=Object.freeze([
   {id:'hisa',name:'HISA',url:'https://www.hisaus.org/news',host:'hisaus.org',category:'Regulatory'},
   {id:'hiwu',name:'HIWU',url:'https://www.hiwu.org/news',host:'hiwu.org',category:'Regulatory'},
-  {id:'keeneland',name:'Keeneland',url:'https://www.keeneland.com/media/news',host:'keeneland.com',path_prefix:'/media/news'}
+  {id:'keeneland',name:'Keeneland',url:'https://www.keeneland.com/media/news',host:'keeneland.com',path_prefix:'/media/news'},
+  {id:'drf',name:'Daily Racing Form',url:'https://www.drf.com/news/all-news',host:'drf.com',path_prefix:'/news'},
+  {id:'santa-anita',name:'Santa Anita',url:'https://www.santaanita.com/news/',host:'santaanita.com',path_prefix:'/news',require_racing_context:true},
+  {id:'del-mar',name:'Del Mar',url:'https://www.dmtc.com/media/news',host:'dmtc.com',path_prefix:'/media/news',require_racing_context:true},
+  {id:'gulfstream',name:'Gulfstream Park',url:'https://www.gulfstreampark.com/news/',host:'gulfstreampark.com',path_prefix:'/news',require_racing_context:true},
+  {id:'remington',name:'Remington Park',url:'https://www.remingtonpark.com/press-releases/',host:'remingtonpark.com',path_prefix:'/press',require_racing_context:true}
 ]);
 const PREVIEW_RETRY_OFFICIAL_NEWS_PAGES=Object.freeze([
+  {id:'paulick',name:'Paulick Report',url:'https://paulickreport.com/news',host:'paulickreport.com',path_prefix:'/news'},
   {id:'breeders-cup',name:"Breeders' Cup",url:'https://www.breederscup.com/news',host:'breederscup.com',path_prefix:'/news'},
-  {id:'fasig-tipton',name:'Fasig-Tipton',url:'https://www.fasigtipton.com/news',host:'fasigtipton.com',path_prefix:'/news',category:'Sales / Auctions'},
-  {id:'churchill-downs',name:'Churchill Downs',url:'https://www.churchilldowns.com/horses/news/',host:'churchilldowns.com',path_prefix:'/horses/news'},
-  {id:'santa-anita',name:'Santa Anita',url:'https://www.santaanita.com/news/',host:'santaanita.com',path_prefix:'/news'},
-  {id:'del-mar',name:'Del Mar',url:'https://www.dmtc.com/media/news',host:'dmtc.com',path_prefix:'/media/news'},
-  {id:'gulfstream',name:'Gulfstream Park',url:'https://www.gulfstreampark.com/news/',host:'gulfstreampark.com',path_prefix:'/news'}
+  {id:'fasig-tipton',name:'Fasig-Tipton',url:'https://www.fasigtipton.com/news',host:'fasigtipton.com',category:'Sales / Auctions',adapter:'fasig'}
 ]);
 export const PREVIEW_OFFICIAL_NEWS_PAGES=Object.freeze([...PREVIEW_LIVE_OFFICIAL_NEWS_PAGES,...PREVIEW_RETRY_OFFICIAL_NEWS_PAGES]);
+export const PREVIEW_LIVE_JSON_SOURCES=Object.freeze([
+  {id:'toba',name:'TOBA',url:'https://toba.org/wp-json/wp/v2/posts?per_page=20&_fields=link,date,title,categories',host:'toba.org',category:'Industry'}
+]);
 function decode(s){
   return String(s||'').replace(/^<!\[CDATA\[|\]\]>$/g,'')
     .replace(/&#(x[0-9a-f]+|\d+);/gi,(_,n)=>{const x=n[0].toLowerCase()==='x'?parseInt(n.slice(1),16):Number(n);return x>0&&x<=0x10ffff?String.fromCodePoint(x):'';})
