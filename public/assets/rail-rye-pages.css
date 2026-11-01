@@ -889,3 +889,76 @@ body.rr-racecards-page .rr-racecards-bundle-list li{padding:2px 0}
  body.rr-racecards-page .rr-racecards-access{font-size:9px}
  body.rr-racecards-page .rr-racecards-product-kind{font-size:9px}
 }
+
+
+/* Editorial polish, Pages 3–5: keep the approved single-screen hero and chip
+   layout, but make each listed edition directly reachable and keep older cards
+   inside a modest, independently scrollable rail. */
+body.heritage-publication-page .rr-publication-product-grid .rr-racecards-purchase-rail{
+ justify-content:flex-start;align-self:start;max-height:min(610px,74svh);overflow:hidden
+}
+body.heritage-publication-page .rr-publication-latest-card{position:relative;isolation:isolate}
+body.heritage-publication-page .rr-pub-edition-overlay{
+ position:absolute;inset:0;z-index:2;display:block;overflow:hidden;
+ font-size:0;color:transparent;text-decoration:none;border-radius:inherit
+}
+body.heritage-publication-page .rr-pub-edition-overlay:focus-visible{
+ outline:3px solid #f2c779;outline-offset:-4px
+}
+body.heritage-publication-page .rr-publication-latest-card .rr-purchase-buy{
+ position:relative;z-index:3
+}
+body.heritage-publication-page .rr-pub-recent{
+ display:grid;gap:7px;min-height:0;max-height:203px;
+ overflow-y:auto;overscroll-behavior:contain;scrollbar-color:#bb8c48 #112d3a;
+ margin-top:13px;padding-right:5px
+}
+body.heritage-publication-page .rr-pub-recent[hidden]{display:none}
+body.heritage-publication-page .rr-pub-recent-kicker{
+ color:#e9be77;font:800 10px/1.3 var(--heritage-sans);
+ letter-spacing:.13em;text-transform:uppercase;padding-bottom:2px
+}
+body.heritage-publication-page .rr-pub-recent-link{
+ display:flex;align-items:center;justify-content:space-between;
+ gap:14px;padding:9px 12px;border:1px solid rgba(226,185,111,.44);
+ border-radius:9px;background:rgba(9,32,46,.56);text-decoration:none;
+ min-width:0;transition:background-color .2s,border-color .2s
+}
+body.heritage-publication-page .rr-pub-recent-link:hover,
+body.heritage-publication-page .rr-pub-recent-link:focus-visible{
+ background:rgba(226,185,111,.16);border-color:#e9be77;outline:none
+}
+body.heritage-publication-page .rr-pub-recent-title{
+ min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+ color:#fff0d9;font:500 16px/1.25 var(--heritage-serif)
+}
+body.heritage-publication-page .rr-pub-recent-meta{
+ flex:0 0 auto;max-width:40%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+ color:#edc17b;font:700 9px/1.3 var(--heritage-sans)
+}
+@media(max-width:750px){
+ body.heritage-publication-page .rr-publication-product-grid .rr-racecards-purchase-rail{
+  max-height:none;overflow:visible;align-self:stretch
+ }
+ body.heritage-publication-page .rr-pub-recent{max-height:none;overflow:visible}
+ body.heritage-publication-page .rr-pub-recent-link:nth-of-type(n+3){display:none}
+ body.heritage-publication-page .rr-pub-recent-title{font-size:15px}
+ body.heritage-publication-page .rr-pub-recent-meta{font-size:9px}
+}
+@media(prefers-reduced-motion:reduce){
+ body.heritage-publication-page .rr-pub-recent-link{transition:none}
+}
+
+/* Page 9 only. The archive's final hero action leads back to Page 2;
+   The Journal landing, article routes, and header are unchanged. */
+body.heritage-journal-page.rr-journal-archive-view .rr-journal-archive-pill{
+ display:inline-flex
+}
+body.heritage-journal-page.rr-journal-archive-view .rr-journal-feature-rail{
+ max-height:min(640px,76svh)
+}
+@media(max-width:750px){
+ body.heritage-journal-page.rr-journal-archive-view .rr-journal-feature-rail{
+  max-height:none
+ }
+}

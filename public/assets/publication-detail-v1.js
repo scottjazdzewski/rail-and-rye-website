@@ -3,6 +3,7 @@
 const category=document.body.dataset.publicationCategory;
 const latestGrid=document.getElementById('rr-pub-latest');
 const latestStatus=document.getElementById('rr-pub-latest-status');
+const recentList=document.getElementById('rr-pub-recent');
 const grid=document.getElementById('rr-pub-products');
 const status=document.getElementById('rr-pub-status');
 if(!category||!latestGrid||!latestStatus)return;
@@ -28,6 +29,7 @@ const latestMeta=p=>{
  return parts.join(' · ')
 };
 const freeProduct=p=>p.kind==='single'&&Number(p.price_cents)===0;
+const editionHref=p=>'/store/?category='+encodeURIComponent(category)+'#edition-'+encodeURIComponent(p.id);
 const makePurchaseButton=(p,data,onError)=>{
  const free=freeProduct(p),ready=Boolean(data.checkout_ready),live=data.checkout_mode==='live';
  const label=free?'Download free PDF':ready?(live?(p.kind==='bundle'?'Purchase bundle':'Purchase PDF'):'Test purchase'):'Checkout unavailable';
@@ -48,6 +50,11 @@ const makePurchaseButton=(p,data,onError)=>{
 };
 const makeGlassCard=(p,data,onError)=>{
  const card=document.createElement('article');card.className='rr-glass-purchase-card rr-publication-latest-card';
+ // The whole edition panel opens that exact edition on the Publication Desk.
+ // Its separate purchase button remains an explicit checkout action.
+ const editionLink=document.createElement('a');editionLink.className='rr-pub-edition-overlay';
+ editionLink.href=editionHref(p);editionLink.setAttribute('aria-label','View '+displayTitle(p.title||category)+' in the Publication Desk');
+ editionLink.textContent='View edition';
  const cover=document.createElement('div');cover.className='rr-purchase-brand-mark';
  const logo=document.createElement('img');logo.src='/assets/approved/brand/rail-rye-ivory-logo.png';logo.alt='Rail & Rye official horseshoe emblem';logo.className='rr-purchase-brand-logo';logo.loading='lazy';logo.decoding='async';cover.append(logo);
  const copy=document.createElement('div');copy.className='rr-purchase-copy';
@@ -56,8 +63,23 @@ const makeGlassCard=(p,data,onError)=>{
  copy.append(txt('h3',displayTitle(p.title||category),'rr-purchase-title'));
  copy.append(txt('p',p.description||'Digital racing publication.','rr-purchase-description'));
  copy.append(txt('div',freeProduct(p)?'FREE':price(p.price_cents),'rr-purchase-price'));
- card.append(cover,copy,makePurchaseButton(p,data,onError));
+ card.append(cover,copy,makePurchaseButton(p,data,onError),editionLink);
  return card
+};
+const renderRecent=products=>{
+ if(!recentList)return;
+ recentList.replaceChildren();
+ const other=products.slice(1,5);
+ if(!other.length){recentList.hidden=true;return;}
+ recentList.hidden=false;
+ recentList.append(txt('div','RECENT EDITIONS','rr-pub-recent-kicker'));
+ for(const item of other){
+  const link=document.createElement('a');link.className='rr-pub-recent-link';
+  link.href=editionHref(item);
+  const label=txt('span',displayTitle(item.title||category),'rr-pub-recent-title');
+  const meta=txt('small',latestMeta(item)||'View edition','rr-pub-recent-meta');
+  link.append(label,meta);recentList.append(link);
+ }
 };
 const makeEditionCard=(p,data,onError)=>{
  const card=document.createElement('article');card.className='rr-edition-card';
@@ -80,6 +102,7 @@ const makeEditionCard=(p,data,onError)=>{
    .filter(p=>Array.isArray(p.categories)?p.categories.includes(category):p.category===category)
    .sort((a,b)=>String(b.race_date||'').localeCompare(String(a.race_date||'')));
   if(!products.length){
+   if(recentList){recentList.replaceChildren();recentList.hidden=true;}
    latestStatus.textContent='No editions are currently published in this collection.';
    if(status)status.textContent='No editions are currently published in this collection.';
    return
@@ -87,6 +110,7 @@ const makeEditionCard=(p,data,onError)=>{
   latestStatus.textContent=products.length===1?'1 edition available':products.length+' editions available · latest shown';
   const showError=error=>{latestStatus.textContent=error.message||'Checkout could not be started.';latestStatus.classList.add('rr-status-error')};
   latestGrid.replaceChildren(makeGlassCard(products[0],data,showError));
+  renderRecent(products);
   if(grid&&status){
    status.textContent=products.length===1?'1 edition available':products.length+' editions available';
    grid.replaceChildren(...products.map(p=>makeEditionCard(p,data,showError)))
