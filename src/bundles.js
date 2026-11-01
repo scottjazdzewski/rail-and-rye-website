@@ -1,6 +1,7 @@
 /* Automatic bundles: only server-authorized admin users can edit memberships.
    Buyer entitlements are captured at checkout, not resolved from the live catalog
    after payment. R2 keys are never exposed in an API response. */
+import {ensureReleaseSchedule} from './publication-schedule.js';
 export const BUNDLE_KEY = '__rr_bundle__';
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const CATEGORIES=new Set(['Race Cards','Longshot Radar','Stable Notes','Target List']);
@@ -39,11 +40,11 @@ async function payload(request) {
     new Set(product_ids).size!==product_ids.length)throw Error('Select 2–12 different published PDFs');
   return {title,description,category,race_date,price_cents,status,product_ids};
 }
-function eligibleChild(p){return !!p&&!!p.pdf_key&&p.pdf_key!==BUNDLE_KEY&&(p.status==='published'||(p.status==='draft'&&!!p.asset_id));}
+function eligibleChild(p){return !!p&&!!p.pdf_key&&p.pdf_key!==BUNDLE_KEY&&!p.pending_release&&(p.status==='published'||(p.status==='draft'&&!!p.asset_id));}
 async function validatedChildren(env,ids) {
   const rows=[];
   for (const id of ids) {
-    const p=await env.STORE_DB.prepare("SELECT p.id,p.title,p.pdf_key,p.status,a.product_id AS asset_id FROM products p LEFT JOIN bundle_only_assets a ON a.product_id=p.id WHERE p.id=?").bind(id).first();
+    const p=await env.STORE_DB.prepare("SELECT p.id,p.title,p.pdf_key,p.status,a.product_id AS asset_id,CASE WHEN s.release_at>CURRENT_TIMESTAMP THEN 1 ELSE 0 END AS pending_release FROM products p LEFT JOIN bundle_only_assets a ON a.product_id=p.id LEFT JOIN product_release_schedule s ON s.product_id=p.id WHERE p.id=?").bind(id).first();
     if(!eligibleChild(p))
       throw Error('Include only published individual PDFs or uploaded bundle-only PDFs');
     rows.push(p);
@@ -60,18 +61,19 @@ async function allBundles(env) {
   const bundles=[];
   for (const b of products.results||[]) {
     const items=await env.STORE_DB.prepare(
-      "SELECT bi.product_id,p.title,p.status,p.pdf_key,a.product_id AS asset_id FROM bundle_items bi LEFT JOIN products p ON p.id=bi.product_id LEFT JOIN bundle_only_assets a ON a.product_id=p.id WHERE bi.bundle_id=? ORDER BY bi.position"
+      "SELECT bi.product_id,p.title,p.status,p.pdf_key,a.product_id AS asset_id,CASE WHEN s.release_at>CURRENT_TIMESTAMP THEN 1 ELSE 0 END AS pending_release FROM bundle_items bi LEFT JOIN products p ON p.id=bi.product_id LEFT JOIN bundle_only_assets a ON a.product_id=p.id LEFT JOIN product_release_schedule s ON s.product_id=p.id WHERE bi.bundle_id=? ORDER BY bi.position"
     ).bind(b.id).all();
     bundles.push({...b,product_ids:(items.results||[]).map(x=>x.product_id),
       components:(items.results||[]).map(x=>({id:x.product_id,title:x.title,status:x.status,available:eligibleChild(x),bundle_only:!!x.asset_id}))});
   }
   const singles=await env.STORE_DB.prepare(
-    "SELECT p.id,p.title,p.category,p.race_date,p.price_cents,p.status,CASE WHEN a.product_id IS NOT NULL THEN 1 ELSE 0 END AS bundle_only FROM products p LEFT JOIN bundle_only_assets a ON a.product_id=p.id WHERE (p.status='published' OR (p.status='draft' AND a.product_id IS NOT NULL)) AND p.pdf_key IS NOT NULL AND p.pdf_key != ? ORDER BY p.race_date DESC, p.title LIMIT 250"
+    "SELECT p.id,p.title,p.category,p.race_date,p.price_cents,p.status,CASE WHEN a.product_id IS NOT NULL THEN 1 ELSE 0 END AS bundle_only FROM products p LEFT JOIN bundle_only_assets a ON a.product_id=p.id WHERE (p.status='published' OR (p.status='draft' AND a.product_id IS NOT NULL)) AND p.pdf_key IS NOT NULL AND p.pdf_key != ? AND NOT EXISTS(SELECT 1 FROM product_release_schedule s WHERE s.product_id=p.id AND s.release_at>CURRENT_TIMESTAMP) ORDER BY p.race_date DESC, p.title LIMIT 250"
   ).bind(BUNDLE_KEY).all();
   return out({bundles,available_products:singles.results||[]});
 }
 export async function handleAdminBundles(request,env,path) {
   if (!env.STORE_DB) return bad('Database unavailable',503);
+  await ensureReleaseSchedule(env);
   if (!['GET','POST','PATCH'].includes(request.method))return bad('Method not allowed',405);
   if(request.method!=='GET'&&!originOk(request))return bad('Same-origin request required',403);
   if(path==='/api/admin/bundles'&&request.method==='GET')return allBundles(env);
