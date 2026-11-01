@@ -302,8 +302,9 @@ const previewHeader=wirePage.match(/<header class="heritage-header">[\s\S]*?<\/h
 assert.ok(previewHeader && journalHeader,'Preview uses the existing production header component');
 assert.ok(previewHeader.includes('heritage-strap') && previewHeader.includes('header-horse.webp'),'Centered production racing strap retained');
 assert.ok(previewHeader.includes('heritage-mobile-nav'),'Production mobile navigation retained');
-assert.ok(!previewHeader.includes('The Racing Wire'),'Unlisted preview does not add a fourth nav pill or change production header spacing');
-assert.equal((previewHeader.match(/class="heritage-nav-pill"/g)||[]).length,3,'Desktop header has the exact three public navigation pills');
+assert.ok(!previewHeader.includes('>The Racing Wire</a>'),'Unlisted preview does not add a public Racing Wire navigation pill');
+assert.ok(previewHeader.includes('href="/our-approach/"'),'Our Approach is included in the shared navigation');
+assert.equal((previewHeader.match(/class="heritage-nav-pill"/g)||[]).length,4,'Desktop header has the four approved public navigation pills');
 assert.ok(wirePage.includes('/assets/rail-rye-core.css?v=') &&
  wirePage.includes('/assets/rail-rye-components.css?v=') &&
  wirePage.includes('/assets/rail-rye-pages.css?v='),'Header/footer use actual versioned site stylesheets');
