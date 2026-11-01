@@ -199,13 +199,21 @@ function storyCard(x,lead=false,allowImage=true){
 }
 function render(){
  const q=$('search').value.trim().toLowerCase();
+ const editorialView=subject==='all'&&!q&&$('sort').value==='newest';
  let records=data.filter(x=>(subject==='all'||x.subject_kind===subject)&&(!q||(x.title+' '+(x.summary||'')+' '+(x.source||'')).toLowerCase().includes(q)));
- records=records.slice().sort((a,b)=>$('sort').value==='oldest'?new Date(a.published_at)-new Date(b.published_at):new Date(b.published_at)-new Date(a.published_at));
+ records=records.slice().sort((a,b)=>{
+   if($('sort').value==='oldest')return new Date(a.published_at)-new Date(b.published_at);
+   if(editorialView){
+     const ar=Number.isFinite(Number(a.newsroom_rank))?Number(a.newsroom_rank):9999;
+     const br=Number.isFinite(Number(b.newsroom_rank))?Number(b.newsroom_rank):9999;
+     return ar-br||new Date(b.published_at)-new Date(a.published_at);
+   }
+   return new Date(b.published_at)-new Date(a.published_at);
+ });
  $('count').textContent=records.length+' stor'+(records.length===1?'y':'ies');
  const leadSection=$('leadSection'),leadStory=$('leadStory');
  const secondarySection=$('secondarySection'),secondaryStories=$('secondaryStories');
  let lead=null,secondary=[];
- const editorialView=subject==='all'&&!q&&$('sort').value==='newest';
  if(editorialView){
    const hasStoryImage=x=>typeof x.image_url==='string'&&/^https:\/\/[a-z0-9.-]+\//i.test(x.image_url)&&!failedImages.has(x.image_url);
    lead=records.find(x=>x.editorial?.placement==='top'&&hasStoryImage(x))||
@@ -220,7 +228,11 @@ function render(){
      .sort((a,b)=>new Date(b.published_at)-new Date(a.published_at)).slice(0,3);
    const manualSet=new Set(manual);
    const automatic=records.filter(x=>x!==lead&&!manualSet.has(x)&&x.editorial?.placement!=='top'&&typeof x.image_url==='string'&&/^https:\/\/[a-z0-9.-]+\//i.test(x.image_url)&&!failedImages.has(x.image_url))
-     .sort((a,b)=>(Number(b.editorial_score)-Number(a.editorial_score))||(new Date(b.published_at)-new Date(a.published_at)))
+     .sort((a,b)=>{
+       const ar=Number.isFinite(Number(a.newsroom_rank))?Number(a.newsroom_rank):9999;
+       const br=Number.isFinite(Number(b.newsroom_rank))?Number(b.newsroom_rank):9999;
+       return ar-br||Number(b.editorial_score)-Number(a.editorial_score)||new Date(b.published_at)-new Date(a.published_at);
+     })
      .slice(0,Math.max(0,3-manual.length));
    secondary=[...manual,...automatic];
    for(const x of secondary){const card=storyCard(x,false,true);card.classList.add('secondary-story');secondaryStories.append(card);}
