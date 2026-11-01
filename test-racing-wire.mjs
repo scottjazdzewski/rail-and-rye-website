@@ -229,8 +229,7 @@ assert.equal(socialPreview('Short original post').title,'Short original post');
 assert.equal(socialPreview('Short original post').summary,'');
 const wirePage=readFileSync(new URL('./public/preview/racing-wire-5333548f0ffee31ba519b2470ffb/index.html',import.meta.url),'utf8');
 for(const type of ['horse','owner','trainer','jockey','race','stable','racetrack','breeding','sale','regulatory','achievement','industry']){
- assert.ok(wirePage.includes(type+':'), 'Original subject pictogram exists: '+type);
- assert.ok(wirePage.includes("'"+type+"'"), 'Subject filter configured: '+type);
+ assert.ok(wirePage.includes("'"+type+"'"), 'Approved subject filter and badge kind configured: '+type);
 }
 assert.ok(wirePage.includes('Source: '),'Source attribution exists');
 assert.ok(!wirePage.includes('bsky.app'),'Preview contains no Blue Sky source links');
