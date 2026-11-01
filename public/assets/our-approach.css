@@ -1,0 +1,116 @@
+/* Rail & Rye — Our Approach. Dedicated styling only. No legacy overrides. */
+body.rr-approach-page{
+ display:flex;flex-direction:column;min-height:100vh;min-height:100svh
+}
+body.rr-approach-page>.rr-approach-hero{
+ display:flex;flex:1 1 auto;flex-direction:column;min-height:0;
+ background-color:#081c2b;
+ background-image:url('/assets/approved/home/hero-dust-charged-finish.jpg');
+ background-size:cover;background-position:center 50%;border-bottom:0
+}
+body.rr-approach-page>.heritage-footer{flex:0 0 auto;margin-top:auto}
+body.rr-approach-page .rr-approach-grid{
+ box-sizing:border-box;display:grid;grid-template-columns:minmax(0,1.06fr) minmax(400px,.94fr);
+ gap:clamp(30px,5vw,82px);align-items:start;flex:1 1 auto;
+ padding-top:clamp(52px,5.5vw,89px);padding-bottom:clamp(30px,4vw,65px)
+}
+body.rr-approach-page .rr-approach-left{align-self:start;max-width:690px}
+body.rr-approach-page .rr-approach-kicker{
+ display:inline-flex;align-items:center;min-height:37px;
+ padding:9px 16px;border:1px solid rgba(224,181,107,.75);border-radius:999px;
+ background:rgba(5,24,36,.64);color:#eec681;
+ font:800 11px/1.3 var(--heritage-sans);letter-spacing:.13em;text-transform:uppercase
+}
+body.rr-approach-page .rr-approach-left .rr-page-title{
+ margin:22px 0 21px;color:#fff0db;
+ font:500 clamp(60px,6vw,96px)/.99 var(--heritage-serif);letter-spacing:-.025em;
+ text-shadow:0 5px 19px rgba(0,0,0,.58)
+}
+body.rr-approach-page .rr-approach-left .rr-page-rule{
+ display:block;width:100px;height:3px;margin:0;background:#e7b66d
+}
+body.rr-approach-page .rr-approach-left .rr-page-description{
+ max-width:590px;margin-top:20px;color:#f3deb8;
+ font:400 clamp(15px,1.25vw,19px)/1.63 var(--heritage-sans);
+ text-shadow:0 3px 10px #000a
+}
+body.rr-approach-page .rr-approach-action{
+ display:inline-flex;align-items:center;gap:12px;margin-top:22px;
+ padding:12px 18px;border:1px solid #d6a763;border-radius:999px;
+ background:rgba(5,23,35,.72);color:#ffebc8;text-decoration:none;
+ font:800 10px/1.3 var(--heritage-sans);letter-spacing:.09em;text-transform:uppercase
+}
+body.rr-approach-page .rr-approach-action:hover{background:rgba(226,183,111,.2)}
+body.rr-approach-page .rr-approach-rail{
+ box-sizing:border-box;display:flex;flex-direction:column;align-self:start;
+ width:100%;min-width:0;max-height:min(570px,66vh);max-height:min(570px,66svh);
+ padding:clamp(22px,2.3vw,34px);border:1px solid rgba(231,181,105,.78);
+ border-radius:12px;background:rgba(4,24,36,.91);color:#e9c993;
+ box-shadow:inset 0 0 0 5px rgba(232,195,124,.055),0 18px 45px #0006;
+ -webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)
+}
+body.rr-approach-page .rr-approach-rail-head{
+ flex:0 0 auto;padding-bottom:16px;border-bottom:1px solid rgba(224,181,107,.4)
+}
+body.rr-approach-page .rr-approach-overline,
+body.rr-approach-page .rr-approach-point-index{
+ color:#ecc17b;font:800 10px/1.4 var(--heritage-sans);
+ letter-spacing:.16em;text-transform:uppercase
+}
+body.rr-approach-page .rr-approach-rail-head h2{
+ margin:9px 0 0;color:#f5cf8f;
+ font:500 clamp(31px,2.8vw,43px)/1.08 var(--heritage-serif)
+}
+body.rr-approach-page .rr-approach-rail-content{
+ flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;
+ padding:19px 9px 7px 1px;scrollbar-color:#bb8c48 #112d3a
+}
+body.rr-approach-page .rr-approach-point{
+ padding:0 0 23px;margin:0 0 22px;
+ border-bottom:1px solid rgba(224,181,107,.32)
+}
+body.rr-approach-page .rr-approach-point-final{border:0;margin:0;padding-bottom:12px}
+body.rr-approach-page .rr-approach-point h3{
+ margin:8px 0 10px;color:#f7d69e;
+ font:500 clamp(24px,2vw,31px)/1.14 var(--heritage-serif)
+}
+body.rr-approach-page .rr-approach-point p{
+ margin:0;color:#e7d0a6;font:400 14px/1.72 var(--heritage-sans)
+}
+body.rr-approach-page .rr-approach-rail-foot{
+ flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;
+ gap:15px;margin-top:11px;padding-top:14px;
+ border-top:1px solid rgba(224,181,107,.36)
+}
+body.rr-approach-page .rr-approach-rail-foot a{
+ color:#f8d296;font:800 11px/1.3 var(--heritage-sans);
+ text-decoration:underline;text-underline-offset:4px;white-space:nowrap
+}
+body.rr-approach-page .rr-approach-rail-foot span{
+ color:#d4b887;font:700 8px/1.5 var(--heritage-sans);
+ letter-spacing:.12em;text-align:right
+}
+@media(max-width:1120px){
+ body.rr-approach-page .rr-approach-grid{grid-template-columns:1fr;gap:27px}
+ body.rr-approach-page .rr-approach-left{max-width:780px}
+ body.rr-approach-page .rr-approach-rail{max-height:none;max-width:780px}
+ body.rr-approach-page .rr-approach-rail-content{max-height:none;overflow:visible}
+}
+@media(max-width:750px){
+ body.rr-approach-page>.rr-approach-hero{min-height:0;background-position:59% 40%}
+ body.rr-approach-page .rr-approach-grid{
+  padding-top:62px;padding-bottom:38px;gap:28px
+ }
+ body.rr-approach-page .rr-approach-left .rr-page-title{
+  font-size:clamp(49px,11vw,68px);margin:17px 0
+ }
+ body.rr-approach-page .rr-approach-left .rr-page-description{
+  font-size:14px;line-height:1.6;max-width:590px
+ }
+ body.rr-approach-page .rr-approach-rail{
+  padding:22px 18px;max-width:none;max-height:none
+ }
+ body.rr-approach-page .rr-approach-rail-head h2{font-size:33px}
+ body.rr-approach-page .rr-approach-point p{font-size:13px}
+ body.rr-approach-page .rr-approach-rail-foot span{font-size:7px}
+}

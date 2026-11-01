@@ -6,7 +6,7 @@ import fs from 'node:fs';
 import { createHash } from 'node:crypto';
 
 const approvedBlobs = {
-  'public/index.html': '8f9c6fa14340859f2e725fd586446febe660e599',
+  'public/index.html': 'edaa4aa2c455f346f0d73b24e20b0dbddbdfa2b2',
   'public/assets/approved/brand/header-horse.webp': 'c6a7ed8882a6b42dd96af9a621fe80a88da96f8a',
   'public/assets/approved/brand/rail-rye-ivory-logo.png': '974905e392779b081e784ca55d43205c80fef126',
   'public/assets/approved/home/hero-dust-charged-finish.jpg': 'aa2e5b276969e2b65c7e3b1fd099bd541d32ea21',

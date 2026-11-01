@@ -184,6 +184,12 @@ body.heritage-home.rr-shell-page .micro-strip{display:none}
 .heritage-nav .heritage-nav-pill[aria-current=page]{
  background:linear-gradient(150deg,#a77b403c,#092432b0);color:#ffe0a2
 }
+/* Four aligned header pills without disturbing the central brand strapline. */
+@media(min-width:1121px) and (max-width:1450px){
+ .heritage-nav{gap:5px}
+ .heritage-nav a{font-size:9px;letter-spacing:.055em}
+ .heritage-nav .heritage-nav-pill{padding:9px 8px;min-height:40px}
+}
 .heritage-mobile-nav{display:none}
 .heritage-mobile-nav summary{
  cursor:pointer;list-style:none;border:1px solid #e0b572;color:#f6ebd8;border-radius:99px;

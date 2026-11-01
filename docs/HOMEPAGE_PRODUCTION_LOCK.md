@@ -33,3 +33,7 @@ The owner has confirmed the homepage layout is correct. Treat this visual state 
 Use the commit or snapshot branch above as the recovery reference. Restore **only the impacted homepage files and homepage-specific CSS rules**, not the entire repository: restoring an entire old commit could wipe newer commerce, content or security work. Recheck desktop, mobile, and the "More from Rail & Rye" fold after any restoration.
 
 **Approved baseline:** confirmed working by the owner on October 31, 2026.
+
+## Owner-authorized navigation addition (October 31, 2026)
+
+The owner explicitly approved adding **Our Approach** as a fourth top-navigation pill throughout public pages and their mobile menus. The authorized homepage source change is restricted to the desktop/mobile header links and the shared header stylesheet cache version. Homepage photography, hero, typography, body copy, tiles, page spacing and fold are not redesigned. The homepage lock hash was updated to reflect the approved navigation-only change; all approved visual asset hashes and CSS layout guards remain intact. The `approved-homepage-2026-10-31` branch is still the pre-navigation recovery snapshot.
