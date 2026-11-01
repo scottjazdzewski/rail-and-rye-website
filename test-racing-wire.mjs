@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import {readFileSync,readdirSync} from 'node:fs';
 import vm from 'node:vm';
-import {PREVIEW_LIVE_FEEDS,PREVIEW_DIAGNOSTIC_FEEDS,PREVIEW_LIVE_OFFICIAL_NEWS_PAGES,PREVIEW_OFFICIAL_NEWS_PAGES,handleRacingWire,handlePreviewRacingWire,handleAdminRacingWire,previewExternalItems,parseRacingRss,parseOfficialNewsPage,categorize,refreshRacingWire,testPreviewRssFeeds,groupRacingWireStories,curateRacingWireStories,scoreRacingWireItem,subjectKind,socialPreview} from './src/racing-wire.js';
+import {PREVIEW_LIVE_FEEDS,PREVIEW_DIAGNOSTIC_FEEDS,PREVIEW_LIVE_OFFICIAL_NEWS_PAGES,PREVIEW_OFFICIAL_NEWS_PAGES,PREVIEW_LIVE_JSON_SOURCES,handleRacingWire,handlePreviewRacingWire,handleAdminRacingWire,previewExternalItems,parseRacingRss,parseOfficialNewsPage,parseOneStNewsPage,parseBreedersCupNewsPage,parseFasigNewsArchive,parseOfficialJsonItems,categorize,refreshRacingWire,testPreviewRssFeeds,groupRacingWireStories,curateRacingWireStories,scoreRacingWireItem,subjectKind,socialPreview} from './src/racing-wire.js';
 const db=new DatabaseSync(':memory:');
 db.exec("CREATE TABLE journal_articles (id TEXT PRIMARY KEY,slug TEXT,title TEXT,category TEXT,excerpt TEXT,publish_date TEXT,status TEXT,created_at TEXT);");
 db.prepare("INSERT INTO journal_articles VALUES (?,?,?,?,?,?,?,?)").run(
@@ -126,84 +126,110 @@ const fixtureTitles=[
  'Grade 1 winner sidelined by injury and surgery',
  'Filly wins Grade 2 stakes in track-record performance',
  'BloodHorse reports champion stallion breeding rights update',
- 'Paulick Report covers trainer suspension ruling',
- 'Daily Racing Form reports Grade 1 stakes winner',
- 'NTRA announces Thoroughbred industry initiative',
- 'TOBA honors leading Thoroughbred owner at awards',
  'Tattersalls yearling tops major bloodstock sale',
- 'National HBPA issues Thoroughbred industry statement',
  'Fair Grounds announces Louisiana Derby stakes schedule',
- 'Remington Park reports Thoroughbred stakes result',
- 'Laurel Park announces Maryland Thoroughbred racing operations update'
-]
-assert.ok(!PREVIEW_LIVE_FEEDS.some(feed=>/us racing|usracing/i.test(feed.name+' '+feed.url)),'Wagering-focused US Racing is excluded at the source level');
+ 'Laurel Park reports Thoroughbred stakes result',
+ 'Churchill Downs reports Grade 2 stakes result',
+ 'NTRA announces Thoroughbred industry initiative',
+ 'National HBPA issues Thoroughbred industry statement'
+];
+assert.ok(![...PREVIEW_LIVE_FEEDS,...PREVIEW_DIAGNOSTIC_FEEDS].some(feed=>/us racing|usracing/i.test(feed.name+' '+feed.url)),'Wagering-focused US Racing is excluded at the source level');
 assert.ok(![...PREVIEW_LIVE_FEEDS,...PREVIEW_DIAGNOSTIC_FEEDS].some(feed=>/past the wire|pastthewire/i.test(feed.name+' '+feed.url)),'Past The Wire is excluded at the source level as a direct competitor');
 assert.equal(scoreRacingWireItem({title:'Best bets and wagering tips for Saturday stakes',source:'Editorial Outlet'}).reject,true,'Betting/wagering editorial is rejected even from an otherwise allowed publication');
 assert.equal(scoreRacingWireItem({title:'Standardbred champion wins harness stakes',source:'Editorial Outlet'}).reject,true,'Harness/Standardbred coverage is excluded');
+assert.equal(scoreRacingWireItem({title:'Meadowlands pacers sweep Kindergarten pacing finals',source:'Daily Racing Form'}).reject,true,'Trotting/pacing coverage is excluded even without the word harness');
 assert.equal(scoreRacingWireItem({title:'National Hunt star wins steeplechase feature',source:'Editorial Outlet'}).reject,true,'Steeplechase/National Hunt coverage is excluded');
+
 const previewFeedCount=PREVIEW_LIVE_FEEDS.length;
 const diagnosticFeedCount=PREVIEW_DIAGNOSTIC_FEEDS.length;
-assert.equal(previewFeedCount,10,'Only approved non-competing RSS sources participate in the live private preview');
-assert.equal(diagnosticFeedCount,16,'Health diagnostics retry sixteen approved non-competing Thoroughbred source candidates');
-assert.ok(['bloodhorse','tattersalls','fair-grounds','laurel'].every(id=>PREVIEW_LIVE_FEEDS.some(feed=>feed.id===id)),'Live RSS pool includes confirmed newsroom, sales and track sources');
-assert.ok(['paulick','drf-headlines','ntra','toba','national-hbpa','remington'].every(id=>PREVIEW_DIAGNOSTIC_FEEDS.some(feed=>feed.id===id&&!PREVIEW_LIVE_FEEDS.some(live=>live.id===id))),'Blocked or empty RSS sources stay in diagnostics without slowing Page 8');
-assert.deepEqual(PREVIEW_OFFICIAL_NEWS_PAGES.map(x=>x.id),['hisa','hiwu','keeneland','breeders-cup','fasig-tipton','churchill-downs','santa-anita','del-mar','gulfstream'],'Approved first-party Thoroughbred newsrooms remain under health monitoring');
-assert.deepEqual(PREVIEW_LIVE_OFFICIAL_NEWS_PAGES.map(x=>x.id),['hisa','hiwu','keeneland'],'Only verified official-page adapters feed Page 8');
-assert.ok(PREVIEW_LIVE_FEEDS.filter(feed=>feed.require_racing_context).every(feed=>['fair-grounds','laurel'].includes(feed.id)),'Mixed-use live track feeds require explicit racing context');
+const liveOfficialCount=PREVIEW_LIVE_OFFICIAL_NEWS_PAGES.length;
+const officialDiagnosticCount=PREVIEW_OFFICIAL_NEWS_PAGES.length;
+const liveJsonCount=PREVIEW_LIVE_JSON_SOURCES.length;
+assert.equal(previewFeedCount,11,'Eleven proven non-competing RSS sources feed the private preview');
+assert.equal(diagnosticFeedCount,13,'RSS health diagnostics include the eleven live feeds plus NTRA and National HBPA monitor-only endpoints');
+assert.equal(liveOfficialCount,10,'Ten verified first-party newsroom adapters feed the private preview');
+assert.equal(officialDiagnosticCount,11,'Paulick remains health-monitored in addition to the ten live official newsrooms');
+assert.equal(liveJsonCount,1,'TOBA uses its official WordPress JSON metadata endpoint');
+assert.deepEqual(PREVIEW_LIVE_OFFICIAL_NEWS_PAGES.map(x=>x.id),
+ ['hisa','hiwu','keeneland','drf','santa-anita','del-mar','gulfstream','remington','breeders-cup','fasig-tipton'],
+ 'Verified official-page sources remain explicit and ordered');
+assert.deepEqual(PREVIEW_OFFICIAL_NEWS_PAGES.filter(x=>!PREVIEW_LIVE_OFFICIAL_NEWS_PAGES.some(y=>y.id===x.id)).map(x=>x.id),['paulick'],
+ 'Paulick is monitor-only because its site blocks server-side access');
+assert.deepEqual(PREVIEW_DIAGNOSTIC_FEEDS.filter(x=>!PREVIEW_LIVE_FEEDS.some(y=>y.id===x.id)).map(x=>x.id),['ntra','national-hbpa'],
+ 'NTRA and National HBPA remain monitor-only because their endpoints block server-side access');
+assert.deepEqual(PREVIEW_LIVE_JSON_SOURCES.map(x=>x.id),['toba']);
+
+const oneStFixture='<article class="tile-inner"><div class="image"><a href="/news/grade-one-stakes-result/"><img alt="Grade One Stakes Result at Santa Anita"></a></div><div class="description"><span>10/31/2026</span><h2 class="post-title"><a href="/news/grade-one-stakes-result/">Grade One Stakes Result at Santa Anita</a></h2></div></article>';
+assert.equal(parseOneStNewsPage(oneStFixture,{name:'Santa Anita',host:'santaanita.com',url:'https://www.santaanita.com/news/',path_prefix:'/news'}).length,1,'1/ST card adapter parses Santa Anita/Gulfstream cards');
+const bcFixture='<script>{"cards":[{"title":"Sovereignty Wins Breeders Cup Classic","url":"/news/2026/classic-result","publishDate":"2026-10-31T12:00:00.000Z"}]}</script>';
+assert.equal(parseBreedersCupNewsPage(bcFixture,{name:"Breeders' Cup",host:'breederscup.com',url:'https://www.breederscup.com/news'}).length,1,'Breeders Cup adapter parses embedded first-party card metadata');
+const fasigFixture='<div>October 31, 2026 <a href="/2026/november/1031">Fasig-Tipton November Sale Update</a></div>';
+assert.equal(parseFasigNewsArchive(fasigFixture,{name:'Fasig-Tipton',host:'fasigtipton.com',url:'https://www.fasigtipton.com/archive/2026'}).length,1,'Fasig-Tipton archive adapter parses dated sale headlines');
+const jsonFixture=[{link:'https://toba.org/news/test',date:'2026-10-31T12:00:00',title:{rendered:'TOBA Thoroughbred Industry Initiative'}}];
+assert.equal(parseOfficialJsonItems(jsonFixture,{name:'TOBA',host:'toba.org',category:'Industry'}).length,1,'TOBA JSON adapter parses first-party post metadata');
+
 const officialFixtureFor=source=>{
+ if(source.adapter==='one-st')return oneStFixture.replaceAll('santaanita.com',source.host);
+ if(source.adapter==='breeders-cup')return bcFixture;
+ if(source.adapter==='fasig')return fasigFixture;
  const prefix=source.path_prefix||'/news';
- return '<html><body><a href="'+prefix+'/regulatory-update"><article><div>October 31, 2026</div><h3>Official Thoroughbred regulatory update</h3></article></a></body></html>';
+ return '<html><body><div>October 31, 2026 <a href="'+prefix+'/regulatory-update"><h3>Official Thoroughbred Stakes Update</h3></a></div></body></html>';
 };
-assert.equal(parseOfficialNewsPage(officialFixtureFor({path_prefix:'/news'}),{name:'HISA',host:'hisaus.org',url:'https://www.hisaus.org/news',path_prefix:'/news'}).length,1,'Official news-page adapter extracts only dated headline/link metadata');
-assert.equal(parseOfficialNewsPage(officialFixtureFor({path_prefix:'/media/news'}),{name:'Keeneland',host:'keeneland.com',url:'https://www.keeneland.com/media/news',path_prefix:'/media/news'}).length,1,'Official news-page adapter supports nested newsroom paths');
 const previewFeedFixtures=Object.fromEntries(PREVIEW_DIAGNOSTIC_FEEDS.map((feed,i)=>{
  const host=(feed.link_hosts?.[0]||feed.host);
- return [feed.url,{host,title:fixtureTitles[i],link:'https://www.'+host+'/rr-preview-story-'+(i+1)}];
+ return [feed.url,{host,title:fixtureTitles[i]||('Thoroughbred stakes update '+feed.id),link:'https://www.'+host+'/rr-preview-story-'+(i+1)}];
 }));
 let diagnosticFetches=0;
 const previewFetch=async url=>{
  diagnosticFetches++;
  const official=PREVIEW_OFFICIAL_NEWS_PAGES.find(source=>source.url===String(url));
  if(official)return new Response(officialFixtureFor(official),{status:200,headers:{'Content-Type':'text/html'}});
+ const jsonSource=PREVIEW_LIVE_JSON_SOURCES.find(source=>source.url===String(url));
+ if(jsonSource)return new Response(JSON.stringify(jsonFixture),{status:200,headers:{'Content-Type':'application/json'}});
  const fixture=previewFeedFixtures[String(url)];
  assert.ok(fixture,'Only allowlisted Racing Wire endpoints are requested: '+url);
  const xml='<rss><channel><item><title>'+fixture.title+'</title><link>'+fixture.link+'</link>'+
   '<pubDate>Sat, 31 Oct 2026 12:00:00 GMT</pubDate></item></channel></rss>';
  return new Response(xml,{status:200,headers:{'Content-Type':'application/rss+xml'}});
 };
+
 const diagnostic=await testPreviewRssFeeds(previewFetch);
-assert.equal(diagnosticFetches,diagnosticFeedCount+PREVIEW_OFFICIAL_NEWS_PAGES.length,'Diagnostics exercise every RSS candidate plus every approved official newsroom');
+const diagnosticSourceCount=diagnosticFeedCount+officialDiagnosticCount+liveJsonCount;
+assert.equal(diagnosticFetches,diagnosticSourceCount,'Diagnostics exercise all RSS, official-page and JSON source candidates');
 assert.equal(diagnostic.diagnostic_only,true);
-assert.equal(diagnostic.results.length,diagnosticFeedCount+PREVIEW_OFFICIAL_NEWS_PAGES.length);
+assert.equal(diagnostic.results.length,diagnosticSourceCount);
 assert.ok(diagnostic.results.every(x=>x.reachable&&x.http_status===200&&x.parsed_count===1));
-assert.equal(diagnostic.results.filter(x=>x.source_type==='official-page').length,PREVIEW_OFFICIAL_NEWS_PAGES.length,'Official-page health entries are distinguished from RSS');
-assert.ok(diagnostic.results.every(x=>x.newest_published_at==='2026-10-31T12:00:00.000Z'));
+assert.equal(diagnostic.results.filter(x=>x.source_type==='official-page').length,officialDiagnosticCount);
+assert.equal(diagnostic.results.filter(x=>x.source_type==='official-json').length,liveJsonCount);
 assert.ok(diagnostic.results.every(x=>!('title' in x)&&!('items' in x)),
  'Diagnostic reports connectivity/counts only and does not republish third-party headlines');
 
 diagnosticFetches=0;
 const previewExternal=await previewExternalItems(previewFetch);
-assert.equal(diagnosticFetches,previewFeedCount+PREVIEW_LIVE_OFFICIAL_NEWS_PAGES.length,'Preview aggregator checks live RSS plus verified official newsrooms only');
-assert.equal(previewExternal.items.length,previewFeedCount+PREVIEW_LIVE_OFFICIAL_NEWS_PAGES.length);
-assert.equal(previewExternal.sources.filter(x=>x.parsed_count===1).length,previewFeedCount+PREVIEW_LIVE_OFFICIAL_NEWS_PAGES.length);
+const liveExternalSourceCount=previewFeedCount+liveOfficialCount+liveJsonCount;
+assert.equal(liveExternalSourceCount,22,'Twenty-two verified technical sources feed the private Page 8 preview');
+assert.equal(diagnosticFetches,liveExternalSourceCount);
+assert.equal(previewExternal.items.length,liveExternalSourceCount);
+assert.equal(previewExternal.sources.length,liveExternalSourceCount);
+assert.ok(previewExternal.sources.every(x=>x.parsed_count===1));
 assert.ok(previewExternal.items.every(x=>x.preview_external===true&&x.summary===''&&!x.original));
+assert.ok(!previewExternal.items.some(x=>/harness|standardbred|trotting|pacing|meadowlands/i.test(x.title)),'Non-Thoroughbred coverage cannot enter the preview');
 
 diagnosticFetches=0;
 const previewResponse=await handlePreviewRacingWire(new Request('https://railandryeracing.com/api/preview/racing-wire-test'),env,previewFetch);
 assert.equal(previewResponse.status,200);
 const previewBody=await previewResponse.json();
-assert.equal(diagnosticFetches,previewFeedCount+PREVIEW_LIVE_OFFICIAL_NEWS_PAGES.length);
+assert.equal(diagnosticFetches,liveExternalSourceCount);
 assert.equal(previewBody.external_test_only,true);
-assert.equal(previewBody.source_count,previewFeedCount+PREVIEW_LIVE_OFFICIAL_NEWS_PAGES.length+1,'Rail & Rye Journal plus verified live RSS and official-page sources');
-assert.equal(previewBody.external_sources.length,previewFeedCount+PREVIEW_LIVE_OFFICIAL_NEWS_PAGES.length);
-assert.ok(previewBody.external_sources.every(x=>x.parsed_count===1),
- 'All active preview feeds parse successfully before editorial filtering');
-assert.ok(previewBody.items.length>=5&&previewBody.items.length<=previewFeedCount+PREVIEW_LIVE_OFFICIAL_NEWS_PAGES.length+1,
- 'Editorial relevance/dedupe gate may suppress low-value or overlapping feed items');
-assert.ok(previewBody.items.some(x=>x.source==='Ocala Breeders’ Sales'),'Correct OBS feed can reach curated preview');
-assert.ok(previewBody.external_sources.some(x=>x.name==="America's Best Racing"&&x.parsed_count===1),
- 'ABR feed health is verified independently of whether a synthetic headline clears editorial curation');
-assert.ok(previewBody.external_sources.every(x=>'newest_published_at' in x),'Source diagnostics expose newest accepted item timestamps');
+assert.equal(previewBody.source_count,liveExternalSourceCount+1,'Rail & Rye Journal plus twenty-two verified private-preview sources');
+assert.equal(previewBody.external_sources.length,liveExternalSourceCount);
+assert.ok(previewBody.external_sources.every(x=>x.parsed_count===1),'All active preview source adapters parse successfully before editorial filtering');
+assert.ok(previewBody.items.length>=5&&previewBody.items.length<=liveExternalSourceCount+1,'Editorial relevance/dedupe gate may suppress low-value or overlapping items');
+assert.ok(previewBody.items.some(x=>x.source==='Ocala Breeders’ Sales'),'OBS can reach the curated preview');
+assert.ok(previewBody.external_sources.some(x=>x.name==="Daily Racing Form"&&x.parsed_count===1),'DRF official newsroom adapter is active');
+assert.ok(previewBody.external_sources.some(x=>x.name==="Breeders' Cup"&&x.parsed_count===1),'Breeders Cup official adapter is active');
+assert.ok(previewBody.external_sources.some(x=>x.name==='Fasig-Tipton'&&x.parsed_count===1),'Fasig-Tipton archive adapter is active');
+assert.ok(previewBody.external_sources.some(x=>x.name==='TOBA'&&x.source_type==='official-json'),'TOBA JSON source is active');
 assert.ok(previewBody.items.every(x=>x.editorial_score>=62),'Preview emits only editorially relevant items');
 assert.equal((await handlePreviewRacingWire(new Request('https://railandryeracing.com/api/preview/racing-wire-test',{method:'POST'}),env,previewFetch)).status,405);
 
