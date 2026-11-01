@@ -5,6 +5,7 @@ const read=path=>readFileSync(path,'utf8');
 const page=read('public/journal/index.html');
 const css=read('public/assets/rail-rye-pages.css');
 const api=read('src/journal.js');
+const share=read('public/assets/share-v1.js');
 const code=page.split('<script>').slice(1).map(chunk=>chunk.split('</script>')[0]).join('\n');
 new Function(code);
 assert.ok(page.includes('rail-rye-pages.css?v=50'),'New Journal stylesheet must bypass browser caches');
@@ -12,12 +13,14 @@ assert.ok(code.includes("byline.textContent='RAIL & RYE JOURNAL · '+readingMinu
  'Use a credited publication and data-derived reading time, not a fabricated author');
 assert.ok(code.includes("Math.max(1,Math.ceil((String(bodyText||'').trim().match(/\\S+/g)||[]).length/220))"),
  'Reading time is calculated from original text at 220 words/minute');
-assert.ok(code.includes("shareBtn.textContent='Copy article link'"),'Article offers a share link');
-assert.ok(code.includes("shareStatus.setAttribute('aria-live','polite')"),'Copy outcome is announced accessibly');
-assert.ok(code.includes('await navigator.clipboard.writeText(articleUrl)'),'Clipboard copy requires actual success');
-assert.ok(code.includes("shareStatus.textContent='Link copied'"),'Copy success feedback present');
-assert.ok(code.includes("shareStatus.textContent='Copy unavailable — use the address bar'"),'Copy failure does not claim success');
-assert.ok(code.includes("new URL(articleHref(item),window.location.origin).href"),'Share canonical URL without tracker query parameters');
+assert.ok(page.includes('/assets/share-v1.js?v=2'),'Journal loads the shared publication share control');
+assert.ok(code.includes("window.RRShare.button({title:item.title")&&code.includes("label:'Share story'"),'Article offers the shared Rail & Rye share control');
+assert.ok(share.includes("status.setAttribute('aria-live','polite')"),'Shared copy outcome is announced accessibly');
+assert.ok(share.includes("await navigator.clipboard.writeText(url)"),'Shared copy action requires actual clipboard success');
+assert.ok(share.includes("status.textContent='Link copied.'"),'Shared copy success feedback present');
+assert.ok(share.includes("status.textContent='Copy unavailable. Select the page address to share it.'"),'Shared copy failure does not claim success');
+assert.ok(share.includes("['Email'")&&share.includes("['Facebook'")&&share.includes("['X'"),'Shared control offers email and social sharing');
+assert.ok(share.includes("const url=absoluteUrl(options.url)")&&share.includes("if(url.origin!==window.location.origin)"),'Shared control canonicalizes Rail & Rye URLs without external tracker destinations');
 assert.ok(code.includes("const related=document.createElement('section')"),'Related area is created by the article template');
 assert.ok(code.includes("related.hidden=true"),'Recommendations are hidden pending confirmed published results');
 assert.ok(code.includes("if(slugMatch&&activeArticle)renderRelated(articles,activeArticle)"),'Related recommendations only on story routes');
