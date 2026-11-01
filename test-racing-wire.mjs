@@ -396,6 +396,9 @@ for(const type of ['horse','owner','trainer','jockey','race','stable','racetrack
  assert.ok(wirePage.includes("'"+type+"'"), 'Approved subject filter and badge kind configured: '+type);
 }
 assert.ok(wirePage.includes('Source: '),'Source attribution exists');
+assert.ok(wirePage.includes("category.className='category-pill'")&&wirePage.includes("tags.className='story-tags'"),'Every Racing Wire story renders a right-side category tag');
+assert.ok(wirePage.includes("if(x.type&&x.type!==x.category)")&&wirePage.includes("typ.className='type-pill'"),'Specific event tags remain available beneath the category tag without duplicating it');
+assert.ok(wirePage.includes('.story-tags{display:flex;flex-direction:column;align-items:flex-end'), 'Desktop story tags stay aligned to the right edge');
 assert.ok(!wirePage.includes('bsky.app'),'Preview contains no Blue Sky source links');
 assert.ok(wirePage.includes('Also reported by:'),'UI offers linked alternate sources when one event has several reports');
 assert.ok(!wirePage.includes('TRENDING TOPICS'),'Trending Topics sidebar removed');
