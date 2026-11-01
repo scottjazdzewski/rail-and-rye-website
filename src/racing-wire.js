@@ -13,6 +13,18 @@ const FEEDS=Object.freeze([
 ]);
 const MAX_FEED_BYTES=350000;
 const PREVIEW_MAX_ITEM_AGE_MS=48*3600000;
+const EDITORIAL_CATEGORIES=Object.freeze(['Horses','Jockeys','Trainers','Owners','Stable','Stakes','Race-Day','Racetrack','Breeding','Sales / Auctions','Regulatory','Achievement','Industry']);
+let editorialSchemaPromise=null;
+async function ensureEditorialSchema(env){
+  if(!env.STORE_DB)throw Error('Racing Wire database binding missing');
+  if(!editorialSchemaPromise){
+    editorialSchemaPromise=(async()=>{
+      await env.STORE_DB.prepare("CREATE TABLE IF NOT EXISTS racing_wire_editorial (story_url TEXT PRIMARY KEY, hidden INTEGER NOT NULL DEFAULT 0 CHECK(hidden IN (0,1)), placement TEXT NOT NULL DEFAULT 'auto' CHECK(placement IN ('auto','top','more')), category_override TEXT, updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)").run();
+      await env.STORE_DB.prepare("CREATE INDEX IF NOT EXISTS racing_wire_editorial_placement ON racing_wire_editorial(placement,updated_at DESC)").run();
+    })().catch(error=>{editorialSchemaPromise=null;throw error;});
+  }
+  await editorialSchemaPromise;
+}
 export const PREVIEW_LIVE_FEEDS=Object.freeze([
   {id:'tdn-all',name:'Thoroughbred Daily News',url:'https://www.thoroughbreddailynews.com/feed/',host:'thoroughbreddailynews.com'},
   {id:'past-the-wire-news',name:'Past The Wire',url:'https://pastthewire.com/feed',host:'pastthewire.com'},
@@ -433,8 +445,7 @@ export function curateRacingWireStories(stories,{threshold=62,maxItems=24,maxPer
  }
  return accepted;
 }
-export async function handlePreviewRacingWire(request,env,fetchFn=fetch){
-  if(request.method!=='GET')return reply({error:'Method not allowed'},405);
+async function loadPreviewWire(env,fetchFn=fetch){
   let originals=[];
   if(env.STORE_DB)try{
     const r=await env.STORE_DB.prepare(
@@ -449,11 +460,88 @@ export async function handlePreviewRacingWire(request,env,fetchFn=fetch){
   }catch(e){console.warn('Racing Wire preview journal unavailable',String(e).slice(0,90));}
   const external=await previewExternalItems(fetchFn);
   const items=curateRacingWireStories([...originals,...external.items],{threshold:62,maxItems:24,maxPerSource:4});
+  return {items,external,originals};
+}
+async function editorialRows(env){
+  if(!env.STORE_DB)return [];
+  await ensureEditorialSchema(env);
+  const result=await env.STORE_DB.prepare("SELECT story_url,hidden,placement,category_override,updated_at FROM racing_wire_editorial ORDER BY updated_at DESC").all();
+  return result.results||[];
+}
+function applyEditorialControls(items,rows,{includeHidden=false}={}){
+  const controls=new Map(rows.map(row=>[row.story_url,row]));
+  const adjusted=[];
+  for(const item of items){
+    const control=controls.get(item.url);
+    const category=control?.category_override&&EDITORIAL_CATEGORIES.includes(control.category_override)?control.category_override:item.category;
+    const next={...item,category,subject_kind:subjectKind(item.title,category),
+      editorial:{hidden:Boolean(control?.hidden),placement:control?.placement||'auto',category_override:control?.category_override||null}};
+    if(!next.editorial.hidden||includeHidden)adjusted.push(next);
+  }
+  adjusted.sort((a,b)=>{
+    const ap=a.editorial?.placement==='top'?3:a.editorial?.placement==='more'?2:1;
+    const bp=b.editorial?.placement==='top'?3:b.editorial?.placement==='more'?2:1;
+    return bp-ap||Date.parse(b.published_at)-Date.parse(a.published_at);
+  });
+  return adjusted;
+}
+function sameOrigin(request){
+  const origin=request.headers.get('origin');
+  return !!origin&&origin===new URL(request.url).origin&&request.headers.get('sec-fetch-site')!=='cross-site';
+}
+async function readEditorialPayload(request){
+  if(!request.headers.get('content-type')?.toLowerCase().startsWith('application/json'))throw Error('Expected JSON');
+  const text=await request.text();if(text.length>5000)throw Error('Request too large');
+  const data=JSON.parse(text);
+  if(!data||typeof data!=='object'||Array.isArray(data))throw Error('Invalid editorial control');
+  const story_url=String(data.story_url||'').trim();
+  const action=String(data.action||'').trim();
+  if(!(story_url.startsWith('/journal/')||/^https:\/\/[a-z0-9.-]+\//i.test(story_url))||story_url.length>1900)throw Error('Invalid story URL');
+  if(!['top','more','hide','category','restore'].includes(action))throw Error('Invalid editorial action');
+  const category=data.category==null?null:String(data.category).trim();
+  if(action==='category'&&!EDITORIAL_CATEGORIES.includes(category))throw Error('Invalid category');
+  return {story_url,action,category};
+}
+export async function handleAdminRacingWire(request,env,fetchFn=fetch){
+  if(!env.STORE_DB)return reply({error:'Racing Wire database binding missing'},503);
+  if(!['GET','PATCH'].includes(request.method))return reply({error:'Method not allowed'},405);
+  if(request.method!=='GET'&&!sameOrigin(request))return reply({error:'Same-origin request required'},403);
+  try{await ensureEditorialSchema(env);}catch(error){console.error('Racing Wire editorial schema failed',error);return reply({error:'Racing Wire editorial controls are temporarily unavailable'},503);}
+  if(request.method==='GET'){
+    const [{items},rows]=await Promise.all([loadPreviewWire(env,fetchFn),editorialRows(env)]);
+    return reply({items:applyEditorialControls(items,rows,{includeHidden:true}),categories:EDITORIAL_CATEGORIES});
+  }
+  let data;try{data=await readEditorialPayload(request);}catch(error){return reply({error:error.message},422);}
+  const now=new Date().toISOString();
+  if(data.action==='restore'){
+    await env.STORE_DB.prepare("DELETE FROM racing_wire_editorial WHERE story_url=?").bind(data.story_url).run();
+  }else{
+    const current=await env.STORE_DB.prepare("SELECT story_url,hidden,placement,category_override FROM racing_wire_editorial WHERE story_url=?").bind(data.story_url).first();
+    let hidden=Number(current?.hidden||0),placement=current?.placement||'auto',category=current?.category_override||null;
+    if(data.action==='hide')hidden=1;
+    if(data.action==='top'){
+      await env.STORE_DB.prepare("UPDATE racing_wire_editorial SET placement='auto',updated_at=? WHERE placement='top' AND story_url<>?").bind(now,data.story_url).run();
+      hidden=0;placement='top';
+    }
+    if(data.action==='more'){hidden=0;placement=placement==='more'?'auto':'more';}
+    if(data.action==='category')category=data.category;
+    await env.STORE_DB.prepare("INSERT INTO racing_wire_editorial (story_url,hidden,placement,category_override,updated_at) VALUES (?,?,?,?,?) ON CONFLICT(story_url) DO UPDATE SET hidden=excluded.hidden,placement=excluded.placement,category_override=excluded.category_override,updated_at=excluded.updated_at")
+      .bind(data.story_url,hidden,placement,category,now).run();
+  }
+  const [{items},rows]=await Promise.all([loadPreviewWire(env,fetchFn),editorialRows(env)]);
+  return reply({items:applyEditorialControls(items,rows,{includeHidden:true}),categories:EDITORIAL_CATEGORIES});
+}
+export async function handlePreviewRacingWire(request,env,fetchFn=fetch){
+  if(request.method!=='GET')return reply({error:'Method not allowed'},405);
+  const loaded=await loadPreviewWire(env,fetchFn);
+  let items=loaded.items;
+  if(env.STORE_DB)try{items=applyEditorialControls(items,await editorialRows(env));}
+  catch(e){console.warn('Racing Wire editorial controls unavailable',String(e).slice(0,90));}
   return reply({
     items,
-    source_count:external.sources.filter(x=>x.parsed_count>0).length+(originals.length?1:0),
+    source_count:loaded.external.sources.filter(x=>x.parsed_count>0).length+(loaded.originals.length?1:0),
     external_test_only:true,
-    external_sources:external.sources,
+    external_sources:loaded.external.sources,
     social_sources:[],
     social_policy:'Preview RSS only for technical testing; X/Meta not connected yet',
     headline_only:true,
