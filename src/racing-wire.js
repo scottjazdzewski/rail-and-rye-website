@@ -750,21 +750,92 @@ export function scoreRacingWireItem(item){
  return {score:Math.max(0,Math.min(100,score)),reject:false,reason:'scored'};
 }
 
-export function curateRacingWireStories(stories,{threshold=66,maxItems=24,maxPerSource=4}={}){
+function majorEventFamilyKey(title){
+ const t=String(title||'').toLowerCase();
+ for(const [rx,key] of [
+  [/\bbreeders.? cup\b/,'breeders-cup'],[/\bkentucky derby\b|\bkentucky oaks\b/,'derby-week'],
+  [/\bpreakness\b/,'preakness'],[/\bbelmont stakes\b/,'belmont-stakes'],[/\btravers\b/,'travers'],
+  [/\bpegasus world cup\b/,'pegasus-world-cup'],[/\bdubai world cup\b/,'dubai-world-cup'],
+  [/\broyal ascot\b/,'royal-ascot'],[/\bmelbourne cup\b|\bcox plate\b/,'melbourne-carnival'],
+  [/\bprix de l.?arc de triomphe\b/,'arc'],[/\bjapan cup\b/,'japan-cup']
+ ])if(rx.test(t))return key;
+ return raceEventKey(title);
+}
+function newsroomLane(item){
+ const category=String(item?.category||'').toLowerCase(),kind=String(item?.subject_kind||'').toLowerCase(),title=String(item?.title||'');
+ if(INDUSTRY_RE.test(title)||category.includes('regulatory'))return 'regulatory';
+ if(SALES_RE.test(title)||category.includes('sale'))return 'sales';
+ if(BREEDING_RE.test(title)||category.includes('breeding'))return 'breeding';
+ if(INDUSTRY_METRICS_RE.test(title)||category.includes('industry'))return 'industry';
+ if(category.includes('achievement'))return 'achievement';
+ if(['horse','trainer','jockey','owner','stable'].includes(kind)||/horse|trainer|jockey|owner|stable/.test(category))return 'horse-people';
+ return 'race';
+}
+function isNewsroomBalanceExempt(item){
+ const title=String(item?.title||'');
+ if(MATERIAL_RE.test(title))return true;
+ if(RESULT_RE.test(title)&&(MAJOR_EVENT_RE.test(title)||GRADED_RE.test(title)))return true;
+ if(SALES_RE.test(title)&&/(?:\$\s?\d|\b(?:million|record|seven[- ]figure|eight[- ]figure)\b)/i.test(title))return true;
+ return false;
+}
+function freshnessPenalty(item,referenceMs){
+ const published=Date.parse(item?.published_at),ageHours=Math.max(0,(referenceMs-published)/3600000);
+ if(!Number.isFinite(ageHours))return 24;
+ if(isNewsroomBalanceExempt(item))return ageHours<=12?0:Math.min(8,(ageHours-12)*.18);
+ if(ageHours<=6)return 0;
+ if(ageHours<=18)return (ageHours-6)*.25;
+ if(ageHours<=30)return 3+(ageHours-18)*.6;
+ return 10.2+Math.min(18,(ageHours-30));
+}
+function newsroomSelectionPriority(item,referenceMs,laneCounts){
+ const lane=newsroomLane(item),lanePenalty=Math.min(12,(laneCounts.get(lane)||0)*5);
+ return Number(item.editorial_score||0)-freshnessPenalty(item,referenceMs)-lanePenalty;
+}
+export function curateRacingWireStories(stories,{threshold=66,maxItems=24,maxPerSource=4,topWindow=10,maxTopPerEvent=2,maxTopPerSource=3}={}){
  const grouped=groupRacingWireStories(stories);
- const accepted=[];
- const sourceCounts=new Map();
+ const candidates=[];
  for(const item of grouped){
    const assessment=scoreRacingWireItem(item);
    if(assessment.reject||assessment.score<threshold)continue;
-   const source=String(item.source||'Unknown');
-   const used=sourceCounts.get(source)||0;
-   if(!item.original&&used>=maxPerSource)continue;
-   sourceCounts.set(source,used+1);
-   accepted.push({...item,type:item.type||displayType(item.title),editorial_score:assessment.score});
-   if(accepted.length>=maxItems)break;
+   candidates.push({...item,type:item.type||displayType(item.title),editorial_score:assessment.score});
  }
- return accepted;
+ if(!candidates.length)return [];
+ const referenceMs=Math.max(...candidates.map(x=>Date.parse(x.published_at)).filter(Number.isFinite));
+ const selected=[],remaining=[...candidates],sourceCounts=new Map(),topSourceCounts=new Map(),eventCounts=new Map(),laneCounts=new Map();
+ const topLimit=Math.min(topWindow,maxItems,candidates.length);
+ while(remaining.length&&selected.length<maxItems){
+   const inTop=selected.length<topLimit;
+   let pool=remaining.filter(item=>{
+     const source=String(item.source||'Unknown'),used=sourceCounts.get(source)||0;
+     if(!item.original&&used>=maxPerSource)return false;
+     if(!inTop||isNewsroomBalanceExempt(item))return true;
+     const family=majorEventFamilyKey(item.title);
+     if((topSourceCounts.get(source)||0)>=maxTopPerSource)return false;
+     if(family&&(eventCounts.get(family)||0)>=maxTopPerEvent)return false;
+     return true;
+   });
+   if(!pool.length&&inTop){
+     pool=remaining.filter(item=>{
+       const source=String(item.source||'Unknown'),used=sourceCounts.get(source)||0;
+       return item.original||used<maxPerSource;
+     });
+   }
+   if(!pool.length)break;
+   pool.sort((a,b)=>{
+     const ap=newsroomSelectionPriority(a,referenceMs,laneCounts),bp=newsroomSelectionPriority(b,referenceMs,laneCounts);
+     return bp-ap||Number(b.editorial_score)-Number(a.editorial_score)||Date.parse(b.published_at)-Date.parse(a.published_at);
+   });
+   const chosen=pool[0],idx=remaining.indexOf(chosen);remaining.splice(idx,1);
+   const source=String(chosen.source||'Unknown'),family=majorEventFamilyKey(chosen.title),lane=newsroomLane(chosen);
+   sourceCounts.set(source,(sourceCounts.get(source)||0)+1);
+   if(inTop){
+     topSourceCounts.set(source,(topSourceCounts.get(source)||0)+1);
+     if(family)eventCounts.set(family,(eventCounts.get(family)||0)+1);
+     laneCounts.set(lane,(laneCounts.get(lane)||0)+1);
+   }
+   selected.push({...chosen,newsroom_rank:selected.length+1});
+ }
+ return selected;
 }
 async function loadPreviewWire(env,fetchFn=fetch){
   let originals=[];
@@ -802,7 +873,11 @@ function applyEditorialControls(items,rows,{includeHidden=false}={}){
   adjusted.sort((a,b)=>{
     const ap=a.editorial?.placement==='top'?3:a.editorial?.placement==='more'?2:1;
     const bp=b.editorial?.placement==='top'?3:b.editorial?.placement==='more'?2:1;
-    return bp-ap||Date.parse(b.published_at)-Date.parse(a.published_at);
+    if(bp!==ap)return bp-ap;
+    if(ap>1)return Date.parse(b.published_at)-Date.parse(a.published_at);
+    const ar=Number.isFinite(Number(a.newsroom_rank))?Number(a.newsroom_rank):9999;
+    const br=Number.isFinite(Number(b.newsroom_rank))?Number(b.newsroom_rank):9999;
+    return ar-br||Date.parse(b.published_at)-Date.parse(a.published_at);
   });
   return adjusted;
 }
