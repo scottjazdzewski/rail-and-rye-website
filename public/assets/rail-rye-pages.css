@@ -717,10 +717,19 @@ body.rr-single-screen-hero.heritage-journal-page>.heritage-inner-hero{flex:1 1 0
  padding-top:var(--rr-single-hero-top);padding-bottom:clamp(48px,5vw,82px)
 }
 .rr-journal-hero-grid>.rr-page-intro{align-self:start;width:100%;max-width:720px}
-/* Page 9 (Journal Archive) uses the owner's approved racing-action artwork; Page 2 remains unchanged. */
+/* Page 9 is a full numbered hero followed by a story archive. It must NOT
+   shrink its photo hero to the masthead height as the article-content flex layout can.
+   Page 2's single-screen hero and every other numbered page stay unchanged. */
 body.heritage-home.heritage-inner-page.heritage-journal-page.rr-journal-archive-view>.heritage-inner-hero{
+ flex:0 0 auto;
+ min-height:var(--rr-shared-photo-hero-height,600px);
+ height:auto;
  background-image:url('/assets/approved/journal/archive-hero.webp');
+ background-size:cover;
  background-position:center 50%;
+}
+body.heritage-home.heritage-journal-page.rr-journal-archive-view .rr-journal-hero-grid{
+ flex:1 0 auto;
 }
 .rr-journal-feature-rail{
  align-self:start;display:flex;flex-direction:column;min-width:0;min-height:0;max-height:min(580px,65vh);box-sizing:border-box;
