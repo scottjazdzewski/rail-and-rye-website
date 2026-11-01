@@ -27,6 +27,16 @@ jobs:
         run: node --experimental-sqlite test-free-downloads.mjs
       - name: Scheduled publication embargo and automatic release tests
         run: node --experimental-sqlite test-scheduled-publications.mjs
+      - name: Prove final Racing Wire source map
+        run: |
+          node --input-type=module <<'NODE'
+          import {previewExternalItems,testPreviewRssFeeds} from './src/racing-wire.js';
+          const live=await previewExternalItems(fetch);
+          console.log('FINAL_LIVE '+JSON.stringify(live.sources.map(x=>({id:x.id,type:x.source_type,status:x.http_status,parsed:x.parsed_count,available:x.available_count??null,newest:x.newest_published_at,error:x.error||null}))));
+          console.log('FINAL_STORIES '+JSON.stringify(live.items.filter(x=>['Daily Racing Form','Santa Anita','Gulfstream Park','Remington Park',"Breeders' Cup",'Fasig-Tipton','Churchill Downs','TOBA'].includes(x.source)).slice(0,30).map(x=>({source:x.source,title:x.title,date:x.published_at,category:x.category}))));
+          const health=await testPreviewRssFeeds(fetch);
+          console.log('FINAL_HEALTH '+JSON.stringify(health.results.map(x=>({id:x.id,type:x.source_type||'rss',status:x.http_status,reachable:x.reachable,parsed:x.parsed_count,newest:x.newest_published_at,note:x.note}))));
+          NODE
       - name: Multi-collection bundle listing tests
         run: node --experimental-sqlite test-bundle-category-placement.mjs
       - name: Compact Publisher desktop layout and control regression
