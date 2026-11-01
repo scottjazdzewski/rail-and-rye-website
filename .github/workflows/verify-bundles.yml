@@ -29,6 +29,25 @@ jobs:
         run: node --experimental-sqlite test-scheduled-publications.mjs
       - name: Live Racing Wire feed health
         run: curl -sS --max-time 120 https://railandryeracing.com/api/preview/racing-wire-5333548f0ffee31ba519b2470ffb/feed-test
+      - name: Inspect problematic racing feeds
+        run: |
+          echo '--- BLOODHORSE ---'
+          curl -L -sS --max-time 20 'https://www.bloodhorse.com/horse-racing/feeds/news/all-news' | head -c 5000 || true
+          echo
+          echo '--- REMINGTON ---'
+          curl -L -sS --max-time 20 'https://www.remingtonpark.com/feed/' | head -c 5000 || true
+          echo
+          echo '--- PAULICK FEED DISCOVERY ---'
+          curl -L -sS --max-time 20 'https://paulickreport.com/' | grep -Eio '<link[^>]+(rss|atom)[^>]*>|https?://[^" ]+(feed|rss)[^" <]*' | head -20 || true
+          echo '--- DRF HEADERS ---'
+          curl -L -sSI --max-time 20 'https://www.drf.com/feeds/all-articles-of-track' | head -30 || true
+          echo '--- NTRA/TOBA/HBPA STATUS WITH BROWSER UA ---'
+          for u in 'https://www.ntra.com/feed/' 'https://toba.org/feed/' 'https://nationalhbpa.com/feed/'; do
+            echo "$u"
+            curl -L -sS -A 'Mozilla/5.0' -o /tmp/feed -w '%{http_code} %{content_type} %{size_download}\n' --max-time 20 "$u" || true
+            head -c 400 /tmp/feed || true
+            echo
+          done
       - name: Racing Wire expanded source validation
         run: node --experimental-sqlite test-racing-wire.mjs
       - name: Multi-collection bundle listing tests
