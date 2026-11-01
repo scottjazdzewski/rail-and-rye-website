@@ -389,7 +389,7 @@ assert.ok(previewHeader.includes('heritage-strap') && previewHeader.includes('he
 assert.ok(previewHeader.includes('heritage-mobile-nav'),'Production mobile navigation retained');
 assert.ok(!previewHeader.includes('>The Racing Wire</a>'),'Unlisted preview does not add a public Racing Wire navigation pill');
 assert.ok(previewHeader.includes('href="/our-approach/"'),'Our Approach is included in the shared navigation');
-assert.equal((previewHeader.match(/class="heritage-nav-pill"/g)||[]).length,4,'Desktop header has the four approved public navigation pills');
+assert.equal((previewHeader.match(/class="heritage-nav-pill"/g)||[]).length,5,'Desktop header has the five approved public navigation pills');
 assert.ok(wirePage.includes('/assets/rail-rye-core.css?v=') &&
  wirePage.includes('/assets/rail-rye-components.css?v=') &&
  wirePage.includes('/assets/rail-rye-pages.css?v='),'Header/footer use actual versioned site stylesheets');
