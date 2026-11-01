@@ -27,6 +27,32 @@ jobs:
         run: node --experimental-sqlite test-free-downloads.mjs
       - name: Scheduled publication embargo and automatic release tests
         run: node --experimental-sqlite test-scheduled-publications.mjs
+      - name: Inspect article metadata for final adapters
+        run: |
+          node --input-type=module <<'NODE'
+          const sources=[
+            ['santa','https://www.santaanita.com/news/','Longshot Cupid Cowboy'],
+            ['gulf','https://www.gulfstreampark.com/news/','Dramatic Rally Carries Hammy'],
+            ['bc','https://www.breederscup.com/news','Sovereignty']
+          ];
+          for(const [id,url,needle] of sources){
+            const r=await fetch(url,{headers:{'User-Agent':'Mozilla/5.0','Accept':'text/html,*/*'}});
+            const html=await r.text();
+            const lower=html.toLowerCase(),pos=lower.indexOf(needle.toLowerCase());
+            console.log('\n### '+id+' status='+r.status+' bytes='+html.length+' needle='+pos);
+            if(pos>=0)console.log(html.slice(Math.max(0,pos-3500),Math.min(html.length,pos+6500)).replace(/\s+/g,' '));
+            const dates=[...html.matchAll(/(?:datePublished|publishedAt|publishDate|publicationDate|published_date|date)["\\:]+"?([^"\\,<}]{6,40})/gi)].slice(0,30).map(m=>m[0]);
+            console.log('DATES '+JSON.stringify(dates));
+            const newsLinks=[...html.matchAll(/(?:href=["']([^"']+)["']|https?:\\?\/\\?\/[^\"'<> ]+)/gi)]
+              .map(m=>m[1]||m[0]).filter(x=>/\/news\//i.test(x)).slice(0,30);
+            console.log('NEWSLINKS '+JSON.stringify(newsLinks));
+          }
+          const r=await fetch('https://www.breederscup.com/sitemap.xml',{headers:{'User-Agent':'Mozilla/5.0','Accept':'application/xml,text/xml'}});
+          const xml=await r.text();
+          const entries=[...xml.matchAll(/<url>\s*<loc>([^<]+)<\/loc>\s*<lastmod>([^<]+)<\/lastmod>[\s\S]*?<\/url>/gi)]
+            .map(m=>({loc:m[1],lastmod:m[2]})).filter(x=>/\/news\//i.test(x.loc)).sort((a,b)=>Date.parse(b.lastmod)-Date.parse(a.lastmod));
+          console.log('BC_NEWS_SITEMAP '+JSON.stringify({count:entries.length,top:entries.slice(0,25)}));
+          NODE
       - name: Multi-collection bundle listing tests
         run: node --experimental-sqlite test-bundle-category-placement.mjs
       - name: Compact Publisher desktop layout and control regression
