@@ -48,17 +48,44 @@ function previewHeadlineRelevant(title,section=''){
   if(/\b(listen now|podcast episode|watch live|where to watch|tv schedule)\b/.test(text))return false;
   return true;
 }
-export function categorize(title,category=''){
+export function categorize(title,category='',source=''){
   const s=(title+' '+category).toLowerCase();
-  if(/jockey|rider|apprentice|irad ortiz|prat\b/.test(s))return 'Jockeys';
-  if(/trainer|barn|stable|assistant trainer/.test(s))return 'Trainers';
-  if(/scratch|entry|entries|post position|racing secretary|stewards|workout|track condition|race day/.test(s))return 'Race-Day';
-  // Race/event language must win before breeding terms. Race names such as
-  // "Breeders' Cup Filly & Mare Sprint" contain words like mare/breeders but
-  // are race coverage, not breeding news.
-  if(/stakes|derby|breeders.? cup|grade [i123]|\bg[123]\b|classic|preakness|belmont stakes|distaff|juvenile|sprint|turf mile|turf sprint/.test(s))return 'Stakes';
-  if(/breeding|stallion|sire|foal|stud fee|yearling|broodmare|mare bred|in foal|auction|sale|keeneland november|fasig.tipton/.test(s))return 'Breeding';
-  if(/retire|horse|filly|colt|gelding|champion|injur/.test(s))return 'Horses';
+  const publisher=String(source||'').toLowerCase();
+
+  // Publisher identity can be editorial context. Sales-company feeds are
+  // sales/auction coverage even when a headline is framed around an OBS/Fasig
+  // graduate winning a race.
+  if(/ocala breeders.? sales|\bobs\b|fasig.?tipton|keeneland sales|tattersalls|goffs/.test(publisher))
+    return 'Sales / Auctions';
+
+  // Subject hierarchy: regulation/business/track operations should not be
+  // swallowed by race-name words such as "Breeders' Cup" or "Classic".
+  if(/\b(hisa|hiwu|racing commission|regulatory|rule change|ruling|suspension|suspended|ban|banned|fine|fined|positive test|medication violation|licensing|appeal)\b/.test(s))
+    return 'Regulatory';
+  if(/\b(hall of fame|milestone|career (?:win|victory)|record[- ]breaking|record setter|\d{3,4}(?:st|nd|rd|th) (?:win|victory))\b/.test(s))
+    return 'Achievement';
+  if(/\b(attendance|handle|wagering handle|all-sources handle|turnover|revenue|viewership|television ratings|tv ratings|economic impact|business results|market share|crowd|fan count)\b/.test(s))
+    return 'Industry';
+  if(/\b(racetrack|racecourse|track surface|turf course|dirt course|track renovation|track management|racing dates|meet dates|meet opens|meet closes|rail setting|course configuration)\b/.test(s))
+    return 'Racetrack';
+  if(/\b(auction|sale|sales|sold for|hammer price|consign(?:ed|ment)|yearling sale|weanling sale|bloodstock|catalog(?:ue)?)\b/.test(s))
+    return 'Sales / Auctions';
+
+  if(/\b(jockey|rider|apprentice|irad ortiz|prat)\b/.test(s))return 'Jockeys';
+  if(/\b(trainer|assistant trainer)\b/.test(s))return 'Trainers';
+  if(/\b(owner|owners|ownership|syndicate|partnership)\b/.test(s))return 'Owners';
+  if(/\b(stable|barn)\b/.test(s))return 'Stable';
+  if(/\b(scratch|scratched|entry|entries|post position|racing secretary|workout|race day)\b/.test(s))return 'Race-Day';
+
+  // Race/event language must win before horse/breeding terms. Race names such
+  // as "Breeders' Cup Filly & Mare Sprint" are race coverage, not breeding.
+  if(/stakes|derby|breeders.? cup|grade [i123]|\bg[123]\b|classic|preakness|belmont stakes|distaff|juvenile|sprint|turf mile|turf sprint/.test(s))
+    return 'Stakes';
+
+  if(/\b(breeding|stallion|sire|foal|stud fee|broodmare|mare bred|in foal|covered|covering)\b/.test(s))
+    return 'Breeding';
+  if(/\b(retire|retired|retirement|horse|filly|colt|gelding|champion|injur(?:y|ed))\b/.test(s))
+    return 'Horses';
   return 'Industry';
 }
 // The five editorial subjects used by DFO-style pictogram cards.
@@ -118,7 +145,7 @@ export function parseRacingRss(xml,feed){
     const dt=new Date(published);
     if(!title||!link||!Number.isFinite(+dt)||dt.getTime()>Date.now()+3600000)continue;
     results.push({source:feed.name,title,link,published_at:dt.toISOString(),
-      section,category:categorize(title,section)});
+      section,category:categorize(title,section,feed.name)});
   }
   return results;
 }
@@ -302,7 +329,8 @@ const SALES_RE=/\b(sale|auction|sold for|brings? \$|hammer price|consign(?:ed|me
 const BREEDING_RE=/\b(stallion|stud fee|retired to stud|breeding|sire|dam|foal|foaled|broodmare|cover(?:ed|ing))\b/i;
 const INDUSTRY_RE=/\b(HISA|HIWU|racing commission|commissioners?|rule change|policy|legislation|licensing|integrity|medication rule)\b/i;
 const MILESTONE_RE=/\b(milestone|hall of fame|career win|career victori(?:es|y)|record[- ]breaking|record setter|\d{3,4}(?:st|nd|rd|th) win|four-timer|five-timer|six-timer|thousand career victories)\b/i;
-const LOW_VALUE_RE=/\b(preview|opinion|podcast|photo gallery|look back|what to know|guide to|attendance|handle|ratings|viewership)\b/i;
+const INDUSTRY_METRICS_RE=/\b(attendance|handle|wagering handle|turnover|revenue|viewership|television ratings|tv ratings|economic impact|market share|crowd)\b/i;
+const LOW_VALUE_RE=/\b(preview|opinion|podcast|photo gallery|look back|what to know|guide to)\b/i;
 
 export function scoreRacingWireItem(item){
  const title=String(item?.title||'').trim();
@@ -318,6 +346,7 @@ export function scoreRacingWireItem(item){
  if(SALES_RE.test(context))score+=18;
  if(BREEDING_RE.test(context))score+=18;
  if(MILESTONE_RE.test(context))score+=24;
+ if(INDUSTRY_METRICS_RE.test(context))score+=MAJOR_EVENT_RE.test(context)?14:6;
  if(RESULT_RE.test(context))score+=(MAJOR_EVENT_RE.test(context)||GRADED_RE.test(context)||/\bstakes\b/i.test(context))?10:-10;
  if(/\b(entry|entries|draw|post position|field set|nominations?)\b/i.test(context))score+=MAJOR_EVENT_RE.test(context)?14:3;
  if(LOW_VALUE_RE.test(context))score-=18;
