@@ -79,7 +79,7 @@ assert.equal(categorize('Horse workout reported'),'Race-Day');
 assert.equal(categorize('Yearling sale underway'),'Sales / Auctions');
 const feed={name:'Authorized Publisher',host:'publisher.example'};
 const rss='<rss><channel><item><title><![CDATA[Trainer &amp; Jockey updates]]></title>'+
- '<link>https://publisher.example/story/123</link><category>Breeders Cup</category><media:content url="https://publisher.example/images/story-123.jpg" medium="image"/><pubDate>Fri, 30 Oct 2026 12:00:00 GMT</pubDate></item>'+
+ '<link>https://publisher.example/story/123</link><category>Breeders Cup</category><media:content url="https://publisher.example/images/story-123.jpg" medium="image"/><pubDate>Sat, 31 Oct 2026 12:00:00 GMT</pubDate></item>'+
  '<item><title>Bad URL</title><link>https://attacker.example/phishing</link><pubDate>Fri, 30 Oct 2026 12:00:00 GMT</pubDate></item></channel></rss>';
 const items=parseRacingRss(rss,feed);
 assert.equal(items.length,1);
@@ -150,7 +150,7 @@ assert.equal(diagnosticFetches,previewFeedCount,'All expanded preview RSS endpoi
 assert.equal(diagnostic.diagnostic_only,true);
 assert.equal(diagnostic.results.length,previewFeedCount);
 assert.ok(diagnostic.results.every(x=>x.reachable&&x.http_status===200&&x.parsed_count===1));
-assert.ok(diagnostic.results.every(x=>x.newest_published_at==='2026-10-30T12:00:00.000Z'));
+assert.ok(diagnostic.results.every(x=>x.newest_published_at==='2026-10-31T12:00:00.000Z'));
 assert.ok(diagnostic.results.every(x=>!('title' in x)&&!('items' in x)),
  'Diagnostic reports connectivity/counts only and does not republish third-party headlines');
 
