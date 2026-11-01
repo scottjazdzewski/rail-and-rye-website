@@ -1,0 +1,9 @@
+# Speed up returning visitors without caching payment or private responses.
+# Cloudflare Workers Static Assets honors these headers for public files only.
+/assets/*
+  Cache-Control: public, max-age=86400
+  X-Content-Type-Options: nosniff
+
+/favicon.png
+  Cache-Control: public, max-age=86400
+  X-Content-Type-Options: nosniff
