@@ -174,7 +174,7 @@ function storyCard(x,lead=false,allowImage=true){
  const row=document.createElement('article');row.className=lead?'lead-card':'item';
  const isLive=typeof x.url==='string'&&(/^\x2fjournal\x2f[a-z0-9-]+\x2f$/.test(x.url)||/^https:\/\/[a-z0-9.-]+\//i.test(x.url));
  row.append(allowImage?storyVisual(x,isLive,lead,row):icon(x.subject_kind));
- const content=document.createElement('div'),meta=document.createElement('div');meta.className='meta';meta.textContent=labelTime(x.published_at);
+ const content=document.createElement('div'),meta=document.createElement('div');meta.className='meta';meta.textContent=x.published_at_estimated?'Recent':labelTime(x.published_at);
  const heading=document.createElement('h3');
  if(isLive){const link=document.createElement('a');link.href=x.url;link.textContent=x.title;if(!x.original){link.rel='noopener noreferrer external';link.target='_blank';}heading.append(link);}
  else heading.textContent=x.title;
