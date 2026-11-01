@@ -142,7 +142,7 @@ const previewFetch=async url=>{
  const fixture=previewFeedFixtures[String(url)];
  assert.ok(fixture,'Only allowlisted preview RSS endpoints are requested: '+url);
  const xml='<rss><channel><item><title>'+fixture.title+'</title><link>'+fixture.link+'</link>'+
-  '<pubDate>Fri, 30 Oct 2026 12:00:00 GMT</pubDate></item></channel></rss>';
+  '<pubDate>Sat, 31 Oct 2026 12:00:00 GMT</pubDate></item></channel></rss>';
  return new Response(xml,{status:200,headers:{'Content-Type':'application/rss+xml'}});
 };
 const diagnostic=await testPreviewRssFeeds(previewFetch);
