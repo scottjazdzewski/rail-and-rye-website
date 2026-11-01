@@ -29,7 +29,6 @@ async function ensureEditorialSchema(env){
 const BROWSER_FEED_UA='Mozilla/5.0 (compatible; RailAndRyeRacingWire/1.0; +https://railandryeracing.com)';
 export const PREVIEW_LIVE_FEEDS=Object.freeze([
   {id:'tdn-all',name:'Thoroughbred Daily News',url:'https://www.thoroughbreddailynews.com/feed/',host:'thoroughbreddailynews.com'},
-  {id:'past-the-wire-news',name:'Past The Wire',url:'https://pastthewire.com/feed',host:'pastthewire.com'},
   {id:'abr',name:"America's Best Racing",url:'https://www.americasbestracing.net/rss',host:'americasbestracing.net'},
   {id:'hrn',name:'Horse Racing Nation',url:'https://www.horseracingnation.com/rss/newsfeed.aspx',host:'horseracingnation.com'},
   {id:'racing-biz',name:'The Racing Biz',url:'https://www.theracingbiz.com/feed',host:'theracingbiz.com'},
