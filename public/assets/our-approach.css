@@ -15,11 +15,24 @@ body.rr-approach-page .rr-approach-grid{
  padding-top:clamp(52px,5.5vw,89px);padding-bottom:clamp(30px,4vw,65px)
 }
 body.rr-approach-page .rr-approach-left{align-self:start;max-width:690px}
-body.rr-approach-page .rr-approach-kicker{
- display:inline-flex;align-items:center;min-height:37px;
- padding:9px 16px;border:1px solid rgba(224,181,107,.75);border-radius:999px;
- background:rgba(5,24,36,.64);color:#eec681;
- font:800 11px/1.3 var(--heritage-sans);letter-spacing:.13em;text-transform:uppercase
+/* Page 10 uses the original numbered saddlecloth artwork and the identical
+   chip proportions, white plate, label typography, and spacing as Pages 2–9. */
+body.rr-approach-page .rr-page-saddle-kicker{
+ display:flex;align-items:center;gap:12px;width:100%;min-height:40px
+}
+body.rr-approach-page .rr-page-saddle-kicker>.rr-chip-solid{
+ display:grid;place-items:center;flex:0 0 40px;width:40px;height:40px;
+ box-sizing:border-box;border-radius:6px;overflow:hidden;isolation:isolate;
+ background:#fff;opacity:1!important;mix-blend-mode:normal!important
+}
+body.rr-approach-page .rr-page-saddle-kicker>.rr-chip-solid img{
+ display:block;width:100%;height:100%;object-fit:contain;
+ opacity:1!important;filter:none!important;mix-blend-mode:normal!important
+}
+body.rr-approach-page .rr-page-kicker-label{
+ display:block;flex:1 1 auto;min-width:0;color:#e8bd72;
+ font:600 clamp(10px,.73vw,14px)/1.2 var(--heritage-serif);
+ letter-spacing:.17em;text-transform:uppercase
 }
 body.rr-approach-page .rr-approach-left .rr-page-title{
  margin:22px 0 21px;color:#fff0db;
@@ -97,6 +110,7 @@ body.rr-approach-page .rr-approach-rail-foot span{
  body.rr-approach-page .rr-approach-rail-content{max-height:none;overflow:visible}
 }
 @media(max-width:750px){
+ body.rr-approach-page .rr-page-kicker-label{font-size:clamp(9px,2.4vw,12px);letter-spacing:.1em}
  body.rr-approach-page>.rr-approach-hero{min-height:0;background-position:59% 40%}
  body.rr-approach-page .rr-approach-grid{
   padding-top:62px;padding-bottom:38px;gap:28px
