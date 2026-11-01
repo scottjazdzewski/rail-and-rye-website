@@ -962,3 +962,69 @@ body.heritage-journal-page.rr-journal-archive-view .rr-journal-feature-rail{
   max-height:none
  }
 }
+
+
+/* Journal story routes only: reuse the exact site header without the landing
+   hero image or its viewport-sized spacer. Retain each article's own cover. */
+body.heritage-home.heritage-journal-page.rr-journal-article-view>.heritage-inner-hero{
+ display:flex;flex:0 0 auto!important;flex-direction:column;
+ min-height:0!important;height:auto!important;overflow:visible;
+ border-bottom:1px solid rgba(227,185,112,.42);
+ background:#071a2c!important;background-image:none!important
+}
+body.heritage-home.heritage-journal-page.rr-journal-article-view>.heritage-inner-hero::before{
+ display:none
+}
+body.heritage-home.heritage-journal-page.rr-journal-article-view>.heritage-inner-hero>.rr-journal-hero-grid{
+ display:none!important
+}
+body.heritage-home.heritage-journal-page.rr-journal-article-view>.heritage-inner-hero>.heritage-header{
+ flex:0 0 auto
+}
+body.heritage-home.heritage-journal-page.rr-journal-article-view>.rr-journal-main{
+ display:block;flex:1 0 auto;border-top:0
+}
+body.heritage-home.heritage-journal-page.rr-journal-article-view .rr-journal-shell{
+ width:min(100%,980px);padding:clamp(32px,3.6vw,58px) clamp(20px,3vw,42px) clamp(52px,6vw,86px)
+}
+body.heritage-home.heritage-journal-page.rr-journal-article-view .rr-journal-detail{
+ width:min(100%,860px)
+}
+body.heritage-home.heritage-journal-page.rr-journal-article-view .rr-journal-article-title{
+ margin:18px 0 19px;font-size:clamp(39px,4.6vw,60px);line-height:1.03
+}
+body.heritage-home.heritage-journal-page.rr-journal-article-view .rr-journal-article-excerpt{
+ margin-bottom:23px
+}
+body.heritage-home.heritage-journal-page.rr-journal-article-view .rr-journal-article-image{
+ display:block;width:100%;height:auto;max-height:none;object-fit:contain;
+ margin:23px auto 33px
+}
+body.heritage-home.heritage-journal-page.rr-journal-article-view .rr-journal-article-copy{
+ font-size:16px;line-height:1.86
+}
+body.heritage-home.heritage-journal-page.rr-journal-article-view .rr-journal-article-return{
+ margin-top:42px;padding-top:22px;border-top:1px solid rgba(165,129,73,.43)
+}
+body.heritage-home.heritage-journal-page.rr-journal-article-view .rr-journal-article-return a{
+ display:inline-block;color:#77582d;font:800 11px/1.5 var(--heritage-sans);
+ letter-spacing:.07em;text-decoration:none;text-transform:uppercase
+}
+body.heritage-home.heritage-journal-page.rr-journal-article-view .rr-journal-article-return a:hover,
+body.heritage-home.heritage-journal-page.rr-journal-article-view .rr-journal-article-return a:focus-visible{
+ color:#15384b;text-decoration:underline;text-underline-offset:5px
+}
+@media(max-width:750px){
+ body.heritage-home.heritage-journal-page.rr-journal-article-view .rr-journal-shell{
+  padding:25px 18px 52px
+ }
+ body.heritage-home.heritage-journal-page.rr-journal-article-view .rr-journal-article-title{
+  font-size:clamp(35px,9vw,49px);line-height:1.04
+ }
+ body.heritage-home.heritage-journal-page.rr-journal-article-view .rr-journal-article-copy{
+  font-size:15px;line-height:1.78
+ }
+ body.heritage-home.heritage-journal-page.rr-journal-article-view .rr-journal-article-image{
+  margin:20px auto 26px
+ }
+}
