@@ -54,6 +54,12 @@ assert.equal(subjectKind("OBS Grad Further Ado Up in Time in Breeders’ Cup Dir
 assert.equal(categorize("Two-Day Breeders’ Cup Attendance Up, Handle Down Over 2025"),'Industry');
 assert.equal(subjectKind("Two-Day Breeders’ Cup Attendance Up, Handle Down Over 2025",
   categorize("Two-Day Breeders’ Cup Attendance Up, Handle Down Over 2025")),'industry');
+assert.equal(categorize("Breeders' Cup reports record attendance and wagering handle"),'Industry');
+assert.equal(categorize("OBS graduate wins graded stakes",'',"Ocala Breeders’ Sales"),'Sales / Auctions');
+assert.equal(categorize("Fasig-Tipton graduate captures Breeders' Cup race",'',"Fasig-Tipton"),'Sales / Auctions');
+assert.equal(categorize("Breeders' Cup announces new host venue for 2028"),'Racetrack');
+assert.equal(categorize("Champion retires to stud after Breeders' Cup campaign"),'Breeding');
+assert.equal(categorize("Classic contender injured before Breeders' Cup"),'Horses');
 assert.equal(categorize('Keeneland announces turf course rail setting and track surface update'),'Racetrack');
 assert.equal(subjectKind('Keeneland announces turf course rail setting and track surface update','Racetrack'),'racetrack');
 assert.equal(categorize("Sovereignty Rules Breeders’ Cup Classic; Forever Young Denied"),'Stakes');
@@ -254,8 +260,14 @@ assert.ok(!wirePage.includes('class="hero-art"'),'Temporary SVG hero artwork rem
 assert.ok(wirePage.includes('rr-page-saddle-kicker')&&wirePage.includes('rr-page-title')&&
  wirePage.includes('rr-page-rule')&&wirePage.includes('rr-page-description'),
  'Page 8 uses the same canonical numbered-page title treatment');
-assert.ok(wirePage.includes('class="heritage-inner-hero rrw-wire-hero"')&&wirePage.includes('rr-page-intro rr-page-intro--hero'),
- 'Racing Wire uses the exact shared production inner-hero frame and intro layout');
+assert.ok(wirePage.includes('class="heritage-inner-hero rrw-wire-hero"')&&
+ wirePage.includes('class="heritage-shell rr-racecards-hero-grid rrw-numbered-hero-grid"')&&
+ wirePage.includes('class="rr-racecards-intro rr-page-intro rr-page-intro--grid"'),
+ 'Racing Wire uses the same numbered-page hero grid, left intro column and title geometry as pages 2–5');
+assert.ok(wirePage.includes('/assets/rail-rye-pages.css?v=43'),
+ 'Racing Wire loads the current numbered-page geometry stylesheet used by Race Cards / Publications');
+assert.ok(!wirePage.includes('rr-page-intro--hero'),
+ 'Old free-positioned hero intro is removed so the saddle chip cannot drift from pages 2–5');
 assert.ok(!wirePage.includes('rr-single-screen-hero'),
  'Racing Wire does not use the single-screen flex mode that collapses when a live feed is present');
 assert.ok(!wirePage.includes('rrw-hero-media')&&!wirePage.includes('rrw-hero-image')&&!wirePage.includes('rrw-wire-hero:before{z-index'),
