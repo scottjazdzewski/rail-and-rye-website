@@ -48,17 +48,20 @@ const PREVIEW_RETRY_FEEDS=Object.freeze([
   {id:'remington',name:'Remington Park',url:'https://www.remingtonpark.com/feed/',host:'remingtonpark.com',candidate:true,require_racing_context:true}
 ]);
 export const PREVIEW_DIAGNOSTIC_FEEDS=Object.freeze([...PREVIEW_LIVE_FEEDS,...PREVIEW_RETRY_FEEDS]);
-export const PREVIEW_OFFICIAL_NEWS_PAGES=Object.freeze([
+export const PREVIEW_LIVE_OFFICIAL_NEWS_PAGES=Object.freeze([
   {id:'hisa',name:'HISA',url:'https://www.hisaus.org/news',host:'hisaus.org',category:'Regulatory'},
   {id:'hiwu',name:'HIWU',url:'https://www.hiwu.org/news',host:'hiwu.org',category:'Regulatory'},
+  {id:'keeneland',name:'Keeneland',url:'https://www.keeneland.com/media/news',host:'keeneland.com',path_prefix:'/media/news'}
+]);
+const PREVIEW_RETRY_OFFICIAL_NEWS_PAGES=Object.freeze([
   {id:'breeders-cup',name:"Breeders' Cup",url:'https://www.breederscup.com/news',host:'breederscup.com',path_prefix:'/news'},
   {id:'fasig-tipton',name:'Fasig-Tipton',url:'https://www.fasigtipton.com/news',host:'fasigtipton.com',path_prefix:'/news',category:'Sales / Auctions'},
-  {id:'keeneland',name:'Keeneland',url:'https://www.keeneland.com/media/news',host:'keeneland.com',path_prefix:'/media/news'},
   {id:'churchill-downs',name:'Churchill Downs',url:'https://www.churchilldowns.com/horses/news/',host:'churchilldowns.com',path_prefix:'/horses/news'},
   {id:'santa-anita',name:'Santa Anita',url:'https://www.santaanita.com/news/',host:'santaanita.com',path_prefix:'/news'},
   {id:'del-mar',name:'Del Mar',url:'https://www.dmtc.com/media/news',host:'dmtc.com',path_prefix:'/media/news'},
   {id:'gulfstream',name:'Gulfstream Park',url:'https://www.gulfstreampark.com/news/',host:'gulfstreampark.com',path_prefix:'/news'}
 ]);
+export const PREVIEW_OFFICIAL_NEWS_PAGES=Object.freeze([...PREVIEW_LIVE_OFFICIAL_NEWS_PAGES,...PREVIEW_RETRY_OFFICIAL_NEWS_PAGES]);
 function decode(s){
   return String(s||'').replace(/^<!\[CDATA\[|\]\]>$/g,'')
     .replace(/&#(x[0-9a-f]+|\d+);/gi,(_,n)=>{const x=n[0].toLowerCase()==='x'?parseInt(n.slice(1),16):Number(n);return x>0&&x<=0x10ffff?String.fromCodePoint(x):'';})
@@ -357,7 +360,7 @@ async function fetchPreviewFeed(feed,fetchFn=fetch){
 export async function previewExternalItems(fetchFn=fetch){
   const [rssSettled,pageSettled]=await Promise.all([
     Promise.all(PREVIEW_LIVE_FEEDS.map(feed=>fetchPreviewFeed(feed,fetchFn))),
-    Promise.all(PREVIEW_OFFICIAL_NEWS_PAGES.map(source=>fetchOfficialNewsPage(source,fetchFn)))
+    Promise.all(PREVIEW_LIVE_OFFICIAL_NEWS_PAGES.map(source=>fetchOfficialNewsPage(source,fetchFn)))
   ]);
   return {
     items:[...rssSettled.flatMap(x=>x.items),...pageSettled.flatMap(x=>x.items)].slice(0,140),
