@@ -287,6 +287,9 @@ assert.ok(wirePage.includes('The Latest from the Backstretch.'),'Approved Racing
 assert.ok(wirePage.includes('<main class="wrap heritage-shell">'),'News body uses the same production shell geometry as the numbered pages');
 assert.ok(wirePage.includes('id="allNews"')&&wirePage.includes('aria-pressed="true">All News</button>'),'All News has an explicit filter control');
 assert.ok(wirePage.includes('id="leadSection"')&&wirePage.includes('Top Story'),'High-value stories have a lead-story presentation');
+assert.ok(wirePage.includes('id="secondarySection"')&&wirePage.includes('More to Know'),'Racing Wire has a secondary visual-story tier beneath the lead story');
+assert.ok(wirePage.includes(".slice(0,3)")&&wirePage.includes("secondary-story"),'Secondary tier promotes at most three image-backed stories');
+assert.ok(wirePage.includes("storyCard(x,false,false)"),'Stories below the promoted tier return to compact badge cards');
 assert.ok(wirePage.includes('function storyVisual(')&&wirePage.includes('x.image_url')&&wirePage.includes("className='story-media'"),'Story cards can render publisher-supplied RSS photography');
 assert.ok(wirePage.includes('media.replaceWith(icon(x.subject_kind))'),'Approved category badge remains the fallback when an external image fails');
 assert.ok(wirePage.includes("img.referrerPolicy='no-referrer'"),'External feed images do not receive the private preview URL as referrer');
