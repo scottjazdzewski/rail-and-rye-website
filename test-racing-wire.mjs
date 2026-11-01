@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import {readFileSync,readdirSync} from 'node:fs';
 import vm from 'node:vm';
-import {PREVIEW_LIVE_FEEDS,PREVIEW_DIAGNOSTIC_FEEDS,PREVIEW_OFFICIAL_NEWS_PAGES,handleRacingWire,handlePreviewRacingWire,handleAdminRacingWire,previewExternalItems,parseRacingRss,parseOfficialNewsPage,categorize,refreshRacingWire,testPreviewRssFeeds,groupRacingWireStories,curateRacingWireStories,scoreRacingWireItem,subjectKind,socialPreview} from './src/racing-wire.js';
+import {PREVIEW_LIVE_FEEDS,PREVIEW_DIAGNOSTIC_FEEDS,PREVIEW_LIVE_OFFICIAL_NEWS_PAGES,PREVIEW_OFFICIAL_NEWS_PAGES,handleRacingWire,handlePreviewRacingWire,handleAdminRacingWire,previewExternalItems,parseRacingRss,parseOfficialNewsPage,categorize,refreshRacingWire,testPreviewRssFeeds,groupRacingWireStories,curateRacingWireStories,scoreRacingWireItem,subjectKind,socialPreview} from './src/racing-wire.js';
 const db=new DatabaseSync(':memory:');
 db.exec("CREATE TABLE journal_articles (id TEXT PRIMARY KEY,slug TEXT,title TEXT,category TEXT,excerpt TEXT,publish_date TEXT,status TEXT,created_at TEXT);");
 db.prepare("INSERT INTO journal_articles VALUES (?,?,?,?,?,?,?,?)").run(
@@ -147,7 +147,8 @@ assert.equal(previewFeedCount,10,'Only approved non-competing RSS sources partic
 assert.equal(diagnosticFeedCount,16,'Health diagnostics retry sixteen approved non-competing Thoroughbred source candidates');
 assert.ok(['bloodhorse','tattersalls','fair-grounds','laurel'].every(id=>PREVIEW_LIVE_FEEDS.some(feed=>feed.id===id)),'Live RSS pool includes confirmed newsroom, sales and track sources');
 assert.ok(['paulick','drf-headlines','ntra','toba','national-hbpa','remington'].every(id=>PREVIEW_DIAGNOSTIC_FEEDS.some(feed=>feed.id===id&&!PREVIEW_LIVE_FEEDS.some(live=>live.id===id))),'Blocked or empty RSS sources stay in diagnostics without slowing Page 8');
-assert.deepEqual(PREVIEW_OFFICIAL_NEWS_PAGES.map(x=>x.id),['hisa','hiwu','breeders-cup','fasig-tipton','keeneland','churchill-downs','santa-anita','del-mar','gulfstream'],'Approved first-party Thoroughbred newsrooms use official-page adapters instead of fake RSS');
+assert.deepEqual(PREVIEW_OFFICIAL_NEWS_PAGES.map(x=>x.id),['hisa','hiwu','keeneland','breeders-cup','fasig-tipton','churchill-downs','santa-anita','del-mar','gulfstream'],'Approved first-party Thoroughbred newsrooms remain under health monitoring');
+assert.deepEqual(PREVIEW_LIVE_OFFICIAL_NEWS_PAGES.map(x=>x.id),['hisa','hiwu','keeneland'],'Only verified official-page adapters feed Page 8');
 assert.ok(PREVIEW_LIVE_FEEDS.filter(feed=>feed.require_racing_context).every(feed=>['fair-grounds','laurel'].includes(feed.id)),'Mixed-use live track feeds require explicit racing context');
 const officialFixtureFor=source=>{
  const prefix=source.path_prefix||'/news';
@@ -182,22 +183,22 @@ assert.ok(diagnostic.results.every(x=>!('title' in x)&&!('items' in x)),
 
 diagnosticFetches=0;
 const previewExternal=await previewExternalItems(previewFetch);
-assert.equal(diagnosticFetches,previewFeedCount+PREVIEW_OFFICIAL_NEWS_PAGES.length,'Preview aggregator checks live RSS plus all approved official newsrooms');
-assert.equal(previewExternal.items.length,previewFeedCount+PREVIEW_OFFICIAL_NEWS_PAGES.length);
-assert.equal(previewExternal.sources.filter(x=>x.parsed_count===1).length,previewFeedCount+PREVIEW_OFFICIAL_NEWS_PAGES.length);
+assert.equal(diagnosticFetches,previewFeedCount+PREVIEW_LIVE_OFFICIAL_NEWS_PAGES.length,'Preview aggregator checks live RSS plus verified official newsrooms only');
+assert.equal(previewExternal.items.length,previewFeedCount+PREVIEW_LIVE_OFFICIAL_NEWS_PAGES.length);
+assert.equal(previewExternal.sources.filter(x=>x.parsed_count===1).length,previewFeedCount+PREVIEW_LIVE_OFFICIAL_NEWS_PAGES.length);
 assert.ok(previewExternal.items.every(x=>x.preview_external===true&&x.summary===''&&!x.original));
 
 diagnosticFetches=0;
 const previewResponse=await handlePreviewRacingWire(new Request('https://railandryeracing.com/api/preview/racing-wire-test'),env,previewFetch);
 assert.equal(previewResponse.status,200);
 const previewBody=await previewResponse.json();
-assert.equal(diagnosticFetches,previewFeedCount+PREVIEW_OFFICIAL_NEWS_PAGES.length);
+assert.equal(diagnosticFetches,previewFeedCount+PREVIEW_LIVE_OFFICIAL_NEWS_PAGES.length);
 assert.equal(previewBody.external_test_only,true);
-assert.equal(previewBody.source_count,previewFeedCount+PREVIEW_OFFICIAL_NEWS_PAGES.length+1,'Rail & Rye Journal plus current live RSS and official-page sources');
-assert.equal(previewBody.external_sources.length,previewFeedCount+PREVIEW_OFFICIAL_NEWS_PAGES.length);
+assert.equal(previewBody.source_count,previewFeedCount+PREVIEW_LIVE_OFFICIAL_NEWS_PAGES.length+1,'Rail & Rye Journal plus verified live RSS and official-page sources');
+assert.equal(previewBody.external_sources.length,previewFeedCount+PREVIEW_LIVE_OFFICIAL_NEWS_PAGES.length);
 assert.ok(previewBody.external_sources.every(x=>x.parsed_count===1),
  'All active preview feeds parse successfully before editorial filtering');
-assert.ok(previewBody.items.length>=5&&previewBody.items.length<=previewFeedCount+1,
+assert.ok(previewBody.items.length>=5&&previewBody.items.length<=previewFeedCount+PREVIEW_LIVE_OFFICIAL_NEWS_PAGES.length+1,
  'Editorial relevance/dedupe gate may suppress low-value or overlapping feed items');
 assert.ok(previewBody.items.some(x=>x.source==='Ocala Breeders’ Sales'),'Correct OBS feed can reach curated preview');
 assert.ok(previewBody.external_sources.some(x=>x.name==="America's Best Racing"&&x.parsed_count===1),
