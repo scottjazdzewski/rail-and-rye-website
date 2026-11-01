@@ -61,9 +61,9 @@ async function allBundles(env) {
   const bundles=[];
   for (const b of products.results||[]) {
     const items=await env.STORE_DB.prepare(
-      "SELECT bi.product_id,p.title,p.status,p.pdf_key,a.product_id AS asset_id,CASE WHEN s.release_at>CURRENT_TIMESTAMP THEN 1 ELSE 0 END AS pending_release FROM bundle_items bi LEFT JOIN products p ON p.id=bi.product_id LEFT JOIN bundle_only_assets a ON a.product_id=p.id LEFT JOIN product_release_schedule s ON s.product_id=p.id WHERE bi.bundle_id=? ORDER BY bi.position"
+      "SELECT bi.product_id,p.title,p.category,p.status,p.pdf_key,a.product_id AS asset_id,CASE WHEN s.release_at>CURRENT_TIMESTAMP THEN 1 ELSE 0 END AS pending_release FROM bundle_items bi LEFT JOIN products p ON p.id=bi.product_id LEFT JOIN bundle_only_assets a ON a.product_id=p.id LEFT JOIN product_release_schedule s ON s.product_id=p.id WHERE bi.bundle_id=? ORDER BY bi.position"
     ).bind(b.id).all();
-    bundles.push({...b,product_ids:(items.results||[]).map(x=>x.product_id),
+    bundles.push({...b,categories:[...new Set([b.category,...(items.results||[]).map(x=>x.category)].filter(Boolean))],product_ids:(items.results||[]).map(x=>x.product_id),
       components:(items.results||[]).map(x=>({id:x.product_id,title:x.title,status:x.status,available:eligibleChild(x),bundle_only:!!x.asset_id}))});
   }
   const singles=await env.STORE_DB.prepare(
