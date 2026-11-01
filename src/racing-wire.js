@@ -676,7 +676,7 @@ const HARD_REJECT_PATTERNS=[
 ];
 const MAJOR_EVENT_RE=/\b(breeders.? cup|kentucky derby|preakness|belmont stakes|travers|pegasus world cup|dubai world cup|melbourne cup|prix de l.?arc de triomphe|japan cup|cox plate|eclipse stakes|royal ascot|kentucky oaks)\b/i;
 const GRADED_RE=/\b(group|grade)\s*[123i]+\b|\bG[123]\b/i;
-const MATERIAL_RE=/\b(scratch(?:ed|es)?|withdrawn?|ruled out|injur(?:y|ed)|illness|surgery|colic|retir(?:e|ed|ement)|suspend(?:ed|sion)?|ruling|disqualif(?:ied|ication)|ban(?:ned)?|cancel(?:led|ed)|postpon(?:ed|ement)|stewards?|positive test|appeal)\b/i;
+const MATERIAL_RE=/\b(scratch(?:ed|es)?|withdrawn?|rules? out|ruled out|injur(?:y|ed)|illness|surgery|colic|retir(?:e|ed|ement)|suspend(?:ed|sion)?|ruling|disqualif(?:ied|ication)|ban(?:ned)?|cancel(?:led|ed)|postpon(?:ed|ement)|stewards?|positive test|appeal)\b/i;
 const RESULT_RE=/\b(wins?|won|victory|triumph|scores?|takes?|captures?|proves best|remains perfect|completes .*timer)\b/i;
 const SALES_RE=/\b(sale|auction|sold for|brings? \$|hammer price|consign(?:ed|ment)|yearling|weanling)\b/i;
 const BREEDING_RE=/\b(stallion|stud fee|retired to stud|breeding|sire|dam|foal|foaled|broodmare|cover(?:ed|ing))\b/i;
