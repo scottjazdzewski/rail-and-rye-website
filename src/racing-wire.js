@@ -25,6 +25,7 @@ async function ensureEditorialSchema(env){
   }
   await editorialSchemaPromise;
 }
+const BROWSER_FEED_UA='Mozilla/5.0 (compatible; RailAndRyeRacingWire/1.0; +https://railandryeracing.com)';
 export const PREVIEW_LIVE_FEEDS=Object.freeze([
   {id:'tdn-all',name:'Thoroughbred Daily News',url:'https://www.thoroughbreddailynews.com/feed/',host:'thoroughbreddailynews.com'},
   {id:'past-the-wire-news',name:'Past The Wire',url:'https://pastthewire.com/feed',host:'pastthewire.com'},
@@ -33,18 +34,20 @@ export const PREVIEW_LIVE_FEEDS=Object.freeze([
   {id:'racing-biz',name:'The Racing Biz',url:'https://www.theracingbiz.com/feed',host:'theracingbiz.com'},
   {id:'woodbine',name:'Woodbine',url:'https://woodbine.com/feed',host:'woodbine.com'},
   {id:'obs',name:'Ocala Breeders’ Sales',url:'https://obssales.com/feed/',host:'obssales.com'},
-  {id:'bloodhorse',name:'BloodHorse',url:'https://www.bloodhorse.com/horse-racing/feeds/news/all-news',host:'bloodhorse.com'},
-  {id:'paulick',name:'Paulick Report',url:'https://paulickreport.com/feed/',host:'paulickreport.com',candidate:true},
-  {id:'drf-headlines',name:'Daily Racing Form',url:'https://www.drf.com/feeds/all-articles-of-track',host:'drf.com',candidate:true},
-  {id:'ntra',name:'NTRA',url:'https://www.ntra.com/feed/',host:'ntra.com'},
-  {id:'toba',name:'TOBA',url:'https://toba.org/feed/',host:'toba.org'},
+  {id:'bloodhorse',name:'BloodHorse',url:'https://www.bloodhorse.com/horse-racing/feeds/news/all-news',host:'bloodhorse.com',allow_undated:true},
+  {id:'toba',name:'TOBA',url:'https://toba.org/feed/',host:'toba.org',user_agent:BROWSER_FEED_UA},
   {id:'tattersalls',name:'Tattersalls',url:'https://www.tattersalls.com/feed/',host:'tattersalls.com'},
-  {id:'national-hbpa',name:'National HBPA',url:'https://nationalhbpa.com/feed/',host:'nationalhbpa.com'},
+  {id:'national-hbpa',name:'National HBPA',url:'https://nationalhbpa.com/feed/',host:'nationalhbpa.com',user_agent:BROWSER_FEED_UA},
   {id:'fair-grounds',name:'Fair Grounds',url:'https://www.fairgroundsracecourse.com/feed/',host:'fairgroundsracecourse.com',require_racing_context:true},
-  {id:'remington',name:'Remington Park',url:'https://www.remingtonpark.com/feed/',host:'remingtonpark.com',require_racing_context:true},
   {id:'laurel',name:'Laurel Park',url:'https://www.laurelpark.com/feed/',host:'laurelpark.com',require_racing_context:true}
 ]);
-const PREVIEW_DIAGNOSTIC_FEEDS=PREVIEW_LIVE_FEEDS;
+const PREVIEW_RETRY_FEEDS=Object.freeze([
+  {id:'paulick',name:'Paulick Report',url:'https://paulickreport.com/feed/',host:'paulickreport.com',candidate:true},
+  {id:'drf-headlines',name:'Daily Racing Form',url:'https://www.drf.com/feeds/all-articles-of-track',host:'drf.com',candidate:true},
+  {id:'ntra',name:'NTRA',url:'https://www.ntra.com/feed/',host:'ntra.com',candidate:true},
+  {id:'remington',name:'Remington Park',url:'https://www.remingtonpark.com/feed/',host:'remingtonpark.com',candidate:true,require_racing_context:true}
+]);
+const PREVIEW_DIAGNOSTIC_FEEDS=Object.freeze([...PREVIEW_LIVE_FEEDS,...PREVIEW_RETRY_FEEDS]);
 function decode(s){
   return String(s||'').replace(/^<!\[CDATA\[|\]\]>$/g,'')
     .replace(/&#(x[0-9a-f]+|\d+);/gi,(_,n)=>{const x=n[0].toLowerCase()==='x'?parseInt(n.slice(1),16):Number(n);return x>0&&x<=0x10ffff?String.fromCodePoint(x):'';})
@@ -214,10 +217,10 @@ export function parseRacingRss(xml,feed){
     const link=safeUrl(field(item,'link'),feed.link_hosts||feed.host);
     const section=field(item,'category').slice(0,120);
     const published=field(item,'pubDate')||field(item,'published')||field(item,'updated');
-    const dt=new Date(published);
-    if(!title||!link||!Number.isFinite(+dt)||dt.getTime()>Date.now()+3600000)continue;
-    results.push({source:feed.name,title,link,published_at:dt.toISOString(),
-      section,category:categorize(title,section,feed.name),image_url:feedImage(item,feed)});
+    const dt=new Date(published),hasDate=Number.isFinite(+dt);
+    if(!title||!link||(!hasDate&&!feed.allow_undated)||(hasDate&&dt.getTime()>Date.now()+3600000))continue;
+    results.push({source:feed.name,title,link,published_at:hasDate?dt.toISOString():null,
+      undated:!hasDate,section,category:categorize(title,section,feed.name),image_url:feedImage(item,feed)});
   }
   return results;
 }
@@ -228,23 +231,25 @@ async function fetchPreviewFeed(feed,fetchFn=fetch){
       Accept:'application/rss+xml,application/xml,text/xml;q=0.9,*/*;q=0.1',
       'Cache-Control':'no-cache',
       Pragma:'no-cache',
-      'User-Agent':'RailAndRyeRacingWire-Preview/1.0 (+https://railandryeracing.com)'
+      'User-Agent':feed.user_agent||'RailAndRyeRacingWire-Preview/1.0 (+https://railandryeracing.com)'
     },cache:'no-store',signal:AbortSignal.timeout(8000)});
     const len=Number(response.headers.get('content-length')||0);
     if(!response.ok||len>MAX_FEED_BYTES)return {feed,items:[],status:response.status,elapsed_ms:Date.now()-started};
     const xml=await response.text();
     if(xml.length>MAX_FEED_BYTES)return {feed,items:[],status:response.status,elapsed_ms:Date.now()-started};
     const now=Date.now();
+    const fetchedAt=new Date(now).toISOString();
     const parsed=parseRacingRss(xml,feed)
       .filter(item=>previewHeadlineRelevant(item.title,item.section))
       .filter(item=>!feed.require_racing_context||hasRacingContext(item.title,item.section))
-      .filter(item=>now-Date.parse(item.published_at)<=PREVIEW_MAX_ITEM_AGE_MS)
+      .filter(item=>item.undated||now-Date.parse(item.published_at)<=PREVIEW_MAX_ITEM_AGE_MS)
       .slice(0,12)
       .map(item=>({
         title:item.title,url:item.link,source:item.source,
         category:item.category,section:item.section||'',
         subject_kind:subjectKind(item.title,item.category),
-        published_at:item.published_at,summary:'',image_url:item.image_url||'',
+        published_at:item.published_at||fetchedAt,published_at_estimated:Boolean(item.undated),
+        summary:'',image_url:item.image_url||'',
         original:false,preview_external:true
       }));
     return {feed,items:parsed,status:response.status,
@@ -272,7 +277,7 @@ export async function testPreviewRssFeeds(fetchFn=fetch){
     try{
       const response=await fetchFn(feed.url,{headers:{
         Accept:'application/rss+xml,application/xml,text/xml;q=0.9,*/*;q=0.1',
-        'User-Agent':'RailAndRyeRacingWire-Preview/1.0 (+https://railandryeracing.com)'
+        'User-Agent':feed.user_agent||'RailAndRyeRacingWire-Preview/1.0 (+https://railandryeracing.com)'
       },signal:AbortSignal.timeout(9000)});
       const type=String(response.headers.get('content-type')||'').slice(0,120);
       const len=Number(response.headers.get('content-length')||0);
@@ -291,7 +296,7 @@ export async function testPreviewRssFeeds(fetchFn=fetch){
       const xml=await response.text();
       if(xml.length>MAX_FEED_BYTES)throw Error('Feed exceeded preview safety limit');
       const parsed=parseRacingRss(xml,feed);
-      const newest=parsed.map(x=>x.published_at).sort().at(-1)||null;
+      const newest=parsed.map(x=>x.published_at).filter(Boolean).sort().at(-1)||null;
       results.push({id:feed.id,source:feed.name,url:feed.url,reachable:true,http_status:response.status,
         content_type:type,bytes:xml.length,parsed_count:parsed.length,newest_published_at:newest,
         elapsed_ms:Date.now()-started,note:'Diagnostic only — headlines are not republished.'});
