@@ -1250,3 +1250,18 @@ body.heritage-home.heritage-journal-page.rr-journal-article-view .rr-journal-rel
  body.heritage-home.heritage-journal-page.rr-journal-article-view .rr-journal-related-media{height:70px}
 }
 @media(prefers-reduced-motion:reduce){.rr-share-button{transition:none}}
+
+
+/* Category publication cards keep sharing beside the purchase or download action. */
+body.heritage-home.heritage-publication-page .rr-publication-product-grid .rr-publication-latest-card .rr-purchase-actions{
+ grid-column:2;grid-row:2;display:flex;align-items:center;justify-self:start;gap:10px;flex-wrap:wrap;position:relative;z-index:4;min-width:0
+}
+body.heritage-home.heritage-publication-page .rr-publication-product-grid .rr-publication-latest-card .rr-purchase-actions .rr-purchase-buy{
+ grid-column:auto;grid-row:auto;justify-self:auto;flex:0 0 auto;min-width:156px;margin:0
+}
+@media(max-width:750px){
+ body.heritage-home.heritage-publication-page .rr-publication-product-grid .rr-publication-latest-card .rr-purchase-actions{gap:8px}
+ body.heritage-home.heritage-publication-page .rr-publication-product-grid .rr-publication-latest-card .rr-purchase-actions .rr-purchase-buy{
+  min-width:128px;min-height:38px;margin:0;padding:8px 12px;font-size:10px
+ }
+}

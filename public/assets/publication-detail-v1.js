@@ -76,8 +76,10 @@ const makeGlassCard=(p,data,onError)=>{
  }
  copy.append(txt('p',p.description||'Digital racing publication.','rr-purchase-description'));
  copy.append(txt('div',freeProduct(p)?'FREE':price(p.price_cents),'rr-purchase-price'));
- if(window.RRShare)copy.append(window.RRShare.button({title:displayTitle(p.title||category),text:p.description||'Rail & Rye digital racing publication.',url:'/store/#edition-'+encodeURIComponent(p.id),compact:true}));
- card.append(cover,copy,makePurchaseButton(p,data,onError),editionLink);
+ const actions=document.createElement('div');actions.className='rr-purchase-actions';
+ actions.append(makePurchaseButton(p,data,onError));
+ if(window.RRShare)actions.append(window.RRShare.button({title:displayTitle(p.title||category),text:p.description||'Rail & Rye digital racing publication.',url:'/store/#edition-'+encodeURIComponent(p.id),compact:true}));
+ card.append(cover,copy,actions,editionLink);
  return card
 };
 const renderRecent=products=>{
