@@ -32,7 +32,17 @@ export const PREVIEW_LIVE_FEEDS=Object.freeze([
   {id:'hrn',name:'Horse Racing Nation',url:'https://www.horseracingnation.com/rss/newsfeed.aspx',host:'horseracingnation.com'},
   {id:'racing-biz',name:'The Racing Biz',url:'https://www.theracingbiz.com/feed',host:'theracingbiz.com'},
   {id:'woodbine',name:'Woodbine',url:'https://woodbine.com/feed',host:'woodbine.com'},
-  {id:'obs',name:'Ocala Breeders’ Sales',url:'https://obssales.com/feed/',host:'obssales.com'}
+  {id:'obs',name:'Ocala Breeders’ Sales',url:'https://obssales.com/feed/',host:'obssales.com'},
+  {id:'bloodhorse',name:'BloodHorse',url:'https://www.bloodhorse.com/horse-racing/feeds/news/all-news',host:'bloodhorse.com'},
+  {id:'paulick',name:'Paulick Report',url:'https://paulickreport.com/feed/',host:'paulickreport.com',candidate:true},
+  {id:'drf-headlines',name:'Daily Racing Form',url:'https://www.drf.com/feeds/all-articles-of-track',host:'drf.com',candidate:true},
+  {id:'ntra',name:'NTRA',url:'https://www.ntra.com/feed/',host:'ntra.com'},
+  {id:'toba',name:'TOBA',url:'https://toba.org/feed/',host:'toba.org'},
+  {id:'tattersalls',name:'Tattersalls',url:'https://www.tattersalls.com/feed/',host:'tattersalls.com'},
+  {id:'national-hbpa',name:'National HBPA',url:'https://nationalhbpa.com/feed/',host:'nationalhbpa.com'},
+  {id:'fair-grounds',name:'Fair Grounds',url:'https://www.fairgroundsracecourse.com/feed/',host:'fairgroundsracecourse.com',require_racing_context:true},
+  {id:'remington',name:'Remington Park',url:'https://www.remingtonpark.com/feed/',host:'remingtonpark.com',require_racing_context:true},
+  {id:'laurel',name:'Laurel Park',url:'https://www.laurelpark.com/feed/',host:'laurelpark.com',require_racing_context:true}
 ]);
 const PREVIEW_DIAGNOSTIC_FEEDS=PREVIEW_LIVE_FEEDS;
 function decode(s){
@@ -82,8 +92,13 @@ function previewHeadlineRelevant(title,section=''){
   const text=(String(title||'')+' '+String(section||'')).toLowerCase();
   if(/\b(best bets?|picks?|selections?|odds|free bets?|betting guide|wagering tips?|promo code|bonus offer|merch|merchandise|tickets? on sale|photo gallery|quiz)\b/.test(text))return false;
   if(/\b(listen now|podcast episode|watch live|where to watch|tv schedule)\b/.test(text))return false;
+  if(/\b(casino|slot(?:s| machine)?|video poker|free slot play|gaming promotion|jackpot)\b/.test(text))return false;
   if(/\b(harness|standardbred|steeplechase|steeplechaser|jump racing|national hunt)\b/.test(text))return false;
   return true;
+}
+function hasRacingContext(title,section=''){
+  const text=(String(title||'')+' '+String(section||'')).toLowerCase();
+  return /\b(thoroughbred|race|racing|racetrack|stakes|derby|oaks|jockey|trainer|horse|filly|colt|gelding|mare|stallion|yearling|foal|purse|meet|breeders.? cup|claiming|maiden|allowance|graded|grade [123i]|\bg[123]\b)\b/.test(text);
 }
 export function categorize(title,category='',source=''){
   const s=(String(title||'')+' '+String(category||'')).toLowerCase();
@@ -222,6 +237,7 @@ async function fetchPreviewFeed(feed,fetchFn=fetch){
     const now=Date.now();
     const parsed=parseRacingRss(xml,feed)
       .filter(item=>previewHeadlineRelevant(item.title,item.section))
+      .filter(item=>!feed.require_racing_context||hasRacingContext(item.title,item.section))
       .filter(item=>now-Date.parse(item.published_at)<=PREVIEW_MAX_ITEM_AGE_MS)
       .slice(0,12)
       .map(item=>({
@@ -244,7 +260,8 @@ export async function previewExternalItems(fetchFn=fetch){
     items:settled.flatMap(x=>x.items).slice(0,120),
     sources:settled.map(x=>({id:x.feed.id,name:x.feed.name,url:x.feed.url,http_status:x.status,
       parsed_count:x.items.length,newest_published_at:x.newest_published_at||null,
-      elapsed_ms:x.elapsed_ms,error:x.error||null}))
+      elapsed_ms:x.elapsed_ms,error:x.error||null,candidate:Boolean(x.feed.candidate),
+      require_racing_context:Boolean(x.feed.require_racing_context)}))
   };
 }
 
