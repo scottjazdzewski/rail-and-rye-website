@@ -119,6 +119,20 @@ function absoluteNewsUrl(source,slug){
 function decodeHtmlText(value){
   return decode(String(value||'').replace(/<[^>]+>/g,' '));
 }
+function structuredMetaNearSlug(html,slug){
+  const needles=['"slug":"'+slug+'"','\\"slug\\":\\"'+slug+'\\"'];
+  for(const needle of needles){
+    const pos=html.indexOf(needle);
+    if(pos<0)continue;
+    const before=html.slice(Math.max(0,pos-12000),pos+needle.length);
+    const after=html.slice(pos,Math.min(html.length,pos+2200));
+    const dateMatches=[...before.matchAll(/(?:\\?"(?:date|publishedAt|datePublished)\\?":\\?"([^"\\]+)\\?")/g)];
+    const date=dateMatches.at(-1)?.[1]||'';
+    const title=(/(?:\\?"title\\?":\\?"([^"\\]+)\\?")/.exec(after)||[])[1]||'';
+    return {date,title:decode(title)};
+  }
+  return {date:'',title:''};
+}
 export function parseOfficialNewsPage(html,source){
   if(typeof html!=='string'||html.length>MAX_OFFICIAL_PAGE_BYTES)return [];
   const items=[],seen=new Set();
@@ -128,14 +142,18 @@ export function parseOfficialNewsPage(html,source){
     if(!slug||seen.has(slug))continue;
     const body=match[2];
     const heading=/<h[1-6]\b[^>]*>([\s\S]*?)<\/h[1-6]>/i.exec(body)?.[1]||'';
-    let title=decodeHtmlText(heading);
-    const plain=decodeHtmlText(body),dateText=plain.match(NEWS_DATE_RE)?.[0]||'';
+    const meta=structuredMetaNearSlug(html,slug);
+    const anchorStart=match.index||0;
+    const nearby=decodeHtmlText(html.slice(Math.max(0,anchorStart-1400),Math.min(html.length,anchorStart+match[0].length+1400)));
+    let title=decodeHtmlText(heading)||meta.title;
+    let dateText=meta.date||nearby.match(NEWS_DATE_RE)?.[0]||'';
     if(!title){
+      const plain=decodeHtmlText(body);
       const withoutDate=plain.replace(NEWS_DATE_RE,'').replace(/^(?:Press Releases?|Operational Bulletins?|Newsletters?|Metrics Reports?|Meeting Minutes?|Announcements?|Appointments?|General|Outreach)\s*/i,'').trim();
       title=withoutDate.split(/(?<=[.!?])\s/)[0].slice(0,240);
     }
     if(!title||!dateText)continue;
-    const dt=new Date(dateText+' 12:00:00 UTC');
+    const dt=/^\d{4}-\d{2}-\d{2}/.test(dateText)?new Date(dateText):new Date(dateText+' 12:00:00 UTC');
     const url=absoluteNewsUrl(source,slug);
     if(!url||!Number.isFinite(+dt))continue;
     seen.add(slug);
