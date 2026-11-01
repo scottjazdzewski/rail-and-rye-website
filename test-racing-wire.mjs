@@ -137,13 +137,14 @@ const fixtureTitles=[
  'Laurel Park announces Maryland Thoroughbred racing operations update'
 ]
 assert.ok(!PREVIEW_LIVE_FEEDS.some(feed=>/us racing|usracing/i.test(feed.name+' '+feed.url)),'Wagering-focused US Racing is excluded at the source level');
+assert.ok(![...PREVIEW_LIVE_FEEDS,...PREVIEW_DIAGNOSTIC_FEEDS].some(feed=>/past the wire|pastthewire/i.test(feed.name+' '+feed.url)),'Past The Wire is excluded at the source level as a direct competitor');
 assert.equal(scoreRacingWireItem({title:'Best bets and wagering tips for Saturday stakes',source:'Editorial Outlet'}).reject,true,'Betting/wagering editorial is rejected even from an otherwise allowed publication');
 assert.equal(scoreRacingWireItem({title:'Standardbred champion wins harness stakes',source:'Editorial Outlet'}).reject,true,'Harness/Standardbred coverage is excluded');
 assert.equal(scoreRacingWireItem({title:'National Hunt star wins steeplechase feature',source:'Editorial Outlet'}).reject,true,'Steeplechase/National Hunt coverage is excluded');
 const previewFeedCount=PREVIEW_LIVE_FEEDS.length;
 const diagnosticFeedCount=PREVIEW_DIAGNOSTIC_FEEDS.length;
-assert.equal(previewFeedCount,11,'Only proven RSS sources participate in the live private preview');
-assert.equal(diagnosticFeedCount,17,'Health diagnostics continue retrying all seventeen approved Thoroughbred source candidates');
+assert.equal(previewFeedCount,10,'Only approved non-competing RSS sources participate in the live private preview');
+assert.equal(diagnosticFeedCount,16,'Health diagnostics retry sixteen approved non-competing Thoroughbred source candidates');
 assert.ok(['bloodhorse','tattersalls','fair-grounds','laurel'].every(id=>PREVIEW_LIVE_FEEDS.some(feed=>feed.id===id)),'Live RSS pool includes confirmed newsroom, sales and track sources');
 assert.ok(['paulick','drf-headlines','ntra','toba','national-hbpa','remington'].every(id=>PREVIEW_DIAGNOSTIC_FEEDS.some(feed=>feed.id===id&&!PREVIEW_LIVE_FEEDS.some(live=>live.id===id))),'Blocked or empty RSS sources stay in diagnostics without slowing Page 8');
 assert.deepEqual(PREVIEW_OFFICIAL_NEWS_PAGES.map(x=>x.id),['hisa','hiwu'],'HISA and HIWU use first-party official news adapters instead of fake RSS');
