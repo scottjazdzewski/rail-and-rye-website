@@ -47,22 +47,23 @@ function safeMediaUrl(candidate,feed){
   try{
     const u=new URL(decode(candidate));if(u.protocol!=='https:'||u.username||u.password)return null;
     const allowed=[feed?.host,...(Array.isArray(feed?.image_hosts)?feed.image_hosts:[])]
-      .filter(Boolean).map(x=>String(x).toLowerCase().replace(/^www\\./,''));
-    const h=u.hostname.toLowerCase().replace(/^www\\./,'');
+      .filter(Boolean).map(x=>String(x).toLowerCase().replace(/^www\./,''));
+    const h=u.hostname.toLowerCase().replace(/^www\./,'');
     if(!allowed.some(host=>h===host||h.endsWith('.'+host)))return null;
     u.hash='';return u.toString().slice(0,1900);
   }catch{return null;}
 }
 function tagAttr(xml,tag,attr){
-  const m=new RegExp('<'+tag+'\\b[^>]*\\b'+attr+'\\s*=\\s*["\\\']([^"\\\']+)["\\\'][^>]*>','i').exec(xml);
+  const pattern="<"+tag+"\\b[^>]*\\b"+attr+"\\s*=\\s*[\"']([^\"']+)[\"'][^>]*>";
+  const m=new RegExp(pattern,'i').exec(xml);
   return m?.[1]||'';
 }
 function feedImage(item,feed){
   const direct=[tagAttr(item,'media:content','url'),tagAttr(item,'media:thumbnail','url')];
-  const enclosure=/<enclosure\\b[^>]*>/i.exec(item)?.[0]||'';
-  if(/\\btype\\s*=\\s*["\\']image\\//i.test(enclosure))direct.push(tagAttr(enclosure,'enclosure','url'));
-  const body=/<(?:content:encoded|description)(?:\\s[^>]*)?>([\\s\\S]*?)<\\/(?:content:encoded|description)>/i.exec(item)?.[1]||'';
-  direct.push(/<img\\b[^>]*\\bsrc\\s*=\\s*["\\']([^"\\']+)["\\']/i.exec(body)?.[1]||'');
+  const enclosure=/<enclosure\b[^>]*>/i.exec(item)?.[0]||'';
+  if(/\btype\s*=\s*["']image\//i.test(enclosure))direct.push(tagAttr(enclosure,'enclosure','url'));
+  const body=/<(?:content:encoded|description)(?:\s[^>]*)?>([\s\S]*?)<\/(?:content:encoded|description)>/i.exec(item)?.[1]||'';
+  direct.push(/<img\b[^>]*\bsrc\s*=\s*["']([^"']+)["']/i.exec(body)?.[1]||'');
   for(const candidate of direct){const safe=safeMediaUrl(candidate,feed);if(safe)return safe;}
   return '';
 }
