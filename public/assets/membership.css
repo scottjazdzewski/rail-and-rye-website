@@ -70,3 +70,6 @@
 .rr-member-already{margin-top:30px}
 @media(max-width:900px){.rr-member-layout{grid-template-columns:minmax(0,1fr);gap:24px}.rr-member-intro .rr-member-title{max-width:850px}.rr-member-options{width:100%;max-width:760px;margin:0 auto}.rr-member-main{padding-top:38px}}
 @media(max-width:560px){.rr-member-options{padding:20px 16px}.rr-member-options .rr-plan-card{grid-template-columns:minmax(0,1fr);grid-template-areas:"name" "period" "price" "action";gap:5px;min-height:0;padding:16px}.rr-member-options .rr-plan-card .rr-member-button{width:100%;margin-top:6px}.rr-member-options-head h2{font-size:28px}.rr-member-already{padding:24px 20px}}
+
+/* The shared site header remains legible on the membership page without a hero image. */
+.rr-member-page .heritage-header{background:#071c2a!important}
