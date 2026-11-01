@@ -47,7 +47,7 @@ assert.ok(css.includes('position:relative;z-index:1;flex:0 0 auto;'),'Footer no 
 
 assert.ok(journal.includes("if(archiveRoute){"), 'Archive counts are conditional, avoiding Page 2 changes');
 assert.ok(journal.includes('/assets/approved/saddlecloths/9.png'), 'Keep Page 9 numbered saddlecloth');
-assert.ok(journal.includes('rail-rye-pages.css?v=47'), 'Journal landing, archive and articles load updated shared stylesheet');
+assert.ok(journal.includes('rail-rye-pages.css?v=49'), 'Journal landing, archive and articles load updated shared stylesheet');
 assert.ok(css.includes('body.heritage-journal-page.rr-journal-archive-view .rr-journal-archive-pill'),
   'Page 9 archive return link is visible, without changing Page 2');
 for(const code of [pageJs,catalog.split('<script>').slice(-1)[0].split('</script>')[0],
