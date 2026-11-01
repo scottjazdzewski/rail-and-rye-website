@@ -788,7 +788,7 @@ function freshnessPenalty(item,referenceMs){
  return 10.2+Math.min(18,(ageHours-30));
 }
 function newsroomSelectionPriority(item,referenceMs,laneCounts){
- const lane=newsroomLane(item),lanePenalty=Math.min(12,(laneCounts.get(lane)||0)*5);
+ const lane=newsroomLane(item),lanePenalty=Math.min(14,(laneCounts.get(lane)||0)*7);
  return Number(item.editorial_score||0)-freshnessPenalty(item,referenceMs)-lanePenalty;
 }
 export function curateRacingWireStories(stories,{threshold=66,maxItems=24,maxPerSource=4,topWindow=10,maxTopPerEvent=2,maxTopPerSource=3}={}){
