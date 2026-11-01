@@ -7,7 +7,7 @@ body.rr-approach-page{
 body.rr-approach-page>.rr-approach-hero{
  display:flex;flex:1 1 auto;flex-direction:column;min-height:0;
  background-color:#081c2b;
- background-image:url('/assets/approved/home/hero-dust-charged-finish.jpg');
+ background-image:url('/assets/approved/our-approach/hero-number-2-finish.webp');
  background-size:cover;background-position:center 50%;border-bottom:0
 }
 body.rr-approach-page>.heritage-footer{flex:0 0 auto;margin-top:auto}
