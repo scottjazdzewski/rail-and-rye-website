@@ -44,6 +44,31 @@ jobs:
             } catch(e) { console.log(JSON.stringify({id:source.id,error:String(e)})); }
           }
           NODE
+      - name: Inspect official newsroom link patterns
+        run: |
+          node --input-type=module <<'NODE'
+          const sources=[
+            ['breeders-cup','https://www.breederscup.com/news',['/news/']],
+            ['fasig-tipton','https://www.fasigtipton.com/news',['/news/']],
+            ['churchill-downs','https://www.churchilldowns.com/horses/news/',['/horses/news/']],
+            ['santa-anita','https://www.santaanita.com/news/',['/news/']],
+            ['del-mar','https://www.dmtc.com/media/news',['/media/news/']],
+            ['gulfstream','https://www.gulfstreampark.com/news/',['/news/']]
+          ];
+          for(const [id,url,prefixes] of sources){
+            const r=await fetch(url,{headers:{'User-Agent':'Mozilla/5.0','Accept':'text/html'}});
+            const html=await r.text();
+            console.log('\n### '+id+' status='+r.status+' bytes='+html.length);
+            const hrefs=[...html.matchAll(/href=["']([^"']+)["']/gi)].map(m=>({href:m[1],i:m.index||0})).filter(x=>prefixes.some(p=>x.href.includes(p)));
+            const seen=new Set();
+            for(const h of hrefs){
+              if(seen.has(h.href))continue;seen.add(h.href);
+              const snippet=html.slice(Math.max(0,h.i-280),Math.min(html.length,h.i+620)).replace(/\s+/g,' ');
+              console.log(JSON.stringify({href:h.href,snippet:snippet.slice(0,850)}));
+              if(seen.size>=8)break;
+            }
+          }
+          NODE
       - name: Multi-collection bundle listing tests
         run: node --experimental-sqlite test-bundle-category-placement.mjs
       - name: Compact Publisher desktop layout and control regression
