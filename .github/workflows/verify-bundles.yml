@@ -27,6 +27,18 @@ jobs:
         run: node --experimental-sqlite test-free-downloads.mjs
       - name: Scheduled publication embargo and automatic release tests
         run: node --experimental-sqlite test-scheduled-publications.mjs
+      - name: Validate image-backed duplicate primary
+        run: |
+          node --experimental-sqlite test-racing-wire.mjs
+          node --input-type=module <<'NODE'
+          import {previewExternalItems,groupRacingWireStories,curateRacingWireStories} from './src/racing-wire.js';
+          const external=await previewExternalItems(fetch);
+          const grouped=groupRacingWireStories(external.items);
+          const sov=grouped.find(x=>/sovereignty/i.test(x.title)&&/classic/i.test(x.title));
+          const curated=curateRacingWireStories(external.items);
+          const curatedSov=curated.find(x=>/sovereignty/i.test(x.title)&&/classic/i.test(x.title));
+          console.log('SOVEREIGNTY_GROUP '+JSON.stringify(sov?{source:sov.source,title:sov.title,image_url:sov.image_url||'',also:sov.also_reported_by||[],score:curatedSov?.editorial_score||null}:null));
+          NODE
       - name: Multi-collection bundle listing tests
         run: node --experimental-sqlite test-bundle-category-placement.mjs
       - name: Compact Publisher desktop layout and control regression
