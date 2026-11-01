@@ -3,6 +3,7 @@ import {handleRacingWire,handlePreviewRacingWire,testPreviewRssFeeds} from './ra
 import {handleAdminBundles,BUNDLE_KEY} from './bundles.js';
 import {handleAdminBundleAssets} from './bundle-assets.js';
 import {handleAdminJournal,handlePublicJournal,publicJournalCover} from './journal.js';
+import {handleSitemap,serveJournalDocument} from './seo.js';
 import {ensureReleaseSchedule,validReleaseAt} from './publication-schedule.js';
 /* Rail & Rye admin MVP. Dependencies: Cloudflare Workers, R2, D1, Cloudflare Access.
    Admin routes FAIL CLOSED until ACCESS_TEAM_DOMAIN, ACCESS_AUD and ADMIN_EMAIL
@@ -224,6 +225,7 @@ export default {
     const url=new URL(request.url),path=url.pathname;
     try{
       if(path==="/api/health"&&request.method==="GET") return json({website:"Rail & Rye",status:"online",storage:env.CARDS_BUCKET?"connected":"not connected",database:env.STORE_DB?"bound":"not bound"});
+      if(path==="/sitemap.xml")return handleSitemap(env,request.method);
       if(path.startsWith("/api/admin/")||path==="/admin"||path.startsWith("/admin/")) {
         const auth=await verifyAdmin(request,env); if(!auth.ok)return auth.response;
         if(path.startsWith('/api/admin/bundles'))return handleAdminBundles(request,env,path);
@@ -294,10 +296,21 @@ export default {
       const image=path.match(/^\/media\/cover\/([0-9a-f-]{36})$/i);
       if(image&&request.method==="GET")return publicCover(env,image[1]);
       if(path==="/api/journal/articles"||path.startsWith("/api/journal/articles/"))return handlePublicJournal(request,env,path);
-      const journalStory=path.match(/^\/journal\/([a-z0-9]+(?:-[a-z0-9]+)*)\/?$/);
-      if(journalStory&&(request.method==="GET"||request.method==="HEAD")){
+      const journalArchive=path==="/journal/archive/"||path==="/journal/archive";
+      const journalStory=journalArchive?null:path.match(/^\/journal\/([a-z0-9]+(?:-[a-z0-9]+)*)\/?$/);
+      if((journalStory||journalArchive)&&(request.method==="GET"||request.method==="HEAD")){
+        let article=null;
+        if(journalStory){
+          // The original JavaScript-only article shared the Journal landing
+          // metadata with every post. Publish accurate HTML at request time.
+          const apiResponse=await handlePublicJournal(new Request(url.toString(),{method:"GET"}),env,'/api/journal/articles/'+journalStory[1]);
+          if(!apiResponse.ok)return apiResponse;
+          article=(await apiResponse.json()).article;
+        }
         const asset=new URL(url);asset.pathname="/journal/";asset.search="";
-        return env.ASSETS.fetch(new Request(asset.toString(),request));
+        const original=await env.ASSETS.fetch(new Request(asset.toString(),{method:"GET"}));
+        const response=await serveJournalDocument(original,{article,archive:journalArchive});
+        return request.method==="HEAD"?new Response(null,{status:response.status,headers:response.headers}):response;
       }
       if(path.startsWith("/api/free-download/")||path==="/api/products"||path==="/api/checkout"||path==="/api/stripe/webhook"||path==="/api/stripe/live-webhook"||path.startsWith("/api/orders/")||path==="/api/delivery/download"||path==="/api/delivery/items"||path==="/api/recovery/request")return handleCommerce(request,env,url,ctx);
       if(path.startsWith("/api/"))return fail("Not found",404);

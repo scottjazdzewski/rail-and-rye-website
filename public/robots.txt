@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+
+# Purchase delivery, recovery and checkout-status pages have their own noindex tags.
+# The private Racing Wire preview serves an X-Robots-Tag: noindex response.
+Sitemap: https://railandryeracing.com/sitemap.xml
