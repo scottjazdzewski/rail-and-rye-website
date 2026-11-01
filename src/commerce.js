@@ -110,7 +110,8 @@ async function webhook(request,env,ctx,mode){
       typeof obj.payment_intent==='string'&&obj.payment_intent.startsWith('pi_');
     // A 100%-off Stripe-hosted Checkout Session has no PaymentIntent. Require
     // Stripe's no_payment_required status, no intent and a fully verified total.
-    const freeCheckout=obj.amount_total===0&&obj.payment_status==='no_payment_required'&&
+    const freeCheckout=obj.amount_total===0&&
+      (obj.payment_status==='no_payment_required'||obj.payment_status==='paid')&&
       (obj.payment_intent===null||obj.payment_intent===undefined);
     if(obj.livemode===(mode==='live')&&amountsValid&&(paidIntent||freeCheckout)&&
       obj.mode==='payment'&&obj.currency==='usd'&&obj.metadata?.order_id&&
@@ -466,6 +467,7 @@ async function checkout(request,env){
   const base=new URL(request.url).origin;
   const fields=new URLSearchParams({
     mode:'payment',
+    'branding_settings[display_name]':'Rail & Rye',
     'payment_method_types[0]':'card',
     // Buyer enters an active Stripe promotion code directly in Stripe Checkout.
     allow_promotion_codes:'true',
@@ -505,11 +507,12 @@ async function confirmPendingOrder(env,id,order,ctx){
   const amountsValid=checkoutAmountsValid(session,order.amount_cents);
   const paidIntent=session.amount_total>0&&session.payment_status==='paid'&&
     typeof session.payment_intent==='string'&&session.payment_intent.startsWith('pi_');
-  const freeCheckout=session.amount_total===0&&session.payment_status==='no_payment_required'&&
+  const freeCheckout=session.amount_total===0&&
+    (session.payment_status==='no_payment_required'||session.payment_status==='paid')&&
     (session.payment_intent===null||session.payment_intent===undefined);
   if(session.id!==id||session.livemode!==(mode==='live')||session.status!=='complete'||
     session.mode!=='payment'||session.currency!=='usd'||session.metadata?.order_id!==order.id||
-    session.client_reference_id!==order.id||!amountsValid||!(paidIntent||freeCheckout))return;
+    !amountsValid||!(paidIntent||freeCheckout))return;
   const email=normalizeEmail(session.customer_details?.email).slice(0,254);
   const ops=[env.STORE_DB.prepare(`UPDATE orders SET status='paid',stripe_payment_intent=?,buyer_email=?,paid_at=COALESCE(paid_at,CURRENT_TIMESTAMP)
     WHERE id=? AND stripe_session_id=? AND amount_cents=? AND status='pending'
