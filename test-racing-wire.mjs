@@ -36,7 +36,7 @@ assert.equal(categorize('Horse workout reported'),'Race-Day');
 assert.equal(categorize('Yearling sale underway'),'Sales / Auctions');
 const feed={name:'Authorized Publisher',host:'publisher.example'};
 const rss='<rss><channel><item><title><![CDATA[Trainer &amp; Jockey updates]]></title>'+
- '<link>https://publisher.example/story/123</link><category>Breeders Cup</category><pubDate>Fri, 30 Oct 2026 12:00:00 GMT</pubDate></item>'+
+ '<link>https://publisher.example/story/123</link><category>Breeders Cup</category><media:content url="https://publisher.example/images/story-123.jpg" medium="image"/><pubDate>Fri, 30 Oct 2026 12:00:00 GMT</pubDate></item>'+
  '<item><title>Bad URL</title><link>https://attacker.example/phishing</link><pubDate>Fri, 30 Oct 2026 12:00:00 GMT</pubDate></item></channel></rss>';
 const items=parseRacingRss(rss,feed);
 assert.equal(items.length,1);
@@ -44,6 +44,9 @@ assert.equal(items[0].title,'Trainer & Jockey updates');
 assert.equal(items[0].link,'https://publisher.example/story/123');
 assert.equal(items[0].section,'Breeders Cup');
 assert.equal(items[0].category,'Jockeys');
+assert.equal(items[0].image_url,'https://publisher.example/images/story-123.jpg','Publisher-supplied RSS image URL is preserved without copying the image');
+const badImage=parseRacingRss('<rss><item><title>Valid story</title><link>https://publisher.example/story/2</link><media:thumbnail url="https://attacker.example/stolen.jpg"/><pubDate>Fri, 30 Oct 2026 12:00:00 GMT</pubDate></item></rss>',feed);
+assert.equal(badImage[0].image_url,'','Off-domain feed images are rejected');
 assert.equal(categorize('Championship update','Breeders Cup'),'Stakes');
 assert.equal(categorize("Ways and Means Blasts Home in Breeders’ Cup Filly and Mare Sprint"),'Stakes');
 assert.equal(subjectKind("Ways and Means Blasts Home in Breeders’ Cup Filly and Mare Sprint",categorize("Ways and Means Blasts Home in Breeders’ Cup Filly and Mare Sprint")),'race');
@@ -284,6 +287,9 @@ assert.ok(wirePage.includes('The Latest from the Backstretch.'),'Approved Racing
 assert.ok(wirePage.includes('<main class="wrap heritage-shell">'),'News body uses the same production shell geometry as the numbered pages');
 assert.ok(wirePage.includes('id="allNews"')&&wirePage.includes('aria-pressed="true">All News</button>'),'All News has an explicit filter control');
 assert.ok(wirePage.includes('id="leadSection"')&&wirePage.includes('Top Story'),'High-value stories have a lead-story presentation');
+assert.ok(wirePage.includes('function storyVisual(')&&wirePage.includes('x.image_url')&&wirePage.includes("className='story-media'"),'Story cards can render publisher-supplied RSS photography');
+assert.ok(wirePage.includes('media.replaceWith(icon(x.subject_kind))'),'Approved category badge remains the fallback when an external image fails');
+assert.ok(wirePage.includes("img.referrerPolicy='no-referrer'"),'External feed images do not receive the private preview URL as referrer');
 assert.ok(!wirePage.includes('Open the original source for the full update.'),'External stories never repeat generic filler summaries');
 assert.ok(!wirePage.includes('const actionMap='),'Generic duplicate category pills are removed');
 assert.ok(wirePage.includes('if(x.type){'),'Only meaningful event labels create a story pill');
