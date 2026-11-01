@@ -142,6 +142,49 @@
   </section>
 </main>
 <script>
+/* Eastern racing-date defaults apply to new items, never existing saved dates. */
+(()=>{
+ 'use strict';
+ const fields=['raceDate','bundleDate','assetDate','articleDate'];
+ const todayEastern=()=>{
+  const parts=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
+  const field=name=>parts.find(p=>p.type===name)?.value||'';
+  return [field('year'),field('month'),field('day')].join('-');
+ };
+ window.rrPrefillRacingDate=id=>{
+  const input=document.getElementById(id);
+  if(!input)return;
+  input.value=todayEastern();
+  input.dataset.rrAutoDate=input.value;
+ };
+ window.rrRestoreRacingDate=(id,value)=>{
+  const input=document.getElementById(id);
+  if(!input)return;
+  delete input.dataset.rrAutoDate;
+  input.value=value||'';
+ };
+ const refreshAutoDates=()=>{
+  const today=todayEastern();
+  for(const id of fields){
+   const input=document.getElementById(id);
+   if(input?.dataset.rrAutoDate&&input.value===input.dataset.rrAutoDate){
+    input.value=today;
+    input.dataset.rrAutoDate=today;
+   }
+  }
+ };
+ for(const id of fields){
+  window.rrPrefillRacingDate(id);
+  document.getElementById(id).addEventListener('input',()=>{
+   delete document.getElementById(id).dataset.rrAutoDate;
+  });
+ }
+ window.addEventListener('focus',refreshAutoDates);
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshAutoDates();});
+ setInterval(refreshAutoDates,60000);
+})();
+</script>
+<script>
 (()=>{
   'use strict';
   const $=id=>document.getElementById(id);
@@ -179,8 +222,8 @@
     return data;
   };
   function setBusy(value){busy=value;['draftBtn','publishBtn','scheduleBtn','cancelScheduleBtn','archiveBtn','refreshBtn','newBtn'].forEach(id=>$(id).disabled=value||(id==='archiveBtn'&&!currentId)||(id==='cancelScheduleBtn'&&!pending(products.find(p=>p.id===currentId))));}
-  function reset(){currentId=null;$('editor-title').textContent='New publication';$('productForm').reset();$('price').value='9.99';$('scheduleAt').value='';$('pdfStatus').textContent='';$('coverStatus').textContent='';$('draftBtn').textContent='Save draft';$('cancelScheduleBtn').hidden=true;setBusy(false);renderList();}
-  function edit(item){currentId=item.id;$('editor-title').textContent='Edit publication';$('title').value=safeText(item.title);$('category').value=item.category;$('raceDate').value=item.race_date||'';$('track').value=item.track||'';$('price').value=(item.price_cents/100).toFixed(2);$('description').value=item.description||'';$('scheduleAt').value=localRelease(item.release_at);$('pdf').value='';$('cover').value='';$('pdfStatus').textContent=item.pdf_key?'— Uploaded':'— Missing';$('coverStatus').textContent=item.image_url?'— Uploaded':'';$('draftBtn').textContent=item.status==='published'?'Save changes':'Save draft';$('cancelScheduleBtn').hidden=!pending(item);setBusy(false);renderList();window.scrollTo({top:0,behavior:'smooth'});}
+  function reset(){currentId=null;$('editor-title').textContent='New publication';$('productForm').reset();rrPrefillRacingDate('raceDate');$('price').value='9.99';$('scheduleAt').value='';$('pdfStatus').textContent='';$('coverStatus').textContent='';$('draftBtn').textContent='Save draft';$('cancelScheduleBtn').hidden=true;setBusy(false);renderList();}
+  function edit(item){currentId=item.id;$('editor-title').textContent='Edit publication';$('title').value=safeText(item.title);$('category').value=item.category;rrRestoreRacingDate('raceDate',item.race_date);$('track').value=item.track||'';$('price').value=(item.price_cents/100).toFixed(2);$('description').value=item.description||'';$('scheduleAt').value=localRelease(item.release_at);$('pdf').value='';$('cover').value='';$('pdfStatus').textContent=item.pdf_key?'— Uploaded':'— Missing';$('coverStatus').textContent=item.image_url?'— Uploaded':'';$('draftBtn').textContent=item.status==='published'?'Save changes':'Save draft';$('cancelScheduleBtn').hidden=!pending(item);setBusy(false);renderList();window.scrollTo({top:0,behavior:'smooth'});}
   function renderList(){const el=$('productList');el.replaceChildren();if(!products.length){let e=document.createElement('div');e.className='empty';e.textContent='No products yet. Start with your first race card.';el.append(e);return;}
     for(const p of products){const b=document.createElement('button');b.type='button';b.className='product'+(p.id===currentId?' active':'');b.addEventListener('click',()=>edit(p));let name=document.createElement('strong');name.textContent=p.title;let status=document.createElement('em');status.className='pill '+(pending(p)?'scheduled':p.status==='published'?'published':'');status.textContent=pending(p)?'Scheduled':p.status;name.append(status);let details=document.createElement('span');details.textContent=[p.category,p.race_date||'No date',money(p.price_cents),p.pdf_key?'PDF attached':'PDF missing',pending(p)?'Release '+localRelease(p.release_at).replace('T',' ')+' ET':null].filter(Boolean).join(' • ');b.append(name,details);el.append(b);}
   }
@@ -256,7 +299,7 @@
   let bundles=[],available=[],selectedId=null,busy=false;
   const note=(message)=>{$('bundleNotice').textContent=message;};
   function reset(){
-    selectedId=null;$('bundleTitle').value='';$('bundleCategory').value='Race Cards';$('bundleDate').value='';
+    selectedId=null;$('bundleTitle').value='';$('bundleCategory').value='Race Cards';rrPrefillRacingDate('bundleDate');
     $('bundlePrice').value='19.99';$('bundleDescription').value='';
     document.querySelectorAll('[data-bundle-product]').forEach(x=>x.checked=false);
     drawBundles();note('Creating a new bundle.');
@@ -282,7 +325,7 @@
   }
   function edit(b){
     selectedId=b.id;$('bundleTitle').value=b.title;$('bundleCategory').value=b.category;
-    $('bundleDate').value=b.race_date||'';$('bundlePrice').value=(b.price_cents/100).toFixed(2);
+    rrRestoreRacingDate('bundleDate',b.race_date);$('bundlePrice').value=(b.price_cents/100).toFixed(2);
     $('bundleDescription').value=b.description||'';drawCandidates(b.product_ids);
     drawBundles();note('Editing '+b.title+'. Existing buyers retain their original included PDFs.');
   }
@@ -343,13 +386,13 @@
   function lockEditor(v){for(const id of ['assetTitle','assetCategory','assetDate','assetTrack','assetPdf'])$(id).disabled=v;}
   function reset(){
     selectedId=null;$('assetTitle').value='';$('assetCategory').value='Race Cards';
-    $('assetDate').value='';$('assetTrack').value='';$('assetPdf').value='';
+    rrPrefillRacingDate('assetDate');$('assetTrack').value='';$('assetPdf').value='';
     $('assetPdfStatus').textContent='';$('assetSave').textContent='Upload bundle-only PDF';notice('New private PDF.');
     lockEditor(false);setBusy(false);render();
   }
   function edit(a){
     selectedId=a.id;$('assetTitle').value=a.title;$('assetCategory').value=a.category;
-    $('assetDate').value=a.race_date||'';$('assetTrack').value=a.track||'';
+    rrRestoreRacingDate('assetDate',a.race_date);$('assetTrack').value=a.track||'';
     $('assetPdf').value='';$('assetPdfStatus').textContent=a.has_pdf?'— Uploaded':'— Missing';
     $('assetSave').textContent=a.status==='archived'?'Archived PDF':'Save private PDF';
     lockEditor(a.status==='archived');setBusy(false);
@@ -455,7 +498,7 @@
   function reset(){
     currentId=null;
     $('articleForm').reset();
-    $('articleDate').value=new Date().toISOString().slice(0,10);
+    rrPrefillRacingDate('articleDate');
     $('articleCategory').value='Race Analysis';
     $('articleCoverStatus').textContent='';
     note('New article. Save a draft whenever you want to continue later.');
@@ -481,7 +524,7 @@
       currentId=item.id;
       $('articleTitle').value=item.title||'';
       $('articleCategory').value=item.category||'Race Analysis';
-      $('articleDate').value=item.publish_date||'';
+      rrRestoreRacingDate('articleDate',item.publish_date);
       $('articleExcerpt').value=item.excerpt||'';
       $('articleBody').value=item.body_text||'';
       $('articleCover').value='';
@@ -554,7 +597,7 @@
   $('articlePublish').addEventListener('click',()=>save('publish'));
   $('articleArchive').addEventListener('click',()=>save('archive'));
   $('articleRefresh').addEventListener('click',()=>refresh().then(()=>note('Article list refreshed.')).catch(error=>note(error.message,'error')));
-  $('articleDate').value=new Date().toISOString().slice(0,10);
+  rrPrefillRacingDate('articleDate');
   refresh().catch(error=>note('Journal service unavailable: '+error.message,'error'));
 })();
 </script>
