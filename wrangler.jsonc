@@ -10,7 +10,8 @@
       "/preview/*",
       "/api/*",
       "/media/*",
-      "/journal/*"
+      "/journal/*",
+      "/sitemap.xml"
     ]
   },
   "r2_buckets": [
