@@ -546,6 +546,103 @@ async function orderStatus(url,env,ctx){
     downloads_remaining:bundle?null:Math.max(0,5-o.download_count),bundle,
     items:bundle&&o.status==='paid'?await bundleItems(env,o.id):[],checkout_mode:sessionMode(id)});
 }
+const ZIP_CRC_TABLE=(()=>{const table=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=(c&1)?(0xedb88320^(c>>>1)):(c>>>1);table[n]=c>>>0;}return table;})();
+function zipCrcUpdate(crc,bytes){for(let i=0;i<bytes.length;i++)crc=ZIP_CRC_TABLE[(crc^bytes[i])&255]^(crc>>>8);return crc>>>0;}
+function zipSafePdfName(value,used){
+  let base=String(value||'publication').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9 ._-]/g,'').replace(/\s+/g,' ').replace(/^\.+|\.+$/g,'').trim().slice(0,90);
+  base=base.replace(/\.pdf$/i,'').trim()||'publication';
+  let name=base+'.pdf',n=2;while(used.has(name.toLowerCase()))name=base+'-'+(n++)+'.pdf';used.add(name.toLowerCase());return name;
+}
+function zipSafeArchiveName(value){
+  const base=String(value||'rail-and-rye-bundle').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9 ._-]/g,'').replace(/\s+/g,' ').replace(/^\.+|\.+$/g,'').trim().slice(0,90).replace(/\.zip$/i,'').trim();
+  return (base||'rail-and-rye-bundle')+'.zip';
+}
+async function* bundleZipChunks(env,orderId,items,state){
+  const encoder=new TextEncoder(),used=new Set(),centralEntries=[];let offset=0;
+  for(const item of items){
+    const file=await env.CARDS_BUCKET.get(item.pdf_key);
+    if(!file||!file.body)throw Error('PDF temporarily unavailable');
+    if(!Number.isSafeInteger(file.size)||file.size<0||file.size>0xffffffff)throw Error('PDF size is not supported in a ZIP');
+    const change=await env.STORE_DB.prepare(`UPDATE bundle_order_items SET download_count=download_count+1
+      WHERE order_id=? AND product_id=? AND download_count<5
+      AND EXISTS(SELECT 1 FROM orders WHERE id=? AND status='paid'
+      AND datetime(paid_at, '+' || access_days || ' days') > CURRENT_TIMESTAMP)`).bind(orderId,item.id,orderId).run();
+    if(!change.meta?.changes)throw Error('Download not available or expired');
+    const name=zipSafePdfName(item.product_title,used),nameBytes=encoder.encode(name),localOffset=offset;
+    const local=new Uint8Array(30+nameBytes.length),lv=new DataView(local.buffer);
+    lv.setUint32(0,0x04034b50,true);lv.setUint16(4,20,true);lv.setUint16(6,0x0808,true);
+    lv.setUint16(8,0,true);lv.setUint16(10,0,true);lv.setUint16(12,0x21,true);
+    lv.setUint32(14,0,true);lv.setUint32(18,0,true);lv.setUint32(22,0,true);
+    lv.setUint16(26,nameBytes.length,true);lv.setUint16(28,0,true);local.set(nameBytes,30);
+    yield local;offset+=local.length;
+    let crc=0xffffffff,size=0;const reader=file.body.getReader();state.reader=reader;
+    try{
+      for(;;){
+        const part=await reader.read();if(part.done)break;
+        size+=part.value.byteLength;if(size>0xffffffff)throw Error('PDF size is not supported in a ZIP');
+        crc=zipCrcUpdate(crc,part.value);yield part.value;offset+=part.value.byteLength;
+      }
+    }finally{
+      if(state.reader===reader)state.reader=null;
+      try{reader.releaseLock();}catch{}
+    }
+    if(size!==file.size)throw Error('PDF download was incomplete');
+    crc=(crc^0xffffffff)>>>0;
+    const descriptor=new Uint8Array(16),dv=new DataView(descriptor.buffer);
+    dv.setUint32(0,0x08074b50,true);dv.setUint32(4,crc,true);dv.setUint32(8,size,true);dv.setUint32(12,size,true);
+    yield descriptor;offset+=descriptor.length;
+    const central=new Uint8Array(46+nameBytes.length),cv=new DataView(central.buffer);
+    cv.setUint32(0,0x02014b50,true);cv.setUint16(4,20,true);cv.setUint16(6,20,true);
+    cv.setUint16(8,0x0808,true);cv.setUint16(10,0,true);cv.setUint16(12,0,true);cv.setUint16(14,0x21,true);
+    cv.setUint32(16,crc,true);cv.setUint32(20,size,true);cv.setUint32(24,size,true);
+    cv.setUint16(28,nameBytes.length,true);cv.setUint16(30,0,true);cv.setUint16(32,0,true);
+    cv.setUint16(34,0,true);cv.setUint16(36,0,true);cv.setUint32(38,0,true);cv.setUint32(42,localOffset,true);
+    central.set(nameBytes,46);centralEntries.push(central);
+  }
+  const centralOffset=offset,centralSize=centralEntries.reduce((sum,entry)=>sum+entry.length,0);
+  for(const entry of centralEntries){yield entry;offset+=entry.length;}
+  const end=new Uint8Array(22),ev=new DataView(end.buffer);
+  ev.setUint32(0,0x06054b50,true);ev.setUint16(4,0,true);ev.setUint16(6,0,true);
+  ev.setUint16(8,centralEntries.length,true);ev.setUint16(10,centralEntries.length,true);
+  ev.setUint32(12,centralSize,true);ev.setUint32(16,centralOffset,true);ev.setUint16(20,0,true);
+  yield end;
+}
+function bundleZipStream(env,orderId,items){
+  const state={reader:null},iterator=bundleZipChunks(env,orderId,items,state)[Symbol.asyncIterator]();let cancelled=false;
+  return new ReadableStream({
+    async pull(controller){
+      if(cancelled)return;
+      try{const next=await iterator.next();if(cancelled)return;if(next.done)controller.close();else controller.enqueue(next.value);}
+      catch(error){if(!cancelled)controller.error(error);}
+    },
+    async cancel(){
+      cancelled=true;
+      try{await state.reader?.cancel();}catch{}
+      try{await iterator.return?.();}catch{}
+    }
+  });
+}
+async function downloadBundleArchive(url,env){
+  const session=orderSessionId(url);if(!session)return error('Invalid session',400);
+  if(!env.STORE_DB||!env.CARDS_BUCKET)return error('Downloads unavailable',503);
+  const order=await env.STORE_DB.prepare(`SELECT id,product_title FROM orders WHERE stripe_session_id=? AND pdf_key=?
+    AND status='paid' AND datetime(paid_at, '+' || access_days || ' days') > CURRENT_TIMESTAMP`).bind(session,BUNDLE_KEY).first();
+  if(!order)return error('Bundle download not available or expired',403);
+  const result=await env.STORE_DB.prepare('SELECT product_id AS id,product_title,pdf_key,download_count FROM bundle_order_items WHERE order_id=? ORDER BY position LIMIT 12').bind(order.id).all();
+  const items=result.results||[];
+  if(!items.length)return error('No PDFs are available in this bundle',404);
+  if(items.some(item=>!UUID_RE.test(item.id||'')||!item.pdf_key||item.download_count>=5))return error('One or more PDFs have reached their download limit',403);
+  const files=await Promise.all(items.map(item=>env.CARDS_BUCKET.head(item.pdf_key)));
+  if(files.some(file=>!file))return error('One or more bundle PDFs are temporarily unavailable',503);
+  const body=bundleZipStream(env,order.id,items);
+  const filename=zipSafeArchiveName(order.product_title||'Rail and Rye Bundle');
+  return new Response(body,{headers:{
+    'Content-Type':'application/zip',
+    'Content-Disposition':`attachment; filename="${filename}"`,
+    'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff',
+    'Referrer-Policy':'no-referrer','X-Robots-Tag':'noindex, nofollow'
+  }});
+}
 async function download(url,env){
   const id=orderSessionId(url);if(!id)return error('Invalid session',400);
   if(!env.STORE_DB||!env.CARDS_BUCKET)return error('Downloads unavailable',503);
@@ -601,5 +698,6 @@ export async function handleCommerce(request,env,url,ctx){
   if(p==='/api/recovery/request')return recover(request,env,ctx);
   if(/^\/api\/orders\/[^/]+\/status$/.test(p)&&request.method==='GET')return orderStatus(url,env,ctx);
   if(/^\/api\/orders\/[^/]+\/download$/.test(p)&&request.method==='GET')return download(url,env);
+  if(/^\/api\/orders\/[^/]+\/download-all$/.test(p)&&request.method==='GET')return downloadBundleArchive(url,env);
   return error('Not found',404);
 }

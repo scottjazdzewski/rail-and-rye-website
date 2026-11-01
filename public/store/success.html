@@ -11,13 +11,41 @@ const root='/api/orders/'+encodeURIComponent(id);let tries=0;
 while(tries++<12){try{const statusUrl=root+'/status'+((tries===1||tries===7)?'?confirm=1':'');const r=await fetch(statusUrl,{cache:'no-store'}),v=await r.json();if(!r.ok)throw Error(v.error||'Order lookup failed');
 if(v.status==='paid'){
   if(v.bundle){
-    panel.textContent='Payment confirmed for '+v.title+'. Your included publications are available below (five downloads per PDF within '+v.access_days+' days).';
+    const items=v.items||[];
+    panel.textContent='Payment confirmed for '+v.title+'. Download the bundle as one ZIP or choose PDFs below (five downloads per PDF within '+v.access_days+' days).';
     const area=link.parentElement;
-    for(const item of v.items||[]){
-      const a=document.createElement('a');a.className='rr-delivery-action';
+    const all=document.createElement('a');all.className='rr-delivery-action';all.href=root+'/download-all';
+    all.textContent='Download All PDFs (.ZIP)';
+    all.style.cssText='display:flex;width:100%;margin:12px 0;text-align:center';
+    all.setAttribute('aria-label','Download all included PDFs as one ZIP file');
+    if(!items.length||items.some(item=>item.downloads_remaining<1)){
+      const disabled=document.createElement('button');disabled.type='button';disabled.className='rr-delivery-action';
+      disabled.disabled=true;disabled.textContent='Download All Unavailable — Check Individual Limits';
+      disabled.style.cssText='display:flex;width:100%;margin:12px 0;text-align:center';
+      area.insertBefore(disabled,link);
+    }else{
+      all.addEventListener('click',()=>{
+        for(const item of items){
+          item.downloads_remaining=Math.max(0,item.downloads_remaining-1);
+          const individual=area.querySelector('[data-item-id="'+item.id+'"]');
+          if(individual)individual.textContent='Download '+item.title+' ('+item.downloads_remaining+' left)';
+        }
+        panel.textContent='Your bundle ZIP is being prepared. This uses one download from each PDF’s limit.';
+        if(items.some(item=>item.downloads_remaining<1)){
+          const disabled=document.createElement('button');disabled.type='button';disabled.className='rr-delivery-action';
+          disabled.disabled=true;disabled.textContent='Download All Unavailable — Check Individual Limits';
+          disabled.style.cssText='display:flex;width:100%;margin:12px 0;text-align:center';
+          area.replaceChild(disabled,all);
+        }else all.textContent='Download All PDFs Again (.ZIP)';
+      });
+      area.insertBefore(all,link);
+    }
+
+    for(const item of items){
+      const a=document.createElement('a');a.className='rr-delivery-action';a.dataset.itemId=item.id;
       a.href=root+'/download?item_id='+encodeURIComponent(item.id);
       a.textContent='Download '+item.title+' ('+item.downloads_remaining+' left)';
-      a.style.cssText='display:block;margin-top:12px;text-align:center';a.rel='noreferrer';area.append(a);
+      a.style.cssText='display:flex;width:100%;margin-top:12px;text-align:center';a.rel='noreferrer';area.append(a);
     }
     return;
   }
