@@ -4,6 +4,9 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex,nofollow,noarchive"><meta name="referrer" content="no-referrer">
 <meta name="theme-color" content="#061e35">
+<meta name="description" content="Curated thoroughbred racing news, race-day developments, sales, breeding, regulatory updates and industry stories from Rail & Rye.">
+<meta property="og:title" content="The Racing Wire | Rail & Rye">
+<meta property="og:description" content="The latest meaningful developments from across thoroughbred racing, organized by topic and source.">
 <title>The Racing Wire | Rail &amp; Rye</title>
 <link rel="icon" href="/favicon.png" type="image/png">
 <link rel="stylesheet" href="/assets/rail-rye-core.css?v=11">
@@ -11,7 +14,7 @@
 <link rel="stylesheet" href="/assets/rail-rye-pages.css?v=43">
 <style>
 :root{--navy:#071e35;--navy2:#0b2d4b;--gold:#cfa661;--cream:#faf8f3;--ink:#142944;--muted:#5b6b80;--line:#e8e2d7}
-*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:#faf9f5;color:var(--ink);font:14px/1.5 Georgia,"Times New Roman",serif}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:#efe5d1 url('/assets/approved/textures/parchment.jpg') center top/720px auto repeat;color:var(--ink);font:14px/1.5 Georgia,"Times New Roman",serif}
 a{color:inherit}button,input,select{font:inherit}button{cursor:pointer}
 .rrw-wire-hero{background-image:url('/assets/approved/racing-wire/hero-race.webp?v=4')}
 .wrap{margin-inline:auto;padding-top:24px;padding-bottom:90px}
@@ -205,7 +208,7 @@ async function loadVerified(){
   const result=await response.json();if(!response.ok)throw Error(result.error||'Unavailable');
   data=Array.isArray(result.items)?result.items:[];render();
   const stamp=new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
-  $('count').textContent+= ' · refreshed '+stamp;
+  $('count').textContent+= ' · Updated '+stamp;
  }catch(error){
   data=[];render();$('count').textContent='Unable to retrieve live updates';
  }finally{feedLoading=false}
