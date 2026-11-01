@@ -398,3 +398,5 @@ assert.equal(subjectKind('New sales figures','Sales / Auctions'),'sale');
 assert.equal(subjectKind('Racing commission announces rule change','Regulatory'),'regulatory');
 
 console.log('PASS Racing Wire: original published-only news, archive/draft secrecy, approved-only RSS source gate, safe publisher links, XML safety, categorization.');
+
+// CI validation branch only; no production behavior change.
