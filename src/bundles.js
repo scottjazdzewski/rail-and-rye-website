@@ -39,7 +39,7 @@ async function payload(request) {
     new Set(product_ids).size!==product_ids.length)throw Error('Select 2–12 different published PDFs');
   return {title,description,category,race_date,price_cents,status,product_ids};
 }
-function eligibleChild(p){return !!p&&!!p.pdf_key&&p.pdf_key!==BUNDLE_KEY&&(p.status==='published'||p.status==='draft');}
+function eligibleChild(p){return !!p&&!!p.pdf_key&&p.pdf_key!==BUNDLE_KEY&&(p.status==='published'||(p.status==='draft'&&!!p.asset_id));}
 async function validatedChildren(env,ids) {
   const rows=[];
   for (const id of ids) {
