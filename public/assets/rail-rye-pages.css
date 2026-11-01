@@ -845,3 +845,33 @@ body.rr-journal-archive-view .rr-journal-archive-pill{display:none}
   .rr-journal-article-copy{font-size:14px;line-height:1.8}
 }
 
+
+/* Publication Desk: disclose bundle contents and digital access without changing
+   the approved card grid, hero, or shared purchase components. */
+body.heritage-home.heritage-store-page .rr-store-bundle-contents{
+ min-width:0;margin:3px 0 0;border:1px solid rgba(224,181,107,.38);
+ border-radius:8px;background:rgba(1,15,25,.25);color:#f4e6cc
+}
+body.heritage-home.heritage-store-page .rr-store-bundle-summary{
+ display:list-item;margin:0;padding:9px 12px;cursor:pointer;
+ color:#eec77f;font:700 11px/1.5 var(--heritage-sans);
+ letter-spacing:.04em
+}
+body.heritage-home.heritage-store-page .rr-store-bundle-summary:hover{color:#fff3d8}
+body.heritage-home.heritage-store-page .rr-store-bundle-summary:focus-visible{
+ outline:2px solid #efd09a;outline-offset:3px
+}
+body.heritage-home.heritage-store-page .rr-store-bundle-list{
+ margin:0;padding:1px 16px 12px 30px;border-top:1px solid rgba(224,181,107,.23);
+ color:#f5ead7;font:400 12px/1.55 var(--heritage-sans);
+ overflow-wrap:anywhere
+}
+body.heritage-home.heritage-store-page .rr-store-bundle-list li{padding-top:6px}
+body.heritage-home.heritage-store-page .rr-store-access-terms{
+ margin:3px 0 0;color:#d8c6a7;font:500 11px/1.45 var(--heritage-sans)
+}
+@media(max-width:750px){
+ body.heritage-home.heritage-store-page .rr-store-bundle-summary{font-size:10px;padding:8px 10px}
+ body.heritage-home.heritage-store-page .rr-store-bundle-list{font-size:11px}
+ body.heritage-home.heritage-store-page .rr-store-access-terms{font-size:10px}
+}
