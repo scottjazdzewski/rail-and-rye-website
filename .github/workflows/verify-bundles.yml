@@ -88,6 +88,20 @@ jobs:
           probe remington-feed 'https://www.remingtonpark.com/feed/'
           probe remington-racing-feed 'https://www.remingtonpark.com/category/racing/feed/'
           probe remington-news-feed 'https://www.remingtonpark.com/category/news/feed/'
+      - name: Inspect first-party metadata fallbacks
+        run: |
+          echo '=== BLOODHORSE ARTICLE DATE METADATA ==='
+          curl -L -sS --max-time 20 'https://www.bloodhorse.com/horse-racing/articles/295752/sovereignty-caps-career-with-breeders-cup-classic-win' | grep -Eio '.{0,100}(datePublished|article:published_time|publishDate).{0,180}' | head -12 || true
+          echo '=== PAULICK ROBOTS/SITEMAPS ==='
+          for u in 'https://paulickreport.com/robots.txt' 'https://paulickreport.com/sitemap.xml' 'https://paulickreport.com/news-sitemap.xml' 'https://paulickreport.com/sitemap_index.xml'; do echo "$u"; curl -L -sS --max-time 15 "$u" | head -c 1200 || true; echo; done
+          echo '=== DRF ROBOTS/SITEMAPS ==='
+          for u in 'https://www.drf.com/robots.txt' 'https://www.drf.com/sitemap.xml' 'https://www.drf.com/news-sitemap.xml'; do echo "$u"; curl -L -sS --max-time 15 "$u" | head -c 1200 || true; echo; done
+          echo '=== HISA NEWS STRUCTURED DATA ==='
+          curl -L -sS --max-time 20 'https://www.hisaus.org/news' -o /tmp/hisa || true
+          grep -Eio '.{0,100}(hisa-hires-in-house-counsel-reduces-legal-costs|datePublished|publishedAt|createdAt).{0,220}' /tmp/hisa | head -30 || true
+          echo '=== HIWU NEWS STRUCTURED DATA ==='
+          curl -L -sS --max-time 20 'https://www.hiwu.org/news' -o /tmp/hiwu || true
+          grep -Eio '.{0,100}(Michelle-Pujals-Retires|datePublished|publishedAt|createdAt).{0,220}' /tmp/hiwu | head -30 || true
       - name: Racing Wire expanded source validation
         run: node --experimental-sqlite test-racing-wire.mjs
       - name: Multi-collection bundle listing tests
