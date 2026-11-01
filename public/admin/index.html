@@ -739,8 +739,9 @@
      if(editorial.category_override)flags.append(makeFlag('Category Override'));
      head.append(left,flags);card.append(head);
      const actions=document.createElement('div');actions.className='rr-wire-actions';
-     const top=document.createElement('button');top.type='button';top.className='gold mini';top.textContent='Pin Top Story';top.disabled=busy||editorial.placement==='top';top.addEventListener('click',()=>change(story.url,'top'));
-     const more=document.createElement('button');more.type='button';more.className='secondary mini';more.textContent=editorial.placement==='more'?'Remove from More to Know':'Promote to More to Know';more.disabled=busy;more.addEventListener('click',()=>change(story.url,'more'));
+     const hasImage=typeof story.image_url==='string'&&/^https:\/\/[a-z0-9.-]+\//i.test(story.image_url);
+     const top=document.createElement('button');top.type='button';top.className='gold mini';top.textContent='Pin Top Story';top.disabled=busy||editorial.placement==='top'||!hasImage;top.title=hasImage?'':'Top Story requires a story image';top.addEventListener('click',()=>change(story.url,'top'));
+     const more=document.createElement('button');more.type='button';more.className='secondary mini';more.textContent=editorial.placement==='more'?'Remove from More to Know':'Promote to More to Know';more.disabled=busy||(!hasImage&&editorial.placement!=='more');more.title=hasImage||editorial.placement==='more'?'':'More to Know requires a story image';more.addEventListener('click',()=>change(story.url,'more'));
      const hide=document.createElement('button');hide.type='button';hide.className='secondary mini';hide.textContent=editorial.hidden?'Hidden':'Hide';hide.disabled=busy||editorial.hidden;hide.addEventListener('click',()=>change(story.url,'hide'));
      const select=document.createElement('select');select.setAttribute('aria-label','Category for '+story.title);
      for(const category of categories){const option=document.createElement('option');option.value=category;option.textContent=category;if(category===story.category)option.selected=true;select.append(option);}
