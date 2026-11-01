@@ -82,12 +82,25 @@
       .rr-bundle-editor .row{gap:10px}
       .rr-bundle-editor .field{min-width:0}
     }
+    .rr-wire-editor{margin-top:24px}
+    .rr-wire-list{display:grid;gap:10px;margin-top:15px}
+    .rr-wire-item{border:1px solid #d8dfe6;border-radius:10px;background:#fff;padding:14px 15px}
+    .rr-wire-item.is-hidden{opacity:.7;background:#f5f3ef}
+    .rr-wire-story-head{display:flex;justify-content:space-between;gap:15px;align-items:flex-start}
+    .rr-wire-story-head strong{font:700 16px/1.3 Georgia,serif;color:#102b43}
+    .rr-wire-story-meta{margin-top:5px;color:#607287;font-size:12px}
+    .rr-wire-flags{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+    .rr-wire-flag{border-radius:999px;padding:4px 8px;background:#edf1f4;color:#344b60;font:800 9px/1 system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase}
+    .rr-wire-flag.top{background:#0c2c48;color:#fff}.rr-wire-flag.more{background:#e9d4a5;color:#5f4314}.rr-wire-flag.hidden{background:#742b35;color:#fff}
+    .rr-wire-actions{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-top:12px}
+    .rr-wire-actions select{min-width:160px;padding:7px 9px;border:1px solid #cbd4dc;border-radius:6px;background:#fff}
+    .rr-wire-actions button{padding:7px 10px}
     @media(max-width:900px){.layout{grid-template-columns:1fr}.panel{padding:20px}}
-    @media(max-width:560px){.top{padding:18px}.logo{font-size:19px}main{padding:28px 14px}.row{grid-template-columns:1fr}}
+    @media(max-width:560px){.top{padding:18px}.logo{font-size:19px}main{padding:28px 14px}.row{grid-template-columns:1fr}.rr-wire-story-head{display:block}.rr-wire-flags{justify-content:flex-start;margin-top:8px}.rr-wire-actions select{width:100%}}
   </style>
 <link rel="icon" href="/favicon.png" type="image/png"></head>
 <body>
-<header><div class="top"><div class="logo">RAIL &amp; RYE <small>The Publisher's Desk</small></div><nav aria-label="Publisher tools" style="display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:14px"><a href="#journal-editor">Journal articles ↓</a><a href="/preview/racing-wire-5333548f0ffee31ba519b2470ffb/">Racing Wire private preview ↗</a><a href="/store/">Publication desk ↗</a><a href="/">View website ↗</a></nav></div></header>
+<header><div class="top"><div class="logo">RAIL &amp; RYE <small>The Publisher's Desk</small></div><nav aria-label="Publisher tools" style="display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:14px"><a href="#racing-wire-editor">Racing Wire editor ↓</a><a href="#journal-editor">Journal articles ↓</a><a href="/preview/racing-wire-5333548f0ffee31ba519b2470ffb/">Racing Wire private preview ↗</a><a href="/store/">Publication desk ↗</a><a href="/">View website ↗</a></nav></div></header>
 <main>
   <div class="kicker">Independent thoroughbred racing intelligence</div>
   <h1>Publisher's Desk</h1>
@@ -162,6 +175,16 @@
         <p id="bundleNotice" class="detail" role="status" aria-live="polite" style="margin-top:15px"></p>
       </div>
     </div>
+  </section>
+
+  <section class="panel rr-wire-editor" id="racing-wire-editor" aria-label="Racing Wire editorial controls">
+    <div class="head-row">
+      <div><h2>Racing Wire editor</h2><p class="detail">Override the automatic feed when a story needs editorial judgment. These controls affect the private Page 8 preview only.</p></div>
+      <div class="actions"><a class="secondary mini" href="/preview/racing-wire-5333548f0ffee31ba519b2470ffb/" target="_blank" rel="noopener">Open Page 8 ↗</a><button type="button" class="secondary mini" id="wireRefresh">Refresh stories</button></div>
+    </div>
+    <p class="detail"><strong>Top Story</strong> forces one story into the lead position. <strong>More to Know</strong> promotes up to three stories. <strong>Hide</strong> removes a story from Page 8. Category changes also update its topic badge/filter. <strong>Restore automatic</strong> clears all overrides for that story.</p>
+    <p id="wireNotice" class="detail" role="status" aria-live="polite"></p>
+    <div id="wireList" class="rr-wire-list"><div class="empty">Loading Racing Wire stories…</div></div>
   </section>
 
   <section class="panel article-panel" id="journal-editor" aria-label="Journal article editor">
@@ -682,6 +705,63 @@
   $('articleRefresh').addEventListener('click',()=>refresh().then(()=>note('Article list refreshed.')).catch(error=>note(error.message,'error')));
   rrPrefillRacingDate('articleDate');
   refresh().catch(error=>note('Journal service unavailable: '+error.message,'error'));
+})();
+</script>
+
+<script>
+(()=>{
+ 'use strict';
+ const $=id=>document.getElementById(id);
+ let stories=[],categories=[],busy=false;
+ const api=async(options={})=>{
+   const response=await fetch('/api/admin/racing-wire-editorial',{credentials:'same-origin',cache:'no-store',...options});
+   const raw=await response.text();let data;
+   try{data=JSON.parse(raw);}catch{throw Error('Racing Wire editor returned '+response.status);}
+   if(!response.ok)throw Error(data.error||'Racing Wire request failed');
+   return data;
+ };
+ const note=(message,type='')=>{const el=$('wireNotice');el.textContent=message;el.style.color=type==='error'?'#8c2635':type==='good'?'#285f43':'';};
+ const dateLabel=value=>{const d=new Date(value);return Number.isFinite(+d)?d.toLocaleString([],{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'Date unavailable';};
+ const makeFlag=(text,kind='')=>{const el=document.createElement('span');el.className='rr-wire-flag '+kind;el.textContent=text;return el;};
+ function render(){
+   const list=$('wireList');list.replaceChildren();
+   if(!stories.length){const empty=document.createElement('div');empty.className='empty';empty.textContent='No current Racing Wire stories are available.';list.append(empty);return;}
+   for(const story of stories){
+     const editorial=story.editorial||{},card=document.createElement('div');card.className='rr-wire-item'+(editorial.hidden?' is-hidden':'');
+     const head=document.createElement('div');head.className='rr-wire-story-head';
+     const left=document.createElement('div'),title=document.createElement('strong');title.textContent=story.title;
+     const meta=document.createElement('div');meta.className='rr-wire-story-meta';meta.textContent=[story.source,story.category,dateLabel(story.published_at)].filter(Boolean).join(' • ');
+     left.append(title,meta);
+     const flags=document.createElement('div');flags.className='rr-wire-flags';
+     if(editorial.placement==='top')flags.append(makeFlag('Top Story','top'));
+     if(editorial.placement==='more')flags.append(makeFlag('More to Know','more'));
+     if(editorial.hidden)flags.append(makeFlag('Hidden','hidden'));
+     if(editorial.category_override)flags.append(makeFlag('Category Override'));
+     head.append(left,flags);card.append(head);
+     const actions=document.createElement('div');actions.className='rr-wire-actions';
+     const top=document.createElement('button');top.type='button';top.className='gold mini';top.textContent='Pin Top Story';top.disabled=busy||editorial.placement==='top';top.addEventListener('click',()=>change(story.url,'top'));
+     const more=document.createElement('button');more.type='button';more.className='secondary mini';more.textContent=editorial.placement==='more'?'Remove from More to Know':'Promote to More to Know';more.disabled=busy;more.addEventListener('click',()=>change(story.url,'more'));
+     const hide=document.createElement('button');hide.type='button';hide.className='secondary mini';hide.textContent=editorial.hidden?'Hidden':'Hide';hide.disabled=busy||editorial.hidden;hide.addEventListener('click',()=>change(story.url,'hide'));
+     const select=document.createElement('select');select.setAttribute('aria-label','Category for '+story.title);
+     for(const category of categories){const option=document.createElement('option');option.value=category;option.textContent=category;if(category===story.category)option.selected=true;select.append(option);}
+     const categoryBtn=document.createElement('button');categoryBtn.type='button';categoryBtn.className='secondary mini';categoryBtn.textContent='Change category';categoryBtn.disabled=busy;categoryBtn.addEventListener('click',()=>change(story.url,'category',select.value));
+     const restore=document.createElement('button');restore.type='button';restore.className='secondary mini';restore.textContent='Restore automatic';restore.disabled=busy||(!editorial.hidden&&editorial.placement==='auto'&&!editorial.category_override);restore.addEventListener('click',()=>change(story.url,'restore'));
+     actions.append(top,more,hide,select,categoryBtn,restore);card.append(actions);list.append(card);
+   }
+ }
+ async function refresh(message=''){
+   const data=await api();stories=data.items||[];categories=data.categories||[];render();if(message)note(message,'good');
+ }
+ async function change(story_url,action,category=null){
+   if(busy)return;busy=true;render();note('Saving Racing Wire change…');
+   try{
+     const data=await api({method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({story_url,action,category})});
+     stories=data.items||[];categories=data.categories||categories;note('Racing Wire updated.','good');
+   }catch(error){note(error.message,'error');}
+   finally{busy=false;render();}
+ }
+ $('wireRefresh').addEventListener('click',()=>refresh('Racing Wire stories refreshed.').catch(error=>note(error.message,'error')));
+ refresh().catch(error=>note('Racing Wire editor unavailable: '+error.message,'error'));
 })();
 </script>
 
