@@ -1,4 +1,4 @@
-import { handleCommerce, sendQueuedEmails, checkoutReadiness, replacePublishedProductPdf } from './commerce.js';
+import { handleCommerce, sendQueuedEmails, checkoutReadiness, replacePdfAndNotifyBuyers } from './commerce.js';
 import {handleRacingWire,handlePreviewRacingWire,testPreviewRssFeeds} from './racing-wire.js';
 import {handleAdminBundles,BUNDLE_KEY} from './bundles.js';
 import {handleAdminBundleAssets} from './bundle-assets.js';
@@ -179,8 +179,13 @@ async function handleAdminAPI(request,env,pathname,ctx) {
     })();
     try{
       await Promise.all([pump,env.CARDS_BUCKET.put(key,readable,{httpMetadata:{contentType:"application/pdf"}})]);
-      if(item.status==="published"&&item.pdf_key){
-        await replacePublishedProductPdf(env,item,key);
+      // Published editions and bundle-only PDFs can both have active buyers.
+      // Queue secure revised-PDF links for eligible bundle purchases as well.
+      const privateBundlePdf=item.status==="draft"&&item.pdf_key
+        ? await env.STORE_DB.prepare("SELECT product_id FROM bundle_only_assets WHERE product_id=? AND purged_at IS NULL").bind(id).first()
+        : null;
+      if(item.pdf_key&&(item.status==="published"||privateBundlePdf)){
+        await replacePdfAndNotifyBuyers(env,item,key);
         if(ctx?.waitUntil)ctx.waitUntil(sendQueuedEmails(env,8).catch(e=>console.warn('Queued PDF update notices deferred',String(e))));
       }else await env.STORE_DB.prepare("UPDATE products SET pdf_key=? WHERE id=?").bind(key,id).run();
       // Preserve older PDF versions: existing paid orders may still reference them.
