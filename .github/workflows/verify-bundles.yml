@@ -27,6 +27,45 @@ jobs:
         run: node --experimental-sqlite test-free-downloads.mjs
       - name: Scheduled publication embargo and automatic release tests
         run: node --experimental-sqlite test-scheduled-publications.mjs
+      - name: Probe remaining official Racing Wire adapters
+        run: |
+          node --input-type=module <<'NODE'
+          import {parseOfficialNewsPage,parseRacingRss} from './src/racing-wire.js';
+          const pages=[
+            {id:'drf',name:'Daily Racing Form',url:'https://www.drf.com/news/all-news',host:'drf.com',path_prefix:'/news'},
+            {id:'santa-anita',name:'Santa Anita',url:'https://www.santaanita.com/news/',host:'santaanita.com',path_prefix:'/news'},
+            {id:'del-mar',name:'Del Mar',url:'https://www.dmtc.com/media/news',host:'dmtc.com',path_prefix:'/media/news'},
+            {id:'gulfstream',name:'Gulfstream Park',url:'https://www.gulfstreampark.com/news/',host:'gulfstreampark.com',path_prefix:'/news'},
+            {id:'remington',name:'Remington Park',url:'https://www.remingtonpark.com/press-releases/',host:'remingtonpark.com',path_prefix:'/press'}
+          ];
+          for(const source of pages){
+            try{
+              const r=await fetch(source.url,{headers:{'User-Agent':'Mozilla/5.0 (compatible; RailAndRyeRacingWire/1.0; +https://railandryeracing.com)','Accept':'text/html,*/*;q=0.1'},redirect:'follow'});
+              const html=await r.text();
+              const items=parseOfficialNewsPage(html.slice(0,650000),source);
+              console.log(JSON.stringify({kind:'page',id:source.id,status:r.status,bytes:html.length,parsed:items.length,newest:items.map(x=>x.published_at).sort().at(-1)||null,samples:items.slice(0,4).map(x=>({title:x.title,url:x.url,date:x.published_at}))}));
+            }catch(e){console.log(JSON.stringify({kind:'page',id:source.id,error:String(e)}));}
+          }
+          const apis=[
+            ['ntra','https://www.ntra.com/wp-json/wp/v2/posts?per_page=10&_fields=link,date,title,categories'],
+            ['toba','https://toba.org/wp-json/wp/v2/posts?per_page=10&_fields=link,date,title,categories'],
+            ['hbpa','https://nationalhbpa.com/wp-json/wp/v2/posts?per_page=10&_fields=link,date,title,categories'],
+            ['remington','https://www.remingtonpark.com/wp-json/wp/v2/posts?per_page=10&_fields=link,date,title,categories']
+          ];
+          for(const [id,url] of apis){
+            try{
+              const r=await fetch(url,{headers:{'User-Agent':'Mozilla/5.0 (compatible; RailAndRyeRacingWire/1.0; +https://railandryeracing.com)','Accept':'application/json,*/*;q=0.1'},redirect:'follow'});
+              const body=await r.text();
+              let data=null;try{data=JSON.parse(body)}catch{}
+              console.log(JSON.stringify({kind:'api',id,status:r.status,type:r.headers.get('content-type'),bytes:body.length,array:Array.isArray(data),sample:Array.isArray(data)?data.slice(0,3):body.slice(0,300)}));
+            }catch(e){console.log(JSON.stringify({kind:'api',id,error:String(e)}));}
+          }
+          const churchill='https://www.churchilldowns.com/horses/news/feed/';
+          const r=await fetch(churchill,{headers:{'User-Agent':'Mozilla/5.0','Accept':'application/rss+xml'}});
+          const xml=await r.text();
+          const parsed=parseRacingRss(xml,{name:'Churchill Downs',host:'churchilldowns.com'});
+          console.log(JSON.stringify({kind:'rss',id:'churchill',status:r.status,bytes:xml.length,parsed:parsed.length,newest:parsed.map(x=>x.published_at).sort().at(-1)||null,samples:parsed.slice(0,3).map(x=>x.title)}));
+          NODE
       - name: Multi-collection bundle listing tests
         run: node --experimental-sqlite test-bundle-category-placement.mjs
       - name: Compact Publisher desktop layout and control regression
