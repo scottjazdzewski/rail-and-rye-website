@@ -107,7 +107,8 @@ function feedImage(item,feed){
 }
 function previewHeadlineRelevant(title,section=''){
   const text=(String(title||'')+' '+String(section||'')).toLowerCase();
-  if(/\b(best bets?|picks?|selections?|odds|free bets?|betting guide|wagering tips?|promo code|bonus offer|merch|merchandise|tickets? on sale|photo gallery|quiz)\b/.test(text))return false;
+  if(/\b(best bets?|picks?|selections?|odds|free bets?|betting guide|wagering tips?|promo code|bonus offer|merch|merchandise|tickets? on sale|photo gallery|quiz|past performances?|free pps?|race of the day)\b/.test(text))return false;
+  if(/\b(?:pick\s*[3-9]|rainbow\s*6|jackpot pool|mandatory payouts?|carryovers?|wager menu|bet minimums?|handicapping(?: analysis| picks| plays| tips)?|account wagering)\b/.test(text))return false;
   if(/\b(listen now|podcast episode|watch live|where to watch|tv schedule)\b/.test(text))return false;
   if(/\b(casino|slot(?:s| machine)?|video poker|free slot play|gaming promotion|jackpot)\b/.test(text))return false;
   if(/\b(harness|standardbred|steeplechase|steeplechaser|jump racing|national hunt)\b/.test(text))return false;
@@ -118,7 +119,7 @@ function hasRacingContext(title,section=''){
   return /\b(thoroughbred|race|racing|racetrack|stakes|derby|oaks|jockey|trainer|horse|filly|colt|gelding|mare|stallion|yearling|foal|purse|meet|breeders.? cup|claiming|maiden|allowance|graded|grade [123i]|\bg[123]\b)\b/.test(text);
 }
 
-const NEWS_DATE_RE=/\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2},\s+\d{4}\b/i;
+const NEWS_DATE_RE=/\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2}(?:st|nd|rd|th)?,\s+\d{4}\b/i;
 const NEWS_NUMERIC_DATE_RE=/\b(?:0?[1-9]|1[0-2])\/(?:0?[1-9]|[12]\d|3[01])\/20\d{2}\b/;
 const OFFICIAL_NAV_TITLES=new Set(['news','press room','press releases','stable notes','stakes quotes','daily recaps','media guide','features','latest news','wagering','community impact','stakes advance','stakes recap','view more','read more']);
 function regexEscape(value){return String(value||'').replace(/[.*+?^$\{\}()|[\]\\]/g,'\\$&');}
@@ -167,16 +168,19 @@ export function parseOfficialNewsPage(html,source){
     const heading=/<h[1-6]\b[^>]*>([\s\S]*?)<\/h[1-6]>/i.exec(body)?.[1]||'';
     const titleAttr=/\btitle\s*=\s*["']([^"']+)["']/i.exec(attrs)?.[1]||'';
     const aria=/\baria-label\s*=\s*["']([^"']+)["']/i.exec(attrs)?.[1]||'';
-    const imageAlt=/<img\b[^>]*\balt\s*=\s*["']([^"']+)["']/i.exec(body)?.[1]||'';
+    const rawAlt=/<img\b[^>]*\balt\s*=\s*["']([^"']+)["']/i.exec(body)?.[1]||'';
+    const imageAlt=/^(?:featured image|article photo thumbnail|horses? running(?: on turf)?|image)$/i.test(decode(rawAlt))?'':rawAlt;
+    const anchorText=decodeHtmlText(body);
     const meta=structuredMetaNearSlug(html,slug);
     const anchorStart=match.index||0;
     const nearby=decodeHtmlText(html.slice(Math.max(0,anchorStart-1700),Math.min(html.length,anchorStart+match[0].length+1700)));
-    let title=decodeHtmlText(heading)||decode(titleAttr)||decode(aria)||decode(imageAlt)||meta.title;
+    let title=decodeHtmlText(heading)||decode(titleAttr)||decode(aria)||meta.title||decode(imageAlt)||anchorText;
     title=title.replace(/^read (?:the )?(?:article|story)\s*/i,'').trim();
     const generic=title.toLowerCase().replace(/[.:]+$/,'').trim();
     if(!title||title.length<12||OFFICIAL_NAV_TITLES.has(generic))continue;
     let dateText=meta.date||nearby.match(NEWS_DATE_RE)?.[0]||nearby.match(NEWS_NUMERIC_DATE_RE)?.[0]||'';
     if(!dateText)continue;
+    dateText=dateText.replace(/(\d{1,2})(?:st|nd|rd|th)(,\s+\d{4})/i,'$1$2');
     const dt=/^\d{4}-\d{2}-\d{2}/.test(dateText)?new Date(dateText):
       /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(dateText)?new Date(dateText+' 12:00:00 UTC'):
       new Date(dateText+' 12:00:00 UTC');
