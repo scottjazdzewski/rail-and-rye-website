@@ -49,43 +49,63 @@ function previewHeadlineRelevant(title,section=''){
   return true;
 }
 export function categorize(title,category='',source=''){
-  const s=(title+' '+category).toLowerCase();
+  const s=(String(title||'')+' '+String(category||'')).toLowerCase();
   const publisher=String(source||'').toLowerCase();
 
-  // Publisher identity can be editorial context. Sales-company feeds are
-  // sales/auction coverage even when a headline is framed around an OBS/Fasig
-  // graduate winning a race.
+  // Source identity is decisive only when the publisher itself has a narrow
+  // editorial function. This keeps an OBS racing graduate story in the
+  // Sales/Auctions desk instead of mislabeling it as a race result.
   if(/ocala breeders.? sales|\bobs\b|fasig.?tipton|keeneland sales|tattersalls|goffs/.test(publisher))
     return 'Sales / Auctions';
-
-  // Subject hierarchy: regulation/business/track operations should not be
-  // swallowed by race-name words such as "Breeders' Cup" or "Classic".
-  if(/\b(hisa|hiwu|racing commission|regulatory|rule change|ruling|suspension|suspended|ban|banned|fine|fined|positive test|medication violation|licensing|appeal)\b/.test(s))
+  if(/\bhisa\b|\bhiwu\b|racing commission|horse racing integrity/.test(publisher))
     return 'Regulatory';
-  if(/\b(hall of fame|milestone|career (?:win|victory)|record[- ]breaking|record setter|\d{3,4}(?:st|nd|rd|th) (?:win|victory))\b/.test(s))
+
+  // High-confidence editorial desks come before race-name words such as
+  // "Breeders' Cup", "Classic", "Filly" or "Mare".
+  if(/\b(hisa|hiwu|racing commission|regulatory|rule change|ruling|suspension|suspended|ban|banned|fine|fined|positive test|medication violation|licensing|appeal|stewards? decision)\b/.test(s))
+    return 'Regulatory';
+  if(/\b(hall of fame|milestone|career (?:win|victory)|record[- ]breaking|record setter|award(?:ed)?|honou?r(?:ed)?|\d{3,4}(?:st|nd|rd|th) (?:win|victory))\b/.test(s))
     return 'Achievement';
-  if(/\b(attendance|handle|wagering handle|all-sources handle|turnover|revenue|viewership|television ratings|tv ratings|economic impact|business results|market share|crowd|fan count)\b/.test(s))
+
+  // Business / audience metrics are Industry even when the event name itself
+  // contains a stakes term. Example: Breeders' Cup attendance and handle.
+  if(/\b(attendance|handle|wagering handle|all-sources handle|turnover|revenue|viewership|television ratings|tv ratings|economic impact|business results|market share|crowd|fan count|media rights|broadcast rights|purse increase|purses increase)\b/.test(s))
     return 'Industry';
-  if(/\b(racetrack|racecourse|track surface|turf course|dirt course|track renovation|track management|racing dates|meet dates|meet opens|meet closes|rail setting|course configuration)\b/.test(s))
+
+  // Facility, venue and meet-operation stories are Racetrack.
+  if(/\b(racetrack|racecourse|track surface|turf course|dirt course|track renovation|track management|racing dates|meet dates|meet opens|meet closes|rail setting|course configuration|host track|host site|host venue|venue change|moves to|returns to)\b/.test(s))
     return 'Racetrack';
-  if(/\b(auction|sale|sales|sold for|hammer price|consign(?:ed|ment)|yearling sale|weanling sale|bloodstock|catalog(?:ue)?)\b/.test(s))
+
+  // Sales language is stronger than race/event language.
+  if(/\b(auction|sale|sales|sold for|hammer price|consign(?:ed|ment)|yearling sale|weanling sale|bloodstock|catalog(?:ue)?|average price|median price|topper|sale topper)\b/.test(s))
     return 'Sales / Auctions';
+
+  // Explicit breeding lifecycle language is stronger than a race name. This
+  // correctly labels "retired to stud" while avoiding generic "mare" alone.
+  if(/\b(retired? to stud|retires? to stud|stud fee|stallion|broodmare|in foal|foal(?:ed|ing)?|sire|dam|breeding rights|cover(?:ed|ing))\b/.test(s))
+    return 'Breeding';
 
   if(/\b(jockey|rider|apprentice|irad ortiz|prat)\b/.test(s))return 'Jockeys';
   if(/\b(trainer|assistant trainer)\b/.test(s))return 'Trainers';
   if(/\b(owner|owners|ownership|syndicate|partnership)\b/.test(s))return 'Owners';
   if(/\b(stable|barn)\b/.test(s))return 'Stable';
-  if(/\b(scratch|scratched|entry|entries|post position|racing secretary|workout|race day)\b/.test(s))return 'Race-Day';
 
-  // Race/event language must win before horse/breeding terms. Race names such
-  // as "Breeders' Cup Filly & Mare Sprint" are race coverage, not breeding.
-  if(/stakes|derby|breeders.? cup|grade [i123]|\bg[123]\b|classic|preakness|belmont stakes|distaff|juvenile|sprint|turf mile|turf sprint/.test(s))
+  // Immediate race-day operations remain race coverage.
+  if(/\b(scratch|scratched|entry|entries|post position|racing secretary|workout|race day|drawn|post draw)\b/.test(s))
+    return 'Race-Day';
+
+  // Horse-specific health / retirement stories should not become Stakes merely
+  // because the affected horse was headed to a major event.
+  if(/\b(injur(?:y|ed)|illness|surgery|colic|euthani[sz]ed|dies?|death|retir(?:e|ed|ement))\b/.test(s))
+    return 'Horses';
+
+  // Race/event language wins before generic horse descriptors such as filly,
+  // colt or mare. "Breeders' Cup Filly & Mare Sprint" is a race story.
+  if(/stakes|derby|breeders.? cup|grade [i123]|\bg[123]\b|classic|preakness|belmont stakes|distaff|juvenile|sprint|turf mile|turf sprint|race result|wins? the/.test(s))
     return 'Stakes';
 
-  if(/\b(breeding|stallion|sire|foal|stud fee|broodmare|mare bred|in foal|covered|covering)\b/.test(s))
-    return 'Breeding';
-  if(/\b(retire|retired|retirement|horse|filly|colt|gelding|champion|injur(?:y|ed))\b/.test(s))
-    return 'Horses';
+  if(/\b(breeding|pedigree|mating|stud book)\b/.test(s))return 'Breeding';
+  if(/\b(horse|filly|colt|gelding|mare|champion)\b/.test(s))return 'Horses';
   return 'Industry';
 }
 // The five editorial subjects used by DFO-style pictogram cards.
