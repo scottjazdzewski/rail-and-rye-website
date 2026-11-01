@@ -891,6 +891,27 @@ body.rr-racecards-page .rr-racecards-bundle-list li{padding:2px 0}
 }
 
 
+/* Bundle contents on the Pages 3–5 latest-edition cards. */
+body.heritage-publication-page .rr-publication-latest-card .rr-racecards-product-kind{
+ display:block;color:#efc47e;font:800 10px/1.3 var(--heritage-sans);
+ letter-spacing:.08em;text-transform:uppercase
+}
+body.heritage-publication-page .rr-publication-latest-card .rr-racecards-bundle-details{
+ position:relative;z-index:3;min-width:0;max-width:100%;margin:1px 0;color:#f4e4c6
+}
+body.heritage-publication-page .rr-publication-latest-card .rr-racecards-bundle-summary{
+ display:list-item;cursor:pointer;color:#e6bc76;font:700 10px/1.4 var(--heritage-sans)
+}
+body.heritage-publication-page .rr-publication-latest-card .rr-racecards-bundle-summary:hover{color:#fff0d5}
+body.heritage-publication-page .rr-publication-latest-card .rr-racecards-bundle-summary:focus-visible{
+ outline:2px solid #efc47e;outline-offset:3px
+}
+body.heritage-publication-page .rr-publication-latest-card .rr-racecards-bundle-list{
+ margin:5px 0 0;padding:0 0 0 18px;color:#f4e4c6;
+ font:400 11px/1.45 var(--heritage-sans);overflow-wrap:anywhere
+}
+body.heritage-publication-page .rr-publication-latest-card .rr-racecards-bundle-list li{padding:2px 0}
+
 /* Editorial polish, Pages 3–5: keep the approved single-screen hero and chip
    layout, but make each listed edition directly reachable and keep older cards
    inside a modest, independently scrollable rail. */

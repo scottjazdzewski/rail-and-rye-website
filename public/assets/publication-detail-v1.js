@@ -21,11 +21,11 @@ const displayTitle=value=>{
  return title.toLocaleLowerCase('en-US').replace(/(^|[\s:([{—–-])([a-z])/g,(_,prefix,letter)=>prefix+letter.toLocaleUpperCase('en-US'))
 };
 const latestMeta=p=>{
- const parts=[],track=String(p.track||'').trim(),title=String(p.title||'');
- if(track&&!/^(all|any)$/i.test(track))parts.push(track);
- const titleHasDate=/\b(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+\d{1,2}(?:st|nd|rd|th)?\b/i.test(title);
- const date=titleHasDate?'':editionDate(p.race_date);
+ const parts=[],pageCategory=String(category||'').trim(),track=String(p.track||'').trim();
+ if(pageCategory)parts.push(pageCategory);
+ const date=editionDate(p.race_date);
  if(date)parts.push(date);
+ if(track&&!/^(all|any)$/i.test(track)&&track.toLocaleLowerCase('en-US')!==pageCategory.toLocaleLowerCase('en-US'))parts.push(track);
  return parts.join(' · ')
 };
 const freeProduct=p=>p.kind==='single'&&Number(p.price_cents)===0;
@@ -60,7 +60,20 @@ const makeGlassCard=(p,data,onError)=>{
  const copy=document.createElement('div');copy.className='rr-purchase-copy';
  const meta=latestMeta(p);
  if(meta)copy.append(txt('div',meta,'rr-purchase-meta'));
+ const isBundle=p.kind==='bundle';
+ const includedTitles=Array.isArray(p.included_titles)?p.included_titles.filter(title=>typeof title==='string'&&title.trim()):[];
+ if(isBundle){
+  const count=Number.isInteger(p.bundle_count)&&p.bundle_count>0?p.bundle_count:includedTitles.length;
+  copy.append(txt('span','BUNDLE · '+count+' PDF'+(count===1?'':'s'),'rr-racecards-product-kind'));
+ }
  copy.append(txt('h3',displayTitle(p.title||category),'rr-purchase-title'));
+ if(isBundle&&includedTitles.length){
+  const details=document.createElement('details');details.className='rr-racecards-bundle-details';
+  details.append(txt('summary','Included PDFs · View titles','rr-racecards-bundle-summary'));
+  const list=document.createElement('ul');list.className='rr-racecards-bundle-list';
+  for(const title of includedTitles)list.append(txt('li',title.trim()));
+  details.append(list);copy.append(details);
+ }
  copy.append(txt('p',p.description||'Digital racing publication.','rr-purchase-description'));
  copy.append(txt('div',freeProduct(p)?'FREE':price(p.price_cents),'rr-purchase-price'));
  card.append(cover,copy,makePurchaseButton(p,data,onError),editionLink);
