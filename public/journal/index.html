@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#072B67"><meta name="description" content="The Journal from Rail & Rye Racing — racing history, analysis, horses and the stories behind the sport."><title>The Journal | Rail & Rye Racing</title><link rel="icon" href="/favicon.png" type="image/png"><link rel="stylesheet" href="/assets/rail-rye-core.css?v=11"><link rel="stylesheet" href="/assets/rail-rye-components.css?v=9"><link rel="stylesheet" href="/assets/rail-rye-pages.css?v=45"></head><body class="heritage-home heritage-inner-page heritage-journal-page rr-numbered-hero-page rr-single-screen-hero"><div class="heritage-inner-hero"><header class="heritage-header"><div class="heritage-shell heritage-header-inner">
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#072B67"><meta name="description" content="The Journal from Rail & Rye Racing — racing history, analysis, horses and the stories behind the sport."><title>The Journal | Rail & Rye Racing</title><link rel="icon" href="/favicon.png" type="image/png"><link rel="stylesheet" href="/assets/rail-rye-core.css?v=11"><link rel="stylesheet" href="/assets/rail-rye-components.css?v=9"><link rel="stylesheet" href="/assets/rail-rye-pages.css?v=46"></head><body class="heritage-home heritage-inner-page heritage-journal-page rr-numbered-hero-page rr-single-screen-hero"><div class="heritage-inner-hero"><header class="heritage-header"><div class="heritage-shell heritage-header-inner">
   <a class="heritage-brand" href="/" aria-label="Rail and Rye home"><span class="heritage-brand-mark"><img src="/assets/approved/brand/rail-rye-ivory-logo.png" alt="Rail & Rye official ivory horseshoe emblem" width="80" height="80" decoding="async"></span><span class="heritage-wordmark">RAIL &amp; RYE</span></a>
   <div class="heritage-strap"><img class="heritage-horse-mini" src="/assets/approved/brand/header-horse.webp" alt="" aria-hidden="true" width="66" height="76"><span>Thoroughbred Racing Intelligence</span></div>
   <nav class="heritage-nav" aria-label="Main navigation"><a class="heritage-nav-pill" href="/race-cards/">Race Cards</a><a class="heritage-nav-pill" href="/our-approach/">Our Approach</a><a class="heritage-nav-pill" href="/journal/" aria-current="page">The Journal</a><a class="heritage-nav-pill" href="https://rail-rye-shop.fourthwall.com/" target="_blank" rel="noopener noreferrer" aria-label="Shop Rail and Rye apparel (opens in a new tab)">Apparel</a></nav>
@@ -40,6 +40,7 @@
   let archiveArticles=[];
   let activeArchiveCategory='';
   let archiveCategoryFilters=null;
+  let activeArticle=null;
   if(archiveRoute){
     document.body.classList.add('rr-journal-content-view','rr-journal-archive-view');
     const chipImage=document.querySelector('.rr-page-saddle-kicker .rr-chip-solid img');
@@ -173,17 +174,67 @@
     const paragraphs=String(text||'').split(/\n[ \t]*\n+/).map(part=>part.trim()).filter(Boolean);
     for(const content of paragraphs){const paragraph=document.createElement('p');paragraph.textContent=content;container.append(paragraph);}
   }
+  const readingMinutes=bodyText=>Math.max(1,Math.ceil((String(bodyText||'').trim().match(/\S+/g)||[]).length/220));
+  function renderRelated(articles,current){
+    if(!slugMatch||!current)return;
+    const section=detail.querySelector('.rr-journal-related');
+    if(!section)return;
+    const suggestions=ordered(articles.filter(article=>article.slug&&article.slug!==current.slug))
+      .sort((a,b)=>Number(categoryOf(b).toLowerCase()===categoryOf(current).toLowerCase())-Number(categoryOf(a).toLowerCase()===categoryOf(current).toLowerCase()))
+      .slice(0,2);
+    section.replaceChildren();
+    if(!suggestions.length){section.hidden=true;return;}
+    const kicker=document.createElement('span');kicker.className='rr-journal-related-kicker';kicker.textContent='MORE FROM THE JOURNAL';
+    const heading=document.createElement('h2');heading.className='rr-journal-related-heading';heading.textContent='Continue reading';
+    const cards=document.createElement('div');cards.className='rr-journal-related-grid';
+    for(const story of suggestions){
+      const card=document.createElement('a');card.className='rr-journal-related-card';card.href=articleHref(story);
+      const media=document.createElement('span');media.className='rr-journal-related-media';
+      if(story.cover_url){
+        const img=document.createElement('img');img.src=story.cover_url;img.alt='';img.loading='lazy';img.decoding='async';media.append(img);
+      }else{
+        const mark=document.createElement('span');mark.className='rr-journal-related-fallback';mark.textContent='RAIL & RYE';media.append(mark);
+      }
+      const copy=document.createElement('span');copy.className='rr-journal-related-copy';
+      const meta=document.createElement('span');meta.className='rr-journal-related-meta';meta.textContent=categoryOf(story)+' · '+formatDate(story.publish_date);
+      const title=document.createElement('span');title.className='rr-journal-related-title';title.textContent=story.title;
+      copy.append(meta,title);card.append(media,copy);cards.append(card);
+    }
+    section.append(kicker,heading,cards);section.hidden=false;
+  }
   function renderArticle(item){
-    archive.hidden=true;detail.hidden=false;detail.replaceChildren();
+    archive.hidden=true;detail.hidden=false;detail.replaceChildren();activeArticle=item;
     const back=document.createElement('a');back.className='rr-journal-back';back.href='/journal/archive/';back.textContent='← All stories';
     const meta=document.createElement('div');meta.className='rr-journal-story-meta';meta.append(chip(formatDate(item.publish_date)),chip(item.category));
+    const byline=document.createElement('div');byline.className='rr-journal-article-byline';
+    byline.textContent='RAIL & RYE JOURNAL · '+readingMinutes(item.body_text)+' MIN READ';
+    const share=document.createElement('div');share.className='rr-journal-article-share';
+    const shareBtn=document.createElement('button');shareBtn.type='button';shareBtn.className='rr-journal-copy-link';shareBtn.textContent='Copy article link';
+    const shareStatus=document.createElement('span');shareStatus.className='rr-journal-copy-status';shareStatus.setAttribute('role','status');shareStatus.setAttribute('aria-live','polite');
+    shareBtn.addEventListener('click',async()=>{
+      // Copy the canonical article URL; avoid sharing campaign/tracking parameters.
+      const articleUrl=new URL(articleHref(item),window.location.origin).href;
+      try{
+        if(navigator.clipboard&&navigator.clipboard.writeText){
+          await navigator.clipboard.writeText(articleUrl);
+        }else{
+          const field=document.createElement('textarea');field.value=articleUrl;field.setAttribute('readonly','');
+          field.style.position='fixed';field.style.opacity='0';document.body.append(field);field.select();
+          let copied=false;try{copied=document.execCommand('copy');}finally{field.remove();}
+          if(!copied)throw Error('Clipboard unavailable');
+        }
+        shareStatus.textContent='Link copied';
+      }catch(error){shareStatus.textContent='Copy unavailable — use the address bar';}
+    });
+    share.append(shareBtn,shareStatus);
     const heading=document.createElement('h1');heading.className='rr-journal-article-title';heading.textContent=item.title;
     const excerpt=document.createElement('p');excerpt.className='rr-journal-article-excerpt';excerpt.textContent=item.excerpt;
-    detail.append(back,meta,heading,excerpt);
+    detail.append(back,meta,byline,heading,excerpt,share);
     if(item.cover_url){
       const image=document.createElement('img');image.className='rr-journal-article-image';image.src=item.cover_url;image.alt=item.title;image.loading='eager';detail.append(image);
     }
     const body=document.createElement('div');body.className='rr-journal-article-copy';renderBody(body,item.body_text);detail.append(body);
+    const related=document.createElement('section');related.className='rr-journal-related';related.setAttribute('aria-label','Other Journal stories');related.hidden=true;detail.append(related);
     const footer=document.createElement('nav');footer.className='rr-journal-article-return';footer.setAttribute('aria-label','Continue reading Rail & Rye');
     const returnLink=document.createElement('a');returnLink.href='/journal/archive/';returnLink.textContent='← Return to all Journal stories';
     footer.append(returnLink);detail.append(footer);
@@ -206,6 +257,7 @@
     try{
       const result=await api('/api/journal/articles');
       const articles=Array.isArray(result.articles)?result.articles:[];
+      if(slugMatch&&activeArticle)renderRelated(articles,activeArticle);
       if(archiveRoute){
         archiveArticles=articles;
         renderArchiveCategories();

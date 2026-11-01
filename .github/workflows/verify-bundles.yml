@@ -35,5 +35,7 @@ jobs:
         run: node test-publication-page-polish.mjs
       - name: Journal article masthead and cover-image regression
         run: node test-journal-article-layout.mjs
+      - name: Journal reading, related stories and sharing regression
+        run: node test-journal-editorial-features.mjs
       - name: Private Racing Wire preview, author sources, and visibility tests
         run: node --experimental-sqlite test-racing-wire.mjs

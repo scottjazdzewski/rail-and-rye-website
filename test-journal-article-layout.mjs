@@ -5,7 +5,7 @@ const journal=read('public/journal/index.html');
 const css=read('public/assets/rail-rye-pages.css');
 const home=read('public/index.html');
 const race=read('public/race-cards/index.html');
-assert.ok(journal.includes('rail-rye-pages.css?v=45'),'Journal needs fresh CSS cache version');
+assert.ok(journal.includes('rail-rye-pages.css?v=46'),'Journal needs fresh CSS cache version');
 assert.ok(journal.includes("document.body.classList.add('rr-journal-content-view','rr-journal-article-view')"),'Article route scoped class');
 assert.ok(journal.includes('class="heritage-header"'),'Preserve exact shared header markup');
 assert.ok(journal.includes('href="/race-cards/"')&&journal.includes('href="/our-approach/"')&&journal.includes('href="/journal/"'),'Header navigation preserved');
