@@ -230,7 +230,7 @@ assert.ok(previewBody.external_sources.some(x=>x.name==="Daily Racing Form"&&x.p
 assert.ok(previewBody.external_sources.some(x=>x.name==="Breeders' Cup"&&x.parsed_count===1),'Breeders Cup official adapter is active');
 assert.ok(previewBody.external_sources.some(x=>x.name==='Fasig-Tipton'&&x.parsed_count===1),'Fasig-Tipton archive adapter is active');
 assert.ok(previewBody.external_sources.some(x=>x.name==='TOBA'&&x.source_type==='official-json'),'TOBA JSON source is active');
-assert.ok(previewBody.items.every(x=>x.editorial_score>=62),'Preview emits only editorially relevant items');
+assert.ok(previewBody.items.every(x=>x.editorial_score>=66),'Preview emits only editorially relevant items at the tightened threshold');
 assert.equal((await handlePreviewRacingWire(new Request('https://railandryeracing.com/api/preview/racing-wire-test',{method:'POST'}),env,previewFetch)).status,405);
 
 // Only authorized publisher RSS is eligible for automated site-side ingestion.
@@ -258,6 +258,18 @@ assert.equal(groupRacingWireStories(articles.slice(0,1)).length,1);
 assert.equal(groupRacingWireStories([
  ...articles.slice(0,1),{...articles[1],published_at:'2026-10-28T09:00:00Z'}
 ]).length,2,'Old developments remain separately dated for review');
+
+const imageBackedGroup=groupRacingWireStories([
+ {title:"Sovereignty Caps Career With Breeders' Cup Classic Win",url:'https://bloodhorse.example/sovereignty',
+  source:'BloodHorse',subject_kind:'race',published_at:'2026-11-01T17:00:00Z',image_url:''},
+ {title:"Sovereignty Delivers in Breeders' Cup Classic",url:'https://tdn.example/sovereignty',
+  source:'Thoroughbred Daily News',subject_kind:'race',published_at:'2026-11-01T16:00:00Z',
+  image_url:'https://tdn.example/images/sovereignty.jpg'}
+]);
+assert.equal(imageBackedGroup.length,1,'Duplicate major-race reports still collapse into one development');
+assert.equal(imageBackedGroup[0].source,'Thoroughbred Daily News','Image-backed report becomes the primary grouped story even when a newer text-only report exists');
+assert.equal(imageBackedGroup[0].image_url,'https://tdn.example/images/sovereignty.jpg');
+assert.ok(imageBackedGroup[0].also_reported_by.some(x=>x.source==='BloodHorse'&&x.url==='https://bloodhorse.example/sovereignty'),'Text-only report remains available under Also reported by');
 
 const irrelevantHeadlines=[
  'Breeders Cup Classic 2026: Can Forever Young Win Again? Picks',
