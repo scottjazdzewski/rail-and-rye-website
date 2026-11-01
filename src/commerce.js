@@ -61,6 +61,20 @@ async function stripeRequest(env,mode,method,endpoint,data){
   if(!r.ok) {console.error('Stripe API error',r.status,j?.error?.code||'unknown');throw Error('Stripe could not start checkout');}
   return j;
 }
+
+// Checkout Sessions can represent unused shipping/tax totals as null. These
+// digital products allow no nonzero shipping or tax, while Stripe calculates
+// any promotion discount and final amount.
+function checkoutAmountsValid(session,expectedSubtotal){
+  const subtotal=session.amount_subtotal,discount=session.total_details?.amount_discount;
+  const tax=session.total_details?.amount_tax,shipping=session.total_details?.amount_shipping;
+  return Number.isSafeInteger(subtotal)&&subtotal>=50&&
+    (expectedSubtotal===undefined||subtotal===expectedSubtotal)&&
+    Number.isSafeInteger(discount)&&discount>=0&&discount<=subtotal&&
+    (tax===0||tax===null||tax===undefined)&&
+    (shipping===0||shipping===null||shipping===undefined)&&
+    Number.isSafeInteger(session.amount_total)&&session.amount_total===subtotal-discount;
+}
 function sameOrigin(request){const u=new URL(request.url);return request.headers.get('origin')===u.origin&&request.headers.get('sec-fetch-site')!=='cross-site';}
 function orderSessionId(url){ const parts=url.pathname.split('/');const id=parts[3];return SESSION_RE.test(id||'')?id:null;}
 function cacheNoStore(resp){resp.headers.set('Cache-Control','no-store');return resp;}
@@ -90,11 +104,8 @@ async function webhook(request,env,ctx,mode){
     // Stripe, not the browser, calculates the promotion discount. Match the
     // original catalog subtotal to D1 and verify the exact discounted total.
     // No shipping or tax is configured for these digital-only Checkout Sessions.
-    const subtotal=obj.amount_subtotal,discount=obj.total_details?.amount_discount;
-    const amountsValid=Number.isSafeInteger(subtotal)&&subtotal>=50&&
-      Number.isSafeInteger(discount)&&discount>=0&&discount<=subtotal&&
-      obj.total_details?.amount_tax===0&&obj.total_details?.amount_shipping===0&&
-      Number.isSafeInteger(obj.amount_total)&&obj.amount_total===subtotal-discount;
+    const subtotal=obj.amount_subtotal;
+    const amountsValid=checkoutAmountsValid(obj);
     const paidIntent=obj.amount_total>0&&obj.payment_status==='paid'&&
       typeof obj.payment_intent==='string'&&obj.payment_intent.startsWith('pi_');
     // A 100%-off Stripe-hosted Checkout Session has no PaymentIntent. Require
@@ -480,13 +491,53 @@ async function checkout(request,env){
   }
   return reply({url:session.url});
 }
-async function orderStatus(url,env){
+async function confirmPendingOrder(env,id,order,ctx){
+  const mode=sessionMode(id);
+  if(!stripeReadyFor(env,mode)||!env.STORE_DB)return;
+  let session;
+  try{
+    session=await stripeRequest(env,mode,'GET','checkout/sessions/'+encodeURIComponent(id));
+  }catch(e){
+    console.warn('Pending checkout could not be reconciled',String(e).slice(0,100));
+    return;
+  }
+  const subtotal=session.amount_subtotal;
+  const amountsValid=checkoutAmountsValid(session,order.amount_cents);
+  const paidIntent=session.amount_total>0&&session.payment_status==='paid'&&
+    typeof session.payment_intent==='string'&&session.payment_intent.startsWith('pi_');
+  const freeCheckout=session.amount_total===0&&session.payment_status==='no_payment_required'&&
+    (session.payment_intent===null||session.payment_intent===undefined);
+  if(session.id!==id||session.livemode!==(mode==='live')||session.status!=='complete'||
+    session.mode!=='payment'||session.currency!=='usd'||session.metadata?.order_id!==order.id||
+    session.client_reference_id!==order.id||!amountsValid||!(paidIntent||freeCheckout))return;
+  const email=normalizeEmail(session.customer_details?.email).slice(0,254);
+  const ops=[env.STORE_DB.prepare(`UPDATE orders SET status='paid',stripe_payment_intent=?,buyer_email=?,paid_at=COALESCE(paid_at,CURRENT_TIMESTAMP)
+    WHERE id=? AND stripe_session_id=? AND amount_cents=? AND status='pending'
+    AND NOT EXISTS (SELECT 1 FROM payment_revocations WHERE payment_intent=?)`)
+    .bind(paidIntent?session.payment_intent:null,email,order.id,id,subtotal,paidIntent?session.payment_intent:null)];
+  if(recipientAllowed(env,email,id)){
+    ops.push(env.STORE_DB.prepare(`INSERT OR IGNORE INTO email_jobs (id,order_id,email,purpose)
+      SELECT 'purchase-'||id,id,buyer_email,'purchase' FROM orders
+      WHERE id=? AND stripe_session_id=? AND status='paid' AND lower(buyer_email)=?`)
+      .bind(order.id,id,email));
+  }
+  await env.STORE_DB.batch(ops);
+  if(ctx?.waitUntil)ctx.waitUntil(sendQueuedEmails(env,2).catch(e=>console.warn('Email queue retry scheduled',String(e))));
+}
+async function orderStatus(url,env,ctx){
   const id=orderSessionId(url);if(!id)return error('Invalid session',400);
   if(!env.STORE_DB)return error('Orders unavailable',503);
-  const o=await env.STORE_DB.prepare(`SELECT id,product_title,pdf_key,amount_cents,status,paid_at,download_count,access_days,
+  const lookup=()=>env.STORE_DB.prepare(`SELECT id,product_title,pdf_key,amount_cents,status,paid_at,download_count,access_days,
       datetime(paid_at, '+' || access_days || ' days') AS expires_at
     FROM orders WHERE stripe_session_id=?`).bind(id).first();
+  let o=await lookup();
   if(!o)return error('Order not found',404);
+  // The success page asks for a Stripe-backed reconciliation on its first poll
+  // and once more if fulfillment is delayed. Never trust browser payment data.
+  if(o.status==='pending'&&url.searchParams.get('confirm')==='1'){
+    await confirmPendingOrder(env,id,o,ctx);
+    o=await lookup();
+  }
   const bundle=o.pdf_key===BUNDLE_KEY;
   return reply({title:o.product_title,amount_cents:o.amount_cents,status:o.status,paid_at:o.paid_at,access_days:o.access_days,expires_at:o.expires_at,
     downloads_remaining:bundle?null:Math.max(0,5-o.download_count),bundle,
@@ -545,7 +596,7 @@ export async function handleCommerce(request,env,url,ctx){
   if(p==='/api/delivery/download')return accessPdf(request,env);
   if(p==='/api/delivery/items')return deliveryItems(request,env);
   if(p==='/api/recovery/request')return recover(request,env,ctx);
-  if(/^\/api\/orders\/[^/]+\/status$/.test(p)&&request.method==='GET')return orderStatus(url,env);
+  if(/^\/api\/orders\/[^/]+\/status$/.test(p)&&request.method==='GET')return orderStatus(url,env,ctx);
   if(/^\/api\/orders\/[^/]+\/download$/.test(p)&&request.method==='GET')return download(url,env);
   return error('Not found',404);
 }

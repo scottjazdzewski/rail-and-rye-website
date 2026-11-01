@@ -8,7 +8,7 @@
 <script>
 (async()=>{'use strict';const panel=document.getElementById('panel'),link=document.getElementById('download');const id=new URL(location.href).searchParams.get('session_id')||'';if(!/^cs_(?:test|live)_[A-Za-z0-9_]{10,200}$/.test(id)){panel.textContent='No valid Checkout Session was provided.';return;}
 const root='/api/orders/'+encodeURIComponent(id);let tries=0;
-while(tries++<12){try{const r=await fetch(root+'/status',{cache:'no-store'}),v=await r.json();if(!r.ok)throw Error(v.error||'Order lookup failed');
+while(tries++<12){try{const statusUrl=root+'/status'+((tries===1||tries===7)?'?confirm=1':'');const r=await fetch(statusUrl,{cache:'no-store'}),v=await r.json();if(!r.ok)throw Error(v.error||'Order lookup failed');
 if(v.status==='paid'){
   if(v.bundle){
     panel.textContent='Payment confirmed for '+v.title+'. Your included publications are available below (five downloads per PDF within '+v.access_days+' days).';
