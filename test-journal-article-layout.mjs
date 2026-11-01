@@ -5,7 +5,7 @@ const journal=read('public/journal/index.html');
 const css=read('public/assets/rail-rye-pages.css');
 const home=read('public/index.html');
 const race=read('public/race-cards/index.html');
-assert.ok(journal.includes('rail-rye-pages.css?v=44'),'Journal needs fresh CSS cache version');
+assert.ok(journal.includes('rail-rye-pages.css?v=45'),'Journal needs fresh CSS cache version');
 assert.ok(journal.includes("document.body.classList.add('rr-journal-content-view','rr-journal-article-view')"),'Article route scoped class');
 assert.ok(journal.includes('class="heritage-header"'),'Preserve exact shared header markup');
 assert.ok(journal.includes('href="/race-cards/"')&&journal.includes('href="/our-approach/"')&&journal.includes('href="/journal/"'),'Header navigation preserved');
@@ -14,6 +14,12 @@ assert.ok(css.includes('background:#071a2c!important;background-image:none!impor
 assert.ok(css.includes('body.heritage-home.heritage-journal-page.rr-journal-article-view>.heritage-inner-hero>.rr-journal-hero-grid{'),'No duplicate full-screen hero on article');
 assert.ok(css.includes('body.heritage-home.heritage-journal-page.rr-journal-article-view .rr-journal-article-image{'),'Cover image stays');
 assert.ok(css.includes('height:auto;max-height:none;object-fit:contain'),'Full artwork remains visible without cropping');
+assert.ok(css.includes('display:block;flex:1 0 auto;border-top:0;padding:0'),'Remove inherited content padding on article route');
+assert.ok(css.includes('padding:clamp(26px,2.5vw,38px) clamp(20px,3vw,42px)'),'Bring article immediately below site header');
+assert.ok(css.includes('rr-journal-article-excerpt::after'),'Keep a subtle gold editorial rule below article subtitle');
+assert.ok(css.includes('margin:19px auto 29px'),'Keep artwork near subtitle');
+assert.ok(css.includes('padding:20px 18px 48px'),'Mobile article padding stays compact');
+
 assert.ok(journal.includes("image.src=item.cover_url;image.alt=item.title"),'Existing article cover source preserved');
 assert.ok(journal.includes("heading=document.createElement('h1');heading.className='rr-journal-article-title';heading.textContent=item.title"),'Article title is heading one');
 assert.ok(journal.includes("footer.className='rr-journal-article-return'"),'Bottom navigation present');

@@ -982,23 +982,29 @@ body.heritage-home.heritage-journal-page.rr-journal-article-view>.heritage-inner
  flex:0 0 auto
 }
 body.heritage-home.heritage-journal-page.rr-journal-article-view>.rr-journal-main{
- display:block;flex:1 0 auto;border-top:0
+ display:block;flex:1 0 auto;border-top:0;padding:0
 }
 body.heritage-home.heritage-journal-page.rr-journal-article-view .rr-journal-shell{
- width:min(100%,980px);padding:clamp(32px,3.6vw,58px) clamp(20px,3vw,42px) clamp(52px,6vw,86px)
+ width:min(100%,980px);padding:clamp(26px,2.5vw,38px) clamp(20px,3vw,42px) clamp(48px,5vw,70px)
 }
 body.heritage-home.heritage-journal-page.rr-journal-article-view .rr-journal-detail{
  width:min(100%,860px)
 }
 body.heritage-home.heritage-journal-page.rr-journal-article-view .rr-journal-article-title{
- margin:18px 0 19px;font-size:clamp(39px,4.6vw,60px);line-height:1.03
+ margin:14px 0 14px;font-size:clamp(39px,4.6vw,60px);line-height:1.03
+}
+body.heritage-home.heritage-journal-page.rr-journal-article-view .rr-journal-back{
+ margin-bottom:16px
 }
 body.heritage-home.heritage-journal-page.rr-journal-article-view .rr-journal-article-excerpt{
- margin-bottom:23px
+ margin-bottom:0
+}
+body.heritage-home.heritage-journal-page.rr-journal-article-view .rr-journal-article-excerpt::after{
+ content:"";display:block;width:70px;height:2px;margin-top:14px;background:#b88d4b
 }
 body.heritage-home.heritage-journal-page.rr-journal-article-view .rr-journal-article-image{
  display:block;width:100%;height:auto;max-height:none;object-fit:contain;
- margin:23px auto 33px
+ margin:19px auto 29px
 }
 body.heritage-home.heritage-journal-page.rr-journal-article-view .rr-journal-article-copy{
  font-size:16px;line-height:1.86
@@ -1016,7 +1022,7 @@ body.heritage-home.heritage-journal-page.rr-journal-article-view .rr-journal-art
 }
 @media(max-width:750px){
  body.heritage-home.heritage-journal-page.rr-journal-article-view .rr-journal-shell{
-  padding:25px 18px 52px
+  padding:20px 18px 48px
  }
  body.heritage-home.heritage-journal-page.rr-journal-article-view .rr-journal-article-title{
   font-size:clamp(35px,9vw,49px);line-height:1.04
@@ -1025,6 +1031,6 @@ body.heritage-home.heritage-journal-page.rr-journal-article-view .rr-journal-art
   font-size:15px;line-height:1.78
  }
  body.heritage-home.heritage-journal-page.rr-journal-article-view .rr-journal-article-image{
-  margin:20px auto 26px
+  margin:18px auto 25px
  }
 }
