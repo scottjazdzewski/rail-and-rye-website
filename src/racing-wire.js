@@ -59,7 +59,7 @@ export const PREVIEW_LIVE_OFFICIAL_NEWS_PAGES=Object.freeze([
 const PREVIEW_RETRY_OFFICIAL_NEWS_PAGES=Object.freeze([
   {id:'paulick',name:'Paulick Report',url:'https://paulickreport.com/news',host:'paulickreport.com',path_prefix:'/news'},
   {id:'breeders-cup',name:"Breeders' Cup",url:'https://www.breederscup.com/news',host:'breederscup.com',path_prefix:'/news'},
-  {id:'fasig-tipton',name:'Fasig-Tipton',url:'https://www.fasigtipton.com/news',host:'fasigtipton.com',category:'Sales / Auctions',adapter:'fasig'}
+  {id:'fasig-tipton',name:'Fasig-Tipton',url:'https://www.fasigtipton.com/archive/2026',host:'fasigtipton.com',category:'Sales / Auctions',adapter:'fasig'}
 ]);
 export const PREVIEW_OFFICIAL_NEWS_PAGES=Object.freeze([...PREVIEW_LIVE_OFFICIAL_NEWS_PAGES,...PREVIEW_RETRY_OFFICIAL_NEWS_PAGES]);
 export const PREVIEW_LIVE_JSON_SOURCES=Object.freeze([
@@ -196,6 +196,60 @@ export function parseOfficialNewsPage(html,source){
   }
   return items;
 }
+export function parseFasigNewsArchive(html,source){
+  if(typeof html!=='string'||html.length>MAX_OFFICIAL_PAGE_BYTES)return [];
+  const items=[],seen=new Set(),anchor=/<a\b([^>]*?)href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+  for(const match of html.matchAll(anchor)){
+    let resolved;try{resolved=new URL(decode(match[2]),source.url);}catch{continue;}
+    const safe=safeUrl(resolved.toString(),source.host);if(!safe||seen.has(safe))continue;
+    if(!/^\/20\d{2}\/[^/]+\/\d{4}\/?$/i.test(resolved.pathname))continue;
+    const title=decodeHtmlText(match[3]).replace(/^more\.?$/i,'').trim();
+    if(title.length<12)continue;
+    const i=match.index||0,nearby=decodeHtmlText(html.slice(Math.max(0,i-500),Math.min(html.length,i+match[0].length+900)));
+    let dateText=nearby.match(NEWS_DATE_RE)?.[0]||nearby.match(NEWS_NUMERIC_DATE_RE)?.[0]||'';
+    if(!dateText)continue;
+    dateText=dateText.replace(/(\d{1,2})(?:st|nd|rd|th)(,\s+\d{4})/i,'$1$2');
+    const dt=new Date(dateText+' 12:00:00 UTC');if(!Number.isFinite(+dt))continue;
+    seen.add(safe);
+    items.push({title:title.slice(0,240),url:safe,source:source.name,category:'Sales / Auctions',section:'Sales / Auctions',
+      subject_kind:'sale',published_at:dt.toISOString(),published_date_only:true,
+      summary:'',image_url:'',original:false,preview_external:true});
+  }
+  return items;
+}
+export function parseOfficialJsonItems(payload,source){
+  if(!Array.isArray(payload))return [];
+  const items=[];
+  for(const row of payload.slice(0,50)){
+    const title=decode(row?.title?.rendered??row?.title??'').slice(0,240);
+    const url=safeUrl(String(row?.link||''),source.host);
+    const dt=new Date(row?.date_gmt||row?.date||'');
+    if(!title||!url||!Number.isFinite(+dt)||dt.getTime()>Date.now()+3600000)continue;
+    const category=source.category||categorize(title,'',source.name);
+    items.push({title,url,source:source.name,category,section:category,
+      subject_kind:subjectKind(title,category),published_at:dt.toISOString(),published_date_only:false,
+      summary:'',image_url:'',original:false,preview_external:true});
+  }
+  return items;
+}
+async function fetchOfficialJsonSource(source,fetchFn=fetch){
+  const started=Date.now();
+  try{
+    const response=await fetchFn(source.url,{headers:{Accept:'application/json,*/*;q=0.1','User-Agent':BROWSER_FEED_UA},
+      cache:'no-store',signal:AbortSignal.timeout(9000)});
+    const len=Number(response.headers.get('content-length')||0);
+    if(!response.ok||len>MAX_JSON_BYTES)return {source,items:[],all_items:[],status:response.status,elapsed_ms:Date.now()-started};
+    const raw=await response.text();if(raw.length>MAX_JSON_BYTES)throw Error('Official JSON feed exceeded preview safety limit');
+    const all=parseOfficialJsonItems(JSON.parse(raw),source),now=Date.now();
+    const items=all.filter(item=>previewHeadlineRelevant(item.title,item.section))
+      .filter(item=>!source.require_racing_context||hasRacingContext(item.title,item.section))
+      .filter(item=>now-Date.parse(item.published_at)<=PREVIEW_MAX_ITEM_AGE_MS).slice(0,12);
+    return {source,items,all_items:all,status:response.status,
+      newest_published_at:all.map(x=>x.published_at).sort().at(-1)||null,elapsed_ms:Date.now()-started};
+  }catch(e){
+    return {source,items:[],all_items:[],status:null,elapsed_ms:Date.now()-started,error:String(e?.message||e).slice(0,120)};
+  }
+}
 async function fetchOfficialNewsPage(source,fetchFn=fetch){
   const started=Date.now();
   try{
@@ -205,7 +259,7 @@ async function fetchOfficialNewsPage(source,fetchFn=fetch){
     if(!response.ok||len>MAX_OFFICIAL_PAGE_BYTES)return {source,items:[],all_items:[],status:response.status,elapsed_ms:Date.now()-started};
     const html=await response.text();
     if(html.length>MAX_OFFICIAL_PAGE_BYTES)throw Error('Official news page exceeded preview safety limit');
-    const all=parseOfficialNewsPage(html,source);
+    const all=source.adapter==='fasig'?parseFasigNewsArchive(html,source):parseOfficialNewsPage(html,source);
     const now=Date.now();
     const items=all
       .filter(item=>previewHeadlineRelevant(item.title,item.section))
@@ -376,12 +430,13 @@ async function fetchPreviewFeed(feed,fetchFn=fetch){
   }
 }
 export async function previewExternalItems(fetchFn=fetch){
-  const [rssSettled,pageSettled]=await Promise.all([
+  const [rssSettled,pageSettled,jsonSettled]=await Promise.all([
     Promise.all(PREVIEW_LIVE_FEEDS.map(feed=>fetchPreviewFeed(feed,fetchFn))),
-    Promise.all(PREVIEW_LIVE_OFFICIAL_NEWS_PAGES.map(source=>fetchOfficialNewsPage(source,fetchFn)))
+    Promise.all(PREVIEW_LIVE_OFFICIAL_NEWS_PAGES.map(source=>fetchOfficialNewsPage(source,fetchFn))),
+    Promise.all(PREVIEW_LIVE_JSON_SOURCES.map(source=>fetchOfficialJsonSource(source,fetchFn)))
   ]);
   return {
-    items:[...rssSettled.flatMap(x=>x.items),...pageSettled.flatMap(x=>x.items)].slice(0,140),
+    items:[...rssSettled.flatMap(x=>x.items),...pageSettled.flatMap(x=>x.items),...jsonSettled.flatMap(x=>x.items)].slice(0,160),
     sources:[
       ...rssSettled.map(x=>({id:x.feed.id,name:x.feed.name,url:x.feed.url,http_status:x.status,
         parsed_count:x.items.length,newest_published_at:x.newest_published_at||null,
@@ -389,7 +444,10 @@ export async function previewExternalItems(fetchFn=fetch){
         require_racing_context:Boolean(x.feed.require_racing_context),source_type:'rss'})),
       ...pageSettled.map(x=>({id:x.source.id,name:x.source.name,url:x.source.url,http_status:x.status,
         parsed_count:x.items.length,available_count:x.all_items.length,newest_published_at:x.newest_published_at||null,
-        elapsed_ms:x.elapsed_ms,error:x.error||null,candidate:false,require_racing_context:false,source_type:'official-page'}))
+        elapsed_ms:x.elapsed_ms,error:x.error||null,candidate:false,require_racing_context:Boolean(x.source.require_racing_context),source_type:'official-page'})),
+      ...jsonSettled.map(x=>({id:x.source.id,name:x.source.name,url:x.source.url,http_status:x.status,
+        parsed_count:x.items.length,available_count:x.all_items.length,newest_published_at:x.newest_published_at||null,
+        elapsed_ms:x.elapsed_ms,error:x.error||null,candidate:false,require_racing_context:Boolean(x.source.require_racing_context),source_type:'official-json'}))
     ]
   };
 }
@@ -437,7 +495,14 @@ export async function testPreviewRssFeeds(fetchFn=fetch){
       newest_published_at:result.newest_published_at||null,elapsed_ms:result.elapsed_ms,
       source_type:'official-page',note:result.error?'Official news page error: '+result.error:'Official first-party news listing; headline/date/link metadata only.'});
   }
-  return {tested_at,diagnostic_only:true,permission_status:'RSS and official first-party news endpoints are being technically tested only; third-party headline reuse remains disabled pending permission.',results};
+  for(const source of PREVIEW_LIVE_JSON_SOURCES){
+    const result=await fetchOfficialJsonSource(source,fetchFn);
+    results.push({id:source.id,source:source.name,url:source.url,reachable:result.status===200,
+      http_status:result.status,content_type:'application/json',parsed_count:result.all_items.length,
+      newest_published_at:result.newest_published_at||null,elapsed_ms:result.elapsed_ms,
+      source_type:'official-json',note:result.error?'Official JSON error: '+result.error:'Official first-party JSON metadata; headline/date/link only.'});
+  }
+  return {tested_at,diagnostic_only:true,permission_status:'RSS and official first-party news/JSON endpoints are being technically tested only; third-party headline reuse remains disabled pending permission.',results};
 }
 
 export async function refreshRacingWire(env){
