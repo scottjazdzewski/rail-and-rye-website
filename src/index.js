@@ -1,5 +1,5 @@
 import { handleCommerce, sendQueuedEmails, checkoutReadiness, replacePdfAndNotifyBuyers } from './commerce.js';
-import {handleRacingWire,handlePreviewRacingWire,testPreviewRssFeeds} from './racing-wire.js';
+import {handleRacingWire,handlePreviewRacingWire,testPreviewRssFeeds,handleAdminRacingWire} from './racing-wire.js';
 import {handleAdminBundles,BUNDLE_KEY} from './bundles.js';
 import {handleAdminBundleAssets} from './bundle-assets.js';
 import {handleAdminJournal,handlePublicJournal,publicJournalCover} from './journal.js';
@@ -241,6 +241,7 @@ export default {
           return handleAdminBundleAssets(request,env,path);
         }
         if(path.startsWith("/api/admin/articles"))return handleAdminJournal(request,env,path);
+        if(path==="/api/admin/racing-wire-editorial")return handleAdminRacingWire(request,env);
         if(path.startsWith("/api/admin/"))return handleAdminAPI(request,env,path,ctx);
         if(request.method!=="GET"&&request.method!=="HEAD")return fail("Method not allowed",405);
         const asset=new URL(url);asset.pathname="/admin/index.html";
