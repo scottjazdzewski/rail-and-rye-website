@@ -21,5 +21,5 @@ for(const fragment of admin.split('<script>').slice(1)){
 for(const category of ['longshot-radar','stable-notes','target-list']){
  assert.ok(read('public/publications/'+category+'/index.html').includes('publication-detail-v1.js?v=8'));
 }
-assert.ok(read('public/race-cards/index.html').includes('race-cards-page-v1.js?v=7'));
+assert.ok(read('public/race-cards/index.html').includes('race-cards-page-v1.js?v=8'));
 console.log('PASS category placement: four publication pages, store filter, bundle admin, cache refresh.');
