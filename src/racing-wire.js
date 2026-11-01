@@ -119,6 +119,8 @@ function hasRacingContext(title,section=''){
 }
 
 const NEWS_DATE_RE=/\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2},\s+\d{4}\b/i;
+const NEWS_NUMERIC_DATE_RE=/\b(?:0?[1-9]|1[0-2])\/(?:0?[1-9]|[12]\d|3[01])\/20\d{2}\b/;
+const OFFICIAL_NAV_TITLES=new Set(['news','press room','press releases','stable notes','stakes quotes','daily recaps','media guide','features','latest news','wagering','community impact','stakes advance','stakes recap','view more','read more']);
 function regexEscape(value){return String(value||'').replace(/[.*+?^$\{\}()|[\]\\]/g,'\\$&');}
 function newsPathPrefix(source){
   const raw=String(source?.path_prefix||'/news').trim();
@@ -149,30 +151,39 @@ function structuredMetaNearSlug(html,slug){
 }
 export function parseOfficialNewsPage(html,source){
   if(typeof html!=='string'||html.length>MAX_OFFICIAL_PAGE_BYTES)return [];
-  const items=[],seen=new Set(),prefix=regexEscape(newsPathPrefix(source));
-  const anchor=new RegExp('<a\\b[^>]*href=["\\\']'+prefix+'\\/([^"\\\'?#]+)["\\\'][^>]*>([\\s\\S]*?)<\\/a>','gi');
+  const items=[],seen=new Set(),prefix=newsPathPrefix(source);
+  const anchor=/<a\b([^>]*?)href=["']([^"']+)["']([^>]*)>([\s\S]*?)<\/a>/gi;
   for(const match of html.matchAll(anchor)){
-    const slug=decode(match[1]).trim();
-    if(!slug||seen.has(slug))continue;
-    const body=match[2];
+    const rawHref=decode(match[2]).trim();
+    let resolved;
+    try{resolved=new URL(rawHref,source.url);}catch{continue;}
+    const safe=safeUrl(resolved.toString(),source.host);
+    if(!safe)continue;
+    const pathname=resolved.pathname.replace(/\/{2,}/g,'/');
+    if(pathname!==prefix&&!pathname.startsWith(prefix+'/'))continue;
+    const slug=pathname.slice(prefix.length).replace(/^\/+|\/+$/g,'');
+    if(!slug||seen.has(safe))continue;
+    const body=match[4],attrs=(match[1]||'')+' '+(match[3]||'');
     const heading=/<h[1-6]\b[^>]*>([\s\S]*?)<\/h[1-6]>/i.exec(body)?.[1]||'';
+    const titleAttr=/\btitle\s*=\s*["']([^"']+)["']/i.exec(attrs)?.[1]||'';
+    const aria=/\baria-label\s*=\s*["']([^"']+)["']/i.exec(attrs)?.[1]||'';
+    const imageAlt=/<img\b[^>]*\balt\s*=\s*["']([^"']+)["']/i.exec(body)?.[1]||'';
     const meta=structuredMetaNearSlug(html,slug);
     const anchorStart=match.index||0;
-    const nearby=decodeHtmlText(html.slice(Math.max(0,anchorStart-1400),Math.min(html.length,anchorStart+match[0].length+1400)));
-    let title=decodeHtmlText(heading)||meta.title;
-    let dateText=meta.date||nearby.match(NEWS_DATE_RE)?.[0]||'';
-    if(!title){
-      const plain=decodeHtmlText(body);
-      const withoutDate=plain.replace(NEWS_DATE_RE,'').replace(/^(?:Press Releases?|Operational Bulletins?|Newsletters?|Metrics Reports?|Meeting Minutes?|Announcements?|Appointments?|General|Outreach)\s*/i,'').trim();
-      title=withoutDate.split(/(?<=[.!?])\s/)[0].slice(0,240);
-    }
-    if(!title||!dateText)continue;
-    const dt=/^\d{4}-\d{2}-\d{2}/.test(dateText)?new Date(dateText):new Date(dateText+' 12:00:00 UTC');
-    const url=absoluteNewsUrl(source,slug);
-    if(!url||!Number.isFinite(+dt))continue;
-    seen.add(slug);
+    const nearby=decodeHtmlText(html.slice(Math.max(0,anchorStart-1700),Math.min(html.length,anchorStart+match[0].length+1700)));
+    let title=decodeHtmlText(heading)||decode(titleAttr)||decode(aria)||decode(imageAlt)||meta.title;
+    title=title.replace(/^read (?:the )?(?:article|story)\s*/i,'').trim();
+    const generic=title.toLowerCase().replace(/[.:]+$/,'').trim();
+    if(!title||title.length<12||OFFICIAL_NAV_TITLES.has(generic))continue;
+    let dateText=meta.date||nearby.match(NEWS_DATE_RE)?.[0]||nearby.match(NEWS_NUMERIC_DATE_RE)?.[0]||'';
+    if(!dateText)continue;
+    const dt=/^\d{4}-\d{2}-\d{2}/.test(dateText)?new Date(dateText):
+      /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(dateText)?new Date(dateText+' 12:00:00 UTC'):
+      new Date(dateText+' 12:00:00 UTC');
+    if(!Number.isFinite(+dt))continue;
+    seen.add(safe);
     const category=source.category||categorize(title,'',source.name);
-    items.push({title,url,source:source.name,category,section:category,
+    items.push({title:title.slice(0,240),url:safe,source:source.name,category,section:category,
       subject_kind:subjectKind(title,category),published_at:dt.toISOString(),published_date_only:true,
       summary:'',image_url:'',original:false,preview_external:true});
   }
