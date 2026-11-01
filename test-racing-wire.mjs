@@ -61,6 +61,7 @@ assert.equal(categorize("Breeders' Cup announces new host venue for 2028"),'Race
 assert.equal(categorize("Champion retires to stud after Breeders' Cup campaign"),'Breeding');
 assert.equal(categorize("Classic contender injured before Breeders' Cup"),'Horses');
 assert.equal(categorize('Keeneland announces turf course rail setting and track surface update'),'Racetrack');
+assert.notEqual(categorize('Champion filly moves to a new trainer'),'Racetrack','Generic movement language must not create a track classification');
 assert.equal(subjectKind('Keeneland announces turf course rail setting and track surface update','Racetrack'),'racetrack');
 assert.equal(categorize("Sovereignty Rules Breeders’ Cup Classic; Forever Young Denied"),'Stakes');
 assert.equal(parseRacingRss('<!DOCTYPE rss [<!ENTITY pwn SYSTEM "http://evil/">]>'+rss,feed).length,0);
@@ -204,8 +205,10 @@ const sourceFlood=floodTitles.map((title,i)=>({
  subject_kind:subjectKind(title),category:categorize(title),
  published_at:new Date(Date.parse(date)-i*60000).toISOString()
 }));
-assert.equal(curateRacingWireStories(sourceFlood,{threshold:62,maxItems:24,maxPerSource:4}).length,4,
- 'Per-source cap prevents one publisher from dominating the wire');
+const curatedFlood=curateRacingWireStories(sourceFlood,{threshold:62,maxItems:24,maxPerSource:4});
+assert.equal(curatedFlood.length,4,'Per-source cap prevents one publisher from dominating the wire');
+assert.equal(curatedFlood.find(x=>x.title.includes('scratched'))?.type,'Scratch','Material event labels are specific, not duplicate category labels');
+assert.equal(curatedFlood.find(x=>x.title.includes('injured'))?.type,'Health','Health developments receive a useful event label');
 
 const backend=readFileSync(new URL('./src/racing-wire.js',import.meta.url),'utf8');
 assert.ok(!backend.includes('bsky.app')&&!backend.includes('Bluesky')&&!backend.includes('publicSocialItems'),
@@ -238,7 +241,7 @@ assert.ok(!wirePage.includes('UPCOMING STAKES')&&!wirePage.includes('rrw-stake-r
  'Upcoming Stakes block is removed from the Racing Wire news page');
 assert.ok(wirePage.includes('.workspace{display:block}'),
  'News feed uses the full content width after sidebar removal');
-assert.ok(wirePage.includes('UNLISTED DESIGN PREVIEW'),'Page is clearly labeled as unlisted');
+assert.ok(!wirePage.includes('UNLISTED DESIGN PREVIEW')&&!wirePage.includes('Test real RSS'),'Viewer-facing preview and diagnostic labels are removed');
 assert.ok(!wirePage.includes('const samples=[')&&!wirePage.includes('DEMO ONLY')&&!wirePage.includes('not a real report')&&!wirePage.includes('Example:'),
  'All fake/demo stories are permanently removed from the preview code');
 assert.ok(!wirePage.includes('showExamples')&&!wirePage.includes('showActual'),
@@ -278,12 +281,13 @@ assert.ok(!wirePage.includes('rrw-masthead')&&!wirePage.includes('class="hero"')
  'Old custom masthead, hero frame and competing overlay are completely removed');
 assert.ok(wirePage.indexOf('<header class="heritage-header">')>wirePage.indexOf('class="heritage-inner-hero rrw-wire-hero"'),
  'Production header sits inside the hero image frame exactly like the other pages');
-assert.ok(wirePage.indexOf('UNLISTED DESIGN PREVIEW')>wirePage.indexOf('</div>\n<div class="rrw-preview-note"'),
- 'Unlisted notice is outside the production header/hero frame so it cannot alter hero geometry');
 assert.ok(wirePage.includes('The Latest from the Backstretch.'),'Approved Racing Wire title is present');
-assert.ok(wirePage.includes('id="testFeeds"')&&wirePage.includes('Test real RSS'),
- 'Unlisted preview exposes real-feed diagnostic control');
-assert.ok(wirePage.includes('/feed-test'),'RSS diagnostic button calls only the unlisted diagnostic route');
+assert.ok(wirePage.includes('<main class="wrap heritage-shell">'),'News body uses the same production shell geometry as the numbered pages');
+assert.ok(wirePage.includes('id="allNews"')&&wirePage.includes('aria-pressed="true">All News</button>'),'All News has an explicit filter control');
+assert.ok(wirePage.includes('id="leadSection"')&&wirePage.includes('Top Story'),'High-value stories have a lead-story presentation');
+assert.ok(!wirePage.includes('Open the original source for the full update.'),'External stories never repeat generic filler summaries');
+assert.ok(!wirePage.includes('const actionMap='),'Generic duplicate category pills are removed');
+assert.ok(wirePage.includes('if(x.type){'),'Only meaningful event labels create a story pill');
 assert.ok(wirePage.includes('.item .emblem{width:88px;height:88px'),
  'News-card badges are enlarged on desktop');
 assert.ok(!wirePage.includes('const shapes={')&&!wirePage.includes("el.innerHTML='<svg"),
@@ -316,10 +320,8 @@ assert.ok(wirePage.includes("document.addEventListener('visibilitychange'"),
  'Returning to the Racing Wire tab forces a fresh update');
 assert.ok(wirePage.includes("?refresh='+Date.now()"),
  'Each refresh uses a cache-busting API request');
-assert.ok(wirePage.includes("const subjectLabels=Object.fromEntries(cats)"),
- 'Story cards use the same full subject labels as the filter strip');
-assert.ok(wirePage.includes("sale:'Auction / Sale'")&&wirePage.includes("racetrack:'Track Update'")&&wirePage.includes("industry:'Industry'"),
- 'Story action pills distinguish sales, track and industry coverage instead of generic race updates');
+assert.ok(wirePage.includes("function dayLabel(iso)")&&wirePage.includes("return 'Today'")&&wirePage.includes("return 'Yesterday'"),
+ 'Wire groups the chronological feed into scannable day sections');
 
 
 const journalPage=readFileSync(new URL('./public/journal/index.html',import.meta.url),'utf8');
