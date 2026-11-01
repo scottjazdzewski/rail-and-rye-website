@@ -7,7 +7,7 @@ const css=read('public/assets/rail-rye-pages.css');
 const api=read('src/journal.js');
 const code=page.split('<script>').slice(1).map(chunk=>chunk.split('</script>')[0]).join('\n');
 new Function(code);
-assert.ok(page.includes('rail-rye-pages.css?v=49'),'New Journal stylesheet must bypass browser caches');
+assert.ok(page.includes('rail-rye-pages.css?v=50'),'New Journal stylesheet must bypass browser caches');
 assert.ok(code.includes("byline.textContent='RAIL & RYE JOURNAL · '+readingMinutes(item.body_text)+' MIN READ'"),
  'Use a credited publication and data-derived reading time, not a fabricated author');
 assert.ok(code.includes("Math.max(1,Math.ceil((String(bodyText||'').trim().match(/\\S+/g)||[]).length/220))"),
