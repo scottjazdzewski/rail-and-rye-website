@@ -27,6 +27,14 @@ jobs:
         run: node --experimental-sqlite test-free-downloads.mjs
       - name: Scheduled publication embargo and automatic release tests
         run: node --experimental-sqlite test-scheduled-publications.mjs
+      - name: Final Racing Wire live curation audit
+        run: |
+          node --input-type=module <<'NODE'
+          import {previewExternalItems,curateRacingWireStories} from './src/racing-wire.js';
+          const external=await previewExternalItems(fetch);
+          const curated=curateRacingWireStories(external.items);
+          console.log('FINAL_CURATED '+JSON.stringify(curated.map(x=>({source:x.source,title:x.title,score:x.editorial_score,also:x.also_reported_by?.length||0,date:x.published_at}))));
+          NODE
       - name: Multi-collection bundle listing tests
         run: node --experimental-sqlite test-bundle-category-placement.mjs
       - name: Compact Publisher desktop layout and control regression
