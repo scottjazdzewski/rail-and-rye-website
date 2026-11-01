@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#072B67"><meta name="description" content="The Journal from Rail & Rye Racing — racing history, analysis, horses and the stories behind the sport."><title>The Journal | Rail & Rye Racing</title><link rel="icon" href="/favicon.png" type="image/png"><link rel="stylesheet" href="/assets/rail-rye-core.css?v=10"><link rel="stylesheet" href="/assets/rail-rye-components.css?v=9"><link rel="stylesheet" href="/assets/rail-rye-pages.css?v=40"></head><body class="heritage-home heritage-inner-page heritage-journal-page rr-numbered-hero-page rr-single-screen-hero"><div class="heritage-inner-hero"><header class="heritage-header"><div class="heritage-shell heritage-header-inner">
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#072B67"><meta name="description" content="The Journal from Rail & Rye Racing — racing history, analysis, horses and the stories behind the sport."><title>The Journal | Rail & Rye Racing</title><link rel="icon" href="/favicon.png" type="image/png"><link rel="stylesheet" href="/assets/rail-rye-core.css?v=10"><link rel="stylesheet" href="/assets/rail-rye-components.css?v=9"><link rel="stylesheet" href="/assets/rail-rye-pages.css?v=41"></head><body class="heritage-home heritage-inner-page heritage-journal-page rr-numbered-hero-page rr-single-screen-hero"><div class="heritage-inner-hero"><header class="heritage-header"><div class="heritage-shell heritage-header-inner">
   <a class="heritage-brand" href="/" aria-label="Rail and Rye home"><span class="heritage-brand-mark"><img src="/assets/approved/brand/rail-rye-ivory-logo.png" alt="Rail & Rye official ivory horseshoe emblem" width="80" height="80" decoding="async"></span><span class="heritage-wordmark">RAIL &amp; RYE</span></a>
   <div class="heritage-strap"><img class="heritage-horse-mini" src="/assets/approved/brand/header-horse.webp" alt="" aria-hidden="true" width="66" height="76"><span>Thoroughbred Racing Intelligence</span></div>
   <nav class="heritage-nav" aria-label="Main navigation"><a class="heritage-nav-pill" href="/race-cards/">Race Cards</a><a class="heritage-nav-pill" href="/journal/" aria-current="page">The Journal</a><a class="heritage-nav-pill" href="https://rail-rye-shop.fourthwall.com/" target="_blank" rel="noopener noreferrer" aria-label="Shop Rail and Rye apparel (opens in a new tab)">Apparel</a></nav>
@@ -37,6 +37,9 @@
   const description=document.querySelector('meta[name="description"]');
   const archiveRoute=/^\/journal\/archive\/?$/.test(window.location.pathname);
   const slugMatch=archiveRoute?null:window.location.pathname.match(/^\/journal\/([a-z0-9]+(?:-[a-z0-9]+)*)\/?$/);
+  let archiveArticles=[];
+  let activeArchiveCategory='';
+  let archiveCategoryFilters=null;
   if(archiveRoute){
     document.body.classList.add('rr-journal-content-view','rr-journal-archive-view');
     const chipImage=document.querySelector('.rr-page-saddle-kicker .rr-chip-solid img');
@@ -53,6 +56,14 @@
     if(railTitle)railTitle.textContent='Published stories';
     document.title='The Journal Archive | Rail & Rye Racing';
     if(description)description.content='Browse every published story from the Rail & Rye Journal, arranged by publication date.';
+    const intro=document.querySelector('.rr-journal-hero-grid>.rr-page-intro');
+    if(intro){
+      archiveCategoryFilters=document.createElement('div');
+      archiveCategoryFilters.className='rr-journal-category-filters';
+      archiveCategoryFilters.setAttribute('role','group');
+      archiveCategoryFilters.setAttribute('aria-label','Filter journal articles by category');
+      intro.append(archiveCategoryFilters);
+    }
   }else if(slugMatch){
     document.body.classList.add('rr-journal-content-view','rr-journal-article-view');
   }
@@ -78,10 +89,35 @@
     target.replaceChildren();
     const p=document.createElement('p');p.className=className;p.textContent=text;target.append(p);
   }
+  function categoryOf(item){return String(item.category||'').trim()||'Uncategorized';}
+  function renderArchiveCategories(){
+    if(!archiveCategoryFilters)return;
+    archiveCategoryFilters.replaceChildren();
+    const seen=new Map();
+    for(const item of archiveArticles){
+      const label=categoryOf(item),key=label.toLocaleLowerCase();
+      if(!seen.has(key))seen.set(key,label);
+    }
+    const categories=['',...Array.from(seen.values()).sort((a,b)=>a.localeCompare(b))];
+    for(const category of categories){
+      const pill=document.createElement('button');
+      pill.type='button';
+      pill.className='rr-journal-category-filter';
+      pill.textContent=category||'All stories';
+      pill.setAttribute('aria-pressed',String(activeArchiveCategory===category));
+      pill.addEventListener('click',()=>{
+        activeArchiveCategory=category;
+        renderArchiveCategories();
+        renderStoryPills(archiveArticles,Infinity);
+      });
+      archiveCategoryFilters.append(pill);
+    }
+  }
   function renderStoryPills(articles,limit=Infinity){
     if(!featureList)return;
     featureList.replaceChildren();
-    const stories=ordered(articles).slice(0,limit);
+    const filtered=archiveRoute&&activeArchiveCategory?articles.filter(item=>categoryOf(item).toLocaleLowerCase()===activeArchiveCategory.toLocaleLowerCase()):articles;
+    const stories=ordered(filtered).slice(0,limit);
     if(!stories.length){
       const emptyText=archiveRoute?'No stories have been published yet. Check back soon.':'New stories will appear here as they are published.';
       message(featureList,emptyText,'rr-journal-feature-message');
@@ -159,8 +195,13 @@
     try{
       const result=await api('/api/journal/articles');
       const articles=Array.isArray(result.articles)?result.articles:[];
-      renderStoryPills(articles,4);
-      if(archiveRoute)renderArchiveList(articles);
+      if(archiveRoute){
+        archiveArticles=articles;
+        renderArchiveCategories();
+        renderStoryPills(archiveArticles,Infinity);
+      }else{
+        renderStoryPills(articles,4);
+      }
     }catch(error){
       renderFeatureMessage(error.message);
       if(archiveRoute){

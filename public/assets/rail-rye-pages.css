@@ -717,19 +717,48 @@ body.rr-single-screen-hero.heritage-journal-page>.heritage-inner-hero{flex:1 1 0
  padding-top:var(--rr-single-hero-top);padding-bottom:clamp(48px,5vw,82px)
 }
 .rr-journal-hero-grid>.rr-page-intro{align-self:start;width:100%;max-width:720px}
-/* Page 9 is a full numbered hero followed by a story archive. It must NOT
-   shrink its photo hero to the masthead height as the article-content flex layout can.
-   Page 2's single-screen hero and every other numbered page stay unchanged. */
+/* Page 9: the dated article list and category pills live inside the numbered
+   photo hero. Archive main content is hidden; Page 2 and article pages are unchanged. */
 body.heritage-home.heritage-inner-page.heritage-journal-page.rr-journal-archive-view>.heritage-inner-hero{
- flex:0 0 auto;
- min-height:var(--rr-shared-photo-hero-height,600px);
+ flex:1 1 0px;
+ min-height:0;
  height:auto;
  background-image:url('/assets/approved/journal/archive-hero.webp');
  background-size:cover;
  background-position:center 50%;
 }
 body.heritage-home.heritage-journal-page.rr-journal-archive-view .rr-journal-hero-grid{
- flex:1 0 auto;
+ flex:1 1 auto;
+}
+body.heritage-home.heritage-journal-page.rr-journal-archive-view .rr-journal-main{
+ display:none!important;
+}
+body.rr-journal-archive-view .rr-journal-category-filters{
+ display:flex;flex-wrap:wrap;align-items:center;gap:10px;
+ max-width:650px;margin-top:26px
+}
+body.rr-journal-archive-view .rr-journal-category-filter{
+ display:inline-flex;align-items:center;justify-content:center;
+ min-height:38px;max-width:100%;padding:10px 17px;box-sizing:border-box;
+ border:1px solid rgba(226,185,111,.67);border-radius:999px;
+ background:rgba(4,24,36,.72);color:#f8e6c7;
+ font:800 10px/1.3 var(--heritage-sans);letter-spacing:.09em;text-transform:uppercase;
+ text-align:center;cursor:pointer;transition:background-color .18s ease,border-color .18s ease,color .18s ease
+}
+body.rr-journal-archive-view .rr-journal-category-filter:hover{
+ background:rgba(226,185,111,.22);border-color:#edc27a
+}
+body.rr-journal-archive-view .rr-journal-category-filter[aria-pressed="true"]{
+ color:#0b2738;background:#efd09a;border-color:#efd09a
+}
+body.rr-journal-archive-view .rr-journal-category-filter:focus-visible{
+ outline:2px solid #ffdf9f;outline-offset:3px
+}
+@media(max-width:750px){
+ body.rr-journal-archive-view .rr-journal-category-filters{gap:8px;margin-top:22px}
+ body.rr-journal-archive-view .rr-journal-category-filter{
+  min-height:34px;padding:8px 13px;font-size:9px
+ }
 }
 .rr-journal-feature-rail{
  align-self:start;display:flex;flex-direction:column;min-width:0;min-height:0;max-height:min(580px,65vh);box-sizing:border-box;
