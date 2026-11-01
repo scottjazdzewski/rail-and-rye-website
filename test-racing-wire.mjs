@@ -121,21 +121,26 @@ const fixtureTitles=[
  'HISA issues suspension ruling after positive test',
  'Grade 1 winner sidelined by injury and surgery',
  'Filly wins Grade 2 stakes in track-record performance',
- 'Yearling by leading sire tops major bloodstock sale',
- 'Woodbine stakes runner scratched by veterinarian',
- 'Broodmare delivers first foal by champion stallion',
- 'National Steeplechase stakes race cancelled after weather change',
- 'Trainer records one thousandth career victory',
- 'OBS yearling sale posts record average and median',
- 'Kentucky Derby winner retired to stud after injury',
- 'Arc contender ruled out of Group 1 with illness'
-];
+ 'BloodHorse reports champion stallion breeding rights update',
+ 'Paulick Report covers trainer suspension ruling',
+ 'Daily Racing Form reports Grade 1 stakes winner',
+ 'NTRA announces Thoroughbred industry initiative',
+ 'TOBA honors leading Thoroughbred owner at awards',
+ 'Tattersalls yearling tops major bloodstock sale',
+ 'National HBPA issues Thoroughbred industry statement',
+ 'Fair Grounds announces Louisiana Derby stakes schedule',
+ 'Remington Park reports Thoroughbred stakes result',
+ 'Laurel Park announces Maryland Thoroughbred racing operations update'
+]
 assert.ok(!PREVIEW_LIVE_FEEDS.some(feed=>/us racing|usracing/i.test(feed.name+' '+feed.url)),'Wagering-focused US Racing is excluded at the source level');
 assert.equal(scoreRacingWireItem({title:'Best bets and wagering tips for Saturday stakes',source:'Editorial Outlet'}).reject,true,'Betting/wagering editorial is rejected even from an otherwise allowed publication');
 assert.equal(scoreRacingWireItem({title:'Standardbred champion wins harness stakes',source:'Editorial Outlet'}).reject,true,'Harness/Standardbred coverage is excluded');
 assert.equal(scoreRacingWireItem({title:'National Hunt star wins steeplechase feature',source:'Editorial Outlet'}).reject,true,'Steeplechase/National Hunt coverage is excluded');
 const previewFeedCount=PREVIEW_LIVE_FEEDS.length;
-assert.equal(previewFeedCount,7,'Live preview excludes wagering-site feeds and keeps only seven currently useful/fresh editorial endpoints');
+assert.equal(previewFeedCount,17,'Private Racing Wire test pool contains seventeen Thoroughbred editorial/official RSS sources');
+assert.ok(['bloodhorse','paulick','drf-headlines','ntra','toba','tattersalls','national-hbpa','fair-grounds','remington','laurel'].every(id=>PREVIEW_LIVE_FEEDS.some(feed=>feed.id===id)),'Expanded private pool includes the approved newsroom, industry, sales and track sources');
+assert.ok(PREVIEW_LIVE_FEEDS.filter(feed=>feed.candidate).every(feed=>['paulick','drf-headlines'].includes(feed.id)),'Only Paulick and legacy DRF RSS endpoints are marked as diagnostic candidates');
+assert.ok(PREVIEW_LIVE_FEEDS.filter(feed=>feed.require_racing_context).every(feed=>['fair-grounds','remington','laurel'].includes(feed.id)),'Mixed-use track feeds require explicit racing context');
 const previewFeedFixtures=Object.fromEntries(PREVIEW_LIVE_FEEDS.map((feed,i)=>{
  const host=(feed.link_hosts?.[0]||feed.host);
  return [feed.url,{host,title:fixtureTitles[i],link:'https://www.'+host+'/rr-preview-story-'+(i+1)}];
@@ -160,7 +165,7 @@ assert.ok(diagnostic.results.every(x=>!('title' in x)&&!('items' in x)),
 
 diagnosticFetches=0;
 const previewExternal=await previewExternalItems(previewFetch);
-assert.equal(diagnosticFetches,previewFeedCount,'Preview live aggregator checks all fifteen RSS sources');
+assert.equal(diagnosticFetches,previewFeedCount,'Preview live aggregator checks every configured private RSS source');
 assert.equal(previewExternal.items.length,previewFeedCount);
 assert.equal(previewExternal.sources.filter(x=>x.parsed_count===1).length,previewFeedCount);
 assert.ok(previewExternal.items.every(x=>x.preview_external===true&&x.summary===''&&!x.original));
