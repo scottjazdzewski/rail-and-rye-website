@@ -50,6 +50,16 @@ a{color:inherit}button,input,select{font:inherit}button{cursor:pointer}
 .lead-card.has-image .story-media-link{width:100%;height:100%;min-height:230px;border:0;border-radius:0}
 .lead-card.has-image>div{padding:27px 0}
 .lead-card.has-image>.type-pill{margin:27px 26px 0 0}
+.secondary-section{margin:-8px 0 30px}
+.secondary-section[hidden]{display:none!important}
+.secondary-kicker{display:flex;align-items:center;gap:10px;margin:0 0 10px;color:#8d642d;font:800 10px/1.2 system-ui,sans-serif;letter-spacing:.16em;text-transform:uppercase}
+.secondary-kicker:after{content:"";height:1px;flex:1;background:#caa56c}
+.secondary-grid{display:grid;gap:11px}
+.secondary-story.item{grid-template-columns:250px minmax(0,1fr) auto;padding:0;overflow:hidden;border-color:#ddc79f;box-shadow:0 6px 18px #25394b0e}
+.secondary-story.item .story-media-link{width:250px;height:150px;border:0;border-radius:0}
+.secondary-story.item>div{padding:22px 0}
+.secondary-story.item>.type-pill{margin:22px 18px 0 0}
+.secondary-story.item h3{font-size:22px;line-height:1.22;margin-top:4px}
 .feed-list{display:grid;gap:11px}
 .day-divider{display:flex;align-items:center;gap:12px;margin:12px 0 2px;color:#8a6739;font:800 10px/1.2 system-ui,sans-serif;letter-spacing:.14em;text-transform:uppercase}
 .day-divider:after{content:"";height:1px;flex:1;background:#dfcda9}
@@ -70,7 +80,7 @@ a{color:inherit}button,input,select{font:inherit}button{cursor:pointer}
 .more{display:block;margin:19px auto 0;padding:12px 22px;border:1px solid #c9a067;background:#fff;border-radius:6px;color:#173b58;font-weight:700}.more[hidden]{display:none!important}
 @media(max-width:1160px){.subject-strip{grid-template-columns:repeat(6,1fr)}}
 @media(max-width:800px){.wrap{padding-top:22px;padding-bottom:60px}}
-@media(max-width:560px){.subject-strip{grid-template-columns:repeat(4,minmax(0,1fr));row-gap:16px}.emblem{width:50px;height:50px}.lead-card{grid-template-columns:76px minmax(0,1fr);gap:14px;padding:17px 15px}.lead-card .emblem{width:72px;height:72px}.lead-card h3{font-size:23px}.lead-card .type-pill{grid-column:2;justify-self:start}.lead-card.has-image{grid-template-columns:1fr;padding:0}.lead-card.has-image .story-media-link{height:190px;min-height:0}.lead-card.has-image>div{padding:17px 15px 0}.lead-card.has-image>.type-pill{grid-column:1;margin:0 15px 15px;justify-self:start}.item{grid-template-columns:70px minmax(0,1fr);gap:13px;padding:15px}.item.has-image{grid-template-columns:104px minmax(0,1fr)}.item.has-image .story-media-link{width:104px;height:76px}.item .emblem{width:66px;height:66px}.type-pill{grid-column:2;justify-self:start}.item h3{font-size:17px}}
+@media(max-width:560px){.subject-strip{grid-template-columns:repeat(4,minmax(0,1fr));row-gap:16px}.emblem{width:50px;height:50px}.lead-card{grid-template-columns:76px minmax(0,1fr);gap:14px;padding:17px 15px}.lead-card .emblem{width:72px;height:72px}.lead-card h3{font-size:23px}.lead-card .type-pill{grid-column:2;justify-self:start}.lead-card.has-image{grid-template-columns:1fr;padding:0}.lead-card.has-image .story-media-link{height:190px;min-height:0}.lead-card.has-image>div{padding:17px 15px 0}.lead-card.has-image>.type-pill{grid-column:1;margin:0 15px 15px;justify-self:start}.secondary-story.item{grid-template-columns:112px minmax(0,1fr);padding:0}.secondary-story.item .story-media-link{width:112px;height:100%;min-height:112px}.secondary-story.item>div{padding:14px 0}.secondary-story.item>.type-pill{grid-column:2;margin:0 12px 12px 0;justify-self:start}.secondary-story.item h3{font-size:18px}.item{grid-template-columns:70px minmax(0,1fr);gap:13px;padding:15px}.item.has-image{grid-template-columns:104px minmax(0,1fr)}.item.has-image .story-media-link{width:104px;height:76px}.item .emblem{width:66px;height:66px}.type-pill{grid-column:2;justify-self:start}.item h3{font-size:17px}}
 </style></head>
 <body class="heritage-home heritage-inner-page rrw-preview-page">
 
@@ -100,6 +110,10 @@ a{color:inherit}button,input,select{font:inherit}button{cursor:pointer}
 <section class="lead-section" id="leadSection" aria-labelledby="leadHeading" hidden>
 <div class="lead-kicker" id="leadHeading">Top Story</div>
 <div id="leadStory"></div>
+</section>
+<section class="secondary-section" id="secondarySection" aria-labelledby="secondaryHeading" hidden>
+<div class="secondary-kicker" id="secondaryHeading">More to Know</div>
+<div class="secondary-grid" id="secondaryStories"></div>
 </section>
 <div class="workspace">
 <section aria-labelledby="feedHeading"><div class="section-head"><h2 id="feedHeading">LATEST NEWS</h2><span class="subtle" id="count">Loading live updates…</span></div>
@@ -153,10 +167,10 @@ function storyVisual(x,isLive,lead,row){
  }
  return icon(x.subject_kind);
 }
-function storyCard(x,lead=false){
+function storyCard(x,lead=false,allowImage=true){
  const row=document.createElement('article');row.className=lead?'lead-card':'item';
  const isLive=typeof x.url==='string'&&(/^\x2fjournal\x2f[a-z0-9-]+\x2f$/.test(x.url)||/^https:\/\/[a-z0-9.-]+\//i.test(x.url));
- row.append(storyVisual(x,isLive,lead,row));
+ row.append(allowImage?storyVisual(x,isLive,lead,row):icon(x.subject_kind));
  const content=document.createElement('div'),meta=document.createElement('div');meta.className='meta';meta.textContent=labelTime(x.published_at);
  const heading=document.createElement('h3');
  if(isLive){const link=document.createElement('a');link.href=x.url;link.textContent=x.title;if(!x.original){link.rel='noopener noreferrer external';link.target='_blank';}heading.append(link);}
@@ -186,24 +200,35 @@ function render(){
  records=records.slice().sort((a,b)=>$('sort').value==='oldest'?new Date(a.published_at)-new Date(b.published_at):new Date(b.published_at)-new Date(a.published_at));
  $('count').textContent=records.length+' stor'+(records.length===1?'y':'ies');
  const leadSection=$('leadSection'),leadStory=$('leadStory');
- let lead=null;
- if(subject==='all'&&!q&&$('sort').value==='newest'){
+ const secondarySection=$('secondarySection'),secondaryStories=$('secondaryStories');
+ let lead=null,secondary=[];
+ const editorialView=subject==='all'&&!q&&$('sort').value==='newest';
+ if(editorialView){
    lead=records.filter(x=>Number(x.editorial_score)>=82)
      .sort((a,b)=>(Number(b.editorial_score)-Number(a.editorial_score))||(new Date(b.published_at)-new Date(a.published_at)))[0]||null;
  }
  leadStory.replaceChildren();
- if(lead){leadStory.append(storyCard(lead,true));leadSection.hidden=false;}else leadSection.hidden=true;
+ if(lead){leadStory.append(storyCard(lead,true,true));leadSection.hidden=false;}else leadSection.hidden=true;
+ secondaryStories.replaceChildren();
+ if(editorialView){
+   secondary=records.filter(x=>x!==lead&&typeof x.image_url==='string'&&/^https:\/\/[a-z0-9.-]+\//i.test(x.image_url))
+     .sort((a,b)=>(Number(b.editorial_score)-Number(a.editorial_score))||(new Date(b.published_at)-new Date(a.published_at)))
+     .slice(0,3);
+   for(const x of secondary){const card=storyCard(x,false,true);card.classList.add('secondary-story');secondaryStories.append(card);}
+ }
+ secondarySection.hidden=!secondary.length;
  const feed=$('feed');feed.replaceChildren();
- const remaining=lead?records.filter(x=>x!==lead):records;
+ const promoted=new Set([lead,...secondary].filter(Boolean));
+ const remaining=records.filter(x=>!promoted.has(x));
  if(!remaining.length){
-  if(!lead){const p=document.createElement('p');p.className='info';p.textContent='No Racing Wire stories match this view.';feed.append(p);}
+  if(!lead&&!secondary.length){const p=document.createElement('p');p.className='info';p.textContent='No Racing Wire stories match this view.';feed.append(p);}
   $('more').hidden=true;return;
  }
  let lastDay='';
  for(const x of remaining.slice(0,shown)){
    const key=dayKey(x.published_at);
    if(key!==lastDay){const divider=document.createElement('div');divider.className='day-divider';divider.textContent=dayLabel(x.published_at);feed.append(divider);lastDay=key;}
-   feed.append(storyCard(x,false));
+   feed.append(storyCard(x,false,false));
  }
  $('more').hidden=remaining.length<=shown;
 }
