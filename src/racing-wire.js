@@ -114,7 +114,8 @@ function previewHeadlineRelevant(title,section=''){
   if(/\b(?:pick\s*[3-9]|rainbow\s*6|jackpot pool|mandatory payouts?|carryovers?|wager menu|bet minimums?|handicapping(?: analysis| picks| plays| tips)?|account wagering)\b/.test(text))return false;
   if(/\b(listen now|podcast episode|watch live|where to watch|tv schedule)\b/.test(text))return false;
   if(/\b(casino|slot(?:s| machine)?|video poker|free slot play|gaming promotion|jackpot)\b/.test(text))return false;
-  if(/\b(harness|standardbred|steeplechase|steeplechaser|jump racing|national hunt)\b/.test(text))return false;
+  if(/\b(harness|standardbred|steeplechase|steeplechaser|jump racing|national hunt|trotting|trotter|trotters|pacing|pacer|pacers|hambletonian)\b/.test(text))return false;
+  if(/\b(meadowlands|yonkers raceway|woodbine mohawk|mohawk park)\b/.test(text))return false;
   return true;
 }
 function hasRacingContext(title,section=''){
@@ -178,7 +179,8 @@ export function parseOfficialNewsPage(html,source){
     const anchorStart=match.index||0;
     const nearby=decodeHtmlText(html.slice(Math.max(0,anchorStart-1700),Math.min(html.length,anchorStart+match[0].length+1700)));
     let title=decodeHtmlText(heading)||decode(titleAttr)||decode(aria)||meta.title||decode(imageAlt)||anchorText;
-    title=title.replace(/^read (?:the )?(?:article|story)\s*/i,'').trim();
+    title=title.replace(/^read (?:the )?(?:article|story)\s*/i,'')
+      .replace(/^continue reading\s*[“"'‘]?/i,'').replace(/[”"'’]+$/,'').trim();
     const generic=title.toLowerCase().replace(/[.:]+$/,'').trim();
     if(!title||title.length<12||OFFICIAL_NAV_TITLES.has(generic))continue;
     let dateText=meta.date||nearby.match(NEWS_DATE_RE)?.[0]||nearby.match(NEWS_NUMERIC_DATE_RE)?.[0]||'';
