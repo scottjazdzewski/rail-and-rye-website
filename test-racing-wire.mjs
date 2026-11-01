@@ -321,7 +321,60 @@ assert.equal(curatedFlood.length,4,'Per-source cap prevents one publisher from d
 assert.equal(curatedFlood.find(x=>x.title.includes('scratched'))?.type,'Scratch','Material event labels are specific, not duplicate category labels');
 assert.equal(curatedFlood.find(x=>x.title.includes('injured'))?.type,'Health','Health developments receive a useful event label');
 
+const balanceNow=Date.parse('2026-11-01T12:00:00Z');
+const freshnessMix=[
+ {title:'Breeders Cup Classic field set with post positions',url:'https://old.example/entry',source:'Older Source',
+  subject_kind:'race',category:'Stakes',published_at:new Date(balanceNow-36*3600000).toISOString()},
+ {title:'HISA announces medication rule change',url:'https://fresh.example/rule',source:'Fresh Source',
+  subject_kind:'regulatory',category:'Regulatory',published_at:new Date(balanceNow-3*3600000).toISOString()}
+];
+const freshnessCurated=curateRacingWireStories(freshnessMix,{threshold:60,maxItems:2,maxPerSource:4,topWindow:2});
+assert.ok(freshnessCurated[0].title.includes('HISA'),'Fresh meaningful news outranks a 36-hour-old routine item even when the stale story has a higher raw editorial score');
+assert.ok(freshnessCurated[1].editorial_score>freshnessCurated[0].editorial_score,'Freshness affects newsroom ordering without rewriting editorial scores');
+
+const publisherMix=[
+ {title:'Breeders Cup Classic field set with post positions',source:'Flood Publisher',url:'https://flood.example/bc',subject_kind:'race'},
+ {title:'Kentucky Derby entries drawn for Saturday',source:'Flood Publisher',url:'https://flood.example/derby',subject_kind:'race'},
+ {title:'Preakness nominations finalized for Saturday',source:'Flood Publisher',url:'https://flood.example/preakness',subject_kind:'race'},
+ {title:'Belmont Stakes post positions announced',source:'Flood Publisher',url:'https://flood.example/belmont',subject_kind:'race'},
+ {title:'Travers nominations finalized at Saratoga',source:'Other Publisher',url:'https://other.example/travers',subject_kind:'race'}
+].map((x,i)=>({...x,category:'Stakes',published_at:new Date(balanceNow-i*60000).toISOString()}));
+const publisherBalanced=curateRacingWireStories(publisherMix,{threshold:60,maxItems:5,maxPerSource:5,topWindow:4,maxTopPerSource:3});
+assert.ok(publisherBalanced.slice(0,4).filter(x=>x.source==='Flood Publisher').length<=3,'One publisher cannot occupy more than three positions in the visible top group');
+assert.ok(publisherBalanced.slice(0,4).some(x=>x.source==='Other Publisher'),'A second publisher breaks into the visible top group instead of being crowded out');
+
+const eventMix=[
+ {title:'Breeders Cup Classic field set with post positions',source:'A',url:'https://a.example/1',subject_kind:'race'},
+ {title:'Breeders Cup Turf entries drawn for Saturday',source:'B',url:'https://b.example/2',subject_kind:'horse'},
+ {title:'Breeders Cup Distaff nominations finalized',source:'C',url:'https://c.example/3',subject_kind:'trainer'},
+ {title:'Breeders Cup Sprint post positions announced',source:'D',url:'https://d.example/4',subject_kind:'jockey'},
+ {title:'Kentucky Derby entries drawn for Saturday',source:'E',url:'https://e.example/5',subject_kind:'race'},
+ {title:'Preakness field set with post positions',source:'F',url:'https://f.example/6',subject_kind:'race'}
+].map((x,i)=>({...x,category:'Stakes',published_at:new Date(balanceNow-i*60000).toISOString()}));
+const eventBalanced=curateRacingWireStories(eventMix,{threshold:60,maxItems:6,maxPerSource:4,topWindow:4,maxTopPerEvent:2});
+assert.ok(eventBalanced.slice(0,4).filter(x=>/Breeders Cup/i.test(x.title)).length<=2,'A single major-event family cannot swallow the visible top group');
+
+const breakingMix=[
+ {title:'Horse A scratched from Breeders Cup Classic',source:'A',url:'https://a.example/break',subject_kind:'race'},
+ {title:'Horse B injured before Breeders Cup Turf',source:'B',url:'https://b.example/break',subject_kind:'horse'},
+ {title:'Trainer C suspended before Breeders Cup Distaff',source:'C',url:'https://c.example/break',subject_kind:'trainer'}
+].map((x,i)=>({...x,category:'Stakes',published_at:new Date(balanceNow-i*60000).toISOString()}));
+const breakingBalanced=curateRacingWireStories(breakingMix,{threshold:60,maxItems:3,topWindow:3,maxTopPerEvent:2});
+assert.equal(breakingBalanced.filter(x=>/Breeders Cup/i.test(x.title)).length,3,'Material breaking stories are exempt from event-family balance caps');
+
+const laneMix=[
+ {title:'Breeders Cup Classic field set with post positions',source:'A',url:'https://a.example/lane',subject_kind:'race'},
+ {title:'Kentucky Derby entries drawn for Saturday',source:'B',url:'https://b.example/lane',subject_kind:'race'},
+ {title:'Preakness nominations finalized for Saturday',source:'C',url:'https://c.example/lane',subject_kind:'race'},
+ {title:'HISA announces medication rule change',source:'D',url:'https://d.example/lane',subject_kind:'regulatory',category:'Regulatory'}
+].map((x,i)=>({...x,category:x.category||'Stakes',published_at:new Date(balanceNow-i*1000).toISOString()}));
+const laneBalanced=curateRacingWireStories(laneMix,{threshold:60,maxItems:4,topWindow:4});
+assert.ok(laneBalanced.findIndex(x=>x.source==='D')<laneBalanced.findIndex(x=>x.source==='C'),'Soft lane diversity lets meaningful regulatory news break through repeated routine race entries');
+assert.deepEqual(laneBalanced.map((x,i)=>x.newsroom_rank),laneBalanced.map((_,i)=>i+1),'Balanced stories carry a stable newsroom rank for Page 8');
+
 const backend=readFileSync(new URL('./src/racing-wire.js',import.meta.url),'utf8');
+assert.ok(backend.includes('maxTopPerEvent=2')&&backend.includes('maxTopPerSource=3')&&backend.includes('topWindow=10'),'Newsroom balance caps are explicit and regression-protected');
+assert.ok(backend.includes('freshnessPenalty')&&backend.includes('isNewsroomBalanceExempt')&&backend.includes('newsroomLane'),'Newsroom balance uses freshness, hard-news exemptions and soft lane diversity');
 assert.ok(!backend.includes('bsky.app')&&!backend.includes('Bluesky')&&!backend.includes('publicSocialItems'),
  'No Blue Sky API or network calls exist in production scorer');
 assert.equal(subjectKind('A horse retires after a win'),'horse');
@@ -400,6 +453,7 @@ assert.ok(wirePage.includes("x.published_at_estimated?'Recent':labelTime(x.publi
 assert.ok(wirePage.includes("x.editorial?.placement==='top'")&&wirePage.includes("x.editorial?.placement==='more'"),'Page 8 honors owner Top Story and More to Know overrides');
 assert.ok(wirePage.includes("x.editorial?.placement==='top'&&hasStoryImage(x)")&&wirePage.includes("hasStoryImage(x)&&Number(x.editorial_score)>=82"),'Top Story is always selected from stories with a usable article image');
 assert.ok(wirePage.includes("editorial?.placement==='more'&&typeof x.image_url==='string'")&&wirePage.includes("!failedImages.has(x.image_url)"),'More to Know only promotes usable image-backed stories');
+assert.ok(wirePage.includes("Number.isFinite(Number(a.newsroom_rank))")&&wirePage.includes("return ar-br"),'Default Page 8 order preserves balanced newsroom rank');
 assert.ok(wirePage.includes(".secondary-story.item{grid-template-columns:250px minmax(0,1fr) auto;padding:14px 18px")&&wirePage.includes("justify-self:center;align-self:center"),'More to Know photos are centered and inset from card edges');
 assert.ok(wirePage.includes(".slice(0,3)")&&wirePage.includes("secondary-story"),'Secondary tier promotes at most three image-backed stories');
 assert.ok(wirePage.includes("storyCard(x,false,false)"),'Stories below the promoted tier return to compact badge cards');
