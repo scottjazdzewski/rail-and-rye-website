@@ -29,5 +29,7 @@ jobs:
         run: node --experimental-sqlite test-scheduled-publications.mjs
       - name: Multi-collection bundle listing tests
         run: node --experimental-sqlite test-bundle-category-placement.mjs
+      - name: Compact Publisher desktop layout and control regression
+        run: node test-admin-desktop-density.mjs
       - name: Private Racing Wire preview, author sources, and visibility tests
         run: node --experimental-sqlite test-racing-wire.mjs

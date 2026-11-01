@@ -29,7 +29,61 @@
     .pill{font-size:10px;display:inline-block;margin-left:8px;padding:2px 7px;border-radius:2px;text-transform:uppercase;letter-spacing:.08em;background:#f0ede5;color:#746047}.pill.published{background:#e3f3e9;color:var(--success)}.pill.scheduled{background:#fff1ce;color:#8f581e}
     .empty{padding:25px 12px;text-align:center;border:1px dashed var(--border);color:var(--muted)}.footer{margin-top:30px;font-size:12px;color:var(--muted)}
     .article-panel{scroll-margin-top:20px}.article-body-input{min-height:380px;line-height:1.7}.article-inventory{max-height:720px;overflow:auto}.article-notice{min-height:24px;margin-top:12px}
-    @media(max-width:900px){.layout{grid-template-columns:1fr}.panel{padding:20px}}@media(max-width:560px){.top{padding:18px}.logo{font-size:19px}main{padding:28px 14px}.row{grid-template-columns:1fr}}
+    /* Compact publishing workspace: desktop only. Touch-friendly mobile layout stays as approved. */
+    .rr-bundle-area{margin-top:28px}
+    .rr-private-library{margin-bottom:25px;padding:19px;border:1px solid var(--border);border-radius:8px;background:#fff;min-width:0}
+    .rr-bundle-editor{margin-top:0}
+    .article-panel{margin-top:28px}
+    @media(min-width:901px){
+      .top{min-height:74px;padding:13px 24px;gap:14px}
+      .logo{font-size:23px}
+      main{max-width:1530px;padding:23px 24px 52px}
+      h1{font-size:clamp(28px,2.7vw,37px);margin-bottom:4px}
+      h2{font-size:23px;margin-bottom:9px}
+      .kicker{margin-bottom:5px}
+      .sub{max-width:880px;font-size:13px}
+      .layout{gap:16px;margin-top:17px}
+      .panel{padding:20px}
+      .head-row{gap:10px;margin-bottom:11px}
+      .row{gap:12px}
+      .field{margin-bottom:11px}
+      .field label{margin-bottom:5px}
+      input,textarea,select{padding:9px 11px}
+      input[type=file]{padding:8px 9px}
+      textarea{min-height:74px}
+      button{padding:9px 13px}
+      .mini{padding:7px 10px}
+      .actions{gap:6px;margin-top:5px}
+      .detail{margin-top:4px;line-height:1.48}
+      .list{gap:6px}
+      .product{padding:10px 12px}
+      .product span{margin-top:2px}
+      .empty{padding:17px 12px}
+      .notice{margin-top:12px;padding:10px 14px}
+      .footer{margin-top:13px}
+      .rr-bundle-area,.article-panel{margin-top:16px}
+      .rr-private-library{padding:15px;margin-bottom:15px}
+      #productList{max-height:520px;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;padding-right:3px}
+      #assetInventory{max-height:240px;overflow-y:auto;overscroll-behavior:contain}
+      #bundleInventory{max-height:255px;overflow-y:auto;overscroll-behavior:contain}
+      #bundleCandidates{margin-bottom:11px!important}
+      .article-body-input{min-height:265px}
+      .article-inventory{max-height:470px}
+      .rr-bundle-area>.detail{margin-bottom:11px!important}
+      .rr-private-library .kicker{margin-top:10px!important}
+    }
+    /* Wide desktop: private PDF uploads and bundle assembly share one row. */
+    @media(min-width:1280px){
+      .rr-bundle-area{display:grid;grid-template-columns:minmax(360px,.85fr) minmax(0,1.75fr);gap:0 18px;align-items:start}
+      .rr-bundle-area>.head-row,.rr-bundle-area>.detail{grid-column:1/-1}
+      .rr-private-library{grid-column:1;grid-row:3;margin-bottom:0;align-self:start}
+      .rr-bundle-editor{grid-column:2;grid-row:3;min-width:0}
+      .rr-bundle-editor>.layout{min-width:0}
+      .rr-bundle-editor .row{gap:10px}
+      .rr-bundle-editor .field{min-width:0}
+    }
+    @media(max-width:900px){.layout{grid-template-columns:1fr}.panel{padding:20px}}
+    @media(max-width:560px){.top{padding:18px}.logo{font-size:19px}main{padding:28px 14px}.row{grid-template-columns:1fr}}
   </style>
 <link rel="icon" href="/favicon.png" type="image/png"></head>
 <body>
@@ -68,10 +122,10 @@
       <p class="footer">This console is for the business owner only. It uses Cloudflare Access sign-in and verifies the authentication token again on the server.</p>
     </aside>
   </div>
-  <section class="panel" style="margin-top:28px" aria-label="Automatic product bundles">
+  <section class="panel rr-bundle-area" aria-label="Automatic product bundles">
     <div class="head-row"><h2>Automatic bundles</h2><button type="button" class="secondary mini" id="bundleNew">+ New bundle</button></div>
     <p class="detail" style="margin-bottom:19px">Choose at least two published editions or bundle-only PDFs, set one package price, and publish. The bundle automatically appears in each collection represented by its included PDFs. Customers receive separate secure downloads. Replacing any included PDF notifies eligible active purchasers, while preserving their original purchased PDF versions.</p>
-    <section aria-label="Bundle-only PDF library" style="margin-bottom:25px;padding:19px;border:1px solid var(--border);border-radius:8px;background:white">
+    <section class="rr-private-library" aria-label="Bundle-only PDF library">
       <div class="head-row"><h3 style="margin:0">Bundle-only PDF library</h3><button type="button" class="secondary mini" id="assetNew">+ New private PDF</button></div>
       <p class="detail">Upload a PDF that will be available only inside bundles. It will never have its own public listing or individual purchase button. Archive older PDFs when their published bundles have been archived. After all customer access expires, you can permanently delete archived PDFs to reclaim storage. Historical order records are retained.</p>
       <div class="row">
@@ -88,7 +142,7 @@
       <p class="kicker" style="margin-top:15px">Your private PDFs</p>
       <div class="list" id="assetInventory"><div class="empty">Loading private PDFs…</div></div>
     </section>
-    <div class="layout" style="margin-top:0">
+    <div class="layout rr-bundle-editor">
       <div>
         <div class="field"><label for="bundleTitle">Bundle name *</label><input id="bundleTitle" maxlength="140" required placeholder="Breeders' Cup Weekend Bundle"></div>
         <div class="row">
@@ -110,7 +164,7 @@
     </div>
   </section>
 
-  <section class="panel article-panel" id="journal-editor" style="margin-top:28px" aria-label="Journal article editor">
+  <section class="panel article-panel" id="journal-editor" aria-label="Journal article editor">
     <div class="head-row">
       <div><h2>Journal articles</h2><p class="detail">Write a story, save it as a draft, or publish it to The Journal.</p></div>
       <button type="button" class="secondary mini" id="articleNew">+ New article</button>
