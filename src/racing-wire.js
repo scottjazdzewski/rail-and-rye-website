@@ -619,7 +619,10 @@ function raceEventKey(title){
   ['juvenile fillies','juvenile-fillies'],['juvenile turf','juvenile-turf'],['dirt mile','dirt-mile'],
   ['turf sprint','turf-sprint'],['classic','classic'],['distaff','distaff'],['mile','mile'],['sprint','sprint'],['turf','turf'],['juvenile','juvenile']
  ];
- if(/\bbreederscup\b/.test(t))for(const [needle,key] of bc)if(t.includes(needle))return 'breederscup:'+key;
+ if(/\bbreederscup\b/.test(t)){
+   for(const [needle,key] of bc)if(t.includes(needle))return 'breederscup:'+key;
+   return 'breederscup:overall';
+ }
  for(const [rx,key] of [
   [/\bkentucky derby\b/,'kentucky-derby'],[/\bpreakness\b/,'preakness'],[/\bbelmont stakes\b/,'belmont-stakes'],
   [/\btravers\b/,'travers'],[/\bpegasus world cup\b/,'pegasus-world-cup'],[/\bdubai world cup\b/,'dubai-world-cup'],
@@ -638,7 +641,9 @@ function canGroup(a,b){
  if(Math.abs(Date.parse(a.published_at)-Date.parse(b.published_at))>48*3600000)return false;
  const typeA=eventType(a.title),typeB=eventType(b.title);
  const raceA=raceEventKey(a.title),raceB=raceEventKey(b.title);
- if(raceA&&raceA===raceB&&typeA==='result'&&typeB==='result'&&specificSharedTokens(a.title,b.title).length>=1)return true;
+ const resultA=typeA==='result'||RESULT_RE.test(a.title),resultB=typeB==='result'||RESULT_RE.test(b.title);
+ if(raceA&&raceA===raceB&&resultA&&resultB&&specificSharedTokens(a.title,b.title).length>=1)return true;
+ if(raceA&&raceA===raceB&&INDUSTRY_METRICS_RE.test(a.title)&&INDUSTRY_METRICS_RE.test(b.title))return true;
  if(typeA!==typeB)return false;
  if(a.subject_kind!==b.subject_kind)return false;
  const at=storyTokens(a.title),bt=storyTokens(b.title);
@@ -677,7 +682,7 @@ const HARD_REJECT_PATTERNS=[
 const MAJOR_EVENT_RE=/\b(breeders.? cup|kentucky derby|preakness|belmont stakes|travers|pegasus world cup|dubai world cup|melbourne cup|prix de l.?arc de triomphe|japan cup|cox plate|eclipse stakes|royal ascot|kentucky oaks)\b/i;
 const GRADED_RE=/\b(group|grade)\s*[123i]+\b|\bG[123]\b/i;
 const MATERIAL_RE=/\b(scratch(?:ed|es)?|withdrawn?|rules? out|ruled out|injur(?:y|ed)|illness|surgery|colic|retir(?:e|ed|ement)|suspend(?:ed|sion)?|ruling|disqualif(?:ied|ication)|ban(?:ned)?|cancel(?:led|ed)|postpon(?:ed|ement)|stewards?|positive test|appeal)\b/i;
-const RESULT_RE=/\b(wins?|won|victory|triumph|scores?|takes?|captures?|proves best|remains perfect|completes .*timer)\b/i;
+const RESULT_RE=/\b(wins?|won|victory|triumph|scores?|takes?|captures?|proves best|remains perfect|delivers|reigns supreme|prevails|dominates|best of all|up in time|caps (?:the )?(?:year|season|career)|completes .*timer)\b/i;
 const SALES_RE=/\b(sale|auction|sold for|brings? \$|hammer price|consign(?:ed|ment)|yearling|weanling)\b/i;
 const BREEDING_RE=/\b(stallion|stud fee|retired to stud|breeding|sire|dam|foal|foaled|broodmare|cover(?:ed|ing))\b/i;
 const INDUSTRY_RE=/\b(HISA|HIWU|racing commission|commissioners?|rule change|policy|legislation|licensing|integrity|medication rule)\b/i;
