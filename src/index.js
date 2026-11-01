@@ -3,6 +3,7 @@ import {handleRacingWire,handlePreviewRacingWire,testPreviewRssFeeds} from './ra
 import {handleAdminBundles,BUNDLE_KEY} from './bundles.js';
 import {handleAdminBundleAssets} from './bundle-assets.js';
 import {handleAdminJournal,handlePublicJournal,publicJournalCover} from './journal.js';
+import {ensureReleaseSchedule,validReleaseAt} from './publication-schedule.js';
 /* Rail & Rye admin MVP. Dependencies: Cloudflare Workers, R2, D1, Cloudflare Access.
    Admin routes FAIL CLOSED until ACCESS_TEAM_DOMAIN, ACCESS_AUD and ADMIN_EMAIL
    are configured in Cloudflare Worker runtime variables, and a matching Access
@@ -82,13 +83,16 @@ function readProduct(data) {
   const description=String(data.description||"").trim();
   const price_cents=Number(data.price_cents);
   const status=String(data.status||"draft");
+  const release_at=data.release_at===undefined||data.release_at===''?null:data.release_at;
+  if(!validReleaseAt(release_at))throw Error('Release time must be a valid UTC date and time');
+  if(release_at&&status!=='published')throw Error('Only published editions may have a scheduled release');
   if(title.length<3||title.length>140) throw Error("Title must be 3–140 characters");
   if(!CATEGORIES.has(category)) throw Error("Invalid category");
   if(!validDate(race_date)) throw Error("Invalid date");
   if(track.length>100||description.length>4000) throw Error("Track or description too long");
   if(!Number.isSafeInteger(price_cents)||price_cents<0||price_cents>500000) throw Error("Invalid price");
   if(!["draft","published","archived"].includes(status)) throw Error("Invalid status");
-  return {title,category,race_date,track,description,price_cents,status};
+  return {title,category,race_date,track,description,price_cents,status,release_at};
 }
 async function parseJSON(request) {
   if(!request.headers.get("content-type")?.toLowerCase().startsWith("application/json")) throw Error("Expected JSON");
@@ -107,10 +111,11 @@ async function handleAdminAPI(request,env,pathname,ctx) {
   if(!env.STORE_DB||!env.CARDS_BUCKET) return fail("Database or storage binding missing",503);
   if(!["GET","POST","PATCH","PUT"].includes(request.method)) return fail("Method not allowed",405);
   if(request.method!=="GET"&&!trustedOrigin(request)) return fail("Same-origin request required",403);
+  await ensureReleaseSchedule(env);
   if(pathname==="/api/admin/status"&&request.method==="GET") return json({ready:true,categories:[...CATEGORIES],max_pdf_bytes:MAX_PDF,...checkoutReadiness(env)});
   if(pathname==="/api/admin/products") {
     if(request.method==="GET") {
-      const result=await env.STORE_DB.prepare("SELECT p.* FROM products p WHERE (p.pdf_key IS NULL OR p.pdf_key != '__rr_bundle__') AND NOT EXISTS (SELECT 1 FROM bundle_only_assets a WHERE a.product_id=p.id) ORDER BY p.created_at DESC, p.id DESC LIMIT 250").all();
+      const result=await env.STORE_DB.prepare("SELECT p.*,s.release_at FROM products p LEFT JOIN product_release_schedule s ON s.product_id=p.id WHERE (p.pdf_key IS NULL OR p.pdf_key != '__rr_bundle__') AND NOT EXISTS (SELECT 1 FROM bundle_only_assets a WHERE a.product_id=p.id) ORDER BY p.created_at DESC, p.id DESC LIMIT 250").all();
       return json({products:result.results||[]});
     }
     if(request.method==="POST") {
@@ -132,9 +137,23 @@ async function handleAdminAPI(request,env,pathname,ctx) {
     if(protectedAsset)return fail('Edit private PDFs using the bundle-only library',409);
     let data;try{data=readProduct(await parseJSON(request));}catch(e){return fail(e.message);}
     if(data.status==="published"&&!item.pdf_key) return fail("Upload a PDF before publishing");
-    await env.STORE_DB.prepare(`UPDATE products SET title=?,category=?,race_date=?,track=?,description=?,price_cents=?,status=? WHERE id=?`)
-      .bind(data.title,data.category,data.race_date,data.track,data.description,data.price_cents,data.status,id).run();
-    return json({product:await fetchProduct(env,id)});
+    // Atomic: a future-dated published product can never be visible between
+    // writing the product and recording its release gate.
+    const existing=await env.STORE_DB.prepare('SELECT release_at FROM product_release_schedule WHERE product_id=?').bind(id).first();
+    if(data.release_at&&(!existing||existing.release_at!==data.release_at)){
+      const when=Date.parse(data.release_at.replace(' ','T')+'Z');
+      if(when<=Date.now()+30*1000||when>Date.now()+366*86400*1000)return fail('Choose a release at least 1 minute ahead, within the next year');
+    }
+    const ops=[env.STORE_DB.prepare(`UPDATE products SET title=?,category=?,race_date=?,track=?,description=?,price_cents=?,status=? WHERE id=?`)
+      .bind(data.title,data.category,data.race_date,data.track,data.description,data.price_cents,data.status,id)];
+    if(data.release_at){
+      ops.push(env.STORE_DB.prepare('INSERT INTO product_release_schedule (product_id,release_at) VALUES (?,?) ON CONFLICT(product_id) DO UPDATE SET release_at=excluded.release_at').bind(id,data.release_at));
+    }else{
+      ops.push(env.STORE_DB.prepare('DELETE FROM product_release_schedule WHERE product_id=?').bind(id));
+    }
+    await env.STORE_DB.batch(ops);
+    const product=await fetchProduct(env,id);
+    return json({product:{...product,release_at:data.release_at}});
   }
   if(action==="pdf"&&request.method==="PUT") {
     const type=request.headers.get("content-type")?.split(";")[0]?.trim().toLowerCase();
@@ -189,7 +208,8 @@ async function handleAdminAPI(request,env,pathname,ctx) {
 }
 async function publicCover(env,id) {
   if(!env.STORE_DB||!env.CARDS_BUCKET)return fail("Not available",503);
-  const record=await env.STORE_DB.prepare("SELECT id,status,image_url FROM products WHERE id=? AND status='published'").bind(id).first();
+  await ensureReleaseSchedule(env);
+  const record=await env.STORE_DB.prepare("SELECT id,status,image_url FROM products WHERE id=? AND status='published' AND NOT EXISTS(SELECT 1 FROM product_release_schedule s WHERE s.product_id=products.id AND s.release_at>CURRENT_TIMESTAMP)").bind(id).first();
   if(!record?.image_url)return fail("Not found",404);
   const object=await env.CARDS_BUCKET.get(`covers/${id}`);if(!object)return fail("Not found",404);
   return new Response(object.body,{headers:{"Content-Type":object.httpMetadata?.contentType||"application/octet-stream","Cache-Control":"public, max-age=300","X-Content-Type-Options":"nosniff"}});

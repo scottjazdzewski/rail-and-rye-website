@@ -1,4 +1,5 @@
 import {BUNDLE_KEY} from './bundles.js';
+import {ensureReleaseSchedule} from './publication-schedule.js';
 /* Rail & Rye fail-closed checkout. Default sandbox. Live activation is separate,
    requires verified Stripe keys and an explicit control flag; no public R2 URLs.
    Stripe secrets are Cloudflare Worker SECRETS, never source files. */
@@ -375,8 +376,10 @@ async function recover(request,env,ctx){
 
 async function listProducts(env){
   if(!env.STORE_DB)return error('Catalog temporarily unavailable',503);
+  await ensureReleaseSchedule(env);
   const records=await env.STORE_DB.prepare(`SELECT id,title,slug,category,race_date,track,description,price_cents,image_url,pdf_key
     FROM products WHERE status='published' AND pdf_key IS NOT NULL
+    AND NOT EXISTS(SELECT 1 FROM product_release_schedule s WHERE s.product_id=products.id AND s.release_at>CURRENT_TIMESTAMP)
     AND NOT EXISTS(SELECT 1 FROM bundle_only_assets a WHERE a.product_id=products.id)
     ORDER BY race_date DESC,created_at DESC LIMIT 150`).all();
   const products=[];
@@ -384,10 +387,12 @@ async function listProducts(env){
     const {pdf_key,...publicFields}=p;
     if(pdf_key!==BUNDLE_KEY){products.push({...publicFields,kind:'single'});continue;}
     // Fail closed: a published bundle must still contain 2–12 available PDFs.
-    const children=await env.STORE_DB.prepare(`SELECT c.title,c.status,c.pdf_key,a.product_id AS asset_id FROM bundle_items bi
-      LEFT JOIN products c ON c.id=bi.product_id LEFT JOIN bundle_only_assets a ON a.product_id=c.id WHERE bi.bundle_id=? ORDER BY bi.position`).bind(p.id).all();
+    const children=await env.STORE_DB.prepare(`SELECT c.title,c.status,c.pdf_key,a.product_id AS asset_id,
+      CASE WHEN s.release_at>CURRENT_TIMESTAMP THEN 1 ELSE 0 END AS pending_release FROM bundle_items bi
+      LEFT JOIN products c ON c.id=bi.product_id LEFT JOIN bundle_only_assets a ON a.product_id=c.id
+      LEFT JOIN product_release_schedule s ON s.product_id=c.id WHERE bi.bundle_id=? ORDER BY bi.position`).bind(p.id).all();
     const items=children.results||[];
-    if(items.length<2||items.length>12||items.some(c=>!c.pdf_key||c.pdf_key===BUNDLE_KEY||!(c.status==='published'||(c.status==='draft'&&c.asset_id))))continue;
+    if(items.length<2||items.length>12||items.some(c=>!c.pdf_key||c.pdf_key===BUNDLE_KEY||c.pending_release||!(c.status==='published'||(c.status==='draft'&&c.asset_id))))continue;
     products.push({...publicFields,kind:'bundle',bundle_count:items.length,included_titles:items.map(x=>x.title)});
   }
   return reply({products,checkout_ready:stripeReady(env),checkout_mode:checkoutMode(env)});
@@ -396,6 +401,7 @@ async function checkout(request,env){
   if(request.method!=='POST')return error('Method not allowed',405);
   const mode=checkoutMode(env);
   if(!stripeReady(env)||!env.STORE_DB)return error('Checkout unavailable',503);
+  await ensureReleaseSchedule(env);
   if(!sameOrigin(request))return error('Same-origin request required',403);
   if(!request.headers.get('content-type')?.toLowerCase().startsWith('application/json'))return error('Expected JSON',400);
   if(Number(request.headers.get('content-length')||0)>1000)return error('Request too large',413);
@@ -403,6 +409,7 @@ async function checkout(request,env){
   if(!UUID_RE.test(data?.product_id||''))return error('Invalid product',400);
   const p=await env.STORE_DB.prepare(`SELECT id,title,description,price_cents,pdf_key,category,status
     FROM products WHERE id=? AND status='published' AND pdf_key IS NOT NULL
+    AND NOT EXISTS(SELECT 1 FROM product_release_schedule s WHERE s.product_id=products.id AND s.release_at>CURRENT_TIMESTAMP)
     AND NOT EXISTS(SELECT 1 FROM bundle_only_assets a WHERE a.product_id=products.id)`).bind(data.product_id).first();
   if(!p)return error('Product is not available',404);
   if(!Number.isSafeInteger(p.price_cents)||p.price_cents<50||p.price_cents>500000)return error('Product is not available for purchase',400);
@@ -410,10 +417,12 @@ async function checkout(request,env){
   const ops=[env.STORE_DB.prepare(`INSERT INTO orders (id,product_id,product_title,pdf_key,amount_cents,status,access_days)
     VALUES (?,?,?,?,?,'initiated',7)`).bind(orderId,p.id,p.title,p.pdf_key,p.price_cents)];
   if(p.pdf_key===BUNDLE_KEY){
-    const children=await env.STORE_DB.prepare(`SELECT c.id,c.title,c.pdf_key,c.status,a.product_id AS asset_id FROM bundle_items bi
-      LEFT JOIN products c ON c.id=bi.product_id LEFT JOIN bundle_only_assets a ON a.product_id=c.id WHERE bi.bundle_id=? ORDER BY bi.position`).bind(p.id).all();
+    const children=await env.STORE_DB.prepare(`SELECT c.id,c.title,c.pdf_key,c.status,a.product_id AS asset_id,
+      CASE WHEN s.release_at>CURRENT_TIMESTAMP THEN 1 ELSE 0 END AS pending_release FROM bundle_items bi
+      LEFT JOIN products c ON c.id=bi.product_id LEFT JOIN bundle_only_assets a ON a.product_id=c.id
+      LEFT JOIN product_release_schedule s ON s.product_id=c.id WHERE bi.bundle_id=? ORDER BY bi.position`).bind(p.id).all();
     const items=children.results||[];
-    if(items.length<2||items.length>12||items.some(c=>!c.pdf_key||c.pdf_key===BUNDLE_KEY||!(c.status==='published'||(c.status==='draft'&&c.asset_id))))
+    if(items.length<2||items.length>12||items.some(c=>!c.pdf_key||c.pdf_key===BUNDLE_KEY||c.pending_release||!(c.status==='published'||(c.status==='draft'&&c.asset_id))))
       return error('Bundle contents are currently unavailable',409);
     items.forEach((c,i)=>ops.push(env.STORE_DB.prepare(
       'INSERT INTO bundle_order_items (order_id,product_id,product_title,pdf_key,position) VALUES (?,?,?,?,?)'
@@ -483,8 +492,10 @@ async function freeDownload(request,env,url){
   const match=url.pathname.match(/^\/api\/free-download\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i);
   if(!match)return error('Not found',404);
   if(!env.STORE_DB||!env.CARDS_BUCKET)return error('Downloads unavailable',503);
+  await ensureReleaseSchedule(env);
   const product=await env.STORE_DB.prepare(`SELECT p.id,p.title,p.pdf_key FROM products p
     WHERE p.id=? AND p.status='published' AND p.price_cents=0
+    AND NOT EXISTS(SELECT 1 FROM product_release_schedule s WHERE s.product_id=p.id AND s.release_at>CURRENT_TIMESTAMP)
     AND p.pdf_key IS NOT NULL AND p.pdf_key!=?
     AND NOT EXISTS(SELECT 1 FROM bundle_only_assets a WHERE a.product_id=p.id)`
   ).bind(match[1],BUNDLE_KEY).first();

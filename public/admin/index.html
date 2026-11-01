@@ -26,7 +26,7 @@
     .list{display:flex;flex-direction:column;gap:10px}.product{width:100%;background:#fff;border:1px solid var(--border);padding:15px;text-align:left;letter-spacing:0;font-weight:400}.product.active{border-color:#b18b4c;background:#fffcf6}
     .product strong{display:block;font-weight:700;font-size:14px;color:var(--deep)}.product span{display:block;color:var(--muted);font-size:12px;margin-top:4px}.product em{font-style:normal;text-transform:uppercase;letter-spacing:.1em;font-size:10px;color:#8a6b40}
     .notice{margin:20px 0 0;background:white;border-left:4px solid var(--navy);padding:13px 18px;white-space:pre-wrap;display:none}.notice.error{border-color:var(--error);color:var(--error)}.notice.good{border-color:var(--success);color:var(--success)}
-    .pill{font-size:10px;display:inline-block;margin-left:8px;padding:2px 7px;border-radius:2px;text-transform:uppercase;letter-spacing:.08em;background:#f0ede5;color:#746047}.pill.published{background:#e3f3e9;color:var(--success)}
+    .pill{font-size:10px;display:inline-block;margin-left:8px;padding:2px 7px;border-radius:2px;text-transform:uppercase;letter-spacing:.08em;background:#f0ede5;color:#746047}.pill.published{background:#e3f3e9;color:var(--success)}.pill.scheduled{background:#fff1ce;color:#8f581e}
     .empty{padding:25px 12px;text-align:center;border:1px dashed var(--border);color:var(--muted)}.footer{margin-top:30px;font-size:12px;color:var(--muted)}
     .article-panel{scroll-margin-top:20px}.article-body-input{min-height:380px;line-height:1.7}.article-inventory{max-height:720px;overflow:auto}.article-notice{min-height:24px;margin-top:12px}
     @media(max-width:900px){.layout{grid-template-columns:1fr}.panel{padding:20px}}@media(max-width:560px){.top{padding:18px}.logo{font-size:19px}main{padding:28px 14px}.row{grid-template-columns:1fr}}
@@ -55,8 +55,9 @@
         <div class="field"><label for="description">Product description</label><textarea id="description" maxlength="4000" placeholder="Premium analysis and probability-driven insights for today's card."></textarea></div>
         <div class="field"><label for="pdf">Premium PDF <span id="pdfStatus"></span></label><input id="pdf" type="file" accept="application/pdf,.pdf"><div class="detail">Private R2 storage. Up to 75 MB per PDF. Replacing a published PDF emails active purchasers a secure link to the revised file.</div></div>
         <div class="field"><label for="cover">Cover image <span id="coverStatus"></span></label><input id="cover" type="file" accept="image/jpeg,image/png,image/webp"><div class="detail">Optional JPG, PNG or WebP, up to 6 MB. Visible publicly only when the product is published.</div></div>
-        <div class="actions"><button type="button" class="primary" id="draftBtn">Save draft</button><button type="button" class="gold" id="publishBtn">Publish product</button><button type="button" class="secondary" id="archiveBtn" disabled>Archive</button></div>
-        <p class="detail" style="margin-top:12px">Publishing makes a product visible in the publication desk. Items priced at $0.00 are publicly downloadable without checkout. Paid items use Stripe checkout when enabled. Publish only finished, authorized editions.</p>
+        <div class="field"><label for="scheduleAt">Scheduled release · Eastern Time</label><input id="scheduleAt" type="datetime-local" step="60"><div class="detail">Choose a future time in New York. The release is automatic. Avoid 1:00–1:59 AM on the fall daylight-saving change night.</div></div>
+        <div class="actions"><button type="button" class="primary" id="draftBtn">Save draft</button><button type="button" class="gold" id="publishBtn">Publish now</button><button type="button" class="gold" id="scheduleBtn">Schedule publication</button><button type="button" class="secondary" id="cancelScheduleBtn" hidden>Cancel scheduled release</button><button type="button" class="secondary" id="archiveBtn" disabled>Archive</button></div>
+        <p class="detail" style="margin-top:12px">Publishing now makes a finished PDF immediately available. A scheduled PDF stays out of the storefront, free download and checkout until its release time. To change a release, choose a new time and schedule again.</p>
       </form>
     </section>
     <aside>
@@ -147,6 +148,25 @@
   let products=[],currentId=null,busy=false,paymentMode='test';
   const message=(str,type='')=>{const n=$('notice');n.style.display='block';n.className='notice '+(type||'');n.textContent=str;};
   const money=n=>(n/100).toLocaleString('en-US',{style:'currency',currency:'USD'});
+  const easternParts=date=>{
+    const parts=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(date);
+    const field=k=>parts.find(p=>p.type===k)?.value||'';
+    return field('year')+'-'+field('month')+'-'+field('day')+'T'+field('hour')+':'+field('minute');
+  };
+  const localRelease=utc=>utc?easternParts(new Date(String(utc).replace(' ','T')+'Z')):'';
+  const pending=item=>Boolean(item&&item.status==='published'&&item.release_at&&Date.parse(item.release_at.replace(' ','T')+'Z')>Date.now());
+  const releaseUTC=value=>{
+    const match=String(value||'').match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/);
+    if(!match)throw Error('Choose an Eastern Time release date and time.');
+    const [y,m,d,h,min]=match.slice(1).map(Number);
+    const instant=Date.UTC(y,m-1,d,h,min);
+    const matches=[4,5].map(offset=>new Date(instant+offset*3600000)).filter(date=>easternParts(date)===value);
+    if(matches.length!==1)throw Error('That hour is skipped or repeated by daylight saving. Choose another Eastern Time.');
+    const scheduled=matches[0].getTime();
+    if(scheduled<Date.now()+60*1000)throw Error('Set the release at least one minute in the future.');
+    if(scheduled>Date.now()+366*86400*1000)throw Error('Set the release within the next year.');
+    return matches[0].toISOString().slice(0,19).replace('T',' ');
+  };
   const safeText=v=>String(v||'');
   const api=async(path,options={})=>{
     const r=await fetch(path,{credentials:'same-origin',cache:'no-store',...options});
@@ -158,41 +178,68 @@
     if(!r.ok)throw Error(data.error||('Request failed ('+r.status+')'));
     return data;
   };
-  function setBusy(value){busy=value;['draftBtn','publishBtn','archiveBtn','refreshBtn','newBtn'].forEach(id=>$(id).disabled=value||(id==='archiveBtn'&&!currentId));}
-  function reset(){currentId=null;$('editor-title').textContent='New publication';$('productForm').reset();$('price').value='9.99';$('pdfStatus').textContent='';$('coverStatus').textContent='';$('draftBtn').textContent='Save draft';setBusy(false);renderList();}
-  function edit(item){currentId=item.id;$('editor-title').textContent='Edit publication';$('title').value=safeText(item.title);$('category').value=item.category;$('raceDate').value=item.race_date||'';$('track').value=item.track||'';$('price').value=(item.price_cents/100).toFixed(2);$('description').value=item.description||'';$('pdf').value='';$('cover').value='';$('pdfStatus').textContent=item.pdf_key?'— Uploaded':'— Missing';$('coverStatus').textContent=item.image_url?'— Uploaded':'';$('draftBtn').textContent=item.status==='published'?'Save changes':'Save draft';setBusy(false);renderList();window.scrollTo({top:0,behavior:'smooth'});}
+  function setBusy(value){busy=value;['draftBtn','publishBtn','scheduleBtn','cancelScheduleBtn','archiveBtn','refreshBtn','newBtn'].forEach(id=>$(id).disabled=value||(id==='archiveBtn'&&!currentId)||(id==='cancelScheduleBtn'&&!pending(products.find(p=>p.id===currentId))));}
+  function reset(){currentId=null;$('editor-title').textContent='New publication';$('productForm').reset();$('price').value='9.99';$('scheduleAt').value='';$('pdfStatus').textContent='';$('coverStatus').textContent='';$('draftBtn').textContent='Save draft';$('cancelScheduleBtn').hidden=true;setBusy(false);renderList();}
+  function edit(item){currentId=item.id;$('editor-title').textContent='Edit publication';$('title').value=safeText(item.title);$('category').value=item.category;$('raceDate').value=item.race_date||'';$('track').value=item.track||'';$('price').value=(item.price_cents/100).toFixed(2);$('description').value=item.description||'';$('scheduleAt').value=localRelease(item.release_at);$('pdf').value='';$('cover').value='';$('pdfStatus').textContent=item.pdf_key?'— Uploaded':'— Missing';$('coverStatus').textContent=item.image_url?'— Uploaded':'';$('draftBtn').textContent=item.status==='published'?'Save changes':'Save draft';$('cancelScheduleBtn').hidden=!pending(item);setBusy(false);renderList();window.scrollTo({top:0,behavior:'smooth'});}
   function renderList(){const el=$('productList');el.replaceChildren();if(!products.length){let e=document.createElement('div');e.className='empty';e.textContent='No products yet. Start with your first race card.';el.append(e);return;}
-    for(const p of products){const b=document.createElement('button');b.type='button';b.className='product'+(p.id===currentId?' active':'');b.addEventListener('click',()=>edit(p));let name=document.createElement('strong');name.textContent=p.title;let status=document.createElement('em');status.className='pill '+(p.status==='published'?'published':'');status.textContent=p.status;name.append(status);let details=document.createElement('span');details.textContent=[p.category,p.race_date||'No date',money(p.price_cents),p.pdf_key?'PDF attached':'PDF missing'].join(' • ');b.append(name,details);el.append(b);}
+    for(const p of products){const b=document.createElement('button');b.type='button';b.className='product'+(p.id===currentId?' active':'');b.addEventListener('click',()=>edit(p));let name=document.createElement('strong');name.textContent=p.title;let status=document.createElement('em');status.className='pill '+(pending(p)?'scheduled':p.status==='published'?'published':'');status.textContent=pending(p)?'Scheduled':p.status;name.append(status);let details=document.createElement('span');details.textContent=[p.category,p.race_date||'No date',money(p.price_cents),p.pdf_key?'PDF attached':'PDF missing',pending(p)?'Release '+localRelease(p.release_at).replace('T',' ')+' ET':null].filter(Boolean).join(' • ');b.append(name,details);el.append(b);}
   }
   async function refresh(selectId){const data=await api('/api/admin/products');products=data.products||[];if(selectId){const item=products.find(p=>p.id===selectId);if(item)edit(item);}else renderList();}
   function payload(status){const priceText=$('price').value.trim();const dollars=Number(priceText);const cents=Math.round(dollars*100);if(!Number.isFinite(dollars)||dollars<0||Math.abs(dollars*100-cents)>1e-5)throw Error('Enter a valid price with at most two decimal places.');
-    return {title:$('title').value.trim(),category:$('category').value,race_date:$('raceDate').value||null,track:$('track').value.trim(),price_cents:cents,description:$('description').value.trim(),status};}
+    return {title:$('title').value.trim(),category:$('category').value,race_date:$('raceDate').value||null,track:$('track').value.trim(),price_cents:cents,description:$('description').value.trim(),status,release_at:null};}
   async function upload(id,file,type){if(!file)return;if(type==='pdf'&&file.size>75*1024*1024)throw Error('PDF exceeds 75 MB limit');if(type==='cover'&&file.size>6*1024*1024)throw Error('Cover exceeds 6 MB limit');
     const contentType=type==='pdf'?'application/pdf':file.type;
     await api('/api/admin/products/'+id+'/'+type,{method:'PUT',body:file,headers:{'Content-Type':contentType,'X-File-Size':String(file.size)}});
   }
-  async function save(status){if(busy)return;try{$('productForm').reportValidity();if(!$('productForm').checkValidity())return;setBusy(true);let data=payload('draft');
+  async function save(action){
+    if(busy)return;
+    try{
+      $('productForm').reportValidity();
+      if(!$('productForm').checkValidity())return;
       const current=products.find(p=>p.id===currentId);
-      // Never accidentally unpublish an existing product just because the user
-      // pressed Save draft on an edit. Explicit archive controls status.
-      if(status==='draft'&&current?.status==='published')data.status='published';
-      if(status==='archive')data.status='archived';
+      if(action==='scheduled'&&current?.status==='published'&&!pending(current))
+        throw Error('An already-live edition cannot be scheduled again. Create a new draft.');
+      const utcRelease=action==='scheduled'?releaseUTC($('scheduleAt').value):null;
+      setBusy(true);
+      const data=payload('draft');
+      if(action==='draft'&&current?.status==='published'){
+        data.status='published';data.release_at=current.release_at||null;
+      }
+      if(action==='scheduled'&&pending(current)){
+        // Keep the old release gate while uploading, then replace atomically.
+        data.status='published';data.release_at=current.release_at;
+      }
+      if(action==='archive'||action==='cancel'){
+        data.status=action==='archive'?'archived':'draft';data.release_at=null;
+      }
       let id=currentId;
-      if(!id){const result=await api('/api/admin/products',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});id=result.product.id;currentId=id;}
-      else await api('/api/admin/products/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+      if(!id){
+        const result=await api('/api/admin/products',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+        id=result.product.id;currentId=id;
+      }else await api('/api/admin/products/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
       const pdf=$('pdf').files[0],cover=$('cover').files[0];
       if(pdf){message('Uploading PDF securely…');await upload(id,pdf,'pdf');}
       if(cover){message('Uploading cover image…');await upload(id,cover,'cover');}
-      if(status==='published'||status==='archived'){
-        data.status=status;
+      if(action==='scheduled'||action==='published'){
+        data.status='published';
+        data.release_at=action==='scheduled'?utcRelease:null;
         await api('/api/admin/products/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
       }
       await refresh(id);
-      message(status==='published'?(paymentMode==='live'?'Published to the LIVE publication desk. Real payments are enabled.':paymentMode==='paused'?'Published product saved. Checkout is currently paused.':'Published to the sandbox publication desk. No real payments can be processed.'):status==='archive'?'Product archived.':'Draft saved successfully.','good');
-    }catch(e){message(e.message,'error');}finally{setBusy(false);}}
+      let msg;
+      if(action==='scheduled')msg='Scheduled for '+$('scheduleAt').value.replace('T',' ')+' Eastern Time. The product remains private until release.';
+      else if(action==='published')msg=paymentMode==='live'?'Published LIVE. Stripe checkout is active.':paymentMode==='paused'?'Published. Checkout remains paused.':'Published in test mode.';
+      else if(action==='archive')msg='Product archived.';
+      else if(action==='cancel')msg='Scheduled release cancelled; product returned to a private draft.';
+      else msg=pending(products.find(p=>p.id===id))?'Scheduled edition updated; release time unchanged.':'Draft saved successfully.';
+      message(msg,'good');
+    }catch(error){message(error.message,'error');}finally{setBusy(false);}
+  }
   $('newBtn').addEventListener('click',reset);
   $('draftBtn').addEventListener('click',()=>save('draft'));
   $('publishBtn').addEventListener('click',()=>save('published'));
+  $('scheduleBtn').addEventListener('click',()=>save('scheduled'));
+  $('cancelScheduleBtn').addEventListener('click',()=>{if(confirm('Cancel this scheduled release and return it to a private draft?'))save('cancel');});
   $('archiveBtn').addEventListener('click',()=>{if(confirm('Archive this product? It will no longer appear in the future storefront.'))save('archive');});
   $('refreshBtn').addEventListener('click',()=>refresh().catch(e=>message(e.message,'error')));
   api('/api/admin/status').then(r=>{paymentMode=r.payment_mode||'test';return refresh();}).catch(e=>message('Admin service unavailable: '+e.message,'error'));
