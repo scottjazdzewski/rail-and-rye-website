@@ -16,7 +16,7 @@ for(const [slug,category,chip] of expected){
  assert.ok(page.includes('data-publication-category="'+category+'"'));
  assert.ok(page.includes('/assets/approved/saddlecloths/'+chip+'.png'), 'Preserve approved saddlecloth '+chip);
  assert.ok(page.includes('id="rr-pub-recent"'),category+' needs recent-edition links');
- assert.ok(page.includes('publication-detail-v1.js?v=6'), 'New linked-edition script not cache-stale');
+ assert.ok(page.includes('publication-detail-v1.js?v=8'), 'New linked-edition script not cache-stale');
  assert.ok(page.includes('rail-rye-pages.css?v=43'), 'New scoped layout not cache-stale');
  assert.ok(page.includes('class="rr-racecards-purchase-rail"'), 'Keep the approved hero rail');
  assert.ok(page.includes('href="/store/?category='+category.replaceAll(' ','%20')+'"'), 'Keep category browse link');
