@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import {readFileSync,readdirSync} from 'node:fs';
 import vm from 'node:vm';
-import {PREVIEW_LIVE_FEEDS,handleRacingWire,handlePreviewRacingWire,previewExternalItems,parseRacingRss,categorize,refreshRacingWire,testPreviewRssFeeds,groupRacingWireStories,curateRacingWireStories,scoreRacingWireItem,subjectKind,socialPreview} from './src/racing-wire.js';
+import {PREVIEW_LIVE_FEEDS,handleRacingWire,handlePreviewRacingWire,handleAdminRacingWire,previewExternalItems,parseRacingRss,categorize,refreshRacingWire,testPreviewRssFeeds,groupRacingWireStories,curateRacingWireStories,scoreRacingWireItem,subjectKind,socialPreview} from './src/racing-wire.js';
 const db=new DatabaseSync(':memory:');
 db.exec("CREATE TABLE journal_articles (id TEXT PRIMARY KEY,slug TEXT,title TEXT,category TEXT,excerpt TEXT,publish_date TEXT,status TEXT,created_at TEXT);");
 db.prepare("INSERT INTO journal_articles VALUES (?,?,?,?,?,?,?,?)").run(
@@ -13,7 +13,13 @@ db.prepare("INSERT INTO journal_articles VALUES (?,?,?,?,?,?,?,?)").run(
  'three','horse-update','Horse retires after big stakes','Horses','An archived story must stay hidden.','2026-10-30','archived','2026-10-30 12:00:00');
 const STORE_DB={prepare(sql){
  const statement=db.prepare(sql);
- return {all(){return {results:statement.all()}}};
+ const bound=(args=[])=>({
+   bind(...next){return bound(next)},
+   all(){return {results:statement.all(...args)}},
+   first(){return statement.get(...args)||null},
+   run(){statement.run(...args);return {success:true}}
+ });
+ return bound();
 }};
 const env={STORE_DB,RR_SOCIAL_FEEDS:'off'};
 const root='https://railandryeracing.com/api/racing-wire';
@@ -29,6 +35,43 @@ assert.equal(body.source_count,0,'No unlicensed external publisher enabled by de
 assert.ok(!JSON.stringify(body).includes('private-draft'));
 assert.ok(!JSON.stringify(body).includes('horse-update'));
 assert.equal((await handleRacingWire(new Request(root,{method:'POST'}),env)).status,405);
+
+const adminFeedFetch=async url=>{
+ const feed=PREVIEW_LIVE_FEEDS.find(x=>x.url===url);
+ if(!feed)return new Response('',{status:404});
+ if(feed.id!=='tdn-all')return new Response('<rss><channel></channel></rss>',{status:200,headers:{'Content-Type':'application/rss+xml'}});
+ const xml='<rss><channel><item><title>Breeders Cup Classic contender scratched after health concern</title><link>https://www.thoroughbreddailynews.com/story/editorial-test</link><category>Breeders Cup</category><pubDate>Sat, 31 Oct 2026 16:00:00 GMT</pubDate></item></channel></rss>';
+ return new Response(xml,{status:200,headers:{'Content-Type':'application/rss+xml'}});
+};
+const adminUrl='https://railandryeracing.com/api/admin/racing-wire-editorial';
+let adminWire=await handleAdminRacingWire(new Request(adminUrl),env,adminFeedFetch);
+assert.equal(adminWire.status,200);
+let adminWireBody=await adminWire.json();
+const controlled=adminWireBody.items.find(x=>x.url==='https://www.thoroughbreddailynews.com/story/editorial-test');
+assert.ok(controlled,'Admin Racing Wire lists current curated stories');
+assert.ok(adminWireBody.categories.includes('Sales / Auctions'),'Admin Racing Wire exposes approved category choices');
+const patchEditorial=async payload=>handleAdminRacingWire(new Request(adminUrl,{method:'PATCH',headers:{
+ 'Content-Type':'application/json','Origin':'https://railandryeracing.com','Sec-Fetch-Site':'same-origin'
+},body:JSON.stringify(payload)}),env,adminFeedFetch);
+adminWire=await patchEditorial({story_url:controlled.url,action:'top'});
+adminWireBody=await adminWire.json();
+assert.equal(adminWireBody.items.find(x=>x.url===controlled.url).editorial.placement,'top','Owner can pin a Top Story');
+adminWire=await patchEditorial({story_url:controlled.url,action:'category',category:'Sales / Auctions'});
+adminWireBody=await adminWire.json();
+assert.equal(adminWireBody.items.find(x=>x.url===controlled.url).category,'Sales / Auctions','Owner category override is applied');
+assert.equal(adminWireBody.items.find(x=>x.url===controlled.url).subject_kind,'sale','Category override also changes topic badge/filter');
+adminWire=await patchEditorial({story_url:controlled.url,action:'hide'});
+adminWireBody=await adminWire.json();
+assert.equal(adminWireBody.items.find(x=>x.url===controlled.url).editorial.hidden,true,'Hidden story remains visible to admin for restoration');
+const publicAfterHide=await handlePreviewRacingWire(new Request('https://railandryeracing.com/api/preview/racing-wire-5333548f0ffee31ba519b2470ffb'),env,adminFeedFetch);
+assert.ok(!(await publicAfterHide.json()).items.some(x=>x.url===controlled.url),'Hidden story is removed from Page 8 preview');
+adminWire=await patchEditorial({story_url:controlled.url,action:'restore'});
+adminWireBody=await adminWire.json();
+const restored=adminWireBody.items.find(x=>x.url===controlled.url);
+assert.equal(restored.editorial.placement,'auto');
+assert.equal(restored.editorial.category_override,null);
+assert.equal(restored.editorial.hidden,false,'Restore automatic clears all story overrides');
+assert.equal((await handleAdminRacingWire(new Request(adminUrl,{method:'PATCH',headers:{'Content-Type':'application/json'},body:'{}'}),env,adminFeedFetch)).status,403,'Editorial writes require same-origin requests');
 assert.deepEqual(await refreshRacingWire(env),{checked:0,added:0},
  'No external feed requests are made without explicit publisher authorization');
 assert.equal(categorize('Jockey loses mount'),'Jockeys');
@@ -288,6 +331,7 @@ assert.ok(wirePage.includes('<main class="wrap heritage-shell">'),'News body use
 assert.ok(wirePage.includes('id="allNews"')&&wirePage.includes('aria-pressed="true">All News</button>'),'All News has an explicit filter control');
 assert.ok(wirePage.includes('id="leadSection"')&&wirePage.includes('Top Story'),'High-value stories have a lead-story presentation');
 assert.ok(wirePage.includes('id="secondarySection"')&&wirePage.includes('More to Know'),'Racing Wire has a secondary visual-story tier beneath the lead story');
+assert.ok(wirePage.includes("x.editorial?.placement==='top'")&&wirePage.includes("x.editorial?.placement==='more'"),'Page 8 honors owner Top Story and More to Know overrides');
 assert.ok(wirePage.includes(".slice(0,3)")&&wirePage.includes("secondary-story"),'Secondary tier promotes at most three image-backed stories');
 assert.ok(wirePage.includes("storyCard(x,false,false)"),'Stories below the promoted tier return to compact badge cards');
 assert.ok(!wirePage.includes('function priorityFor(x)')&&!wirePage.includes('wire-urgent')&&!wirePage.includes('priority-label'),'Urgency experiment is fully removed from the compact wire');
@@ -383,6 +427,7 @@ assert.equal((await siteWorker.fetch(new Request('https://railandryeracing.com'+
  {method:'HEAD'}),{ASSETS:mockAssets},{})).status,200);
 
 const router=readFileSync(new URL('./src/index.js',import.meta.url),'utf8');
+assert.ok(router.includes("handleAdminRacingWire")&&router.includes("path===\"/api/admin/racing-wire-editorial\""),'Racing Wire editorial API is routed only through the authenticated admin namespace');
 assert.ok(router.includes("const previewApi='/api/preview/racing-wire-5333548f0ffee31ba519b2470ffb'"),'Only exact unlisted API path exists');
 assert.ok(router.includes("path===previewApi+'/feed-test'")&&router.includes('testPreviewRssFeeds'),'Real-feed test endpoint stays under the unlisted preview namespace');
 assert.ok(router.includes("const previewSlug='/preview/racing-wire-5333548f0ffee31ba519b2470ffb/'"),'Only exact unlisted web path exists');
@@ -400,6 +445,8 @@ assert.ok(!home.includes('/racing-wire/'),'No public navigation pill until expli
 const wrangler=readFileSync(new URL('./wrangler.jsonc',import.meta.url),'utf8');
 assert.ok(wrangler.includes('"/preview/*"'),'Preview URL reaches Worker for exact route handling');
 const publisherDesk=readFileSync(new URL('./public/admin/index.html',import.meta.url),'utf8');
+assert.ok(publisherDesk.includes('id="racing-wire-editor"')&&publisherDesk.includes('Pin Top Story')&&publisherDesk.includes('Promote to More to Know')&&publisherDesk.includes('Restore automatic'),'Publisher Desk exposes Racing Wire editorial controls');
+assert.ok(publisherDesk.includes("/api/admin/racing-wire-editorial"),'Publisher Desk uses the authenticated Racing Wire editorial endpoint');
 assert.ok(publisherDesk.includes('/preview/racing-wire-5333548f0ffee31ba519b2470ffb/'),'Publisher Desk offers owner a working shareable preview link');
 assert.ok(!home.includes('racing-wire-5333548f0ffee31ba519b2470ffb'),'No public homepage preview link');
 assert.ok(!wirePage.includes('OWNER ACCESS ONLY'),'Viewer sign-in is not required');
