@@ -27,6 +27,16 @@ jobs:
         run: node --experimental-sqlite test-free-downloads.mjs
       - name: Scheduled publication embargo and automatic release tests
         run: node --experimental-sqlite test-scheduled-publications.mjs
+      - name: Validate final International Racing Wire gate
+        run: |
+          node --experimental-sqlite test-racing-wire.mjs
+          node --input-type=module <<'NODE'
+          import {previewExternalItems,curateRacingWireStories} from './src/racing-wire.js';
+          const external=await previewExternalItems(fetch);
+          const curated=curateRacingWireStories(external.items);
+          const intl=curated.filter(x=>x.category==='International'||/japan|melbourne|dubai|saudi|ascot|ireland|france|hong kong/i.test(x.title)).map(x=>({source:x.source,title:x.title,category:x.category,score:x.editorial_score}));
+          console.log('FINAL_INTL '+JSON.stringify(intl));
+          NODE
       - name: Multi-collection bundle listing tests
         run: node --experimental-sqlite test-bundle-category-placement.mjs
       - name: Compact Publisher desktop layout and control regression
