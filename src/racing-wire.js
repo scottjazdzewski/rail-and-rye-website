@@ -703,7 +703,7 @@ const HARD_REJECT_PATTERNS=[
  /\b(?:betting odds?|odds and|favorites? and how to bet|how to bet)\b/i,
  /\b(?:promo code|bonus bets?|sportsbook|racebook|off[- ]?track betting|otb|advance deposit wagering|\badw\b|parlay|rebates?)\b/i,
  /\b(?:handicapper|handicapping plays?|wagering tips?|betting strategy|how to wager|how to bet)\b/i,
- /\b(?:harness|standardbred|steeplechase|steeplechaser|jump racing|national hunt|trotting|trotter|trotters|pacing|pacer|pacers|hambletonian|meadowlands|yonkers raceway|woodbine mohawk|mohawk park)\b/i,
+ /\b(?:harness|standardbred|steeplechase|steeplechaser|jump racing|national hunt|trotting|trotter|trotters|pacing|pacer|pacers|hambletonian|meadowlands|yonkers raceway|woodbine mohawk|mohawk park|kentucky sire stakes|kentucky sires stakes|cumberland run late sire stakes)\b/i,
  /\bhistory:\s*(?:winners?|losers?|betting|odds)/i
 ];
 const MAJOR_EVENT_RE=/\b(breeders.? cup|kentucky derby|preakness|belmont stakes|travers|pegasus world cup|dubai world cup|melbourne cup|prix de l.?arc de triomphe|japan cup|cox plate|eclipse stakes|royal ascot|kentucky oaks)\b/i;
