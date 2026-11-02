@@ -27,6 +27,15 @@ jobs:
         run: node --experimental-sqlite test-free-downloads.mjs
       - name: Scheduled publication embargo and automatic release tests
         run: node --experimental-sqlite test-scheduled-publications.mjs
+      - name: Audit Racing Wire near-miss stories
+        run: |
+          node --input-type=module <<'NODE'
+          import {previewExternalItems,groupRacingWireStories,scoreRacingWireItem} from './src/racing-wire.js';
+          const external=await previewExternalItems(fetch);
+          const grouped=groupRacingWireStories(external.items);
+          const rows=grouped.map(x=>({x,s:scoreRacingWireItem(x)})).filter(r=>!r.s.reject&&r.s.score>=58&&r.s.score<66).sort((a,b)=>b.s.score-a.s.score||Date.parse(b.x.published_at)-Date.parse(a.x.published_at));
+          console.log('NEAR_MISSES '+JSON.stringify(rows.map(r=>({score:r.s.score,source:r.x.source,title:r.x.title,category:r.x.category,date:r.x.published_at}))));
+          NODE
       - name: Multi-collection bundle listing tests
         run: node --experimental-sqlite test-bundle-category-placement.mjs
       - name: Compact Publisher desktop layout and control regression
