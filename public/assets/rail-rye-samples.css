@@ -55,7 +55,7 @@
 .rr-anatomy-visual{position:relative;margin-left:29px;border:1px solid rgba(176,132,65,.7);border-radius:5px;background:#fffdf7;box-shadow:0 20px 42px rgba(12,29,39,.19),0 4px 12px rgba(12,29,39,.1)}
 .rr-anatomy-visual img{display:block;width:100%;height:auto;border-radius:4px}
 .rr-anatomy-pin{position:absolute;left:-30px;display:grid;place-items:center;width:26px;height:26px;border:1px solid #e2bc70;border-radius:50%;background:#09283a;color:#f7e5c4;font:800 11px/1 var(--heritage-sans);box-shadow:0 0 0 3px rgba(255,251,241,.95),0 5px 13px rgba(10,27,38,.35);z-index:2}
-.rr-anatomy-pin:after{position:absolute;content:"";left:23px;top:11px;width:14px;height:2px;background:#c99546;box-shadow:0 1px 4px rgba(20,30,34,.35)}
+.rr-anatomy-pin:before{position:absolute;content:"";left:12px;top:24px;width:1px;height:7px;background:#bd8840}.rr-anatomy-pin:after{position:absolute;content:"";left:12px;top:30px;width:25px;height:1px;background:#bd8840;box-shadow:none}
 .rr-anatomy-pin--one{top:4.7%}
 .rr-anatomy-pin--two{top:19%}
 .rr-anatomy-pin--three{top:30%}
@@ -75,7 +75,7 @@
 .rr-samples-disclaimer{margin-top:18px;padding-left:2px}
 @media(max-width:900px){.rr-anatomy-card{grid-template-columns:minmax(220px,.75fr) minmax(0,1.25fr);gap:25px}.rr-anatomy-figure figcaption{align-items:flex-start;flex-direction:column;gap:4px}}
 @media(max-width:640px){.rr-anatomy-card{grid-template-columns:1fr;gap:25px;padding:22px 19px}.rr-anatomy-card--reverse .rr-anatomy-figure,.rr-anatomy-card--reverse .rr-anatomy-copy{order:initial}.rr-anatomy-figure{max-width:390px}.rr-anatomy-copy h3{font-size:35px}.rr-anatomy-intro{font-size:13px;line-height:1.7}.rr-anatomy-notes p{font-size:12px}.rr-anatomy-figure figcaption{flex-direction:row;align-items:center;flex-wrap:wrap}.rr-sample-showcases{gap:17px}}
-@media(max-width:390px){.rr-anatomy-card{padding:19px 15px}.rr-anatomy-visual{margin-left:25px}.rr-anatomy-pin{left:-26px;width:23px;height:23px}.rr-anatomy-pin:after{left:20px;top:10px;width:12px}.rr-anatomy-figure figcaption{margin-left:25px}.rr-anatomy-figure figcaption span{font-size:7px}.rr-anatomy-copy h3{font-size:32px}}
+@media(max-width:390px){.rr-anatomy-card{padding:19px 15px}.rr-anatomy-visual{margin-left:25px}.rr-anatomy-pin{left:-26px;width:23px;height:23px}.rr-anatomy-pin:before{left:11px;top:21px;height:6px}.rr-anatomy-pin:after{left:11px;top:26px;width:23px}.rr-anatomy-figure figcaption{margin-left:25px}.rr-anatomy-figure figcaption span{font-size:7px}.rr-anatomy-copy h3{font-size:32px}}
 
 .rr-anatomy-visual--longshot .rr-anatomy-pin--one{top:15.5%}
 .rr-anatomy-visual--longshot .rr-anatomy-pin--two{top:20.3%}
