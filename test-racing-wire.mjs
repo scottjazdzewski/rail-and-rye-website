@@ -319,6 +319,15 @@ const routineInternational=scoreRacingWireItem({
 assert.equal(routineInternational.reject,true,'Routine foreign racing is filtered out for a North American audience');
 assert.equal(routineInternational.reason,'international-low-relevance');
 
+const selectiveExpansion=curateRacingWireStories([
+ {title:'Unrivaled Time prevails in Grade II Twilight Derby',source:'Santa Anita',category:'Stakes',subject_kind:'race',published_at:date,url:'https://example.com/g2'},
+ {title:'Ten Major Takeaways You Need to Know From the Breeders Cup',source:"America's Best Racing",category:'Stakes',subject_kind:'race',published_at:date,url:'https://example.com/takeaways'},
+ {title:'Belmont: Paradise Valley wins Sunday stakes',source:'Horse Racing Nation',category:'Stakes',subject_kind:'race',published_at:date,url:'https://example.com/routine'}
+],{maxItems:10});
+assert.ok(selectiveExpansion.some(x=>x.title.includes('Grade II Twilight Derby')&&x.editorial_tier==='expanded'),'Graded result can enter through the selective expanded gate');
+assert.ok(!selectiveExpansion.some(x=>/Takeaways/i.test(x.title)),'Listicle recap is rejected rather than admitted by the expanded gate');
+assert.ok(!selectiveExpansion.some(x=>/Paradise Valley/i.test(x.title)),'Routine minor stakes result does not enter through the expanded gate');
+
 const superficialInternational=scoreRacingWireItem({
  title:'Melbourne Cup Links Bolster Goffs Autumn Catalog',source:'BloodHorse',
  category:'Sales / Auctions',published_at:date
@@ -496,7 +505,7 @@ assert.ok(wirePage.includes('.item .emblem{width:88px;height:88px'),
  'News-card badges are enlarged on desktop');
 assert.ok(!wirePage.includes('const shapes={')&&!wirePage.includes("el.innerHTML='<svg"),
  'Temporary inline SVG badge system is completely removed');
-assert.ok(wirePage.includes("/assets/approved/racing-wire/badges/'+safe+'.png?v=11"),
+assert.ok(wirePage.includes("/assets/approved/racing-wire/badges/'+safe+'.png?v=12"),
  'All Racing Wire badges, including International, use the same approved PNG rendering path');
 assert.ok(!wirePage.includes('breeding-dna-v2.svg')&&!wirePage.includes("kind==='breeding'"),
  'No custom breeding badge renderer or replacement SVG can override the approved family');
