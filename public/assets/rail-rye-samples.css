@@ -44,3 +44,48 @@
 @media(max-width:900px){.rr-samples-intro{grid-template-columns:1fr;align-items:start}.rr-samples-note{max-width:440px}.rr-samples-section-head{display:block}.rr-samples-section-head>p{margin-top:13px}.rr-samples-grid{gap:13px}}
 @media(max-width:640px){.rr-samples-main{padding-top:22px}.rr-samples-page .rr-breadcrumb{margin-bottom:24px;font-size:9px}.rr-samples-intro{gap:22px;padding-bottom:30px}.rr-samples-intro h1{font-size:clamp(41px,11vw,58px);line-height:1.01;margin:13px 0 17px}.rr-samples-intro-copy>p{font-size:13px;line-height:1.65}.rr-samples-note{padding:18px 19px}.rr-samples-note strong{font-size:26px}.rr-samples-section{padding-top:33px}.rr-samples-section-head h2{font-size:31px}.rr-samples-grid{grid-template-columns:1fr;gap:12px}.rr-sample-card{padding:22px 20px}.rr-sample-card h3{font-size:34px}.rr-sample-lead{min-height:0}.rr-samples-close{align-items:flex-start;flex-direction:column}.rr-sample-link--light{align-self:flex-start}}
 @media(max-width:390px){.rr-samples-intro h1{font-size:39px}.rr-samples-note strong{font-size:23px}.rr-sample-card{padding:20px 17px}.rr-sample-question{grid-template-columns:1fr;gap:6px}}
+
+.rr-samples-section-head h2{max-width:620px}
+.rr-samples-section-head>p{max-width:390px}
+.rr-sample-showcases{display:grid;gap:24px}
+.rr-anatomy-card{display:grid;grid-template-columns:minmax(270px,.78fr) minmax(0,1.22fr);align-items:center;gap:clamp(28px,5vw,72px);padding:clamp(22px,3vw,40px);border:1px solid #c4a36c;border-radius:11px;background:rgba(255,251,241,.94);box-shadow:0 16px 34px rgba(33,27,18,.1),inset 0 0 0 4px rgba(214,184,129,.14);scroll-margin-top:24px}
+.rr-anatomy-card--reverse .rr-anatomy-figure{order:2}
+.rr-anatomy-card--reverse .rr-anatomy-copy{order:1}
+.rr-anatomy-figure{width:100%;max-width:405px;margin:0 auto}
+.rr-anatomy-visual{position:relative;margin-left:29px;border:1px solid rgba(176,132,65,.7);border-radius:5px;background:#fffdf7;box-shadow:0 20px 42px rgba(12,29,39,.19),0 4px 12px rgba(12,29,39,.1)}
+.rr-anatomy-visual img{display:block;width:100%;height:auto;border-radius:4px}
+.rr-anatomy-pin{position:absolute;left:-30px;display:grid;place-items:center;width:26px;height:26px;border:1px solid #e2bc70;border-radius:50%;background:#09283a;color:#f7e5c4;font:800 11px/1 var(--heritage-sans);box-shadow:0 0 0 3px rgba(255,251,241,.95),0 5px 13px rgba(10,27,38,.35);z-index:2}
+.rr-anatomy-pin:after{position:absolute;content:"";left:23px;top:11px;width:14px;height:2px;background:#c99546;box-shadow:0 1px 4px rgba(20,30,34,.35)}
+.rr-anatomy-pin--one{top:4.7%}
+.rr-anatomy-pin--two{top:19%}
+.rr-anatomy-pin--three{top:30%}
+.rr-anatomy-figure figcaption{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:13px 0 0 29px;color:#80653d;font:800 8px/1.5 var(--heritage-sans);letter-spacing:.08em;text-transform:uppercase}
+.rr-anatomy-figure figcaption a{flex:0 0 auto;color:#805623;text-decoration:none;font:700 9px/1.4 var(--heritage-sans);letter-spacing:0;text-transform:none}
+.rr-anatomy-figure figcaption a:hover{text-decoration:underline;text-underline-offset:3px}
+.rr-anatomy-copy{max-width:620px}
+.rr-anatomy-heading{display:flex;align-items:center;gap:11px;margin-bottom:15px}
+.rr-anatomy-copy h3{margin:0;color:#17384a;font:500 clamp(31px,3.3vw,45px)/1.06 var(--heritage-serif);letter-spacing:-.012em}
+.rr-anatomy-intro{margin:13px 0 20px;color:#475a5f;font:500 14px/1.72 var(--heritage-sans)}
+.rr-anatomy-notes{list-style:none;display:grid;margin:0;padding:0;border-top:1px solid rgba(182,151,99,.55)}
+.rr-anatomy-notes li{display:grid;grid-template-columns:31px minmax(0,1fr);gap:12px;padding:14px 0;border-bottom:1px solid rgba(182,151,99,.4)}
+.rr-anatomy-note-no{display:grid;place-items:center;width:25px;height:25px;border:1px solid #c5a164;border-radius:50%;background:#f3e8d3;color:#7b5522;font:800 10px/1 var(--heritage-sans);box-shadow:0 2px 6px rgba(34,35,30,.1)}
+.rr-anatomy-notes h4{margin:0;color:#213f4b;font:800 10px/1.45 var(--heritage-sans);letter-spacing:.09em;text-transform:uppercase}
+.rr-anatomy-notes p{margin:4px 0 0;color:#506167;font:500 12px/1.6 var(--heritage-sans)}
+.rr-anatomy-copy .rr-sample-link{margin-top:20px}
+.rr-stable-notes{display:grid;grid-template-columns:minmax(170px,.55fr) minmax(0,1.55fr) auto;align-items:center;gap:24px;margin-top:24px;padding:22px 26px;border:1px solid #b9975c;border-radius:9px;background:#0a2636;color:#f3e7d0;box-shadow:inset 0 0 0 4px rgba(232,195,124,.055)}
+.rr-stable-notes .rr-samples-kicker{color:#e8bb70}
+.rr-stable-notes h3{margin:6px 0 0;color:#f5e9d4;font:500 28px/1.05 var(--heritage-serif)}
+.rr-stable-notes p{margin:0;color:#e0d3bd;font:500 12px/1.65 var(--heritage-sans)}
+.rr-stable-notes>a{color:#f1c776;text-decoration:none;font:800 9px/1.4 var(--heritage-sans);letter-spacing:.07em;text-transform:uppercase;white-space:nowrap}
+.rr-stable-notes>a:hover{text-decoration:underline;text-underline-offset:4px}
+.rr-samples-disclaimer{margin-top:18px;padding-left:2px}
+@media(max-width:900px){.rr-anatomy-card{grid-template-columns:minmax(220px,.75fr) minmax(0,1.25fr);gap:25px}.rr-anatomy-figure figcaption{align-items:flex-start;flex-direction:column;gap:4px}.rr-stable-notes{grid-template-columns:1fr 2fr;gap:13px 22px}.rr-stable-notes>a{grid-column:2}}
+@media(max-width:640px){.rr-anatomy-card{grid-template-columns:1fr;gap:25px;padding:22px 19px}.rr-anatomy-card--reverse .rr-anatomy-figure,.rr-anatomy-card--reverse .rr-anatomy-copy{order:initial}.rr-anatomy-figure{max-width:390px}.rr-anatomy-copy h3{font-size:35px}.rr-anatomy-intro{font-size:13px;line-height:1.7}.rr-anatomy-notes p{font-size:12px}.rr-anatomy-figure figcaption{flex-direction:row;align-items:center;flex-wrap:wrap}.rr-stable-notes{grid-template-columns:1fr;gap:12px;padding:21px 20px}.rr-stable-notes>a{grid-column:auto;white-space:normal}.rr-sample-showcases{gap:17px}}
+@media(max-width:390px){.rr-anatomy-card{padding:19px 15px}.rr-anatomy-visual{margin-left:25px}.rr-anatomy-pin{left:-26px;width:23px;height:23px}.rr-anatomy-pin:after{left:20px;top:10px;width:12px}.rr-anatomy-figure figcaption{margin-left:25px}.rr-anatomy-figure figcaption span{font-size:7px}.rr-anatomy-copy h3{font-size:32px}}
+
+.rr-anatomy-visual--longshot .rr-anatomy-pin--one{top:15.5%}
+.rr-anatomy-visual--longshot .rr-anatomy-pin--two{top:20.3%}
+.rr-anatomy-visual--longshot .rr-anatomy-pin--three{top:25.5%}
+.rr-anatomy-visual--target-list .rr-anatomy-pin--one{top:21.5%}
+.rr-anatomy-visual--target-list .rr-anatomy-pin--two{top:28%}
+.rr-anatomy-visual--target-list .rr-anatomy-pin--three{top:36%}
