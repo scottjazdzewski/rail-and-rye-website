@@ -302,6 +302,19 @@ assert.ok(scoreRacingWireItem({
  category:'Industry',published_at:date
 }).score>=70,'Breeders Cup attendance/handle metrics qualify as material industry news');
 
+const majorInternational=scoreRacingWireItem({
+ title:'Danon Decile Wins Tenno Sho, Japan Cup Looms',source:'BloodHorse',
+ category:'International',published_at:date
+});
+assert.equal(majorInternational.reject,false,'Major international races can enter the North American Racing Wire');
+assert.ok(majorInternational.score>=78,'Major international championship-level coverage clears the relevance bar');
+const routineInternational=scoreRacingWireItem({
+ title:'Japan Allowance Results from Tokyo Sunday',source:'International Racing Desk',
+ category:'International',published_at:date
+});
+assert.equal(routineInternational.reject,true,'Routine foreign racing is filtered out for a North American audience');
+assert.equal(routineInternational.reason,'international-low-relevance');
+
 const floodTitles=[
  'Horse A scratched from Breeders Cup Classic',
  'Horse B injured before Breeders Cup Turf',
@@ -384,6 +397,7 @@ assert.equal(subjectKind('Jockey makes return'),'jockey');
 assert.equal(subjectKind('Scratch in Breeders Cup Classic'),'race');
 assert.equal(subjectKind('New York racing update'),'race');
 assert.equal(subjectKind('Update','Owners'),'owner');
+assert.equal(subjectKind('Japan Cup update','International'),'international');
 const longPost='Trainer confirms the colt has arrived at the track. A final workout is planned for the morning and a decision will follow. Further information about the horse will be shared after the next examination.';
 const preview=socialPreview(longPost);
 assert.ok(preview.title.startsWith('Trainer confirms the colt'));
@@ -392,13 +406,14 @@ assert.ok(!preview.summary.includes('imagined'));
 assert.equal(socialPreview('Short original post').title,'Short original post');
 assert.equal(socialPreview('Short original post').summary,'');
 const wirePage=readFileSync(new URL('./public/preview/racing-wire-5333548f0ffee31ba519b2470ffb/index.html',import.meta.url),'utf8');
-for(const type of ['horse','owner','trainer','jockey','race','stable','racetrack','breeding','sale','regulatory','achievement','industry']){
+for(const type of ['horse','owner','trainer','jockey','race','stable','racetrack','breeding','sale','regulatory','achievement','industry','international']){
  assert.ok(wirePage.includes("'"+type+"'"), 'Approved subject filter and badge kind configured: '+type);
 }
 assert.ok(wirePage.includes('Source: '),'Source attribution exists');
 assert.ok(wirePage.includes("category.className='category-pill'")&&wirePage.includes("tags.className='story-tags'"),'Every Racing Wire story renders a right-side category tag');
 assert.ok(wirePage.includes("if(x.type&&x.type!==x.category)")&&wirePage.includes("typ.className='type-pill'"),'Specific event tags remain available beneath the category tag without duplicating it');
 assert.ok(wirePage.includes('.story-tags{display:flex;flex-direction:column;align-items:flex-end'), 'Desktop story tags stay aligned to the right edge');
+assert.ok(wirePage.includes('.item>.story-tags{grid-column:2;justify-self:start;align-items:flex-start;max-width:100%;min-width:0}'), 'Mobile category and event pills remain inside the story card');
 assert.ok(!wirePage.includes('bsky.app'),'Preview contains no Blue Sky source links');
 assert.ok(wirePage.includes('Also reported by:'),'UI offers linked alternate sources when one event has several reports');
 assert.ok(!wirePage.includes('TRENDING TOPICS'),'Trending Topics sidebar removed');
@@ -471,20 +486,20 @@ assert.ok(wirePage.includes('.item .emblem{width:88px;height:88px'),
  'News-card badges are enlarged on desktop');
 assert.ok(!wirePage.includes('const shapes={')&&!wirePage.includes("el.innerHTML='<svg"),
  'Temporary inline SVG badge system is completely removed');
-assert.ok(wirePage.includes("/assets/approved/racing-wire/badges/'+safe+'.png?v=10"),
- 'All twelve badges, including breeding, use the same approved PNG rendering path');
+assert.ok(wirePage.includes("/assets/approved/racing-wire/badges/'+safe+'.png?v=11"),
+ 'All Racing Wire badges, including International, use the same approved PNG rendering path');
 assert.ok(!wirePage.includes('breeding-dna-v2.svg')&&!wirePage.includes("kind==='breeding'"),
  'No custom breeding badge renderer or replacement SVG can override the approved family');
 assert.ok(!wirePage.includes('badges.webp')&&!wirePage.includes('.badge-horse{background-position')&&!wirePage.includes('.badge-achievement{background-position'),
  'Old badge sprite and badge-specific sprite-position rules are removed');
-const approvedBadgeFiles=['achievement.png','breeding.png','horse.png','industry.png','jockey.png','owner.png','race.png','racetrack.png','regulatory.png','sale.png','stable.png','trainer.png'];
+const approvedBadgeFiles=['achievement.png','breeding.png','horse.png','industry.png','international.png','jockey.png','owner.png','race.png','racetrack.png','regulatory.png','sale.png','stable.png','trainer.png'];
 const badgeDirectory=readdirSync(new URL('./public/assets/approved/racing-wire/badges/',import.meta.url)).sort();
 assert.deepEqual(badgeDirectory,approvedBadgeFiles,
- 'Badge directory contains exactly the 12 approved PNGs and no legacy/sprite/SVG assets');
-for(const badge of ['horse','jockey','trainer','owner','stable','race','racetrack','breeding','sale','industry','regulatory','achievement']){
+ 'Badge directory contains exactly the approved PNG set and no legacy/sprite/SVG assets');
+for(const badge of ['horse','jockey','trainer','owner','stable','race','racetrack','breeding','sale','industry','regulatory','achievement','international']){
  const badgeAsset=readFileSync(new URL('./public/assets/approved/racing-wire/badges/'+badge+'.png',import.meta.url));
  assert.equal(badgeAsset.subarray(0,8).toString('hex'),'89504e470d0a1a0a','Approved '+badge+' badge is a real PNG');
- assert.ok(badgeAsset.length>8000,'Approved '+badge+' badge is full-resolution artwork from the approved master set');
+ assert.ok(badgeAsset.length>(badge==='international'?1200:8000),'Approved '+badge+' badge is a usable PNG asset from the approved badge family');
 }
 const breedingBadge=readFileSync(new URL('./public/assets/approved/racing-wire/badges/breeding.png',import.meta.url));
 assert.equal(breedingBadge.subarray(0,8).toString('hex'),'89504e470d0a1a0a',
