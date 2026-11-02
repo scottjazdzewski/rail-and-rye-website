@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#071a2c">
-<meta name="description" content="A clear guide to Rail &amp; Rye Race Cards, Longshot Radar, Stable Notes and Target List: what each publication covers and what to expect.">
+<meta name="description" content="Inside Rail &amp; Rye Race Cards, Longshot Radar and Target List: annotated sample pages and a detailed guide to the Race Card model.">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Publication Samples | Rail &amp; Rye Racing">
-<meta property="og:description" content="See what each Rail &amp; Rye publication covers and what to expect inside a typical edition.">
+<meta property="og:description" content="Explore annotated examples of our flagship Race Cards, Longshot Radar and Target List.">
 <meta property="og:image" content="https://railandryeracing.com/assets/approved/home/hero-dust-charged-finish.jpg">
 <link rel="canonical" href="https://railandryeracing.com/samples/">
 <title>Publication Samples | Rail &amp; Rye Racing</title>
@@ -15,7 +15,7 @@
 <link rel="stylesheet" href="/assets/rail-rye-core.css?v=12">
 <link rel="stylesheet" href="/assets/rail-rye-components.css?v=9">
 <link rel="stylesheet" href="/assets/rail-rye-pages.css?v=53">
-<link rel="stylesheet" href="/assets/rail-rye-samples.css?v=2">
+<link rel="stylesheet" href="/assets/rail-rye-samples.css?v=3">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 </head>
@@ -37,9 +37,9 @@
     <p>Each Rail &amp; Rye publication answers a different racing question. Explore what a typical edition covers, how its analysis is organized and what to expect before choosing an edition.</p>
    </div>
    <aside class="rr-samples-note" aria-label="About these publication previews">
-    <span class="rr-samples-note-label">FOUR DISTINCT LINES</span>
-    <strong>One sport.<br>Four ways to read it.</strong>
-    <p>Exact races and track coverage vary by publication date and the edition currently available.</p>
+    <span class="rr-samples-note-label">THREE DISTINCT PUBLICATIONS</span>
+    <strong>One sport.<br>Three ways to read it.</strong>
+    <p>These dated examples explain the format. Each product page shows the edition available now.</p>
    </aside>
   </section>
   <section class="rr-samples-section" aria-labelledby="rr-samples-section-title">
@@ -60,15 +60,39 @@
      </figure>
      <div class="rr-anatomy-copy">
       <div class="rr-anatomy-heading"><span class="rr-sample-index">01</span><span class="rr-sample-category">RACE-DAY ANALYSIS</span></div>
-      <h3>A field-by-field view of each race.</h3>
-      <p class="rr-anatomy-intro">Race Cards organize the day race by race. A quick race profile sets the scene, then the runner table brings the entire field into one comparison.</p>
+      <h3>Our flagship: read the whole field.</h3>
+      <p class="rr-anatomy-intro">Each track-specific Race Card starts with the race in front of you: its conditions, pace picture and active field. Then PWIN estimates every runner’s chance of winning, with field-level context and visual ratings beside it.</p>
       <ol class="rr-anatomy-notes">
        <li><span class="rr-anatomy-note-no">1</span><div><h4>Race identity</h4><p>Track, date, race number, class, post time and field status tell you exactly which contest you’re looking at.</p></div></li>
        <li><span class="rr-anatomy-note-no">2</span><div><h4>How the race sets up</h4><p>Pace strength, surface and distance provide a compact read on the conditions each runner will face.</p></div></li>
-       <li><span class="rr-anatomy-note-no">3</span><div><h4>Compare the whole field</h4><p>Each runner is shown with speed, form, class, pace and surface/distance indicators, plus estimated win probability and fair odds.</p></div></li>
+       <li><span class="rr-anatomy-note-no">3</span><div><h4>Compare the whole field</h4><p>Speed, form, class, Pace Fit and Surface/Distance cues help you inspect the race. WIN% and Fair Odds show the separate PWIN probability output.</p></div></li>
       </ol>
       <a class="rr-sample-link" href="/race-cards/">View available Race Cards <span aria-hidden="true">↗</span></a>
      </div>
+     <section class="rr-pwin-method" aria-labelledby="rr-pwin-method-title">
+      <div class="rr-pwin-method-head">
+       <div><span class="rr-pwin-kicker">PWIN · 79 PRE-RACE FEATURES</span><h4 id="rr-pwin-method-title">A whole-field estimate, built horse by horse.</h4></div>
+       <p>PWIN estimates each runner’s chance of winning. It combines 79 pre-race features—built from race-card and past-performance data, condition fit, pace, recency and verified connections—then evaluates every horse against today’s field.</p>
+      </div>
+      <div class="rr-pwin-flow" aria-label="From pre-race inputs to the Race Card">
+       <div class="rr-pwin-step"><strong>79</strong><span>pre-race inputs per runner</span></div><span class="rr-pwin-arrow" aria-hidden="true">→</span>
+       <div class="rr-pwin-step"><strong>Today’s field</strong><span>surface, distance and pace context</span></div><span class="rr-pwin-arrow" aria-hidden="true">→</span>
+       <div class="rr-pwin-step"><strong>PWIN</strong><span>estimated chance for each runner</span></div><span class="rr-pwin-arrow" aria-hidden="true">→</span>
+       <div class="rr-pwin-step"><strong>Race Card</strong><span>projected-win order and fair odds</span></div>
+      </div>
+      <div class="rr-pwin-input-grid">
+       <article><span>01</span><h5>Speed and form</h5><p>Recent, best and 90-day speed evidence; same-surface and similar-distance performance; field-relative strength; trends, variability and how much history supports the estimate.</p></article>
+       <article><span>02</span><h5>Surface and distance fit</h5><p>Today’s surface, route or sprint, and distance are compared with relevant past starts. The model accounts for similarity, sample size, stretch-outs, cutbacks and sprint-to-route or route-to-sprint changes.</p></article>
+       <article><span>03</span><h5>Expected pace and matchup</h5><p>Early and late pace signals are read together, with surface and distance interactions. Pace matters in context: early speed is not an automatic bonus, and late strength depends on the race shape.</p></article>
+       <article><span>04</span><h5>Trainer and jockey context</h5><p>Source-checked trainer, jockey and partnership ratings are paired with their supporting sample sizes and win or in-the-money records. Known, limited and unavailable evidence is kept distinct.</p></article>
+       <article><span>05</span><h5>Recency, development and reliability</h5><p>Age and development status, days since the last race, freshness of the evidence, relevant-start counts, figure variability and uncertainty help distinguish a strong signal from a thin record.</p></article>
+       <article><span>06</span><h5>The field itself</h5><p>Field size and each runner’s performance relative to the other entrants matter. PWIN is a race-level distribution, not a reusable rating that ignores who else is entered.</p></article>
+      </div>
+      <div class="rr-pwin-readout">
+       <p><strong>How to read the order:</strong> runners are listed by projected-win rank; saddlecloth numbers identify the horses, not their rank. WIN% is each runner’s estimated share of the win probability, normalized across the active field (about 100% total after display rounding). Fair Odds translate that estimate into an odds reference. A projected rank is a comparison, not a promised finishing order.</p>
+       <p><strong>Independent PWIN:</strong> the morning line and current market odds are not model inputs. PWIN is built from evidence available before the race. Historical results measure how prior estimates performed; the outcome of the race being predicted cannot enter its own probability.</p>
+      </div>
+     </section>
     </article>
 
     <article class="rr-anatomy-card rr-anatomy-card--reverse" id="longshot-radar">
@@ -117,12 +141,7 @@
      </div>
     </article>
    </div>
-   <aside class="rr-stable-notes">
-    <div><span class="rr-samples-kicker">ALSO IN THE LINEUP</span><h3>Stable Notes</h3></div>
-    <p>Notes on horses with a noteworthy performance or circumstance to remember before their next start—so you know what stood out and what may be worth watching next time.</p>
-    <a href="/publications/stable-notes/#editions">Explore Stable Notes <span aria-hidden="true">↗</span></a>
-   </aside>
-   <p class="rr-samples-disclaimer">The preview pages are examples from Monday, November 2, 2026, shown to explain the format and analysis. Dates, fields, odds, selections and availability change by edition; use each product page for current details.</p>
+   <p class="rr-samples-disclaimer">These dated sample pages illustrate layout and analysis, not a current slate. Dates, fields, prices, selections and availability change by edition; product pages show current details.</p>
   </section>
   <section class="rr-samples-close" aria-label="Explore Rail and Rye publications">
    <div><span class="rr-samples-kicker">READY TO EXPLORE?</span><h2>Find the edition that fits your day.</h2></div>
