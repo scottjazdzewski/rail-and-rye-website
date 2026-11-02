@@ -98,7 +98,9 @@ async function subscribe(request, env) {
   if (size > 4096) return json({error: 'Request too large'}, 413);
   let body;
   try {
-    body = await request.json();
+    const raw = await request.text();
+    if (raw.length > 4096) return json({error: 'Request too large'}, 413);
+    body = JSON.parse(raw);
   } catch (_) {
     return json({error: 'Invalid request'}, 400);
   }
@@ -121,10 +123,7 @@ async function subscribe(request, env) {
     const token = randomToken();
     const hash = await tokenHash(token);
     await env.STORE_DB.prepare("INSERT INTO race_card_alert_subscribers (subscriber_id,email,consented_at,confirmation_token_hash,confirmation_expires_at,confirmed_at,unsubscribed_at) VALUES (?,?,CURRENT_TIMESTAMP,?,datetime('now','+1 day'),NULL,NULL) ON CONFLICT(email) DO UPDATE SET consented_at=CURRENT_TIMESTAMP,confirmation_token_hash=excluded.confirmation_token_hash,confirmation_expires_at=excluded.confirmation_expires_at,confirmed_at=NULL,unsubscribed_at=NULL").bind(subscriberId, email, hash).run();
-    const sentId = await resend(env, Object.assign({to: email}, confirmationMessage(token)), 'rr-alert-confirm-' + subscriberId + '-' + hash.slice(0, 12));
-    await env.STORE_DB.prepare("UPDATE race_card_alert_subscribers SET confirmation_token_hash=NULL, confirmation_expires_at=NULL WHERE subscriber_id=? AND confirmation_token_hash=?").bind(subscriberId, hash).run().catch(function () {});
-    // Store the confirmation token hash until clicked. The email provider receipt is intentionally not retained.
-    await env.STORE_DB.prepare("UPDATE race_card_alert_subscribers SET confirmation_token_hash=?, confirmation_expires_at=datetime('now','+1 day') WHERE subscriber_id=? AND confirmed_at IS NULL").bind(hash, subscriberId).run();
+    await resend(env, Object.assign({to: email}, confirmationMessage(token)), 'rr-alert-confirm-' + subscriberId + '-' + hash.slice(0, 12));
     return json({message: 'Check your inbox for a confirmation link to activate Race Card alerts.'}, 202);
   } catch (error) {
     console.warn('Race Card alert signup failed', String(error).slice(0, 120));
