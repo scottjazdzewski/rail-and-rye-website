@@ -8,8 +8,17 @@ async function ensureJournalSchema(env) {
   if (!env.STORE_DB) throw Error("Journal database binding missing");
   if (!schemaPromise) {
     schemaPromise = (async () => {
-      await env.STORE_DB.prepare("CREATE TABLE IF NOT EXISTS journal_articles (id TEXT PRIMARY KEY, slug TEXT NOT NULL UNIQUE, title TEXT NOT NULL, category TEXT NOT NULL, publish_date TEXT NOT NULL, excerpt TEXT NOT NULL DEFAULT '', body_text TEXT NOT NULL DEFAULT '', cover_key TEXT, cover_type TEXT, status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','published','archived')), created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)").run();
+      await env.STORE_DB.prepare("CREATE TABLE IF NOT EXISTS journal_articles (id TEXT PRIMARY KEY, slug TEXT NOT NULL UNIQUE, title TEXT NOT NULL, category TEXT NOT NULL, publish_date TEXT NOT NULL, excerpt TEXT NOT NULL DEFAULT '', body_text TEXT NOT NULL DEFAULT '', cover_key TEXT, cover_type TEXT, status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','published','archived')), scheduled_at TEXT, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)").run();
+      const columns = await env.STORE_DB.prepare("PRAGMA table_info(journal_articles)").all();
+      if (!(columns.results || []).some(column => column.name === "scheduled_at")) {
+        try { await env.STORE_DB.prepare("ALTER TABLE journal_articles ADD COLUMN scheduled_at TEXT").run(); }
+        catch (error) {
+          const refreshed = await env.STORE_DB.prepare("PRAGMA table_info(journal_articles)").all();
+          if (!(refreshed.results || []).some(column => column.name === "scheduled_at")) throw error;
+        }
+      }
       await env.STORE_DB.prepare("CREATE INDEX IF NOT EXISTS journal_articles_public_order ON journal_articles(status, publish_date DESC, created_at DESC)").run();
+      await env.STORE_DB.prepare("CREATE INDEX IF NOT EXISTS journal_articles_schedule ON journal_articles(status, scheduled_at)").run();
       await env.STORE_DB.prepare("CREATE INDEX IF NOT EXISTS journal_articles_admin_order ON journal_articles(updated_at DESC)").run();
     })().catch(error => {
       schemaPromise = null;
@@ -26,6 +35,11 @@ function validDate(value) {
   return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) &&
     !Number.isNaN(Date.parse(value + "T00:00:00Z")) &&
     new Date(value + "T00:00:00Z").toISOString().slice(0,10) === value;
+}
+function validScheduleAt(value) {
+  return typeof value === "string" &&
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(value) &&
+    !Number.isNaN(Date.parse(value)) && new Date(value).toISOString() === value;
 }
 function slugFor(title, id) {
   const base = title.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
@@ -48,15 +62,26 @@ function readArticle(data) {
   const excerpt = String(data.excerpt || "").trim();
   const body_text = String(data.body_text || "").trim();
   const status = String(data.status || "draft");
+  const scheduled_at = data.scheduled_at ? String(data.scheduled_at) : null;
   if (title.length < 3 || title.length > 140) throw Error("Title must be 3–140 characters");
   if (category.length < 2 || category.length > 60) throw Error("Add a category of 2–60 characters");
   if (!validDate(publish_date)) throw Error("Choose a valid publication date");
   if (excerpt.length > 500) throw Error("Keep the summary to 500 characters or fewer");
   if (body_text.length > 80000) throw Error("Keep article text under 80,000 characters");
   if (!["draft","published","archived"].includes(status)) throw Error("Invalid article status");
+  if (scheduled_at && !validScheduleAt(scheduled_at)) throw Error("Choose a valid scheduled date and time");
+  if (scheduled_at && status !== "draft") throw Error("A scheduled article must remain a draft until release");
+  if (scheduled_at) {
+    const release = Date.parse(scheduled_at), now = Date.now();
+    if (release < now + 60_000 || release > now + 366 * 24 * 60 * 60 * 1000) {
+      throw Error("Choose a release at least 1 minute ahead and within the next year");
+    }
+  }
   if (status === "published" && excerpt.length < 20) throw Error("Add a short summary before publishing");
   if (status === "published" && body_text.length < 80) throw Error("Add the article text before publishing");
-  return {title, category, publish_date, excerpt, body_text, status};
+  if (scheduled_at && excerpt.length < 20) throw Error("Add a short summary before scheduling");
+  if (scheduled_at && body_text.length < 80) throw Error("Add the article text before scheduling");
+  return {title, category, publish_date, excerpt, body_text, status, scheduled_at};
 }
 function articleShape(row, options={}) {
   if (!row) return null;
@@ -70,7 +95,8 @@ function articleShape(row, options={}) {
   };
   if (options.admin) {
     result.id = row.id;
-    result.status = row.status;
+    result.status = row.status === "draft" && row.scheduled_at ? "scheduled" : row.status;
+    result.scheduled_at = row.scheduled_at || null;
     result.updated_at = row.updated_at;
     result.created_at = row.created_at;
   }
@@ -78,10 +104,21 @@ function articleShape(row, options={}) {
   return result;
 }
 
+async function publishDueJournalArticles(env) {
+  const now = new Date().toISOString();
+  const result = await env.STORE_DB.prepare("UPDATE journal_articles SET status='published', scheduled_at=NULL, updated_at=? WHERE status='draft' AND scheduled_at IS NOT NULL AND scheduled_at<=?")
+    .bind(now, now).run();
+  return Number(result.meta?.changes || 0);
+}
+export async function publishScheduledJournalArticles(env) {
+  await ensureJournalSchema(env);
+  return publishDueJournalArticles(env);
+}
+
 export async function handlePublicJournal(request, env, pathname) {
   if (request.method !== "GET") return fail("Method not allowed", 405);
   if (!env.STORE_DB) return fail("Journal is not available", 503);
-  try { await ensureJournalSchema(env); }
+  try { await ensureJournalSchema(env); await publishDueJournalArticles(env); }
   catch (error) { console.error("Journal schema setup failed", error); return fail("Journal is temporarily unavailable", 503); }
   if (pathname === "/api/journal/articles") {
     const result = await env.STORE_DB.prepare("SELECT id,slug,title,category,publish_date,excerpt,cover_key,status,created_at,updated_at FROM journal_articles WHERE status='published' ORDER BY publish_date DESC, created_at DESC LIMIT 250").all();
@@ -98,12 +135,12 @@ export async function handleAdminJournal(request, env, pathname) {
   if (!env.STORE_DB) return fail("Journal database binding missing", 503);
   if (!["GET","POST","PATCH","PUT"].includes(request.method)) return fail("Method not allowed", 405);
   if (request.method !== "GET" && !trustedOrigin(request)) return fail("Same-origin request required", 403);
-  try { await ensureJournalSchema(env); }
+  try { await ensureJournalSchema(env); await publishDueJournalArticles(env); }
   catch (error) { console.error("Journal schema setup failed", error); return fail("Journal storage is temporarily unavailable", 503); }
 
   if (pathname === "/api/admin/articles") {
     if (request.method === "GET") {
-      const result = await env.STORE_DB.prepare("SELECT id,slug,title,category,publish_date,excerpt,cover_key,status,created_at,updated_at FROM journal_articles ORDER BY updated_at DESC, id DESC LIMIT 250").all();
+      const result = await env.STORE_DB.prepare("SELECT id,slug,title,category,publish_date,excerpt,cover_key,status,scheduled_at,created_at,updated_at FROM journal_articles ORDER BY updated_at DESC, id DESC LIMIT 250").all();
       return json({articles:(result.results || []).map(row => articleShape(row, {admin:true}))});
     }
     if (request.method !== "POST") return fail("Method not allowed", 405);
@@ -113,8 +150,8 @@ export async function handleAdminJournal(request, env, pathname) {
     const id = crypto.randomUUID();
     const slug = slugFor(data.title, id);
     const now = new Date().toISOString();
-    await env.STORE_DB.prepare("INSERT INTO journal_articles (id,slug,title,category,publish_date,excerpt,body_text,status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?)")
-      .bind(id,slug,data.title,data.category,data.publish_date,data.excerpt,data.body_text,data.status,now,now).run();
+    await env.STORE_DB.prepare("INSERT INTO journal_articles (id,slug,title,category,publish_date,excerpt,body_text,status,scheduled_at,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)")
+      .bind(id,slug,data.title,data.category,data.publish_date,data.excerpt,data.body_text,data.status,data.scheduled_at,now,now).run();
     const row = await env.STORE_DB.prepare("SELECT * FROM journal_articles WHERE id=?").bind(id).first();
     return json({article:articleShape(row,{admin:true,full:true})}, 201);
   }
@@ -132,8 +169,8 @@ export async function handleAdminJournal(request, env, pathname) {
     try { data = readArticle(await parseArticleJSON(request)); }
     catch (error) { return fail(error.message, 422); }
     const now = new Date().toISOString();
-    await env.STORE_DB.prepare("UPDATE journal_articles SET title=?,category=?,publish_date=?,excerpt=?,body_text=?,status=?,updated_at=? WHERE id=?")
-      .bind(data.title,data.category,data.publish_date,data.excerpt,data.body_text,data.status,now,id).run();
+    await env.STORE_DB.prepare("UPDATE journal_articles SET title=?,category=?,publish_date=?,excerpt=?,body_text=?,status=?,scheduled_at=?,updated_at=? WHERE id=?")
+      .bind(data.title,data.category,data.publish_date,data.excerpt,data.body_text,data.status,data.scheduled_at,now,id).run();
     const row = await env.STORE_DB.prepare("SELECT * FROM journal_articles WHERE id=?").bind(id).first();
     return json({article:articleShape(row,{admin:true,full:true})});
   }

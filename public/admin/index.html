@@ -28,7 +28,7 @@
     .notice{margin:20px 0 0;background:white;border-left:4px solid var(--navy);padding:13px 18px;white-space:pre-wrap;display:none}.notice.error{border-color:var(--error);color:var(--error)}.notice.good{border-color:var(--success);color:var(--success)}
     .pill{font-size:10px;display:inline-block;margin-left:8px;padding:2px 7px;border-radius:2px;text-transform:uppercase;letter-spacing:.08em;background:#f0ede5;color:#746047}.pill.published{background:#e3f3e9;color:var(--success)}.pill.scheduled{background:#fff1ce;color:#8f581e}
     .empty{padding:25px 12px;text-align:center;border:1px dashed var(--border);color:var(--muted)}.footer{margin-top:30px;font-size:12px;color:var(--muted)}
-    .article-panel{scroll-margin-top:20px}.article-body-input{min-height:380px;line-height:1.7}.article-inventory{max-height:720px;overflow:auto}.article-notice{min-height:24px;margin-top:12px}
+    .article-panel{scroll-margin-top:20px}.article-body-input{min-height:380px;line-height:1.7}.article-toolbar{display:flex;align-items:center;gap:10px;margin:0 0 8px}.article-toolbar button{min-width:48px}.article-inventory{max-height:720px;overflow:auto}.article-notice{min-height:24px;margin-top:12px}
     /* Compact publishing workspace: desktop only. Touch-friendly mobile layout stays as approved. */
     .rr-bundle-area{margin-top:28px}
     .rr-private-library{margin-bottom:25px;padding:19px;border:1px solid var(--border);border-radius:8px;background:#fff;min-width:0}
@@ -200,12 +200,14 @@
             <div class="field"><label for="articleCategory">Category *</label><input id="articleCategory" maxlength="60" required value="Race Analysis" placeholder="Racing history, Horse profile…"></div>
             <div class="field"><label for="articleDate">Publication date *</label><input id="articleDate" type="date" required></div>
           </div>
-          <div class="field"><label for="articleExcerpt">Short summary</label><textarea id="articleExcerpt" maxlength="500" placeholder="A short preview for the Journal archive. Add at least 20 characters before publishing."></textarea></div>
-          <div class="field"><label for="articleBody">Article text</label><textarea id="articleBody" class="article-body-input" maxlength="80000" placeholder="Write your article in plain text. Leave a blank line between paragraphs."></textarea><div class="detail">Drafts can be incomplete. Published stories appear newest first. Article text is saved as plain writing, so pasted formatting stays safe and readable.</div></div>
+          <div class="field"><label for="articleScheduleAt">Schedule publication · Eastern Time</label><input id="articleScheduleAt" type="datetime-local" step="60"><div class="detail">Choose a future New York time. Scheduled stories remain drafts until release; saving as a draft clears the schedule.</div></div>
+            <div class="field"><label for="articleExcerpt">Short summary</label><textarea id="articleExcerpt" maxlength="500" placeholder="A short preview for the Journal archive. Add at least 20 characters before publishing."></textarea></div>
+          <div class="field"><label for="articleBody">Article text</label><div class="article-toolbar"><button type="button" class="secondary mini" id="articleBold" aria-label="Bold selected text"><strong>B</strong> Bold</button><span class="detail">Select a word or phrase and click Bold, or press Ctrl+B.</span></div><textarea id="articleBody" class="article-body-input" maxlength="80000" placeholder="Write your article. Leave a blank line between paragraphs."></textarea><div class="detail">Leave a blank line between paragraphs. Bold formatting is saved with the article.</div></div>
           <div class="field"><label for="articleCover">Cover image <span id="articleCoverStatus"></span></label><input id="articleCover" type="file" accept="image/jpeg,image/png,image/webp"><div class="detail">Optional JPG, PNG, or WebP image, up to 6 MB. The image is visible only while the article is published.</div></div>
           <div class="actions">
             <button type="button" class="primary" id="articleDraft">Save draft</button>
             <button type="button" class="gold" id="articlePublish">Publish article</button>
+            <button type="button" class="gold" id="articleSchedule">Schedule article</button>
             <button type="button" class="secondary" id="articleArchive">Archive</button>
             <button type="button" class="secondary" id="articleRefresh">Refresh list</button>
           </div>
@@ -602,8 +604,8 @@
   }
   function setBusy(value){
     busy=value;
-    ['articleDraft','articlePublish','articleArchive','articleNew','articleRefresh'].forEach(id=>{
-      $(id).disabled=value||(id==='articleArchive'&&!currentId);
+    ['articleDraft','articlePublish','articleSchedule','articleBold','articleArchive','articleNew','articleRefresh'].forEach(id=>{
+      const el=$(id);if(el)el.disabled=value||(id==='articleArchive'&&!currentId);
     });
   }
   function reset(){
@@ -612,6 +614,8 @@
     rrPrefillRacingDate('articleDate');
     $('articleCategory').value='Race Analysis';
     $('articleCoverStatus').textContent='';
+    $('articleScheduleAt').value='';
+    $('articleSchedule').hidden=false;
     note('New article. Save a draft whenever you want to continue later.');
     setBusy(false);
     render();
@@ -622,8 +626,10 @@
     for(const article of articles){
       const button=document.createElement('button');button.type='button';button.className='product'+(article.id===currentId?' active':'');
       const title=document.createElement('strong');title.textContent=article.title;
-      const status=document.createElement('em');status.className='pill '+(article.status==='published'?'published':'');status.textContent=article.status;title.append(status);
-      const meta=document.createElement('span');meta.textContent=[article.category,article.publish_date].join(' · ');
+      const status=document.createElement('em');status.className='pill '+(article.status==='published'?'published':article.status==='scheduled'?'scheduled':'');status.textContent=article.status;title.append(status);
+      const meta=document.createElement('span');
+      const scheduleLabel=article.status==='scheduled'&&article.scheduled_at?formatEastern(article.scheduled_at):article.publish_date;
+      meta.textContent=[article.category,scheduleLabel].join(' · ');
       button.append(title,meta);button.addEventListener('click',()=>edit(article).catch(error=>note(error.message,'error')));list.append(button);
     }
   }
@@ -636,6 +642,8 @@
       $('articleTitle').value=item.title||'';
       $('articleCategory').value=item.category||'Race Analysis';
       rrRestoreRacingDate('articleDate',item.publish_date);
+      $('articleScheduleAt').value=item.scheduled_at?toEasternInput(item.scheduled_at):'';
+      $('articleSchedule').hidden=item.status==='published';
       $('articleExcerpt').value=item.excerpt||'';
       $('articleBody').value=item.body_text||'';
       $('articleCover').value='';
@@ -655,7 +663,8 @@
       publish_date:$('articleDate').value,
       excerpt:$('articleExcerpt').value.trim(),
       body_text:$('articleBody').value.trim(),
-      status
+      status,
+      scheduled_at:null
     };
   }
   async function uploadCover(id,file){
@@ -663,22 +672,78 @@
     if(file.size<8||file.size>6*1024*1024)throw Error('Choose a cover image smaller than 6 MB.');
     await api('/api/admin/articles/'+id+'/cover',{method:'PUT',body:file,headers:{'Content-Type':file.type,'X-File-Size':String(file.size)}});
   }
+  function easternParts(date){
+    const parts=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(date);
+    return Object.fromEntries(parts.filter(part=>part.type!=='literal').map(part=>[part.type,part.value]));
+  }
+  function toEasternInput(iso){
+    const parts=easternParts(new Date(iso));
+    return parts.year+'-'+parts.month+'-'+parts.day+'T'+parts.hour+':'+parts.minute;
+  }
+  function formatEastern(iso){
+    return new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'}).format(new Date(iso));
+  }
+  function scheduledAtISO(value){
+    const match=/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(value||'');
+    if(!match)throw Error('Choose a scheduled date and time.');
+    const [,year,month,day,hour,minute]=match;
+    const target=[year,month,day,hour,minute].join('|');
+    const base=Date.UTC(+year,+month-1,+day,+hour,+minute);
+    if(new Date(base).toISOString().slice(0,16)!==value)throw Error('Choose a valid scheduled date and time.');
+    const choices=[base+4*60*60*1000,base+5*60*60*1000];
+    const instant=choices.find(candidate=>{
+      const p=easternParts(new Date(candidate));
+      return [p.year,p.month,p.day,p.hour,p.minute].join('|')===target;
+    });
+    if(!instant)throw Error('That New York time does not exist because of the daylight-saving clock change. Choose another time.');
+    const release=new Date(instant);
+    if(release.getTime()<Date.now()+60_000)throw Error('Choose a release at least 1 minute in the future.');
+    if(release.getTime()>Date.now()+366*24*60*60*1000)throw Error('Choose a release within the next year.');
+    return release.toISOString();
+  }
+  function toggleBold(){
+    const field=$('articleBody'),value=field.value,start=field.selectionStart,end=field.selectionEnd;
+    if(start===end){
+      field.setRangeText('****',start,end,'end');
+      field.setSelectionRange(start+2,start+2);
+    }else{
+      const selected=value.slice(start,end);
+      const before=value.slice(Math.max(0,start-2),start);
+      const after=value.slice(end,end+2);
+      if(selected.startsWith('**')&&selected.endsWith('**')){
+        field.setRangeText(selected.slice(2,-2),start,end,'select');
+      }else if(before==='**'&&after==='**'){
+        field.value=value.slice(0,start-2)+selected+value.slice(end+2);
+        field.setSelectionRange(start-2,start-2+selected.length);
+      }else{
+        field.setRangeText('**'+selected+'**',start,end,'select');
+      }
+    }
+    field.focus();
+    field.dispatchEvent(new Event('input',{bubbles:true}));
+  }
   async function save(action){
     if(busy)return;
     if(action==='archive'&&!currentId)return;
     $('articleForm').reportValidity();
     if(!$('articleForm').checkValidity())return;
     const item=articles.find(article=>article.id===currentId);
-    const finalStatus=action==='publish'?'published':action==='archive'?'archived':(item?.status==='published'?'published':'draft');
-    if(action==='publish'){
-      if($('articleExcerpt').value.trim().length<20){note('Add a short summary of at least 20 characters before publishing.','error');return;}
-      if($('articleBody').value.trim().length<80){note('Add the article text before publishing.','error');return;}
+    if(action==='scheduled'&&item?.status==='published'){
+      note('A published article is already live and cannot be scheduled again. Create a new draft for a later story.','error');return;
+    }
+    if(action==='publish'||action==='scheduled'){
+      if($('articleExcerpt').value.trim().length<20){note('Add a short summary of at least 20 characters before publishing or scheduling.','error');return;}
+      if($('articleBody').value.trim().length<80){note('Add at least 80 characters of article text before publishing or scheduling.','error');return;}
     }
     if(action==='archive'&&!confirm('Archive this article? It will no longer appear in The Journal.'))return;
+    let releaseAt=null;
+    try{if(action==='scheduled')releaseAt=scheduledAtISO($('articleScheduleAt').value);}
+    catch(error){note(error.message,'error');return;}
     setBusy(true);
     try{
       let id=currentId;
       const data=payload('draft');
+      data.scheduled_at=null;
       const initialStatus=action==='archive'?'archived':(item?.status==='published'?'published':'draft');
       data.status=initialStatus;
       if(!id){
@@ -689,15 +754,21 @@
       }
       const cover=$('articleCover').files[0];
       if(cover){note('Uploading cover image…');await uploadCover(id,cover);}
+      const finalStatus=action==='publish'?'published':action==='archive'?'archived':(item?.status==='published'?'published':'draft');
       if(finalStatus!==initialStatus){
         data.status=finalStatus;
+        data.scheduled_at=null;
+        await api('/api/admin/articles/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+      }else if(action==='scheduled'){
+        data.status='draft';
+        data.scheduled_at=releaseAt;
         await api('/api/admin/articles/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
       }
       await refresh();
       const selected=articles.find(article=>article.id===id);
       if(selected)await edit(selected);
       $('articleCover').value='';
-      note(action==='publish'?'Article published to The Journal.':action==='archive'?'Article archived.':'Draft saved.','good');
+      note(action==='publish'?'Article published to The Journal.':action==='scheduled'?'Article scheduled for '+formatEastern(releaseAt)+'.':'Article '+(action==='archive'?'archived.':'draft saved.'),'good');
     }catch(error){
       note(error.message,'error');
       await refresh().catch(()=>{});
@@ -706,6 +777,15 @@
   $('articleNew').addEventListener('click',reset);
   $('articleDraft').addEventListener('click',()=>save('draft'));
   $('articlePublish').addEventListener('click',()=>save('publish'));
+  $('articleSchedule').addEventListener('click',()=>save('scheduled'));
+  $('articleBold').addEventListener('click',toggleBold);
+  $('articleBody').addEventListener('keydown',event=>{
+    if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='b'){event.preventDefault();toggleBold();}
+  });
+  $('articleScheduleAt').addEventListener('change',event=>{
+    const date=event.currentTarget.value.slice(0,10);
+    if(date)$('articleDate').value=date;
+  });
   $('articleArchive').addEventListener('click',()=>save('archive'));
   $('articleRefresh').addEventListener('click',()=>refresh().then(()=>note('Article list refreshed.')).catch(error=>note(error.message,'error')));
   rrPrefillRacingDate('articleDate');

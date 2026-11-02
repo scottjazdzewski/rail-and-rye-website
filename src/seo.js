@@ -88,9 +88,18 @@ function updateHead(html,title,description,path,article){
   html=html.replace(/<link rel="canonical" href="[^"]*">/,'');
   return html.replace('</head>',link+social+structured+'</head>');
 }
+function bodyInline(text){
+  const source=String(text||''),pattern=/\*\*([^*\n]+)\*\*/g;
+  let html='',cursor=0,match;
+  while((match=pattern.exec(source))){
+    html+=htmlEscape(source.slice(cursor,match.index))+'<strong>'+htmlEscape(match[1])+'</strong>';
+    cursor=match.index+match[0].length;
+  }
+  return html+htmlEscape(source.slice(cursor));
+}
 function bodyParagraphs(body){
   return String(body||'').split(/\n[ \t]*\n+/).map(p=>p.trim()).filter(Boolean)
-    .map(p=>'<p>'+htmlEscape(p)+'</p>').join('');
+    .map(p=>'<p>'+bodyInline(p)+'</p>').join('');
 }
 function renderArticleMarkup(item){
   const date=htmlEscape(item.publish_date);

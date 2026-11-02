@@ -2,7 +2,7 @@ import { handleCommerce, sendQueuedEmails, checkoutReadiness, replacePdfAndNotif
 import {handleRacingWire,handlePreviewRacingWire,testPreviewRssFeeds,handleAdminRacingWire} from './racing-wire.js';
 import {handleAdminBundles,BUNDLE_KEY} from './bundles.js';
 import {handleAdminBundleAssets} from './bundle-assets.js';
-import {handleAdminJournal,handlePublicJournal,publicJournalCover} from './journal.js';
+import {handleAdminJournal,handlePublicJournal,publicJournalCover,publishScheduledJournalArticles} from './journal.js';
 import {handleSitemap,serveJournalDocument,serveProductDocument} from './seo.js';
 import {ensureReleaseSchedule,validReleaseAt} from './publication-schedule.js';
 import {handleMembershipApi,handleAdminMembershipPlans,reconcileMemberships} from './memberships.js';
@@ -367,6 +367,7 @@ export default {
     }catch(e){console.error("Rail & Rye request error",e);return fail("An internal error occurred",500);}
   },
   async scheduled(controller,env,ctx){
+    ctx.waitUntil(publishScheduledJournalArticles(env).catch(e=>console.warn('Scheduled Journal publication deferred',String(e).slice(0,160))));
     ctx.waitUntil(sendQueuedEmails(env,8));
     ctx.waitUntil(sendRaceCardAlerts(env,20).catch(e=>console.warn('Race Card alert queue retry deferred',String(e).slice(0,120))));
     ctx.waitUntil(reconcileMemberships(env,25));

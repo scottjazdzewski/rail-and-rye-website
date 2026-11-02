@@ -175,9 +175,19 @@
       card.append(meta,heading,excerpt,actions);list.append(card);
     }
   }
+  function appendBodyText(container,text){
+    const source=String(text||''),pattern=/\*\*([^*\n]+)\*\*/g;
+    let cursor=0,match;
+    while((match=pattern.exec(source))){
+      if(match.index>cursor)container.append(document.createTextNode(source.slice(cursor,match.index)));
+      const strong=document.createElement('strong');strong.textContent=match[1];container.append(strong);
+      cursor=match.index+match[0].length;
+    }
+    if(cursor<source.length)container.append(document.createTextNode(source.slice(cursor)));
+  }
   function renderBody(container,text){
     const paragraphs=String(text||'').split(/\n[ \t]*\n+/).map(part=>part.trim()).filter(Boolean);
-    for(const content of paragraphs){const paragraph=document.createElement('p');paragraph.textContent=content;container.append(paragraph);}
+    for(const content of paragraphs){const paragraph=document.createElement('p');appendBodyText(paragraph,content);container.append(paragraph);}
   }
   const readingMinutes=bodyText=>Math.max(1,Math.ceil((String(bodyText||'').trim().match(/\S+/g)||[]).length/220));
   function renderRelated(articles,current){
