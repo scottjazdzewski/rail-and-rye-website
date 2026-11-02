@@ -160,7 +160,7 @@
       <details class="rr-bulk-upload">
         <summary>Bulk upload PDFs for a bundle</summary>
         <div class="rr-bulk-body">
-          <p class="detail">Choose several PDFs at once. Each becomes a separate private library item. Confirm the title, racing date, collection, and track for each file, then select the uploaded items in the bundle editor.</p>
+          <p class="detail">Choose several PDFs at once. Each becomes a separate private library item. The default date applies to the whole queue; edit any file individually, confirm its title, collection, and track, then select the uploaded items in the bundle editor.</p>
           <div class="row">
             <div class="field"><label for="assetBulkFiles">PDF files</label><input id="assetBulkFiles" type="file" accept="application/pdf,.pdf" multiple></div>
             <div class="field"><label for="assetBulkDate">Default racing date</label><input id="assetBulkDate" type="date"></div>
@@ -701,7 +701,7 @@
   }
   $('assetBulkFiles').addEventListener('change',renderBulkQueue);
   $('assetBulkDate').addEventListener('change',()=>{
-    $('assetBulkQueue').querySelectorAll('[data-bulk-field="race_date"]').forEach(input=>{if(!input.value)input.value=$('assetBulkDate').value;});
+    $('assetBulkQueue').querySelectorAll('[data-bulk-field="race_date"]').forEach(input=>{input.value=$('assetBulkDate').value;});
   });
   $('assetBulkUpload').addEventListener('click',bulkUpload);
   $('assetNew').addEventListener('click',reset);
