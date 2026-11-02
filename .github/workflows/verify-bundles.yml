@@ -27,6 +27,8 @@ jobs:
         run: node --experimental-sqlite test-free-downloads.mjs
       - name: Scheduled publication embargo and automatic release tests
         run: node --experimental-sqlite test-scheduled-publications.mjs
+      - name: Unit-check Kentucky Sire Stakes rejection
+        run: node --input-type=module -e "import {scoreRacingWireItem} from './src/racing-wire.js'; const r=scoreRacingWireItem({title:'Cumberland Run: Zeron & Pinske, Dunn & Burke divvy up Kentucky Sire Stakes splits',source:'Daily Racing Form',category:'Breeding',published_at:'2026-11-02T12:00:00Z'}); if(!r.reject) process.exit(1); console.log('PASS KYSS hard reject',r.reason);"
       - name: Multi-collection bundle listing tests
         run: node --experimental-sqlite test-bundle-category-placement.mjs
       - name: Compact Publisher desktop layout and control regression
