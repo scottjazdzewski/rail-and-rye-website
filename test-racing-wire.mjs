@@ -281,6 +281,10 @@ for(const title of irrelevantHeadlines){
  const assessment=scoreRacingWireItem({title,source:'US Racing',published_at:date,category:'Stakes'});
  assert.equal(assessment.reject,true,'Service/betting content is hard rejected: '+title);
 }
+assert.equal(scoreRacingWireItem({
+ title:'Cumberland Run: Zeron & Pinske, Dunn & Burke divvy up Kentucky Sire Stakes splits',
+ source:'Daily Racing Form',category:'Breeding',published_at:date
+}).reject,true,'Kentucky Sire Stakes Standardbred coverage is hard rejected');
 assert.ok(scoreRacingWireItem({
  title:'Defiantly Rules Out Of Melbourne Cup; Kizlyar Draws In',source:'Thoroughbred Daily News',
  category:'Stakes',published_at:date
