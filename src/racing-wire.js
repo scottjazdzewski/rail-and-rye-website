@@ -15,7 +15,7 @@ const MAX_FEED_BYTES=350000;
 const MAX_OFFICIAL_PAGE_BYTES=650000;
 const MAX_JSON_BYTES=250000;
 const PREVIEW_MAX_ITEM_AGE_MS=48*3600000;
-const EDITORIAL_CATEGORIES=Object.freeze(['Horses','Jockeys','Trainers','Owners','Stable','Stakes','Race-Day','Racetrack','Breeding','Sales / Auctions','Regulatory','Achievement','Industry']);
+const EDITORIAL_CATEGORIES=Object.freeze(['Horses','Jockeys','Trainers','Owners','Stable','Stakes','Race-Day','Racetrack','Breeding','Sales / Auctions','Regulatory','Achievement','Industry','International']);
 let editorialSchemaPromise=null;
 async function ensureEditorialSchema(env){
   if(!env.STORE_DB)throw Error('Racing Wire database binding missing');
@@ -340,6 +340,12 @@ export function categorize(title,category='',source=''){
   if(/\b(hall of fame|milestone|career (?:win|victory)|record[- ]breaking|record setter|award(?:ed)?|honou?r(?:ed)?|\d{3,4}(?:st|nd|rd|th) (?:win|victory))\b/.test(s))
     return 'Achievement';
 
+  // Major foreign race/horse developments receive their own desk. Routine
+  // overseas coverage is filtered later unless it clears a North American
+  // relevance gate.
+  if(/\b(japan cup|tenno sho|tokyo yushun|satsuki sho|kikuka sho|takarazuka kinen|arima kinen|dubai world cup|saudi cup|prix de l.?arc de triomphe|royal ascot|epsom derby|irish derby|king george vi|queen elizabeth stakes|melbourne cup|cox plate|hong kong cup|hong kong vase|hong kong mile|hong kong sprint|sha tin|meydan|longchamp|ascot|newmarket|epsom|curragh|flemington|randwick|tokyo racecourse|nakayama|kyoto racecourse)\b/.test(s))
+    return 'International';
+
   // Business / audience metrics are Industry even when the event name itself
   // contains a stakes term. Example: Breeders' Cup attendance and handle.
   if(/\b(attendance|handle|wagering handle|all-sources handle|turnover|revenue|viewership|television ratings|tv ratings|economic impact|business results|market share|crowd|fan count|media rights|broadcast rights|purse increase|purses increase)\b/.test(s))
@@ -392,6 +398,7 @@ export function subjectKind(text,section=''){
   if(/^(regulatory|rules|rulings)$/.test(category))return 'regulatory';
   if(/^(achievement|achievements|milestones)$/.test(category))return 'achievement';
   if(/^(industry|industry news)$/.test(category))return 'industry';
+  if(/^(international|global|world racing)$/.test(category))return 'international';
   if(/^(owner|owners|ownership)$/.test(category))return 'owner';
   if(/^(jockey|jockeys)$/.test(category))return 'jockey';
   if(/^(trainer|trainers)$/.test(category))return 'trainer';
@@ -710,6 +717,23 @@ const INDUSTRY_RE=/\b(HISA|HIWU|racing commission|commissioners?|rule change|pol
 const MILESTONE_RE=/\b(milestone|hall of fame|career win|career victori(?:es|y)|record[- ]breaking|record setter|\d{3,4}(?:st|nd|rd|th) win|four-timer|five-timer|six-timer|thousand career victories)\b/i;
 const INDUSTRY_METRICS_RE=/\b(attendance|handle|wagering handle|turnover|revenue|viewership|television ratings|tv ratings|economic impact|market share|crowd)\b/i;
 const LOW_VALUE_RE=/\b(preview|opinion|podcast|photo gallery|look back|what to know|guide to)\b/i;
+const INTERNATIONAL_RE=/\b(japan|japanese|tokyo|nakayama|kyoto|hanshin|hong kong|sha tin|dubai|meydan|saudi|riyadh|england|britain|british|ireland|irish|france|french|ascot|newmarket|epsom|goodwood|york|curragh|leopardstown|longchamp|chantilly|deauville|australia|australian|flemington|caulfield|randwick|rosehill|new zealand|japan cup|tenno sho|royal ascot|melbourne cup|cox plate|prix de l.?arc de triomphe|dubai world cup|saudi cup)\b/i;
+const INTERNATIONAL_MAJOR_RE=/\b(japan cup|tenno sho|takarazuka kinen|arima kinen|dubai world cup|saudi cup|prix de l.?arc de triomphe|royal ascot|epsom derby|irish derby|king george vi|queen elizabeth stakes|melbourne cup|cox plate|hong kong cup|hong kong vase|hong kong mile|hong kong sprint)\b/i;
+function isInternationalStory(item){
+ const context=String(item?.title||'')+' '+String(item?.section||'')+' '+String(item?.category||'')+' '+String(item?.source||'');
+ return INTERNATIONAL_RE.test(context)||String(item?.category||'').toLowerCase()==='international';
+}
+function internationalRelevant(item){
+ const title=String(item?.title||'');
+ if(!isInternationalStory(item))return true;
+ if(INTERNATIONAL_MAJOR_RE.test(title))return true;
+ if(MAJOR_EVENT_RE.test(title))return true;
+ if(GRADED_RE.test(title)&&(RESULT_RE.test(title)||MATERIAL_RE.test(title)))return true;
+ if(/\b(group|grade)\s*1\b|\bG1\b/i.test(title)&&(RESULT_RE.test(title)||MATERIAL_RE.test(title)||MILESTONE_RE.test(title)))return true;
+ if(SALES_RE.test(title)&&/(?:\$\s?\d|£\s?\d|€\s?\d|\b(?:million|record|seven[- ]figure|eight[- ]figure)\b)/i.test(title))return true;
+ if(MATERIAL_RE.test(title)&&(MILESTONE_RE.test(title)||BREEDING_RE.test(title)||/champion|classic winner|derby winner/i.test(title)))return true;
+ return false;
+}
 
 function displayType(title){
  switch(eventType(title)){
@@ -731,6 +755,8 @@ export function scoreRacingWireItem(item){
  if(!title)return {score:0,reject:true,reason:'empty'};
  if(HARD_REJECT_PATTERNS.some(rx=>rx.test(context)))
    return {score:0,reject:true,reason:'betting-or-service-content'};
+ if(isInternationalStory(item)&&!internationalRelevant(item))
+   return {score:0,reject:true,reason:'international-low-relevance'};
  let score=item?.original?74:42;
  if(MATERIAL_RE.test(signal))score+=34;
  if(MAJOR_EVENT_RE.test(signal))score+=22;
@@ -744,6 +770,7 @@ export function scoreRacingWireItem(item){
  if(/\b(entry|entries|draw|post position|field set|nominations?)\b/i.test(signal))score+=MAJOR_EVENT_RE.test(signal)?14:3;
  if(LOW_VALUE_RE.test(signal))score-=28;
  if(/\b(odds?|betting|wager(?:ing)?|picks?)\b/i.test(signal))score-=24;
+ if(isInternationalStory(item)&&internationalRelevant(item))score+=8;
  if(item?.source==='Thoroughbred Daily News')score+=4;
  const corroboration=Math.min(10,4*(item?.also_reported_by?.length||0));
  score+=corroboration;
@@ -768,6 +795,7 @@ function newsroomLane(item){
  if(BREEDING_RE.test(title)||category.includes('breeding'))return 'breeding';
  if(INDUSTRY_METRICS_RE.test(title)||category.includes('industry'))return 'industry';
  if(category.includes('achievement'))return 'achievement';
+ if(category.includes('international')||kind==='international')return 'international';
  if(['horse','trainer','jockey','owner','stable'].includes(kind)||/horse|trainer|jockey|owner|stable/.test(category))return 'horse-people';
  return 'race';
 }
