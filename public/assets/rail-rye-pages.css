@@ -1280,3 +1280,20 @@ body.rr-publication-scroll-page>.heritage-footer{flex:0 0 auto;margin-top:auto}
 body.rr-publication-scroll-page .rr-publication-product-grid .rr-racecards-purchase-rail{
  max-height:none;overflow:visible
 }
+
+
+/* Page 2: let the mobile journal hero grow around its featured story and keep the footer in normal scroll flow. */
+@media(max-width:750px){
+ body.rr-numbered-hero-page.rr-single-screen-hero.heritage-journal-page{
+  min-height:100svh;display:flex;flex-direction:column
+ }
+ body.rr-numbered-hero-page.rr-single-screen-hero.heritage-journal-page>.heritage-inner-hero{
+  display:flex;flex:0 0 auto!important;flex-direction:column;min-height:0;height:auto;overflow:visible
+ }
+ body.rr-numbered-hero-page.rr-single-screen-hero.heritage-journal-page .rr-journal-hero-grid{
+  flex:0 0 auto;min-height:0
+ }
+ body.rr-numbered-hero-page.rr-single-screen-hero.heritage-journal-page>.heritage-footer{
+  flex:0 0 auto;margin-top:0
+ }
+}
