@@ -315,6 +315,12 @@ const routineInternational=scoreRacingWireItem({
 assert.equal(routineInternational.reject,true,'Routine foreign racing is filtered out for a North American audience');
 assert.equal(routineInternational.reason,'international-low-relevance');
 
+const superficialInternational=scoreRacingWireItem({
+ title:'Melbourne Cup Links Bolster Goffs Autumn Catalog',source:'BloodHorse',
+ category:'Sales / Auctions',published_at:date
+});
+assert.equal(superficialInternational.reject,true,'A famous foreign race name alone does not make a routine catalog story relevant enough for the North American wire');
+
 const floodTitles=[
  'Horse A scratched from Breeders Cup Classic',
  'Horse B injured before Breeders Cup Turf',
