@@ -129,17 +129,17 @@ a{color:inherit}button,input,select{font:inherit}button{cursor:pointer}
 <script>
 (()=>{'use strict';
 const $=id=>document.getElementById(id);
-const cats=[['all','ALL NEWS'],['horse','HORSE'],['jockey','JOCKEY'],['trainer','TRAINER'],['owner','OWNER'],['stable','STABLE'],['race','RACE / STAKES'],['racetrack','RACETRACK'],['breeding','BREEDING'],['sale','SALES / AUCTIONS'],['regulatory','REGULATORY'],['achievement','ACHIEVEMENT'],['industry','INDUSTRY']];
+const cats=[['all','ALL NEWS'],['horse','HORSE'],['jockey','JOCKEY'],['trainer','TRAINER'],['owner','OWNER'],['stable','STABLE'],['race','RACE / STAKES'],['racetrack','RACETRACK'],['breeding','BREEDING'],['sale','SALES / AUCTIONS'],['regulatory','REGULATORY'],['achievement','ACHIEVEMENT'],['industry','INDUSTRY'],['international','INTERNATIONAL']];
 let subject='all',data=[],shown=8;
 
-const badgeKinds=new Set(['horse','jockey','trainer','owner','stable','race','racetrack','breeding','sale','industry','regulatory','achievement']);
+const badgeKinds=new Set(['horse','jockey','trainer','owner','stable','race','racetrack','breeding','sale','industry','regulatory','achievement','international']);
 function icon(kind){
  const safe=badgeKinds.has(kind)?kind:'industry';
  const el=document.createElement('span');
  el.className='emblem';
  el.setAttribute('aria-hidden','true');
  const img=document.createElement('img');
- img.src='/assets/approved/racing-wire/badges/'+safe+'.png?v=10';
+ img.src='/assets/approved/racing-wire/badges/'+safe+'.png?v=11';
  img.alt='';
  img.width=96;img.height=96;
  img.decoding='async';
