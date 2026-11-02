@@ -6,6 +6,7 @@ import {handleAdminJournal,handlePublicJournal,publicJournalCover} from './journ
 import {handleSitemap,serveJournalDocument,serveProductDocument} from './seo.js';
 import {ensureReleaseSchedule,validReleaseAt} from './publication-schedule.js';
 import {handleMembershipApi,handleAdminMembershipPlans,reconcileMemberships} from './memberships.js';
+import {handleRaceCardAlerts,syncRaceCardAnnouncement,sendRaceCardAlerts} from './race-card-alerts.js';
 /* Rail & Rye admin MVP. Dependencies: Cloudflare Workers, R2, D1, Cloudflare Access.
    Admin routes FAIL CLOSED until ACCESS_TEAM_DOMAIN, ACCESS_AUD and ADMIN_EMAIL
    are configured in Cloudflare Worker runtime variables, and a matching Access
@@ -146,6 +147,7 @@ async function handleAdminAPI(request,env,pathname,ctx) {
       const when=Date.parse(data.release_at.replace(' ','T')+'Z');
       if(when<=Date.now()+30*1000||when>Date.now()+366*86400*1000)return fail('Choose a release at least 1 minute ahead, within the next year');
     }
+    const alertAnnouncement=data.status==='published'&&data.category==='Race Cards'&&(item.status!=='published'||(existing?.release_at||null)!==(data.release_at||null));
     const ops=[env.STORE_DB.prepare(`UPDATE products SET title=?,category=?,race_date=?,track=?,description=?,price_cents=?,status=? WHERE id=?`)
       .bind(data.title,data.category,data.race_date,data.track,data.description,data.price_cents,data.status,id)];
     if(data.release_at){
@@ -154,6 +156,10 @@ async function handleAdminAPI(request,env,pathname,ctx) {
       ops.push(env.STORE_DB.prepare('DELETE FROM product_release_schedule WHERE product_id=?').bind(id));
     }
     await env.STORE_DB.batch(ops);
+    if(alertAnnouncement){
+      const alertTask=syncRaceCardAnnouncement(env,id,data.release_at,item.status!=='published').catch(e=>console.warn('Race Card alert queue deferred',String(e).slice(0,120)));
+      if(ctx?.waitUntil)ctx.waitUntil(alertTask);else await alertTask;
+    }
     const product=await fetchProduct(env,id);
     return json({product:{...product,release_at:data.release_at}});
   }
@@ -325,6 +331,7 @@ export default {
         const response=await serveProductDocument(original,{product});
         return request.method==='HEAD'?new Response(null,{status:response.status,headers:response.headers}):response;
       }
+      if(path.startsWith("/api/race-card-alerts/"))return handleRaceCardAlerts(request,env,url);
       if(path.startsWith("/api/membership/"))return handleMembershipApi(request,env,url);
       if(path.startsWith("/api/free-download/")||path==="/api/products"||path==="/api/checkout"||path==="/api/stripe/webhook"||path==="/api/stripe/live-webhook"||path.startsWith("/api/orders/")||path==="/api/delivery/download"||path==="/api/delivery/download-all"||path==="/api/delivery/items"||path==="/api/recovery/request")return handleCommerce(request,env,url,ctx);
       if(path.startsWith("/api/"))return fail("Not found",404);
@@ -333,6 +340,7 @@ export default {
   },
   async scheduled(controller,env,ctx){
     ctx.waitUntil(sendQueuedEmails(env,8));
+    ctx.waitUntil(sendRaceCardAlerts(env,20).catch(e=>console.warn('Race Card alert queue retry deferred',String(e).slice(0,120))));
     ctx.waitUntil(reconcileMemberships(env,25));
   }
 };
