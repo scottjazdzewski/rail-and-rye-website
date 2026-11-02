@@ -340,12 +340,6 @@ export function categorize(title,category='',source=''){
   if(/\b(hall of fame|milestone|career (?:win|victory)|record[- ]breaking|record setter|award(?:ed)?|honou?r(?:ed)?|\d{3,4}(?:st|nd|rd|th) (?:win|victory))\b/.test(s))
     return 'Achievement';
 
-  // Major foreign race/horse developments receive their own desk. Routine
-  // overseas coverage is filtered later unless it clears a North American
-  // relevance gate.
-  if(/\b(japan cup|tenno sho|tokyo yushun|satsuki sho|kikuka sho|takarazuka kinen|arima kinen|dubai world cup|saudi cup|prix de l.?arc de triomphe|royal ascot|epsom derby|irish derby|king george vi|queen elizabeth stakes|melbourne cup|cox plate|hong kong cup|hong kong vase|hong kong mile|hong kong sprint|sha tin|meydan|longchamp|ascot|newmarket|epsom|curragh|flemington|randwick|tokyo racecourse|nakayama|kyoto racecourse)\b/.test(s))
-    return 'International';
-
   // Business / audience metrics are Industry even when the event name itself
   // contains a stakes term. Example: Breeders' Cup attendance and handle.
   if(/\b(attendance|handle|wagering handle|all-sources handle|turnover|revenue|viewership|television ratings|tv ratings|economic impact|business results|market share|crowd|fan count|media rights|broadcast rights|purse increase|purses increase)\b/.test(s))
@@ -363,6 +357,11 @@ export function categorize(title,category='',source=''){
   // correctly labels "retired to stud" while avoiding generic "mare" alone.
   if(/\b(retired? to stud|retires? to stud|stud fee|stallion|broodmare|in foal|foal(?:ed|ing)?|sire|dam|breeding rights|cover(?:ed|ing))\b/.test(s))
     return 'Breeding';
+
+  // Keep Sales/Breeding as the primary desk when that is what the story is
+  // actually about; otherwise major overseas race/horse news gets its own desk.
+  if(/\b(japan cup|tenno sho|tokyo yushun|satsuki sho|kikuka sho|takarazuka kinen|arima kinen|dubai world cup|saudi cup|prix de l.?arc de triomphe|royal ascot|epsom derby|irish derby|king george vi|queen elizabeth stakes|melbourne cup|cox plate|hong kong cup|hong kong vase|hong kong mile|hong kong sprint|sha tin|meydan|longchamp|ascot|newmarket|epsom|curragh|flemington|randwick|tokyo racecourse|nakayama|kyoto racecourse)\b/.test(s))
+    return 'International';
 
   if(/\b(jockey|rider|apprentice|irad ortiz|prat)\b/.test(s))return 'Jockeys';
   if(/\b(trainer|assistant trainer)\b/.test(s))return 'Trainers';
@@ -726,12 +725,17 @@ function isInternationalStory(item){
 function internationalRelevant(item){
  const title=String(item?.title||'');
  if(!isInternationalStory(item))return true;
- if(INTERNATIONAL_MAJOR_RE.test(title))return true;
- if(MAJOR_EVENT_RE.test(title))return true;
+ const sale=SALES_RE.test(title),breeding=BREEDING_RE.test(title);
+ const moneyOrRecord=/(?:\$\s?\d|£\s?\d|€\s?\d|\b(?:million|record|seven[- ]figure|eight[- ]figure)\b)/i.test(title);
+ if(sale)return moneyOrRecord;
+ if(breeding)return MATERIAL_RE.test(title)||MILESTONE_RE.test(title)||moneyOrRecord||/\bchampion|classic winner|derby winner\b/i.test(title);
+ const majorRace=INTERNATIONAL_MAJOR_RE.test(title)||MAJOR_EVENT_RE.test(title);
+ const raceDevelopment=RESULT_RE.test(title)||MATERIAL_RE.test(title)||MILESTONE_RE.test(title)||
+   /\b(entry|entries|draw|post position|field set|nominations?|favorite|favourite|contender|targets?|headed to|runs? in)\b/i.test(title);
+ if(majorRace&&raceDevelopment)return true;
  if(GRADED_RE.test(title)&&(RESULT_RE.test(title)||MATERIAL_RE.test(title)))return true;
  if(/\b(group|grade)\s*1\b|\bG1\b/i.test(title)&&(RESULT_RE.test(title)||MATERIAL_RE.test(title)||MILESTONE_RE.test(title)))return true;
- if(SALES_RE.test(title)&&/(?:\$\s?\d|£\s?\d|€\s?\d|\b(?:million|record|seven[- ]figure|eight[- ]figure)\b)/i.test(title))return true;
- if(MATERIAL_RE.test(title)&&(MILESTONE_RE.test(title)||BREEDING_RE.test(title)||/champion|classic winner|derby winner/i.test(title)))return true;
+ if(MATERIAL_RE.test(title)&&/\bchampion|classic winner|derby winner\b/i.test(title))return true;
  return false;
 }
 
