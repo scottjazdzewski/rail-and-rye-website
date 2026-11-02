@@ -6,9 +6,15 @@ CREATE TABLE IF NOT EXISTS race_card_alert_subscribers (
   consented_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   confirmation_token_hash TEXT,
   confirmation_expires_at TEXT,
+  confirmation_sent_at TEXT,
   confirmed_at TEXT,
   unsubscribed_at TEXT,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS race_card_alert_ip_limits (
+  ip_hash TEXT PRIMARY KEY,
+  window_started_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  requests INTEGER NOT NULL DEFAULT 1
 );
 CREATE TABLE IF NOT EXISTS race_card_announcements (
   product_id TEXT PRIMARY KEY,
