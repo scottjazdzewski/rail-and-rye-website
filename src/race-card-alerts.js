@@ -46,7 +46,8 @@ async function ensureSchema(env) {
   let pending = schemaReady.get(db);
   if (!pending) {
     pending = (async function () {
-      await db.prepare("CREATE TABLE IF NOT EXISTS race_card_alert_subscribers (subscriber_id TEXT PRIMARY KEY, email TEXT NOT NULL COLLATE NOCASE UNIQUE, consented_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, confirmation_token_hash TEXT, confirmation_expires_at TEXT, confirmed_at TEXT, unsubscribed_at TEXT, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)").run();
+      await db.prepare("CREATE TABLE IF NOT EXISTS race_card_alert_subscribers (subscriber_id TEXT PRIMARY KEY, email TEXT NOT NULL COLLATE NOCASE UNIQUE, consented_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, confirmation_token_hash TEXT, confirmation_expires_at TEXT, confirmation_sent_at TEXT, confirmed_at TEXT, unsubscribed_at TEXT, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)").run();
+      await db.prepare("CREATE TABLE IF NOT EXISTS race_card_alert_ip_limits (ip_hash TEXT PRIMARY KEY, window_started_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, requests INTEGER NOT NULL DEFAULT 1)").run();
       await db.prepare("CREATE TABLE IF NOT EXISTS race_card_announcements (product_id TEXT PRIMARY KEY, available_at TEXT NOT NULL, queued_at TEXT, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)").run();
       await db.prepare("CREATE TABLE IF NOT EXISTS race_card_alert_jobs (product_id TEXT NOT NULL, subscriber_id TEXT NOT NULL, state TEXT NOT NULL DEFAULT 'queued' CHECK(state IN ('queued','sending','sent','failed','cancelled')), attempts INTEGER NOT NULL DEFAULT 0, next_attempt_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, claimed_at TEXT, sent_at TEXT, provider_id TEXT, last_error TEXT, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(product_id, subscriber_id))").run();
       await db.prepare("CREATE INDEX IF NOT EXISTS idx_race_card_alert_jobs_queue ON race_card_alert_jobs(state, next_attempt_at, created_at)").run();
@@ -119,10 +120,19 @@ async function subscribe(request, env) {
     if (current && current.confirmed_at && !current.unsubscribed_at) {
       return json({message: 'That address is already confirmed for Race Card alerts.'}, 200);
     }
+    const ip = String(request.headers.get('cf-connecting-ip') || '');
+    if (ip) {
+      const ipHash = await tokenHash(ip + '|' + env.RESEND_API_KEY);
+      await env.STORE_DB.prepare("INSERT INTO race_card_alert_ip_limits (ip_hash,window_started_at,requests) VALUES (?,CURRENT_TIMESTAMP,1) ON CONFLICT(ip_hash) DO UPDATE SET requests=CASE WHEN window_started_at>datetime('now','-1 hour') THEN requests+1 ELSE 1 END,window_started_at=CASE WHEN window_started_at>datetime('now','-1 hour') THEN window_started_at ELSE CURRENT_TIMESTAMP END").bind(ipHash).run();
+      const limit = await env.STORE_DB.prepare("SELECT requests FROM race_card_alert_ip_limits WHERE ip_hash=?").bind(ipHash).first();
+      await env.STORE_DB.prepare("DELETE FROM race_card_alert_ip_limits WHERE window_started_at<datetime('now','-1 day')").run();
+      if (Number(limit && limit.requests) > 5) return json({error: 'Please wait before requesting another confirmation email.'}, 429);
+    }
     const subscriberId = current ? current.subscriber_id : uuid();
     const token = randomToken();
     const hash = await tokenHash(token);
-    await env.STORE_DB.prepare("INSERT INTO race_card_alert_subscribers (subscriber_id,email,consented_at,confirmation_token_hash,confirmation_expires_at,confirmed_at,unsubscribed_at) VALUES (?,?,CURRENT_TIMESTAMP,?,datetime('now','+1 day'),NULL,NULL) ON CONFLICT(email) DO UPDATE SET consented_at=CURRENT_TIMESTAMP,confirmation_token_hash=excluded.confirmation_token_hash,confirmation_expires_at=excluded.confirmation_expires_at,confirmed_at=NULL,unsubscribed_at=NULL").bind(subscriberId, email, hash).run();
+    const saved = await env.STORE_DB.prepare("INSERT INTO race_card_alert_subscribers (subscriber_id,email,consented_at,confirmation_token_hash,confirmation_expires_at,confirmation_sent_at,confirmed_at,unsubscribed_at) VALUES (?,?,CURRENT_TIMESTAMP,?,datetime('now','+1 day'),CURRENT_TIMESTAMP,NULL,NULL) ON CONFLICT(email) DO UPDATE SET consented_at=CURRENT_TIMESTAMP,confirmation_token_hash=excluded.confirmation_token_hash,confirmation_expires_at=excluded.confirmation_expires_at,confirmation_sent_at=CURRENT_TIMESTAMP,confirmed_at=NULL,unsubscribed_at=NULL WHERE race_card_alert_subscribers.confirmation_sent_at IS NULL OR race_card_alert_subscribers.confirmation_sent_at<datetime('now','-15 minutes')").bind(subscriberId, email, hash).run();
+    if (!saved.meta || !saved.meta.changes) return json({message: 'If that address can receive alerts, check your inbox for a confirmation link.'}, 202);
     await resend(env, Object.assign({to: email}, confirmationMessage(token)), 'rr-alert-confirm-' + subscriberId + '-' + hash.slice(0, 12));
     return json({message: 'Check your inbox for a confirmation link to activate Race Card alerts.'}, 202);
   } catch (error) {
