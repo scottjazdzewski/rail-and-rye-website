@@ -110,6 +110,33 @@ function trustedOrigin(request) {
 }
 function slugFor(title,id) {return (title.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,70)||"product")+"-"+id.slice(0,8);}
 async function fetchProduct(env,id) {return env.STORE_DB.prepare("SELECT * FROM products WHERE id = ?").bind(id).first();}
+async function handleAdminBundlesWithRaceAlerts(request,env,pathname,ctx) {
+  const match=pathname.match(/^\/api\/admin\/bundles(?:\/([0-9a-f-]{36}))?$/i);
+  const idFromPath=match?.[1]||null;
+  let before=null;
+  if(request.method==='PATCH'&&idFromPath&&env.STORE_DB){
+    before=await env.STORE_DB.prepare("SELECT p.status,s.release_at FROM products p LEFT JOIN product_release_schedule s ON s.product_id=p.id WHERE p.id=? AND p.pdf_key=?").bind(idFromPath,BUNDLE_KEY).first();
+  }
+  const response=await handleAdminBundles(request,env,pathname);
+  if(!response.ok)return response;
+  let productId=idFromPath;
+  if(request.method==='POST'){
+    const result=await response.clone().json().catch(()=>null);
+    productId=typeof result?.id==='string'?result.id:null;
+  }
+  if(!productId||!env.STORE_DB)return response;
+  const product=await fetchProduct(env,productId);
+  if(!product||product.status!=='published'||product.category!=='Race Cards')return response;
+  const release=await env.STORE_DB.prepare('SELECT release_at FROM product_release_schedule WHERE product_id=?').bind(productId).first();
+  const releaseAt=release?.release_at||null;
+  const createIfMissing=!before||before.status!=='published';
+  const scheduleChanged=(before?.release_at||null)!==releaseAt;
+  if(createIfMissing||scheduleChanged){
+    const alertTask=syncRaceCardAnnouncement(env,productId,releaseAt,createIfMissing).catch(e=>console.warn('Race Card bundle alert queue deferred',String(e).slice(0,120)));
+    if(ctx?.waitUntil)ctx.waitUntil(alertTask);else await alertTask;
+  }
+  return response;
+}
 async function handleAdminAPI(request,env,pathname,ctx) {
   if(!env.STORE_DB||!env.CARDS_BUCKET) return fail("Database or storage binding missing",503);
   if(!["GET","POST","PATCH","PUT"].includes(request.method)) return fail("Method not allowed",405);
@@ -236,7 +263,7 @@ export default {
       if(path.startsWith("/api/admin/")||path==="/admin"||path.startsWith("/admin/")) {
         const auth=await verifyAdmin(request,env); if(!auth.ok)return auth.response;
         if(path==='/api/admin/membership-plans')return handleAdminMembershipPlans(request,env);
-        if(path.startsWith('/api/admin/bundles'))return handleAdminBundles(request,env,path);
+        if(path.startsWith('/api/admin/bundles'))return handleAdminBundlesWithRaceAlerts(request,env,path,ctx);
         if(path.startsWith('/api/admin/bundle-assets')){
           const upload=path.match(/^\/api\/admin\/bundle-assets\/([0-9a-f-]{36})\/pdf$/i);
           if(upload&&request.method==='PUT'){
