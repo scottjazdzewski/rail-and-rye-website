@@ -40,7 +40,8 @@ const adminFeedFetch=async url=>{
  const feed=PREVIEW_LIVE_FEEDS.find(x=>x.url===url);
  if(!feed)return new Response('',{status:404});
  if(feed.id!=='tdn-all')return new Response('<rss><channel></channel></rss>',{status:200,headers:{'Content-Type':'application/rss+xml'}});
- const xml='<rss><channel><item><title>Breeders Cup Classic contender scratched after health concern</title><link>https://www.thoroughbreddailynews.com/story/editorial-test</link><category>Breeders Cup</category><pubDate>Sat, 31 Oct 2026 16:00:00 GMT</pubDate></item></channel></rss>';
+ const recent=new Date(Date.now()-6*3600000).toUTCString();
+ const xml='<rss><channel><item><title>Breeders Cup Classic contender scratched after health concern</title><link>https://www.thoroughbreddailynews.com/story/editorial-test</link><category>Breeders Cup</category><pubDate>'+recent+'</pubDate></item></channel></rss>';
  return new Response(xml,{status:200,headers:{'Content-Type':'application/rss+xml'}});
 };
 const adminUrl='https://railandryeracing.com/api/admin/racing-wire-editorial';
