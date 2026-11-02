@@ -115,6 +115,7 @@ async function handleAdminBundlesWithRaceAlerts(request,env,pathname,ctx) {
   const idFromPath=match?.[1]||null;
   let before=null;
   if(request.method==='PATCH'&&idFromPath&&env.STORE_DB){
+    await ensureReleaseSchedule(env);
     before=await env.STORE_DB.prepare("SELECT p.status,s.release_at FROM products p LEFT JOIN product_release_schedule s ON s.product_id=p.id WHERE p.id=? AND p.pdf_key=?").bind(idFromPath,BUNDLE_KEY).first();
   }
   const response=await handleAdminBundles(request,env,pathname);
