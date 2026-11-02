@@ -189,8 +189,9 @@ const previewFetch=async url=>{
  if(jsonSource)return new Response(JSON.stringify(jsonFixture),{status:200,headers:{'Content-Type':'application/json'}});
  const fixture=previewFeedFixtures[String(url)];
  assert.ok(fixture,'Only allowlisted Racing Wire endpoints are requested: '+url);
+ const recent=new Date(Date.now()-6*3600000).toUTCString();
  const xml='<rss><channel><item><title>'+fixture.title+'</title><link>'+fixture.link+'</link>'+
-  '<pubDate>Sat, 31 Oct 2026 12:00:00 GMT</pubDate></item></channel></rss>';
+  '<pubDate>'+recent+'</pubDate></item></channel></rss>';
  return new Response(xml,{status:200,headers:{'Content-Type':'application/rss+xml'}});
 };
 
