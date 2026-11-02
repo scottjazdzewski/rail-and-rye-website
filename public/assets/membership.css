@@ -55,16 +55,16 @@
 .rr-member-intro .rr-member-lede{font-size:17px;line-height:1.55}
 .rr-member-intro .rr-join-email{box-sizing:border-box;width:100%;max-width:100%;margin-top:24px}
 .rr-member-consent{max-width:100%;margin-top:16px;font-size:13px;line-height:1.55}
-.rr-member-options{box-sizing:border-box;margin-top:0;padding:clamp(16px,1.8vw,24px);border:1px solid #b58a4b;border-radius:16px;background:linear-gradient(145deg,#0a2535f5,#0e3042f5);color:#f6efdf;box-shadow:0 16px 38px #0b233222}
+.rr-member-options{box-sizing:border-box;container-type:inline-size;margin-top:0;padding:clamp(16px,1.8vw,24px);border:1px solid #b58a4b;border-radius:16px;background:linear-gradient(145deg,#0a2535f5,#0e3042f5);color:#f6efdf;box-shadow:0 16px 38px #0b233222}
 .rr-member-options-head>span{color:#e0b96f;font:800 11px/1.4 Inter,system-ui,sans-serif;letter-spacing:.18em;text-transform:uppercase}
 .rr-member-options-head h2{margin:6px 0 4px;color:#f4e6ca;font:clamp(24px,2.3vw,30px)/1.1 Georgia,"Times New Roman",serif}
 .rr-member-options-head p{margin:0;color:#d3dbe0;font:13px/1.4 Inter,system-ui,sans-serif}
 .rr-member-options .rr-member-notice{min-height:0;margin:9px 0 8px;color:#e6decf;font:12px/1.4 Inter,system-ui,sans-serif}
 .rr-member-options .rr-member-grid{grid-template-columns:1fr;gap:8px;margin:0}
-.rr-member-options .rr-plan-card{display:grid;grid-template-columns:minmax(0,1fr) auto 144px;grid-template-areas:"name name action" "period price action";align-items:center;gap:3px 8px;min-height:82px;padding:10px 12px;border-radius:10px;box-shadow:none}
+.rr-member-options .rr-plan-card{display:grid;grid-template-columns:minmax(0,1fr) 150px 144px;grid-template-areas:"name name action" "period price action";align-items:center;gap:3px 8px;min-height:82px;padding:10px 12px;border-radius:10px;box-shadow:none}
 .rr-member-options .rr-plan-card h2{grid-area:name;font-size:20px}
-.rr-member-options .rr-plan-period{grid-area:period;margin:0;font-size:9px;letter-spacing:.1em;white-space:nowrap}
-.rr-member-options .rr-plan-price{grid-area:price;margin:0;font-size:25px;white-space:nowrap}
+.rr-member-options .rr-plan-period{grid-area:period;align-self:baseline;margin:0;font-size:9px;letter-spacing:.1em;white-space:nowrap}
+.rr-member-options .rr-plan-price{grid-area:price;align-self:baseline;justify-self:start;margin:0;font-size:25px;white-space:nowrap}
 .rr-member-options .rr-plan-card .rr-member-button{grid-area:action;width:144px;min-width:0;min-height:42px;padding:9px 10px;white-space:nowrap;font-size:9px}
 .rr-member-options-note{margin:8px 0 0;color:#cfdae0;font:11px/1.35 Inter,system-ui,sans-serif}
 .rr-member-already{margin-top:30px}
@@ -73,3 +73,11 @@
 
 /* The shared site header remains legible on the membership page without a hero image. */
 .rr-member-page .heritage-header{background:#071c2a!important}
+
+/* Keep the plan text columns stable when prices change, and reflow in a narrow membership panel. */
+@container (max-width:560px){
+  .rr-member-options .rr-plan-card{grid-template-columns:minmax(0,1fr) 144px;grid-template-areas:"name action" "period action" "price action";align-items:center;gap:4px 10px;min-height:100px}
+  .rr-member-options .rr-plan-period{white-space:normal;line-height:1.25}
+  .rr-member-options .rr-plan-price{align-self:start;font-size:23px}
+  .rr-member-options .rr-plan-card .rr-member-button{width:144px;white-space:normal;line-height:1.2}
+}
