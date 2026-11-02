@@ -27,6 +27,19 @@ jobs:
         run: node --experimental-sqlite test-free-downloads.mjs
       - name: Scheduled publication embargo and automatic release tests
         run: node --experimental-sqlite test-scheduled-publications.mjs
+      - name: Audit Racing Wire daily volume
+        run: |
+          node --input-type=module <<'NODE'
+          import {previewExternalItems,curateRacingWireStories} from './src/racing-wire.js';
+          const external=await previewExternalItems(fetch);
+          const curated=curateRacingWireStories(external.items);
+          const byDay=arr=>arr.reduce((m,x)=>{const d=(x.published_at||'').slice(0,10)||'undated';m[d]=(m[d]||0)+1;return m;},{});
+          console.log('RAW_COUNT '+external.items.length);
+          console.log('RAW_BY_DAY '+JSON.stringify(byDay(external.items)));
+          console.log('CURATED_COUNT '+curated.length);
+          console.log('CURATED_BY_DAY '+JSON.stringify(byDay(curated)));
+          console.log('CURATED_TITLES '+JSON.stringify(curated.map(x=>({date:(x.published_at||'').slice(0,10),source:x.source,title:x.title,score:x.editorial_score,category:x.category}))));
+          NODE
       - name: Multi-collection bundle listing tests
         run: node --experimental-sqlite test-bundle-category-placement.mjs
       - name: Compact Publisher desktop layout and control regression
