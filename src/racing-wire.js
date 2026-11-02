@@ -703,7 +703,7 @@ const HARD_REJECT_PATTERNS=[
  /\b(?:betting odds?|odds and|favorites? and how to bet|how to bet)\b/i,
  /\b(?:promo code|bonus bets?|sportsbook|racebook|off[- ]?track betting|otb|advance deposit wagering|\badw\b|parlay|rebates?)\b/i,
  /\b(?:handicapper|handicapping plays?|wagering tips?|betting strategy|how to wager|how to bet)\b/i,
- /\b(?:harness|standardbred|steeplechase|steeplechaser|jump racing|national hunt|trotting|trotter|trotters|pacing|pacer|pacers|hambletonian|meadowlands|yonkers raceway|woodbine mohawk|mohawk park|kentucky sire stakes|kentucky sires stakes|cumberland run late sire stakes)\b/i,
+ /\b(?:harness|standardbred|steeplechase|steeplechaser|jump racing|national hunt|trotting|trotter|trotters|pacing|pacer|pacers|hambletonian|meadowlands|yonkers raceway|woodbine mohawk|mohawk park|harrah'?s philadelphia|kentucky sire stakes|kentucky sires stakes|cumberland run late sire stakes)\b/i,
  /\bhistory:\s*(?:winners?|losers?|betting|odds)/i
 ];
 const MAJOR_EVENT_RE=/\b(breeders.? cup|kentucky derby|preakness|belmont stakes|travers|pegasus world cup|dubai world cup|melbourne cup|prix de l.?arc de triomphe|japan cup|cox plate|eclipse stakes|royal ascot|kentucky oaks)\b/i;
@@ -716,6 +716,7 @@ const INDUSTRY_RE=/\b(HISA|HIWU|racing commission|commissioners?|rule change|pol
 const MILESTONE_RE=/\b(milestone|hall of fame|career win|career victori(?:es|y)|record[- ]breaking|record setter|\d{3,4}(?:st|nd|rd|th) win|four-timer|five-timer|six-timer|thousand career victories)\b/i;
 const INDUSTRY_METRICS_RE=/\b(attendance|handle|wagering handle|turnover|revenue|viewership|television ratings|tv ratings|economic impact|market share|crowd)\b/i;
 const LOW_VALUE_RE=/\b(preview|opinion|podcast|photo gallery|look back|what to know|guide to)\b/i;
+const FEED_FILLER_RE=/\b(?:major )?takeaways?\b|\brookie rankings?\b|\brankings?:/i;
 const INTERNATIONAL_RE=/\b(japan|japanese|tokyo|nakayama|kyoto|hanshin|hong kong|sha tin|dubai|meydan|saudi|riyadh|england|britain|british|ireland|irish|france|french|ascot|newmarket|epsom|goodwood|york|curragh|leopardstown|longchamp|chantilly|deauville|australia|australian|flemington|caulfield|randwick|rosehill|new zealand|japan cup|tenno sho|royal ascot|melbourne cup|cox plate|prix de l.?arc de triomphe|dubai world cup|saudi cup)\b/i;
 const INTERNATIONAL_MAJOR_RE=/\b(japan cup|tenno sho|takarazuka kinen|arima kinen|dubai world cup|saudi cup|prix de l.?arc de triomphe|royal ascot|epsom derby|irish derby|king george vi|queen elizabeth stakes|melbourne cup|cox plate|hong kong cup|hong kong vase|hong kong mile|hong kong sprint)\b/i;
 function isInternationalStory(item){
@@ -759,6 +760,8 @@ export function scoreRacingWireItem(item){
  if(!title)return {score:0,reject:true,reason:'empty'};
  if(HARD_REJECT_PATTERNS.some(rx=>rx.test(context)))
    return {score:0,reject:true,reason:'betting-or-service-content'};
+ if(FEED_FILLER_RE.test(title))
+   return {score:0,reject:true,reason:'editorial-listicle'};
  if(isInternationalStory(item)&&!internationalRelevant(item))
    return {score:0,reject:true,reason:'international-low-relevance'};
  let score=item?.original?74:42;
@@ -791,6 +794,17 @@ function majorEventFamilyKey(title){
   [/\bprix de l.?arc de triomphe\b/,'arc'],[/\bjapan cup\b/,'japan-cup']
  ])if(rx.test(t))return key;
  return raceEventKey(title);
+}
+function qualifiesExpandedWire(item,assessment){
+ const title=String(item?.title||'');
+ if(assessment.reject||assessment.score<64)return false;
+ if(MATERIAL_RE.test(title)||INDUSTRY_RE.test(title)||INDUSTRY_METRICS_RE.test(title)||MILESTONE_RE.test(title))return true;
+ if(SALES_RE.test(title)||BREEDING_RE.test(title))return true;
+ if(GRADED_RE.test(title)&&RESULT_RE.test(title))return true;
+ if(/\b(kentucky derby|kentucky oaks|preakness|belmont stakes)\b/i.test(title)&&
+    /\b(prep|points?|schedule|field|entry|entries|draw|post position|qualifier)\b/i.test(title))return true;
+ if(isInternationalStory(item)&&internationalRelevant(item)&&(RESULT_RE.test(title)||MATERIAL_RE.test(title)||SALES_RE.test(title)||BREEDING_RE.test(title)))return true;
+ return false;
 }
 function newsroomLane(item){
  const category=String(item?.category||'').toLowerCase(),kind=String(item?.subject_kind||'').toLowerCase(),title=String(item?.title||'');
@@ -828,8 +842,12 @@ export function curateRacingWireStories(stories,{threshold=66,maxItems=24,maxPer
  const candidates=[];
  for(const item of grouped){
    const assessment=scoreRacingWireItem(item);
-   if(assessment.reject||assessment.score<threshold)continue;
-   candidates.push({...item,type:item.type||displayType(item.title),editorial_score:assessment.score});
+   if(assessment.reject)continue;
+   const primary=assessment.score>=threshold;
+   const expanded=threshold===66&&qualifiesExpandedWire(item,assessment);
+   if(!primary&&!expanded)continue;
+   candidates.push({...item,type:item.type||displayType(item.title),editorial_score:assessment.score,
+     editorial_tier:primary?'core':'expanded'});
  }
  if(!candidates.length)return [];
  const referenceMs=Math.max(...candidates.map(x=>Date.parse(x.published_at)).filter(Number.isFinite));
