@@ -507,7 +507,7 @@ assert.ok(wirePage.includes('.item .emblem{width:88px;height:88px'),
  'News-card badges are enlarged on desktop');
 assert.ok(!wirePage.includes('const shapes={')&&!wirePage.includes("el.innerHTML='<svg"),
  'Temporary inline SVG badge system is completely removed');
-assert.ok(wirePage.includes("const badgeAssetFiles=Object.freeze({international:'world'})")&&wirePage.includes("img.src='/assets/approved/racing-wire/badges/'+asset+'.png?v=15'"),
+assert.ok(wirePage.includes("const badgeAssetFiles=Object.freeze({international:'world'})")&&wirePage.includes("img.src='/assets/approved/racing-wire/badges/'+asset+'.png?v=16'"),
  'International resolves to the new world badge asset and the cache version is bumped');
 assert.ok(!wirePage.includes("safe==='international'")&&!wirePage.includes('data:image/png;base64'),
  'International uses the same approved PNG loader as every other Racing Wire badge with no legacy special-case rendering');
