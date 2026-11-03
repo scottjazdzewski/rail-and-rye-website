@@ -28,7 +28,9 @@ async function payload(request) {
   const price_cents=Number(data?.price_cents);
   const status=String(data?.status||'draft');
   const product_ids=data?.product_ids;
+  const id=data?.id?String(data.id):null;
   const release_at=data?.release_at===undefined?undefined:(data.release_at||null);
+  if(id&&!UUID.test(id))throw Error('Invalid bundle request ID');
   if(title.length<3||title.length>140)throw Error('Bundle name must contain 3–140 characters');
   if(description.length>4000)throw Error('Bundle description too long');
   if(!CATEGORIES.has(category))throw Error('Invalid collection');
@@ -41,7 +43,7 @@ async function payload(request) {
   if(!Array.isArray(product_ids)||product_ids.length<2||product_ids.length>12||
     product_ids.some(x=>typeof x!=='string'||!UUID.test(x))||
     new Set(product_ids).size!==product_ids.length)throw Error('Select 2–12 different published PDFs');
-  return {title,description,category,race_date,price_cents,status,product_ids,release_at};
+  return {id,title,description,category,race_date,price_cents,status,product_ids,release_at};
 }
 function releaseWindowValid(utc){
   const time=Date.parse(utc.replace(' ','T')+'Z');
@@ -63,7 +65,7 @@ function slugFor(title,id) {
 }
 async function allBundles(env) {
   const products=await env.STORE_DB.prepare(
-    "SELECT p.id,p.title,p.category,p.race_date,p.description,p.price_cents,p.status,s.release_at FROM products p LEFT JOIN product_release_schedule s ON s.product_id=p.id WHERE p.pdf_key=? ORDER BY p.created_at DESC LIMIT 100"
+    "SELECT p.id,p.title,p.category,p.race_date,p.description,p.price_cents,p.status,s.release_at FROM products p LEFT JOIN product_release_schedule s ON s.product_id=p.id WHERE p.pdf_key=? AND p.status!='archived' ORDER BY p.created_at DESC LIMIT 100"
   ).bind(BUNDLE_KEY).all();
   const bundles=[];
   for (const b of products.results||[]) {
@@ -87,10 +89,18 @@ export async function handleAdminBundles(request,env,path) {
   if(path==='/api/admin/bundles'&&request.method==='POST') {
     let b;try{
       b=await payload(request);
+      if(b.id){
+        const existing=await env.STORE_DB.prepare('SELECT status,pdf_key FROM products WHERE id=?').bind(b.id).first();
+        if(existing){
+          if(existing.pdf_key!==BUNDLE_KEY)return bad('This request ID is already in use',409);
+          if(existing.status==='archived')return bad('This bundle was already removed',409);
+          return out({id:b.id,created:false,already_exists:true});
+        }
+      }
       if(b.release_at&&!releaseWindowValid(b.release_at))throw Error('Choose a release at least one minute ahead, within the next year');
       await validatedChildren(env,b.product_ids);
     }catch(e){return bad(e.message);}
-    const id=crypto.randomUUID();
+    const id=b.id||crypto.randomUUID();
     const ops=[env.STORE_DB.prepare(
       "INSERT INTO products (id,title,slug,category,race_date,track,description,price_cents,pdf_key,image_url,status) VALUES (?,?,?,?,?,?,?,?,?,?,?)"
     ).bind(id,b.title,slugFor(b.title,id),b.category,b.race_date,'',b.description,b.price_cents,BUNDLE_KEY,null,b.status)];

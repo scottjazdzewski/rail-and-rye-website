@@ -127,7 +127,8 @@ async function handleAdminBundlesWithRaceAlerts(request,env,pathname,ctx) {
   let productId=idFromPath;
   if(request.method==='POST'){
     const result=await response.clone().json().catch(()=>null);
-    productId=typeof result?.id==='string'?result.id:null;
+    if(result?.created!==true)return response;
+    productId=typeof result.id==='string'?result.id:null;
   }
   if(!productId||!env.STORE_DB)return response;
   const product=await fetchProduct(env,productId);

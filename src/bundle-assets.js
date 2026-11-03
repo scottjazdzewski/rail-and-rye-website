@@ -24,6 +24,8 @@ async function readMeta(request){
   if(raw.length>10000)throw Error('Request too large');
   let p;try{p=JSON.parse(raw);}catch{throw Error('Invalid JSON');}
   if(!p||Array.isArray(p)||typeof p!=='object')throw Error('Invalid PDF metadata');
+  const id=p.id==null||p.id===''?null:String(p.id);
+  if(id&&!UUID.test(id))throw Error('Invalid private PDF request ID');
   const title=String(p.title||'').trim(), category=String(p.category||'Race Cards');
   const race_date=parseDate(p.race_date);
   if(!race_date)throw Error('Enter the racing date printed on this PDF');
@@ -33,7 +35,7 @@ async function readMeta(request){
   if(title.length<3||title.length>140)throw Error('PDF name must contain 3–140 characters');
   if(!CATEGORIES.has(category))throw Error('Invalid collection');
   if(track.length>100)throw Error('Racetrack name too long');
-  return {title,category,race_date,track,pdf_expires_at};
+  return {id,title,category,race_date,track,pdf_expires_at};
 }
 export async function handleAdminBundleAssets(request,env,path){
   if(!env.STORE_DB||!env.CARDS_BUCKET)return fail('Database or private storage unavailable',503);
@@ -51,14 +53,26 @@ export async function handleAdminBundleAssets(request,env,path){
   }
   if(path==='/api/admin/bundle-assets'&&request.method==='POST'){
     let p;try{p=await readMeta(request);}catch(e){return fail(e.message);}
-    const id=crypto.randomUUID();
+    const id=p.id||crypto.randomUUID();
+    const existing=await env.STORE_DB.prepare(
+      'SELECT p.status,p.pdf_key,a.product_id AS asset_id,a.purged_at FROM products p LEFT JOIN bundle_only_assets a ON a.product_id=p.id WHERE p.id=?'
+    ).bind(id).first();
+    if(existing){
+      if(!existing.asset_id)return fail('This request ID is already in use',409);
+      if(existing.purged_at)return fail('This private PDF was already deleted',410);
+      if(existing.status!=='draft')return fail('Archived PDFs cannot be reused',409);
+      await env.STORE_DB.prepare(
+        'UPDATE products SET title=?,category=?,race_date=?,track=?,pdf_expires_at=? WHERE id=? AND status=\'draft\''
+      ).bind(p.title,p.category,p.race_date,p.track,p.pdf_expires_at,id).run();
+      return json({id,created:false,has_pdf:!!existing.pdf_key});
+    }
     await env.STORE_DB.batch([
       env.STORE_DB.prepare(
         'INSERT INTO products (id,title,slug,category,race_date,track,description,price_cents,pdf_key,image_url,status,pdf_expires_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)'
       ).bind(id,p.title,'bundle-private-'+id,p.category,p.race_date,p.track,'',0,null,null,'draft',p.pdf_expires_at),
       env.STORE_DB.prepare('INSERT INTO bundle_only_assets (product_id) VALUES (?)').bind(id)
     ]);
-    return json({id,created:true},201);
+    return json({id,created:true,has_pdf:false},201);
   }
   // Physically remove every stored version of an archived private PDF, after
   // checking active bundles, paid entitlements and unfinished checkouts.
