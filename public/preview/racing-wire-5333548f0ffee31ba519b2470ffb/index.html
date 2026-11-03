@@ -133,13 +133,15 @@ const cats=[['all','ALL NEWS'],['horse','HORSE'],['jockey','JOCKEY'],['trainer',
 let subject='all',data=[],shown=8;
 
 const badgeKinds=new Set(['horse','jockey','trainer','owner','stable','race','racetrack','breeding','sale','industry','regulatory','achievement','international']);
+const badgeAssetFiles=Object.freeze({international:'world'});
 function icon(kind){
  const safe=badgeKinds.has(kind)?kind:'industry';
+ const asset=badgeAssetFiles[safe]||safe;
  const el=document.createElement('span');
  el.className='emblem';
  el.setAttribute('aria-hidden','true');
  const img=document.createElement('img');
- img.src='/assets/approved/racing-wire/badges/'+safe+'.png?v=14';
+ img.src='/assets/approved/racing-wire/badges/'+asset+'.png?v=15';
  img.alt='';
  img.width=96;img.height=96;
  img.decoding='async';

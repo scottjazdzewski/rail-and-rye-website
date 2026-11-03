@@ -507,22 +507,24 @@ assert.ok(wirePage.includes('.item .emblem{width:88px;height:88px'),
  'News-card badges are enlarged on desktop');
 assert.ok(!wirePage.includes('const shapes={')&&!wirePage.includes("el.innerHTML='<svg"),
  'Temporary inline SVG badge system is completely removed');
-assert.ok(wirePage.includes("/assets/approved/racing-wire/badges/'+safe+'.png?v=14"),
- 'All Racing Wire badges, including International, use the same approved PNG rendering path');
+assert.ok(wirePage.includes("const badgeAssetFiles=Object.freeze({international:'world'})")&&wirePage.includes("img.src='/assets/approved/racing-wire/badges/'+asset+'.png?v=15'"),
+ 'International resolves to the new world badge asset and the cache version is bumped');
 assert.ok(!wirePage.includes("safe==='international'")&&!wirePage.includes('data:image/png;base64'),
  'International uses the same approved PNG loader as every other Racing Wire badge with no legacy special-case rendering');
 assert.ok(!wirePage.includes('breeding-dna-v2.svg')&&!wirePage.includes("kind==='breeding'"),
  'No custom breeding badge renderer or replacement SVG can override the approved family');
 assert.ok(!wirePage.includes('badges.webp')&&!wirePage.includes('.badge-horse{background-position')&&!wirePage.includes('.badge-achievement{background-position'),
  'Old badge sprite and badge-specific sprite-position rules are removed');
-const approvedBadgeFiles=['achievement.png','breeding.png','horse.png','industry.png','international.png','jockey.png','owner.png','race.png','racetrack.png','regulatory.png','sale.png','stable.png','trainer.png'];
+const approvedBadgeFiles=['achievement.png','breeding.png','horse.png','industry.png','jockey.png','owner.png','race.png','racetrack.png','regulatory.png','sale.png','stable.png','trainer.png','world.png'];
 const badgeDirectory=readdirSync(new URL('./public/assets/approved/racing-wire/badges/',import.meta.url)).sort();
 assert.deepEqual(badgeDirectory,approvedBadgeFiles,
  'Badge directory contains exactly the approved PNG set and no legacy/sprite/SVG assets');
-for(const badge of ['horse','jockey','trainer','owner','stable','race','racetrack','breeding','sale','industry','regulatory','achievement','international']){
+for(const badge of ['horse','jockey','trainer','owner','stable','race','racetrack','breeding','sale','industry','regulatory','achievement','world']){
  const badgeAsset=readFileSync(new URL('./public/assets/approved/racing-wire/badges/'+badge+'.png',import.meta.url));
  assert.equal(badgeAsset.subarray(0,8).toString('hex'),'89504e470d0a1a0a','Approved '+badge+' badge is a real PNG');
- assert.ok(badgeAsset.length>(badge==='international'?1200:8000),'Approved '+badge+' badge is a usable PNG asset from the approved badge family');
+ assert.equal(badgeAsset.readUInt32BE(16),96,'Approved '+badge+' badge is 96px wide');
+ assert.equal(badgeAsset.readUInt32BE(20),96,'Approved '+badge+' badge is 96px high');
+ assert.ok(badgeAsset.length>8000,'Approved '+badge+' badge is a usable PNG asset from the approved badge family');
 }
 const breedingBadge=readFileSync(new URL('./public/assets/approved/racing-wire/badges/breeding.png',import.meta.url));
 assert.equal(breedingBadge.subarray(0,8).toString('hex'),'89504e470d0a1a0a',
