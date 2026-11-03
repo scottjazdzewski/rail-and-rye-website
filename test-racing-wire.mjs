@@ -507,8 +507,10 @@ assert.ok(wirePage.includes('.item .emblem{width:88px;height:88px'),
  'News-card badges are enlarged on desktop');
 assert.ok(!wirePage.includes('const shapes={')&&!wirePage.includes("el.innerHTML='<svg"),
  'Temporary inline SVG badge system is completely removed');
-assert.ok(wirePage.includes("/assets/approved/racing-wire/badges/'+safe+'.png?v=12"),
+assert.ok(wirePage.includes("/assets/approved/racing-wire/badges/'+safe+'.png?v=14"),
  'All Racing Wire badges, including International, use the same approved PNG rendering path');
+assert.ok(!wirePage.includes("safe==='international'")&&!wirePage.includes('data:image/png;base64'),
+ 'International uses the same approved PNG loader as every other Racing Wire badge with no legacy special-case rendering');
 assert.ok(!wirePage.includes('breeding-dna-v2.svg')&&!wirePage.includes("kind==='breeding'"),
  'No custom breeding badge renderer or replacement SVG can override the approved family');
 assert.ok(!wirePage.includes('badges.webp')&&!wirePage.includes('.badge-horse{background-position')&&!wirePage.includes('.badge-achievement{background-position'),
