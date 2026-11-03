@@ -130,15 +130,32 @@
     .rr-bulk-field{display:grid;width:100%;min-width:0;gap:4px;color:#445268;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
     .rr-bulk-field input,.rr-bulk-field select{box-sizing:border-box;width:100%;max-width:100%;min-width:0;padding:8px;font-size:12px;letter-spacing:normal;text-transform:none}
     @media(max-width:560px){.rr-bulk-fields{grid-template-columns:minmax(0,1fr)}.rr-bulk-fields>.rr-bulk-field:first-child,.rr-bulk-fields>.rr-bulk-field:nth-child(4){grid-column:auto}}
-</style>
+    .workflow{border:1px solid #d8dfe6;border-radius:8px;margin:18px 0 22px;overflow:hidden;box-shadow:0 7px 18px rgba(18,31,50,.035)}
+    .workflow>summary{display:flex;flex-direction:column;gap:2px;cursor:pointer;list-style:disclosure-closed;padding:15px 19px;font-size:16px}
+    .workflow[open]>summary{list-style:disclosure-open;border-bottom:1px solid rgba(25,45,65,.12)}
+    .workflow>summary strong{font-size:16px;letter-spacing:.01em}
+    .workflow>summary span{font-size:12px;color:#526174}
+    .workflow-upload{background:#edf4f8;border-color:#c7d8e3}
+    .workflow-upload>summary{background:#e3eef5;color:#163b55}
+    .workflow-bundles{background:#faf4e9;border-color:#e2d0ae}
+    .workflow-bundles>summary{background:#f4ead7;color:#604921}
+    .workflow-journal{background:#eef4ee;border-color:#cbd9ca}
+    .workflow-journal>summary{background:#e5eee4;color:#294733}
+    .workflow>.layout{margin:0;padding:16px}
+    .workflow>.panel{margin:0;border:0;border-radius:0;box-shadow:none;background:transparent;padding:16px}
+    .workflow-journal>.panel+.panel{border-top:1px solid rgba(25,45,65,.12)}
+    @media(max-width:900px){.workflow>.layout{padding:10px}.workflow>.panel{padding:12px}}
+  </style>
 <link rel="icon" href="/favicon.png" type="image/png"></head>
 <body>
-<header><div class="top"><div class="logo">RAIL &amp; RYE <small>The Publisher's Desk</small></div><nav aria-label="Publisher tools" style="display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:14px"><a href="#racing-wire-editor">Racing Wire editor ↓</a><a href="#journal-editor">Journal articles ↓</a><a href="/preview/racing-wire-5333548f0ffee31ba519b2470ffb/">Racing Wire private preview ↗</a><a href="/admin/membership-plans/">Membership plans ↗</a><a href="/store/">Publication desk ↗</a><a href="/">View website ↗</a></nav></div></header>
+<header><div class="top"><div class="logo">RAIL &amp; RYE <small>The Publisher's Desk</small></div><nav aria-label="Publisher tools" style="display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:14px"><a href="#workflow-journal">Journal tools ↓</a><a href="/preview/racing-wire-5333548f0ffee31ba519b2470ffb/">Racing Wire private preview ↗</a><a href="/admin/membership-plans/">Membership plans ↗</a><a href="/store/">Publication desk ↗</a><a href="/">View website ↗</a></nav></div></header>
 <main>
   <div class="kicker">Independent thoroughbred racing intelligence</div>
   <h1>Publisher's Desk</h1>
   <p class="sub">Manage tomorrow's racing products without editing the website code. Draft first, attach a private PDF, and publish only when it's ready.</p>
   <div id="notice" class="notice" role="status" aria-live="polite"></div>
+  <details class="workflow workflow-upload" id="workflow-uploads" name="publisher-workflow">
+    <summary><strong>Immediate Uploads</strong><span>Race cards and individual PDFs</span></summary>
   <div class="layout">
     <section class="panel" aria-label="Product editor">
       <div class="head-row"><h2 id="editor-title">New publication</h2><button id="newBtn" class="secondary mini" type="button">+ New</button></div>
@@ -168,6 +185,9 @@
       <p class="footer">This console is for the business owner only. It uses Cloudflare Access sign-in and verifies the authentication token again on the server.</p>
     </aside>
   </div>
+  </details>
+  <details class="workflow workflow-bundles" id="workflow-bundles" name="publisher-workflow">
+    <summary><strong>Bundles</strong><span>Build a bundle, manage private PDFs, and review existing bundles</span></summary>
   <section class="panel rr-bundle-area" aria-label="Automatic product bundles">
     <div class="head-row"><h2>Automatic bundles</h2></div>
     <p class="detail" style="margin-bottom:10px">Upload the files and create the bundle in one pass. Each PDF is attached automatically, with its own racing date and collection.</p>
@@ -252,7 +272,10 @@
     </div>
     </details>
   </section>
+  </details>
 
+  <details class="workflow workflow-journal" id="workflow-journal" name="publisher-workflow">
+    <summary><strong>Journal</strong><span>Journal articles and Racing Wire editorial controls</span></summary>
   <section class="panel rr-wire-editor" id="racing-wire-editor" aria-label="Racing Wire editorial controls">
     <div class="head-row">
       <div><h2>Racing Wire editor</h2><p class="detail">Override the automatic feed when a story needs editorial judgment. These controls affect the private Page 8 preview only.</p></div>
@@ -297,6 +320,7 @@
       </div>
     </div>
   </section>
+  </details>
   <dialog id="articlePreviewDialog" class="article-preview-dialog" aria-labelledby="articlePreviewTitle">
     <div class="article-preview-bar">
       <div><p class="kicker">Private preview · not published</p><p class="detail">This shows the current editor content, including unsaved changes.</p></div>
