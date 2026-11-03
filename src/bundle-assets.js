@@ -1,6 +1,6 @@
 /* Private, bundle-only PDF library. Files live in R2 via the existing protected
    admin PDF upload; public products/checkout never expose draft assets. */
-import {ensureReleaseSchedule,validRacePostAt} from './publication-schedule.js';
+import {ensureReleaseSchedule,pdfExpiryFromRaceDate} from './publication-schedule.js';
 const CATEGORIES=new Set(['Race Cards','Longshot Radar','Stable Notes','Target List']);
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const HEAD={'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'};
@@ -26,13 +26,14 @@ async function readMeta(request){
   if(!p||Array.isArray(p)||typeof p!=='object')throw Error('Invalid PDF metadata');
   const title=String(p.title||'').trim(), category=String(p.category||'Race Cards');
   const race_date=parseDate(p.race_date);
+  if(!race_date)throw Error('Enter the racing date printed on this PDF');
+  const pdf_expires_at=pdfExpiryFromRaceDate(race_date);
+  if(!pdf_expires_at||Date.parse(pdf_expires_at.replace(' ','T')+'Z')<=Date.now())throw Error('The racing date must leave the PDF within its two-day availability period');
   const track=String(p.track||'').trim();
-  const first_post_at=p.first_post_at?String(p.first_post_at):null;
-  if(!first_post_at||!validRacePostAt(first_post_at))throw Error('Set a valid first post time in Eastern Time. PDFs are removed 48 hours after that time.');
   if(title.length<3||title.length>140)throw Error('PDF name must contain 3–140 characters');
   if(!CATEGORIES.has(category))throw Error('Invalid collection');
   if(track.length>100)throw Error('Racetrack name too long');
-  return {title,category,race_date,track,first_post_at};
+  return {title,category,race_date,track,pdf_expires_at};
 }
 export async function handleAdminBundleAssets(request,env,path){
   if(!env.STORE_DB||!env.CARDS_BUCKET)return fail('Database or private storage unavailable',503);
@@ -41,7 +42,7 @@ export async function handleAdminBundleAssets(request,env,path){
   if(request.method!=='GET'&&!originOk(request))return fail('Same-origin request required',403);
   if(path==='/api/admin/bundle-assets'&&request.method==='GET'){
     const rows=await env.STORE_DB.prepare(
-      `SELECT p.id,p.title,p.category,p.race_date,p.track,p.first_post_at,p.status,
+      `SELECT p.id,p.title,p.category,p.race_date,p.track,p.pdf_expires_at,p.status,
          CASE WHEN p.pdf_key IS NOT NULL THEN 1 ELSE 0 END AS has_pdf
        FROM products p JOIN bundle_only_assets a ON a.product_id=p.id
        WHERE a.purged_at IS NULL
@@ -53,8 +54,8 @@ export async function handleAdminBundleAssets(request,env,path){
     const id=crypto.randomUUID();
     await env.STORE_DB.batch([
       env.STORE_DB.prepare(
-        'INSERT INTO products (id,title,slug,category,race_date,track,description,price_cents,pdf_key,image_url,status,first_post_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)'
-      ).bind(id,p.title,'bundle-private-'+id,p.category,p.race_date,p.track,'',0,null,null,'draft',p.first_post_at),
+        'INSERT INTO products (id,title,slug,category,race_date,track,description,price_cents,pdf_key,image_url,status,pdf_expires_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)'
+      ).bind(id,p.title,'bundle-private-'+id,p.category,p.race_date,p.track,'',0,null,null,'draft',p.pdf_expires_at),
       env.STORE_DB.prepare('INSERT INTO bundle_only_assets (product_id) VALUES (?)').bind(id)
     ]);
     return json({id,created:true},201);
@@ -153,7 +154,7 @@ export async function handleAdminBundleAssets(request,env,path){
   if(old.status!=='draft')return fail('Archived PDF cannot be edited',409);
   let p;try{p=await readMeta(request);}catch(e){return fail(e.message);}
   await env.STORE_DB.prepare(
-    "UPDATE products SET title=?,category=?,race_date=?,track=?,first_post_at=? WHERE id=? AND status='draft'"
-  ).bind(p.title,p.category,p.race_date,p.track,p.first_post_at,id).run();
+    "UPDATE products SET title=?,category=?,race_date=?,track=?,pdf_expires_at=? WHERE id=? AND status='draft'"
+  ).bind(p.title,p.category,p.race_date,p.track,p.pdf_expires_at,id).run();
   return json({id,updated:true});
 }

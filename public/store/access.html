@@ -5,7 +5,7 @@
   <div class="heritage-strap"><img class="heritage-horse-mini" src="/assets/approved/brand/header-horse.webp" alt="" aria-hidden="true" width="66" height="76"><span>Thoroughbred Racing Intelligence</span></div>
   <nav class="heritage-nav" aria-label="Main navigation"><a class="heritage-nav-pill" href="/race-cards/">Race Cards</a><a class="heritage-nav-pill" href="/store/">Publications</a><a class="heritage-nav-pill" href="/our-approach/">Our Approach</a><a class="heritage-nav-pill" href="/journal/">The Journal</a><a class="heritage-nav-pill" href="https://rail-rye-shop.fourthwall.com/" target="_blank" rel="noopener noreferrer" aria-label="Shop Rail and Rye apparel (opens in a new tab)">Apparel</a></nav>
   <details class="heritage-mobile-nav"><summary aria-label="Open navigation">Menu <span aria-hidden="true">☰</span></summary><nav aria-label="Mobile navigation"><a href="/race-cards/">Race Cards</a><a href="/store/">Publications</a><a href="/our-approach/">Our Approach</a><a href="/journal/">The Journal</a><a href="https://rail-rye-shop.fourthwall.com/" target="_blank" rel="noopener noreferrer">Apparel ↗</a></nav></details>
- </div></header><main class="rr-delivery-main"><span class="rr-delivery-overline">Secure digital delivery</span><h1>Your publication is ready.</h1><div class="rr-delivery-card"><p>Use the button below to download your purchase. The secure link is valid for 24 hours. Each racing PDF is available until 48 hours after its listed first post time; email support if you need a copy after it expires.</p><button id="download" type="button">Download PDF</button><p>Need a copy after a PDF expires? <a href="mailto:support@railandryeracing.com">Email support</a>.</p><p id="result" role="status" aria-live="polite"></p></div><p><a href="/store/recover.html">Need a replacement link?</a> · <a href="/store/">Back to publications</a></p></main>
+ </div></header><main class="rr-delivery-main"><span class="rr-delivery-overline">Secure digital delivery</span><h1>Your publication is ready.</h1><div class="rr-delivery-card"><p>Use the button below to download your purchase. The secure link is valid for 24 hours. Each racing PDF is automatically removed at midnight Eastern two calendar days after its racing date; email support if you need a copy after it expires.</p><button id="download" type="button">Download PDF</button><p>Need a copy after a PDF expires? <a href="mailto:support@railandryeracing.com">Email support</a>.</p><p id="result" role="status" aria-live="polite"></p></div><p><a href="/store/recover.html">Need a replacement link?</a> · <a href="/store/">Back to publications</a></p></main>
 <script>
 (()=>{'use strict';
   const params=new URL(location.href).searchParams,code=params.get('code')||'';
@@ -25,14 +25,14 @@
     a.href=href;a.download=filename;document.body.appendChild(a);a.click();a.remove();
     setTimeout(()=>URL.revokeObjectURL(href),30000);
   }
-  const formatExpiry=value=>{if(!value)return '';const date=new Date(String(value).replace(' ','T')+'Z');return Number.isNaN(date.getTime())?'':new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',dateStyle:'medium',timeStyle:'short'}).format(date)+' ET';};
+  const formatExpiry=value=>{if(!value)return '';const date=new Date(String(value).replace(' ','T')+'Z');if(Number.isNaN(date.getTime()))return '';date.setTime(date.getTime()-1000);return new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',dateStyle:'medium'}).format(date);};
   function syncBundle(items){
     bundleItems=items||[];
     for(const item of bundleItems){
       const b=itemButtons.get(item.id);
       if(!b)continue;
       b.dataset.remaining=String(item.downloads_remaining);
-      b.textContent=item.expired?item.title+' — expired; email support':('Download '+item.title+' ('+item.downloads_remaining+' remaining)'+(formatExpiry(item.expires_at)?' · Until '+formatExpiry(item.expires_at):''));
+      b.textContent=item.expired?item.title+' — expired; email support':('Download '+item.title+' ('+item.downloads_remaining+' remaining)'+(formatExpiry(item.expires_at)?' · Available through '+formatExpiry(item.expires_at):''));
       b.disabled=!!item.expired||item.downloads_remaining<=0;
     }
     if(allButton){
@@ -85,14 +85,14 @@
     if(!data.bundle)return;
     original.style.display='none';original.disabled=true;
     const area=original.parentElement,lead=area.querySelector('p');
-    if(lead)lead.textContent='Download each available included PDF or get the available PDFs as one ZIP. Each racing PDF expires 48 hours after its listed first post time, with up to five downloads during the purchase access period.';
+    if(lead)lead.textContent='Download each available included PDF or get the available PDFs as one ZIP. Each racing PDF is automatically removed at midnight Eastern two calendar days after its racing date, with up to five downloads during the purchase access period.';
     allButton=document.createElement('button');allButton.type='button';allButton.className='rr-delivery-action';
     allButton.style.cssText='display:block;margin:12px 0;width:100%';
     allButton.addEventListener('click',()=>downloadAll(allButton));area.insertBefore(allButton,result);
     for(const item of data.items||[]){
       const b=document.createElement('button');b.type='button';b.className='rr-delivery-action';
       b.dataset.itemId=item.id;b.dataset.remaining=String(item.downloads_remaining);
-      b.textContent=item.expired?item.title+' — expired; email support':('Download '+item.title+' ('+item.downloads_remaining+' remaining)'+(formatExpiry(item.expires_at)?' · Until '+formatExpiry(item.expires_at):''));
+      b.textContent=item.expired?item.title+' — expired; email support':('Download '+item.title+' ('+item.downloads_remaining+' remaining)'+(formatExpiry(item.expires_at)?' · Available through '+formatExpiry(item.expires_at):''));
       b.disabled=!!item.expired||item.downloads_remaining<=0;b.style.cssText='display:block;margin:12px 0;width:100%';
       b.addEventListener('click',()=>download(item.id,b));itemButtons.set(item.id,b);area.insertBefore(b,result);
     }

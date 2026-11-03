@@ -35,8 +35,8 @@ const latestMeta=p=>{
  return parts.join(' · ')
 };
 const freeProduct=p=>p.kind==='single'&&Number(p.price_cents)===0;
-const formatExpiry=value=>{if(!value)return '';const date=new Date(String(value).replace(' ','T')+'Z');return Number.isNaN(date.getTime())?'':new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',dateStyle:'medium',timeStyle:'short'}).format(date)+' ET';};
-const accessNote=p=>p.kind==='bundle'?'Each included PDF has its own 48-hour window after its listed first post time.':('Available until '+(formatExpiry(p.pdf_expires_at)||'48 hours after first post time')+'.');
+const formatExpiry=value=>{if(!value)return '';const date=new Date(String(value).replace(' ','T')+'Z');if(Number.isNaN(date.getTime()))return '';date.setTime(date.getTime()-1000);return new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',dateStyle:'medium'}).format(date);};
+const accessNote=p=>p.kind==='bundle'?'Each included PDF is removed at midnight Eastern two calendar days after its racing date.':('Available through '+(formatExpiry(p.pdf_expires_at)||'the day before the two-day racing-date cutoff')+'.');
 const editionHref=p=>'/store/?category='+encodeURIComponent(category)+'#edition-'+encodeURIComponent(p.id);
 const makePurchaseButton=(p,data,onError)=>{
  const free=freeProduct(p),ready=Boolean(data.checkout_ready),live=data.checkout_mode==='live';

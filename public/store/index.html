@@ -24,7 +24,7 @@ function productMeta(p){
  return parts.join(' · ');
 }function info(s){notice.textContent=s;notice.style.display='block';}if(new URL(location.href).searchParams.has('cancelled'))info('Checkout was cancelled. No payment was made.');
 try{const r=await fetch('/api/products',{cache:'no-store'});const data=await r.json();if(!r.ok)throw Error(data.error||'Unable to load products');cards.replaceChildren();
-const live=data.checkout_mode==='live',paused=data.checkout_mode==='paused';document.getElementById('paymentBanner').textContent=paused?'PURCHASES TEMPORARILY UNAVAILABLE. Existing customers can still recover purchased PDFs.':live?'Secure checkout via Stripe. Racing PDFs expire 48 hours after their listed first post time; up to 5 downloads before expiry.':'TEST CHECKOUT ONLY. No real charges can be processed.';
+const live=data.checkout_mode==='live',paused=data.checkout_mode==='paused';document.getElementById('paymentBanner').textContent=paused?'PURCHASES TEMPORARILY UNAVAILABLE. Existing customers can still recover purchased PDFs.':live?'Secure checkout via Stripe. Racing PDFs are removed at midnight Eastern two calendar days after their racing date; up to 5 downloads before expiry.':'TEST CHECKOUT ONLY. No real charges can be processed.';
 if(!data.products?.length){cards.append(el('div','empty',live?'No publications are available at this time.':'No publications are available for testing. Products saved as drafts remain private.'));return;}
 for(const p of data.products){
  const card=el('article','store-card rr-glass-purchase-card');card.dataset.category=p.category;card.dataset.categories=JSON.stringify(Array.isArray(p.categories)?p.categories:[p.category]);if(/^[0-9a-f-]{36}$/i.test(String(p.id||'')))card.id='edition-'+p.id;
@@ -50,8 +50,8 @@ for(const p of data.products){
      inclusions.append(list);
    }
  }
- const exactExpiry=value=>{if(!value)return '';const date=new Date(String(value).replace(' ','T')+'Z');return Number.isNaN(date.getTime())?'':new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',dateStyle:'medium',timeStyle:'short'}).format(date)+' ET';};
- const expiryNote=bundle?'Each included PDF expires 48 hours after its listed first post time.':('PDF expires 48 hours after first post'+(exactExpiry(p.pdf_expires_at)?' · '+exactExpiry(p.pdf_expires_at):'')+'.');
+ const exactExpiry=value=>{if(!value)return '';const date=new Date(String(value).replace(' ','T')+'Z');if(Number.isNaN(date.getTime()))return '';date.setTime(date.getTime()-1000);return new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',dateStyle:'medium'}).format(date);};
+ const expiryNote=bundle?'Each included PDF is removed at midnight Eastern two calendar days after its racing date.':('PDF available through '+(exactExpiry(p.pdf_expires_at)||'the day before its two-day racing-date cutoff')+'.');
  const terms=el('p','rr-store-access-terms',free?'Free PDF · Direct download · No checkout · '+expiryNote:expiryNote+' Up to 5 downloads before expiry.');
  const price=el('div','rr-purchase-price',free?'FREE':new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(p.price_cents/100));
  const b=el('button','rr-purchase-buy',free?'Download free PDF':data.checkout_ready?(live?(bundle?'Purchase bundle':'Purchase PDF'):'Test purchase'):'Checkout unavailable');

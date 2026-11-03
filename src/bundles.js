@@ -47,11 +47,11 @@ function releaseWindowValid(utc){
   const time=Date.parse(utc.replace(' ','T')+'Z');
   return time>=Date.now()+60000&&time<=Date.now()+366*86400000;
 }
-function eligibleChild(p){return !!p&&!!p.pdf_key&&p.pdf_key!==BUNDLE_KEY&&!!p.first_post_at&&Date.parse(String(p.first_post_at).replace(' ','T')+'Z')+48*60*60*1000>Date.now()&&!p.pending_release&&(p.status==='published'||(p.status==='draft'&&!!p.asset_id));}
+function eligibleChild(p){return !!p&&!!p.pdf_key&&p.pdf_key!==BUNDLE_KEY&&!!p.pdf_expires_at&&Date.parse(String(p.pdf_expires_at).replace(' ','T')+'Z')>Date.now()&&!p.pending_release&&(p.status==='published'||(p.status==='draft'&&!!p.asset_id));}
 async function validatedChildren(env,ids) {
   const rows=[];
   for (const id of ids) {
-    const p=await env.STORE_DB.prepare("SELECT p.id,p.title,p.pdf_key,p.first_post_at,p.status,a.product_id AS asset_id,CASE WHEN s.release_at>CURRENT_TIMESTAMP THEN 1 ELSE 0 END AS pending_release FROM products p LEFT JOIN bundle_only_assets a ON a.product_id=p.id LEFT JOIN product_release_schedule s ON s.product_id=p.id WHERE p.id=?").bind(id).first();
+    const p=await env.STORE_DB.prepare("SELECT p.id,p.title,p.pdf_key,p.pdf_expires_at,p.status,a.product_id AS asset_id,CASE WHEN s.release_at>CURRENT_TIMESTAMP THEN 1 ELSE 0 END AS pending_release FROM products p LEFT JOIN bundle_only_assets a ON a.product_id=p.id LEFT JOIN product_release_schedule s ON s.product_id=p.id WHERE p.id=?").bind(id).first();
     if(!eligibleChild(p))
       throw Error('Include only published individual PDFs or uploaded bundle-only PDFs');
     rows.push(p);
@@ -68,13 +68,13 @@ async function allBundles(env) {
   const bundles=[];
   for (const b of products.results||[]) {
     const items=await env.STORE_DB.prepare(
-      "SELECT bi.product_id,p.title,p.category,p.status,p.pdf_key,p.first_post_at,a.product_id AS asset_id,CASE WHEN s.release_at>CURRENT_TIMESTAMP THEN 1 ELSE 0 END AS pending_release FROM bundle_items bi LEFT JOIN products p ON p.id=bi.product_id LEFT JOIN bundle_only_assets a ON a.product_id=p.id LEFT JOIN product_release_schedule s ON s.product_id=p.id WHERE bi.bundle_id=? ORDER BY bi.position"
+      "SELECT bi.product_id,p.title,p.category,p.status,p.pdf_key,p.pdf_expires_at,a.product_id AS asset_id,CASE WHEN s.release_at>CURRENT_TIMESTAMP THEN 1 ELSE 0 END AS pending_release FROM bundle_items bi LEFT JOIN products p ON p.id=bi.product_id LEFT JOIN bundle_only_assets a ON a.product_id=p.id LEFT JOIN product_release_schedule s ON s.product_id=p.id WHERE bi.bundle_id=? ORDER BY bi.position"
     ).bind(b.id).all();
     bundles.push({...b,categories:[...new Set([b.category,...(items.results||[]).map(x=>x.category)].filter(Boolean))],product_ids:(items.results||[]).map(x=>x.product_id),
       components:(items.results||[]).map(x=>({id:x.product_id,title:x.title,status:x.status,available:eligibleChild(x),bundle_only:!!x.asset_id}))});
   }
   const singles=await env.STORE_DB.prepare(
-    "SELECT p.id,p.title,p.category,p.race_date,p.first_post_at,p.price_cents,p.status,CASE WHEN a.product_id IS NOT NULL THEN 1 ELSE 0 END AS bundle_only FROM products p LEFT JOIN bundle_only_assets a ON a.product_id=p.id WHERE (p.status='published' OR (p.status='draft' AND a.product_id IS NOT NULL)) AND p.pdf_key IS NOT NULL AND p.pdf_key != ? AND p.first_post_at IS NOT NULL AND datetime(p.first_post_at,'+48 hours')>CURRENT_TIMESTAMP AND NOT EXISTS(SELECT 1 FROM product_release_schedule s WHERE s.product_id=p.id AND s.release_at>CURRENT_TIMESTAMP) ORDER BY p.race_date DESC, p.title LIMIT 250"
+    "SELECT p.id,p.title,p.category,p.race_date,p.pdf_expires_at,p.price_cents,p.status,CASE WHEN a.product_id IS NOT NULL THEN 1 ELSE 0 END AS bundle_only FROM products p LEFT JOIN bundle_only_assets a ON a.product_id=p.id WHERE (p.status='published' OR (p.status='draft' AND a.product_id IS NOT NULL)) AND p.pdf_key IS NOT NULL AND p.pdf_key != ? AND p.pdf_expires_at IS NOT NULL AND datetime(p.pdf_expires_at)>CURRENT_TIMESTAMP AND NOT EXISTS(SELECT 1 FROM product_release_schedule s WHERE s.product_id=p.id AND s.release_at>CURRENT_TIMESTAMP) ORDER BY p.race_date DESC, p.title LIMIT 250"
   ).bind(BUNDLE_KEY).all();
   return out({bundles,available_products:singles.results||[]});
 }

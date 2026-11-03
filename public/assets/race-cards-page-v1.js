@@ -10,7 +10,7 @@ const raceDateToday=()=>{
  const field=key=>parts.find(part=>part.type===key)?.value||'';
  return [field('year'),field('month'),field('day')].join('-');
 };
-const formatExpiry=value=>{if(!value)return '';const date=new Date(String(value).replace(' ','T')+'Z');return Number.isNaN(date.getTime())?'':new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',dateStyle:'medium',timeStyle:'short'}).format(date)+' ET';};
+const formatExpiry=value=>{if(!value)return '';const date=new Date(String(value).replace(' ','T')+'Z');if(Number.isNaN(date.getTime()))return '';date.setTime(date.getTime()-1000);return new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',dateStyle:'medium'}).format(date);};
 const dateLabel=value=>{
  const match=String(value||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
  if(!match)return String(value||'');
@@ -99,7 +99,7 @@ const sortByTrack=(a,b)=>{
    }
    const free=!bundle&&Number(p.price_cents)===0;
    copy.append(el('div','rr-purchase-price',free?'FREE':money(p.price_cents)));
-   copy.append(el('span','rr-racecards-access',free?'Free direct PDF · Available for 48 hours after first post':bundle?'Each included PDF expires 48 hours after its own first post time.':'Available until '+(formatExpiry(p.pdf_expires_at)||'48 hours after first post')+' · Up to 5 downloads'));
+   copy.append(el('span','rr-racecards-access',free?'Free direct PDF · Available through '+(formatExpiry(p.pdf_expires_at)||'the day before its two-day racing-date cutoff'):bundle?'Each included PDF is removed at midnight Eastern two calendar days after its racing date.':'Available through '+(formatExpiry(p.pdf_expires_at)||'the day before the two-day racing-date cutoff')+' · Up to 5 downloads'));
    if(window.RRShare)copy.append(window.RRShare.button({title:p.title||'Race Card',text:p.description||'Rail & Rye race-day research and analysis.',url:'/store/#edition-'+encodeURIComponent(p.id),compact:true}));
    const buyText=free?'Download free PDF':ready?(live?(bundle?'Purchase bundle':'Purchase PDF'):'Test purchase'):'Unavailable';
    const buy=el('button','rr-purchase-buy',buyText);
