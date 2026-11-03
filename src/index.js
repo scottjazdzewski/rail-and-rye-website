@@ -4,7 +4,8 @@ import {handleAdminBundles,BUNDLE_KEY} from './bundles.js';
 import {handleAdminBundleAssets} from './bundle-assets.js';
 import {handleAdminJournal,handlePublicJournal,publicJournalCover,publishScheduledJournalArticles} from './journal.js';
 import {handleSitemap,serveJournalDocument,serveProductDocument} from './seo.js';
-import {ensureReleaseSchedule,validReleaseAt} from './publication-schedule.js';
+import {ensureReleaseSchedule,validReleaseAt,validRacePostAt} from './publication-schedule.js';
+import {purgeExpiredRacePdfs} from './race-pdf-expiry.js';
 import {handleMembershipApi,handleAdminMembershipPlans,reconcileMemberships} from './memberships.js';
 import {handleRaceCardAlerts,syncRaceCardAnnouncement,sendRaceCardAlerts} from './race-card-alerts.js';
 /* Rail & Rye admin MVP. Dependencies: Cloudflare Workers, R2, D1, Cloudflare Access.
@@ -87,7 +88,10 @@ function readProduct(data) {
   const price_cents=Number(data.price_cents);
   const status=String(data.status||"draft");
   const release_at=data.release_at===undefined||data.release_at===''?null:data.release_at;
+  const first_post_at=data.first_post_at===undefined||data.first_post_at===''?null:data.first_post_at;
   if(!validReleaseAt(release_at))throw Error('Release time must be a valid UTC date and time');
+  if(!validRacePostAt(first_post_at))throw Error('First post time must be a valid Eastern date and time');
+  if(status==='published'&&(!first_post_at||Date.parse(first_post_at.replace(' ','T')+'Z')+48*60*60*1000<=Date.now()))throw Error('Enter a first post time whose 48-hour PDF window has not expired');
   if(release_at&&status!=='published')throw Error('Only published editions may have a scheduled release');
   if(title.length<3||title.length>140) throw Error("Title must be 3–140 characters");
   if(!CATEGORIES.has(category)) throw Error("Invalid category");
@@ -95,7 +99,7 @@ function readProduct(data) {
   if(track.length>100||description.length>4000) throw Error("Track or description too long");
   if(!Number.isSafeInteger(price_cents)||price_cents<0||price_cents>500000) throw Error("Invalid price");
   if(!["draft","published","archived"].includes(status)) throw Error("Invalid status");
-  return {title,category,race_date,track,description,price_cents,status,release_at};
+  return {title,category,race_date,track,description,price_cents,status,release_at,first_post_at};
 }
 async function parseJSON(request) {
   if(!request.headers.get("content-type")?.toLowerCase().startsWith("application/json")) throw Error("Expected JSON");
@@ -153,8 +157,8 @@ async function handleAdminAPI(request,env,pathname,ctx) {
       let data; try{data=readProduct(await parseJSON(request));}catch(e){return fail(e.message);}
       if(data.status==="published") return fail("Upload a PDF before publishing");
       const id=crypto.randomUUID(),slug=slugFor(data.title,id);
-      await env.STORE_DB.prepare(`INSERT INTO products (id,title,slug,category,race_date,track,description,price_cents,pdf_key,image_url,status) VALUES (?,?,?,?,?,?,?,?,?,?,?)`)
-        .bind(id,data.title,slug,data.category,data.race_date,data.track,data.description,data.price_cents,null,null,data.status).run();
+      await env.STORE_DB.prepare(`INSERT INTO products (id,title,slug,category,race_date,track,description,price_cents,pdf_key,image_url,status,first_post_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`)
+        .bind(id,data.title,slug,data.category,data.race_date,data.track,data.description,data.price_cents,null,null,data.status,data.first_post_at).run();
       return json({product:await fetchProduct(env,id)},201);
     }
   }
@@ -176,8 +180,8 @@ async function handleAdminAPI(request,env,pathname,ctx) {
       if(when<=Date.now()+30*1000||when>Date.now()+366*86400*1000)return fail('Choose a release at least 1 minute ahead, within the next year');
     }
     const alertAnnouncement=data.status==='published'&&data.category==='Race Cards'&&(item.status!=='published'||(existing?.release_at||null)!==(data.release_at||null));
-    const ops=[env.STORE_DB.prepare(`UPDATE products SET title=?,category=?,race_date=?,track=?,description=?,price_cents=?,status=? WHERE id=?`)
-      .bind(data.title,data.category,data.race_date,data.track,data.description,data.price_cents,data.status,id)];
+    const ops=[env.STORE_DB.prepare(`UPDATE products SET title=?,category=?,race_date=?,track=?,description=?,price_cents=?,status=?,first_post_at=? WHERE id=?`)
+      .bind(data.title,data.category,data.race_date,data.track,data.description,data.price_cents,data.status,data.first_post_at,id)];
     if(data.release_at){
       ops.push(env.STORE_DB.prepare('INSERT INTO product_release_schedule (product_id,release_at) VALUES (?,?) ON CONFLICT(product_id) DO UPDATE SET release_at=excluded.release_at').bind(id,data.release_at));
     }else{
@@ -371,5 +375,6 @@ export default {
     ctx.waitUntil(sendQueuedEmails(env,8));
     ctx.waitUntil(sendRaceCardAlerts(env,20).catch(e=>console.warn('Race Card alert queue retry deferred',String(e).slice(0,120))));
     ctx.waitUntil(reconcileMemberships(env,25));
+    ctx.waitUntil(purgeExpiredRacePdfs(env,8).catch(e=>console.warn('Expired PDF cleanup deferred',String(e).slice(0,140))));
   }
 };

@@ -4,58 +4,79 @@
   <div class="heritage-strap"><img class="heritage-horse-mini" src="/assets/approved/brand/header-horse.webp" alt="" aria-hidden="true" width="66" height="76"><span>Thoroughbred Racing Intelligence</span></div>
   <nav class="heritage-nav" aria-label="Main navigation"><a class="heritage-nav-pill" href="/race-cards/">Race Cards</a><a class="heritage-nav-pill" href="/store/">Publications</a><a class="heritage-nav-pill" href="/our-approach/">Our Approach</a><a class="heritage-nav-pill" href="/journal/">The Journal</a><a class="heritage-nav-pill" href="https://rail-rye-shop.fourthwall.com/" target="_blank" rel="noopener noreferrer" aria-label="Shop Rail and Rye apparel (opens in a new tab)">Apparel</a></nav>
   <details class="heritage-mobile-nav"><summary aria-label="Open navigation">Menu <span aria-hidden="true">☰</span></summary><nav aria-label="Mobile navigation"><a href="/race-cards/">Race Cards</a><a href="/store/">Publications</a><a href="/our-approach/">Our Approach</a><a href="/journal/">The Journal</a><a href="https://rail-rye-shop.fourthwall.com/" target="_blank" rel="noopener noreferrer">Apparel ↗</a></nav></details>
- </div></header><main class="rr-delivery-main"><span class="rr-delivery-overline">Secure digital delivery</span><h1>Your publication.</h1><div class="rr-delivery-card"><div id="panel" role="status" aria-live="polite">Confirming your payment…</div><a id="download" class="rr-delivery-action" href="#" rel="noreferrer" style="display:none">Download PDF</a></div><p class="rr-delivery-note">Keep this order link private: its secure session ID also grants access to your purchase. Downloads are limited to five per PDF during the purchase access period. For bundles, this limit applies separately to each included PDF. Refunded orders lose access. You may receive a separate email delivery link or <a href="/store/recover.html">request a replacement link</a>.</p><p><a href="/store/">Return to the Publication Desk</a></p></main>
+ </div></header><main class="rr-delivery-main"><span class="rr-delivery-overline">Secure digital delivery</span><h1>Your publication.</h1><div class="rr-delivery-card"><div id="panel" role="status" aria-live="polite">Confirming your payment…</div><a id="download" class="rr-delivery-action" href="#" rel="noreferrer" style="display:none">Download PDF</a></div><p class="rr-delivery-note">Keep this order link private: its secure session ID also grants access to your purchase. Each racing PDF is available until 48 hours after its listed first post time, with up to five downloads per PDF during the purchase access period. Expired PDFs are removed; email <a href="mailto:support@railandryeracing.com">support</a> if you need a copy. Refunded orders lose access. You may receive a separate email delivery link or <a href="/store/recover.html">request a replacement link</a>.</p><p><a href="/store/">Return to the Publication Desk</a></p></main>
 <script>
-(async()=>{'use strict';const panel=document.getElementById('panel'),link=document.getElementById('download');const id=new URL(location.href).searchParams.get('session_id')||'';if(!/^cs_(?:test|live)_[A-Za-z0-9_]{10,200}$/.test(id)){panel.textContent='No valid Checkout Session was provided.';return;}
-const root='/api/orders/'+encodeURIComponent(id);let tries=0;
-while(tries++<30){try{const statusUrl=root+'/status'+(((tries-1)%6===0)?'?confirm=1':'');const r=await fetch(statusUrl,{cache:'no-store'}),v=await r.json();if(!r.ok)throw Error(v.error||'Order lookup failed');
-if(v.status==='paid'){
-  if(v.bundle){
-    const items=v.items||[];
-    panel.textContent='Payment confirmed for '+v.title+'. Download the bundle as one ZIP or choose PDFs below (five downloads per PDF within '+v.access_days+' days).';
-    const area=link.parentElement;
+(async()=>{'use strict';
+const panel=document.getElementById('panel'),link=document.getElementById('download');
+const id=new URL(location.href).searchParams.get('session_id')||'';
+if(!/^cs_(?:test|live)_[A-Za-z0-9_]{10,200}$/.test(id)){panel.textContent='No valid Checkout Session was provided.';return;}
+const root='/api/orders/'+encodeURIComponent(id),formatExpiry=value=>{
+ if(!value)return '';
+ const date=new Date(String(value).replace(' ','T')+'Z');
+ return Number.isNaN(date.getTime())?'':new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',dateStyle:'medium',timeStyle:'short'}).format(date)+' ET';
+};
+const support=()=>{const a=document.createElement('a');a.href='mailto:support@railandryeracing.com';a.textContent='Email support for a copy';return a;};
+let tries=0;
+while(tries++<30){
+ try{
+  const statusUrl=root+'/status'+(((tries-1)%6===0)?'?confirm=1':'');
+  const r=await fetch(statusUrl,{cache:'no-store'}),v=await r.json();
+  if(!r.ok)throw Error(v.error||'Order lookup failed');
+  if(v.status==='paid'){
+   const area=link.parentElement;
+   if(v.bundle){
+    const items=v.items||[],active=items.filter(item=>!item.expired);
+    panel.textContent='Payment confirmed for '+v.title+'. Each included racing PDF is available until 48 hours after its listed first post time; five downloads per PDF within '+v.access_days+' days.';
     const all=document.createElement('a');all.className='rr-delivery-action';all.href=root+'/download-all';
-    all.textContent='Download All PDFs (.ZIP)';
-    all.style.cssText='display:flex;width:100%;margin:12px 0;text-align:center';
-    all.setAttribute('aria-label','Download all included PDFs as one ZIP file');
-    if(!items.length||items.some(item=>item.downloads_remaining<1)){
-      const disabled=document.createElement('button');disabled.type='button';disabled.className='rr-delivery-action';
-      disabled.disabled=true;disabled.textContent='Download All Unavailable — Check Individual Limits';
-      disabled.style.cssText='display:flex;width:100%;margin:12px 0;text-align:center';
-      area.insertBefore(disabled,link);
+    all.textContent='Download All Available PDFs (.ZIP)';all.style.cssText='display:flex;width:100%;margin:12px 0;text-align:center';
+    all.setAttribute('aria-label','Download all currently available included PDFs as one ZIP file');
+    if(!active.length||active.some(item=>item.downloads_remaining<1)){
+     const disabled=document.createElement('button');disabled.type='button';disabled.className='rr-delivery-action';disabled.disabled=true;
+     disabled.textContent=active.length?'Download All Unavailable — Check Individual Limits':'No bundle PDFs remain available';
+     disabled.style.cssText='display:flex;width:100%;margin:12px 0;text-align:center';area.insertBefore(disabled,link);
     }else{
-      all.addEventListener('click',()=>{
-        for(const item of items){
-          item.downloads_remaining=Math.max(0,item.downloads_remaining-1);
-          const individual=area.querySelector('[data-item-id="'+item.id+'"]');
-          if(individual)individual.textContent='Download '+item.title+' ('+item.downloads_remaining+' left)';
-        }
-        panel.textContent='Your bundle ZIP is being prepared. This uses one download from each PDF’s limit.';
-        if(items.some(item=>item.downloads_remaining<1)){
-          const disabled=document.createElement('button');disabled.type='button';disabled.className='rr-delivery-action';
-          disabled.disabled=true;disabled.textContent='Download All Unavailable — Check Individual Limits';
-          disabled.style.cssText='display:flex;width:100%;margin:12px 0;text-align:center';
-          area.replaceChild(disabled,all);
-        }else all.textContent='Download All PDFs Again (.ZIP)';
-      });
-      area.insertBefore(all,link);
+     all.addEventListener('click',()=>{
+      for(const item of active){
+       item.downloads_remaining=Math.max(0,item.downloads_remaining-1);
+       const individual=area.querySelector('[data-item-id="'+item.id+'"]');
+       if(individual)individual.textContent='Download '+item.title+' ('+item.downloads_remaining+' left)';
+      }
+      panel.textContent='Your available bundle PDFs are being prepared as a ZIP. This uses one download from each included PDF.';
+      if(active.some(item=>item.downloads_remaining<1)){
+       const disabled=document.createElement('button');disabled.type='button';disabled.className='rr-delivery-action';disabled.disabled=true;
+       disabled.textContent='Download All Unavailable — Check Individual Limits';disabled.style.cssText='display:flex;width:100%;margin:12px 0;text-align:center';area.replaceChild(disabled,all);
+      }else all.textContent='Download All Available PDFs Again (.ZIP)';
+     });
+     area.insertBefore(all,link);
     }
-
     for(const item of items){
-      const a=document.createElement('a');a.className='rr-delivery-action';a.dataset.itemId=item.id;
-      a.href=root+'/download?item_id='+encodeURIComponent(item.id);
-      a.textContent='Download '+item.title+' ('+item.downloads_remaining+' left)';
-      a.style.cssText='display:flex;width:100%;margin-top:12px;text-align:center';a.rel='noreferrer';area.append(a);
+     if(item.expired){
+      const row=document.createElement('div');row.className='rr-delivery-note';row.style.cssText='margin-top:12px';
+      row.append(document.createTextNode(item.title+' — expired. '),support());area.insertBefore(row,link);continue;
+     }
+     const a=document.createElement('a');a.className='rr-delivery-action';a.dataset.itemId=item.id;
+     a.href=root+'/download?item_id='+encodeURIComponent(item.id);
+     const until=formatExpiry(item.expires_at);
+     a.textContent='Download '+item.title+' ('+item.downloads_remaining+' left)'+(until?' · Until '+until:'');
+     a.style.cssText='display:flex;width:100%;margin-top:12px;text-align:center';a.rel='noreferrer';area.insertBefore(a,link);
     }
     return;
+   }
+   if(v.file_expired){
+    panel.textContent='This PDF has expired and is no longer available for download. Need a copy? ';
+    panel.append(support());return;
+   }
+   const until=formatExpiry(v.pdf_expires_at);
+   panel.textContent='Payment confirmed for '+v.title+'. Up to five downloads are available within '+v.access_days+' days after purchase. PDF availability ends 48 hours after the listed first post time'+(until?' ('+until+')':'')+'. Remaining downloads: '+v.downloads_remaining+'.';
+   link.href=root+'/download';link.textContent='Download PDF';link.style.display='inline-block';return;
   }
-  panel.textContent='Payment confirmed for '+v.title+'. Downloads are available for '+v.access_days+' days after purchase. Remaining downloads: '+v.downloads_remaining;
-  link.href=root+'/download';link.style.display='inline-block';return;
+  if(['refunded','revoked','failed'].includes(v.status)){panel.textContent='This order is '+v.status+'. A download is not available.';return;}
+  panel.textContent='Payment confirmation is pending. Checking securely…';
+ }catch(e){panel.textContent='We are having trouble checking payment status. Retrying securely…';}
+ await new Promise(resolve=>setTimeout(resolve,2000));
 }
-if(['refunded','revoked','failed'].includes(v.status)){panel.textContent='This order is '+v.status+'. A download is not available.';return;}
-panel.textContent='Payment confirmation is pending. Checking securely…';
-}catch(e){panel.textContent='We are having trouble checking payment status. Retrying securely…';}
-await new Promise(resolve=>setTimeout(resolve,2000));
-}panel.textContent='Payment is still being confirmed. No PDF is available until Stripe confirms it.';const retry=document.createElement('button');retry.type='button';retry.className='rr-delivery-action';retry.textContent='Check payment again';retry.style.cssText='display:block;margin-top:12px';retry.addEventListener('click',()=>location.reload());panel.append(document.createElement('br'),retry);
+panel.textContent='Payment is still being confirmed. No PDF is available until Stripe confirms it.';
+const retry=document.createElement('button');retry.type='button';retry.className='rr-delivery-action';retry.textContent='Check payment again';
+retry.style.cssText='display:block;margin-top:12px';retry.addEventListener('click',()=>location.reload());panel.append(document.createElement('br'),retry);
 })();
-</script><footer class="heritage-footer"><div class="heritage-shell heritage-footer-inner"><span class="heritage-footmark">RAIL &amp; RYE</span><nav aria-label="Footer"><a href="/store/">Publications</a><a href="/journal/">Journal</a><a href="mailto:support@railandryeracing.com">Support</a><a href="/policies/refunds.html">Refunds</a><a href="/policies/terms.html">Terms</a><a href="/policies/privacy.html">Privacy</a></nav><small>Independent research. No guarantees.</small><span class="rr-social-links" role="group" aria-label="Rail and Rye social media"><a class="rr-social-icon" href="https://www.facebook.com/share/1A41v513oT/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer" aria-label="Rail and Rye on Facebook" title="Facebook"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M15.25 4H12.5C9.4 4 8 5.9 8 8.7V11H5v3.5h3V22h3.7v-7.5h3.1l.5-3.5h-3.6V9c0-.95.25-1.5 1.7-1.5h1.85V4z"/></svg></a><a class="rr-social-icon" href="https://www.instagram.com/rail_and_rye/" target="_blank" rel="noopener noreferrer" aria-label="Rail and Rye on Instagram" title="Instagram"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="2.5" width="19" height="19" rx="5.5"/><circle cx="12" cy="12" r="4.3"/><circle cx="17.6" cy="6.5" r=".9" fill="currentColor" stroke="none"/></svg></a><a class="rr-social-icon" href="https://x.com/Rail_Rye" target="_blank" rel="noopener noreferrer" aria-label="Rail and Rye on X" title="X"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M18.901 1.154h3.68l-8.04 9.19L24 22.846h-7.406l-5.801-7.584-6.64 7.584H.47l8.6-9.83L0 1.154h7.594l5.243 6.933 6.064-6.933zm-1.29 19.49h2.04L6.486 3.24H4.298l13.314 17.404z"/></svg></a></span></div></footer></body></html>
+</script></script><footer class="heritage-footer"><div class="heritage-shell heritage-footer-inner"><span class="heritage-footmark">RAIL &amp; RYE</span><nav aria-label="Footer"><a href="/store/">Publications</a><a href="/journal/">Journal</a><a href="mailto:support@railandryeracing.com">Support</a><a href="/policies/refunds.html">Refunds</a><a href="/policies/terms.html">Terms</a><a href="/policies/privacy.html">Privacy</a></nav><small>Independent research. No guarantees.</small><span class="rr-social-links" role="group" aria-label="Rail and Rye social media"><a class="rr-social-icon" href="https://www.facebook.com/share/1A41v513oT/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer" aria-label="Rail and Rye on Facebook" title="Facebook"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M15.25 4H12.5C9.4 4 8 5.9 8 8.7V11H5v3.5h3V22h3.7v-7.5h3.1l.5-3.5h-3.6V9c0-.95.25-1.5 1.7-1.5h1.85V4z"/></svg></a><a class="rr-social-icon" href="https://www.instagram.com/rail_and_rye/" target="_blank" rel="noopener noreferrer" aria-label="Rail and Rye on Instagram" title="Instagram"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="2.5" width="19" height="19" rx="5.5"/><circle cx="12" cy="12" r="4.3"/><circle cx="17.6" cy="6.5" r=".9" fill="currentColor" stroke="none"/></svg></a><a class="rr-social-icon" href="https://x.com/Rail_Rye" target="_blank" rel="noopener noreferrer" aria-label="Rail and Rye on X" title="X"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M18.901 1.154h3.68l-8.04 9.19L24 22.846h-7.406l-5.801-7.584-6.64 7.584H.47l8.6-9.83L0 1.154h7.594l5.243 6.933 6.064-6.933zm-1.29 19.49h2.04L6.486 3.24H4.298l13.314 17.404z"/></svg></a></span></div></footer></body></html>

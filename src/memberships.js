@@ -218,17 +218,17 @@ function productFields(product){
 }
 async function memberLibrary(env){
   await ensureReleaseSchedule(env);
-  const direct=await env.STORE_DB.prepare("SELECT p.id,p.title,p.category,p.race_date,p.track,p.description FROM products p WHERE p.status IN ('published','archived') AND p.pdf_key IS NOT NULL AND p.pdf_key!=? AND NOT EXISTS(SELECT 1 FROM bundle_only_assets a WHERE a.product_id=p.id) AND NOT EXISTS(SELECT 1 FROM product_release_schedule s WHERE s.product_id=p.id AND s.release_at>CURRENT_TIMESTAMP) ORDER BY COALESCE(p.race_date,'') DESC,p.created_at DESC").bind(BUNDLE_KEY).all();
-  const bundled=await env.STORE_DB.prepare("SELECT c.id,c.title,c.category,c.race_date,c.track,c.description FROM products b JOIN bundle_items bi ON bi.bundle_id=b.id JOIN products c ON c.id=bi.product_id LEFT JOIN bundle_only_assets a ON a.product_id=c.id WHERE b.status IN ('published','archived') AND b.pdf_key=? AND c.pdf_key IS NOT NULL AND c.pdf_key!=? AND (c.status IN ('published','archived') OR (c.status='draft' AND a.product_id IS NOT NULL)) AND NOT EXISTS(SELECT 1 FROM product_release_schedule s WHERE s.product_id=c.id AND s.release_at>CURRENT_TIMESTAMP) ORDER BY COALESCE(c.race_date,'') DESC,c.created_at DESC").bind(BUNDLE_KEY,BUNDLE_KEY).all();
+  const direct=await env.STORE_DB.prepare("SELECT p.id,p.title,p.category,p.race_date,p.track,p.description,datetime(p.first_post_at,'+48 hours') AS pdf_expires_at FROM products p WHERE p.status IN ('published','archived') AND p.pdf_key IS NOT NULL AND p.pdf_key!=? AND p.first_post_at IS NOT NULL AND datetime(p.first_post_at,'+48 hours')>CURRENT_TIMESTAMP AND NOT EXISTS(SELECT 1 FROM bundle_only_assets a WHERE a.product_id=p.id) AND NOT EXISTS(SELECT 1 FROM product_release_schedule s WHERE s.product_id=p.id AND s.release_at>CURRENT_TIMESTAMP) ORDER BY COALESCE(p.race_date,'') DESC,p.created_at DESC").bind(BUNDLE_KEY).all();
+  const bundled=await env.STORE_DB.prepare("SELECT c.id,c.title,c.category,c.race_date,c.track,c.description,datetime(c.first_post_at,'+48 hours') AS pdf_expires_at FROM products b JOIN bundle_items bi ON bi.bundle_id=b.id JOIN products c ON c.id=bi.product_id LEFT JOIN bundle_only_assets a ON a.product_id=c.id WHERE b.status IN ('published','archived') AND b.pdf_key=? AND c.pdf_key IS NOT NULL AND c.pdf_key!=? AND c.first_post_at IS NOT NULL AND datetime(c.first_post_at,'+48 hours')>CURRENT_TIMESTAMP AND (c.status IN ('published','archived') OR (c.status='draft' AND a.product_id IS NOT NULL)) AND NOT EXISTS(SELECT 1 FROM product_release_schedule s WHERE s.product_id=c.id AND s.release_at>CURRENT_TIMESTAMP) ORDER BY COALESCE(c.race_date,'') DESC,c.created_at DESC").bind(BUNDLE_KEY,BUNDLE_KEY).all();
   const items=new Map();
   for(const item of [...(direct.results||[]),...(bundled.results||[])])items.set(item.id,item);
   return [...items.values()].sort((a,b)=>String(b.race_date||"").localeCompare(String(a.race_date||""))||String(a.title||"").localeCompare(String(b.title||"")));
 }
 async function memberProduct(env,id){
   await ensureReleaseSchedule(env);
-  const direct=await env.STORE_DB.prepare("SELECT p.title,p.pdf_key FROM products p WHERE p.id=? AND p.status IN ('published','archived') AND p.pdf_key IS NOT NULL AND p.pdf_key!=? AND NOT EXISTS(SELECT 1 FROM bundle_only_assets a WHERE a.product_id=p.id) AND NOT EXISTS(SELECT 1 FROM product_release_schedule s WHERE s.product_id=p.id AND s.release_at>CURRENT_TIMESTAMP)").bind(id,BUNDLE_KEY).first();
+  const direct=await env.STORE_DB.prepare("SELECT p.title,p.pdf_key FROM products p WHERE p.id=? AND p.status IN ('published','archived') AND p.pdf_key IS NOT NULL AND p.pdf_key!=? AND p.first_post_at IS NOT NULL AND datetime(p.first_post_at,'+48 hours')>CURRENT_TIMESTAMP AND NOT EXISTS(SELECT 1 FROM bundle_only_assets a WHERE a.product_id=p.id) AND NOT EXISTS(SELECT 1 FROM product_release_schedule s WHERE s.product_id=p.id AND s.release_at>CURRENT_TIMESTAMP)").bind(id,BUNDLE_KEY).first();
   if(direct)return direct;
-  return env.STORE_DB.prepare("SELECT c.title,c.pdf_key FROM products b JOIN bundle_items bi ON bi.bundle_id=b.id JOIN products c ON c.id=bi.product_id LEFT JOIN bundle_only_assets a ON a.product_id=c.id WHERE c.id=? AND b.status IN ('published','archived') AND b.pdf_key=? AND c.pdf_key IS NOT NULL AND c.pdf_key!=? AND (c.status IN ('published','archived') OR (c.status='draft' AND a.product_id IS NOT NULL)) AND NOT EXISTS(SELECT 1 FROM product_release_schedule s WHERE s.product_id=c.id AND s.release_at>CURRENT_TIMESTAMP) LIMIT 1").bind(id,BUNDLE_KEY,BUNDLE_KEY).first();
+  return env.STORE_DB.prepare("SELECT c.title,c.pdf_key FROM products b JOIN bundle_items bi ON bi.bundle_id=b.id JOIN products c ON c.id=bi.product_id LEFT JOIN bundle_only_assets a ON a.product_id=c.id WHERE c.id=? AND b.status IN ('published','archived') AND b.pdf_key=? AND c.pdf_key IS NOT NULL AND c.pdf_key!=? AND c.first_post_at IS NOT NULL AND datetime(c.first_post_at,'+48 hours')>CURRENT_TIMESTAMP AND (c.status IN ('published','archived') OR (c.status='draft' AND a.product_id IS NOT NULL)) AND NOT EXISTS(SELECT 1 FROM product_release_schedule s WHERE s.product_id=c.id AND s.release_at>CURRENT_TIMESTAMP) LIMIT 1").bind(id,BUNDLE_KEY,BUNDLE_KEY).first();
 }
 function safeFilename(title){
   return String(title||"rail-and-rye").normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-zA-Z0-9 -]/g,"").trim().replace(/\s+/g,"-").slice(0,70)||"rail-and-rye";
@@ -475,7 +475,7 @@ async function memberDownload(request,env,url){
   if(!UUID_RE.test(id||""))return error("Publication not found.",404);
   if(!env.CARDS_BUCKET)return error("Downloads are temporarily unavailable.",503);
   const product=await memberProduct(env,id);
-  if(!product)return error("Publication not available in the member library.",404);
+  if(!product)return error("This PDF has left the member library after its 48-hour race-day window. Need a copy? Email support@railandryeracing.com.",410);
   const file=await env.CARDS_BUCKET.get(product.pdf_key);
   if(!file)return error("Publication PDF temporarily unavailable.",503);
   return new Response(file.body,{headers:{

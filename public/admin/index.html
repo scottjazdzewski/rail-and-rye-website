@@ -131,6 +131,7 @@
           <div class="field"><label for="category">Collection *</label><select id="category"><option>Race Cards</option><option>Longshot Radar</option><option>Stable Notes</option><option>Target List</option></select></div>
           <div class="field"><label for="raceDate">Racing date</label><input id="raceDate" type="date"></div>
         </div>
+        <div class="field"><label for="firstPostAt">First post time · Eastern Time</label><input id="firstPostAt" type="datetime-local" step="60"><div class="detail">Customers can download this PDF until 48 hours after this time. Enter the first post time printed on the card; the PDF and stored versions will then be removed automatically.</div></div>
         <div class="row">
           <div class="field"><label for="track">Racetrack</label><input id="track" maxlength="100" placeholder="Keeneland"></div>
           <div class="field"><label for="price">Price in USD *</label><input id="price" type="number" min="0" max="5000" step="0.01" value="9.99" required><div class="detail"><strong>Free publication:</strong> Set $0.00 and publish with a PDF. The public store will offer an immediate download with no checkout or card required. Anyone can download a published free PDF.</div></div>
@@ -156,15 +157,16 @@
     <p class="detail" style="margin-bottom:19px">Choose at least two published editions or bundle-only PDFs, set one package price, and publish. The bundle automatically appears in each collection represented by its included PDFs. Customers receive separate secure downloads. Replacing any included PDF notifies eligible active purchasers, while preserving their original purchased PDF versions.</p>
     <section class="rr-private-library" aria-label="Bundle-only PDF library">
       <div class="head-row"><h3 style="margin:0">Bundle-only PDF library</h3><button type="button" class="secondary mini" id="assetNew">+ New private PDF</button></div>
-      <p class="detail">Upload a PDF that will be available only inside bundles. It will never have its own public listing or individual purchase button. Archive older PDFs when their published bundles have been archived. After all customer access expires, you can permanently delete archived PDFs to reclaim storage. Historical order records are retained.</p>
+      <p class="detail">Upload a PDF that will be available only inside bundles. Enter its first post time in Eastern Time. The PDF and every stored version are removed automatically 48 hours later; buyers who still need it can email support@railandryeracing.com.</p>
       <details class="rr-bulk-upload">
         <summary>Bulk upload PDFs for a bundle</summary>
         <div class="rr-bulk-body">
-          <p class="detail">Choose several PDFs at once. Each becomes a separate private library item. The default date applies to the whole queue; edit any file individually, confirm its title, collection, and track, then select the uploaded items in the bundle editor.</p>
+          <p class="detail">Choose several PDFs at once. Set the default racing date and first post time, then adjust individual files as needed. PDFs are removed 48 hours after their listed first post time.</p>
           <div class="row">
             <div class="field"><label for="assetBulkFiles">PDF files</label><input id="assetBulkFiles" type="file" accept="application/pdf,.pdf" multiple></div>
             <div class="field"><label for="assetBulkDate">Default racing date</label><input id="assetBulkDate" type="date"></div>
           </div>
+          <div class="field"><label for="assetBulkPostTime">Default first post time · Eastern Time</label><input id="assetBulkPostTime" type="datetime-local" step="60"></div>
           <div id="assetBulkQueue" class="rr-bulk-queue"></div>
           <div class="actions"><button type="button" class="primary" id="assetBulkUpload" disabled>Upload selected PDFs</button></div>
           <p id="assetBulkNotice" class="detail" role="status" aria-live="polite"></p>
@@ -174,6 +176,7 @@
         <div class="field"><label for="assetTitle">PDF title *</label><input id="assetTitle" maxlength="140" placeholder="Keeneland — Bonus Race Notes"></div>
         <div class="field"><label for="assetDate">Racing date</label><input id="assetDate" type="date"></div>
       </div>
+      <div class="field"><label for="assetFirstPostAt">First post time · Eastern Time</label><input id="assetFirstPostAt" type="datetime-local" step="60"><div class="detail">Customers can download this PDF until 48 hours after this time. The PDF and stored versions are then removed automatically.</div></div>
       <div class="row">
         <div class="field"><label for="assetCategory">Collection</label><select id="assetCategory"><option>Race Cards</option><option>Longshot Radar</option><option>Stable Notes</option><option>Target List</option></select></div>
         <div class="field"><label for="assetTrack">Racetrack (optional)</label><input id="assetTrack" maxlength="100" placeholder="Keeneland"></div>
@@ -333,6 +336,8 @@
     if(scheduled>Date.now()+366*86400*1000)throw Error('Set the release within the next year.');
     return matches[0].toISOString().slice(0,19).replace('T',' ');
   };
+   const racePostUTC=value=>{const match=String(value||'').match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/);if(!match)throw Error('Choose a first post time in Eastern Time.');const [y,m,d,h,min]=match.slice(1).map(Number),instant=Date.UTC(y,m-1,d,h,min);const matches=[4,5].map(offset=>new Date(instant+offset*3600000)).filter(date=>easternParts(date)===value);if(matches.length!==1)throw Error('That Eastern Time is skipped or repeated by daylight saving. Choose another time.');return matches[0].toISOString().slice(0,19).replace('T',' ');};
+  window.rrRacePostUTC=racePostUTC;
   window.rrLocalRelease=localRelease;
   window.rrReleaseUTC=releaseUTC;
   const safeText=v=>String(v||'');
@@ -347,14 +352,14 @@
     return data;
   };
   function setBusy(value){busy=value;['draftBtn','publishBtn','scheduleBtn','cancelScheduleBtn','archiveBtn','refreshBtn','newBtn'].forEach(id=>$(id).disabled=value||(id==='archiveBtn'&&!currentId)||(id==='cancelScheduleBtn'&&!pending(products.find(p=>p.id===currentId))));}
-  function reset(){currentId=null;$('editor-title').textContent='New publication';$('productForm').reset();rrPrefillRacingDate('raceDate');$('price').value='9.99';$('scheduleAt').value='';$('pdfStatus').textContent='';$('coverStatus').textContent='';$('draftBtn').textContent='Save draft';$('cancelScheduleBtn').hidden=true;setBusy(false);renderList();}
-  function edit(item){currentId=item.id;$('editor-title').textContent='Edit publication';$('title').value=safeText(item.title);$('category').value=item.category;rrRestoreRacingDate('raceDate',item.race_date);$('track').value=item.track||'';$('price').value=(item.price_cents/100).toFixed(2);$('description').value=item.description||'';$('scheduleAt').value=localRelease(item.release_at);$('pdf').value='';$('cover').value='';$('pdfStatus').textContent=item.pdf_key?'— Uploaded':'— Missing';$('coverStatus').textContent=item.image_url?'— Uploaded':'';$('draftBtn').textContent=item.status==='published'?'Save changes':'Save draft';$('cancelScheduleBtn').hidden=!pending(item);setBusy(false);renderList();window.scrollTo({top:0,behavior:'smooth'});}
+  function reset(){currentId=null;$('editor-title').textContent='New publication';$('productForm').reset();rrPrefillRacingDate('raceDate');$('price').value='9.99';$('scheduleAt').value='';$('firstPostAt').value='';$('pdfStatus').textContent='';$('coverStatus').textContent='';$('draftBtn').textContent='Save draft';$('cancelScheduleBtn').hidden=true;setBusy(false);renderList();}
+  function edit(item){currentId=item.id;$('editor-title').textContent='Edit publication';$('title').value=safeText(item.title);$('category').value=item.category;rrRestoreRacingDate('raceDate',item.race_date);$('track').value=item.track||'';$('price').value=(item.price_cents/100).toFixed(2);$('description').value=item.description||'';$('scheduleAt').value=localRelease(item.release_at);$('firstPostAt').value=localRelease(item.first_post_at);$('pdf').value='';$('cover').value='';$('pdfStatus').textContent=item.pdf_key?'— Uploaded':'— Missing';$('coverStatus').textContent=item.image_url?'— Uploaded':'';$('draftBtn').textContent=item.status==='published'?'Save changes':'Save draft';$('cancelScheduleBtn').hidden=!pending(item);setBusy(false);renderList();window.scrollTo({top:0,behavior:'smooth'});}
   function renderList(){const el=$('productList');el.replaceChildren();if(!products.length){let e=document.createElement('div');e.className='empty';e.textContent='No products yet. Start with your first race card.';el.append(e);return;}
-    for(const p of products){const b=document.createElement('button');b.type='button';b.className='product'+(p.id===currentId?' active':'');b.addEventListener('click',()=>edit(p));let name=document.createElement('strong');name.textContent=p.title;let status=document.createElement('em');status.className='pill '+(pending(p)?'scheduled':p.status==='published'?'published':'');status.textContent=pending(p)?'Scheduled':p.status;name.append(status);let details=document.createElement('span');details.textContent=[p.category,p.race_date||'No date',money(p.price_cents),p.pdf_key?'PDF attached':'PDF missing',pending(p)?'Release '+localRelease(p.release_at).replace('T',' ')+' ET':null].filter(Boolean).join(' • ');b.append(name,details);el.append(b);}
+    for(const p of products){const b=document.createElement('button');b.type='button';b.className='product'+(p.id===currentId?' active':'');b.addEventListener('click',()=>edit(p));let name=document.createElement('strong');name.textContent=p.title;let status=document.createElement('em');status.className='pill '+(pending(p)?'scheduled':p.status==='published'?'published':'');status.textContent=pending(p)?'Scheduled':p.status;name.append(status);let details=document.createElement('span');details.textContent=[p.category,p.race_date||'No date',money(p.price_cents),p.pdf_key?'PDF attached':'PDF missing',p.first_post_at?'First post '+localRelease(p.first_post_at).replace('T',' ')+' ET':'FIRST POST TIME MISSING',pending(p)?'Release '+localRelease(p.release_at).replace('T',' ')+' ET':null].filter(Boolean).join(' • ');b.append(name,details);el.append(b);}
   }
   async function refresh(selectId){const data=await api('/api/admin/products');products=data.products||[];if(selectId){const item=products.find(p=>p.id===selectId);if(item)edit(item);}else renderList();}
   function payload(status){const priceText=$('price').value.trim();const dollars=Number(priceText);const cents=Math.round(dollars*100);if(!Number.isFinite(dollars)||dollars<0||Math.abs(dollars*100-cents)>1e-5)throw Error('Enter a valid price with at most two decimal places.');
-    return {title:$('title').value.trim(),category:$('category').value,race_date:$('raceDate').value||null,track:$('track').value.trim(),price_cents:cents,description:$('description').value.trim(),status,release_at:null};}
+    return {title:$('title').value.trim(),category:$('category').value,race_date:$('raceDate').value||null,track:$('track').value.trim(),price_cents:cents,description:$('description').value.trim(),status,release_at:null,first_post_at:$('firstPostAt').value?racePostUTC($('firstPostAt').value):null};}
   async function upload(id,file,type){if(!file)return;if(type==='pdf'&&file.size>75*1024*1024)throw Error('PDF exceeds 75 MB limit');if(type==='cover'&&file.size>6*1024*1024)throw Error('Cover exceeds 6 MB limit');
     const contentType=type==='pdf'?'application/pdf':file.type;
     await api('/api/admin/products/'+id+'/'+type,{method:'PUT',body:file,headers:{'Content-Type':contentType,'X-File-Size':String(file.size)}});
@@ -539,20 +544,20 @@
     $('assetArchive').disabled=v||!selectedId||selected()?.status!=='draft';
     $('assetPurge').disabled=v||!selectedId||selected()?.status!=='archived';
     $('assetBulkFiles').disabled=v;
-    $('assetBulkDate').disabled=v;
+    $('assetBulkDate').disabled=v;$('assetBulkPostTime').disabled=v;
     $('assetBulkUpload').disabled=v||!$('assetBulkFiles').files.length;
     $('assetBulkQueue').querySelectorAll('input,select').forEach(el=>el.disabled=v);
   }
-  function lockEditor(v){for(const id of ['assetTitle','assetCategory','assetDate','assetTrack','assetPdf'])$(id).disabled=v;}
+  function lockEditor(v){for(const id of ['assetTitle','assetCategory','assetDate','assetFirstPostAt','assetTrack','assetPdf'])$(id).disabled=v;}
   function reset(){
     selectedId=null;$('assetTitle').value='';$('assetCategory').value='Race Cards';
-    rrPrefillRacingDate('assetDate');$('assetTrack').value='';$('assetPdf').value='';
+    rrPrefillRacingDate('assetDate');$('assetFirstPostAt').value='';$('assetTrack').value='';$('assetPdf').value='';
     $('assetPdfStatus').textContent='';$('assetSave').textContent='Upload bundle-only PDF';notice('New private PDF.');
     lockEditor(false);setBusy(false);render();
   }
   function edit(a){
     selectedId=a.id;$('assetTitle').value=a.title;$('assetCategory').value=a.category;
-    rrRestoreRacingDate('assetDate',a.race_date);$('assetTrack').value=a.track||'';
+    rrRestoreRacingDate('assetDate',a.race_date);$('assetFirstPostAt').value=window.rrLocalRelease(a.first_post_at);$('assetTrack').value=a.track||'';
     $('assetPdf').value='';$('assetPdfStatus').textContent=a.has_pdf?'— Uploaded':'— Missing';
     $('assetSave').textContent=a.status==='archived'?'Archived PDF':'Save private PDF';
     lockEditor(a.status==='archived');setBusy(false);
@@ -566,7 +571,7 @@
     for(const a of assets){
       const b=document.createElement('button');b.type='button';b.className='product'+(a.id===selectedId?' active':'');
       const name=document.createElement('strong');name.textContent=a.title;
-      const meta=document.createElement('span');meta.textContent=[a.race_date||'No date',
+      const meta=document.createElement('span');meta.textContent=[a.race_date||'No date',a.first_post_at?'First post '+window.rrLocalRelease(a.first_post_at).replace('T',' ')+' ET':'FIRST POST TIME MISSING',
         a.status==='archived'?'ARCHIVED':a.has_pdf?'Ready for bundles':'PDF missing'].join(' · ');
       b.append(name,meta);b.addEventListener('click',()=>edit(a));box.append(b);
     }
@@ -583,7 +588,7 @@
     if(title.length<3||title.length>140){notice('Enter a PDF title of 3–140 characters.');return;}
     if(!selectedId&&!file){notice('Choose a PDF before creating a private item.');return;}
     if(file&&(file.size<5||file.size>75*1024*1024)){notice('PDF must be smaller than 75 MB.');return;}
-    const body={title,category:$('assetCategory').value,race_date:$('assetDate').value||null,track:$('assetTrack').value.trim()};
+    const body={title,category:$('assetCategory').value,race_date:$('assetDate').value||null,track:$('assetTrack').value.trim(),first_post_at:$('assetFirstPostAt').value?window.rrRacePostUTC($('assetFirstPostAt').value):null};
     setBusy(true);
     try{
       const r=await api(selectedId?'/api/admin/bundle-assets/'+selectedId:'/api/admin/bundle-assets',
@@ -629,7 +634,7 @@
     const files=bulkFiles();
     $('assetBulkUpload').disabled=busy||!files.length;
     if(!files.length){$('assetBulkNotice').textContent='Select multiple PDF files to prepare the upload.';return;}
-    const defaultDate=$('assetBulkDate').value||$('assetDate').value||'';
+    const defaultDate=$('assetBulkDate').value||$('assetDate').value||'';const defaultPostTime=$('assetBulkPostTime').value||$('assetFirstPostAt').value||'';
     $('assetBulkDate').value=defaultDate;
     const defaultCategory=$('assetCategory').value||'Race Cards';
     const defaultTrack=$('assetTrack').value.trim();
@@ -645,14 +650,15 @@
       const category=document.createElement('select');category.dataset.bulkField='category';
       bulkCategories.forEach(value=>{const option=document.createElement('option');option.value=value;option.textContent=value;category.append(option);});category.value=defaultCategory;
       const track=document.createElement('input');track.type='text';track.maxLength=100;track.placeholder='Optional';track.value=defaultTrack;track.dataset.bulkField='track';
-      fields.append(bulkField('PDF title',title),bulkField('Racing date',date),bulkField('Collection',category),bulkField('Racetrack',track));
+      const postTime=document.createElement('input');postTime.type='datetime-local';postTime.step='60';postTime.value=defaultPostTime;postTime.dataset.bulkField='first_post_at';
+      fields.append(bulkField('PDF title',title),bulkField('Racing date',date),bulkField('First post · ET',postTime),bulkField('Collection',category),bulkField('Racetrack',track));
       row.append(fields);box.append(row);
     });
-    $('assetBulkNotice').textContent=files.length+' PDF'+(files.length===1?' is':'s are')+' queued. Check each title, date, collection, and track before uploading.';
+    $('assetBulkNotice').textContent=files.length+' PDF'+(files.length===1?' is':'s are')+' queued. Check each title, date, first post time, collection, and track before uploading.';
   }
   function bulkMetadata(row){
     const value=key=>row.querySelector('[data-bulk-field="'+key+'"]').value.trim();
-    return {title:value('title'),race_date:value('race_date')||null,category:value('category'),track:value('track')};
+    return {title:value('title'),race_date:value('race_date')||null,category:value('category'),track:value('track'),first_post_at:value('first_post_at')?window.rrRacePostUTC(value('first_post_at')):null};
   }
   async function bulkUpload(){
     if(busy)return;
@@ -702,6 +708,9 @@
   $('assetBulkFiles').addEventListener('change',renderBulkQueue);
   $('assetBulkDate').addEventListener('change',()=>{
     $('assetBulkQueue').querySelectorAll('[data-bulk-field="race_date"]').forEach(input=>{input.value=$('assetBulkDate').value;});
+  });
+  $('assetBulkPostTime').addEventListener('change',()=>{
+    $('assetBulkQueue').querySelectorAll('[data-bulk-field="first_post_at"]').forEach(input=>{input.value=$('assetBulkPostTime').value;});
   });
   $('assetBulkUpload').addEventListener('click',bulkUpload);
   $('assetNew').addEventListener('click',reset);

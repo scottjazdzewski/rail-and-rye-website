@@ -20,15 +20,23 @@ const displayTitle=value=>{
  if(!title||title!==title.toLocaleUpperCase('en-US'))return title||category;
  return title.toLocaleLowerCase('en-US').replace(/(^|[\s:([{—–-])([a-z])/g,(_,prefix,letter)=>prefix+letter.toLocaleUpperCase('en-US'))
 };
+const categoryProducts=p=>p.kind==='bundle'&&Array.isArray(p.included_products)?p.included_products.filter(x=>x.category===category):[];
+const effectiveRaceDate=p=>{
+ const dates=categoryProducts(p).map(x=>String(x.race_date||'')).filter(Boolean).sort();
+ return dates.at(-1)||String(p.race_date||'');
+};
 const latestMeta=p=>{
- const parts=[],pageCategory=String(category||'').trim(),track=String(p.track||'').trim();
+ const parts=[],pageCategory=String(category||'').trim(),children=categoryProducts(p);
+ const track=String(p.track||[...new Set(children.map(x=>String(x.track||'').trim()).filter(Boolean))].join(', ')||'').trim();
  if(pageCategory)parts.push(pageCategory);
- const date=editionDate(p.race_date);
+ const date=editionDate(effectiveRaceDate(p));
  if(date)parts.push(date);
  if(track&&!/^(all|any)$/i.test(track)&&track.toLocaleLowerCase('en-US')!==pageCategory.toLocaleLowerCase('en-US'))parts.push(track);
  return parts.join(' · ')
 };
 const freeProduct=p=>p.kind==='single'&&Number(p.price_cents)===0;
+const formatExpiry=value=>{if(!value)return '';const date=new Date(String(value).replace(' ','T')+'Z');return Number.isNaN(date.getTime())?'':new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',dateStyle:'medium',timeStyle:'short'}).format(date)+' ET';};
+const accessNote=p=>p.kind==='bundle'?'Each included PDF has its own 48-hour window after its listed first post time.':('Available until '+(formatExpiry(p.pdf_expires_at)||'48 hours after first post time')+'.');
 const editionHref=p=>'/store/?category='+encodeURIComponent(category)+'#edition-'+encodeURIComponent(p.id);
 const makePurchaseButton=(p,data,onError)=>{
  const free=freeProduct(p),ready=Boolean(data.checkout_ready),live=data.checkout_mode==='live';
@@ -75,6 +83,7 @@ const makeGlassCard=(p,data,onError)=>{
   details.append(list);copy.append(details);
  }
  copy.append(txt('p',p.description||'Digital racing publication.','rr-purchase-description'));
+ copy.append(txt('p',accessNote(p),'rr-store-access-terms'));
  copy.append(txt('div',freeProduct(p)?'FREE':price(p.price_cents),'rr-purchase-price'));
  const actions=document.createElement('div');actions.className='rr-purchase-actions';
  actions.append(makePurchaseButton(p,data,onError));
@@ -107,6 +116,7 @@ const makeEditionCard=(p,data,onError)=>{
  if(meta)info.append(txt('span',meta,'rr-edition-meta'));
  info.append(txt('h3',p.title||category));
  if(p.description)info.append(txt('p',p.description,'rr-edition-description'));
+ info.append(txt('p',accessNote(p),'rr-store-access-terms'));
  if(window.RRShare)info.append(window.RRShare.button({title:displayTitle(p.title||category),text:p.description||'Rail & Rye digital racing publication.',url:'/store/#edition-'+encodeURIComponent(p.id),compact:true}));
  const bottom=document.createElement('div');bottom.className='rr-edition-actions';
  bottom.append(txt('strong',freeProduct(p)?'FREE':price(p.price_cents),'rr-edition-price'));
@@ -120,7 +130,7 @@ const makeEditionCard=(p,data,onError)=>{
   if(!response.ok)throw Error(data.error||'Products are temporarily unavailable.');
   const products=(Array.isArray(data.products)?data.products:[])
    .filter(p=>Array.isArray(p.categories)?p.categories.includes(category):p.category===category)
-   .sort((a,b)=>String(b.race_date||'').localeCompare(String(a.race_date||'')));
+   .sort((a,b)=>effectiveRaceDate(b).localeCompare(effectiveRaceDate(a)));
   if(!products.length){
    if(recentList){recentList.replaceChildren();recentList.hidden=true;}
    latestStatus.textContent='No editions are currently published in this collection.';

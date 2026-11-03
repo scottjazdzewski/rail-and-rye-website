@@ -46,6 +46,7 @@ function signInForm(form){
   finally{if(button){button.disabled=false;button.textContent="Email me a sign-in link";}}
  });
 }
+function formatPdfExpiry(value){if(!value)return "";const date=new Date(String(value).replace(" ","T")+"Z");return Number.isNaN(date.getTime())?"":new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",dateStyle:"medium",timeStyle:"short"}).format(date)+" ET";}
 function renderLibrary(data){
  const sign=q("#sign-in-panel"),account=q("#member-account"),list=q("#member-library");
  if(sign)sign.hidden=true;
@@ -68,7 +69,7 @@ function renderLibrary(data){
    const row=document.createElement("article");row.className="rr-library-item";
    const info=document.createElement("div");
    const title=document.createElement("h3");title.textContent=item.title;info.append(title);
-   const detail=document.createElement("p");detail.textContent=[item.category,item.race_date].filter(Boolean).join(" · ");info.append(detail);
+   const detail=document.createElement("p");detail.textContent=[item.category,item.race_date].filter(Boolean).join(" · ")+(formatPdfExpiry(item.pdf_expires_at)?" · Available until "+formatPdfExpiry(item.pdf_expires_at):"");info.append(detail);
    const button=document.createElement("button");button.type="button";button.className="rr-member-button";button.textContent="Download PDF";
    button.addEventListener("click",()=>location.assign("/api/membership/download/"+encodeURIComponent(item.id)));
    row.append(info,button);list.append(row);

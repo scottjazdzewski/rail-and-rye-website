@@ -10,11 +10,19 @@ const raceDateToday=()=>{
  const field=key=>parts.find(part=>part.type===key)?.value||'';
  return [field('year'),field('month'),field('day')].join('-');
 };
+const formatExpiry=value=>{if(!value)return '';const date=new Date(String(value).replace(' ','T')+'Z');return Number.isNaN(date.getTime())?'':new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',dateStyle:'medium',timeStyle:'short'}).format(date)+' ET';};
 const dateLabel=value=>{
  const match=String(value||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
  if(!match)return String(value||'');
  return new Intl.DateTimeFormat('en-US',{timeZone:'UTC',month:'short',day:'numeric',year:'numeric'})
   .format(new Date(Date.UTC(Number(match[1]),Number(match[2])-1,Number(match[3]),12)));
+};
+const categoryRaceDates=p=>{
+ if(p.kind==='bundle'&&Array.isArray(p.included_products)){
+  const dates=p.included_products.filter(x=>x.category==='Race Cards'&&/^\d{4}-\d{2}-\d{2}$/.test(String(x.race_date||''))).map(x=>x.race_date);
+  if(dates.length)return [...new Set(dates)];
+ }
+ return /^\d{4}-\d{2}-\d{2}$/.test(String(p.race_date||''))?[p.race_date]:[];
 };
 const sortByTrack=(a,b)=>{
  if((a.kind==='bundle')!==(b.kind==='bundle'))return a.kind==='bundle'?1:-1;
@@ -27,13 +35,14 @@ const sortByTrack=(a,b)=>{
   if(!response.ok)throw Error(data.error||'Unable to load published Race Cards.');
   const today=raceDateToday();
   const catalog=(Array.isArray(data.products)?data.products:[]).filter(p=>Array.isArray(p.categories)?p.categories.includes('Race Cards'):p.category==='Race Cards');
-  // Cards with no racing date stay in the full Publication Desk, not "today".
-  const dated=catalog.filter(p=>/^\d{4}-\d{2}-\d{2}$/.test(String(p.race_date||'')));
-  const current=dated.filter(p=>p.race_date===today);
-  const nextDate=dated.filter(p=>p.race_date>today).map(p=>p.race_date).sort()[0];
+  // Bundles inherit the date of each included Race Cards PDF, so today's card
+  // is shown here even when the bundle's own publication date differs.
+  const dated=catalog.filter(p=>categoryRaceDates(p).length);
+  const current=dated.filter(p=>categoryRaceDates(p).includes(today));
+  const nextDate=dated.flatMap(p=>categoryRaceDates(p)).filter(date=>date>today).sort()[0];
   const upcoming=!current.length&&Boolean(nextDate);
   const displayedDate=upcoming?nextDate:today;
-  const available=(upcoming?dated.filter(p=>p.race_date===nextDate):current).sort(sortByTrack);
+  const available=dated.filter(p=>categoryRaceDates(p).includes(displayedDate)).sort(sortByTrack);
   const bundles=available.filter(p=>p.kind==='bundle');
   const singles=available.filter(p=>p.kind!=='bundle');
   // Show at most four in the approved rail; reserve a bundle slot when needed.
@@ -63,13 +72,17 @@ const sortByTrack=(a,b)=>{
    img.alt='Rail & Rye official horseshoe emblem';
    img.className='rr-purchase-brand-logo';
    img.loading='lazy';img.decoding='async';cover.append(img);
+   const bundle=p.kind==='bundle';
    const meta=el('div','rr-purchase-meta');
-   if(p.track)meta.append(el('span','rr-racecards-meta-track',p.track));
-   if(p.track&&p.race_date)meta.append(el('span','rr-racecards-meta-divider','·'));
-   if(p.race_date)meta.append(el('span','rr-racecards-meta-date',dateLabel(p.race_date)));
+   const includedRaceCards=bundle&&Array.isArray(p.included_products)?p.included_products.filter(x=>x.category==='Race Cards'):[];
+   const childTracks=[...new Set(includedRaceCards.map(x=>String(x.track||'').trim()).filter(Boolean))];
+   const displayTrack=p.track||childTracks.join(', ');
+   const displayRaceDate=includedRaceCards.find(x=>x.race_date===displayedDate)?.race_date||p.race_date||displayedDate;
+   if(displayTrack)meta.append(el('span','rr-racecards-meta-track',displayTrack));
+   if(displayTrack&&displayRaceDate)meta.append(el('span','rr-racecards-meta-divider','·'));
+   if(displayRaceDate)meta.append(el('span','rr-racecards-meta-date',dateLabel(displayRaceDate)));
    if(!meta.childNodes.length)meta.textContent='Rail & Rye Race Card';
    const copy=el('div','rr-purchase-copy');
-   const bundle=p.kind==='bundle';
    if(bundle){
     const count=Number.isInteger(p.bundle_count)&&p.bundle_count>0?p.bundle_count:(Array.isArray(p.included_titles)?p.included_titles.length:0);
     copy.append(el('span','rr-racecards-product-kind','BUNDLE · '+count+' PDFs'));
@@ -86,7 +99,7 @@ const sortByTrack=(a,b)=>{
    }
    const free=!bundle&&Number(p.price_cents)===0;
    copy.append(el('div','rr-purchase-price',free?'FREE':money(p.price_cents)));
-   copy.append(el('span','rr-racecards-access',free?'Direct PDF download · No checkout':bundle?'7-day access · 5 downloads per PDF':'7-day access · Up to 5 downloads'));
+   copy.append(el('span','rr-racecards-access',free?'Free direct PDF · Available for 48 hours after first post':bundle?'Each included PDF expires 48 hours after its own first post time.':'Available until '+(formatExpiry(p.pdf_expires_at)||'48 hours after first post')+' · Up to 5 downloads'));
    if(window.RRShare)copy.append(window.RRShare.button({title:p.title||'Race Card',text:p.description||'Rail & Rye race-day research and analysis.',url:'/store/#edition-'+encodeURIComponent(p.id),compact:true}));
    const buyText=free?'Download free PDF':ready?(live?(bundle?'Purchase bundle':'Purchase PDF'):'Test purchase'):'Unavailable';
    const buy=el('button','rr-purchase-buy',buyText);
