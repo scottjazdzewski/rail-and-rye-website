@@ -763,11 +763,19 @@
     const box=$('assetInventory');box.replaceChildren();
     if(!assets.length){const e=document.createElement('div');e.className='empty';e.textContent='No bundle-only PDFs yet.';box.append(e);return;}
     for(const a of assets){
+      const row=document.createElement('div');row.className='rr-bundle-row';
       const b=document.createElement('button');b.type='button';b.className='product'+(a.id===selectedId?' active':'');
       const name=document.createElement('strong');name.textContent=a.title;
       const meta=document.createElement('span');meta.textContent=[a.race_date||'No date',a.pdf_expires_at?'Auto-delete '+window.rrExpiryLabel(a.pdf_expires_at):'Racing date needed',
         a.status==='archived'?'ARCHIVED':a.has_pdf?'Ready for bundles':'PDF missing'].join(' · ');
-      b.append(name,meta);b.addEventListener('click',()=>edit(a));box.append(b);
+      b.append(name,meta);b.addEventListener('click',()=>edit(a));row.append(b);
+      if(a.status==='draft'&&!a.has_pdf){
+        const remove=document.createElement('button');remove.type='button';remove.className='secondary mini rr-delete-bundle';remove.textContent='Delete missing';
+        remove.setAttribute('aria-label','Delete incomplete PDF '+a.title);
+        remove.addEventListener('click',event=>{event.stopPropagation();deleteMissing(a);});
+        row.append(remove);
+      }
+      box.append(row);
     }
   }
   async function refresh(id){
@@ -797,6 +805,18 @@
       notice('Private PDF saved. It is available to select in Automatic bundles, but not sold on its own.');
       window.dispatchEvent(new Event('rr-bundle-assets-changed'));
     }catch(e){notice('Private PDF not saved completely: '+e.message+'. If created, select it below to retry.');await refresh(selectedId).catch(()=>{});}
+    finally{setBusy(false);}
+  }
+  async function deleteMissing(asset){
+    if(busy||asset.status!=='draft'||asset.has_pdf)return;
+    if(!confirm('Delete the incomplete "'+asset.title+'" entry? This shortcut only removes entries with no PDF and no bundle or customer history.'))return;
+    setBusy(true);
+    try{
+      await api('/api/admin/bundle-assets/'+asset.id,{method:'DELETE'});
+      if(selectedId===asset.id)selectedId=null;
+      await refresh();
+      notice('Incomplete upload deleted.');
+    }catch(error){notice(error.message);}
     finally{setBusy(false);}
   }
   async function archive(){

@@ -39,7 +39,7 @@ async function readMeta(request){
 }
 export async function handleAdminBundleAssets(request,env,path){
   if(!env.STORE_DB||!env.CARDS_BUCKET)return fail('Database or private storage unavailable',503);
-  if(!['GET','POST','PATCH'].includes(request.method))return fail('Method not allowed',405);
+  if(!['GET','POST','PATCH','DELETE'].includes(request.method))return fail('Method not allowed',405);
   await ensureReleaseSchedule(env);
   if(request.method!=='GET'&&!originOk(request))return fail('Same-origin request required',403);
   if(path==='/api/admin/bundle-assets'&&request.method==='GET'){
@@ -159,8 +159,29 @@ export async function handleAdminBundleAssets(request,env,path){
     return json({id,archived:true});
   }
   const m=path.match(/^\/api\/admin\/bundle-assets\/([0-9a-f-]{36})$/i);
-  if(!m||request.method!=='PATCH'||!UUID.test(m[1]))return fail('Not found',404);
+  if(!m||!['PATCH','DELETE'].includes(request.method)||!UUID.test(m[1]))return fail('Not found',404);
   const id=m[1];
+  if(request.method==='DELETE'){
+    const old=await env.STORE_DB.prepare(
+      'SELECT p.status,p.pdf_key,a.purged_at FROM products p JOIN bundle_only_assets a ON a.product_id=p.id WHERE p.id=?'
+    ).bind(id).first();
+    if(!old)return fail('Private PDF not found',404);
+    if(old.purged_at)return fail('This private PDF was already deleted',410);
+    if(old.status!=='draft'||old.pdf_key)return fail('Only draft entries marked PDF missing can be deleted here',409);
+    const [bundleUse,orderUse,entitlementUse]=await Promise.all([
+      env.STORE_DB.prepare('SELECT bundle_id FROM bundle_items WHERE product_id=? LIMIT 1').bind(id).first(),
+      env.STORE_DB.prepare('SELECT id FROM orders WHERE product_id=? LIMIT 1').bind(id).first(),
+      env.STORE_DB.prepare('SELECT order_id FROM bundle_order_items WHERE product_id=? LIMIT 1').bind(id).first()
+    ]);
+    if(bundleUse||orderUse||entitlementUse)return fail('This PDF has bundle or customer history and cannot be deleted from this shortcut',409);
+    const deleted=await env.STORE_DB.batch([
+      env.STORE_DB.prepare('DELETE FROM product_release_schedule WHERE product_id=?').bind(id),
+      env.STORE_DB.prepare('DELETE FROM bundle_only_assets WHERE product_id=? AND purged_at IS NULL').bind(id),
+      env.STORE_DB.prepare("DELETE FROM products WHERE id=? AND status='draft' AND pdf_key IS NULL").bind(id)
+    ]);
+    if(!deleted?.[2]?.meta?.changes)return fail('Unable to delete this incomplete upload. Refresh and try again.',409);
+    return json({id,deleted:true});
+  }
   const old=await env.STORE_DB.prepare(
     'SELECT p.status FROM products p JOIN bundle_only_assets a ON a.product_id=p.id WHERE p.id=?'
   ).bind(id).first();
