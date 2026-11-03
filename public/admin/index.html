@@ -103,16 +103,21 @@
     .rr-bulk-upload>summary::-webkit-details-marker{display:none}
     .rr-bulk-body{padding-top:10px}
     .rr-bulk-queue{display:grid;gap:9px;margin:10px 0}
-    .rr-bulk-row{min-width:0;padding:10px;border:1px solid #d8dfe6;border-radius:6px;background:#fff}
+    .rr-bulk-body,.rr-bulk-queue,.rr-bulk-row,.rr-bulk-fields,.rr-bulk-field{min-width:0;max-width:100%}
+    .rr-bulk-row{padding:10px;border:1px solid #d8dfe6;border-radius:6px;background:#fff}
     .rr-bulk-file-head{display:flex;justify-content:space-between;gap:12px;align-items:baseline;margin-bottom:8px;color:#25394e;font-size:12px}
     .rr-bulk-file-name{min-width:0;overflow-wrap:anywhere;font-weight:700}
     .rr-bulk-file-status{flex:0 0 auto;color:#627084;font-size:11px}
+    .rr-bulk-row.is-error{border-color:var(--error);background:#fff8f7}
+    .rr-bulk-row.is-error .rr-bulk-file-status{color:var(--error);font-weight:700}
+    .rr-bulk-field [aria-invalid="true"]{border-color:var(--error);outline:1px solid var(--error)}
     .rr-bulk-row.is-done{border-color:#a9cbb8;background:#f4faf6}
     .rr-bulk-row.is-done .rr-bulk-file-status{color:#23694f;font-weight:700}
-    .rr-bulk-fields{display:grid;grid-template-columns:minmax(150px,1.4fr) minmax(125px,.9fr) minmax(145px,1fr) minmax(120px,.9fr);gap:8px}
+    .rr-bulk-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;width:100%}
+    .rr-bulk-fields>.rr-bulk-field:first-child{grid-column:1/-1}
     .rr-bulk-field{display:grid;min-width:0;gap:4px;color:#445268;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
     .rr-bulk-field input,.rr-bulk-field select{min-width:0;padding:8px;font-size:12px;letter-spacing:normal;text-transform:none}
-    @media(max-width:1000px){.rr-bulk-fields{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:560px){.rr-bulk-fields{grid-template-columns:minmax(0,1fr)}.rr-bulk-fields>.rr-bulk-field:first-child{grid-column:auto}}
 </style>
 <link rel="icon" href="/favicon.png" type="image/png"></head>
 <body>
@@ -680,9 +685,14 @@
           failed++;status.textContent='PDF must be 5 bytes–75 MB';continue;
         }
         if(meta.title.length<3||meta.title.length>140){
-          failed++;status.textContent='Title must be 3–140 characters';continue;
+          failed++;row.classList.add('is-error');status.textContent='Title must be 3–140 characters';continue;
         }
-        row.classList.remove('is-done');
+        const postTimeInput=row.querySelector('[data-bulk-field="first_post_at"]');
+        if(!postTimeInput?.value){
+          failed++;row.classList.add('is-error');postTimeInput?.setAttribute('aria-invalid','true');status.textContent='Set first post time · ET';continue;
+        }
+        postTimeInput.removeAttribute('aria-invalid');
+        row.classList.remove('is-error','is-done');
         status.textContent='Preparing…';
         try{
           let id=row.dataset.assetId;
@@ -697,7 +707,7 @@
             headers:{'Content-Type':'application/pdf','X-File-Size':String(file.size)}});
           row.dataset.uploaded='true';row.classList.add('is-done');status.textContent='Uploaded';
           uploaded++;
-        }catch(e){failed++;status.textContent='Failed — '+e.message;}
+        }catch(e){failed++;row.classList.add('is-error');status.textContent='Failed — '+e.message;}
       }
       await refresh().catch(()=>{});
       window.dispatchEvent(new Event('rr-bundle-assets-changed'));
