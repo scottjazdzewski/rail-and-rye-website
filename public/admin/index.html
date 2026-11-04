@@ -1193,10 +1193,10 @@
   const pickerHelp=document.createElement('p');pickerHelp.className='detail';
   pickerHelp.textContent='All uploaded PDFs are listed here. Select 2–12 current PDFs; gray items need a current racing date. Switch to Individual to update a PDF’s repository details.';
   picker.append(pickerTitle,pickerHelp,candidateList);
-  files.append(repository,picker);
   main.append(tabs,help,individualPane,bundlePane);
   workspace.append(main,files);
   workflow.insertBefore(workspace,repository);
+  files.append(repository,picker);
   oldLayout.remove();
   bundleDetails.remove();
   const repositoryInventory=document.getElementById('assetInventory');
