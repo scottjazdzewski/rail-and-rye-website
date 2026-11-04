@@ -34,17 +34,6 @@
     .rr-bundle-area{margin-top:28px}
     .rr-private-library{margin-bottom:25px;padding:19px;border:1px solid var(--border);border-radius:8px;background:#fff;min-width:0}
     .rr-bundle-editor{margin-top:0}
-    .rr-quick-bundle{margin:16px 0 20px;padding:20px;border:1px solid #caa76d;border-radius:8px;background:#fffdf8}
-    .rr-quick-bundle h3{margin:0;font:500 23px/1.2 Georgia,serif;color:var(--deep)}
-    .rr-quick-bundle-head{margin-bottom:16px}
-    .rr-quick-bundle-head .detail{max-width:760px}
-    .rr-quick-upload-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(190px,.6fr);gap:14px}
-    .rr-quick-bundle details{margin:0 0 13px;border:1px solid var(--border);border-radius:5px;padding:10px 12px;background:white}
-    .rr-quick-bundle details>summary,.rr-admin-legacy>summary{cursor:pointer;font-weight:700;color:var(--navy)}
-    .rr-admin-legacy{display:block;margin-top:18px;border:1px solid var(--border);border-radius:8px;background:#fbfaf7}
-    .rr-admin-legacy>summary{padding:14px 16px;list-style:disclosure-closed}
-    .rr-admin-legacy[open]>summary{border-bottom:1px solid var(--border)}
-    .rr-admin-legacy>section,.rr-admin-legacy>.rr-bundle-editor{margin:16px}
     .rr-bundle-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:stretch}
     .rr-bundle-row .product{min-width:0}
     .rr-bundle-row .rr-delete-bundle{align-self:center;white-space:nowrap;color:#8f2828;border-color:#d7bcbc}
@@ -94,7 +83,7 @@
       .rr-bundle-editor .row{gap:10px}
       .rr-bundle-editor .field{min-width:0}
     }
-    @media(max-width:620px){.rr-quick-upload-row{grid-template-columns:1fr}.rr-quick-bundle{padding:15px}.rr-bundle-row{grid-template-columns:minmax(0,1fr)}}
+    @media(max-width:620px){.rr-bundle-row{grid-template-columns:minmax(0,1fr)}}
     .rr-wire-editor{margin-top:24px}
     .rr-wire-list{display:grid;gap:10px;margin-top:15px}
     .rr-wire-item{border:1px solid #d8dfe6;border-radius:10px;background:#fff;padding:14px 15px}
@@ -152,10 +141,40 @@
 <main>
   <div class="kicker">Independent thoroughbred racing intelligence</div>
   <h1>Publisher's Desk</h1>
-  <p class="sub">Manage tomorrow's racing products without editing the website code. Draft first, attach a private PDF, and publish only when it's ready.</p>
+  <p class="sub">Manage racing publications without editing the website code. Upload PDFs once to the private repository, then create individual drafts or bundles before publishing.</p>
   <div id="notice" class="notice" role="status" aria-live="polite"></div>
   <details class="workflow workflow-upload" id="workflow-uploads" name="publisher-workflow">
-    <summary><strong>Immediate Uploads</strong><span>Race cards and individual PDFs</span></summary>
+    <summary><strong>PDF Repository &amp; Publications</strong><span>Upload each PDF once, then decide whether it becomes an individual product, bundle item, or both</span></summary>
+  <section class="rr-private-library" id="pdf-repository" aria-label="Private PDF repository">
+        <div class="head-row"><h3 style="margin:0">PDF Repository</h3><button type="button" class="secondary mini" id="assetNew">+ Upload one PDF</button></div>
+        <p class="detail">This is the single intake point for PDFs. Upload each file here once. It stays private until you choose how to use it: create an individual publication draft or select it while building a bundle.</p>
+        <details class="rr-bulk-upload" open>
+          <summary>Upload one or more PDFs to the repository</summary>
+          <div class="rr-bulk-body">
+            <p class="detail">Choose one or more PDFs. Titles come from the filenames. Set a racing date now or later; assign a collection and track in the repository when needed.</p>
+            <div class="row">
+              <div class="field"><label for="assetBulkFiles">PDF files</label><input id="assetBulkFiles" type="file" accept="application/pdf,.pdf" multiple></div>
+              <div class="field"><label for="assetBulkDate">Default racing date (optional)</label><input id="assetBulkDate" type="date"></div>
+            </div>
+            <div id="assetBulkQueue" class="rr-bulk-queue"></div>
+            <div class="actions"><button type="button" class="primary" id="assetBulkUpload" disabled>Upload selected PDFs</button></div>
+            <p id="assetBulkNotice" class="detail" role="status" aria-live="polite"></p>
+          </div>
+        </details>
+        <div class="row">
+          <div class="field"><label for="assetTitle">PDF title *</label><input id="assetTitle" maxlength="140" placeholder="Keeneland — Bonus Race Notes"></div>
+          <div class="field"><label for="assetDate">Racing date</label><input id="assetDate" type="date"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label for="assetCategory">Collection (optional until publishing)</label><select id="assetCategory"><option value="">Assign collection later</option><option>Race Cards</option><option>Longshot Radar</option><option>Stable Notes</option><option>Target List</option></select></div>
+          <div class="field"><label for="assetTrack">Racetrack (optional)</label><input id="assetTrack" maxlength="100" placeholder="Keeneland"></div>
+        </div>
+        <div class="field"><label for="assetPdf">PDF file <span id="assetPdfStatus"></span></label><input id="assetPdf" type="file" accept="application/pdf,.pdf"><div class="detail">One file up to 75 MB. Use the multi-file upload above for several PDFs. Replacing a repository PDF with active bundle buyers sends them a secure update link.</div></div>
+        <div class="actions"><button type="button" class="primary" id="assetSave">Save repository PDF</button><button type="button" class="gold" id="assetMakeIndividual" disabled>Create individual draft</button><button type="button" class="secondary" id="assetArchive" disabled>Archive private PDF</button><button type="button" class="secondary" id="assetPurge" disabled>Permanently delete PDF</button></div>
+        <p id="assetNotice" class="detail" role="status" aria-live="polite"></p>
+        <p class="kicker" style="margin-top:15px">Files in your repository</p>
+        <div class="list" id="assetInventory"><div class="empty">Loading private PDFs…</div></div>
+      </section>
   <div class="layout">
     <section class="panel" aria-label="Product editor">
       <div class="head-row"><h2 id="editor-title">New publication</h2><button id="newBtn" class="secondary mini" type="button">+ New</button></div>
@@ -170,7 +189,7 @@
           <div class="field"><label for="price">Price in USD *</label><input id="price" type="number" min="0" max="5000" step="0.01" value="9.99" required><div class="detail"><strong>Free publication:</strong> Set $0.00 and publish with a PDF. The public store will offer an immediate download with no checkout or card required. Anyone can download a published free PDF.</div></div>
         </div>
         <div class="field"><label for="description">Product description</label><textarea id="description" maxlength="4000" placeholder="Premium analysis and probability-driven insights for today's card."></textarea></div>
-        <div class="field"><label for="pdf">Premium PDF <span id="pdfStatus"></span></label><input id="pdf" type="file" accept="application/pdf,.pdf"><div class="detail">Private R2 storage. Up to 75 MB per PDF. Replacing a published PDF emails active purchasers a secure link to the revised file.</div></div>
+        <div class="field"><label for="pdf">Replace attached PDF <span id="pdfStatus"></span></label><input id="pdf" type="file" accept="application/pdf,.pdf" disabled><div class="detail">Use the PDF Repository for new files. This field replaces the file on an existing individual publication and emails eligible buyers a secure update link.</div></div>
         <div class="field"><label for="cover">Cover image <span id="coverStatus"></span></label><input id="cover" type="file" accept="image/jpeg,image/png,image/webp"><div class="detail">Optional JPG, PNG or WebP, up to 6 MB. Visible publicly only when the product is published.</div></div>
         <div class="field"><label for="scheduleAt">Scheduled release · Eastern Time</label><input id="scheduleAt" type="datetime-local" step="60"><div class="detail">Choose a future time in New York. The release is automatic. Avoid 1:00–1:59 AM on the fall daylight-saving change night.</div></div>
         <div class="actions"><button type="button" class="primary" id="draftBtn">Save draft</button><button type="button" class="gold" id="publishBtn">Publish now</button><button type="button" class="gold" id="scheduleBtn">Schedule publication</button><button type="button" class="secondary" id="cancelScheduleBtn" hidden>Cancel scheduled release</button><button type="button" class="secondary" id="archiveBtn" disabled>Archive</button></div>
@@ -179,7 +198,7 @@
     </section>
     <aside>
       <section class="panel">
-        <div class="head-row"><h2>Publication inventory</h2><button class="secondary mini" type="button" id="refreshBtn">Refresh</button></div>
+        <div class="head-row"><h2>Individual publication drafts and live products</h2><button class="secondary mini" type="button" id="refreshBtn">Refresh</button></div>
         <div class="list" id="productList"><div class="empty">Loading your products…</div></div>
       </section>
       <p class="footer">This console is for the business owner only. It uses Cloudflare Access sign-in and verifies the authentication token again on the server.</p>
@@ -187,69 +206,11 @@
   </div>
   </details>
   <details class="workflow workflow-bundles" id="workflow-bundles" name="publisher-workflow">
-    <summary><strong>Bundles</strong><span>Build a bundle, manage private PDFs, and review existing bundles</span></summary>
+    <summary><strong>Bundles</strong><span>Choose PDFs already in the repository and publish or schedule a package</span></summary>
   <section class="panel rr-bundle-area" aria-label="Automatic product bundles">
-    <div class="head-row"><h2>Automatic bundles</h2></div>
-    <p class="detail" style="margin-bottom:10px">Upload the files and create the bundle in one pass. Each PDF is attached automatically, with its own racing date and collection.</p>
-    <section class="rr-quick-bundle" aria-label="Create a bundle in one pass">
-      <div class="rr-quick-bundle-head"><h3>Build a bundle</h3><p class="detail">Choose the PDFs, enter the bundle details, then upload and save. You will not need to find the files again in another list.</p></div>
-      <div class="row">
-        <div class="field"><label for="rrQuickTitle">Bundle name *</label><input id="rrQuickTitle" maxlength="140" placeholder="Sunday Race Cards Bundle"></div>
-        <div class="field"><label for="rrQuickPrice">Bundle price (USD) *</label><input id="rrQuickPrice" type="number" min="0" max="5000" step="0.01" placeholder="5.00"></div>
-      </div>
-      <div class="row">
-        <div class="field"><label for="rrQuickCategory">Primary collection</label><select id="rrQuickCategory"><option>Race Cards</option><option>Longshot Radar</option><option>Stable Notes</option><option>Target List</option></select></div>
-        <div class="field"><label for="rrQuickDate">Bundle date (optional)</label><input id="rrQuickDate" type="date"></div>
-      </div>
-      <div class="field"><label for="rrQuickDescription">What buyers receive</label><textarea id="rrQuickDescription" maxlength="4000" placeholder="Describe what is included in this bundle."></textarea></div>
-      <details>
-        <summary>Release options</summary>
-        <div class="row" style="margin-top:12px">
-          <div class="field"><label for="rrQuickStatus">Bundle status</label><select id="rrQuickStatus"><option value="published">Publish now</option><option value="draft">Save as draft</option><option value="scheduled">Schedule for later</option></select></div>
-          <div class="field" id="rrQuickReleaseWrap" hidden><label for="rrQuickRelease">Release date &amp; time · Eastern</label><input id="rrQuickRelease" type="datetime-local" step="60"></div>
-        </div>
-      </details>
-      <div class="rr-quick-upload-row">
-        <div class="field"><label for="rrQuickFiles">PDF files · select 2–12</label><input id="rrQuickFiles" type="file" accept="application/pdf,.pdf" multiple><p class="detail">Each PDF can be up to 75 MB. Files are removed at midnight Eastern two calendar days after their racing date.</p></div>
-        <div class="field"><label for="rrQuickDefaultDate">Default racing date for PDFs</label><input id="rrQuickDefaultDate" type="date"></div>
-      </div>
-      <div id="rrQuickQueue" class="rr-bulk-queue"></div>
-      <div class="actions"><button type="button" class="primary" id="rrQuickSubmit" disabled>Upload PDFs &amp; create bundle</button></div>
-      <p id="rrQuickNotice" class="detail" role="status" aria-live="polite"></p>
-    </section>
-    <details class="rr-admin-legacy">
-      <summary>Manage existing PDFs and bundles</summary>
-      <section class="rr-private-library" aria-label="Bundle-only PDF library">
-      <div class="head-row"><h3 style="margin:0">Bundle-only PDF library</h3><button type="button" class="secondary mini" id="assetNew">+ New private PDF</button></div>
-      <p class="detail">Upload a PDF that will be available only inside bundles. It is automatically removed at midnight Eastern two calendar days after its racing date; buyers who still need it can email support@railandryeracing.com.</p>
-      <details class="rr-bulk-upload">
-        <summary>Advanced: bulk upload PDFs to the private library</summary>
-        <div class="rr-bulk-body">
-          <p class="detail">Choose several PDFs at once. Set a default racing date, then adjust the date for each file as needed. Files are automatically removed at midnight Eastern two calendar days after their racing date.</p>
-          <div class="row">
-            <div class="field"><label for="assetBulkFiles">PDF files</label><input id="assetBulkFiles" type="file" accept="application/pdf,.pdf" multiple></div>
-            <div class="field"><label for="assetBulkDate">Default racing date</label><input id="assetBulkDate" type="date"></div>
-          </div>
-          <div id="assetBulkQueue" class="rr-bulk-queue"></div>
-          <div class="actions"><button type="button" class="primary" id="assetBulkUpload" disabled>Upload selected PDFs</button></div>
-          <p id="assetBulkNotice" class="detail" role="status" aria-live="polite"></p>
-        </div>
-      </details>
-      <div class="row">
-        <div class="field"><label for="assetTitle">PDF title *</label><input id="assetTitle" maxlength="140" placeholder="Keeneland — Bonus Race Notes"></div>
-        <div class="field"><label for="assetDate">Racing date</label><input id="assetDate" type="date"></div>
-      </div>
-      <div class="row">
-        <div class="field"><label for="assetCategory">Collection</label><select id="assetCategory"><option>Race Cards</option><option>Longshot Radar</option><option>Stable Notes</option><option>Target List</option></select></div>
-        <div class="field"><label for="assetTrack">Racetrack (optional)</label><input id="assetTrack" maxlength="100" placeholder="Keeneland"></div>
-      </div>
-      <div class="field"><label for="assetPdf">Private PDF <span id="assetPdfStatus"></span></label><input id="assetPdf" type="file" accept="application/pdf,.pdf"><div class="detail">Maximum 75 MB. Replacing a bundle-only PDF emails buyers with active bundle access a secure link to the revised PDF. Their original purchased PDF is preserved.</div></div>
-      <div class="actions"><button type="button" class="primary" id="assetSave">Upload bundle-only PDF</button><button type="button" class="secondary" id="assetArchive" disabled>Archive private PDF</button><button type="button" class="secondary" id="assetPurge" disabled>Permanently delete PDF</button></div>
-      <p id="assetNotice" class="detail" role="status" aria-live="polite"></p>
-      <p class="kicker" style="margin-top:15px">Your private PDFs</p>
-      <div class="list" id="assetInventory"><div class="empty">Loading private PDFs…</div></div>
-    </section>
-    <div class="head-row" style="margin:16px 16px 10px"><h3 style="margin:0">Manage existing or published products</h3><button type="button" class="secondary mini" id="bundleNew">+ Manual bundle</button></div>
+    <div class="head-row"><h2>Build and manage bundles</h2></div>
+    <p class="detail" style="margin-bottom:10px">Select 2–12 current PDFs. Repository files remain private unless they are published separately or through this bundle.</p>
+    <div class="head-row" style="margin:16px 16px 10px"><h3 style="margin:0">Choose PDFs from the repository or individual products</h3><button type="button" class="secondary mini" id="bundleNew">+ Manual bundle</button></div>
     <div class="layout rr-bundle-editor">
       <div>
         <div class="field"><label for="bundleTitle">Bundle name *</label><input id="bundleTitle" maxlength="140" required placeholder="Breeders' Cup Weekend Bundle"></div>
@@ -263,14 +224,13 @@
         <div class="actions"><button type="button" class="primary" id="bundleDraft">Save bundle draft</button><button type="button" class="gold" id="bundlePublish">Publish bundle now</button><button type="button" class="gold" id="bundleSchedule">Schedule bundle</button><button type="button" class="secondary" id="bundleCancelSchedule" hidden>Cancel scheduled release</button><button type="button" class="secondary" id="bundleArchive">Delete bundle</button></div>
       </div>
       <div>
-        <p class="kicker">Include published or bundle-only PDFs</p>
+        <p class="kicker">Choose repository PDFs and published individual PDFs</p>
         <div id="bundleCandidates" class="list" style="max-height:320px;overflow:auto;margin-bottom:22px"><div class="empty">Loading published products…</div></div>
         <p class="kicker">Your bundles</p>
         <div id="bundleInventory" class="list"><div class="empty">Loading bundles…</div></div>
         <p id="bundleNotice" class="detail" role="status" aria-live="polite" style="margin-top:15px"></p>
       </div>
     </div>
-    </details>
   </section>
   </details>
 
@@ -339,7 +299,7 @@
 /* Eastern racing-date defaults apply to new items, never existing saved dates. */
 (()=>{
  'use strict';
- const fields=['raceDate','bundleDate','assetDate','articleDate'];
+ const fields=['raceDate','bundleDate','articleDate'];
  const todayEastern=()=>{
   const parts=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
   const field=name=>parts.find(p=>p.type===name)?.value||'';
@@ -419,7 +379,7 @@
     if(!r.ok)throw Error(data.error||('Request failed ('+r.status+')'));
     return data;
   };
-  function setBusy(value){busy=value;['draftBtn','publishBtn','scheduleBtn','cancelScheduleBtn','archiveBtn','refreshBtn','newBtn'].forEach(id=>$(id).disabled=value||(id==='archiveBtn'&&!currentId)||(id==='cancelScheduleBtn'&&!pending(products.find(p=>p.id===currentId))));}
+  function setBusy(value){busy=value;const existing=products.find(p=>p.id===currentId);$('pdf').disabled=value||!existing?.pdf_key;['draftBtn','publishBtn','scheduleBtn','cancelScheduleBtn','archiveBtn','refreshBtn','newBtn'].forEach(id=>$(id).disabled=value||(id==='archiveBtn'&&!currentId)||(id==='cancelScheduleBtn'&&!pending(existing)));}
   function reset(){currentId=null;$('editor-title').textContent='New publication';$('productForm').reset();rrPrefillRacingDate('raceDate');$('price').value='9.99';$('scheduleAt').value='';$('pdfStatus').textContent='';$('coverStatus').textContent='';$('draftBtn').textContent='Save draft';$('cancelScheduleBtn').hidden=true;setBusy(false);renderList();}
   function edit(item){currentId=item.id;$('editor-title').textContent='Edit publication';$('title').value=safeText(item.title);$('category').value=item.category;rrRestoreRacingDate('raceDate',item.race_date);$('track').value=item.track||'';$('price').value=(item.price_cents/100).toFixed(2);$('description').value=item.description||'';$('scheduleAt').value=localRelease(item.release_at);$('pdf').value='';$('cover').value='';$('pdfStatus').textContent=item.pdf_key?'— Uploaded':'— Missing';$('coverStatus').textContent=item.image_url?'— Uploaded':'';$('draftBtn').textContent=item.status==='published'?'Save changes':'Save draft';$('cancelScheduleBtn').hidden=!pending(item);setBusy(false);renderList();window.scrollTo({top:0,behavior:'smooth'});}
   function renderList(){const el=$('productList');el.replaceChildren();if(!products.length){let e=document.createElement('div');e.className='empty';e.textContent='No products yet. Start with your first race card.';el.append(e);return;}
@@ -483,6 +443,7 @@
   $('cancelScheduleBtn').addEventListener('click',()=>{if(confirm('Cancel this scheduled release and return it to a private draft?'))save('cancel');});
   $('archiveBtn').addEventListener('click',()=>{if(confirm('Archive this product? It will no longer appear in the future storefront.'))save('archive');});
   $('refreshBtn').addEventListener('click',()=>refresh().catch(e=>message(e.message,'error')));
+  window.addEventListener('rr-open-product',event=>{const id=event.detail?.id;if(id)refresh(id).catch(e=>message(e.message,'error'));});
   api('/api/admin/status').then(r=>{paymentMode=r.payment_mode||'test';return refresh();}).catch(e=>message('Admin service unavailable: '+e.message,'error'));
 })();
 </script>
@@ -508,12 +469,12 @@
   }
   function drawCandidates(selected=[]){
     const box=$('bundleCandidates');box.replaceChildren();
-    if(!available.length){const e=document.createElement('div');e.className='empty';e.textContent='Upload a PDF to the private library above or attach a PDF to a product first.';box.append(e);return;}
+    if(!available.length){const e=document.createElement('div');e.className='empty';e.textContent='Upload PDFs in the repository above, or publish an individual PDF first.';box.append(e);return;}
     for(const p of available){
       const label=document.createElement('label');label.style.cssText='display:flex;align-items:center;gap:10px;border:1px solid #e7e1d7;padding:10px;cursor:pointer;';
       const c=document.createElement('input');c.type='checkbox';c.dataset.bundleProduct=p.id;c.value=p.id;c.style.cssText='width:auto;flex:none';c.checked=selected.includes(p.id);
       const copy=document.createElement('span');copy.style.cssText='flex:1;min-width:0;line-height:1.35;overflow-wrap:anywhere';
-      const name=document.createElement('span');name.textContent=p.title+(p.bundle_only?' · BUNDLE ONLY':p.status==='draft'?' · DRAFT PDF':' · '+money(p.price_cents));
+      const name=document.createElement('span');name.textContent=p.title+(p.bundle_only?' · PDF REPOSITORY':p.status==='draft'?' · DRAFT PDF':' · '+money(p.price_cents));
       copy.append(name);
       const meta=[];
       if(p.track)meta.push('Track: '+p.track);
@@ -616,142 +577,7 @@
 })();
 </script>
 
-<script>
-(()=>{'use strict';
-  const $=id=>document.getElementById(id);
-  const box=$('rrQuickQueue'),panel=document.querySelector('.rr-quick-bundle');
-  let busy=false;
-  const api=async(path,options={})=>{
-    const response=await fetch(path,{credentials:'same-origin',cache:'no-store',...options});
-    let data;try{data=await response.json();}catch{throw Error('Server did not return a usable response ('+response.status+').');}
-    if(!response.ok){const error=Error(data.error||'Request failed');error.status=response.status;throw error;}
-    return data;
-  };
-  const categories=['Race Cards','Longshot Radar','Stable Notes','Target List'];
-  const files=()=>Array.from($('rrQuickFiles').files||[]);
-  const titleFromFile=name=>name.replace(/\.pdf$/i,'').replace(/[_]+/g,' ').replace(/\s+/g,' ').trim();
-  const field=(caption,control)=>{const label=document.createElement('label');label.className='rr-bulk-field';const span=document.createElement('span');span.textContent=caption;label.append(span,control);return label;};
-  const signature=(file,index)=>'rr_bundle_pdf_'+btoa(unescape(encodeURIComponent([file.name,file.size,file.lastModified,index].join('|')))).replace(/[^a-zA-Z0-9_-]/g,'');
-  function drawQueue(){
-    box.replaceChildren();
-    const list=files();
-    $('rrQuickSubmit').disabled=busy||list.length<2||list.length>12;
-    if(list.length<2||list.length>12){$('rrQuickNotice').textContent=list.length>12?'Choose no more than 12 PDFs; remove files from the picker and select again.':'Choose at least 2 PDFs. Every file will be added to this bundle automatically.';}
-    if(!list.length)return;
-    const defaultDate=$('rrQuickDefaultDate').value;
-    list.forEach((file,index)=>{
-      const row=document.createElement('div');row.className='rr-bulk-row';row.dataset.index=String(index);row.dataset.sessionKey=signature(file,index);
-      row.dataset.assetId=sessionStorage.getItem(row.dataset.sessionKey)||'';
-      const head=document.createElement('div');head.className='rr-bulk-file-head';
-      const name=document.createElement('span');name.className='rr-bulk-file-name';name.textContent=(index+1)+'. '+file.name;
-      const status=document.createElement('span');status.className='rr-bulk-file-status';status.textContent=(file.size/1048576).toFixed(1)+' MB';
-      head.append(name,status);row.append(head);
-      const fields=document.createElement('div');fields.className='rr-bulk-fields';
-      const title=document.createElement('input');title.type='text';title.maxLength=140;title.value=titleFromFile(file.name);title.dataset.quickField='title';
-      const date=document.createElement('input');date.type='date';date.value=defaultDate;date.dataset.quickField='race_date';
-      const category=document.createElement('select');category.dataset.quickField='category';
-      categories.forEach(value=>{const option=document.createElement('option');option.value=value;option.textContent=value;category.append(option);});category.value=$('rrQuickCategory').value;
-      const track=document.createElement('input');track.type='text';track.maxLength=100;track.placeholder='Optional';track.dataset.quickField='track';
-      fields.append(field('PDF title',title),field('Racing date',date),field('Collection',category),field('Racetrack',track));
-      row.append(fields);box.append(row);
-    });
-    $('rrQuickNotice').textContent=list.length+' PDF'+(list.length===1?' is':'s are')+' queued. Check each file name and racing date.';
-  }
-  function metadata(row){
-    const get=name=>row.querySelector('[data-quick-field="'+name+'"]').value.trim();
-    return {title:get('title'),race_date:get('race_date'),category:get('category'),track:get('track')};
-  }
-  function lock(value){
-    panel.querySelectorAll('input,select,textarea,button').forEach(element=>{
-      if(element.id!=='rrQuickSubmit')element.disabled=value;
-    });
-    $('rrQuickSubmit').disabled=value||files().length<2||files().length>12;
-    box.querySelectorAll('input,select').forEach(element=>element.disabled=value);
-  }
-  async function createBundle(action){
-    if(busy)return;
-    const selected=files(),rows=Array.from(box.children);
-    if(selected.length<2||selected.length>12){$('rrQuickNotice').textContent='Choose 2–12 PDFs for a bundle.';return;}
-    const title=$('rrQuickTitle').value.trim(),priceText=$('rrQuickPrice').value.trim(),price=Number(priceText),cents=Math.round(price*100);
-    if(title.length<3||title.length>140){$('rrQuickNotice').textContent='Enter a bundle name of 3–140 characters.';$('rrQuickTitle').focus();return;}
-    if(!priceText||!Number.isFinite(price)||price<0||price>5000||Math.abs(price*100-cents)>1e-5){$('rrQuickNotice').textContent='Enter a valid bundle price.';$('rrQuickPrice').focus();return;}
-    if($('rrQuickStatus').value!=='draft'&&cents<50){$('rrQuickNotice').textContent='Published bundles must cost at least $0.50. Choose Save as draft if you are still preparing it.';$('rrQuickPrice').focus();return;}
-    for(let i=0;i<rows.length;i++){
-      const file=selected[i],row=rows[i],meta=metadata(row),date=row.querySelector('[data-quick-field="race_date"]');
-      if(!file||(!file.name.toLowerCase().endsWith('.pdf')&&file.type!=='application/pdf')){row.classList.add('is-error');row.querySelector('.rr-bulk-file-status').textContent='Choose a PDF';return;}
-      if(file.size<5||file.size>75*1024*1024){row.classList.add('is-error');row.querySelector('.rr-bulk-file-status').textContent='Must be 5 bytes–75 MB';return;}
-      if(meta.title.length<3||meta.title.length>140){row.classList.add('is-error');row.querySelector('.rr-bulk-file-status').textContent='Title must be 3–140 characters';return;}
-      if(!meta.race_date){row.classList.add('is-error');date.setAttribute('aria-invalid','true');row.querySelector('.rr-bulk-file-status').textContent='Set racing date';date.focus();return;}
-      date.removeAttribute('aria-invalid');row.classList.remove('is-error');
-    }
-    const choice=$('rrQuickStatus').value;
-    let status=choice,release_at=null;
-    if(choice==='scheduled'){
-      status='published';
-      try{release_at=window.rrReleaseUTC($('rrQuickRelease').value);}
-      catch(error){$('rrQuickNotice').textContent=error.message;$('rrQuickRelease').focus();return;}
-    }
-    busy=true;lock(true);
-    const ids=[];let failed=0;
-    try{
-      $('rrQuickNotice').textContent='Uploading PDFs and attaching them to the bundle…';
-      for(let i=0;i<rows.length;i++){
-        const file=selected[i],row=rows[i],meta=metadata(row),label=row.querySelector('.rr-bulk-file-status');
-        const sessionKey=row.dataset.sessionKey;
-        let assetId=row.dataset.assetId;
-        if(!assetId){assetId=crypto.randomUUID();row.dataset.assetId=assetId;sessionStorage.setItem(sessionKey,assetId);}
-        try{
-          const saved=await api('/api/admin/bundle-assets',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:assetId,...meta})});
-          if(!saved.has_pdf){
-            label.textContent='Uploading…';
-            await api('/api/admin/bundle-assets/'+assetId+'/pdf',{method:'PUT',body:file,headers:{'Content-Type':'application/pdf','X-File-Size':String(file.size)}});
-          }
-          row.dataset.uploaded='true';ids.push(assetId);row.classList.remove('is-error');row.classList.add('is-done');label.textContent='Ready';
-        }catch(error){
-          failed++;row.classList.add('is-error');label.textContent='Needs retry — '+error.message;
-        }
-      }
-      if(failed){$('rrQuickNotice').textContent=failed+' PDF'+(failed===1?' needs':'s need')+' attention. Correct marked files and press the same button again; finished uploads will be reused.';return;}
-      const payload={title,category:$('rrQuickCategory').value,race_date:$('rrQuickDate').value||null,
-        description:$('rrQuickDescription').value.trim(),price_cents:cents,status,release_at,
-        product_ids:ids};
-      let bundleId=panel.dataset.bundleId||'';
-      if(bundleId&&panel.dataset.bundleSignature&&panel.dataset.bundleSignature!==JSON.stringify(payload)){
-        const prior=await api('/api/admin/bundles');
-        if((prior.bundles||[]).some(bundle=>bundle.id===bundleId)){
-          panel.dataset.bundleId='';panel.dataset.bundleSignature='';
-          $('rrQuickNotice').textContent='The previous attempt already created its bundle. Your current details are still here; press the button again to create this bundle as a separate item.';
-          return;
-        }
-      }
-      if(!bundleId){bundleId=crypto.randomUUID();panel.dataset.bundleId=bundleId;}
-      payload.id=bundleId;
-      panel.dataset.bundleSignature=JSON.stringify(payload);
-      $('rrQuickNotice').textContent=choice==='draft'?'Saving bundle draft…':choice==='scheduled'?'Scheduling bundle…':'Publishing bundle…';
-      const result=await api('/api/admin/bundles',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-      const bundleLabel=choice==='draft'?'Bundle draft saved':choice==='scheduled'?'Bundle scheduled':'Bundle published';
-      $('rrQuickNotice').textContent=(result.already_exists?'The earlier attempt had already saved this bundle. ':bundleLabel+'. ')+ids.length+' PDFs attached.';
-      window.dispatchEvent(new Event('rr-bundle-assets-changed'));
-      for(const row of rows)sessionStorage.removeItem(row.dataset.sessionKey);
-      panel.dataset.bundleId='';panel.dataset.bundleSignature='';
-      $('rrQuickTitle').value='';$('rrQuickPrice').value='';$('rrQuickDate').value='';$('rrQuickDescription').value='';
-      $('rrQuickStatus').value='published';$('rrQuickRelease').value='';$('rrQuickReleaseWrap').hidden=true;
-      $('rrQuickFiles').value='';drawQueue();
-      $('rrQuickNotice').textContent=(result.already_exists?'The earlier attempt had already saved this bundle. ':bundleLabel+'. ')+ids.length+' PDFs attached.';
-    }catch(error){
-      if(error.status&&error.status<500){panel.dataset.bundleId='';panel.dataset.bundleSignature='';}
-      $('rrQuickNotice').textContent='The PDFs are saved. Bundle was not confirmed: '+error.message+'. Press the button again after correcting any details; uploaded files will be reused.';
-    }finally{busy=false;lock(false);}
-  }
-  $('rrQuickFiles').addEventListener('change',drawQueue);
-  $('rrQuickDefaultDate').addEventListener('change',()=>box.querySelectorAll('[data-quick-field="race_date"]').forEach(input=>input.value=$('rrQuickDefaultDate').value));
-  $('rrQuickCategory').addEventListener('change',()=>box.querySelectorAll('[data-quick-field="category"]').forEach(input=>input.value=$('rrQuickCategory').value));
-  $('rrQuickStatus').addEventListener('change',()=>{$('rrQuickReleaseWrap').hidden=$('rrQuickStatus').value!=='scheduled';});
-  $('rrQuickSubmit').addEventListener('click',createBundle);
-  if(!$('rrQuickDefaultDate').value)rrPrefillRacingDate('rrQuickDefaultDate');
-  drawQueue();
-})();
-</script>
+
 
 <script>
 (()=>{'use strict';
@@ -765,9 +591,14 @@
     return d;
   }
   function selected(){return assets.find(a=>a.id===selectedId);}
+  function canMakeIndividual(a){
+    return !!a&&a.status==='draft'&&a.has_pdf&&!!a.category&&!!a.race_date&&!!a.pdf_expires_at&&
+      Date.parse(String(a.pdf_expires_at).replace(' ','T')+'Z')>Date.now();
+  }
   function setBusy(v){
     busy=v;
     $('assetSave').disabled=v||selected()?.status==='archived';
+    $('assetMakeIndividual').disabled=v||!canMakeIndividual(selected());
     $('assetNew').disabled=v;
     $('assetArchive').disabled=v||!selectedId||selected()?.status!=='draft';
     $('assetPurge').disabled=v||!selectedId||selected()?.status!=='archived';
@@ -778,16 +609,16 @@
   }
   function lockEditor(v){for(const id of ['assetTitle','assetCategory','assetDate','assetTrack','assetPdf'])$(id).disabled=v;}
   function reset(){
-    selectedId=null;$('assetTitle').value='';$('assetCategory').value='Race Cards';
-    rrPrefillRacingDate('assetDate');$('assetTrack').value='';$('assetPdf').value='';
-    $('assetPdfStatus').textContent='';$('assetSave').textContent='Upload bundle-only PDF';notice('New private PDF.');
+    selectedId=null;$('assetTitle').value='';$('assetCategory').value='';
+    rrRestoreRacingDate('assetDate','');$('assetTrack').value='';$('assetPdf').value='';
+    $('assetPdfStatus').textContent='';$('assetSave').textContent='Upload to PDF Repository';notice('New private PDF.');
     lockEditor(false);setBusy(false);render();
   }
   function edit(a){
     selectedId=a.id;$('assetTitle').value=a.title;$('assetCategory').value=a.category;
     rrRestoreRacingDate('assetDate',a.race_date);$('assetTrack').value=a.track||'';
     $('assetPdf').value='';$('assetPdfStatus').textContent=a.has_pdf?'— Uploaded':'— Missing';
-    $('assetSave').textContent=a.status==='archived'?'Archived PDF':'Save private PDF';
+    $('assetSave').textContent=a.status==='archived'?'Archived PDF':'Save repository details';
     lockEditor(a.status==='archived');setBusy(false);
     notice(a.status==='archived'?'This PDF is archived. Previous customer downloads are preserved.':
       'Editing '+a.title+'. Older purchases keep their PDF versions.');
@@ -795,13 +626,13 @@
   }
   function render(){
     const box=$('assetInventory');box.replaceChildren();
-    if(!assets.length){const e=document.createElement('div');e.className='empty';e.textContent='No bundle-only PDFs yet.';box.append(e);return;}
+    if(!assets.length){const e=document.createElement('div');e.className='empty';e.textContent='No PDFs in the repository yet. Upload one or several above.';box.append(e);return;}
     for(const a of assets){
       const row=document.createElement('div');row.className='rr-bundle-row';
       const b=document.createElement('button');b.type='button';b.className='product'+(a.id===selectedId?' active':'');
       const name=document.createElement('strong');name.textContent=a.title;
-      const meta=document.createElement('span');meta.textContent=[a.race_date||'No date',a.pdf_expires_at?'Auto-delete '+window.rrExpiryLabel(a.pdf_expires_at):'Racing date needed',
-        a.status==='archived'?'ARCHIVED':a.has_pdf?'Ready for bundles':'PDF missing'].join(' · ');
+      const meta=document.createElement('span');meta.textContent=[a.race_date||'No date',a.pdf_expires_at?'Race-date cutoff '+window.rrExpiryLabel(a.pdf_expires_at):'Racing date needed',
+        a.status==='archived'?'ARCHIVED':!a.has_pdf?'PDF missing':!a.race_date?'Private draft · add race date to bundle or publish':Date.parse(String(a.pdf_expires_at||'').replace(' ','T')+'Z')<=Date.now()?'Race-date window expired':'Ready for bundles and individual drafts'].join(' · ');
       b.append(name,meta);b.addEventListener('click',()=>edit(a));row.append(b);
       if(a.status==='draft'&&!a.has_pdf){
         const remove=document.createElement('button');remove.type='button';remove.className='secondary mini rr-delete-bundle';remove.textContent='Delete missing';
@@ -836,9 +667,27 @@
           headers:{'Content-Type':'application/pdf','X-File-Size':String(file.size)}});
       }
       await refresh(id);
-      notice('Private PDF saved. It is available to select in Automatic bundles, but not sold on its own.');
+      notice('PDF saved in the private repository. Choose Create individual draft or select it while building a bundle.');
       window.dispatchEvent(new Event('rr-bundle-assets-changed'));
     }catch(e){notice('Private PDF not saved completely: '+e.message+'. If created, select it below to retry.');await refresh(selectedId).catch(()=>{});}
+    finally{setBusy(false);}
+  }
+  async function makeIndividual(){
+    const asset=selected();
+    if(busy||!selectedId)return;
+    if(!asset?.has_pdf){notice('Upload the PDF before creating an individual draft.');return;}
+    if(!asset.category){notice('Choose a collection first.');return;}
+    if(!asset.race_date||!asset.pdf_expires_at||Date.parse(String(asset.pdf_expires_at).replace(' ','T')+'Z')<=Date.now()){
+      notice('Set a current racing date first. The normal race-date availability window still applies.');return;
+    }
+    if(!confirm('Create an individual publication draft using this same PDF? The draft stays private until you publish or schedule it. The PDF will not be uploaded again.'))return;
+    const id=asset.id;setBusy(true);
+    try{
+      await api('/api/admin/bundle-assets/'+id+'/individual',{method:'POST'});
+      selectedId=null;await refresh();window.dispatchEvent(new CustomEvent('rr-open-product',{detail:{id}}));
+      window.dispatchEvent(new Event('rr-bundle-assets-changed'));
+      notice('Individual publication draft created with the existing repository PDF. It remains private until published or scheduled.');
+    }catch(error){notice(error.message);}
     finally{setBusy(false);}
   }
   async function deleteMissing(asset){
@@ -884,8 +733,6 @@
     if(!files.length){$('assetBulkNotice').textContent='Select multiple PDF files to prepare the upload.';return;}
     const defaultDate=$('assetBulkDate').value||$('assetDate').value||'';
     $('assetBulkDate').value=defaultDate;
-    const defaultCategory=$('assetCategory').value||'Race Cards';
-    const defaultTrack=$('assetTrack').value.trim();
     files.forEach((file,index)=>{
       const row=document.createElement('div');row.className='rr-bulk-row';row.dataset.index=String(index);
       const head=document.createElement('div');head.className='rr-bulk-file-head';
@@ -895,17 +742,14 @@
       const fields=document.createElement('div');fields.className='rr-bulk-fields';
       const title=document.createElement('input');title.type='text';title.maxLength=140;title.value=titleFromFileName(file.name);title.dataset.bulkField='title';
       const date=document.createElement('input');date.type='date';date.value=defaultDate;date.dataset.bulkField='race_date';
-      const category=document.createElement('select');category.dataset.bulkField='category';
-      bulkCategories.forEach(value=>{const option=document.createElement('option');option.value=value;option.textContent=value;category.append(option);});category.value=defaultCategory;
-      const track=document.createElement('input');track.type='text';track.maxLength=100;track.placeholder='Optional';track.value=defaultTrack;track.dataset.bulkField='track';
-      fields.append(bulkField('PDF title',title),bulkField('Racing date',date),bulkField('Collection',category),bulkField('Racetrack',track));
+      fields.append(bulkField('PDF title',title),bulkField('Racing date · optional',date));
       row.append(fields);box.append(row);
     });
-    $('assetBulkNotice').textContent=files.length+' PDF'+(files.length===1?' is':'s are')+' queued. Check each title, racing date, collection, and track before uploading.';
+    $('assetBulkNotice').textContent=files.length+' PDF'+(files.length===1?' is':'s are')+' queued. Check filenames and optional dates, then upload once to the repository.';
   }
   function bulkMetadata(row){
     const value=key=>row.querySelector('[data-bulk-field="'+key+'"]').value.trim();
-    return {title:value('title'),race_date:value('race_date')||null,category:value('category'),track:value('track')};
+    return {title:value('title'),race_date:value('race_date')||null,category:'',track:''};
   }
   async function bulkUpload(){
     if(busy)return;
@@ -929,11 +773,6 @@
         if(meta.title.length<3||meta.title.length>140){
           failed++;row.classList.add('is-error');status.textContent='Title must be 3–140 characters';continue;
         }
-        const dateInput=row.querySelector('[data-bulk-field="race_date"]');
-        if(!dateInput?.value){
-          failed++;row.classList.add('is-error');dateInput?.setAttribute('aria-invalid','true');status.textContent='Set racing date';continue;
-        }
-        dateInput.removeAttribute('aria-invalid');
         row.classList.remove('is-error','is-done');
         status.textContent='Preparing…';
         try{
@@ -951,7 +790,7 @@
       }
       await refresh().catch(()=>{});
       window.dispatchEvent(new Event('rr-bundle-assets-changed'));
-      $('assetBulkNotice').textContent=uploaded+' PDF'+(uploaded===1?' uploaded':'s uploaded')+(failed?'; '+failed+' need attention. Correct any marked rows and upload again.':' successfully to the private library.');
+      $('assetBulkNotice').textContent=uploaded+' PDF'+(uploaded===1?' uploaded':'s uploaded')+(failed?'; '+failed+' need attention. Correct any marked rows and upload again.':' to the PDF Repository as private drafts.');
       if(failed&&uploaded===0)$('assetBulkNotice').textContent='Upload attempted for '+attempted+' file'+(attempted===1?'':'s')+'; '+failed+' need attention. Correct any marked rows and upload again.';
     }finally{setBusy(false);}
   }
@@ -962,6 +801,7 @@
   $('assetBulkUpload').addEventListener('click',bulkUpload);
   $('assetNew').addEventListener('click',reset);
   $('assetSave').addEventListener('click',save);
+  $('assetMakeIndividual').addEventListener('click',makeIndividual);
   $('assetArchive').addEventListener('click',archive);
   async function purge(){
     if(busy||!selectedId||selected()?.status!=='archived')return;
@@ -980,7 +820,9 @@
     finally{setBusy(false);}
   }
   $('assetPurge').addEventListener('click',purge);
-  refresh().catch(e=>notice('Private PDF library setup required: '+e.message));
+  rrRestoreRacingDate('assetDate','');
+  rrRestoreRacingDate('assetBulkDate','');
+  refresh().catch(e=>notice('PDF Repository unavailable: '+e.message));
 })();
 </script>
 
