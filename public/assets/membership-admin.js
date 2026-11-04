@@ -6,7 +6,7 @@ const set=(el,v)=>{if(el)el.textContent=v;};
 async function request(url,options={}){
  const r=await fetch(url,{credentials:"same-origin",cache:"no-store",...options});
  const data=await r.json().catch(()=>({}));
- if(!r.ok)throw Error(data.error||"Request failed");
+ if(!r.ok){const failures=Array.isArray(data.failures)?data.failures.map(x=>[x.plan,x.mode].filter(Boolean).join(" (")+(x.mode?")":"")+": "+(x.error||"price creation failed")).join(" · "):"";throw Error(failures||data.error||("Request failed ("+r.status+")"));}
  return data;
 }
 function dollars(cents){return cents==null?"":(Number(cents)/100).toFixed(2);}
