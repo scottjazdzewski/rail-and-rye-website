@@ -185,7 +185,7 @@ body.heritage-home.rr-shell-page .micro-strip{display:none}
  background:linear-gradient(150deg,#a77b403c,#092432b0);color:#ffe0a2
 }
 /* Five aligned header pills without disturbing the central brand strapline. */
-@media(min-width:1121px) and (max-width:1450px){
+@media(min-width:1121px) and (max-width:1580px){
  .heritage-nav{gap:4px}
  .heritage-nav a{font-size:9px;letter-spacing:.045em}
  .heritage-nav .heritage-nav-pill{padding:9px 7px;min-height:40px}
@@ -219,7 +219,7 @@ body.heritage-home.rr-shell-page .micro-strip{display:none}
   linear-gradient(90deg,rgba(2,17,28,.96) 0%,rgba(3,18,29,.86) 30%,rgba(3,20,30,.62) 56%,rgba(4,20,29,.18) 100%),
   linear-gradient(180deg,rgba(4,16,26,.18) 0%,transparent 48%,rgba(5,18,28,.38) 100%)
 }
-@media(min-width:751px) and (max-width:1120px){
+@media(min-width:751px) and (max-width:1270px){
  .heritage-header-inner{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px}
  .heritage-brand-mark{width:60px;height:60px}
  .heritage-wordmark{font-size:27px}
