@@ -91,7 +91,8 @@ function readProduct(data) {
   if(!validReleaseAt(release_at))throw Error('Release time must be a valid UTC date and time');
   if(release_at&&status!=='published')throw Error('Only published editions may have a scheduled release');
   if(title.length<3||title.length>140) throw Error("Title must be 3–140 characters");
-  if(!CATEGORIES.has(category)) throw Error("Invalid category");
+  if(category&&!CATEGORIES.has(category)) throw Error("Invalid category");
+  if(status==="published"&&!CATEGORIES.has(category)) throw Error("Choose a collection before publishing");
   if(!validDate(race_date)) throw Error("Invalid date");
   if(status==='published'&&!race_date)throw Error('Enter the racing date printed on this PDF before publishing');
   const pdf_expires_at=race_date?pdfExpiryFromRaceDate(race_date):null;
