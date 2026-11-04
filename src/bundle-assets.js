@@ -1,5 +1,5 @@
-/* Private, bundle-only PDF library. Files live in R2 via the existing protected
-   admin PDF upload; public products/checkout never expose draft assets. */
+/* Private PDF repository. Files live in R2 via the protected admin upload;
+   drafts stay out of public products and checkout until the owner publishes. */
 import {ensureReleaseSchedule,pdfExpiryFromRaceDate} from './publication-schedule.js';
 const CATEGORIES=new Set(['Race Cards','Longshot Radar','Stable Notes','Target List']);
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -26,14 +26,13 @@ async function readMeta(request){
   if(!p||Array.isArray(p)||typeof p!=='object')throw Error('Invalid PDF metadata');
   const id=p.id==null||p.id===''?null:String(p.id);
   if(id&&!UUID.test(id))throw Error('Invalid private PDF request ID');
-  const title=String(p.title||'').trim(), category=String(p.category||'Race Cards');
+  const title=String(p.title||'').trim(), category=String(p.category||'').trim();
   const race_date=parseDate(p.race_date);
-  if(!race_date)throw Error('Enter the racing date printed on this PDF');
-  const pdf_expires_at=pdfExpiryFromRaceDate(race_date);
-  if(!pdf_expires_at||Date.parse(pdf_expires_at.replace(' ','T')+'Z')<=Date.now())throw Error('The racing date must leave the PDF within its two-day availability period');
+  const pdf_expires_at=race_date?pdfExpiryFromRaceDate(race_date):null;
+  if(race_date&&!pdf_expires_at)throw Error('Invalid racing date');
   const track=String(p.track||'').trim();
   if(title.length<3||title.length>140)throw Error('PDF name must contain 3–140 characters');
-  if(!CATEGORIES.has(category))throw Error('Invalid collection');
+  if(category&&!CATEGORIES.has(category))throw Error('Invalid collection');
   if(track.length>100)throw Error('Racetrack name too long');
   return {id,title,category,race_date,track,pdf_expires_at};
 }
@@ -73,6 +72,18 @@ export async function handleAdminBundleAssets(request,env,path){
       env.STORE_DB.prepare('INSERT INTO bundle_only_assets (product_id) VALUES (?)').bind(id)
     ]);
     return json({id,created:true,has_pdf:false},201);
+  }
+  const individual=path.match(/^\/api\/admin\/bundle-assets\/([0-9a-f-]{36})\/individual$/i);
+  if(individual&&request.method==='POST'&&UUID.test(individual[1])){
+    const id=individual[1];
+    const asset=await env.STORE_DB.prepare('SELECT p.status,p.pdf_key,p.category,p.race_date,p.pdf_expires_at,a.purged_at FROM products p JOIN bundle_only_assets a ON a.product_id=p.id WHERE p.id=?').bind(id).first();
+    if(!asset)return fail('PDF repository item not found',404);
+    if(asset.status!=='draft'||asset.purged_at)return fail('Only active private draft PDFs can become individual publications',409);
+    if(!asset.pdf_key)return fail('Upload the PDF before creating an individual publication',409);
+    if(!CATEGORIES.has(asset.category))return fail('Choose a collection in the PDF repository first',409);
+    if(!asset.race_date||!asset.pdf_expires_at||Date.parse(String(asset.pdf_expires_at).replace(' ','T')+'Z')<=Date.now())return fail('Set a current racing date before creating an individual publication',409);
+    await env.STORE_DB.prepare('DELETE FROM bundle_only_assets WHERE product_id=? AND purged_at IS NULL').bind(id).run();
+    return json({id,individual_draft:true});
   }
   // Physically remove every stored version of an archived private PDF, after
   // checking active bundles, paid entitlements and unfinished checkouts.
