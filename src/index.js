@@ -170,7 +170,7 @@ async function handleAdminAPI(request,env,pathname,ctx) {
   if(item.pdf_key===BUNDLE_KEY)return fail('Edit bundles using the bundle editor',409);
   if(!action&&request.method==="PATCH") {
     const protectedAsset=await env.STORE_DB.prepare('SELECT product_id FROM bundle_only_assets WHERE product_id=?').bind(id).first();
-    if(protectedAsset)return fail('Edit private PDFs using the bundle-only library',409);
+    if(protectedAsset)return fail('Edit private PDFs using the PDF Repository',409);
     let data;try{data=readProduct(await parseJSON(request));}catch(e){return fail(e.message);}
     if(data.status==="published"&&!item.pdf_key) return fail("Upload a PDF before publishing");
     // Atomic: a future-dated published product can never be visible between
@@ -197,6 +197,12 @@ async function handleAdminAPI(request,env,pathname,ctx) {
     return json({product:{...product,release_at:data.release_at}});
   }
   if(action==="pdf"&&request.method==="PUT") {
+    if(!item.pdf_key){
+      const repositoryAsset=item.status==="draft"
+        ? await env.STORE_DB.prepare("SELECT product_id FROM bundle_only_assets WHERE product_id=? AND purged_at IS NULL").bind(id).first()
+        : null;
+      if(!repositoryAsset)return fail("Upload new PDFs through the PDF Repository. This field only replaces an attached PDF.",409);
+    }
     const type=request.headers.get("content-type")?.split(";")[0]?.trim().toLowerCase();
     const size=Number(request.headers.get("content-length")||request.headers.get("x-file-size"));
     if(type!=="application/pdf"||!Number.isSafeInteger(size)||size<5||size>MAX_PDF) return fail("Upload a PDF smaller than 75 MB",413);
