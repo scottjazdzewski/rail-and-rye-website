@@ -79,9 +79,9 @@ export async function handleAdminBundleAssets(request,env,path){
     const asset=await env.STORE_DB.prepare('SELECT p.status,p.pdf_key,p.category,p.race_date,p.pdf_expires_at,a.purged_at FROM products p JOIN bundle_only_assets a ON a.product_id=p.id WHERE p.id=?').bind(id).first();
     if(!asset)return fail('PDF repository item not found',404);
     if(asset.status!=='draft'||asset.purged_at)return fail('Only active private draft PDFs can become individual publications',409);
-    if(!asset.pdf_key)return fail('Upload the PDF before creating an individual publication',409);
-    if(!CATEGORIES.has(asset.category))return fail('Choose a collection in the PDF repository first',409);
-    if(!asset.race_date||!asset.pdf_expires_at||Date.parse(String(asset.pdf_expires_at).replace(' ','T')+'Z')<=Date.now())return fail('Set a current racing date before creating an individual publication',409);
+    if(!asset.pdf_key)return fail('Upload the PDF before assigning it to an individual publication',409);
+    // Assigning changes only the private draft type. Collection, racing date and price
+    // are completed in the individual editor before the owner publishes it.
     await env.STORE_DB.prepare('DELETE FROM bundle_only_assets WHERE product_id=? AND purged_at IS NULL').bind(id).run();
     return json({id,individual_draft:true});
   }
