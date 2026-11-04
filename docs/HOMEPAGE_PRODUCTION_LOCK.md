@@ -1,7 +1,7 @@
 # RAIL & RYE — HOMEPAGE PRODUCTION LOCK
 
 **Status: OWNER APPROVED / DO NOT REDESIGN**  
-**Approved:** October 31, 2026  
+**Approved:** November 4, 2026 (owner-authorized Racing Wire header pill)
 **Frozen homepage HTML blob:** `3ae6330161bf1c2e5969709129847fe1ad37fd89` (owner-approved source in main commit `bf3513a0c8e42302c6605c5ac54bcd4659481cf7`)  
 **Recovery snapshot branch:** `approved-homepage-2026-10-31`  
 **Website:** https://railandryeracing.com/
@@ -41,3 +41,8 @@ The owner explicitly approved adding **Our Approach** as a fourth top-navigation
 ## Owner-authorized publication copy and resource hints (November 1, 2026)
 
 The owner approved replacing inaccurate product taglines without changing the approved layout or imagery: Longshot Radar now reads **“Contenders the Market May Overlook”**, Stable Notes **“Horses Worth Following”**, and Target List **“When Favorites Face a Test.”** An early connection to the existing Google Fonts providers and a preload of the existing homepage hero image were also approved as performance-only changes. No CSS, hero artwork, cards, saddlecloth chips, navigation layout or commerce logic was altered. The homepage source hash and its regression test are updated to preserve this exact owner-authorized copy. The prior October 31 snapshot branch remains available as a historical recovery point; use the current GitHub main commit for the latest owner-approved wording.
+
+
+## Owner-authorized Racing Wire navigation (November 4, 2026)
+
+The owner explicitly authorized publishing The Racing Wire and adding **The Wire** to the desktop header and mobile menu throughout public pages. The approved homepage header now includes that navigation link. The homepage title, strapline, hero, feature tiles, spacing and fold remain unchanged. The header switches to the existing compact mobile menu at tablet widths; desktop navigation spacing is tightened to keep the strapline clear. Homepage baseline hash updated to this exact navigation-only source. The homepage lock and protected asset checks remain enabled.
