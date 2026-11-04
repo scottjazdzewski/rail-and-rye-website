@@ -61,7 +61,7 @@ async function stripeRequest(env,mode,method,endpoint,data,idempotencyKey){
   if(idempotencyKey)headers["Idempotency-Key"]=idempotencyKey;
   const response=await fetch("https://api.stripe.com/v1/"+endpoint,{method,headers,body:data?data.toString():undefined});
   const body=await response.json().catch(()=>({}));
-  if(!response.ok){console.error("Membership Stripe request failed",response.status,body?.error?.code||"unknown");throw Error("Stripe membership operation failed");}
+  if(!response.ok){const stripeError=body?.error||{};const code=String(stripeError.code||stripeError.type||"unknown").slice(0,80);const detail=String(stripeError.message||"").replace(/\b(?:sk|rk)_(?:live|test)_[A-Za-z0-9_]+\b/g,"[redacted]").replace(/\bwhsec_[A-Za-z0-9_]+\b/g,"[redacted]").slice(0,180);console.error("Membership Stripe request failed",response.status,code);throw Error("Stripe rejected the request ("+code+")"+(detail?": "+detail:""));}
   return body;
 }
 function priceIdFor(plan,mode){return plan[modeColumn(mode,"stripe_price_id")];}
