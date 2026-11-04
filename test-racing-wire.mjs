@@ -232,7 +232,7 @@ assert.ok(previewBody.external_sources.some(x=>x.name==="Daily Racing Form"&&x.p
 assert.ok(previewBody.external_sources.some(x=>x.name==="Breeders' Cup"&&x.parsed_count===1),'Breeders Cup official adapter is active');
 assert.ok(previewBody.external_sources.some(x=>x.name==='Fasig-Tipton'&&x.parsed_count===1),'Fasig-Tipton archive adapter is active');
 assert.ok(previewBody.external_sources.some(x=>x.name==='TOBA'&&x.source_type==='official-json'),'TOBA JSON source is active');
-assert.ok(previewBody.items.every(x=>x.editorial_score>=64),'Preview emits only editorially relevant items at the tightened threshold');
+assert.ok(previewBody.items.every(x=>x.editorial_score>=60),'Preview emits only editorially relevant items at the tightened threshold');
 assert.equal((await handlePreviewRacingWire(new Request('https://railandryeracing.com/api/preview/racing-wire-test',{method:'POST'}),env,previewFetch)).status,405);
 
 // Only authorized publisher RSS is eligible for automated site-side ingestion.

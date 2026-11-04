@@ -901,7 +901,7 @@ async function loadPreviewWire(env,fetchFn=fetch){
     }));
   }catch(e){console.warn('Racing Wire preview journal unavailable',String(e).slice(0,90));}
   const external=await previewExternalItems(fetchFn);
-  const items=curateRacingWireStories([...originals,...external.items],{threshold:64,maxItems:24,maxPerSource:4});
+  const items=curateRacingWireStories([...originals,...external.items],{threshold:60,maxItems:24,maxPerSource:4});
   return {items,external,originals};
 }
 async function editorialRows(env){
@@ -1022,7 +1022,7 @@ export async function handleRacingWire(request,env){
       published_at:a.published_at,original:false,summary:''
     }));
   }catch(e){console.warn('Racing Wire syndicated cache unavailable',String(e).slice(0,90));}
-  const items=curateRacingWireStories([...originals,...syndicated],{threshold:64,maxItems:24,maxPerSource:4});
+  const items=curateRacingWireStories([...originals,...syndicated],{threshold:60,maxItems:24,maxPerSource:4});
   return reply({items,source_count:FEEDS.filter(f=>f.authorized).length,
     social_sources:[],social_policy:'Publisher-authorized RSS; X official embeds; Facebook/Instagram verified official links or embeds',
     headline_only:true,generated_at:new Date().toISOString()});
