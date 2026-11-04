@@ -43,7 +43,7 @@ export async function handleAdminBundleAssets(request,env,path){
   if(request.method!=='GET'&&!originOk(request))return fail('Same-origin request required',403);
   if(path==='/api/admin/bundle-assets'&&request.method==='GET'){
     const rows=await env.STORE_DB.prepare(
-      `SELECT p.id,p.title,p.category,p.race_date,p.track,p.pdf_expires_at,p.status,
+      `SELECT p.id,p.title,p.category,p.race_date,p.track,p.pdf_expires_at,p.status,a.created_at AS uploaded_at,
          CASE WHEN p.pdf_key IS NOT NULL THEN 1 ELSE 0 END AS has_pdf
        FROM products p JOIN bundle_only_assets a ON a.product_id=p.id
        WHERE a.purged_at IS NULL
