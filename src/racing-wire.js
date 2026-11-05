@@ -610,6 +610,7 @@ function eventType(title){
  if(/\b(scratch|scratched|scratches)\b/.test(t))return 'scratch';
  if(/\b(injury|injured|illness|surgery|colic)\b/.test(t))return 'health';
  if(/\b(workout|worked|breeze|breezed)\b/.test(t))return 'workout';
+ if(/\b(?:stud|stallion|standing|service)\s+fee\b|\bfee\s+set\b/.test(t))return 'stallion_fee';
  if(/\b(sale|auction|sold|consigned|purchased)\b/.test(t))return 'sale';
  if(/\b(entry|entered|entries|draw|post position)\b/.test(t))return 'entry';
  if(/\b(retire|retired|retirement)\b/.test(t))return 'retirement';
@@ -653,8 +654,20 @@ function canGroup(a,b){
  if(typeA!==typeB)return false;
  if(a.subject_kind!==b.subject_kind)return false;
  const at=storyTokens(a.title),bt=storyTokens(b.title);
- const setB=new Set(bt),common=at.filter(x=>setB.has(x)).length;
- const ratio=common/Math.max(at.length,bt.length,1);
+ const setB=new Set(bt),shared=at.filter(x=>setB.has(x));
+ const common=shared.length,ratio=common/Math.max(at.length,bt.length,1);
+ if(typeA==='sale'){
+  const generic=new Set(['sale','sales','auction','auctions','sold','consigned','purchased','day','million','thousand','november','nov','breeding','stock','yearling','broodmare']);
+  const eventTokens=shared.filter(x=>!generic.has(x)&&!/^\d+$/.test(x));
+  if(eventTokens.length>=2)return true;
+ }
+ if(typeA==='stallion_fee'){
+  const generic=new Set(['stud','stallion','standing','service','fee','fees','set','sets','season','year']);
+  const subjectTokens=shared.filter(x=>!generic.has(x)&&!/^\d+$/.test(x));
+  const amounts=title=>[...String(title||'').matchAll(/[$£€]\s*(\d[\d,]*(?:\.\d+)?)/g)].map(m=>m[1].replace(/\D/g,''));
+  const leftAmounts=amounts(a.title),rightAmounts=amounts(b.title);
+  if(subjectTokens.length>=1&&leftAmounts.some(amount=>rightAmounts.includes(amount)))return true;
+ }
  return common>=3&&ratio>=.72;
 }
 function hasPublisherImage(item){

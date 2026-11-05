@@ -209,13 +209,9 @@ function render(){
  const editorialView=subject==='all'&&!q&&$('sort').value==='newest';
  let records=data.filter(x=>(subject==='all'||x.subject_kind===subject)&&(!q||(x.title+' '+(x.summary||'')+' '+(x.source||'')).toLowerCase().includes(q)));
  records=records.slice().sort((a,b)=>{
-   if($('sort').value==='oldest')return new Date(a.published_at)-new Date(b.published_at);
-   if(editorialView){
-     const ar=Number.isFinite(Number(a.newsroom_rank))?Number(a.newsroom_rank):9999;
-     const br=Number.isFinite(Number(b.newsroom_rank))?Number(b.newsroom_rank):9999;
-     return ar-br||new Date(b.published_at)-new Date(a.published_at);
-   }
-   return new Date(b.published_at)-new Date(a.published_at);
+   const aTime=Date.parse(a.published_at),bTime=Date.parse(b.published_at);
+   if($('sort').value==='oldest')return aTime-bTime;
+   return bTime-aTime;
  });
  $('count').textContent=records.length+' stor'+(records.length===1?'y':'ies');
  const leadSection=$('leadSection'),leadStory=$('leadStory');
