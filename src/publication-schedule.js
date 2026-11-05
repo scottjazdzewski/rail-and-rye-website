@@ -26,7 +26,7 @@ export async function ensureRacePdfExpirySchema(env){
     pending=(async()=>{
       await db.prepare("CREATE TABLE IF NOT EXISTS bundle_only_assets (product_id TEXT PRIMARY KEY,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(product_id) REFERENCES products(id))").run();
       await db.prepare("CREATE TABLE IF NOT EXISTS product_update_jobs (id TEXT PRIMARY KEY,order_id TEXT NOT NULL,product_id TEXT NOT NULL,email TEXT NOT NULL,product_title TEXT NOT NULL,updated_pdf_key TEXT NOT NULL,state TEXT NOT NULL DEFAULT 'queued' CHECK(state IN ('queued','sending','sent')),attempts INTEGER NOT NULL DEFAULT 0,download_count INTEGER NOT NULL DEFAULT 0 CHECK(download_count>=0),created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,next_attempt_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,claimed_at TEXT,sent_at TEXT,provider_id TEXT,last_error TEXT,UNIQUE(order_id,product_id,updated_pdf_key),FOREIGN KEY(order_id) REFERENCES orders(id))").run();
-      for(const [table,column] of [['products','pdf_expires_at'],['orders','pdf_expires_at'],['orders','pdf_purged_at'],['bundle_order_items','pdf_expires_at'],['bundle_order_items','pdf_purged_at'],['bundle_only_assets','purged_at'],['product_update_jobs','pdf_purged_at']]){
+      for(const [table,column] of [['products','pdf_expires_at'],['products','pdf_uploaded_at'],['orders','pdf_expires_at'],['orders','pdf_purged_at'],['bundle_order_items','pdf_expires_at'],['bundle_order_items','pdf_purged_at'],['bundle_only_assets','purged_at'],['product_update_jobs','pdf_purged_at']]){
         const info=await db.prepare('PRAGMA table_info('+table+')').all();
         if((info.results||[]).some(row=>row.name===column))continue;
         try{await db.prepare('ALTER TABLE '+table+' ADD COLUMN '+column+' TEXT').run();}

@@ -202,6 +202,7 @@
         <p id="assetNotice" class="detail" role="status" aria-live="polite"></p>
         <p class="kicker" style="margin-top:15px">Uploaded PDFs · newest first</p>
         <div class="list" id="assetInventory"><div class="empty">Loading private PDFs…</div></div>
+        <input id="assetReplacementFile" type="file" accept="application/pdf,.pdf" hidden>
       </section>
   <div class="layout">
     <section class="panel" aria-label="Product editor">
@@ -618,7 +619,7 @@
 <script>
 (()=>{'use strict';
   const $=id=>document.getElementById(id);
-  let assets=[],individualPdfs=[],selectedId=null,busy=false;
+  let assets=[],individualPdfs=[],selectedId=null,busy=false,replacementTarget=null;
   const notice=x=>{$('assetNotice').textContent=x;};
   async function api(path,options={}){
     const r=await fetch(path,{credentials:'same-origin',cache:'no-store',...options});
@@ -633,6 +634,8 @@
   function setBusy(v){
     busy=v;
     $('assetSave').disabled=v||selected()?.status==='archived';
+    $('assetReplacementFile').disabled=v;
+    $('assetInventory').querySelectorAll('.rr-upload-replacement').forEach(button=>button.disabled=v);
     $('assetMakeIndividual').disabled=v||!canMakeIndividual(selected());
     $('assetNew').disabled=v;
     $('assetArchive').disabled=v||!selectedId||selected()?.status!=='draft';
@@ -665,7 +668,7 @@
     const box=$('assetInventory');box.replaceChildren();
     const items=[
       ...assets.map(a=>({...a,library_kind:'repository'})),
-      ...individualPdfs.filter(p=>p.pdf_key).map(p=>({...p,has_pdf:true,uploaded_at:p.created_at,library_kind:'individual'}))
+      ...individualPdfs.filter(p=>p.pdf_key).map(p=>({...p,has_pdf:true,uploaded_at:p.pdf_uploaded_at||p.created_at,library_kind:'individual'}))
     ].sort((a,b)=>{
       const ta=Date.parse(String(a.uploaded_at||'').replace(' ','T')+'Z');
       const tb=Date.parse(String(b.uploaded_at||'').replace(' ','T')+'Z');
@@ -690,6 +693,17 @@
         window.dispatchEvent(new CustomEvent('rr-open-product',{detail:{id:a.id}}));
       });
       row.append(b);
+      if(a.has_pdf&&a.status!=='archived'){
+        const replace=document.createElement('button');replace.type='button';
+        replace.className='secondary mini rr-upload-replacement';replace.textContent='Upload replacement';
+        replace.setAttribute('aria-label','Upload replacement PDF for '+a.title);
+        replace.addEventListener('click',event=>{
+          event.stopPropagation();if(busy)return;
+          replacementTarget={id:a.id,kind:a.library_kind};
+          $('assetReplacementFile').value='';$('assetReplacementFile').click();
+        });
+        row.append(replace);
+      }
       if(isRepository&&a.status==='draft'&&!a.has_pdf){
         const remove=document.createElement('button');remove.type='button';remove.className='secondary mini rr-delete-bundle';remove.textContent='Delete missing';
         remove.setAttribute('aria-label','Delete incomplete PDF '+a.title);
@@ -863,6 +877,22 @@
       }
     }finally{setBusy(false);}
   }
+  async function uploadReplacement(){
+    const file=$('assetReplacementFile').files[0],target=replacementTarget;
+    if(!file||!target)return;
+    if(file.size<5||file.size>75*1024*1024){notice('PDF must be 5 bytes–75 MB. The existing file is unchanged.');return;}
+    if(!file.name.toLowerCase().endsWith('.pdf')&&file.type!=='application/pdf'){notice('Choose a PDF file. The existing file is unchanged.');return;}
+    setBusy(true);notice('Uploading replacement PDF…');
+    try{
+      const endpoint=target.kind==='repository'?'/api/admin/bundle-assets/'+target.id+'/pdf':'/api/admin/products/'+target.id+'/pdf';
+      await api(endpoint,{method:'PUT',body:file,headers:{'Content-Type':'application/pdf','X-File-Size':String(file.size)}});
+      await refresh();
+      notice('Replacement uploaded. Its timestamp is updated in the PDF Library.');
+      window.dispatchEvent(new Event('rr-bundle-assets-changed'));
+    }catch(error){notice('Replacement failed; the existing PDF is unchanged. '+error.message);}
+    finally{replacementTarget=null;$('assetReplacementFile').value='';setBusy(false);}
+  }
+  $('assetReplacementFile').addEventListener('change',uploadReplacement);
   $('assetBulkFiles').addEventListener('change',renderBulkQueue);
   $('assetBulkDate').addEventListener('change',()=>{
     $('assetBulkQueue').querySelectorAll('[data-bulk-field="race_date"]').forEach(input=>{input.value=$('assetBulkDate').value;});

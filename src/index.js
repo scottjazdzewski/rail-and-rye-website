@@ -236,6 +236,10 @@ async function handleAdminAPI(request,env,pathname,ctx) {
         await replacePdfAndNotifyBuyers(env,item,key);
         if(ctx?.waitUntil)ctx.waitUntil(sendQueuedEmails(env,8).catch(e=>console.warn('Queued PDF update notices deferred',String(e))));
       }else await env.STORE_DB.prepare("UPDATE products SET pdf_key=? WHERE id=?").bind(key,id).run();
+      await env.STORE_DB.batch([
+        env.STORE_DB.prepare('UPDATE products SET pdf_uploaded_at=CURRENT_TIMESTAMP WHERE id=?').bind(id),
+        env.STORE_DB.prepare('UPDATE bundle_only_assets SET created_at=CURRENT_TIMESTAMP WHERE product_id=?').bind(id)
+      ]);
       // Preserve older PDF versions: existing paid orders may still reference them.
       // Cleanup requires checking unexpired D1 entitlements first.
     }catch(e){await env.CARDS_BUCKET.delete(key).catch(()=>{});console.error("PDF upload failed",e);return fail("PDF upload failed; check size and retry",500);}
