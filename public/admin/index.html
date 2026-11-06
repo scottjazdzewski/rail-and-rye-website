@@ -37,6 +37,9 @@
     .rr-bundle-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:stretch}
     .rr-bundle-row .product{min-width:0}
     .rr-bundle-row .rr-delete-bundle{align-self:center;white-space:nowrap;color:#8f2828;border-color:#d7bcbc}.rr-bundle-row .rr-use-individual{align-self:center;white-space:nowrap;border-color:var(--gold);color:var(--navy)}
+    .rr-managed-subsection{margin-top:20px;padding-top:15px;border-top:1px solid var(--border)}
+    .rr-managed-subsection h3{margin:0 0 8px;color:var(--navy);font-size:14px;letter-spacing:.06em;text-transform:uppercase}
+    #scheduledProductList,#managedBundleList{max-height:360px;overflow-y:auto;overscroll-behavior:contain}
     .article-panel{margin-top:28px}
     @media(min-width:901px){
       .top{min-height:74px;padding:13px 24px;gap:14px}
@@ -230,6 +233,14 @@
       <section class="panel">
         <div class="head-row"><h2>Individual publication drafts and live products</h2><button class="secondary mini" type="button" id="refreshBtn">Refresh</button></div>
         <div class="list" id="productList"><div class="empty">Loading your products…</div></div>
+        <div class="rr-managed-subsection">
+          <h3>Scheduled individual releases</h3>
+          <div class="list" id="scheduledProductList"><div class="empty">Loading scheduled releases…</div></div>
+        </div>
+        <div class="rr-managed-subsection">
+          <h3>Bundles · drafts, scheduled and live</h3>
+          <div class="list" id="managedBundleList"><div class="empty">Loading bundles…</div></div>
+        </div>
       </section>
       <p class="footer">This console is for the business owner only. It uses Cloudflare Access sign-in and verifies the authentication token again on the server.</p>
     </aside>
@@ -413,7 +424,34 @@
   window.rrCanUsePdfForNewProduct=()=>!currentId;
   function reset(){currentId=null;$('editor-title').textContent='New publication';$('productForm').reset();rrPrefillRacingDate('raceDate');$('price').value='9.99';$('scheduleAt').value='';$('pdfStatus').textContent='';$('coverStatus').textContent='';$('draftBtn').textContent='Save draft';$('cancelScheduleBtn').hidden=true;setBusy(false);renderList();}
   function edit(item){currentId=item.id;$('editor-title').textContent='Edit publication';$('title').value=safeText(item.title);$('category').value=item.category;rrRestoreRacingDate('raceDate',item.race_date);$('track').value=item.track||'';$('price').value=(item.price_cents/100).toFixed(2);$('description').value=item.description||'';$('scheduleAt').value=localRelease(item.release_at);$('pdf').value='';$('cover').value='';$('pdfStatus').textContent=item.pdf_key?'— Uploaded':'— Missing';$('coverStatus').textContent=item.image_url?'— Uploaded':'';$('draftBtn').textContent=item.status==='published'?'Save changes':'Save draft';$('cancelScheduleBtn').hidden=!pending(item);setBusy(false);renderList();window.scrollTo({top:0,behavior:'smooth'});}
-  function renderList(){const el=$('productList');el.replaceChildren();if(!products.length){let e=document.createElement('div');e.className='empty';e.textContent='No products yet. Start with your first race card.';el.append(e);return;}
+  function renderScheduledList(){
+    const el=$('scheduledProductList');el.replaceChildren();
+    const scheduled=products.filter(pending);
+    if(!scheduled.length){const empty=document.createElement('div');empty.className='empty';empty.textContent='No scheduled individual releases.';el.append(empty);return;}
+    for(const p of scheduled){
+      const b=document.createElement('button');b.type='button';b.className='product'+(p.id===currentId?' active':'');b.addEventListener('click',()=>edit(p));
+      const name=document.createElement('strong');name.textContent=p.title;
+      const status=document.createElement('em');status.className='pill scheduled';status.textContent='Scheduled';name.append(status);
+      const details=document.createElement('span');details.textContent=[p.category,p.race_date||'No date',p.pdf_key?'PDF attached':'PDF missing','Releases '+localRelease(p.release_at).replace('T',' ')+' ET'].join(' • ');
+      b.append(name,details);el.append(b);
+    }
+  }
+  function renderManagedBundles(list=[]){
+    const el=$('managedBundleList');if(!el)return;el.replaceChildren();
+    const active=list.filter(bundle=>bundle.status!=='archived');
+    if(!active.length){const empty=document.createElement('div');empty.className='empty';empty.textContent='No bundles yet.';el.append(empty);return;}
+    for(const bundle of active){
+      const button=document.createElement('button');button.type='button';button.className='product';button.addEventListener('click',()=>window.dispatchEvent(new CustomEvent('rr-open-bundle',{detail:{id:bundle.id}})));
+      const name=document.createElement('strong');name.textContent=bundle.title;
+      const isScheduled=pendingBundleForDesk(bundle);
+      const status=document.createElement('em');status.className='pill '+(isScheduled?'scheduled':bundle.status==='published'?'published':'');status.textContent=isScheduled?'Scheduled':bundle.status;name.append(status);
+      const release=bundle.release_at?localRelease(bundle.release_at).replace('T',' ')+' ET':null;
+      const details=document.createElement('span');details.textContent=[bundle.category,bundle.race_date||'No date',money(bundle.price_cents),bundle.product_ids.length+' PDFs',isScheduled?'Releases '+release:null].filter(Boolean).join(' • ');
+      button.append(name,details);el.append(button);
+    }
+  }
+  function pendingBundleForDesk(bundle){return bundle.status==='published'&&bundle.release_at&&Date.parse(String(bundle.release_at).replace(' ','T')+'Z')>Date.now();}
+  function renderList(){const el=$('productList');el.replaceChildren();renderScheduledList();if(!products.length){let e=document.createElement('div');e.className='empty';e.textContent='No products yet. Start with your first race card.';el.append(e);return;}
     for(const p of products){const b=document.createElement('button');b.type='button';b.className='product'+(p.id===currentId?' active':'');b.addEventListener('click',()=>edit(p));let name=document.createElement('strong');name.textContent=p.title;let status=document.createElement('em');status.className='pill '+(pending(p)?'scheduled':p.status==='published'?'published':'');status.textContent=pending(p)?'Scheduled':p.status;name.append(status);let details=document.createElement('span');details.textContent=[p.category,p.race_date||'No date',money(p.price_cents),p.pdf_key?'PDF attached':'PDF missing',p.pdf_expires_at?'Auto-delete '+expiryLabel(p.pdf_expires_at):null,pending(p)?'Release '+localRelease(p.release_at).replace('T',' ')+' ET':null].filter(Boolean).join(' • ');b.append(name,details);el.append(b);}
   }
   async function refresh(selectId){const data=await api('/api/admin/products');products=data.products||[];if(selectId){const item=products.find(p=>p.id===selectId);if(item)edit(item);}else renderList();}
@@ -474,6 +512,7 @@
   $('cancelScheduleBtn').addEventListener('click',()=>{if(confirm('Cancel this scheduled release and return it to a private draft?'))save('cancel');});
   $('archiveBtn').addEventListener('click',()=>{if(confirm('Archive this product? It will no longer appear in the future storefront.'))save('archive');});
   $('refreshBtn').addEventListener('click',()=>refresh().catch(e=>message(e.message,'error')));
+  window.addEventListener('rr-bundles-updated',event=>renderManagedBundles(event.detail?.bundles||[]));
   window.addEventListener('rr-open-product',event=>{
     const id=event.detail?.id;if(!id)return;
     const prefill=event.detail?.prefill;
@@ -570,6 +609,7 @@
   async function refresh(id){
     const x=await api('/api/admin/bundles');bundles=x.bundles||[];available=x.available_products||[];
     drawCandidates();drawBundles();
+    window.dispatchEvent(new CustomEvent('rr-bundles-updated',{detail:{bundles}}));
     if(id){const found=bundles.find(x=>x.id===id);if(found)edit(found);}
   }
   async function save(action){
@@ -622,6 +662,10 @@
   $('bundleCancelSchedule').addEventListener('click',()=>{if(selectedId&&confirm('Cancel this scheduled bundle and return it to a private draft?'))save('cancel');});
   $('bundleArchive').addEventListener('click',()=>{const current=bundles.find(item=>item.id===selectedId);if(current&&confirm('Remove "'+current.title+'" from the active bundle list and storefront? Any existing customer orders and paid access will be preserved.'))save('archived');});
   window.addEventListener('rr-bundle-assets-changed',()=>refresh(selectedId).catch(e=>note(e.message)));
+  window.addEventListener('rr-open-bundle',event=>{
+    const bundle=bundles.find(item=>item.id===event.detail?.id);
+    if(bundle){edit(bundle);note('Editing '+bundle.title+'. Choose Save draft, Publish now or Schedule publication in Bundles.');}
+  });
   refresh().catch(e=>note('Bundle setup required: '+e.message));
 })();
 </script>
@@ -1404,6 +1448,7 @@
   bundleTab.addEventListener('click',()=>chooseMode('bundle'));
   journalTab.addEventListener('click',()=>chooseMode('journal'));
   window.addEventListener('rr-open-product',()=>chooseMode('individual'));
+  window.addEventListener('rr-open-bundle',()=>{chooseMode('bundle');bundlePane.scrollIntoView({behavior:'smooth',block:'start'});});
   document.querySelectorAll('a[href="#workflow-journal"]').forEach(link=>{
     link.href='#rr-publish-workspace';
     link.addEventListener('click',event=>{
