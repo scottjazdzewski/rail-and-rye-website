@@ -202,6 +202,7 @@
         <p id="assetNotice" class="detail" role="status" aria-live="polite"></p>
         <p class="kicker" style="margin-top:15px">Uploaded PDFs · newest first</p>
         <div class="list" id="assetInventory"><div class="empty">Loading private PDFs…</div></div>
+        <p id="assetLibraryNotice" class="detail" role="status" aria-live="polite"></p>
         <input id="assetReplacementFile" type="file" accept="application/pdf,.pdf" hidden>
       </section>
   <div class="layout">
@@ -631,7 +632,11 @@
 (()=>{'use strict';
   const $=id=>document.getElementById(id);
   let assets=[],individualPdfs=[],selectedId=null,busy=false,replacementTarget=null;
-  const notice=x=>{$('assetNotice').textContent=x;};
+  const notice=x=>{
+    $('assetNotice').textContent=x;
+    const visible=$('assetLibraryNotice');if(visible)visible.textContent=x;
+    const page=$('notice');if(page){page.textContent=x;page.style.display='block';page.className='notice';}
+  };
   async function api(path,options={}){
     const r=await fetch(path,{credentials:'same-origin',cache:'no-store',...options});
     let d;try{d=await r.json();}catch{throw Error('Private PDF server did not respond ('+r.status+').');}
@@ -707,7 +712,11 @@
       if(isRepository&&a.has_pdf&&a.status==='draft'){
         const use=document.createElement('button');use.type='button';use.className='secondary mini rr-use-individual';use.textContent='Use for individual';
         use.setAttribute('aria-label','Use '+a.title+' for a new individual publication');
-        use.addEventListener('click',event=>{event.stopPropagation();useForIndividual(a);});
+        use.addEventListener('click',event=>{
+          event.stopPropagation();if(busy)return;
+          use.textContent='Working…';use.disabled=true;
+          useForIndividual(a).finally(()=>{if(use.isConnected){use.textContent='Use for individual';use.disabled=false;}});
+        });
         row.append(use);
       }
       if(a.has_pdf&&a.status!=='archived'){
@@ -801,6 +810,7 @@
     if(!priceText||!Number.isFinite(price)||price<0||Math.abs(price*100-Math.round(price*100))>1e-5){notice('Enter a valid price on the left before using this PDF.');return;}
     const metadata={title,category,race_date,track};
     const prefill={price:price.toFixed(2),description:$('description').value,scheduleAt:$('scheduleAt').value};
+    notice('Attaching '+asset.title+' to the new individual draft…');
     setBusy(true);
     try{
       await api('/api/admin/bundle-assets/'+asset.id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(metadata)});
