@@ -34,9 +34,9 @@
     .rr-bundle-area{margin-top:28px}
     .rr-private-library{margin-bottom:25px;padding:19px;border:1px solid var(--border);border-radius:8px;background:#fff;min-width:0}
     .rr-bundle-editor{margin-top:0}
-    .rr-bundle-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:stretch}
+    .rr-bundle-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:stretch}
     .rr-bundle-row .product{min-width:0}
-    .rr-bundle-row .rr-delete-bundle{align-self:center;white-space:nowrap;color:#8f2828;border-color:#d7bcbc}
+    .rr-bundle-row .rr-delete-bundle{align-self:center;white-space:nowrap;color:#8f2828;border-color:#d7bcbc}.rr-bundle-row .rr-use-individual{align-self:center;white-space:nowrap;border-color:var(--gold);color:var(--navy)}
     .article-panel{margin-top:28px}
     @media(min-width:901px){
       .top{min-height:74px;padding:13px 24px;gap:14px}
@@ -218,7 +218,7 @@
           <div class="field"><label for="price">Price in USD *</label><input id="price" type="number" min="0" max="5000" step="0.01" value="9.99" required><div class="detail"><strong>Free publication:</strong> Set $0.00 and publish with a PDF. The public store will offer an immediate download with no checkout or card required. Anyone can download a published free PDF.</div></div>
         </div>
         <div class="field"><label for="description">Product description</label><textarea id="description" maxlength="4000" placeholder="Premium analysis and probability-driven insights for today's card."></textarea></div>
-        <div class="field"><label for="pdf">Replace attached PDF <span id="pdfStatus"></span></label><input id="pdf" type="file" accept="application/pdf,.pdf" disabled><div class="detail">Use the PDF Repository for new files. This field replaces the file on an existing individual publication and emails eligible buyers a secure update link.</div></div>
+        <div class="field"><label for="pdf">Replace attached PDF <span id="pdfStatus"></span></label><input id="pdf" type="file" accept="application/pdf,.pdf" disabled><div class="detail">For a new publication, click <strong>Use for individual</strong> beside its PDF in the library. This field replaces the file on an existing publication and emails eligible buyers a secure update link.</div></div>
         <div class="field"><label for="cover">Cover image <span id="coverStatus"></span></label><input id="cover" type="file" accept="image/jpeg,image/png,image/webp"><div class="detail">Optional JPG, PNG or WebP, up to 6 MB. Visible publicly only when the product is published.</div></div>
         <div class="field"><label for="scheduleAt">Scheduled release · Eastern Time</label><input id="scheduleAt" type="datetime-local" step="60"><div class="detail">Choose a future time in New York. The release is automatic. Avoid 1:00–1:59 AM on the fall daylight-saving change night.</div></div>
         <div class="actions"><button type="button" class="primary" id="draftBtn">Save draft</button><button type="button" class="gold" id="publishBtn">Publish now</button><button type="button" class="gold" id="scheduleBtn">Schedule publication</button><button type="button" class="secondary" id="cancelScheduleBtn" hidden>Cancel scheduled release</button><button type="button" class="secondary" id="archiveBtn" disabled>Archive</button></div>
@@ -409,6 +409,7 @@
     return data;
   };
   function setBusy(value){busy=value;const existing=products.find(p=>p.id===currentId);$('pdf').disabled=value||!existing?.pdf_key;['draftBtn','publishBtn','scheduleBtn','cancelScheduleBtn','archiveBtn','refreshBtn','newBtn'].forEach(id=>$(id).disabled=value||(id==='archiveBtn'&&!currentId)||(id==='cancelScheduleBtn'&&!pending(existing)));}
+  window.rrCanUsePdfForNewProduct=()=>!currentId;
   function reset(){currentId=null;$('editor-title').textContent='New publication';$('productForm').reset();rrPrefillRacingDate('raceDate');$('price').value='9.99';$('scheduleAt').value='';$('pdfStatus').textContent='';$('coverStatus').textContent='';$('draftBtn').textContent='Save draft';$('cancelScheduleBtn').hidden=true;setBusy(false);renderList();}
   function edit(item){currentId=item.id;$('editor-title').textContent='Edit publication';$('title').value=safeText(item.title);$('category').value=item.category;rrRestoreRacingDate('raceDate',item.race_date);$('track').value=item.track||'';$('price').value=(item.price_cents/100).toFixed(2);$('description').value=item.description||'';$('scheduleAt').value=localRelease(item.release_at);$('pdf').value='';$('cover').value='';$('pdfStatus').textContent=item.pdf_key?'— Uploaded':'— Missing';$('coverStatus').textContent=item.image_url?'— Uploaded':'';$('draftBtn').textContent=item.status==='published'?'Save changes':'Save draft';$('cancelScheduleBtn').hidden=!pending(item);setBusy(false);renderList();window.scrollTo({top:0,behavior:'smooth'});}
   function renderList(){const el=$('productList');el.replaceChildren();if(!products.length){let e=document.createElement('div');e.className='empty';e.textContent='No products yet. Start with your first race card.';el.append(e);return;}
@@ -472,7 +473,17 @@
   $('cancelScheduleBtn').addEventListener('click',()=>{if(confirm('Cancel this scheduled release and return it to a private draft?'))save('cancel');});
   $('archiveBtn').addEventListener('click',()=>{if(confirm('Archive this product? It will no longer appear in the future storefront.'))save('archive');});
   $('refreshBtn').addEventListener('click',()=>refresh().catch(e=>message(e.message,'error')));
-  window.addEventListener('rr-open-product',event=>{const id=event.detail?.id;if(id)refresh(id).catch(e=>message(e.message,'error'));});
+  window.addEventListener('rr-open-product',event=>{
+    const id=event.detail?.id;if(!id)return;
+    const prefill=event.detail?.prefill;
+    refresh(id).then(async()=>{
+      if(!prefill)return;
+      if(prefill.price!=null)$('price').value=String(prefill.price);
+      $('description').value=safeText(prefill.description);
+      await save('draft');
+      if(prefill.scheduleAt)$('scheduleAt').value=prefill.scheduleAt;
+    }).catch(e=>message(e.message,'error'));
+  });
   api('/api/admin/status').then(r=>{paymentMode=r.payment_mode||'test';return refresh();}).catch(e=>message('Admin service unavailable: '+e.message,'error'));
 })();
 </script>
@@ -635,7 +646,7 @@
     busy=v;
     $('assetSave').disabled=v||selected()?.status==='archived';
     $('assetReplacementFile').disabled=v;
-    $('assetInventory').querySelectorAll('.rr-upload-replacement').forEach(button=>button.disabled=v);
+    $('assetInventory').querySelectorAll('.rr-upload-replacement,.rr-use-individual').forEach(button=>button.disabled=v);
     $('assetMakeIndividual').disabled=v||!canMakeIndividual(selected());
     $('assetNew').disabled=v;
     $('assetArchive').disabled=v||!selectedId||selected()?.status!=='draft';
@@ -693,6 +704,12 @@
         window.dispatchEvent(new CustomEvent('rr-open-product',{detail:{id:a.id}}));
       });
       row.append(b);
+      if(isRepository&&a.has_pdf&&a.status==='draft'){
+        const use=document.createElement('button');use.type='button';use.className='secondary mini rr-use-individual';use.textContent='Use for individual';
+        use.setAttribute('aria-label','Use '+a.title+' for a new individual publication');
+        use.addEventListener('click',event=>{event.stopPropagation();useForIndividual(a);});
+        row.append(use);
+      }
       if(a.has_pdf&&a.status!=='archived'){
         const replace=document.createElement('button');replace.type='button';
         replace.className='secondary mini rr-upload-replacement';replace.textContent='Upload replacement';
@@ -765,6 +782,34 @@
       window.dispatchEvent(new Event('rr-bundle-assets-changed'));
       notice('PDF assigned to Individual. Set its collection, racing date and price on the left, then publish or schedule it.');
     }catch(error){notice(error.message);}
+    finally{setBusy(false);}
+  }
+  async function useForIndividual(asset){
+    if(busy||!canMakeIndividual(asset))return;
+    if(window.rrCanUsePdfForNewProduct&&!window.rrCanUsePdfForNewProduct()){
+      notice('Click + New on the left before using a repository PDF for a new individual publication.');
+      return;
+    }
+    const title=$('title').value.trim()||asset.title;
+    const category=$('category').value||asset.category||'';
+    const race_date=$('raceDate').value||asset.race_date||null;
+    const track=$('track').value.trim()||asset.track||'';
+    const priceText=$('price').value.trim();
+    const price=Number(priceText);
+    if(title.length<3||title.length>140){notice('Enter a product name of 3–140 characters on the left.');return;}
+    if(!category){notice('Choose a collection on the left before using this PDF.');return;}
+    if(!priceText||!Number.isFinite(price)||price<0||Math.abs(price*100-Math.round(price*100))>1e-5){notice('Enter a valid price on the left before using this PDF.');return;}
+    const metadata={title,category,race_date,track};
+    const prefill={price:price.toFixed(2),description:$('description').value,scheduleAt:$('scheduleAt').value};
+    setBusy(true);
+    try{
+      await api('/api/admin/bundle-assets/'+asset.id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(metadata)});
+      await api('/api/admin/bundle-assets/'+asset.id+'/individual',{method:'POST'});
+      selectedId=null;await refresh();
+      window.dispatchEvent(new CustomEvent('rr-open-product',{detail:{id:asset.id,prefill}}));
+      window.dispatchEvent(new Event('rr-bundle-assets-changed'));
+      notice('PDF is attached to the new individual draft. Your name, collection, date, track, price and description have been carried over; review it on the left, then publish or schedule.');
+    }catch(error){notice('Could not use this PDF: '+error.message);}
     finally{setBusy(false);}
   }
   async function deleteMissing(asset){
