@@ -250,7 +250,7 @@ async function checkout(request,env){
   if(!validEmail(email))return error("Enter a valid email address.",400);
   if(data.accepted_terms!==true)return error("Please accept the recurring membership terms before continuing.",400);
   await ensureMembershipSchema(env);
-  if(await activeMembership(env,email))return error("This email already has an active membership. Sign in at /membership/account/ to open the library.",409);
+  if(await activeMembership(env,email))return error("This email already has an active membership. Sign in on the Membership page to open the library.",409);
   const row=await env.STORE_DB.prepare("SELECT * FROM membership_plans WHERE slug=?").bind(plan.slug).first();
   const priceId=row&&priceIdFor(row,mode),amount=row&&amountFor(row,mode);
   if(!priceId||!Number.isSafeInteger(amount)||amount<50)return error("This membership is not available yet.",503);
