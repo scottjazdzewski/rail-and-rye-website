@@ -132,3 +132,12 @@ body.rr-approach-page .rr-approach-rail-foot span{
  body.rr-approach-page .rr-approach-point p{font-size:13px}
  body.rr-approach-page .rr-approach-rail-foot span{font-size:7px}
 }
+
+
+/* Keep the right-hand hero rail on the same desktop anchor as the other numbered pages. */
+@media (min-width:961px){
+ body.rr-approach-page .rr-approach-grid{
+  grid-template-columns:minmax(0,1.08fr) minmax(420px,.92fr);
+  gap:clamp(42px,6vw,105px);
+ }
+}
