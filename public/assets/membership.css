@@ -106,3 +106,6 @@
  .rr-member-page .rr-member-already{margin:20px 16px}
  .rr-home-membership-link{margin-top:12px}
 }
+
+/* Membership page uses the owner-provided race-day hero image. */
+.rr-member-page .heritage-inner-hero{background-image:url('/assets/approved/membership/hero.webp');background-position:center 50%;}
