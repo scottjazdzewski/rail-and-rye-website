@@ -305,3 +305,5 @@ body.heritage-home.heritage-inner-page.heritage-store-page.rr-member-page .rr-me
 .rr-member-account-view .rr-library-item p{font-size:11px}
 .rr-member-account-view [hidden],.rr-member-signin-panel[hidden]{display:none!important}
 @media(max-width:760px){.rr-member-signin-panel .rr-member-form{display:grid}.rr-member-account-view .rr-library-item{align-items:flex-start;flex-direction:column}}
+
+.rr-member-signin-panel .rr-member-form label{flex:0 0 100%;display:block;margin:0 0 -4px;color:#17374a;font:800 11px/1.4 Inter,system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase}

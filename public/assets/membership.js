@@ -94,7 +94,7 @@ function initAccount(inline=false){
  signInForm(signForm,inline?q("#member-signin-status"):status);
  const toggle=q("#member-signin-toggle"),signPanel=q("#member-sign-in-panel");
  if(inline&&toggle&&signPanel){
-  toggle.addEventListener("click",event=>{event.preventDefault();const opening=signPanel.hidden;signPanel.hidden=!opening;toggle.setAttribute("aria-expanded",String(opening));if(opening)q('input[name="email"]',signPanel)?.focus();});
+  toggle.addEventListener("click",event=>{event.preventDefault();const opening=signPanel.hidden;signPanel.hidden=!opening;toggle.setAttribute("aria-expanded",String(opening));const joinEmail=q("#join-email-section"),consent=q("#member-consent");if(joinEmail)joinEmail.hidden=opening;if(consent)consent.hidden=opening;if(opening)q('input[name="email"]',signPanel)?.focus();});
  }
  const params=new URLSearchParams(location.hash.replace(/^#/,"")),token=params.get("token");
  if(token){
