@@ -254,3 +254,6 @@ body.heritage-home.rr-shell-page .micro-strip{display:none}
 
 
 /* Shared masthead: balanced side tracks, centered strap, right-anchored pills, stable route gutter. */
+
+/* Compact, shared 7-pill navigation at desktop widths. */
+@media(min-width:1121px) and (max-width:1580px){.heritage-nav{gap:3px}.heritage-nav a{font-size:9px;letter-spacing:.025em}.heritage-nav .heritage-nav-pill{padding:9px 5px;min-height:40px}}
