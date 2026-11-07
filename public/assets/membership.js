@@ -34,23 +34,29 @@ function renderPlans(data){
   card.append(button);grid.append(card);
  }
 }
-function signInForm(form){
+function signInForm(form,targetStatus=status){
  if(!form)return;
  form.addEventListener("submit",async event=>{
   event.preventDefault();
   const email=q('input[name="email"]',form)?.value||"";
   const button=q("button",form);if(button){button.disabled=true;button.textContent="Sending…";}
-  show(status,"If that email has an active membership, a sign-in link will arrive shortly.");
-  try{await post("/api/membership/sign-in",{email});show(status,"If that email has an active membership, a sign-in link will arrive shortly.");}
-  catch(e){show(status,e.message);}
+  show(targetStatus,"If that email has an active membership, a sign-in link will arrive shortly.");
+  try{await post("/api/membership/sign-in",{email});show(targetStatus,"If that email has an active membership, a sign-in link will arrive shortly.");}
+  catch(e){show(targetStatus,e.message);}
   finally{if(button){button.disabled=false;button.textContent="Email me a sign-in link";}}
  });
 }
 function formatPdfExpiry(value){if(!value)return "";const date=new Date(String(value).replace(" ","T")+"Z");if(Number.isNaN(date.getTime()))return "";date.setTime(date.getTime()-1000);return new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",dateStyle:"medium"}).format(date);}
 function renderLibrary(data){
- const sign=q("#sign-in-panel"),account=q("#member-account"),list=q("#member-library");
+ const sign=q("#sign-in-panel")||q("#member-sign-in-panel"),account=q("#member-account"),list=q("#member-library");
  if(sign)sign.hidden=true;
  if(account)account.hidden=false;
+ const planContent=q("#member-plan-content"),joinEmail=q("#join-email-section"),consent=q("#member-consent"),heroActions=q("#member-hero-actions");
+ if(planContent)planContent.hidden=true;
+ if(joinEmail)joinEmail.hidden=true;
+ if(consent)consent.hidden=true;
+ if(heroActions)heroActions.hidden=true;
+ const toggle=q("#member-signin-toggle");if(toggle)toggle.setAttribute("aria-expanded","false");
  show(status,"Signed in as "+data.email+".");
  const subs=q("#member-subscriptions");
  if(subs){
@@ -83,15 +89,20 @@ async function loadAccount(){
   return true;
  }catch{return false;}
 }
-function initAccount(){
- signInForm(q("#member-sign-in"));
+function initAccount(inline=false){
+ const signForm=q("#member-sign-in");
+ signInForm(signForm,inline?q("#member-signin-status"):status);
+ const toggle=q("#member-signin-toggle"),signPanel=q("#member-sign-in-panel");
+ if(inline&&toggle&&signPanel){
+  toggle.addEventListener("click",event=>{event.preventDefault();const opening=signPanel.hidden;signPanel.hidden=!opening;toggle.setAttribute("aria-expanded",String(opening));if(opening)q('input[name="email"]',signPanel)?.focus();});
+ }
  const params=new URLSearchParams(location.hash.replace(/^#/,"")),token=params.get("token");
  if(token){
   history.replaceState(null,"",location.pathname);
   show(status,"Checking your sign-in link…");
   post("/api/membership/verify",{token}).then(()=>loadAccount()).catch(e=>show(status,e.message));
  }else{
-  loadAccount().then(ok=>{if(ok)return;const sign=q("#sign-in-panel");if(sign)sign.hidden=false;const account=q("#member-account");if(account)account.hidden=true;show(status,"Sign in with the email address used for your membership.");});
+  loadAccount().then(ok=>{if(ok)return;if(!inline){const sign=q("#sign-in-panel");if(sign)sign.hidden=false;const account=q("#member-account");if(account)account.hidden=true;show(status,"Sign in with the email address used for your membership.");}});
  }
  q("#member-sign-out")?.addEventListener("click",async()=>{try{await post("/api/membership/logout",{});}catch{}location.reload();});
  q("#member-cancel")?.addEventListener("click",async()=>{
@@ -120,6 +131,7 @@ async function initSuccess(){
 }
 if(view==="plans"){
  fetchJson("/api/membership/plans").then(renderPlans).catch(e=>show(status,e.message));
+ initAccount(true);
 }else if(view==="account")initAccount();
 else if(view==="success")initSuccess();
 })();
