@@ -315,3 +315,25 @@ body.heritage-home.heritage-inner-page.heritage-store-page.rr-member-page .rr-jo
 body.heritage-home.heritage-inner-page.heritage-store-page.rr-member-page .rr-join-email label{display:block;margin:0 0 6px;color:#f4ead5;font:800 10px/1.4 Inter,system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase;text-shadow:0 1px 7px #071a2bcc}
 body.heritage-home.heritage-inner-page.heritage-store-page.rr-member-page .rr-join-email input{box-sizing:border-box;width:min(100%,380px);min-height:40px;padding:9px 12px;border:1px solid #c8b48b;border-radius:6px;background:#fff;color:#123247;font:15px Inter,system-ui,sans-serif}
 body.heritage-home.heritage-inner-page.heritage-store-page.rr-member-page .rr-join-email .rr-member-note{margin:5px 0 0;color:#eee2cb;font:12px/1.45 Inter,system-ui,sans-serif;text-shadow:0 1px 7px #071a2bcc}
+
+/* Show purchase details only after a visitor picks a billing plan. */
+.rr-checkout-dialog{width:min(540px,calc(100vw - 32px));max-width:none;max-height:min(88vh,760px);margin:auto;padding:0;border:1px solid #c8a66e;border-radius:16px;background:linear-gradient(145deg,#0a2535,#0e3042);color:#f6efdf;box-shadow:0 24px 80px #0008}
+.rr-checkout-dialog::backdrop{background:rgba(2,10,17,.76);backdrop-filter:blur(3px)}
+.rr-checkout-dialog-inner{position:relative;padding:clamp(22px,5vw,34px)}
+.rr-checkout-close{position:absolute;top:12px;right:14px;width:36px;height:36px;border:1px solid #b58a4b;border-radius:50%;background:transparent;color:#f6efdf;font-size:25px;line-height:1;cursor:pointer}
+.rr-checkout-kicker{color:#e0b96f;font:800 10px/1.4 Inter,system-ui,sans-serif;letter-spacing:.16em;text-transform:uppercase}
+.rr-checkout-dialog h2{margin:8px 44px 6px 0;color:#f4e6ca;font:clamp(26px,6vw,34px)/1.1 Georgia,"Times New Roman",serif}
+.rr-checkout-plan{margin:0 0 12px;color:#f3c76f;font:700 16px/1.4 Inter,system-ui,sans-serif}
+.rr-checkout-intro{margin:0 0 18px;color:#e2e8ea;font:14px/1.5 Inter,system-ui,sans-serif}
+.rr-checkout-form>label:first-child{display:block;margin:0 0 6px;color:#f4ead5;font:800 11px/1.4 Inter,system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase}
+.rr-checkout-form>input{box-sizing:border-box;width:100%;min-height:46px;padding:10px 12px;border:1px solid #c8b48b;border-radius:6px;background:#fff;color:#123247;font:16px Inter,system-ui,sans-serif}
+.rr-checkout-consent{display:flex;align-items:flex-start;gap:10px;margin:16px 0 0;color:#eee2cb;font:12px/1.5 Inter,system-ui,sans-serif}
+.rr-checkout-consent input{width:17px;height:17px;margin:1px 0 0;accent-color:#d2a44c;flex:0 0 auto}
+.rr-checkout-consent a{color:#f4d28f;text-decoration:underline;text-underline-offset:3px}
+.rr-checkout-error{min-height:1.4em;margin:8px 0 0;color:#ffd3c7;font:13px/1.4 Inter,system-ui,sans-serif}
+.rr-checkout-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:12px}
+.rr-checkout-actions button{min-height:42px;padding:9px 15px;border-radius:999px;font:800 11px/1 Inter,system-ui,sans-serif;letter-spacing:.04em;cursor:pointer}
+.rr-checkout-cancel{border:1px solid #c8a66e;background:transparent;color:#f4ead5}
+.rr-checkout-dialog .rr-member-button{width:auto;min-width:190px;border:1px solid #d2a44c;background:#f3e5c8;color:#092536}
+.rr-checkout-actions button:disabled{opacity:.65;cursor:wait}
+@media(max-width:480px){.rr-checkout-actions{flex-direction:column-reverse}.rr-checkout-actions button{width:100%}.rr-checkout-dialog-inner{padding:26px 20px}}

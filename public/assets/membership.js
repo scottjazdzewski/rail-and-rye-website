@@ -13,6 +13,7 @@ const fetchJson=async(url,options={})=>{
 const post=(url,data)=>fetchJson(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data||{})});
 const money=cents=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(Number(cents||0)/100);
 const planOrder=["weekly","monthly","yearly"];
+let selectedPlan=null;
 function renderPlans(data){
  const grid=q("#plan-grid");
  if(!grid)return;
@@ -25,14 +26,35 @@ function renderPlans(data){
   const period=document.createElement("p");period.className="rr-plan-period";period.textContent=plan.slug==="weekly"?"Billed every 7 days":plan.slug==="monthly"?"Billed monthly":"Billed yearly";card.append(period);
   const price=document.createElement("p");price.className="rr-plan-price";price.textContent=plan.amount_cents==null?"Pricing soon":money(plan.amount_cents);card.append(price);
   const button=document.createElement("button");button.type="button";button.className="rr-member-button";button.textContent=plan.checkout_ready?"Join "+plan.label:"Not available yet";button.disabled=!plan.checkout_ready;
-  button.addEventListener("click",async()=>{
-   const email=q("#join-email"),terms=q("#join-terms");if(!email?.reportValidity())return;if(!terms?.reportValidity())return;
-   button.disabled=true;button.textContent="Opening secure checkout…";
-   try{const response=await post("/api/membership/checkout",{plan:plan.slug,email:email.value,accepted_terms:terms.checked});location.assign(response.url);}
-   catch(e){show(status,e.message);button.disabled=false;button.textContent="Try again";}
+  button.addEventListener("click",()=>{
+   selectedPlan=plan;
+   const dialog=q("#membership-checkout-dialog"),selected=q("#checkout-dialog-plan"),email=q("#join-email");
+   if(selected)selected.textContent=plan.label+" All-Access · "+money(plan.amount_cents)+" · "+(plan.slug==="weekly"?"billed every 7 days":plan.slug==="monthly"?"billed monthly":"billed yearly");
+   const error=q("#checkout-error");if(error)error.textContent="";
+   if(dialog?.showModal){dialog.showModal();email?.focus();}
   });
   card.append(button);grid.append(card);
  }
+}
+function initCheckoutDialog(){
+ const dialog=q("#membership-checkout-dialog"),form=q("#membership-checkout-form");
+ const email=q("#join-email"),terms=q("#join-terms"),continueButton=q("#checkout-continue");
+ const close=()=>dialog?.close();
+ q("#checkout-close")?.addEventListener("click",close);
+ q("#checkout-cancel")?.addEventListener("click",close);
+ form?.addEventListener("submit",async event=>{
+  event.preventDefault();
+  if(!selectedPlan||!email?.reportValidity()||!terms?.reportValidity())return;
+  continueButton.disabled=true;continueButton.textContent="Opening secure checkout…";
+  const error=q("#checkout-error");if(error)error.textContent="";
+  try{
+   const response=await post("/api/membership/checkout",{plan:selectedPlan.slug,email:email.value,accepted_terms:terms.checked});
+   location.assign(response.url);
+  }catch(e){
+   if(error)error.textContent=e.message;
+   continueButton.disabled=false;continueButton.textContent="Continue to secure checkout";
+  }
+ });
 }
 function signInForm(form,targetStatus=status){
  if(!form)return;
@@ -132,6 +154,7 @@ async function initSuccess(){
 if(view==="plans"){
  fetchJson("/api/membership/plans").then(renderPlans).catch(e=>show(status,e.message));
  initAccount(true);
+ initCheckoutDialog();
 }else if(view==="account")initAccount();
 else if(view==="success")initSuccess();
 })();
