@@ -200,3 +200,36 @@ body.heritage-home.heritage-inner-page.heritage-store-page.rr-member-page .herit
  body.heritage-home.heritage-inner-page.heritage-store-page.rr-member-page .rr-member-hero-intro .rr-page-title{font-size:44px}
  body.heritage-home.heritage-inner-page.heritage-store-page.rr-member-page .rr-member-options .rr-plan-card{padding:14px;min-height:0}
 }
+
+
+/* Lock the membership hero to the shared numbered-page chip, title and panel anchors. */
+.rr-member-page .rr-member-hero-intro .rr-page-title{
+ max-width:1000px;
+ margin:16px 0 20px;
+ color:#fff7e9;
+ font:500 clamp(60px,5.4vw,96px)/.92 var(--heritage-serif);
+ letter-spacing:-.04em;
+ text-shadow:0 4px 18px rgba(0,0,0,.6);
+}
+.rr-member-page .rr-member-hero-intro .rr-page-description{
+ max-width:610px;
+ margin:19px 0 0;
+ color:#f5ead7;
+ font:500 clamp(14px,1.05vw,18px)/1.65 var(--heritage-sans);
+ text-shadow:0 2px 9px rgba(0,0,0,.7);
+}
+@media (min-width:961px){
+ body.heritage-home.heritage-inner-page.heritage-store-page.rr-member-page .rr-member-store-layout{
+  grid-template-columns:minmax(0,1.08fr) minmax(420px,.92fr);
+  align-items:start;
+  gap:clamp(42px,6vw,105px);
+  padding-top:var(--rr-single-hero-top,67px);
+  padding-bottom:38px;
+ }
+}
+@media (max-width:760px){
+ .rr-member-page .rr-member-hero-intro .rr-page-title{
+  font-size:clamp(44px,12vw,62px);
+  line-height:.94;
+ }
+}

@@ -1297,3 +1297,14 @@ body.rr-publication-scroll-page .rr-publication-product-grid .rr-racecards-purch
   flex:0 0 auto;margin-top:0
  }
 }
+
+
+/* Keep the side panel column aligned across the shared desktop hero pages. */
+@media (min-width:961px){
+ body.heritage-home .rr-racecards-hero-grid:not(.rrw-numbered-hero-grid),
+ body.heritage-home.heritage-store-page:not(.rr-member-page) .heritage-store-layout,
+ body.heritage-home.heritage-journal-page .rr-journal-hero-grid{
+  grid-template-columns:minmax(0,1.08fr) minmax(420px,.92fr);
+  gap:clamp(42px,6vw,105px);
+ }
+}
