@@ -1309,3 +1309,6 @@ body.rr-publication-scroll-page .rr-publication-product-grid .rr-racecards-purch
   gap:clamp(42px,6vw,105px);
  }
 }
+
+/* Give the home membership pill a little visual breathing room without changing hero height. */
+.heritage-home .heritage-lead .rr-home-membership-link{position:relative;top:8px}
