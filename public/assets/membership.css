@@ -71,9 +71,6 @@
 @media(max-width:900px){.rr-member-layout{grid-template-columns:minmax(0,1fr);gap:24px}.rr-member-intro .rr-member-title{max-width:850px}.rr-member-options{width:100%;max-width:760px;margin:0 auto}.rr-member-main{padding-top:38px}}
 @media(max-width:560px){.rr-member-options{padding:20px 16px}.rr-member-options .rr-plan-card{grid-template-columns:minmax(0,1fr);grid-template-areas:"name" "period" "price" "action";gap:5px;min-height:0;padding:16px}.rr-member-options .rr-plan-card .rr-member-button{width:100%;margin-top:6px}.rr-member-options-head h2{font-size:28px}.rr-member-already{padding:24px 20px}}
 
-/* The shared site header remains legible on the membership page without a hero image. */
-.rr-member-page .heritage-header{background:#071c2a!important}
-
 /* Keep the plan text columns stable when prices change, and reflow in a narrow membership panel. */
 @container (max-width:560px){
   .rr-member-options .rr-plan-card{grid-template-columns:minmax(0,1fr) 144px;grid-template-areas:"name action" "period action" "price action";align-items:center;gap:4px 10px;min-height:100px}
@@ -81,3 +78,34 @@
   .rr-member-options .rr-plan-price{align-self:start;font-size:23px}
   .rr-member-options .rr-plan-card .rr-member-button{width:144px;white-space:normal;line-height:1.2}
 }
+
+/* Membership preview follows the Publication Desk hero composition. */
+.rr-member-page .heritage-inner-hero{background-position:center 52%}
+.rr-member-page .rr-member-store-layout{padding-top:clamp(40px,4.2vw,68px);padding-bottom:clamp(34px,4.6vw,66px)}
+.rr-member-page .rr-member-store-copy{min-width:0}
+.rr-member-page .rr-member-hero-intro{max-width:760px!important}
+.rr-member-page .rr-member-hero-intro .rr-page-title{max-width:760px;font-size:clamp(52px,4.8vw,86px);line-height:.94}
+.rr-member-page .rr-member-hero-intro .rr-page-description{max-width:690px;font-size:clamp(14px,1vw,17px);line-height:1.55}
+.rr-member-page .rr-member-choose-plan{margin-top:20px}
+.rr-member-page .rr-join-email{box-sizing:border-box;width:min(100%,620px);max-width:100%;margin:22px 0 0;padding:16px 18px}
+.rr-member-page .rr-member-consent{margin-top:14px;color:#f4ead5;text-shadow:0 1px 7px #071a2bcc}
+.rr-member-page .rr-member-consent a{color:#f4d28f}
+.rr-member-page .rr-member-options{align-self:start}
+.rr-member-page .rr-member-already{box-sizing:border-box;max-width:1240px;margin:30px auto;padding:clamp(22px,3vw,38px);background:#fffaf0}
+.rr-member-page .heritage-footer{margin-top:auto}
+.rr-home-membership-link{margin-top:16px}
+@media(max-width:960px){
+ .rr-member-page .rr-member-store-layout{padding-top:34px}
+ .rr-member-page .rr-member-options{width:100%;max-width:none}
+}
+@media(max-width:750px){
+ .rr-member-page .rr-member-store-layout{gap:18px;padding-top:34px;padding-bottom:24px}
+ .rr-member-page .rr-member-hero-intro .rr-page-title{font-size:clamp(48px,10vw,68px)}
+ .rr-member-page .rr-join-email{margin-top:18px}
+ .rr-member-page .rr-member-consent{font-size:12px}
+ .rr-member-page .rr-member-already{margin:20px 16px}
+ .rr-home-membership-link{margin-top:12px}
+}
+
+/* Membership page uses the owner-provided race-day hero image. */
+.rr-member-page .heritage-inner-hero{background-image:url('/assets/approved/membership/hero.webp');background-position:center 50%;}
