@@ -309,3 +309,9 @@ body.heritage-home.heritage-inner-page.heritage-store-page.rr-member-page .rr-me
 .rr-member-signin-panel .rr-member-form label{flex:0 0 100%;display:block;margin:0 0 -4px;color:#17374a;font:800 11px/1.4 Inter,system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase}
 
 body.heritage-home.heritage-inner-page.heritage-store-page.rr-member-page .rr-member-signin-panel>p:first-child{color:#415d70;text-shadow:none}
+
+/* Keep checkout email available for the duplicate-membership check without an oversized ivory card. */
+body.heritage-home.heritage-inner-page.heritage-store-page.rr-member-page .rr-join-email{box-sizing:border-box;width:min(100%,620px);max-width:100%;margin:22px 0 0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;color:#f4ead5}
+body.heritage-home.heritage-inner-page.heritage-store-page.rr-member-page .rr-join-email label{display:block;margin:0 0 6px;color:#f4ead5;font:800 10px/1.4 Inter,system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase;text-shadow:0 1px 7px #071a2bcc}
+body.heritage-home.heritage-inner-page.heritage-store-page.rr-member-page .rr-join-email input{box-sizing:border-box;width:min(100%,380px);min-height:40px;padding:9px 12px;border:1px solid #c8b48b;border-radius:6px;background:#fff;color:#123247;font:15px Inter,system-ui,sans-serif}
+body.heritage-home.heritage-inner-page.heritage-store-page.rr-member-page .rr-join-email .rr-member-note{margin:5px 0 0;color:#eee2cb;font:12px/1.45 Inter,system-ui,sans-serif;text-shadow:0 1px 7px #071a2bcc}
