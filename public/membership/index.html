@@ -10,8 +10,8 @@
 <link rel="stylesheet" href="/assets/rail-rye-core.css?v=12">
 <link rel="stylesheet" href="/assets/rail-rye-components.css?v=9">
 <link rel="stylesheet" href="/assets/rail-rye-pages.css?v=56">
-<link rel="stylesheet" href="/assets/membership.css?v=12">
-<script defer src="/assets/membership.js?v=2"></script>
+<link rel="stylesheet" href="/assets/membership.css?v=13">
+<script defer src="/assets/membership.js?v=3"></script>
 <link rel="preload" as="image" href="/assets/approved/membership/hero.webp" fetchpriority="high">
 </head>
 <body class="heritage-home heritage-inner-page heritage-store-page rr-single-screen-hero rr-member-page" data-member-view="plans">
@@ -32,26 +32,42 @@
 <h1 class="rr-page-title" id="membership-title">All current publications.<br><em>One membership.</em></h1>
 <span class="rr-page-rule" aria-hidden="true"></span>
 <p class="rr-page-description">Your membership gives you access to currently available Race Cards, Longshot Radar, Stable Notes and Target List PDFs—not a permanent archive. New editions appear as they are published. Each racing PDF is removed at midnight Eastern two calendar days after its listed racing date.</p>
-<div class="rr-member-hero-actions"><a class="heritage-recovery rr-member-choose-plan" href="#member-plans">Choose your plan ↓</a><a class="heritage-recovery rr-member-library-pill" href="/membership/account/">Already a member? Sign in ↗</a></div>
+<div class="rr-member-hero-actions" id="member-hero-actions"><a class="heritage-recovery rr-member-choose-plan" href="#member-plans">Choose your plan ↓</a><a class="heritage-recovery rr-member-library-pill" id="member-signin-toggle" href="#member-sign-in-panel" aria-expanded="false" aria-controls="member-sign-in-panel">Already a member? Sign in ↗</a></div>
+<section id="member-sign-in-panel" class="rr-member-signin-panel" aria-label="Member sign in" hidden>
+<p>Enter your membership email and we’ll send a secure sign-in link.</p>
+<form id="member-sign-in" class="rr-member-form"><label class="sr-only" for="member-signin-email">Membership email address</label><input id="member-signin-email" name="email" type="email" required autocomplete="email" placeholder="Membership email"><button class="rr-member-button" type="submit">Email me a sign-in link</button></form>
+<p id="member-signin-status" class="rr-member-signin-status" role="status" aria-live="polite"></p>
+</section>
 </div>
-<section class="rr-member-section rr-join-email" aria-label="Membership email">
+<section id="join-email-section" class="rr-member-section rr-join-email" aria-label="Membership email">
 <label for="join-email">Email for your membership</label>
 <input id="join-email" type="email" autocomplete="email" required placeholder="Email address">
-<p class="rr-member-note">Use the same address at checkout and when you sign in.</p>
+<p class="rr-member-note">This email will be used for your membership and checkout receipt.</p>
 </section>
-<section class="rr-member-consent">
+<section id="member-consent" class="rr-member-consent">
 <label><input id="join-terms" type="checkbox" required><span>I agree to recurring billing at the selected rate until I cancel. Access continues through the paid period. <a href="/policies/terms.html">Terms</a> · <a href="/policies/refunds.html">Refund policy</a></span></label>
 </section>
 </section>
 <section class="heritage-store-inventory rr-member-options" id="member-plans" aria-labelledby="member-options-title">
+<div id="member-plan-content">
 <div class="rr-member-options-head">
 <span>All-Access Membership</span>
 <h2 id="member-options-title">Choose your billing term.</h2>
-
 </div>
 <p id="member-status" class="rr-member-notice" role="status" aria-live="polite">Loading membership options…</p>
 <section id="plan-grid" class="rr-member-grid" aria-label="Membership plans"></section>
 <p class="rr-member-options-note">Every plan includes the same currently available publications while your membership is active. Past racing editions are not kept indefinitely. Failed renewals include a three-day grace period.</p>
+</div>
+<section id="member-account" class="rr-member-account-view" aria-label="Member account" hidden>
+<h2>All-access library</h2>
+<div id="member-subscriptions"></div>
+<div class="rr-member-account-actions">
+<button id="member-billing" type="button" class="rr-member-button">Manage payment method</button>
+<button id="member-cancel" type="button" class="rr-member-button">Cancel at period end</button>
+<button id="member-sign-out" type="button" class="rr-member-button">Sign out</button>
+</div>
+<div id="member-library" class="rr-member-library" aria-label="Available publications"></div>
+</section>
 </section>
 </main>
 </div>

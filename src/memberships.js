@@ -250,7 +250,7 @@ async function checkout(request,env){
   if(!validEmail(email))return error("Enter a valid email address.",400);
   if(data.accepted_terms!==true)return error("Please accept the recurring membership terms before continuing.",400);
   await ensureMembershipSchema(env);
-  if(await activeMembership(env,email))return error("This email already has an active membership. Sign in at /membership/account/ to open the library.",409);
+  if(await activeMembership(env,email))return error("This email already has an active membership. Sign in on the Membership page to open the library.",409);
   const row=await env.STORE_DB.prepare("SELECT * FROM membership_plans WHERE slug=?").bind(plan.slug).first();
   const priceId=row&&priceIdFor(row,mode),amount=row&&amountFor(row,mode);
   if(!priceId||!Number.isSafeInteger(amount)||amount<50)return error("This membership is not available yet.",503);
@@ -385,7 +385,7 @@ async function requestMagicLink(request,env){
   const raw=randomHex(),tokenHash=await digest(raw),expires=now+MAGIC_SECONDS;
   await env.STORE_DB.prepare("INSERT INTO membership_magic_links (token_hash,email,expires_at,created_at) VALUES (?,?,?,?)").bind(tokenHash,email,expires,now).run();
   await env.STORE_DB.prepare("DELETE FROM membership_sessions WHERE expires_at<?").bind(nowSeconds()).run();
-  const link=SITE+"/membership/account/#token="+raw;
+  const link=SITE+"/membership/#token="+raw;
   const text=["Rail & Rye","", "Use this private link to sign in to your all-access membership:",link,"","This link expires in 15 minutes and can only be used once.","If you did not request it, you can ignore this email."].join("\n");
   const html="<!doctype html><html><body style=\"background:#f6f1e6;color:#0a2635;font-family:Arial,sans-serif;padding:24px\"><div style=\"max-width:540px;margin:auto;background:#fffaf0;border:1px solid #caa76d;padding:28px\"><p style=\"font:24px Georgia,serif;letter-spacing:3px\">RAIL &amp; RYE</p><h1 style=\"font:30px Georgia,serif\">Your member sign-in link</h1><p>Use this private link to access your all-access membership library.</p><p><a style=\"display:inline-block;padding:15px 22px;background:#0a2635;color:#fff;text-decoration:none\" href=\""+escapeHtml(link)+"\">SIGN IN TO RAIL &amp; RYE</a></p><p>This link expires in 15 minutes and can only be used once. If you did not request it, you can ignore this email.</p></div></body></html>";
   const result=await fetch("https://api.resend.com/emails",{method:"POST",headers:{Authorization:"Bearer "+env.RESEND_API_KEY,"Content-Type":"application/json","Idempotency-Key":"rr-member-login-"+tokenHash.slice(0,40)},body:JSON.stringify({from:"Rail & Rye Racing <orders@railandryeracing.com>",to:[email],subject:"Rail & Rye | Your member sign-in link",html,text})});
@@ -459,7 +459,7 @@ async function billingPortal(request,env){
   if(!current)return error("Active membership not found.",404);
   try{
     const portal=await stripeRequest(env,current.stripe_mode,"POST","billing_portal/sessions",new URLSearchParams({
-      customer:current.stripe_customer_id,return_url:SITE+"/membership/account/"
+      customer:current.stripe_customer_id,return_url:SITE+"/membership/"
     }));
     if(typeof portal.url!=="string"||!portal.url.startsWith("https://billing.stripe.com/"))throw Error("Unexpected billing portal response");
     return json({url:portal.url});

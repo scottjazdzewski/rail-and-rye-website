@@ -289,3 +289,19 @@ body.heritage-home.heritage-inner-page.heritage-store-page.rr-member-page .rr-me
   padding:8px 10px;
  }
 }
+
+/* Inline member sign-in and library on the membership page */
+.rr-member-signin-panel{max-width:620px;margin:14px 0 0;padding:16px 18px;border:1px solid #c8a66e;border-radius:12px;background:#fffaf0;color:#123247}
+.rr-member-signin-panel>p:first-child{margin:0;color:#415d70;font:14px/1.5 Inter,system-ui,sans-serif}
+.rr-member-signin-panel .rr-member-form{margin-top:12px}
+.rr-member-signin-status{min-height:1.4em;margin:8px 0 0;color:#536a78;font:13px/1.4 Inter,system-ui,sans-serif}
+.rr-member-account-view{margin-top:12px;padding:14px;border:1px solid #b58a4b;border-radius:12px;background:linear-gradient(145deg,#0a2535f5,#0e3042f5);color:#f6efdf}
+.rr-member-account-view h2{margin:0;color:#f4e6ca;font:clamp(24px,2.3vw,30px)/1.1 Georgia,"Times New Roman",serif}
+.rr-member-account-view .rr-member-note{margin:8px 0;color:#e3d4b7}
+.rr-member-account-view .rr-member-account-actions{margin:12px 0}
+.rr-member-account-view .rr-member-library{grid-template-columns:1fr;margin-top:10px}
+.rr-member-account-view .rr-library-item{gap:10px;padding:12px}
+.rr-member-account-view .rr-library-item h3{font-size:18px}
+.rr-member-account-view .rr-library-item p{font-size:11px}
+.rr-member-account-view [hidden],.rr-member-signin-panel[hidden]{display:none!important}
+@media(max-width:760px){.rr-member-signin-panel .rr-member-form{display:grid}.rr-member-account-view .rr-library-item{align-items:flex-start;flex-direction:column}}
