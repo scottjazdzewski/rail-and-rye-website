@@ -109,3 +109,33 @@
 
 /* Membership page uses the owner-provided race-day hero image. */
 .rr-member-page .heritage-inner-hero{background-image:url('/assets/approved/membership/hero.webp');background-position:center 50%;}
+
+
+/* Membership page: compact the shared navigation without changing its pill design. */
+@media(min-width:751px){
+ .rr-member-page .heritage-header-inner{padding-inline:clamp(16px,2.2vw,38px)}
+ .rr-member-page .heritage-brand-mark{width:66px;height:66px}
+ .rr-member-page .heritage-wordmark{font-size:clamp(23px,1.8vw,34px)}
+ .rr-member-page .heritage-nav{gap:4px}
+ .rr-member-page .heritage-nav .heritage-nav-pill{min-height:36px;padding:7px 8px;font-size:clamp(8px,.54vw,10px);letter-spacing:.035em}
+}
+@media(min-width:751px) and (max-width:1100px){
+ .rr-member-page .heritage-header-inner{grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto;height:auto;min-height:96px;row-gap:3px;padding:7px 18px}
+ .rr-member-page .heritage-brand{grid-column:1;grid-row:1}
+ .rr-member-page .heritage-mobile-nav{grid-column:2;grid-row:1;justify-self:end;display:block;position:relative;z-index:22}
+ .rr-member-page .heritage-mobile-nav summary{padding:8px 10px;font-size:10px}
+ .rr-member-page .heritage-nav{display:none}
+ .rr-member-page .heritage-strap{grid-column:1/-1;grid-row:2;justify-self:center;font-size:11px}
+}
+.rr-member-page .rr-member-hero-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:20px}
+.rr-member-page .rr-member-hero-actions .heritage-recovery{margin:0}
+.rr-member-page .rr-member-library-pill{background:rgba(5,20,31,.52)}
+.rr-member-page .heritage-inner-hero:before{
+ background:
+  linear-gradient(90deg,rgba(2,17,28,.52) 0%,rgba(3,18,29,.30) 42%,rgba(3,20,30,.12) 100%),
+  linear-gradient(180deg,rgba(4,16,26,.08) 0%,transparent 48%,rgba(5,18,28,.18) 100%)
+}
+@media(max-width:750px){
+ .rr-member-page .rr-member-hero-actions{gap:8px;margin-top:16px}
+ .rr-member-page .rr-member-hero-actions .heritage-recovery{font-size:9px;padding:10px 12px}
+}
