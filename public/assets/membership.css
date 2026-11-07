@@ -203,7 +203,7 @@ body.heritage-home.heritage-inner-page.heritage-store-page.rr-member-page .herit
 
 
 /* Lock the membership hero to the shared numbered-page chip, title and panel anchors. */
-.rr-member-page .rr-member-hero-intro .rr-page-title{
+body.heritage-home.heritage-inner-page.heritage-store-page.rr-member-page .rr-member-hero-intro .rr-page-title{
  max-width:1000px;
  margin:16px 0 20px;
  color:#fff7e9;
@@ -211,7 +211,7 @@ body.heritage-home.heritage-inner-page.heritage-store-page.rr-member-page .herit
  letter-spacing:-.04em;
  text-shadow:0 4px 18px rgba(0,0,0,.6);
 }
-.rr-member-page .rr-member-hero-intro .rr-page-description{
+body.heritage-home.heritage-inner-page.heritage-store-page.rr-member-page .rr-member-hero-intro .rr-page-description{
  max-width:610px;
  margin:19px 0 0;
  color:#f5ead7;
@@ -228,7 +228,7 @@ body.heritage-home.heritage-inner-page.heritage-store-page.rr-member-page .herit
  }
 }
 @media (max-width:760px){
- .rr-member-page .rr-member-hero-intro .rr-page-title{
+ body.heritage-home.heritage-inner-page.heritage-store-page.rr-member-page .rr-member-hero-intro .rr-page-title{
   font-size:clamp(44px,12vw,62px);
   line-height:.94;
  }
