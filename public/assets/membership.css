@@ -139,3 +139,6 @@
  .rr-member-page .rr-member-hero-actions{gap:8px;margin-top:16px}
  .rr-member-page .rr-member-hero-actions .heritage-recovery{font-size:9px;padding:10px 12px}
 }
+
+/* Ensure the membership page uses its owner-supplied hero over the shared store default. */
+body.heritage-home.heritage-inner-page.heritage-store-page.rr-member-page .heritage-inner-hero{background-image:url('/assets/approved/membership/hero.webp');background-position:center 50%;}
