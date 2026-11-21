@@ -468,7 +468,7 @@ async function billingPortal(request,env){
     return error("Billing management is not configured yet. You can still cancel here at the end of your paid period.",503);
   }
 }
-async function memberDownload(request,env,url){
+async function memberDownload(request,env,url,inline=false){
   if(request.method!=="GET")return error("Method not allowed",405);
   const email=await sessionEmail(request,env);
   if(!email)return error("Sign in to access your membership.",401);
@@ -481,7 +481,7 @@ async function memberDownload(request,env,url){
   if(!file)return error("Publication PDF temporarily unavailable.",503);
   return new Response(file.body,{headers:{
     "Content-Type":"application/pdf",
-    "Content-Disposition":"attachment; filename=\""+safeFilename(product.title)+".pdf\"",
+    "Content-Disposition":(inline?"inline":"attachment")+"; filename=\""+safeFilename(product.title)+".pdf\"",
     "Cache-Control":"private, no-store",
     "X-Content-Type-Options":"nosniff",
     "Referrer-Policy":"no-referrer",
@@ -501,7 +501,8 @@ export async function handleMembershipApi(request,env,url){
     if(p==="/api/membership/me"&&request.method==="GET")return await memberDetails(request,env);
     if(p==="/api/membership/cancel")return await cancelAtPeriodEnd(request,env);
     if(p==="/api/membership/billing-portal")return await billingPortal(request,env);
-    if(/^\/api\/membership\/download\/[0-9a-f-]{36}$/i.test(p))return await memberDownload(request,env,url);
+    if(/^\/api\/membership\/view\/[0-9a-f-]{36}$/i.test(p))return await memberDownload(request,env,url,true);
+    if(/^\/api\/membership\/download\/[0-9a-f-]{36}$/i.test(p))return await memberDownload(request,env,url,false);
     return error("Not found.",404);
   }catch(e){
     console.error("Membership request failed",String(e).slice(0,180));

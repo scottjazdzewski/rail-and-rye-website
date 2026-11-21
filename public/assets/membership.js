@@ -69,6 +69,26 @@ function signInForm(form,targetStatus=status){
  });
 }
 function formatPdfExpiry(value){if(!value)return "";const date=new Date(String(value).replace(" ","T")+"Z");if(Number.isNaN(date.getTime()))return "";date.setTime(date.getTime()-1000);return new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",dateStyle:"medium"}).format(date);}
+function openReader(item){
+ let dialog=q("#rr-pdf-reader");
+ if(!dialog){
+  dialog=document.createElement("dialog");dialog.id="rr-pdf-reader";dialog.className="rr-pdf-reader";
+  const shell=document.createElement("div");shell.className="rr-pdf-reader-shell";
+  const header=document.createElement("header");header.className="rr-pdf-reader-header";
+  const title=document.createElement("h2");title.id="rr-pdf-reader-title";
+  const close=document.createElement("button");close.type="button";close.className="rr-member-button";close.textContent="Close reader";close.setAttribute("aria-label","Close publication reader");close.addEventListener("click",()=>dialog.close());
+  header.append(title,close);
+  const frame=document.createElement("iframe");frame.className="rr-pdf-reader-frame";frame.title="Publication PDF";
+  shell.append(header,frame);dialog.append(shell);
+  dialog.addEventListener("click",event=>{if(event.target===dialog)dialog.close();});
+  dialog.addEventListener("close",()=>{frame.removeAttribute("src");});
+  document.body.append(dialog);
+ }
+ q("#rr-pdf-reader-title").textContent=item.title;
+ const frame=q(".rr-pdf-reader-frame",dialog);frame.title=item.title+" PDF";
+ frame.src="/api/membership/view/"+encodeURIComponent(item.id);
+ if(dialog.showModal)dialog.showModal();else window.open(frame.src,"_blank","noopener");
+}
 function renderLibrary(data){
  const sign=q("#sign-in-panel")||q("#member-sign-in-panel"),account=q("#member-account"),list=q("#member-library");
  if(sign)sign.hidden=true;
@@ -98,9 +118,10 @@ function renderLibrary(data){
    const info=document.createElement("div");
    const title=document.createElement("h3");title.textContent=item.title;info.append(title);
    const detail=document.createElement("p");detail.textContent=[item.category,item.race_date].filter(Boolean).join(" · ")+(formatPdfExpiry(item.pdf_expires_at)?" · Available through "+formatPdfExpiry(item.pdf_expires_at):"");info.append(detail);
-   const button=document.createElement("button");button.type="button";button.className="rr-member-button";button.textContent="Download PDF";
-   button.addEventListener("click",()=>location.assign("/api/membership/download/"+encodeURIComponent(item.id)));
-   row.append(info,button);list.append(row);
+   const actions=document.createElement("div");actions.className="rr-library-actions";
+   const viewButton=document.createElement("button");viewButton.type="button";viewButton.className="rr-member-button";viewButton.textContent="Read on site";viewButton.setAttribute("aria-label","Read "+item.title+" on site");viewButton.addEventListener("click",()=>openReader(item));
+   const downloadButton=document.createElement("button");downloadButton.type="button";downloadButton.className="rr-member-button rr-member-button-secondary";downloadButton.textContent="Download PDF";downloadButton.addEventListener("click",()=>location.assign("/api/membership/download/"+encodeURIComponent(item.id)));
+   actions.append(viewButton,downloadButton);row.append(info,actions);list.append(row);
   }
  }
 }
