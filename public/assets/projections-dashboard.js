@@ -147,7 +147,8 @@ function cardHeader(card){
  wrapper.append(logo,info);return wrapper;
 }
 function scratchList(race){
- const scratches=race.scratches||[];if(!scratches.length)return null;
+ const scratches=race.scratches||[],scratchCount=Number(race.scratch_count)||0;
+ if(!scratches.length&&!scratchCount)return null;
  const strip=makeNode("div","rr-dash-scratch-strip"),list=makeNode("ul","rr-dash-scratch-list");
  strip.append(makeNode("strong","rr-dash-scratch-label","SCRATCHES"));
  for(const scratch of scratches){
@@ -161,6 +162,7 @@ function scratchList(race){
   if(scratch.horse_name)item.append(makeNode("span","rr-dash-scratch-name",scratch.horse_name));
   list.append(item);
  }
+ if(!scratches.length&&scratchCount)list.append(makeNode("li","rr-dash-scratch-missing",previewMode?"Scratch names missing from uploaded JSON":"Scratch details unavailable"));
  strip.append(list);return strip;
 }
 function raceBanner(race){
@@ -168,13 +170,11 @@ function raceBanner(race){
  number.append(makeNode("span","","RACE"),makeNode("strong","",race.race_number));
  const condition=String(race.conditions||"Race projections").trim(),purse=String(race.purse||"").trim();
  const title=makeNode("h3","rr-dash-race-condition");
- const shownPurse=purse&&!condition.toLowerCase().includes(purse.toLowerCase())?purse:"";
- title.setAttribute("aria-label",[condition,shownPurse].filter(Boolean).join(" "));
- title.append(makeNode("span","rr-dash-race-condition-name",condition));
- if(shownPurse)title.append(makeNode("span","rr-dash-race-purse",shownPurse));
- copy.append(title);
+ title.textContent=condition;copy.append(title);
  const meta=makeNode("div","rr-dash-race-meta"),runnerCount=(race.entries||[]).length;
  meta.append(makeNode("p","rr-dash-race-runners",runnerCount+" RUNNERS"));
+ if(purse)meta.append(makeNode("p","rr-dash-race-purse","PURSE "+purse));
+ else if(previewMode){const missing=makeNode("p","rr-dash-race-purse","PURSE MISSING FROM EXPORT");missing.dataset.missing="true";meta.append(missing);}
  const scratchCount=race.scratch_count==null?(race.scratches?.length||null):race.scratch_count;
  if(scratchCount!=null)meta.append(makeNode("p","rr-dash-race-scratch-count",scratchCount+" SCRATCH"+(scratchCount===1?"":"ES")));
  copy.append(meta);
@@ -215,10 +215,10 @@ function renderCard(){
   const horseButton=makeNode("button","rr-dash-horse-open");horseButton.type="button";horseButton.setAttribute("aria-label","Open projection details for "+entry.horse_name);
   const horseHeading=makeNode("span","rr-dash-horse-heading");
   horseHeading.append(makeNode("span","rr-dash-horse-name",entry.horse_name));
-  if(entry.morning_line)horseHeading.append(makeNode("span","rr-dash-horse-ml","M/L "+entry.morning_line));
+  horseHeading.append(makeNode("span","rr-dash-horse-ml","M/L "+(entry.morning_line||"—")));
   horseButton.append(horseHeading);
-  const connections=[entry.trainer||"",entry.jockey||""].filter(Boolean).join(" | ");
-  if(connections)horseButton.append(makeNode("span","rr-dash-horse-connections",connections));
+  const connections=[entry.trainer||"Trainer not listed",entry.jockey||"Jockey not listed"].join(" | ");
+  horseButton.append(makeNode("span","rr-dash-horse-connections",connections));
   horseButton.addEventListener("click",()=>showHorse(entry));horseCell.append(horseButton);
   const metricGroup=makeMetricGroup(entry);metricGroup.setAttribute("role","cell");
   const odds=fairOdds(entry)||"—",win=makeNode("div","rr-dash-win");win.setAttribute("role","cell");
