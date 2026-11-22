@@ -190,3 +190,86 @@
  .rr-dash-race-button{flex-basis:46px;min-height:46px}
  .rr-dash-race-button strong{font-size:19px}
 }
+
+/* Compact mobile dashboard: retain the approved PDF palette and artwork, with less dead space. */
+@media(max-width:700px){
+ .rr-dashboard-main{padding:14px 10px 28px}
+ .rr-dash-heading{gap:4px;margin:0 0 8px}
+ .rr-dash-heading .rr-member-title{margin:2px 0;font-size:25px;line-height:1.08}
+ .rr-dash-intro{display:none}
+ .rr-dash-toolbar{gap:7px;padding:8px}
+ .rr-dash-toolbar label{font-size:9px}
+ .rr-dash-toolbar select,.rr-dash-toolbar input{min-height:38px;padding:7px 9px;font-size:13px}
+ .rr-dash-updated{font-size:10px}
+ .rr-dash-races{gap:5px;margin:4px 0;padding:2px 0 5px}
+ .rr-dash-race-button{flex-basis:44px;min-height:44px;padding:4px;border-width:1px;border-radius:7px}
+ .rr-dash-race-button span{font-size:8px}
+ .rr-dash-race-button strong{font-size:18px}
+ .rr-dash-race-panel{padding:9px;border-radius:10px}
+ .rr-dash-card-head{grid-template-columns:42px minmax(0,1fr);gap:8px;padding-bottom:8px}
+ .rr-dash-card-logo{width:40px;height:40px}
+ .rr-dash-track-title{font-size:21px}
+ .rr-dash-card-date{margin-top:3px;font-size:10px}
+ .rr-dash-race-banner{grid-template-columns:62px minmax(0,1fr) 72px;gap:6px;margin:8px 0;padding:7px;border-radius:9px}
+ .rr-dash-race-number{grid-row:1/3;min-height:58px;border-width:2px;border-radius:9px}
+ .rr-dash-race-number span{font-size:9px}
+ .rr-dash-race-number strong{font-size:24px}
+ .rr-dash-race-condition{font-size:14px}
+ .rr-dash-race-runners{margin-top:3px;font-size:9px}
+ .rr-dash-race-scratches{margin-top:2px;font-size:9px}
+ .rr-dash-post-time{grid-column:3;grid-row:1/3;padding-left:6px}
+ .rr-dash-post-time span{font-size:8px}
+ .rr-dash-post-time strong{margin-top:4px;font-size:15px}
+ .rr-dash-race-tiles{gap:5px;margin:7px 0}
+ .rr-dash-race-tile{gap:4px;min-height:49px;padding:5px 6px;border-width:1px;border-radius:8px}
+ .rr-dash-tile-mark{flex:0 0 22px;width:22px;height:26px;border-right:1px solid #c99831}
+ .rr-dash-tile-mark img{max-width:23px;max-height:23px}
+ .rr-dash-race-tile>div>span{font-size:8px;letter-spacing:.04em}
+ .rr-dash-race-tile strong{margin-top:2px;font-size:11px}
+ .rr-dash-race-summary{margin:7px 0;padding:8px 10px;font-size:11px}
+ .rr-dash-runner-list{gap:6px}
+ .rr-dash-runner-row{grid-template-columns:40px minmax(0,1fr) 62px;grid-template-areas:"program horse win" "program metrics metrics" "program fair fair";gap:1px 4px;min-height:0;padding:4px 5px;border-radius:8px}
+ .rr-dash-runner-row>div{padding:2px 3px}
+ .rr-dash-program{align-content:start;padding:5px 1px!important}
+ .rr-dash-program img{width:35px;height:35px}
+ .rr-dash-program-fallback{width:33px;height:33px}
+ .rr-dash-horse-cell{padding-left:2px!important}
+ .rr-dash-horse-open{padding:3px 2px}
+ .rr-dash-horse-name{font-size:15px}
+ .rr-dash-horse-sub{margin-top:2px;font-size:9px;line-height:1.2;letter-spacing:.02em}
+ .rr-dash-metric-group{grid-area:metrics;grid-template-columns:repeat(6,minmax(0,1fr));gap:3px;padding:2px 0 3px}
+ .rr-dash-metric-value{display:grid;grid-template-rows:auto 1fr;gap:1px;min-height:43px;padding:2px;border:1px solid #e6dfd0;border-radius:5px;background:#fffdf6;font:600 10px/1.1 Inter,system-ui,sans-serif}
+ .rr-dash-metric-value:nth-child(-n+3){grid-column:span 2}
+ .rr-dash-metric-value:nth-child(n+4){grid-column:span 3}
+ .rr-dash-metric-value[data-state]{min-height:43px;padding:2px}
+ .rr-dash-metric-indicator{width:52px;height:29px}
+ .rr-dash-metric-indicator img{max-width:50px;max-height:28px}
+ .rr-dash-metric-value::before{margin:0;color:#667987;font:800 9px/1.05 Inter,system-ui,sans-serif;letter-spacing:.015em;text-transform:uppercase;white-space:nowrap}
+ .rr-dash-win{grid-area:win;justify-self:end;align-self:center;padding:3px!important;font-size:15px}
+ .rr-dash-fair{grid-area:fair;justify-self:start;justify-content:start;padding:1px 3px 3px!important;font-size:10px}
+ .rr-dash-fair::before{content:"FAIR ODDS · ";font-size:9px}
+ .rr-dash-detail-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:390px){
+ .rr-dashboard-main{padding-right:8px;padding-left:8px}
+ .rr-dash-heading .rr-member-title{font-size:23px}
+ .rr-dash-toolbar{gap:6px;padding:7px}
+ .rr-dash-race-banner{grid-template-columns:56px minmax(0,1fr) 65px;gap:5px}
+ .rr-dash-race-number{min-height:54px}
+ .rr-dash-race-condition{font-size:13px}
+ .rr-dash-post-time strong{font-size:14px}
+ .rr-dash-race-tile{gap:3px;padding:4px}
+ .rr-dash-tile-mark{flex-basis:20px;width:20px;height:24px}
+ .rr-dash-tile-mark img{max-width:21px;max-height:21px}
+ .rr-dash-race-tile strong{font-size:10px}
+ .rr-dash-runner-row{grid-template-columns:37px minmax(0,1fr) 58px;column-gap:3px}
+ .rr-dash-program img{width:33px;height:33px}
+ .rr-dash-program-fallback{width:31px;height:31px}
+ .rr-dash-horse-name{font-size:14px}
+ .rr-dash-metric-group{gap:2px}
+ .rr-dash-metric-value,.rr-dash-metric-value[data-state]{min-height:41px}
+ .rr-dash-metric-value::before{font-size:8px}
+ .rr-dash-metric-indicator{width:46px;height:27px}
+ .rr-dash-metric-indicator img{max-width:44px;max-height:26px}
+ .rr-dash-detail-grid{grid-template-columns:1fr}
+}

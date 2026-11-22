@@ -114,11 +114,10 @@ function showHorse(entry){
  if(entry.notes){const notes=makeNode("p","rr-dash-detail-notes",entry.notes);detail.append(notes);}
  dialog.showModal();
 }
-function cardHeader(card,race){
+function cardHeader(card){
  const wrapper=makeNode("div","rr-dash-card-head"),logo=document.createElement("img");logo.className="rr-dash-card-logo";logo.src="/assets/approved/brand/rail-rye-ivory-logo.png";logo.alt="Rail & Rye";
  const info=document.createElement("div"),track=makeNode("h2","rr-dash-track-title",card.track||card.card.track_name),date=makeNode("p","rr-dash-card-date",dateLabel(card.race_date));info.append(track,date);
- const mark=makeNode("div","rr-dash-track-mark"),badge=document.createElement("img");badge.src="/assets/approved/racing-wire/badges/racetrack.png";badge.alt="";mark.append(badge,makeNode("span","",card.track||card.card.track_name));
- wrapper.append(logo,info,mark);return wrapper;
+ wrapper.append(logo,info);return wrapper;
 }
 function raceBanner(race){
  const wrapper=makeNode("div","rr-dash-race-banner"),number=makeNode("div","rr-dash-race-number"),copy=document.createElement("div"),time=makeNode("div","rr-dash-post-time");
@@ -132,7 +131,7 @@ function renderCard(){
  activeCard=selectedCard();if(!activeCard)return;
  renderRaceNav(activeCard);
  const race=activeCard.card.races.find(item=>item.race_number===activeRace);if(!race)return;
- const panel=q("#rr-dash-race");panel.replaceChildren(cardHeader(activeCard,race),raceBanner(race));
+ const panel=q("#rr-dash-race");panel.replaceChildren(cardHeader(activeCard),raceBanner(race));
  const tiles=makeNode("div","rr-dash-race-tiles");tiles.append(makeTile("Pace",race.pace,factBadge("pace",race.pace)),makeTile("Surface",race.surface,factBadge("surface",race.surface)),makeTile("Distance",race.distance,factBadge("distance",race.distance)));panel.append(tiles);
  if(race.summary)panel.append(makeNode("p","rr-dash-race-summary",race.summary));
  const table=makeNode("div","rr-dash-table");table.setAttribute("role","table");table.setAttribute("aria-label","Race "+race.race_number+" projections");
