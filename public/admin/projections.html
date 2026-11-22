@@ -28,9 +28,9 @@ details{margin-top:20px;border-top:1px solid var(--border);padding-top:15px}summ
   <div class="field"><label for="product">Match this dashboard data to a publication</label><select id="product"><option value="">Loading…</option></select><span class="hint">Only individual Race Cards publications with a PDF attached appear here.</span></div>
   <div class="field"><label for="json-file">Projection JSON file</label><input id="json-file" type="file" accept=".json,application/json"><span class="hint">Maximum file size: 1 MB. The race date must match the selected publication.</span></div>
   <div id="preview" class="preview"></div>
-  <div class="buttons"><button id="upload" type="button" disabled>Upload projection data</button><a class="link-button secondary" href="/admin/">Back to Publisher’s Desk</a></div>
+  <div class="buttons"><button id="copy-prompt" type="button" class="secondary">Copy GPT export instructions</button><button id="upload" type="button" disabled>Upload projection data</button><a class="link-button secondary" href="/admin/">Back to Publisher’s Desk</a></div>
   <details><summary>JSON format for GPT export</summary>
-   <p class="hint">Tell GPT: “Export the finalized card using this schema. Copy the final values exactly; do not recalculate, round, add, or remove projections. Include every race and horse. Put every other metric printed on the card in the metrics label/value list.”</p>
+   <p class="hint">Use win_probability in percentage points (27.5 means 27.5%). Put every other projection printed on the card in the metrics label/value list. Copy the final values exactly; do not recalculate or round them.</p>
    <pre>{
   "schema_version": 1,
   "race_date": "2026-11-22",
