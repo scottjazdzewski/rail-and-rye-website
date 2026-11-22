@@ -1,4 +1,4 @@
-import {handleAdminProjectionUpload} from './projections.js';
+import {handleAdminProjectionUpload,handleAdminProjectionBatchUpload,readAdminProjectionCards} from './projections.js';
 import { handleCommerce, sendQueuedEmails, checkoutReadiness, replacePdfAndNotifyBuyers, publicProductForShare } from './commerce.js';
 import {handleRacingWire,handlePreviewRacingWire,testPreviewRssFeeds,handleAdminRacingWire} from './racing-wire.js';
 import {handleAdminBundles,BUNDLE_KEY} from './bundles.js';
@@ -151,6 +151,8 @@ async function handleAdminAPI(request,env,pathname,ctx) {
   if(request.method!=="GET"&&!trustedOrigin(request)) return fail("Same-origin request required",403);
   await ensureReleaseSchedule(env);
   if(pathname==="/api/admin/status"&&request.method==="GET") return json({ready:true,categories:[...CATEGORIES],max_pdf_bytes:MAX_PDF,...checkoutReadiness(env)});
+  if(pathname==="/api/admin/projections-preview"&&request.method==="GET") return readAdminProjectionCards(env);
+  if(pathname==="/api/admin/projections/batch") return handleAdminProjectionBatchUpload(request,env);
   if(pathname==="/api/admin/projections") return handleAdminProjectionUpload(request,env);
   if(pathname==="/api/admin/products") {
     if(request.method==="GET") {

@@ -93,6 +93,44 @@ export async function handleAdminProjectionUpload(request,env){
   return fail("Projection data could not be saved.",503);
  }
 }
+export async function handleAdminProjectionBatchUpload(request,env){
+ if(request.method!=="POST")return fail("Method not allowed",405);
+ if(!env.STORE_DB||!env.CARDS_BUCKET)return fail("Database or storage binding missing",503);
+ let items;
+ try{
+  const body=await readBody(request);
+  if(!isObject(body)||!Array.isArray(body.items)||body.items.length<1||body.items.length>25)throw Error("Include between 1 and 25 track cards.");
+  const seenProducts=new Set(),seenCards=new Set();
+  items=body.items.map((item,index)=>{
+   if(!isObject(item)||!UUID_RE.test(String(item.product_id||"")))throw Error("Choose a valid Race Cards publication for track card "+(index+1)+".");
+   if(seenProducts.has(item.product_id))throw Error("A publication is assigned more than once. Give each track its own PDF.");
+   seenProducts.add(item.product_id);
+   const card=normalizeCard(item.card),key=card.race_date+"|"+card.track_name.trim().toLowerCase();
+   if(seenCards.has(key))throw Error("The JSON contains the same track and date more than once.");
+   seenCards.add(key);
+   return {product_id:item.product_id,card};
+  });
+ }catch(e){return fail(e.message||"Could not read projection data.");}
+ const products=await Promise.all(items.map(item=>env.STORE_DB.prepare("SELECT id,title,category,race_date,track,pdf_key,status FROM products WHERE id=? AND category='Race Cards' AND status IN ('draft','published','archived') AND pdf_key IS NOT NULL AND pdf_key!='__rr_bundle__' AND NOT EXISTS(SELECT 1 FROM bundle_only_assets a WHERE a.product_id=products.id)").bind(item.product_id).first()));
+ for(let i=0;i<items.length;i++){
+  const product=products[i],card=items[i].card;
+  if(!product)return fail("No individual Race Cards PDF was found for "+card.track_name+". Attach its PDF once in the PDF Repository, then retry.",404);
+  if(product.race_date&&product.race_date!==card.race_date)return fail("The JSON race date does not match the selected publication for "+card.track_name+".",409);
+ }
+ const uploadedAt=new Date().toISOString();
+ const results=await Promise.allSettled(items.map(async(item,index)=>{
+  const card=item.card,product=products[index];
+  await env.CARDS_BUCKET.put(projectionKey(product.id),JSON.stringify(card),{httpMetadata:{contentType:"application/json; charset=utf-8",cacheControl:"private, no-store"},customMetadata:{product_id:product.id,uploaded_at:uploadedAt}});
+  return {product_id:product.id,title:product.title,track_name:card.track_name,race_date:card.race_date,races:card.races.length,entries:card.races.reduce((sum,race)=>sum+race.entries.length,0),uploaded_at:uploadedAt};
+ }));
+ const uploaded=results.filter(result=>result.status==="fulfilled").map(result=>result.value);
+ const errors=results.map((result,index)=>result.status==="rejected"?{track_name:items[index].card.track_name,message:"Projection data could not be saved."}:null).filter(Boolean);
+ if(errors.length){
+  console.error("Projection batch upload partially failed",errors.map(item=>item.track_name).join(", "));
+  return json({ok:false,uploaded,errors,error:"Some cards did not save. Re-upload the same JSON to finish; saved cards will be safely replaced."},503);
+ }
+ return json({ok:true,uploaded,tracks:uploaded.length,races:uploaded.reduce((sum,item)=>sum+item.races,0),entries:uploaded.reduce((sum,item)=>sum+item.entries,0),uploaded_at:uploadedAt});
+}
 export async function readMemberProjectionCards(env,library){
  if(!env.CARDS_BUCKET)return [];
  const products=(library||[]).filter(item=>item.category==="Race Cards").slice(0,80);
@@ -108,4 +146,10 @@ export async function readMemberProjectionCards(env,library){
   }
  }));
  return cards.filter(Boolean);
+}
+export async function readAdminProjectionCards(env){
+ if(!env.STORE_DB||!env.CARDS_BUCKET)return json({cards:[]},503);
+ const result=await env.STORE_DB.prepare("SELECT id,title,category,race_date,track,pdf_expires_at FROM products WHERE category='Race Cards' AND pdf_key IS NOT NULL AND pdf_key!='__rr_bundle__' AND NOT EXISTS(SELECT 1 FROM bundle_only_assets a WHERE a.product_id=products.id) ORDER BY race_date DESC,created_at DESC LIMIT 250").all();
+ const cards=await readMemberProjectionCards(env,result.results||[]);
+ return json({cards});
 }

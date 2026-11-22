@@ -11,25 +11,6 @@ const CARD_METRICS=[
  ["PACE FIT",["pace fit","pace","pacefit"]],
  ["SURFACE/DISTANCE",["surface/distance","surface distance","surface fit","distance fit","track fit"]]
 ];
-const previewCard={schema_version:1,race_date:"2026-11-22",track_name:"Belmont Park · Preview",races:[
- {race_number:1,post_time_et:"12:40 PM",surface:"Dirt",distance:"6 1/2 Furlongs",conditions:"Maiden Special Weight",pace:"Moderate",scratch_count:1,summary:"Sample only: a balanced early pace with the strongest projected finish from the first flight.",entries:[
-  {program_number:"4",horse_name:"Harbor Signal",rank:1,win_probability:35.9,morning_line:"5-2",fair_odds:"9/5",metrics:[{label:"SPEED",value:"Strong"},{label:"FORM",value:"Steady"},{label:"CLASS",value:"Fits"},{label:"PACE FIT",value:"Moderate"},{label:"SURFACE/DISTANCE",value:"Positive"}],notes:"Fictional sample runner. The live view will show the exact notes and metrics from your finalized export."},
-  {program_number:"5",horse_name:"Amber Banner",rank:2,win_probability:23.2,morning_line:"3-1",fair_odds:"7/2",metrics:[{label:"SPEED",value:"Above avg."},{label:"FORM",value:"Improving"},{label:"CLASS",value:"Fits"},{label:"PACE FIT",value:"Positive"},{label:"SURFACE/DISTANCE",value:"Neutral"}],notes:"Fictional sample data."},
-  {program_number:"2",horse_name:"Blue Measure",rank:3,win_probability:17.4,morning_line:"5-1",fair_odds:"9/2",metrics:[{label:"SPEED",value:"Competitive"},{label:"FORM",value:"Steady"},{label:"CLASS",value:"Strong"},{label:"PACE FIT",value:"Neutral"},{label:"SURFACE/DISTANCE",value:"Positive"}],notes:"Fictional sample data."},
-  {program_number:"3",horse_name:"Quiet Harbor",rank:4,win_probability:14.9,morning_line:"8-1",fair_odds:"6/1",metrics:[{label:"SPEED",value:"Competitive"},{label:"FORM",value:"Mixed"},{label:"CLASS",value:"Fits"},{label:"PACE FIT",value:"Needs help"},{label:"SURFACE/DISTANCE",value:"Positive"}],notes:"Fictional sample data."},
-  {program_number:"6",horse_name:"Crown Ledger",rank:5,win_probability:8.6,morning_line:"10-1",fair_odds:"11/1",metrics:[{label:"SPEED",value:"Developing"},{label:"FORM",value:"Improving"},{label:"CLASS",value:"Test"},{label:"PACE FIT",value:"Neutral"},{label:"SURFACE/DISTANCE",value:"Unclear"}],notes:"Fictional sample data."}
- ]},
- {race_number:2,post_time_et:"1:12 PM",surface:"Turf",distance:"1 Mile",conditions:"Allowance Optional Claiming",pace:"Honest",scratch_count:0,summary:"Second sample race to show race switching. These runners and figures are fictional.",entries:[
-  {program_number:"1",horse_name:"Rye Field",rank:1,win_probability:29.4,morning_line:"3-1",fair_odds:"5/2",metrics:[{label:"SPEED",value:"Strong"},{label:"FORM",value:"Improving"},{label:"CLASS",value:"Fits"},{label:"PACE FIT",value:"Positive"},{label:"SURFACE/DISTANCE",value:"Strong"}],notes:"Fictional sample data."},
-  {program_number:"7",horse_name:"Golden Rail",rank:2,win_probability:24.1,morning_line:"4-1",fair_odds:"3/1",metrics:[{label:"SPEED",value:"Competitive"},{label:"FORM",value:"Steady"},{label:"CLASS",value:"Strong"},{label:"PACE FIT",value:"Neutral"},{label:"SURFACE/DISTANCE",value:"Positive"}],notes:"Fictional sample data."},
-  {program_number:"3",horse_name:"Autumn Circuit",rank:3,win_probability:18.7,morning_line:"5-1",fair_odds:"9/2",metrics:[{label:"SPEED",value:"Competitive"},{label:"FORM",value:"Improving"},{label:"CLASS",value:"Fits"},{label:"PACE FIT",value:"Moderate"},{label:"SURFACE/DISTANCE",value:"Positive"}],notes:"Fictional sample data."}
- ]},
- {race_number:3,post_time_et:"1:44 PM",surface:"Dirt",distance:"7 Furlongs",conditions:"Stakes · 3-Year-Olds",pace:"Fast",scratch_count:0,summary:"Race-level overview can sit above the field while each runner opens its own analysis.",entries:[
-  {program_number:"8",horse_name:"Copper Current",rank:1,win_probability:31.2,morning_line:"2-1",fair_odds:"2/1",metrics:[{label:"SPEED",value:"Strong"},{label:"FORM",value:"Strong"},{label:"CLASS",value:"Strong"},{label:"PACE FIT",value:"Positive"},{label:"SURFACE/DISTANCE",value:"Positive"}],notes:"Fictional sample data."},
-  {program_number:"2",horse_name:"Blue Standard",rank:2,win_probability:25.6,morning_line:"3-1",fair_odds:"3/1",metrics:[{label:"SPEED",value:"Above avg."},{label:"FORM",value:"Steady"},{label:"CLASS",value:"Fits"},{label:"PACE FIT",value:"Needs help"},{label:"SURFACE/DISTANCE",value:"Positive"}],notes:"Fictional sample data."},
-  {program_number:"5",horse_name:"Final Crossing",rank:3,win_probability:17.8,morning_line:"5-1",fair_odds:"9/2",metrics:[{label:"SPEED",value:"Competitive"},{label:"FORM",value:"Improving"},{label:"CLASS",value:"Fits"},{label:"PACE FIT",value:"Positive"},{label:"SURFACE/DISTANCE",value:"Neutral"}],notes:"Fictional sample data."}
- ]}
-]};
 const api=async url=>{
  const response=await fetch(url,{credentials:"same-origin",cache:"no-store"});
  const data=await response.json().catch(()=>({}));
@@ -72,6 +53,10 @@ function metricValue(entry,aliases){
  const found=metrics.find(metric=>wanted.includes(normalizeLabel(metric.label)));
  return found==null?"—":String(found.value);
 }
+function metricState(value){
+ const state=String(value||"").trim().toLowerCase();
+ return ["gray","grey","green","red"].includes(state)?(state==="grey"?"gray":state):"";
+}
 function fairOdds(entry){return entry.fair_odds||metricValue(entry,["fair odds"]);}
 function makeNode(tag,className,text){const node=document.createElement(tag);if(className)node.className=className;if(text!==undefined)node.textContent=String(text);return node;}
 function makeTile(label,value,mark){
@@ -81,7 +66,11 @@ function makeTile(label,value,mark){
 function makeMetricGroup(entry){
  const group=makeNode("div","rr-dash-metric-group");group.setAttribute("role","group");group.setAttribute("aria-label","Runner ratings");
  for(const [label,aliases] of CARD_METRICS){
-  const cell=makeNode("div","rr-dash-metric-value",metricValue(entry,aliases));cell.dataset.label=label;cell.setAttribute("aria-label",label+": "+cell.textContent);group.append(cell);
+  const value=metricValue(entry,aliases),state=metricState(value),cell=makeNode("div","rr-dash-metric-value");
+  cell.dataset.label=label;
+  if(state){cell.dataset.state=state;cell.title=label+": "+state;cell.setAttribute("aria-label",label+": "+state);cell.append(makeNode("span","rr-dash-metric-indicator"));}
+  else{cell.textContent=value;cell.setAttribute("aria-label",label+": "+value);}
+  group.append(cell);
  }
  return group;
 }
@@ -91,13 +80,19 @@ function showHorse(entry){
  const grid=document.createElement("dl");grid.className="rr-dash-detail-grid";
  const fields=[["Projected rank",entry.rank],["Win probability",entry.win_probability==null?null:String(entry.win_probability)+"%"],["Fair odds",fairOdds(entry)],["Morning line",entry.morning_line]];
  for(const [label,value] of fields){if(value==null||value==="")continue;const item=makeNode("div","rr-dash-detail-value"),dt=makeNode("dt","",label),dd=makeNode("dd","",value);item.append(dt,dd);grid.append(item);}
- for(const metric of entry.metrics||[]){const item=makeNode("div","rr-dash-detail-value"),dt=makeNode("dt","",metric.label),dd=makeNode("dd","",metric.value);item.append(dt,dd);grid.append(item);}
+ for(const metric of entry.metrics||[]){
+  const item=makeNode("div","rr-dash-detail-value"),dt=makeNode("dt","",metric.label),dd=makeNode("dd","");
+  const state=metricState(metric.value);
+  if(state)dd.append(makeNode("span","rr-dash-state-pill rr-dash-state-"+state,state.toUpperCase()));
+  else dd.textContent=metric.value;
+  item.append(dt,dd);grid.append(item);
+ }
  detail.append(grid);
  if(entry.notes){const notes=makeNode("p","rr-dash-detail-notes",entry.notes);detail.append(notes);}
  dialog.showModal();
 }
 function cardHeader(card,race){
- const wrapper=makeNode("div","rr-dash-card-head"),logo=document.createElement("img");logo.className="rr-dash-card-logo";logo.src="/assets/brand/rail_rye_official_horseshoe_logo.png";logo.alt="Rail & Rye";
+ const wrapper=makeNode("div","rr-dash-card-head"),logo=document.createElement("img");logo.className="rr-dash-card-logo";logo.src="/assets/approved/brand/rail-rye-ivory-logo.png";logo.alt="Rail & Rye";
  const info=document.createElement("div"),track=makeNode("h2","rr-dash-track-title",card.track||card.card.track_name),date=makeNode("p","rr-dash-card-date",dateLabel(card.race_date));info.append(track,date);
  const mark=makeNode("div","rr-dash-track-mark"),badge=document.createElement("img");badge.src="/assets/approved/racing-wire/badges/racetrack.png";badge.alt="";mark.append(badge,makeNode("span","",card.track||card.card.track_name));
  wrapper.append(logo,info,mark);return wrapper;
@@ -157,7 +152,7 @@ function renderCard(){
   open.removeAttribute("aria-disabled");download.removeAttribute("aria-disabled");
   setText(open,"Open full PDF");setText(download,"Download PDF");
  }
- setText(q("#rr-dash-update"),activeCard.uploaded_at?"Projection updated "+new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}).format(new Date(activeCard.uploaded_at))+" ET":previewMode?"Layout preview · sample data":"");
+ setText(q("#rr-dash-update"),activeCard.uploaded_at?"Projection updated "+new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}).format(new Date(activeCard.uploaded_at))+" ET":previewMode?"Private admin preview":"");
  for(const button of q("#rr-dash-races").querySelectorAll("button"))button.setAttribute("aria-current",String(Number(button.getAttribute("aria-label").replace("Race ",""))===activeRace));
 }
 function onFiltersChanged(){
@@ -165,7 +160,7 @@ function onFiltersChanged(){
 }
 async function init(){
  try{
-  if(previewMode){cards=[{product_id:"preview",title:"Illustrative sample",track:previewCard.track_name,race_date:previewCard.race_date,uploaded_at:null,card:previewCard}];}
+  if(previewMode){const data=await api("/api/admin/projections-preview");cards=data.cards||[];}
   else {const data=await api("/api/membership/projections");cards=data.cards||[];}
   status.hidden=true;
   if(!cards.length){empty.hidden=false;return;}
