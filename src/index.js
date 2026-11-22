@@ -17,7 +17,7 @@ import {handleRaceCardAlerts,syncRaceCardAnnouncement,sendRaceCardAlerts} from '
 
 const MAX_PDF = 75 * 1024 * 1024;
 const MAX_COVER = 6 * 1024 * 1024;
-const CATEGORIES = new Set(["Race Cards", "Longshot Radar", "Stable Notes", "Target List"]);
+const CATEGORIES = new Set(["Race Cards", "Pick Tickets", "Longshot Radar", "Stable Notes", "Target List"]);
 const jsonHeaders = { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" };
 const textHeaders = { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" };
 const json = (data, status=200) => new Response(JSON.stringify(data), {status, headers:jsonHeaders});

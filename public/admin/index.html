@@ -197,7 +197,7 @@
           <div class="field"><label for="assetDate">Racing date</label><input id="assetDate" type="date"></div>
         </div>
         <div class="row">
-          <div class="field"><label for="assetCategory">Collection (optional until publishing)</label><select id="assetCategory"><option value="">Assign collection later</option><option>Race Cards</option><option>Longshot Radar</option><option>Stable Notes</option><option>Target List</option></select></div>
+          <div class="field"><label for="assetCategory">Collection (optional until publishing)</label><select id="assetCategory"><option value="">Assign collection later</option><option>Race Cards</option><option>Pick Tickets</option><option>Longshot Radar</option><option>Stable Notes</option><option>Target List</option></select></div>
           <div class="field"><label for="assetTrack">Racetrack (optional)</label><input id="assetTrack" maxlength="100" placeholder="Keeneland"></div>
         </div>
         <div class="field"><label for="assetPdf">PDF file <span id="assetPdfStatus"></span></label><input id="assetPdf" type="file" accept="application/pdf,.pdf"><div class="detail">One file up to 75 MB. Use the multi-file upload above for several PDFs. If active bundle buyers use this PDF, replacing it sends them a secure update link.</div></div>
@@ -214,7 +214,7 @@
       <form id="productForm">
         <div class="field"><label for="title">Product name *</label><input id="title" required maxlength="140" placeholder="Keeneland — Friday Race Card"></div>
         <div class="row">
-          <div class="field"><label for="category">Collection *</label><select id="category"><option value="">Choose a collection</option><option>Race Cards</option><option>Longshot Radar</option><option>Stable Notes</option><option>Target List</option></select></div>
+          <div class="field"><label for="category">Collection *</label><select id="category"><option value="">Choose a collection</option><option>Race Cards</option><option>Pick Tickets</option><option>Longshot Radar</option><option>Stable Notes</option><option>Target List</option></select></div>
           <div class="field"><label for="raceDate">Racing date</label><input id="raceDate" type="date"></div>
         </div>
         <div class="row">
@@ -256,7 +256,7 @@
       <div>
         <div class="field"><label for="bundleTitle">Bundle name *</label><input id="bundleTitle" maxlength="140" required placeholder="Breeders' Cup Weekend Bundle"></div>
         <div class="row">
-          <div class="field"><label for="bundleCategory">Primary collection</label><select id="bundleCategory"><option>Race Cards</option><option>Longshot Radar</option><option>Stable Notes</option><option>Target List</option></select></div>
+          <div class="field"><label for="bundleCategory">Primary collection</label><select id="bundleCategory"><option>Race Cards</option><option>Pick Tickets</option><option>Longshot Radar</option><option>Stable Notes</option><option>Target List</option></select></div>
           <div class="field"><label for="bundleDate">Racing date (optional)</label><input id="bundleDate" type="date"></div>
         </div>
         <div class="field"><label for="bundlePrice">Bundle price (USD) *</label><input id="bundlePrice" type="number" min="0" max="5000" step="0.01" value="19.99" required></div>
@@ -892,7 +892,7 @@
     }catch(e){notice(e.message);}
     finally{setBusy(false);}
   }
-  const bulkCategories=['Race Cards','Longshot Radar','Stable Notes','Target List'];
+  const bulkCategories=['Race Cards','Pick Tickets','Longshot Radar','Stable Notes','Target List'];
   const bulkFiles=()=>Array.from($('assetBulkFiles').files||[]);
   function titleFromFileName(name){
     return name.replace(/\.pdf$/i,'').replace(/[_]+/g,' ').replace(/\s+/g,' ').trim();
