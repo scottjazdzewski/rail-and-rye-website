@@ -347,7 +347,10 @@
 @media(max-width:700px){
  .rr-dash-table{overflow-x:auto;overflow-y:hidden;border-radius:8px;-webkit-overflow-scrolling:touch}
  .rr-dash-table-heading,.rr-dash-runner-row{min-width:720px;grid-template-columns:42px minmax(132px,1.25fr) minmax(300px,3fr) 62px 66px}
- .rr-dash-table-heading{position:sticky;top:0;z-index:2;min-height:38px}
+ .rr-dash-table-heading{display:grid;position:static;min-height:38px}
+ .rr-dash-runner-row{grid-template-areas:none}
+ .rr-dash-runner-row>.rr-dash-program,.rr-dash-runner-row>.rr-dash-horse-cell,.rr-dash-runner-row>.rr-dash-metric-group,.rr-dash-runner-row>.rr-dash-win,.rr-dash-runner-row>.rr-dash-fair{grid-area:auto;min-width:0}
+ .rr-dash-metric-group{grid-template-columns:repeat(5,minmax(0,1fr))}
  .rr-dash-table-heading>span{padding:5px 3px;font-size:9px}
  .rr-dash-table-heading .rr-dash-metric-group>span{padding:4px 2px;font-size:8px;letter-spacing:0}
  .rr-dash-runner-row{min-height:56px}
