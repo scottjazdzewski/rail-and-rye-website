@@ -128,7 +128,7 @@ function makeMetricGroup(entry){
 function showHorse(entry){
  const dialog=q("#rr-dash-horse-dialog"),title=q("#rr-dash-horse-title"),detail=q("#rr-dash-horse-detail");setText(title,(entry.program_number?"#"+entry.program_number+"  ":"")+entry.horse_name);detail.replaceChildren();
  const grid=document.createElement("dl");grid.className="rr-dash-detail-grid";
- const fields=[["Projected rank",entry.rank],["Win probability",entry.win_probability==null?null:String(entry.win_probability)+"%"],["Fair odds",fairOdds(entry)],["Morning line",entry.morning_line]];
+ const fields=[["Win probability",entry.win_probability==null?null:String(entry.win_probability)+"%"],["Morning line",entry.morning_line],["Fair odds",fairOdds(entry)],["Jockey",entry.jockey],["Trainer",entry.trainer]];
  for(const [label,value] of fields){if(value==null||value==="")continue;const item=makeNode("div","rr-dash-detail-value"),dt=makeNode("dt","",label),dd=makeNode("dd","",value);item.append(dt,dd);grid.append(item);}
  for(const metric of entry.metrics||[]){
   const item=makeNode("div","rr-dash-detail-value"),dt=makeNode("dt","",metric.label),dd=makeNode("dd","");
@@ -150,9 +150,9 @@ function raceBanner(race){
  const wrapper=makeNode("div","rr-dash-race-banner"),number=makeNode("div","rr-dash-race-number"),copy=makeNode("div","rr-dash-race-copy"),time=makeNode("div","rr-dash-post-time");
  number.append(makeNode("span","","RACE"),makeNode("strong","",race.race_number));
  copy.append(makeNode("h3","rr-dash-race-condition",race.conditions||"Race projections"));
- const meta=makeNode("div","rr-dash-race-meta");
- meta.append(makeNode("p","rr-dash-race-runners",(race.entries||[]).length+" RUNNERS"));
- if(race.scratch_count!=null)meta.append(makeNode("p","rr-dash-race-scratches",race.scratch_count+" SCRATCH"+(race.scratch_count===1?"":"ES")));
+ const meta=makeNode("div","rr-dash-race-meta"),runnerCount=(race.entries||[]).length;
+ const runnerLine=runnerCount+" RUNNERS"+(race.scratch_count==null?"":" · "+race.scratch_count+" SCRATCH"+(race.scratch_count===1?"":"ES"));
+ meta.append(makeNode("p","rr-dash-race-runners",runnerLine));
  copy.append(meta);
  time.append(makeNode("span","","POST TIME"),makeNode("strong","",race.post_time_et||race.post_time||race.postTime||"Not listed"));
  wrapper.append(number,copy,time);return wrapper;
@@ -169,7 +169,7 @@ function renderCard(){
  for(const label of ["#","HORSE"]){const cell=makeNode("span","",label);cell.setAttribute("role","columnheader");header.append(cell);}
  const metricHead=makeNode("div","rr-dash-metric-group");metricHead.setAttribute("role","group");
  for(const [label] of CARD_METRICS){const cell=makeNode("span","",label);cell.setAttribute("role","columnheader");metricHead.append(cell);}
- header.append(metricHead);for(const label of ["WIN %","FAIR ODDS"]){const cell=makeNode("span","",label);cell.setAttribute("role","columnheader");header.append(cell);}table.append(header);
+ header.append(metricHead);const marketHead=makeNode("span","","WIN % · FAIR ODDS");marketHead.setAttribute("role","columnheader");header.append(marketHead);table.append(header);
  const list=makeNode("div","rr-dash-runner-list");list.setAttribute("role","rowgroup");
  let entries=[...race.entries].map((entry,index)=>({entry,index}));
  const query=String(q("#rr-dash-search")?.value||"").trim().toLowerCase();
@@ -185,13 +185,16 @@ function renderCard(){
   const horseCell=makeNode("div","rr-dash-runner-cell rr-dash-horse-cell");horseCell.setAttribute("role","cell");
   const horseButton=makeNode("button","rr-dash-horse-open");horseButton.type="button";horseButton.setAttribute("aria-label","Open projection details for "+entry.horse_name);
   horseButton.append(makeNode("span","rr-dash-horse-name",entry.horse_name));
-  const sub=[entry.rank!=null?"Rank "+entry.rank:"",entry.morning_line?"M/L "+entry.morning_line:""].filter(Boolean).join(" · ");
-  if(sub)horseButton.append(makeNode("span","rr-dash-horse-sub",sub));
+  if(entry.morning_line)horseButton.append(makeNode("span","rr-dash-horse-sub","M/L "+entry.morning_line));
+  const connections=[entry.jockey?"J: "+entry.jockey:"",entry.trainer?"T: "+entry.trainer:""].filter(Boolean).join(" · ");
+  if(connections)horseButton.append(makeNode("span","rr-dash-horse-connections",connections));
   horseButton.addEventListener("click",()=>showHorse(entry));horseCell.append(horseButton);
   const metricGroup=makeMetricGroup(entry);metricGroup.setAttribute("role","cell");
-  const win=makeNode("div","rr-dash-win",entry.win_probability==null?"—":String(entry.win_probability)+"%");win.setAttribute("role","cell");win.setAttribute("aria-label","Win probability");
-  const odds=makeNode("div","rr-dash-fair",fairOdds(entry)==="—"?"—":fairOdds(entry));odds.setAttribute("role","cell");odds.setAttribute("aria-label","Fair odds");
-  row.append(program,horseCell,metricGroup,win,odds);list.append(row);
+  const odds=fairOdds(entry)||"—",win=makeNode("div","rr-dash-win");win.setAttribute("role","cell");
+  win.setAttribute("aria-label",(entry.win_probability==null?"No win probability":String(entry.win_probability)+"% win probability")+"; fair odds "+odds);
+  win.append(makeNode("strong","rr-dash-win-percent",entry.win_probability==null?"—":String(entry.win_probability)+"%"));
+  win.append(makeNode("small","rr-dash-win-fair","FAIR "+odds));
+  row.append(program,horseCell,metricGroup,win);list.append(row);
  }
  if(!entries.length)list.append(makeNode("div","rr-dash-no-data","No runners match that search."));
  table.append(list);q("#rr-dash-horses").replaceChildren(table);

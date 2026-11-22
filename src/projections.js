@@ -94,8 +94,10 @@ function normalizeCard(input){
    if(win!==null&&(!Number.isFinite(win)||win<0||win>100))throw Error("Win probability must be between 0 and 100.");
    const morning=text(entry.morning_line,"Morning line",30);
    const fairOdds=text(entry.fair_odds,"Fair odds",30);
+   const jockey=text(entry.jockey,"Jockey",100);
+   const trainer=text(entry.trainer,"Trainer",100);
    const notes=text(entry.notes,"Horse notes",1200);
-   return {program_number:program,horse_name:horseName,rank,win_probability:win,morning_line:morning,fair_odds:fairOdds,metrics:normalizeMetrics(entry.metrics),notes};
+   return {program_number:program,horse_name:horseName,rank,win_probability:win,morning_line:morning,fair_odds:fairOdds,jockey,trainer,metrics:normalizeMetrics(entry.metrics),notes};
   });
   return {race_number:number,post_time_et:text(race.post_time_et,"Post time",40),surface:text(race.surface,"Surface",50),distance:text(race.distance,"Distance",60),conditions:text(race.conditions,"Race conditions",240),pace:text(race.pace,"Pace",50),scratch_count:scratchCount,summary:text(race.summary,"Race summary",1000),entries};
  });
