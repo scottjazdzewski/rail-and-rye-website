@@ -149,11 +149,13 @@ async function handleAdminAPI(request,env,pathname,ctx) {
   if(!env.STORE_DB||!env.CARDS_BUCKET) return fail("Database or storage binding missing",503);
   if(!["GET","POST","PATCH","PUT"].includes(request.method)) return fail("Method not allowed",405);
   if(request.method!=="GET"&&!trustedOrigin(request)) return fail("Same-origin request required",403);
-  await ensureReleaseSchedule(env);
-  if(pathname==="/api/admin/status"&&request.method==="GET") return json({ready:true,categories:[...CATEGORIES],max_pdf_bytes:MAX_PDF,...checkoutReadiness(env)});
+  // Projection uploads and previews use R2 directly. Keep them independent of
+  // product schedule maintenance so JSON dashboards remain usable when D1 is busy.
   if(pathname==="/api/admin/projections-preview"&&request.method==="GET") return readAdminProjectionCards(env);
   if(pathname==="/api/admin/projections/batch") return handleAdminProjectionBatchUpload(request,env);
   if(pathname==="/api/admin/projections") return handleAdminProjectionUpload(request,env);
+  await ensureReleaseSchedule(env);
+  if(pathname==="/api/admin/status"&&request.method==="GET") return json({ready:true,categories:[...CATEGORIES],max_pdf_bytes:MAX_PDF,...checkoutReadiness(env)});
   if(pathname==="/api/admin/products") {
     if(request.method==="GET") {
       const result=await env.STORE_DB.prepare("SELECT p.*,s.release_at FROM products p LEFT JOIN product_release_schedule s ON s.product_id=p.id WHERE (p.pdf_key IS NULL OR p.pdf_key != '__rr_bundle__') AND NOT EXISTS (SELECT 1 FROM bundle_only_assets a WHERE a.product_id=p.id) ORDER BY p.created_at DESC, p.id DESC LIMIT 250").all();

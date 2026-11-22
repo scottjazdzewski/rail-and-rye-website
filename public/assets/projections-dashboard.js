@@ -143,11 +143,12 @@ function renderCard(){
  }
  if(!entries.length)list.append(makeNode("div","rr-dash-no-data","No runners match that search."));
  table.append(list);q("#rr-dash-horses").replaceChildren(table);
- const open=q("#rr-dash-open-pdf"),download=q("#rr-dash-download-pdf");
- if(previewMode){
+ const open=q("#rr-dash-open-pdf"),download=q("#rr-dash-download-pdf"),hasPdf=!!activeCard.product_id;
+ for(const button of [open,download])button.hidden=!hasPdf;
+ if(hasPdf&&previewMode){
   for(const button of [open,download]){button.removeAttribute("href");button.setAttribute("aria-disabled","true");}
   setText(open,"PDF opens after launch");setText(download,"PDF download after launch");
- }else{
+ }else if(hasPdf){
   open.href="/api/membership/view/"+encodeURIComponent(activeCard.product_id);download.href="/api/membership/download/"+encodeURIComponent(activeCard.product_id);
   open.removeAttribute("aria-disabled");download.removeAttribute("aria-disabled");
   setText(open,"Open full PDF");setText(download,"Download PDF");
