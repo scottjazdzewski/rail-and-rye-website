@@ -298,13 +298,21 @@ export default {
         if(path==="/api/admin/racing-wire-editorial")return handleAdminRacingWire(request,env);
         if(path.startsWith("/api/admin/"))return handleAdminAPI(request,env,path,ctx);
         if(request.method!=="GET"&&request.method!=="HEAD")return fail("Method not allowed",405);
-        const asset=new URL(url);const projectionDesk=path==="/admin/projections"||path==="/admin/projections/"||path==="/admin/projections.html";asset.pathname=projectionDesk?"/admin/projections.html":(path==="/admin/membership-plans"||path==="/admin/membership-plans/"||path==="/admin/membership-plans.html")?"/admin/membership-plans.html":"/admin/index.html";
+        const asset=new URL(url);const projectionDesk=path==="/admin/projections"||path==="/admin/projections/"||path==="/admin/projections.html";const projectionPreview=path==="/admin/projections-preview"||path==="/admin/projections-preview/"||path==="/admin/projections-preview.html";asset.pathname=projectionDesk?"/admin/projections.html":projectionPreview?"/admin/projections-preview.html":(path==="/admin/membership-plans"||path==="/admin/membership-plans/"||path==="/admin/membership-plans.html")?"/admin/membership-plans.html":"/admin/index.html";
         const result=await env.ASSETS.fetch(new Request(asset.toString(),{method:request.method}));
         const headers=new Headers(result.headers);
         headers.set("Cache-Control","no-store");headers.set("X-Frame-Options","DENY");headers.set("X-Content-Type-Options","nosniff");
         headers.set("Referrer-Policy","no-referrer");
         headers.set("Content-Security-Policy","default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'");
         return new Response(result.body,{status:result.status,headers});
+      }
+      const memberDashboardPage=path==="/membership/dashboard"||path==="/membership/dashboard/"||path==="/membership/dashboard/index.html";
+      if(memberDashboardPage){
+        if(env.PROJECTIONS_MEMBER_LAUNCH!=="on")return new Response("Not found.",{status:404,headers:{...textHeaders,"X-Robots-Tag":"noindex, nofollow, noarchive"}});
+        if(request.method!=="GET"&&request.method!=="HEAD")return fail("Method not allowed",405);
+        const result=await env.ASSETS.fetch(request);
+        const headers=new Headers(result.headers);headers.set("Cache-Control","private, no-store");headers.set("X-Robots-Tag","noindex, nofollow, noarchive");
+        return new Response(request.method==="HEAD"?null:result.body,{status:result.status,headers});
       }
       // Unlisted design-preview route: intentionally not linked in public navigation.
       // Anyone possessing the URL may access it; this is NOT authentication.

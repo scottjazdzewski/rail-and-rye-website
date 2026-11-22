@@ -7,6 +7,7 @@
     "binding": "ASSETS",
     "run_worker_first": [
       "/admin*",
+      "/membership/dashboard*",
       "/preview/*",
       "/api/*",
       "/media/*",
@@ -14,6 +15,9 @@
       "/store/",
       "/sitemap.xml"
     ]
+  },
+  "vars": {
+    "PROJECTIONS_MEMBER_LAUNCH": "off"
   },
   "r2_buckets": [
     {
