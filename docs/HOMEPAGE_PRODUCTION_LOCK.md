@@ -2,7 +2,7 @@
 
 **Status: OWNER APPROVED / DO NOT REDESIGN**  
 **Approved:** November 4, 2026 (owner-authorized Racing Wire header pill)
-**Frozen homepage HTML blob:** `181ba8de8e97930f277d79e00129ed8aafc3356c` (owner approved November 22, 2026)  
+**Frozen homepage HTML blob:** `ef80a298bfb922f3f52dde6e306228276fe6a3af` (owner approved November 22, 2026)  
 **Recovery snapshot branch:** `approved-homepage-2026-11-22`  
 **Website:** https://railandryeracing.com/
 
