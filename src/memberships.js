@@ -414,6 +414,7 @@ async function verifyMagicLink(request,env){
   return json({ok:true},200,{"Set-Cookie":cookieHeader(sessionRaw,SESSION_SECONDS)});
 }
 async function memberProjectionData(request,env){
+  if(env.PROJECTIONS_MEMBER_LAUNCH!=="on")return error("Not found.",404);
   const email=await sessionEmail(request,env);
   if(!email)return error("Sign in to access your membership.",401);
   if(!env.CARDS_BUCKET)return error("The member dashboard is temporarily unavailable.",503);

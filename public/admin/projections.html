@@ -16,7 +16,7 @@ button,.link-button{display:inline-flex;align-items:center;justify-content:cente
 details{margin-top:20px;border-top:1px solid var(--border);padding-top:15px}summary{font-weight:800;cursor:pointer}pre{max-height:360px;overflow:auto;padding:14px;border-radius:8px;background:#0b2839;color:#f6e8c9;font-size:12px}
 @media(max-width:600px){.top{align-items:flex-start;flex-direction:column;padding:16px}.panel{padding:17px}main{padding:28px 16px 54px}}
 </style>
-<script defer src="/assets/projections-admin.js?v=1"></script>
+<script defer src="/assets/projections-admin.js?v=2"></script>
 </head>
 <body>
 <header><div class="top"><a class="brand" href="/admin/">RAIL &amp; RYE</a><nav><a href="/admin/">Publisher’s Desk</a></nav></div></header>
@@ -28,7 +28,7 @@ details{margin-top:20px;border-top:1px solid var(--border);padding-top:15px}summ
   <div class="field"><label for="product">Match this dashboard data to a publication</label><select id="product"><option value="">Loading…</option></select><span class="hint">Only individual Race Cards publications with a PDF attached appear here.</span></div>
   <div class="field"><label for="json-file">Projection JSON file</label><input id="json-file" type="file" accept=".json,application/json"><span class="hint">Maximum file size: 1 MB. The race date must match the selected publication.</span></div>
   <div id="preview" class="preview"></div>
-  <div class="buttons"><button id="copy-prompt" type="button" class="secondary">Copy GPT export instructions</button><button id="upload" type="button" disabled>Upload projection data</button><a class="link-button secondary" href="/admin/">Back to Publisher’s Desk</a></div>
+  <div class="buttons"><button id="copy-prompt" type="button" class="secondary">Copy GPT export instructions</button><button id="upload" type="button" disabled>Upload projection data</button><a class="link-button secondary" href="/admin/projections-preview/">Private dashboard preview</a><a class="link-button secondary" href="/admin/">Back to Publisher’s Desk</a></div>
   <details><summary>JSON format for GPT export</summary>
    <p class="hint">Use win_probability in percentage points (27.5 means 27.5%). Put every other projection printed on the card in the metrics label/value list. Copy the final values exactly; do not recalculate or round them.</p>
    <pre>{
@@ -42,6 +42,8 @@ details{margin-top:20px;border-top:1px solid var(--border);padding-top:15px}summ
       "surface": "Dirt",
       "distance": "6 furlongs",
       "conditions": "",
+      "pace": "Moderate",
+      "scratch_count": 0,
       "summary": "",
       "entries": [
         {
@@ -50,8 +52,13 @@ details{margin-top:20px;border-top:1px solid var(--border);padding-top:15px}summ
           "rank": 1,
           "win_probability": 27.5,
           "morning_line": "5-2",
+          "fair_odds": "9/5",
           "metrics": [
-            {"label": "PACE", "value": "example value"}
+            {"label": "SPEED", "value": "example value"},
+            {"label": "FORM", "value": "example value"},
+            {"label": "CLASS", "value": "example value"},
+            {"label": "PACE FIT", "value": "example value"},
+            {"label": "SURFACE/DISTANCE", "value": "example value"}
           ],
           "notes": ""
         }

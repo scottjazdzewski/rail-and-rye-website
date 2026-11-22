@@ -41,6 +41,8 @@ function normalizeCard(input){
   const number=Number(race.race_number);
   if(!Number.isInteger(number)||number<1||number>20||seenRaces.has(number))throw Error("Race numbers must be unique whole numbers from 1 to 20.");
   seenRaces.add(number);
+  const scratchCount=race.scratch_count==null?null:Number(race.scratch_count);
+  if(scratchCount!==null&&(!Number.isInteger(scratchCount)||scratchCount<0||scratchCount>30))throw Error("Scratch count must be a whole number from 0 to 30.");
   if(!Array.isArray(race.entries)||race.entries.length<1||race.entries.length>30)throw Error("Race "+number+" must include between 1 and 30 horses.");
   const seenPrograms=new Set();
   const entries=race.entries.map((entry,horseIndex)=>{
@@ -55,10 +57,11 @@ function normalizeCard(input){
    const win=entry.win_probability==null?null:Number(entry.win_probability);
    if(win!==null&&(!Number.isFinite(win)||win<0||win>100))throw Error("Win probability must be between 0 and 100.");
    const morning=text(entry.morning_line,"Morning line",30);
+   const fairOdds=text(entry.fair_odds,"Fair odds",30);
    const notes=text(entry.notes,"Horse notes",1200);
-   return {program_number:program,horse_name:horseName,rank,win_probability:win,morning_line:morning,metrics:normalizeMetrics(entry.metrics),notes};
+   return {program_number:program,horse_name:horseName,rank,win_probability:win,morning_line:morning,fair_odds:fairOdds,metrics:normalizeMetrics(entry.metrics),notes};
   });
-  return {race_number:number,post_time_et:text(race.post_time_et,"Post time",40),surface:text(race.surface,"Surface",50),distance:text(race.distance,"Distance",60),conditions:text(race.conditions,"Race conditions",240),summary:text(race.summary,"Race summary",1000),entries};
+  return {race_number:number,post_time_et:text(race.post_time_et,"Post time",40),surface:text(race.surface,"Surface",50),distance:text(race.distance,"Distance",60),conditions:text(race.conditions,"Race conditions",240),pace:text(race.pace,"Pace",50),scratch_count:scratchCount,summary:text(race.summary,"Race summary",1000),entries};
  });
  return {schema_version:1,race_date:raceDate,track_name:trackName,races};
 }
