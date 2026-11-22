@@ -1,6 +1,6 @@
 // SEO endpoints and search-visible Journal HTML. No CSS or page layout changes.
 const ORIGIN = 'https://railandryeracing.com';
-const INDEXABLE = ['/', '/race-cards/', '/publications/longshot-radar/',
+const INDEXABLE = ['/', '/race-cards/', '/publications/pick-tickets/', '/publications/longshot-radar/',
   '/publications/stable-notes/', '/publications/target-list/', '/store/',
   '/our-approach/', '/samples/', '/journal/', '/journal/archive/', '/membership/',
   '/policies/privacy.html', '/policies/terms.html', '/policies/refunds.html'];
@@ -147,6 +147,7 @@ export async function serveJournalDocument(assetResponse,{article=null,archive=f
 const PUBLICATION_SHARE_IMAGES={
   'Race Cards':'/assets/approved/race-cards/hero.webp',
   'Longshot Radar':'/assets/approved/publications/longshot-hero.jpg',
+  'Pick Tickets':'/assets/approved/publications/pick-tickets-hero.png',
   'Stable Notes':'/assets/approved/publications/stable-hero.jpg',
   'Target List':'/assets/approved/publications/target-hero.jpg'
 };
