@@ -441,7 +441,7 @@ async function listProducts(env){
   if(!env.STORE_DB)return error('Catalog temporarily unavailable',503);
   await ensureReleaseSchedule(env);
   const records=await env.STORE_DB.prepare(`SELECT id,title,slug,category,race_date,track,description,price_cents,image_url,pdf_key,pdf_expires_at
-    FROM products WHERE status='published' AND pdf_key IS NOT NULL
+    FROM products WHERE status='published' AND category <> 'Stable Notes' AND pdf_key IS NOT NULL
     AND NOT EXISTS(SELECT 1 FROM product_release_schedule s WHERE s.product_id=products.id AND s.release_at>CURRENT_TIMESTAMP)
     AND NOT EXISTS(SELECT 1 FROM bundle_only_assets a WHERE a.product_id=products.id)
     ORDER BY race_date DESC,created_at DESC LIMIT 150`).all();
@@ -459,7 +459,7 @@ async function listProducts(env){
       LEFT JOIN products c ON c.id=bi.product_id LEFT JOIN bundle_only_assets a ON a.product_id=c.id
       LEFT JOIN product_release_schedule s ON s.product_id=c.id WHERE bi.bundle_id=? ORDER BY bi.position`).bind(p.id).all();
     const items=children.results||[];
-    if(items.length<2||items.length>12||items.some(c=>!c.pdf_key||c.pdf_key===BUNDLE_KEY||c.expired||c.pending_release||!(c.status==='published'||(c.status==='draft'&&c.asset_id))))continue;
+    if(items.length<2||items.length>12||items.some(c=>!c.pdf_key||c.pdf_key===BUNDLE_KEY||c.expired||c.pending_release||c.category==='Stable Notes'||!(c.status==='published'||(c.status==='draft'&&c.asset_id))))continue;
     // A bundle is one SKU, listed under its primary category and every included PDF category.
     const categories=[...new Set([p.category,...items.map(x=>x.category)].filter(Boolean))];
     products.push({...publicFields,kind:'bundle',categories,bundle_count:items.length,included_titles:items.map(x=>x.title),
@@ -473,7 +473,7 @@ export async function publicProductForShare(env,id){
   const product=await env.STORE_DB.prepare(`SELECT id,title,slug,category,race_date,track,description,price_cents,image_url,pdf_key,pdf_expires_at
     FROM products WHERE id=? AND status='published' AND pdf_key IS NOT NULL
     AND NOT EXISTS(SELECT 1 FROM product_release_schedule s WHERE s.product_id=products.id AND s.release_at>CURRENT_TIMESTAMP)
-    AND NOT EXISTS(SELECT 1 FROM bundle_only_assets a WHERE a.product_id=products.id)`).bind(id).first();
+    AND NOT EXISTS(SELECT 1 FROM bundle_only_assets a WHERE a.product_id=products.id) AND category <> 'Stable Notes'`).bind(id).first();
   if(!product)return null;
   const {pdf_key,...publicFields}=product;
   if(pdf_key!==BUNDLE_KEY){
@@ -486,7 +486,7 @@ export async function publicProductForShare(env,id){
     LEFT JOIN products c ON c.id=bi.product_id LEFT JOIN bundle_only_assets a ON a.product_id=c.id
     LEFT JOIN product_release_schedule s ON s.product_id=c.id WHERE bi.bundle_id=? ORDER BY bi.position`).bind(id).all();
   const items=children.results||[];
-  if(items.length<2||items.length>12||items.some(c=>!c.pdf_key||c.pdf_key===BUNDLE_KEY||c.expired||c.pending_release||!(c.status==='published'||(c.status==='draft'&&c.asset_id))))return null;
+  if(items.length<2||items.length>12||items.some(c=>!c.pdf_key||c.pdf_key===BUNDLE_KEY||c.expired||c.pending_release||c.category==='Stable Notes'||!(c.status==='published'||(c.status==='draft'&&c.asset_id))))return null;
   return {...publicFields,kind:'bundle',bundle_count:items.length,
     categories:[...new Set([publicFields.category,...items.map(x=>x.category)].filter(Boolean))],
     included_titles:items.map(x=>x.title),

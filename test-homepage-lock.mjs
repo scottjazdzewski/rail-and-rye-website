@@ -6,7 +6,7 @@ import fs from 'node:fs';
 import { createHash } from 'node:crypto';
 
 const approvedBlobs = {
-  'public/index.html': 'e1fd28669818cf0c4db158ceea8fc90d2097d1b0',
+  'public/index.html': '181ba8de8e97930f277d79e00129ed8aafc3356c',
   'public/assets/approved/brand/header-horse.webp': 'c6a7ed8882a6b42dd96af9a621fe80a88da96f8a',
   'public/assets/approved/brand/rail-rye-ivory-logo.png': '974905e392779b081e784ca55d43205c80fef126',
   'public/assets/approved/home/hero-dust-charged-finish.jpg': 'aa2e5b276969e2b65c7e3b1fd099bd541d32ea21',
@@ -70,12 +70,13 @@ for (const [path, fragments] of Object.entries(requiredStyleFragments)) {
   }
 }
 
-// Owner-approved November 1 copy-only refinement. Keep the approved homepage
-// image, branding, grid and layout contract unchanged.
+// Owner-authorized November 22 card and copy update. Keep unrelated homepage
+// structure and protected visual assets under the same regression lock.
 const home=fs.readFileSync('public/index.html','utf8');
 const ownerApprovedContent=[
   'Contenders the Market May Overlook',
-  'Horses Worth Following',
+  'Multi-race tickets in start-time order, with runner numbers and projected hit rates.',
+  'src="/assets/approved/publications/stable-mark.png"',
   'Pick Tickets',
   'Stories from the Rail',
   'When Favorites Face a Test',
@@ -85,6 +86,7 @@ const ownerApprovedContent=[
 for(const fragment of ownerApprovedContent){
   if(!home.includes(fragment))issues.push('Owner-approved homepage copy or performance hint missing: '+fragment);
 }
+if(home.includes('Stable Notes'))issues.push('Stable Notes should remain hidden from the homepage.');
 for(const oldClaim of ['We’re Beating the Morning Line','Where Odds Meet Opportunity','The Backstretch Knows First']){
   if(home.includes(oldClaim))issues.push('Outdated homepage tagline reintroduced: '+oldClaim);
 }
