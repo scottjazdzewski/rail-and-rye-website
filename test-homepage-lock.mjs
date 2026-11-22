@@ -75,7 +75,7 @@ for (const [path, fragments] of Object.entries(requiredStyleFragments)) {
 const home=fs.readFileSync('public/index.html','utf8');
 const ownerApprovedContent=[
   'Contenders the Market May Overlook',
-  'Multi-race tickets in start-time order, with runner numbers and projected hit rates.',
+  'Multi-race selections organized by sequence, with a projected hit rate for each.',
   'src="/assets/approved/publications/stable-mark.png"',
   'Pick Tickets',
   'Stories from the Rail',
