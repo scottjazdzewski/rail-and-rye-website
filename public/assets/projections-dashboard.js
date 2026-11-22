@@ -151,7 +151,7 @@ function raceBanner(race){
  number.append(makeNode("span","","RACE"),makeNode("strong","",race.race_number));
  copy.append(makeNode("h3","rr-dash-race-condition",race.conditions||"Race projections"));
  const meta=makeNode("div","rr-dash-race-meta"),runnerCount=(race.entries||[]).length;
- const runnerLine=runnerCount+" RUNNERS"+(race.scratch_count==null?"":" · "+race.scratch_count+" SCRATCH"+(race.scratch_count===1?"":"ES"));
+ const runnerLine=runnerCount+" RUNNERS"+(race.scratch_count==null?"":" "+race.scratch_count+" SCRATCH"+(race.scratch_count===1?"":"ES"));
  meta.append(makeNode("p","rr-dash-race-runners",runnerLine));
  copy.append(meta);
  time.append(makeNode("span","","POST TIME"),makeNode("strong","",race.post_time_et||race.post_time||race.postTime||"Not listed"));
