@@ -169,7 +169,7 @@ function renderCard(){
  if(lockedWinner)entries.sort((a,b)=>{const aw=isPickedWinner(a.entry,lockedWinner),bw=isPickedWinner(b.entry,lockedWinner);if(aw!==bw)return aw?-1:1;return (a.entry.rank??999)-(b.entry.rank??999)||a.index-b.index;});
  else if(q("#rr-dash-sort")?.value==="win")entries.sort((a,b)=>(Number(b.entry.win_probability)||0)-(Number(a.entry.win_probability)||0)||a.index-b.index);
  else entries.sort((a,b)=>(a.entry.rank??999)-(b.entry.rank??999)||a.index-b.index);
- for(const {entry} of entries){
+ for(const [orderIndex,{entry}] of entries.entries()){
   const row=makeNode("div","rr-dash-runner-row");row.setAttribute("role","row");
   const program=makeNode("div","rr-dash-program");program.setAttribute("role","cell");
   const number=Number(entry.program_number),chip=document.createElement("img");
@@ -178,7 +178,8 @@ function renderCard(){
   const horseCell=makeNode("div","rr-dash-runner-cell rr-dash-horse-cell");horseCell.setAttribute("role","cell");
   const horseButton=makeNode("button","rr-dash-horse-open");horseButton.type="button";horseButton.setAttribute("aria-label","Open projection details for "+entry.horse_name);
   horseButton.append(makeNode("span","rr-dash-horse-name",entry.horse_name));
-  const sub=[entry.rank!=null?"Rank "+entry.rank:"",entry.morning_line?"M/L "+entry.morning_line:""].filter(Boolean).join(" · ");
+  const modelLabel=entry.rank!=null?"Rank "+entry.rank:"",orderLabel=lockedWinner?"Order "+(orderIndex+1):modelLabel;
+  const sub=[orderLabel,lockedWinner&&modelLabel?modelLabel:"",entry.morning_line?"M/L "+entry.morning_line:""].filter(Boolean).join(" · ");
   if(sub)horseButton.append(makeNode("span","rr-dash-horse-sub",sub));
   if(isPickedWinner(entry,pickedWinner()))horseButton.append(makeNode("span","rr-dash-winner-label","YOUR WINNER"));
   horseButton.addEventListener("click",()=>showHorse(entry));horseCell.append(horseButton);
