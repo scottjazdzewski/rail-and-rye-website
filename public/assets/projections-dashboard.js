@@ -78,13 +78,7 @@ function factBadge(kind,value){
  return "";
 }
 function fairOdds(entry){return entry.fair_odds||metricValue(entry,["fair odds"]);}
-function winnerRunnerKey(entry){const program=String(entry.program_number??"").trim();return program?"program:"+program:"horse:"+String(entry.horse_name||"").trim().toLowerCase();}
-function winnerRaceKey(){return [activeCard?.race_date,activeCard?.track||activeCard?.card?.track_name,activeRace].map(value=>encodeURIComponent(String(value??""))).join("|");}
-const winnerMemory=new Map();
-function pickedWinner(){const key=winnerRaceKey();if(winnerMemory.has(key))return winnerMemory.get(key);try{const value=localStorage.getItem("rr-projection-winner:"+key);if(value){const pick=JSON.parse(value);winnerMemory.set(key,pick);return pick;}}catch{}return null;}
-function isPickedWinner(entry,pick){return !!pick&&winnerRunnerKey(entry)===pick.runnerKey;}
-function lockWinner(entry){const existing=pickedWinner();if(existing)return existing;const pick={runnerKey:winnerRunnerKey(entry),programNumber:String(entry.program_number||""),horseName:String(entry.horse_name||"")};const key=winnerRaceKey();winnerMemory.set(key,pick);try{localStorage.setItem("rr-projection-winner:"+key,JSON.stringify(pick));}catch{}return pick;}
-function makeNode(tag,className,text){const node=document.createElement(tag);if(className)node.className=className;if(text!==undefined)node.textContent=String(text);return node;}
+function makeNode(function makeNode(tag,className,text){const node=document.createElement(tag);if(className)node.className=className;if(text!==undefined)node.textContent=String(text);return node;}
 function iconNode(name,className,state){
  if(!name)return null;
  const node=makeNode("span",className);node.setAttribute("aria-hidden","true");
@@ -122,10 +116,7 @@ function showHorse(entry){
  }
  detail.append(grid);
  if(entry.notes){const notes=makeNode("p","rr-dash-detail-notes",entry.notes);detail.append(notes);}
- const winner=pickedWinner(),actions=makeNode("div","rr-dash-winner-actions"),button=makeNode("button","rr-member-button rr-dash-winner-button",winner?(isPickedWinner(entry,winner)?"WINNER PICK LOCKED":"WINNER ALREADY LOCKED"):"CHOOSE WINNER & LOCK FINISH ORDER"),hint=makeNode("p","rr-dash-winner-hint",winner?"This race’s finish-position order is locked on this device.":"Choose one runner to place first and lock this race’s finish-position order.");
- button.type="button";button.disabled=!!winner;
- if(!winner)button.addEventListener("click",()=>{lockWinner(entry);dialog.close();renderCard();});
- actions.append(button,hint);detail.append(actions);dialog.showModal();
+ dialog.showModal();dialog.showModal();
 }
 function cardHeader(card){
  const wrapper=makeNode("div","rr-dash-card-head"),logo=document.createElement("img");logo.className="rr-dash-card-logo";logo.src="/assets/brand/rail_rye_logo_header.png";logo.alt="Rail & Rye";
@@ -147,11 +138,6 @@ function renderCard(){
  activeCard=selectedCard();if(!activeCard)return;
  renderRaceNav(activeCard);
  const race=activeCard.card.races.find(item=>item.race_number===activeRace);if(!race)return;
- const sort=q("#rr-dash-sort"),finishOption=[...sort.options].find(option=>option.value==="finish"),winner=pickedWinner();
- if(finishOption){finishOption.disabled=!winner;finishOption.textContent=winner?"Finish position · locked":"Finish order (choose winner)";}
- sort.disabled=!!winner;
- sort.setAttribute("aria-label",winner?"Finish-position order is locked after winner selection":"Sort by win percentage; choose a winner to unlock finish order");
- if(winner)sort.value="finish";else if(sort.value==="finish")sort.value="win";
  const panel=q("#rr-dash-race");panel.replaceChildren(cardHeader(activeCard),raceBanner(race,activeCard));
  const tiles=makeNode("div","rr-dash-race-tiles");tiles.append(makeTile("Pace",race.pace,factBadge("pace",race.pace)),makeTile("Surface",race.surface,factBadge("surface",race.surface)),makeTile("Distance",race.distance,factBadge("distance",race.distance)));panel.append(tiles);
  if(race.summary)panel.append(makeNode("p","rr-dash-race-summary",race.summary));
@@ -165,11 +151,9 @@ function renderCard(){
  let entries=[...race.entries].map((entry,index)=>({entry,index}));
  const query=String(q("#rr-dash-search")?.value||"").trim().toLowerCase();
  if(query)entries=entries.filter(({entry})=>String(entry.horse_name||"").toLowerCase().includes(query)||String(entry.program_number||"").toLowerCase().includes(query));
- const lockedWinner=pickedWinner();
- if(lockedWinner)entries.sort((a,b)=>{const aw=isPickedWinner(a.entry,lockedWinner),bw=isPickedWinner(b.entry,lockedWinner);if(aw!==bw)return aw?-1:1;return (a.entry.rank??999)-(b.entry.rank??999)||a.index-b.index;});
- else if(q("#rr-dash-sort")?.value==="win")entries.sort((a,b)=>(Number(b.entry.win_probability)||0)-(Number(a.entry.win_probability)||0)||a.index-b.index);
+ if(q("#rr-dash-sort")?.value==="win")entries.sort((a,b)=>(Number(b.entry.win_probability)||0)-(Number(a.entry.win_probability)||0)||a.index-b.index);
  else entries.sort((a,b)=>(a.entry.rank??999)-(b.entry.rank??999)||a.index-b.index);
- for(const [orderIndex,{entry}] of entries.entries()){
+ for(const {entry} of entries){
   const row=makeNode("div","rr-dash-runner-row");row.setAttribute("role","row");
   const program=makeNode("div","rr-dash-program");program.setAttribute("role","cell");
   const number=Number(entry.program_number),chip=document.createElement("img");
@@ -178,10 +162,8 @@ function renderCard(){
   const horseCell=makeNode("div","rr-dash-runner-cell rr-dash-horse-cell");horseCell.setAttribute("role","cell");
   const horseButton=makeNode("button","rr-dash-horse-open");horseButton.type="button";horseButton.setAttribute("aria-label","Open projection details for "+entry.horse_name);
   horseButton.append(makeNode("span","rr-dash-horse-name",entry.horse_name));
-  const modelLabel=entry.rank!=null?"Rank "+entry.rank:"",orderLabel=lockedWinner?"Order "+(orderIndex+1):modelLabel;
-  const sub=[orderLabel,lockedWinner&&modelLabel?modelLabel:"",entry.morning_line?"M/L "+entry.morning_line:""].filter(Boolean).join(" · ");
+  const sub=[entry.rank!=null?"Rank "+entry.rank:"",entry.morning_line?"M/L "+entry.morning_line:""].filter(Boolean).join(" · ");
   if(sub)horseButton.append(makeNode("span","rr-dash-horse-sub",sub));
-  if(isPickedWinner(entry,pickedWinner()))horseButton.append(makeNode("span","rr-dash-winner-label","YOUR WINNER"));
   horseButton.addEventListener("click",()=>showHorse(entry));horseCell.append(horseButton);
   const metricGroup=makeMetricGroup(entry);metricGroup.setAttribute("role","cell");
   const win=makeNode("div","rr-dash-win",entry.win_probability==null?"—":String(entry.win_probability)+"%");win.setAttribute("role","cell");win.setAttribute("aria-label","Win probability");
