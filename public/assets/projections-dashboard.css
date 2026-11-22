@@ -44,8 +44,9 @@
 .rr-dash-race-number span{font:800 11px/1.2 Inter,system-ui,sans-serif;letter-spacing:.18em}
 .rr-dash-race-number strong{font:700 38px/1.05 Georgia,"Times New Roman",serif}
 .rr-dash-race-condition{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 9px;min-width:0;margin:0;color:#123567;font:700 clamp(20px,2.4vw,30px)/1.15 Georgia,"Times New Roman",serif;text-transform:uppercase}
-.rr-dash-race-condition-name,.rr-dash-race-purse{min-width:0}.rr-dash-race-condition-name{overflow-wrap:anywhere}
-.rr-dash-race-purse{white-space:nowrap}
+.rr-dash-race-condition-name{min-width:0;overflow-wrap:break-word}
+.rr-dash-race-purse{margin:0;color:#123567;font:800 11px/1.3 Inter,system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase}
+.rr-dash-race-purse[data-missing="true"]{color:#946321}
 .rr-dash-race-runners,.rr-dash-race-scratch-count{margin:0;color:#17345c;font:800 12px/1.3 Inter,system-ui,sans-serif;letter-spacing:.1em;text-transform:uppercase}
 .rr-dash-post-time{padding-left:14px;border-left:1px solid #c99831;text-align:center}
 .rr-dash-post-time span{display:block;color:#17345c;font:800 10px/1.2 Inter,system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase}
@@ -55,7 +56,7 @@
 .rr-dash-tile-mark{display:grid;place-items:center;flex:0 0 52px;width:52px;height:46px;border-right:1px solid #c99831;border-radius:0;background:none;color:#ad7920}
 .rr-dash-tile-mark img{display:block;width:auto;height:auto;max-width:48px;max-height:44px;object-fit:contain}
 .rr-dash-race-tile>div>span{display:block;color:#566b7b;font:800 10px/1.2 Inter,system-ui,sans-serif;letter-spacing:.13em;text-transform:uppercase}
-.rr-dash-race-tile strong{display:block;min-width:0;margin-top:4px;color:#123567;font:700 17px/1.15 Georgia,"Times New Roman",serif;text-transform:uppercase;white-space:normal;overflow-wrap:anywhere}
+.rr-dash-race-tile strong{display:block;min-width:0;margin-top:4px;color:#123567;font:700 17px/1.15 Georgia,"Times New Roman",serif;text-transform:uppercase;white-space:normal;overflow-wrap:normal;word-break:normal}
 .rr-dash-race-summary{margin:12px 0;padding:12px 15px;border-left:3px solid #c99831;background:#f8f2e5;color:#304e68;font:14px/1.5 Inter,system-ui,sans-serif}
 .rr-dash-table{overflow:hidden;border:2px solid #c99831;border-radius:12px;background:#fff}
 .rr-dash-table-heading,.rr-dash-runner-row{display:grid;grid-template-columns:54px minmax(170px,1.6fr) minmax(410px,4fr) minmax(136px,1.2fr);align-items:stretch}
@@ -144,18 +145,19 @@
  .rr-dash-post-time{grid-area:time;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 2px 0;border-left:0;border-top:1px solid #c99831;text-align:left}
  .rr-dash-post-time>span{font-size:9px;letter-spacing:.1em}
  .rr-dash-post-time strong{margin:0;font-size:17px}
- .rr-dash-race-tiles{gap:6px;margin:9px 0}
- .rr-dash-race-tile{gap:5px;min-height:58px;padding:6px 5px;border-width:1px;border-radius:9px}
- .rr-dash-tile-mark{flex:0 0 27px;width:27px;height:38px}
- .rr-dash-tile-mark img{max-width:26px;max-height:34px}
+ .rr-dash-race-tiles{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:9px 0}
+ .rr-dash-race-tile{gap:8px;min-height:64px;padding:8px 10px;border-width:1px;border-radius:9px}
+ .rr-dash-race-tile:last-child{grid-column:1/-1}
+ .rr-dash-tile-mark{flex:0 0 35px;width:35px;height:40px}
+ .rr-dash-tile-mark img{max-width:32px;max-height:36px}
  .rr-dash-race-tile>div{min-width:0}
- .rr-dash-race-tile>div>span{font-size:8px;letter-spacing:.05em}
- .rr-dash-race-tile strong{margin-top:3px;font-size:12px;line-height:1.1}
+ .rr-dash-race-tile>div>span{font-size:9px;letter-spacing:.05em}
+ .rr-dash-race-tile strong{margin-top:3px;font-size:14px;line-height:1.12;overflow-wrap:normal;word-break:normal}
  .rr-dash-race-summary{margin:8px 0;padding:9px 11px;font-size:12px}
  .rr-dash-table{overflow:visible;border:0;background:transparent}
  .rr-dash-table-heading{display:none}
  .rr-dash-runner-list{display:grid;gap:8px}
- .rr-dash-runner-row{display:grid;grid-template-columns:40px minmax(0,1fr);grid-template-areas:"program horse" "market market" "metrics metrics";gap:5px 7px;min-height:0;padding:8px;border:1px solid #d5b56d;border-radius:8px;background:#fffefa;box-shadow:0 2px 5px rgba(16,47,86,.04)}
+ .rr-dash-runner-row{display:grid;grid-template-columns:40px minmax(0,1fr) 78px;grid-template-areas:"program horse market" "metrics metrics metrics";gap:5px 7px;min-height:0;padding:8px;border:1px solid #d5b56d;border-radius:8px;background:#fffefa;box-shadow:0 2px 5px rgba(16,47,86,.04)}
  .rr-dash-runner-row:nth-child(odd){background:#fffefa}
  .rr-dash-runner-row>div{min-width:0;border:0;padding:1px}
  .rr-dash-program{grid-area:program;align-content:center;justify-items:center;padding:1px!important}
@@ -163,12 +165,13 @@
  .rr-dash-program-fallback{width:34px;height:34px;font-size:12px}
  .rr-dash-horse-cell{grid-area:horse;align-content:center;padding-left:2px!important}
  .rr-dash-horse-open{padding:3px 2px}
- .rr-dash-horse-heading{gap:6px}
+ .rr-dash-horse-heading{flex-wrap:wrap;justify-content:flex-start;gap:4px 7px}
+ .rr-dash-horse-name{flex:0 1 auto;overflow:visible;white-space:normal;text-overflow:clip;overflow-wrap:break-word}
  .rr-dash-horse-name,.rr-dash-horse-ml{font-size:16px}
  .rr-dash-horse-connections{margin-top:3px;font-size:10px;line-height:1.25}
- .rr-dash-win{grid-area:market;justify-self:end;gap:6px;padding:3px 2px!important}
- .rr-dash-win-percent{font-size:16px}
- .rr-dash-win-fair{padding-left:6px;font-size:10px}
+ .rr-dash-win{grid-area:market;justify-self:stretch;flex-direction:column;align-items:flex-end;justify-content:center;gap:5px;padding:3px 0!important}
+ .rr-dash-win-percent{font-size:17px}
+ .rr-dash-win-fair{padding:5px 0 0;border-left:0;border-top:1px solid #c99831;font-size:10px}
  .rr-dash-metric-group{grid-area:metrics;grid-template-columns:repeat(6,minmax(0,1fr));gap:5px;padding:0}
  .rr-dash-metric-value,.rr-dash-metric-value[data-state]{display:flex;grid-column:auto;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:0;min-height:64px;padding:4px 3px;border:1px solid #e6dfd0;border-radius:6px;background:#fffdf6;font:600 10px/1.1 Inter,system-ui,sans-serif}
  .rr-dash-metric-value:nth-child(-n+3){grid-column:span 2}
@@ -182,6 +185,7 @@
  .rr-dash-scratch-item{font-size:10px}
  .rr-dash-scratch-chip-wrap{width:25px;height:25px}
  .rr-dash-scratch-fallback{min-width:25px;height:25px}
+ .rr-dash-scratch-missing{font:700 10px/1.3 Inter,system-ui,sans-serif;color:#96612a}
  .rr-dash-detail-grid{grid-template-columns:1fr 1fr}
 }
 @media(max-width:390px){
@@ -210,19 +214,19 @@
  .rr-dash-race-meta{gap:3px 8px}
  .rr-dash-race-runners,.rr-dash-race-scratch-count{font-size:8px}
  .rr-dash-post-time strong{font-size:16px}
- .rr-dash-race-tile{gap:4px;padding:5px 4px}
- .rr-dash-tile-mark{flex-basis:23px;width:23px;height:34px}
- .rr-dash-tile-mark img{max-width:22px;max-height:30px}
- .rr-dash-race-tile>div>span{font-size:7px}
- .rr-dash-race-tile strong{font-size:10px}
- .rr-dash-runner-row{grid-template-columns:36px minmax(0,1fr);gap:4px 6px;padding:7px}
+ .rr-dash-race-tile{gap:6px;padding:7px 6px}
+ .rr-dash-tile-mark{flex-basis:29px;width:29px;height:36px}
+ .rr-dash-tile-mark img{max-width:28px;max-height:32px}
+ .rr-dash-race-tile>div>span{font-size:8px}
+ .rr-dash-race-tile strong{font-size:12px}
+ .rr-dash-runner-row{grid-template-columns:33px minmax(0,1fr) 72px;gap:4px 6px;padding:7px}
  .rr-dash-program-chip-wrap{width:33px;height:33px}
  .rr-dash-horse-name,.rr-dash-horse-ml{font-size:15px}
  .rr-dash-horse-heading{gap:4px}
  .rr-dash-horse-connections{font-size:9px}
  .rr-dash-win{gap:4px}
  .rr-dash-win-percent{font-size:15px}
- .rr-dash-win-fair{padding-left:4px;font-size:9px}
+ .rr-dash-win-fair{padding-top:4px;font-size:9px}
  .rr-dash-metric-group{gap:4px}
  .rr-dash-metric-value,.rr-dash-metric-value[data-state]{min-height:60px;padding:3px 2px}
  .rr-dash-metric-indicator{width:44px;height:37px}
