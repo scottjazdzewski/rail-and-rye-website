@@ -77,7 +77,15 @@ function normalizeCard(input){
   const number=Number(race.race_number);
   if(!Number.isInteger(number)||number<1||number>20||seenRaces.has(number))throw Error("Race numbers must be unique whole numbers from 1 to 20.");
   seenRaces.add(number);
-  const scratchCount=race.scratch_count==null?null:Number(race.scratch_count);
+  const rawScratches=race.scratches==null?[]:race.scratches;
+  if(!Array.isArray(rawScratches)||rawScratches.length>30)throw Error("Race "+number+" scratches must be an array of up to 30 horses.");
+  const scratches=rawScratches.map((scratch,scratchIndex)=>{
+   if(!isObject(scratch))throw Error("Scratch "+(scratchIndex+1)+" in Race "+number+" is invalid.");
+   const program=String(scratch.program_number??"").trim();
+   if(!program||program.length>8)throw Error("Every scratch needs a program number.");
+   return {program_number:program,horse_name:text(scratch.horse_name,"Scratched horse name",100)};
+  });
+  const scratchCount=race.scratch_count==null?(scratches.length||null):Number(race.scratch_count);
   if(scratchCount!==null&&(!Number.isInteger(scratchCount)||scratchCount<0||scratchCount>30))throw Error("Scratch count must be a whole number from 0 to 30.");
   if(!Array.isArray(race.entries)||race.entries.length<1||race.entries.length>30)throw Error("Race "+number+" must include between 1 and 30 horses.");
   const seenPrograms=new Set();
@@ -99,7 +107,7 @@ function normalizeCard(input){
    const notes=text(entry.notes,"Horse notes",1200);
    return {program_number:program,horse_name:horseName,rank,win_probability:win,morning_line:morning,fair_odds:fairOdds,jockey,trainer,metrics:normalizeMetrics(entry.metrics),notes};
   });
-  return {race_number:number,post_time_et:text(race.post_time_et,"Post time",40),surface:text(race.surface,"Surface",50),distance:text(race.distance,"Distance",60),conditions:text(race.conditions,"Race conditions",240),pace:text(race.pace,"Pace",50),scratch_count:scratchCount,summary:text(race.summary,"Race summary",1000),entries};
+  return {race_number:number,post_time_et:text(race.post_time_et,"Post time",40),surface:text(race.surface,"Surface",50),distance:text(race.distance,"Distance",60),conditions:text(race.conditions,"Race conditions",240),purse:text(race.purse,"Purse",50),pace:text(race.pace,"Pace",50),scratch_count:scratchCount,scratches,summary:text(race.summary,"Race summary",1000),entries};
  });
  return {schema_version:1,race_date:raceDate,track_name:trackName,races};
 }

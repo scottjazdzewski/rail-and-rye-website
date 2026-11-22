@@ -128,7 +128,7 @@ function makeMetricGroup(entry){
 function showHorse(entry){
  const dialog=q("#rr-dash-horse-dialog"),title=q("#rr-dash-horse-title"),detail=q("#rr-dash-horse-detail");setText(title,(entry.program_number?"#"+entry.program_number+"  ":"")+entry.horse_name);detail.replaceChildren();
  const grid=document.createElement("dl");grid.className="rr-dash-detail-grid";
- const fields=[["Win probability",entry.win_probability==null?null:String(entry.win_probability)+"%"],["Morning line",entry.morning_line],["Fair odds",fairOdds(entry)],["Jockey",entry.jockey],["Trainer",entry.trainer]];
+ const fields=[["Win probability",entry.win_probability==null?null:String(entry.win_probability)+"%"],["Morning line",entry.morning_line],["Fair odds",fairOdds(entry)],["Trainer",entry.trainer],["Jockey",entry.jockey]];
  for(const [label,value] of fields){if(value==null||value==="")continue;const item=makeNode("div","rr-dash-detail-value"),dt=makeNode("dt","",label),dd=makeNode("dd","",value);item.append(dt,dd);grid.append(item);}
  for(const metric of entry.metrics||[]){
   const item=makeNode("div","rr-dash-detail-value"),dt=makeNode("dt","",metric.label),dd=makeNode("dd","");
@@ -146,13 +146,37 @@ function cardHeader(card){
  const info=document.createElement("div"),track=makeNode("h2","rr-dash-track-title",card.track||card.card.track_name),date=makeNode("p","rr-dash-card-date",dateLabel(card.race_date));info.append(track,date);
  wrapper.append(logo,info);return wrapper;
 }
+function scratchList(race){
+ const scratches=race.scratches||[];if(!scratches.length)return null;
+ const strip=makeNode("div","rr-dash-scratch-strip"),list=makeNode("ul","rr-dash-scratch-list");
+ strip.append(makeNode("strong","rr-dash-scratch-label","SCRATCHES"));
+ for(const scratch of scratches){
+  const item=makeNode("li","rr-dash-scratch-item"),program=String(scratch.program_number||"–"),match=program.match(/^(\d{1,2})([A-Za-z]?)$/),number=match?Number(match[1]):NaN;
+  if(Number.isInteger(number)&&number>=1&&number<=20){
+   const frame=makeNode("span","rr-dash-scratch-chip-wrap"),chip=document.createElement("img");
+   chip.className="rr-dash-scratch-chip";chip.src="/assets/approved/saddlecloths/"+number+".png";chip.alt="Scratched runner "+program;chip.loading="lazy";frame.append(chip);
+   if(match[2])frame.append(makeNode("span","rr-dash-scratch-suffix",match[2]));
+   item.append(frame);
+  }else item.append(makeNode("span","rr-dash-scratch-fallback",program));
+  if(scratch.horse_name)item.append(makeNode("span","rr-dash-scratch-name",scratch.horse_name));
+  list.append(item);
+ }
+ strip.append(list);return strip;
+}
 function raceBanner(race){
  const wrapper=makeNode("div","rr-dash-race-banner"),number=makeNode("div","rr-dash-race-number"),copy=makeNode("div","rr-dash-race-copy"),time=makeNode("div","rr-dash-post-time");
  number.append(makeNode("span","","RACE"),makeNode("strong","",race.race_number));
- copy.append(makeNode("h3","rr-dash-race-condition",race.conditions||"Race projections"));
+ const condition=String(race.conditions||"Race projections").trim(),purse=String(race.purse||"").trim();
+ const title=makeNode("h3","rr-dash-race-condition");
+ const shownPurse=purse&&!condition.toLowerCase().includes(purse.toLowerCase())?purse:"";
+ title.setAttribute("aria-label",[condition,shownPurse].filter(Boolean).join(" "));
+ title.append(makeNode("span","rr-dash-race-condition-name",condition));
+ if(shownPurse)title.append(makeNode("span","rr-dash-race-purse",shownPurse));
+ copy.append(title);
  const meta=makeNode("div","rr-dash-race-meta"),runnerCount=(race.entries||[]).length;
- const runnerLine=runnerCount+" RUNNERS"+(race.scratch_count==null?"":" "+race.scratch_count+" SCRATCH"+(race.scratch_count===1?"":"ES"));
- meta.append(makeNode("p","rr-dash-race-runners",runnerLine));
+ meta.append(makeNode("p","rr-dash-race-runners",runnerCount+" RUNNERS"));
+ const scratchCount=race.scratch_count==null?(race.scratches?.length||null):race.scratch_count;
+ if(scratchCount!=null)meta.append(makeNode("p","rr-dash-race-scratch-count",scratchCount+" SCRATCH"+(scratchCount===1?"":"ES")));
  copy.append(meta);
  time.append(makeNode("span","","POST TIME"),makeNode("strong","",race.post_time_et||race.post_time||race.postTime||"Not listed"));
  wrapper.append(number,copy,time);return wrapper;
@@ -162,6 +186,7 @@ function renderCard(){
  renderRaceNav(activeCard);renderRaceTimeSelect(activeCard);
  const race=activeCard.card.races.find(item=>item.race_number===activeRace);if(!race)return;
  const panel=q("#rr-dash-race");panel.replaceChildren(cardHeader(activeCard),raceBanner(race));
+ const scratches=scratchList(race);if(scratches)panel.append(scratches);
  const tiles=makeNode("div","rr-dash-race-tiles");tiles.append(makeTile("Pace",race.pace,factBadge("pace",race.pace)),makeTile("Surface",race.surface,factBadge("surface",race.surface)),makeTile("Distance",race.distance,factBadge("distance",race.distance)));panel.append(tiles);
  if(race.summary)panel.append(makeNode("p","rr-dash-race-summary",race.summary));
  const table=makeNode("div","rr-dash-table");table.setAttribute("role","table");table.setAttribute("aria-label","Race "+race.race_number+" projections");
@@ -179,14 +204,20 @@ function renderCard(){
  for(const {entry} of entries){
   const row=makeNode("div","rr-dash-runner-row");row.setAttribute("role","row");
   const program=makeNode("div","rr-dash-program");program.setAttribute("role","cell");
-  const number=Number(entry.program_number),chip=document.createElement("img");
-  if(Number.isInteger(number)&&number>=1&&number<=20){chip.src="/assets/approved/saddlecloths/"+number+".png";chip.alt="Saddlecloth "+entry.program_number;chip.loading="lazy";program.append(chip);}
-  else program.append(makeNode("span","rr-dash-program-fallback",entry.program_number||"–"));
+  const programText=String(entry.program_number||"–"),programMatch=programText.match(/^(\d{1,2})([A-Za-z]?)$/),number=programMatch?Number(programMatch[1]):NaN;
+  if(Number.isInteger(number)&&number>=1&&number<=20){
+   const frame=makeNode("span","rr-dash-program-chip-wrap"),chip=document.createElement("img");
+   chip.src="/assets/approved/saddlecloths/"+number+".png";chip.alt="Saddlecloth "+programText;chip.loading="lazy";frame.append(chip);
+   if(programMatch[2])frame.append(makeNode("span","rr-dash-program-suffix",programMatch[2]));
+   program.append(frame);
+  }else program.append(makeNode("span","rr-dash-program-fallback",programText));
   const horseCell=makeNode("div","rr-dash-runner-cell rr-dash-horse-cell");horseCell.setAttribute("role","cell");
   const horseButton=makeNode("button","rr-dash-horse-open");horseButton.type="button";horseButton.setAttribute("aria-label","Open projection details for "+entry.horse_name);
-  horseButton.append(makeNode("span","rr-dash-horse-name",entry.horse_name));
-  if(entry.morning_line)horseButton.append(makeNode("span","rr-dash-horse-sub","M/L "+entry.morning_line));
-  const connections=[entry.jockey?"J: "+entry.jockey:"",entry.trainer?"T: "+entry.trainer:""].filter(Boolean).join(" · ");
+  const horseHeading=makeNode("span","rr-dash-horse-heading");
+  horseHeading.append(makeNode("span","rr-dash-horse-name",entry.horse_name));
+  if(entry.morning_line)horseHeading.append(makeNode("span","rr-dash-horse-ml","M/L "+entry.morning_line));
+  horseButton.append(horseHeading);
+  const connections=[entry.trainer||"",entry.jockey||""].filter(Boolean).join(" | ");
   if(connections)horseButton.append(makeNode("span","rr-dash-horse-connections",connections));
   horseButton.addEventListener("click",()=>showHorse(entry));horseCell.append(horseButton);
   const metricGroup=makeMetricGroup(entry);metricGroup.setAttribute("role","cell");
