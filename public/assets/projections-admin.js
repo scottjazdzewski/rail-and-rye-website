@@ -16,6 +16,19 @@ async function copyExportPrompt(){
  catch{show("Clipboard access is unavailable in this browser. The export format is shown below.","error");}
 }
 q("#copy-prompt").addEventListener("click",copyExportPrompt);
+function dataWarnings(){
+ const warnings=[];
+ for(const {card} of cards)for(const race of card.races){
+  const id=card.track_name+" R"+race.race_number;
+  if(!String(race.purse||"").trim())warnings.push(id+": purse missing");
+  const scratches=Array.isArray(race.scratches)?race.scratches:[];
+  if(Number(race.scratch_count)>scratches.length)warnings.push(id+": scratch names incomplete");
+  const entries=Array.isArray(race.entries)?race.entries:[];
+  const missingConnections=entries.filter(horse=>!String(horse.trainer||"").trim()||!String(horse.jockey||"").trim()).length;
+  if(missingConnections)warnings.push(id+": "+missingConnections+" trainer/jockey records incomplete");
+ }
+ return warnings;
+}
 function renderCards(){
  matches.replaceChildren();
  for(const {card,entries} of cards){
@@ -35,8 +48,11 @@ fileInput.addEventListener("change",async()=>{
   const data=JSON.parse(await file.text()),raw=Array.isArray(data)?data:Array.isArray(data?.cards)?data.cards:[data];
   cards=raw.map(validateCard);
   const raceCount=cards.reduce((sum,item)=>sum+item.card.races.length,0),entryCount=cards.reduce((sum,item)=>sum+item.entries,0);
-  preview.textContent=cards.length+" tracks · "+raceCount+" races · "+entryCount+" runners · "+file.name;
-  renderCards();show("Ready. One click saves every dashboard. PDFs are linked automatically when a matching publication exists; they are not required.","success");
+  const warnings=dataWarnings();
+  preview.textContent=cards.length+" tracks · "+raceCount+" races · "+entryCount+" runners · "+file.name+(warnings.length?" · "+warnings.length+" source-data warnings":"");
+  renderCards();
+  if(warnings.length)show("Check uploaded source before publishing: "+warnings.slice(0,4).join("; ")+(warnings.length>4?"; and "+(warnings.length-4)+" more":"")+". Incomplete information cannot be restored by page styling.","error");
+  else show("Ready. Source-data checks passed. PDFs are linked automatically when available.","success");
  }catch(error){cards=[];show(error.message||"Choose a valid dashboard JSON file.","error");}
 });
 upload.addEventListener("click",async()=>{
