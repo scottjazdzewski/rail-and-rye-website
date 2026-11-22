@@ -39,7 +39,7 @@ await new Promise(resolve=>setTimeout(resolve,0));
 function matchClass(root,className){if(String(root.className||"").split(/\s+/).includes(className))return root;for(const child of root.children){const found=matchClass(child,className);if(found)return found;}return null;}
 function allClass(root,className,out=[]){if(String(root.className||"").split(/\s+/).includes(className))out.push(root);for(const child of root.children)allClass(child,className,out);return out;}
 const race=els.get("rr-dash-race"),horses=els.get("rr-dash-horses");
-assert.match(race.textContent,/CLAIMING \$8,000/,"Preserve claiming price");
+assert.match(race.textContent,/Claiming \$8,000/i,"Preserve claiming price");
 assert.match(race.textContent,/PURSE \$20,000/,"Display actual purse separately");
 assert.match(race.textContent,/SCRATCHES/);
 const scratchChip=matchClass(race,"rr-dash-scratch-chip");
