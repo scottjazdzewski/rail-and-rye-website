@@ -4,15 +4,7 @@ const q=(selector,root=document)=>root.querySelector(selector);
 const status=q("#rr-dash-status"),app=q("#rr-dash-app"),login=q("#rr-dash-login"),empty=q("#rr-dash-empty");
 const previewMode=document.body.dataset.rrPreview==="true";
 let cards=[],activeCard=null,activeRace=null;
-const DASH_ICON_SVGS={
- pace:'<svg viewBox="0 0 48 48"><circle cx="24" cy="27" r="14"/><path d="M20 5h8M24 13V9m9 2 3-3M20 5h8l2 5M24 27l8-8M9 18l-3-3m33 3 3-3"/><path d="M17 43h14"/></svg>',
- surface:'<svg viewBox="0 0 48 48"><path d="M12 9h24a15 15 0 0 1 0 30H12a15 15 0 0 1 0-30Z"/><path d="M12 16h24a8 8 0 0 1 0 16H12a8 8 0 0 1 0-16Z"/><path d="M15 12v4m18-4v4m-18 16v4m18-4v4"/></svg>',
- distance:'<svg viewBox="0 0 48 48"><path d="M10 38V9m0 2h22l-4 6 4 6H10"/><path d="M10 38h28"/></svg>',
- speed:'<svg viewBox="0 0 48 48"><path fill="currentColor" stroke="none" d="m7 29 4-7 8-5 3-8 5 2 2 5 7 1 5 6-4 3-6-2-5 5-1 8h-4l-1-7-5 2-5 7h-4l4-9-8 3Z"/><path d="m27 11 4-4 4 3"/></svg>',
- form:'<svg viewBox="0 0 48 48"><path d="M8 39V25h8v14M20 39V16h8v23M32 39V8h8v31"/><path d="M5 42h38"/></svg>',
- class:'<svg viewBox="0 0 48 48"><path d="m7 17 9 8 8-13 8 13 9-8-3 22H10L7 17Z"/><path d="M12 33h24M18 8l2 3m8-3-2 3"/></svg>'
-};
-const DASH_METRIC_ICONS={"SPEED":"speed","FORM":"form","CLASS":"class","PACE FIT":"pace","SURFACE/DISTANCE":"surface"};
+const DASH_METRIC_BADGES={"SPEED":"speed","FORM":"form","CLASS":"class","PACE FIT":"pace","SURFACE/DISTANCE":"surface"};
 const CARD_METRICS=[
  ["SPEED",["speed","speed figure","speed rating"]],
  ["FORM",["form","recent form"]],
@@ -66,22 +58,40 @@ function metricState(value){
  const state=String(value||"").trim().toLowerCase();
  return ["gray","grey","green","red"].includes(state)?(state==="grey"?"gray":state):"";
 }
+function factBadge(kind,value){
+ const text=String(value||"").toLowerCase();
+ if(kind==="pace"){
+  const match=["strong","moderate","weak"].find(token=>text.includes(token));
+  return match?"fact_pace_"+match:"";
+ }
+ if(kind==="surface"){
+  if(text.includes("dirt"))return "fact_surface_dirt";
+  if(text.includes("turf"))return "fact_surface_turf";
+  if(text.includes("synthetic")||text.includes("all weather")||text.includes("all-weather")||text.includes("tapeta")||text.includes("polytrack"))return "fact_surface_synthetic";
+ }
+ if(kind==="distance")return "fact_distance";
+ return "";
+}
 function fairOdds(entry){return entry.fair_odds||metricValue(entry,["fair odds"]);}
 function makeNode(tag,className,text){const node=document.createElement(tag);if(className)node.className=className;if(text!==undefined)node.textContent=String(text);return node;}
-function iconNode(name,className){
- const node=makeNode("span",className);node.setAttribute("aria-hidden","true");node.innerHTML=DASH_ICON_SVGS[name]||"";return node;
+function iconNode(name,className,state){
+ if(!name)return null;
+ const node=makeNode("span",className);node.setAttribute("aria-hidden","true");
+ const image=document.createElement("img");image.src="/assets/approved/factor-badges/"+name+(state?"_"+state:"")+".png";image.alt="";image.loading="lazy";image.decoding="async";
+ node.append(image);return node;
 }
 function makeTile(label,value,iconName){
- const tile=makeNode("div","rr-dash-race-tile"),icon=iconNode(iconName,"rr-dash-tile-mark"),copy=document.createElement("div");
+ const tile=makeNode("div","rr-dash-race-tile"),copy=document.createElement("div");
  tile.setAttribute("aria-label",label+": "+(value||"Not listed"));
- copy.append(makeNode("span","",label),makeNode("strong","",value||"Not listed"));tile.append(icon,copy);return tile;
+ copy.append(makeNode("span","",label),makeNode("strong","",value||"Not listed"));
+ const icon=iconNode(iconName,"rr-dash-tile-mark");if(icon)tile.append(icon);tile.append(copy);return tile;
 }
 function makeMetricGroup(entry){
  const group=makeNode("div","rr-dash-metric-group");group.setAttribute("role","group");group.setAttribute("aria-label","Runner ratings");
  for(const [label,aliases] of CARD_METRICS){
   const value=metricValue(entry,aliases),state=metricState(value),cell=makeNode("div","rr-dash-metric-value");
   cell.dataset.label=label;
-  if(state){cell.dataset.state=state;cell.title=label+": "+state;cell.setAttribute("aria-label",label+": "+state);cell.append(iconNode(DASH_METRIC_ICONS[label]||"speed","rr-dash-metric-indicator"));}
+  if(state){cell.dataset.state=state;cell.title=label+": "+state;cell.setAttribute("aria-label",label+": "+state);cell.append(iconNode(DASH_METRIC_BADGES[label],"rr-dash-metric-indicator",state));}
   else{cell.textContent=value;cell.setAttribute("aria-label",label+": "+value);}
   group.append(cell);
  }
@@ -123,7 +133,7 @@ function renderCard(){
  renderRaceNav(activeCard);
  const race=activeCard.card.races.find(item=>item.race_number===activeRace);if(!race)return;
  const panel=q("#rr-dash-race");panel.replaceChildren(cardHeader(activeCard,race),raceBanner(race));
- const tiles=makeNode("div","rr-dash-race-tiles");tiles.append(makeTile("Pace",race.pace,"pace"),makeTile("Surface",race.surface,"surface"),makeTile("Distance",race.distance,"distance"));panel.append(tiles);
+ const tiles=makeNode("div","rr-dash-race-tiles");tiles.append(makeTile("Pace",race.pace,factBadge("pace",race.pace)),makeTile("Surface",race.surface,factBadge("surface",race.surface)),makeTile("Distance",race.distance,factBadge("distance",race.distance)));panel.append(tiles);
  if(race.summary)panel.append(makeNode("p","rr-dash-race-summary",race.summary));
  const table=makeNode("div","rr-dash-table");table.setAttribute("role","table");table.setAttribute("aria-label","Race "+race.race_number+" projections");
  const header=makeNode("div","rr-dash-table-heading");header.setAttribute("role","row");
