@@ -342,3 +342,24 @@
  .rr-dash-race-runners,.rr-dash-race-scratches{font-size:8px}
  .rr-dash-post-time strong{font-size:16px}
 }
+
+/* Phone view: preserve the PDF's fixed factor columns in a compact, swipeable field. */
+@media(max-width:700px){
+ .rr-dash-table{overflow-x:auto;overflow-y:hidden;border-radius:8px;-webkit-overflow-scrolling:touch}
+ .rr-dash-table-heading,.rr-dash-runner-row{min-width:720px;grid-template-columns:42px minmax(132px,1.25fr) minmax(300px,3fr) 62px 66px}
+ .rr-dash-table-heading{position:sticky;top:0;z-index:2;min-height:38px}
+ .rr-dash-table-heading>span{padding:5px 3px;font-size:9px}
+ .rr-dash-table-heading .rr-dash-metric-group>span{padding:4px 2px;font-size:8px;letter-spacing:0}
+ .rr-dash-runner-row{min-height:56px}
+ .rr-dash-runner-row>div{padding:4px 3px}
+ .rr-dash-program img{width:32px;height:32px}
+ .rr-dash-horse-name{font-size:14px}
+ .rr-dash-horse-sub{font-size:9px}
+ .rr-dash-metric-group{grid-template-columns:repeat(3,minmax(0,1fr)) repeat(2,minmax(0,1fr))}
+ .rr-dash-metric-value{min-height:48px!important;padding:2px!important}
+ .rr-dash-metric-value[data-state]{min-height:48px!important}
+ .rr-dash-metric-indicator{width:42px;height:38px}
+ .rr-dash-metric-indicator img{max-width:40px;max-height:36px}
+ .rr-dash-win,.rr-dash-fair{font-size:14px}
+ .rr-dash-fair::before{content:none}
+}
