@@ -38,8 +38,9 @@
 .rr-dash-post-time strong{display:block;margin-top:7px;color:#123567;font:700 22px/1.1 Georgia,"Times New Roman",serif}
 .rr-dash-race-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:14px 0}
 .rr-dash-race-tile{display:flex;align-items:center;gap:12px;min-height:74px;padding:10px 14px;border:2px solid #d6a63c;border-radius:11px;background:#fffdf7}
-.rr-dash-tile-mark{display:grid;place-items:center;flex:0 0 44px;width:44px;height:44px;border:1px solid #c99831;border-radius:50%;background:#f7eed9;color:#123567;font:700 15px/1 Georgia,"Times New Roman",serif}
-.rr-dash-race-tile span{display:block;color:#566b7b;font:800 10px/1.2 Inter,system-ui,sans-serif;letter-spacing:.13em;text-transform:uppercase}
+.rr-dash-tile-mark{display:grid;place-items:center;flex:0 0 52px;width:52px;height:46px;border-right:1px solid #c99831;border-radius:0;background:none;color:#ad7920}
+.rr-dash-tile-mark svg{display:block;width:40px;height:40px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.rr-dash-race-tile>div>span{display:block;color:#566b7b;font:800 10px/1.2 Inter,system-ui,sans-serif;letter-spacing:.13em;text-transform:uppercase}
 .rr-dash-race-tile strong{display:block;margin-top:4px;color:#123567;font:700 17px/1.15 Georgia,"Times New Roman",serif;text-transform:uppercase}
 .rr-dash-race-summary{margin:12px 0;padding:12px 15px;border-left:3px solid #c99831;background:#f8f2e5;color:#304e68;font:14px/1.5 Inter,system-ui,sans-serif}
 .rr-dash-table{overflow:hidden;border:2px solid #c99831;border-radius:12px;background:#fff}
@@ -63,9 +64,11 @@
 .rr-dash-horse-sub{display:block;margin-top:4px;color:#637482;font:10px/1.3 Inter,system-ui,sans-serif;letter-spacing:.04em;text-transform:uppercase}
 .rr-dash-metric-value{place-items:center;min-width:0;color:#183755;font:700 14px/1.2 Georgia,"Times New Roman",serif;text-align:center}
 .rr-dash-metric-value[data-state]{padding:4px}
-.rr-dash-metric-indicator{display:block;width:25px;height:25px;border:1px solid #777;border-radius:7px;background:linear-gradient(135deg,#e6e9ec,#737d86 55%,#f8fafb);box-shadow:inset 0 1px 1px rgba(255,255,255,.8),0 1px 2px rgba(9,33,58,.22)}
-.rr-dash-metric-value[data-state="green"] .rr-dash-metric-indicator{border-color:#167447;background:linear-gradient(135deg,#6ce0a2,#19804e 60%,#0c5735)}
-.rr-dash-metric-value[data-state="red"] .rr-dash-metric-indicator{border-color:#a32926;background:linear-gradient(135deg,#ff8a7e,#c4312c 60%,#861c1a)}
+.rr-dash-metric-indicator{display:grid;place-items:center;width:36px;height:36px;border:0;border-radius:0;background:none;box-shadow:none;color:#77838c}
+.rr-dash-metric-indicator svg{display:block;width:34px;height:34px;fill:none;stroke:currentColor;stroke-width:2.3;stroke-linecap:round;stroke-linejoin:round}
+.rr-dash-metric-indicator svg [fill="currentColor"]{stroke:none}
+.rr-dash-metric-value[data-state="green"] .rr-dash-metric-indicator{color:#167447}
+.rr-dash-metric-value[data-state="red"] .rr-dash-metric-indicator{color:#b72a2c}
 .rr-dash-state-pill{display:inline-flex;align-items:center;justify-content:center;min-width:76px;padding:6px 10px;border:1px solid #717b84;border-radius:999px;background:#e6e9ec;color:#273d53;font:800 11px/1 Inter,system-ui,sans-serif;letter-spacing:.08em}
 .rr-dash-state-pill.rr-dash-state-green{border-color:#167447;background:linear-gradient(135deg,#6ce0a2,#19804e 60%,#0c5735);color:#fff}
 .rr-dash-state-pill.rr-dash-state-red{border-color:#a32926;background:linear-gradient(135deg,#ff8a7e,#c4312c 60%,#861c1a);color:#fff}
@@ -123,8 +126,9 @@
  .rr-dash-post-time strong{font-size:17px}
  .rr-dash-race-tiles{gap:6px;margin:10px 0}
  .rr-dash-race-tile{gap:6px;min-height:60px;padding:7px;border-width:1px}
- .rr-dash-tile-mark{flex-basis:26px;width:26px;height:26px;font-size:10px}
- .rr-dash-race-tile span{font-size:8px;letter-spacing:.08em}
+ .rr-dash-tile-mark{flex-basis:28px;width:28px;height:36px}
+ .rr-dash-tile-mark svg{width:25px;height:25px}
+ .rr-dash-race-tile>div>span{font-size:8px;letter-spacing:.08em}
  .rr-dash-race-tile strong{font-size:12px}
  .rr-dash-race-summary{font-size:12px}
  .rr-dash-table{overflow:visible;border:0;background:transparent}
@@ -137,11 +141,12 @@
  .rr-dash-horse-cell{grid-area:horse;padding-left:4px!important}
  .rr-dash-horse-name{font-size:16px}
  .rr-dash-horse-sub{font-size:9px}
- .rr-dash-metric-group{grid-area:metrics;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px;padding-top:4px}
+ .rr-dash-metric-group{grid-area:metrics;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;padding-top:4px}
  .rr-dash-metric-value{min-height:36px;padding:3px;border:1px solid #e6dfd0;border-radius:5px;background:#fffdf6;font:600 11px/1.1 Inter,system-ui,sans-serif}
  .rr-dash-metric-value[data-state]{display:grid;place-items:center}
- .rr-dash-metric-indicator{width:22px;height:22px;border-radius:6px}
- .rr-dash-metric-value::before{content:attr(data-label);display:block;margin-bottom:3px;color:#667987;font:800 7px/1.1 Inter,system-ui,sans-serif;letter-spacing:.04em;text-transform:uppercase}
+ .rr-dash-metric-indicator{width:28px;height:28px}
+ .rr-dash-metric-indicator svg{width:26px;height:26px}
+ .rr-dash-metric-value::before{content:attr(data-label);display:block;margin-bottom:3px;color:#667987;font:800 9px/1.1 Inter,system-ui,sans-serif;letter-spacing:.03em;text-transform:uppercase}
  .rr-dash-win{grid-area:win;justify-self:end;align-self:center;padding:5px!important;font-size:17px}
  .rr-dash-fair{grid-area:fair;justify-self:start;justify-content:start;padding:2px 4px 5px!important;color:#566b7b;font:700 10px/1.25 Inter,system-ui,sans-serif;text-align:left}
  .rr-dash-fair::before{content:"FAIR ODDS  ";color:#667987;font:800 8px/1 Inter,system-ui,sans-serif;letter-spacing:.05em}
@@ -150,8 +155,9 @@
 @media(max-width:390px){
  .rr-dash-race-banner{grid-template-columns:68px minmax(0,1fr) 76px}
  .rr-dash-race-condition{font-size:14px}
- .rr-dash-race-tile{align-items:flex-start;flex-direction:column;justify-content:center}
- .rr-dash-tile-mark{display:none}
+ .rr-dash-race-tile{align-items:center;flex-direction:row;justify-content:flex-start;gap:5px;padding:6px}
+ .rr-dash-tile-mark{flex:0 0 22px;width:22px;height:28px}
+ .rr-dash-tile-mark svg{width:24px;height:24px}
  .rr-dash-metric-group{grid-template-columns:repeat(2,minmax(0,1fr))}
  .rr-dash-detail-grid{grid-template-columns:1fr}
 }
@@ -172,12 +178,15 @@
 @media(max-width:700px){
  .rr-dash-toolbar{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:12px}
  .rr-dash-toolbar label{min-width:0;flex:none}
+ .rr-dash-toolbar label:nth-of-type(1),.rr-dash-toolbar label:nth-of-type(2){grid-column:1/-1}
  .rr-dash-toolbar select,.rr-dash-toolbar input{width:100%;min-width:0;padding:9px 10px;font-size:14px}
  .rr-dash-updated{grid-column:1/-1;width:auto;margin:0}
  .rr-dash-races{position:static;top:auto;margin:8px 0 4px;padding:4px 0 8px;background:transparent}
 }
 @media(max-width:390px){
  .rr-dash-toolbar{gap:8px;padding:10px}
+ .rr-dash-race-tile>div>span{font-size:8px;letter-spacing:.04em}
+ .rr-dash-race-tile strong{font-size:11px}
  .rr-dash-races{gap:5px}
  .rr-dash-race-button{flex-basis:46px;min-height:46px}
  .rr-dash-race-button strong{font-size:19px}
