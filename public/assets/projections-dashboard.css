@@ -273,3 +273,51 @@
  .rr-dash-metric-indicator img{max-width:44px;max-height:26px}
  .rr-dash-detail-grid{grid-template-columns:1fr}
 }
+
+/* Align the projection card header and compact race data with the printed card. */
+.rr-dash-card-head{grid-template-columns:96px minmax(0,1fr);gap:16px}
+.rr-dash-card-logo{width:90px;height:90px}
+.rr-dash-post-time{display:grid;grid-template-rows:auto auto;justify-items:center;gap:4px;min-width:0;padding-left:10px}
+.rr-dash-post-time>span{color:#17345c;font:800 11px/1.2 Inter,system-ui,sans-serif;letter-spacing:.12em}
+.rr-dash-post-time-select{box-sizing:border-box;width:100%;min-width:0;max-width:100%;padding:4px 20px 4px 5px;border:1px solid transparent;border-radius:4px;appearance:none;-webkit-appearance:none;background-color:#fffaf0;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='m3 6 5 5 5-5' fill='none' stroke='%23123567' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 4px center;background-size:12px;color:#123567;font:700 22px/1.1 Georgia,"Times New Roman",serif;text-align:center;cursor:pointer}
+.rr-dash-post-time-select:focus{outline:3px solid rgba(201,152,49,.32);outline-offset:1px}
+.rr-dash-race-condition,.rr-dash-race-runners,.rr-dash-race-scratches,.rr-dash-race-tile,.rr-dash-race-tile>div{min-width:0}
+.rr-dash-race-condition{overflow-wrap:anywhere}
+.rr-dash-race-tile strong{white-space:normal;overflow-wrap:anywhere}
+.rr-dash-winner-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:16px;padding-top:12px;border-top:1px solid #dfc17d}
+.rr-dash-winner-button{min-height:42px}
+.rr-dash-winner-button:disabled{opacity:.86;cursor:default}
+.rr-dash-winner-hint{margin:0;color:#586a7a;font:500 13px/1.4 Inter,system-ui,sans-serif}
+.rr-dash-winner-label{display:inline-block;width:max-content;margin-top:4px;padding:2px 6px;border:1px solid #c99831;border-radius:999px;background:#fff0c5;color:#17345c;font:800 9px/1.2 Inter,system-ui,sans-serif;letter-spacing:.05em}
+@media(max-width:700px){
+ .rr-dash-toolbar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:end;gap:8px;padding:8px}
+ .rr-dash-toolbar label{min-width:0;gap:4px;font-size:12px;letter-spacing:.08em}
+ .rr-dash-toolbar select,.rr-dash-toolbar input{width:100%;min-width:0;min-height:38px;padding:6px 8px;font-size:13px;text-overflow:ellipsis;white-space:nowrap;overflow:hidden}
+ .rr-dash-toolbar>span{grid-column:1/-1}
+ .rr-dash-card-head{grid-template-columns:60px minmax(0,1fr);gap:9px;padding-bottom:9px}
+ .rr-dash-card-logo{width:56px;height:56px}
+ .rr-dash-track-title{font-size:clamp(20px,5.1vw,26px);line-height:1.05}
+ .rr-dash-card-date{margin-top:4px;font-size:11px;line-height:1.2;letter-spacing:.05em}
+ .rr-dash-race-banner{grid-template-columns:62px minmax(0,1fr) 92px;gap:6px;margin:8px 0;padding:7px;border-radius:10px}
+ .rr-dash-race-number{min-height:58px}
+ .rr-dash-race-condition{font-size:clamp(14px,3.8vw,18px);line-height:1.08}
+ .rr-dash-race-runners,.rr-dash-race-scratches{margin-top:3px;font-size:10px;line-height:1.2;letter-spacing:.06em}
+ .rr-dash-post-time{gap:4px;padding-left:6px}
+ .rr-dash-post-time>span{font-size:9px;letter-spacing:.08em}
+ .rr-dash-post-time-select{font-size:15px;padding:4px 16px 4px 2px;background-position:right 2px center;background-size:10px}
+ .rr-dash-race-tiles{gap:6px;margin:8px 0}
+ .rr-dash-race-tile{gap:4px;min-height:50px;padding:5px 6px}
+ .rr-dash-race-tile>div{flex:1 1 0}
+ .rr-dash-race-tile>div>span{font-size:9px;letter-spacing:.05em}
+ .rr-dash-race-tile strong{font-size:11px;line-height:1.1}
+ .rr-dash-winner-actions{gap:7px;margin-top:12px;padding-top:10px}
+ .rr-dash-winner-hint{font-size:12px}
+ .rr-dash-winner-label{font-size:8px}
+}
+@media(max-width:390px){
+ .rr-dash-race-banner{grid-template-columns:56px minmax(0,1fr) 84px;gap:5px}
+ .rr-dash-race-number{min-height:54px}
+ .rr-dash-post-time-select{font-size:14px}
+ .rr-dash-race-tile{gap:3px;padding:4px}
+ .rr-dash-race-tile strong{font-size:10px}
+}
