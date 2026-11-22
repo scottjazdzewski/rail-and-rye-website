@@ -8,6 +8,13 @@ function validatePreview(data){
  let entries=0;for(const race of data.races){if(!Array.isArray(race.entries)||!race.entries.length)throw Error("Each race needs horse entries.");entries+=race.entries.length;}
  return {entries,races:data.races.length};
 }
+async function copyExportPrompt(){
+ const example={schema_version:1,race_date:"2026-11-22",track_name:"Laurel Park",races:[{race_number:1,post_time_et:"12:10 PM",surface:"Dirt",distance:"6 furlongs",conditions:"",summary:"",entries:[{program_number:"1",horse_name:"Example Runner",rank:1,win_probability:27.5,morning_line:"5-2",metrics:[{label:"PACE",value:"example value"}],notes:""}]}]};
+ const prompt="Create a downloadable .json export for the finalized card in this conversation using the exact schema below. Copy the final card values exactly; do not recalculate, round, infer, add, or remove projections. Include every race and every horse. Use win_probability in percentage points (27.5 means 27.5%). Put every other projection shown on the card in metrics as label/value pairs. Keep the card's race and horse order. Return one valid JSON file with no markdown fences.\n\n"+JSON.stringify(example,null,2);
+ try{await navigator.clipboard.writeText(prompt);show("GPT export instructions copied. Paste them into the card-production chat after the card is finalized.","success");}
+ catch{show("Clipboard access is unavailable in this browser. Use the JSON format example below.","error");}
+}
+q("#copy-prompt").addEventListener("click",copyExportPrompt);
 async function loadProducts(){
  try{
   const response=await fetch("/api/admin/products",{credentials:"same-origin",cache:"no-store"});const data=await response.json().catch(()=>({}));
