@@ -78,7 +78,7 @@ function factBadge(kind,value){
  return "";
 }
 function fairOdds(entry){return entry.fair_odds||metricValue(entry,["fair odds"]);}
-function makeNode(function makeNode(tag,className,text){const node=document.createElement(tag);if(className)node.className=className;if(text!==undefined)node.textContent=String(text);return node;}
+function makeNode(tag,className,text){const node=document.createElement(tag);if(className)node.className=className;if(text!==undefined)node.textContent=String(text);return node;}
 function iconNode(name,className,state){
  if(!name)return null;
  const node=makeNode("span",className);node.setAttribute("aria-hidden","true");
@@ -116,7 +116,7 @@ function showHorse(entry){
  }
  detail.append(grid);
  if(entry.notes){const notes=makeNode("p","rr-dash-detail-notes",entry.notes);detail.append(notes);}
- dialog.showModal();dialog.showModal();
+ dialog.showModal();
 }
 function cardHeader(card){
  const wrapper=makeNode("div","rr-dash-card-head"),logo=document.createElement("img");logo.className="rr-dash-card-logo";logo.src="/assets/brand/rail_rye_logo_header.png";logo.alt="Rail & Rye";
