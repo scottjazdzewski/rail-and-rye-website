@@ -129,25 +129,7 @@
  .rr-dash-race-tile>div>span{font-size:8px;letter-spacing:.08em}
  .rr-dash-race-tile strong{font-size:12px}
  .rr-dash-race-summary{font-size:12px}
- .rr-dash-table{overflow:visible;border:0;background:transparent}
- .rr-dash-table-heading{display:none}
- .rr-dash-runner-list{display:grid;gap:8px}
- .rr-dash-runner-row{grid-template-columns:44px minmax(0,1fr) 72px;grid-template-areas:"program horse win" "program metrics metrics" "program fair fair";min-height:0;padding:5px;border:1px solid #d5b56d;border-radius:9px;background:#fffefa!important;box-shadow:0 2px 6px rgba(16,47,86,.04)}
- .rr-dash-runner-row>div{border:0;padding:5px}
- .rr-dash-program{grid-area:program;align-content:start;padding:5px 2px!important}
- .rr-dash-program img{width:38px;height:38px}
- .rr-dash-horse-cell{grid-area:horse;padding-left:4px!important}
- .rr-dash-horse-name{font-size:16px}
- .rr-dash-horse-sub{font-size:9px}
- .rr-dash-metric-group{grid-area:metrics;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;padding-top:4px}
- .rr-dash-metric-value{min-height:36px;padding:3px;border:1px solid #e6dfd0;border-radius:5px;background:#fffdf6;font:600 11px/1.1 Inter,system-ui,sans-serif}
- .rr-dash-metric-value[data-state]{display:grid;place-items:center}
- .rr-dash-metric-value[data-state]{min-height:60px}
- .rr-dash-metric-indicator{width:62px;height:42px}
  .rr-dash-metric-indicator img{max-width:58px;max-height:40px}
- .rr-dash-metric-value::before{content:attr(data-label);display:block;margin-bottom:3px;color:#667987;font:800 9px/1.1 Inter,system-ui,sans-serif;letter-spacing:.03em;text-transform:uppercase}
- .rr-dash-win{grid-area:win;justify-self:end;align-self:center;padding:5px!important;font-size:17px}
- .rr-dash-fair{grid-area:fair;justify-self:start;justify-content:start;padding:2px 4px 5px!important;color:#566b7b;font:700 10px/1.25 Inter,system-ui,sans-serif;text-align:left}
  .rr-dash-fair::before{content:"FAIR ODDS  ";color:#667987;font:800 8px/1 Inter,system-ui,sans-serif;letter-spacing:.05em}
  .rr-dash-detail-grid{grid-template-columns:1fr 1fr}
 }
@@ -157,7 +139,6 @@
  .rr-dash-race-tile{align-items:center;flex-direction:row;justify-content:flex-start;gap:5px;padding:6px}
  .rr-dash-tile-mark{flex:0 0 22px;width:22px;height:28px}
  .rr-dash-tile-mark img{max-width:27px;max-height:27px}
- .rr-dash-metric-group{grid-template-columns:repeat(2,minmax(0,1fr))}
  .rr-dash-detail-grid{grid-template-columns:1fr}
 }
 
@@ -227,26 +208,8 @@
  .rr-dash-race-tile>div>span{font-size:8px;letter-spacing:.04em}
  .rr-dash-race-tile strong{margin-top:2px;font-size:11px}
  .rr-dash-race-summary{margin:7px 0;padding:8px 10px;font-size:11px}
- .rr-dash-runner-list{gap:6px}
- .rr-dash-runner-row{grid-template-columns:40px minmax(0,1fr) 62px;grid-template-areas:"program horse win" "program metrics metrics" "program fair fair";gap:1px 4px;min-height:0;padding:4px 5px;border-radius:8px}
- .rr-dash-runner-row>div{padding:2px 3px}
- .rr-dash-program{align-content:start;padding:5px 1px!important}
- .rr-dash-program img{width:35px;height:35px}
- .rr-dash-program-fallback{width:33px;height:33px}
- .rr-dash-horse-cell{padding-left:2px!important}
  .rr-dash-horse-open{padding:3px 2px}
- .rr-dash-horse-name{font-size:15px}
- .rr-dash-horse-sub{margin-top:2px;font-size:9px;line-height:1.2;letter-spacing:.02em}
- .rr-dash-metric-group{grid-area:metrics;grid-template-columns:repeat(6,minmax(0,1fr));gap:3px;padding:2px 0 3px}
- .rr-dash-metric-value{display:grid;grid-template-rows:auto 1fr;gap:1px;min-height:43px;padding:2px;border:1px solid #e6dfd0;border-radius:5px;background:#fffdf6;font:600 10px/1.1 Inter,system-ui,sans-serif}
- .rr-dash-metric-value:nth-child(-n+3){grid-column:span 2}
- .rr-dash-metric-value:nth-child(n+4){grid-column:span 3}
- .rr-dash-metric-value[data-state]{min-height:43px;padding:2px}
- .rr-dash-metric-indicator{width:52px;height:29px}
  .rr-dash-metric-indicator img{max-width:50px;max-height:28px}
- .rr-dash-metric-value::before{margin:0;color:#667987;font:800 9px/1.05 Inter,system-ui,sans-serif;letter-spacing:.015em;text-transform:uppercase;white-space:nowrap}
- .rr-dash-win{grid-area:win;justify-self:end;align-self:center;padding:3px!important;font-size:15px}
- .rr-dash-fair{grid-area:fair;justify-self:start;justify-content:start;padding:1px 3px 3px!important;font-size:10px}
  .rr-dash-fair::before{content:"FAIR ODDS · ";font-size:9px}
  .rr-dash-detail-grid{grid-template-columns:1fr 1fr}
 }
@@ -262,14 +225,6 @@
  .rr-dash-tile-mark{flex-basis:20px;width:20px;height:24px}
  .rr-dash-tile-mark img{max-width:21px;max-height:21px}
  .rr-dash-race-tile strong{font-size:10px}
- .rr-dash-runner-row{grid-template-columns:37px minmax(0,1fr) 58px;column-gap:3px}
- .rr-dash-program img{width:33px;height:33px}
- .rr-dash-program-fallback{width:31px;height:31px}
- .rr-dash-horse-name{font-size:14px}
- .rr-dash-metric-group{gap:2px}
- .rr-dash-metric-value,.rr-dash-metric-value[data-state]{min-height:41px}
- .rr-dash-metric-value::before{font-size:8px}
- .rr-dash-metric-indicator{width:46px;height:27px}
  .rr-dash-metric-indicator img{max-width:44px;max-height:26px}
  .rr-dash-detail-grid{grid-template-columns:1fr}
 }
@@ -343,26 +298,42 @@
  .rr-dash-post-time strong{font-size:16px}
 }
 
-/* Phone view: preserve the PDF's fixed factor columns in a compact, swipeable field. */
+
+
+/* One compact mobile card layout: five aligned factor columns, no legacy table or horizontal overflow. */
 @media(max-width:700px){
- .rr-dash-table{overflow-x:auto;overflow-y:hidden;border-radius:8px;-webkit-overflow-scrolling:touch}
- .rr-dash-table-heading,.rr-dash-runner-row{min-width:720px;grid-template-columns:42px minmax(132px,1.25fr) minmax(300px,3fr) 62px 66px}
- .rr-dash-table-heading{display:grid;position:static;min-height:38px}
- .rr-dash-runner-row{grid-template-areas:none}
- .rr-dash-runner-row>.rr-dash-program,.rr-dash-runner-row>.rr-dash-horse-cell,.rr-dash-runner-row>.rr-dash-metric-group,.rr-dash-runner-row>.rr-dash-win,.rr-dash-runner-row>.rr-dash-fair{grid-area:auto;min-width:0}
- .rr-dash-metric-group{grid-template-columns:repeat(5,minmax(0,1fr))}
- .rr-dash-table-heading>span{padding:5px 3px;font-size:9px}
- .rr-dash-table-heading .rr-dash-metric-group>span{padding:4px 2px;font-size:8px;letter-spacing:0}
- .rr-dash-runner-row{min-height:56px}
- .rr-dash-runner-row>div{padding:4px 3px}
+ .rr-dash-table{overflow:visible;border:0;background:transparent}
+ .rr-dash-table-heading{display:none}
+ .rr-dash-runner-list{display:grid;gap:7px}
+ .rr-dash-runner-row{display:grid;grid-template-columns:40px minmax(0,1fr) 62px;grid-template-areas:"program horse win" "metrics metrics metrics" "fair fair fair";gap:5px 6px;min-height:0;padding:7px;border:1px solid #d5b56d;border-radius:8px;background:#fffefa!important;box-shadow:0 2px 5px rgba(16,47,86,.04)}
+ .rr-dash-runner-row>div{min-width:0;border:0;padding:1px}
+ .rr-dash-program{grid-area:program;align-content:center;justify-items:center;padding:1px!important}
+ .rr-dash-program img{width:34px;height:34px}
+ .rr-dash-program-fallback{width:32px;height:32px;font-size:12px}
+ .rr-dash-horse-cell{grid-area:horse;align-content:center;padding-left:2px!important}
+ .rr-dash-horse-open{padding:2px}
+ .rr-dash-horse-name{font-size:15px}
+ .rr-dash-horse-sub{margin-top:2px;font-size:9px;line-height:1.2}
+ .rr-dash-win{grid-area:win;justify-self:end;align-self:center;padding:2px!important;font-size:16px}
+ .rr-dash-metric-group{grid-area:metrics;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;padding:0}
+ .rr-dash-metric-value,.rr-dash-metric-value[data-state]{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:0;min-height:58px;padding:3px 1px!important;border:1px solid #e6dfd0;border-radius:5px;background:#fffdf6;font:600 10px/1.1 Inter,system-ui,sans-serif}
+ .rr-dash-metric-value::before{content:attr(data-label);display:block;max-width:100%;margin:0;color:#667987;font:800 7px/1.05 Inter,system-ui,sans-serif;letter-spacing:0;text-align:center;text-transform:uppercase;white-space:normal;overflow-wrap:anywhere}
+ .rr-dash-metric-value:nth-child(5)::before{font-size:6px}
+ .rr-dash-metric-indicator{width:42px;height:34px}
+ .rr-dash-metric-indicator img{max-width:40px;max-height:32px}
+ .rr-dash-metric-value span:not(.rr-dash-metric-indicator){max-width:100%;font-size:9px}
+ .rr-dash-fair{grid-area:fair;display:flex;justify-content:flex-start;padding:1px 2px!important;color:#566b7b;font:700 10px/1.2 Inter,system-ui,sans-serif;text-align:left}
+ .rr-dash-fair::before{content:"FAIR ODDS · ";color:#667987;font:800 8px/1.2 Inter,system-ui,sans-serif;letter-spacing:.06em}
+}
+@media(max-width:390px){
+ .rr-dash-runner-row{grid-template-columns:36px minmax(0,1fr) 58px;gap:4px;padding:6px}
  .rr-dash-program img{width:32px;height:32px}
+ .rr-dash-program-fallback{width:30px;height:30px}
  .rr-dash-horse-name{font-size:14px}
- .rr-dash-horse-sub{font-size:9px}
- .rr-dash-metric-group{grid-template-columns:repeat(3,minmax(0,1fr)) repeat(2,minmax(0,1fr))}
- .rr-dash-metric-value{min-height:48px!important;padding:2px!important}
- .rr-dash-metric-value[data-state]{min-height:48px!important}
- .rr-dash-metric-indicator{width:42px;height:38px}
- .rr-dash-metric-indicator img{max-width:40px;max-height:36px}
- .rr-dash-win,.rr-dash-fair{font-size:14px}
- .rr-dash-fair::before{content:none}
+ .rr-dash-win{font-size:15px}
+ .rr-dash-metric-group{gap:3px}
+ .rr-dash-metric-value,.rr-dash-metric-value[data-state]{min-height:54px}
+ .rr-dash-metric-indicator{width:38px;height:31px}
+ .rr-dash-metric-indicator img{max-width:36px;max-height:29px}
+ .rr-dash-metric-value:nth-child(5)::before{font-size:5.5px}
 }
