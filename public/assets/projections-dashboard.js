@@ -43,6 +43,29 @@ function renderTracks(preferred){
  if(preferred&&tracks.includes(preferred))select.value=preferred;
 }
 function selectedCard(){return cards.find(card=>card.race_date===q("#rr-dash-date").value&&(card.track||card.card.track_name)===q("#rr-dash-track").value)||null;}
+function postTimeMinutes(value){
+ const text=String(value||"").replace(/\b(?:ET|EST|EDT)\b/gi,"").trim();
+ const match=text.match(/(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)?/i);
+ if(!match)return Number.MAX_SAFE_INTEGER;
+ let hours=Number(match[1]);const minutes=Number(match[2]),meridiem=String(match[3]||"").toUpperCase();
+ if(meridiem)hours=(hours%12)+(meridiem==="PM"?12:0);
+ return hours*60+minutes;
+}
+function racesByPostTime(card){
+ return [...(card?.card?.races||[])].sort((a,b)=>{
+  const timeA=postTimeMinutes(a.post_time_et||a.post_time||a.postTime),timeB=postTimeMinutes(b.post_time_et||b.post_time||b.postTime);
+  return timeA-timeB||(Number(a.race_number)||0)-(Number(b.race_number)||0);
+ });
+}
+function renderRaceTimeSelect(card){
+ const select=q("#rr-dash-race-time");if(!select)return;
+ select.replaceChildren();
+ for(const race of racesByPostTime(card)){
+  const time=race.post_time_et||race.post_time||race.postTime||"TIME TBA";
+  option(select,String(race.race_number),time+" · RACE "+race.race_number);
+ }
+ if(activeRace!=null)select.value=String(activeRace);
+}
 function renderRaceNav(card){
  const nav=q("#rr-dash-races");nav.replaceChildren();
  const races=[...card.card.races].sort((a,b)=>a.race_number-b.race_number);
@@ -123,22 +146,22 @@ function cardHeader(card){
  const info=document.createElement("div"),track=makeNode("h2","rr-dash-track-title",card.track||card.card.track_name),date=makeNode("p","rr-dash-card-date",dateLabel(card.race_date));info.append(track,date);
  wrapper.append(logo,info);return wrapper;
 }
-function raceBanner(race,card){
- const wrapper=makeNode("div","rr-dash-race-banner"),number=makeNode("div","rr-dash-race-number"),copy=document.createElement("div"),time=makeNode("label","rr-dash-post-time");
+function raceBanner(race){
+ const wrapper=makeNode("div","rr-dash-race-banner"),number=makeNode("div","rr-dash-race-number"),copy=makeNode("div","rr-dash-race-copy"),time=makeNode("div","rr-dash-post-time");
  number.append(makeNode("span","","RACE"),makeNode("strong","",race.race_number));
- copy.append(makeNode("h3","rr-dash-race-condition",race.conditions||"Race projections"),makeNode("p","rr-dash-race-runners",(race.entries||[]).length+" RUNNERS"));
- if(race.scratch_count!=null)copy.append(makeNode("p","rr-dash-race-scratches",race.scratch_count+" SCRATCH"+(race.scratch_count===1?"":"ES")));
- const select=makeNode("select","rr-dash-post-time-select");select.setAttribute("aria-label","Choose race by post time");
- for(const item of [...(card.card.races||[])].sort((a,b)=>a.race_number-b.race_number)){option(select,String(item.race_number),item.post_time_et||("Race "+item.race_number));}
- select.value=String(activeRace);
- select.addEventListener("change",()=>{activeRace=Number(select.value);renderCard();});
- time.append(makeNode("span","","POST TIME"),select);wrapper.append(number,copy,time);return wrapper;
+ copy.append(makeNode("h3","rr-dash-race-condition",race.conditions||"Race projections"));
+ const meta=makeNode("div","rr-dash-race-meta");
+ meta.append(makeNode("p","rr-dash-race-runners",(race.entries||[]).length+" RUNNERS"));
+ if(race.scratch_count!=null)meta.append(makeNode("p","rr-dash-race-scratches",race.scratch_count+" SCRATCH"+(race.scratch_count===1?"":"ES")));
+ copy.append(meta);
+ time.append(makeNode("span","","POST TIME"),makeNode("strong","",race.post_time_et||race.post_time||race.postTime||"Not listed"));
+ wrapper.append(number,copy,time);return wrapper;
 }
 function renderCard(){
  activeCard=selectedCard();if(!activeCard)return;
- renderRaceNav(activeCard);
+ renderRaceNav(activeCard);renderRaceTimeSelect(activeCard);
  const race=activeCard.card.races.find(item=>item.race_number===activeRace);if(!race)return;
- const panel=q("#rr-dash-race");panel.replaceChildren(cardHeader(activeCard),raceBanner(race,activeCard));
+ const panel=q("#rr-dash-race");panel.replaceChildren(cardHeader(activeCard),raceBanner(race));
  const tiles=makeNode("div","rr-dash-race-tiles");tiles.append(makeTile("Pace",race.pace,factBadge("pace",race.pace)),makeTile("Surface",race.surface,factBadge("surface",race.surface)),makeTile("Distance",race.distance,factBadge("distance",race.distance)));panel.append(tiles);
  if(race.summary)panel.append(makeNode("p","rr-dash-race-summary",race.summary));
  const table=makeNode("div","rr-dash-table");table.setAttribute("role","table");table.setAttribute("aria-label","Race "+race.race_number+" projections");
@@ -186,7 +209,7 @@ function renderCard(){
  for(const button of q("#rr-dash-races").querySelectorAll("button"))button.setAttribute("aria-current",String(Number(button.getAttribute("aria-label").replace("Race ",""))===activeRace));
 }
 function onFiltersChanged(){
- const oldTrack=q("#rr-dash-track").value;renderTracks(oldTrack);activeCard=selectedCard();activeRace=activeCard?.card.races[0]?.race_number||null;if(activeCard)renderCard();
+ const oldTrack=q("#rr-dash-track").value;renderTracks(oldTrack);activeCard=selectedCard();activeRace=racesByPostTime(activeCard)[0]?.race_number||null;if(activeCard)renderCard();
 }
 async function init(){
  try{
@@ -194,8 +217,9 @@ async function init(){
   else {const data=await api("/api/membership/projections");cards=data.cards||[];}
   status.hidden=true;
   if(!cards.length){empty.hidden=false;return;}
-  app.hidden=false;renderDates();renderTracks();activeCard=selectedCard();activeRace=activeCard?.card.races[0]?.race_number||null;renderCard();
+  app.hidden=false;renderDates();renderTracks();activeCard=selectedCard();activeRace=racesByPostTime(activeCard)[0]?.race_number||null;renderCard();
   q("#rr-dash-date").addEventListener("change",onFiltersChanged);q("#rr-dash-track").addEventListener("change",onFiltersChanged);
+  q("#rr-dash-race-time").addEventListener("change",()=>{activeRace=Number(q("#rr-dash-race-time").value);renderCard();});
   q("#rr-dash-search").addEventListener("input",renderCard);q("#rr-dash-sort").addEventListener("change",renderCard);
  }catch(error){
   status.hidden=true;
