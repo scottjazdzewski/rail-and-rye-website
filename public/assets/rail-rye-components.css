@@ -497,7 +497,7 @@
  background-position:51% 49%;
 }
 .heritage-inner-page.heritage-publication-page.rr-pub-pick-tickets .rr-publication-hero{
- background-image:url('/assets/approved/publications/stable-hero.jpg');
+ background-image:url('/assets/approved/publications/pick-tickets-hero.png');
  background-position:51% 49%;
 }
 @media(max-width:850px){
@@ -532,7 +532,7 @@
   background-position:center 52%;
 }
 .heritage-home .pick-tickets-panel-heritage{
-  background-image:url('/assets/approved/publications/stable-hero.jpg');
+  background-image:url('/assets/approved/publications/pick-tickets-hero.png');
   background-position:50% 53%;
 }
 

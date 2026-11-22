@@ -147,7 +147,7 @@ export async function serveJournalDocument(assetResponse,{article=null,archive=f
 const PUBLICATION_SHARE_IMAGES={
   'Race Cards':'/assets/approved/race-cards/hero.webp',
   'Longshot Radar':'/assets/approved/publications/longshot-hero.jpg',
-  'Pick Tickets':'/assets/approved/publications/stable-hero.jpg',
+  'Pick Tickets':'/assets/approved/publications/pick-tickets-hero.png',
   'Stable Notes':'/assets/approved/publications/stable-hero.jpg',
   'Target List':'/assets/approved/publications/target-hero.jpg'
 };

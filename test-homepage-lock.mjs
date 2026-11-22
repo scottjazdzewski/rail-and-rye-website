@@ -1,4 +1,4 @@
-// Rail & Rye homepage production lock: owner-approved current homepage, November 1, 2026.
+// Rail & Rye homepage production lock: owner-approved current homepage, November 22, 2026.
 // This guards the HOME PAGE, not commerce/product availability or the other pages.
 // Intentional homepage redesigns require the owner's explicit approval before
 // updating these baselines. See docs/HOMEPAGE_PRODUCTION_LOCK.md.
@@ -6,7 +6,7 @@ import fs from 'node:fs';
 import { createHash } from 'node:crypto';
 
 const approvedBlobs = {
-  'public/index.html': 'bb6509db7f0d4482bd684710db94add8a7d0000d',
+  'public/index.html': 'e1fd28669818cf0c4db158ceea8fc90d2097d1b0',
   'public/assets/approved/brand/header-horse.webp': 'c6a7ed8882a6b42dd96af9a621fe80a88da96f8a',
   'public/assets/approved/brand/rail-rye-ivory-logo.png': '974905e392779b081e784ca55d43205c80fef126',
   'public/assets/approved/home/hero-dust-charged-finish.jpg': 'aa2e5b276969e2b65c7e3b1fd099bd541d32ea21',
@@ -14,6 +14,7 @@ const approvedBlobs = {
   'public/assets/approved/publications/longshot-hero.jpg': '396f0f3f035bcf6c0f08c50d97066439f0bc72ce',
   'public/assets/approved/publications/longshot-mark.png': '1515818996a2bed51d6284fe7c950cac4cb33cb5',
   'public/assets/approved/publications/stable-hero.jpg': '9216230dbb9c0463d08dc42da3c4da9f6dcc2ec9',
+  'public/assets/approved/publications/pick-tickets-hero.png': '1f9b88e4935061c4795a04cd2ff8355faaadffef',
   'public/assets/approved/publications/stable-mark.png': '94293b93d4efea7c597c76e6918705aa5dc3c2bd',
   'public/assets/approved/publications/target-hero.jpg': 'effcc6b8f83fef9ab67a4ea1c45e7c1671f28607',
   'public/assets/approved/publications/target-mark.png': '0cd7c00aa36e18d1f1a862b1a64bea0beb8e4155',
@@ -36,6 +37,7 @@ const requiredStyleFragments = {
     '.heritage-home .heritage-section-title{margin-bottom:28px}',
     ".heritage-home .race-panel{background-image:url('/assets/approved/race-cards/hero.webp')",
     ".heritage-home .journal-panel-heritage{background-image:url('/assets/approved/journal/hero.webp')",
+    ".heritage-home .pick-tickets-panel-heritage{",
     '.heritage-home .heritage-badges{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))'
   ],
   'public/assets/rail-rye-pages.css': [
@@ -74,6 +76,8 @@ const home=fs.readFileSync('public/index.html','utf8');
 const ownerApprovedContent=[
   'Contenders the Market May Overlook',
   'Horses Worth Following',
+  'Pick Tickets',
+  'Stories from the Rail',
   'When Favorites Face a Test',
   '<h1>The Science of Racing.<br><em>The Soul of the Sport.</em></h1>',
   '<link rel="preload" as="image" href="/assets/approved/home/hero-dust-charged-finish.jpg" fetchpriority="high">'

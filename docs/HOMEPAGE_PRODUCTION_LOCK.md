@@ -2,8 +2,8 @@
 
 **Status: OWNER APPROVED / DO NOT REDESIGN**  
 **Approved:** November 4, 2026 (owner-authorized Racing Wire header pill)
-**Frozen homepage HTML blob:** `3ae6330161bf1c2e5969709129847fe1ad37fd89` (owner-approved source in main commit `bf3513a0c8e42302c6605c5ac54bcd4659481cf7`)  
-**Recovery snapshot branch:** `approved-homepage-2026-10-31`  
+**Frozen homepage HTML blob:** `e1fd28669818cf0c4db158ceea8fc90d2097d1b0` (owner-approved source in main commit `bf3513a0c8e42302c6605c5ac54bcd4659481cf7`)  
+**Recovery snapshot branch:** `approved-homepage-2026-11-22`  
 **Website:** https://railandryeracing.com/
 
 The owner has confirmed the homepage layout is correct. Treat this visual state as locked until the owner explicitly requests an intentional homepage change.
@@ -12,9 +12,10 @@ The owner has confirmed the homepage layout is correct. Treat this visual state 
 
 - Official Rail & Rye logo and one-row desktop masthead, center racing-intelligence strapline and navigation.
 - Approved racing-action hero, headline, gold accent, placement, scale and spacing.
-- The two opening tiles: **Today's Race Cards** and **Stories from the Rail**, their numbered chips, backgrounds and links.
+- The two opening tiles: **Today's Race Cards** (#1) and **Pick Tickets** (#2), their approved backgrounds and links.
+- **Stories from the Rail** in the Page 4 position with saddlecloth #4.
 - The **MORE FROM RAIL & RYE** heading visible beneath the two tiles on the opening desktop viewport, without small slivers of the next cards appearing at the fold at the approved screenshot size.
-- The lower three publication cards, their approved image treatments and category images.
+- The lower publication cards, including Longshot Radar, Stories from the Rail, Target List and the separate Stable Notes badge, with their approved image treatments.
 - The mobile layout, typography, photo assets, header, panel proportions and responsive behavior.
 
 **Not frozen:** dynamic race-card inventory, prices, checkout, Stripe, admin, the Journal, the publication pages, store pages or other site work. Product availability data is still dynamic on the homepage.
@@ -46,3 +47,8 @@ The owner approved replacing inaccurate product taglines without changing the ap
 ## Owner-authorized Racing Wire navigation (November 4, 2026)
 
 The owner explicitly authorized publishing The Racing Wire and adding **The Wire** to the desktop header and mobile menu throughout public pages. The approved homepage header now includes that navigation link. The homepage title, strapline, hero, feature tiles, spacing and fold remain unchanged. The header switches to the existing compact mobile menu at tablet widths; desktop navigation spacing is tightened to keep the strapline clear. Homepage baseline hash updated to this exact navigation-only source. The homepage lock and protected asset checks remain enabled.
+
+
+## Owner-authorized Page 2, Page 4 and Stable Notes update (November 22, 2026)
+
+The owner explicitly approved replacing the Page 2 Journal tile with **Pick Tickets**, placing **Stories from the Rail** in the Page 4 position with saddlecloth #4, and keeping **Stable Notes** as a separate visible homepage badge. The approved Pick Tickets hero is `public/assets/approved/publications/pick-tickets-hero.png`. Pick Tickets is the Page 2 destination and its dedicated page uses the existing publication listing and checkout flow. Stable Notes remains available as its own page and catalog category. The homepage baseline now records this approved content and artwork.
