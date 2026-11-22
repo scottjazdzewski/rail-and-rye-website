@@ -155,3 +155,30 @@
  .rr-dash-metric-group{grid-template-columns:repeat(2,minmax(0,1fr))}
  .rr-dash-detail-grid{grid-template-columns:1fr}
 }
+
+/* Mobile polish: controls stay in a clean grid and race navigation stays in flow. */
+.rr-dash-toolbar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));align-items:end}
+.rr-dash-toolbar label{min-width:0;width:100%}
+.rr-dash-toolbar select,.rr-dash-toolbar input{width:100%;min-width:0}
+.rr-dash-updated{grid-column:1/-1;margin:0}
+.rr-dash-race-tile>div>span{display:block;color:#566b7b;font:800 10px/1.2 Inter,system-ui,sans-serif;letter-spacing:.13em;text-transform:uppercase}
+.rr-dash-card-logo{filter:brightness(0) saturate(100%) invert(14%) sepia(35%) saturate(1894%) hue-rotate(186deg) brightness(90%) contrast(92%);opacity:.9}
+.rr-dash-races{scroll-snap-type:x proximity;overscroll-behavior-inline:contain}
+.rr-dash-race-button{scroll-snap-align:start}
+@media(max-width:950px){
+ .rr-dash-toolbar{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .rr-dash-updated{grid-column:1/-1}
+}
+@media(max-width:700px){
+ .rr-dash-toolbar{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:12px}
+ .rr-dash-toolbar label{min-width:0;flex:none}
+ .rr-dash-toolbar select,.rr-dash-toolbar input{width:100%;min-width:0;padding:9px 10px;font-size:14px}
+ .rr-dash-updated{grid-column:1/-1;width:auto;margin:0}
+ .rr-dash-races{position:static;top:auto;margin:8px 0 4px;padding:4px 0 8px;background:transparent}
+}
+@media(max-width:390px){
+ .rr-dash-toolbar{gap:8px;padding:10px}
+ .rr-dash-races{gap:5px}
+ .rr-dash-race-button{flex-basis:46px;min-height:46px}
+ .rr-dash-race-button strong{font-size:19px}
+}
