@@ -1,0 +1,44 @@
+
+.rr-dashboard-main{max-width:1400px;padding-top:42px}
+.rr-dash-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:18px}
+.rr-dash-heading .rr-member-title{margin-bottom:8px}
+.rr-dash-intro{max-width:740px;color:var(--rr-muted);font:16px/1.55 Inter,system-ui,sans-serif}
+.rr-dash-toolbar{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;padding:16px;border:1px solid var(--rr-gold);border-radius:14px;background:#0b2839;color:var(--rr-ivory)}
+.rr-dash-toolbar label{display:grid;gap:5px;min-width:190px;color:#e9d4ad;font:800 11px/1.2 Inter,system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase}
+.rr-dash-toolbar select{min-height:44px;padding:8px 12px;border:1px solid #caa76d;border-radius:8px;background:#f9f6f0;color:#123247;font:600 15px/1.3 Inter,system-ui,sans-serif}
+.rr-dash-updated{margin-left:auto;color:#d9c8a8;font:12px/1.45 Inter,system-ui,sans-serif}
+.rr-dash-race-layout{display:grid;grid-template-columns: minmax(0,1fr);gap:14px;margin-top:14px}
+.rr-dash-races{display:flex;gap:8px;overflow-x:auto;padding:2px 0 8px}
+.rr-dash-race-button{flex:0 0 auto;min-width:58px;padding:10px 13px;border:1px solid #caa76d;border-radius:999px;background:#0b2839;color:#f7e5bd;font:800 12px/1.1 Inter,system-ui,sans-serif;cursor:pointer}
+.rr-dash-race-button[aria-current="true"]{background:#f5e7c9;color:#082334}
+.rr-dash-race-panel{min-width:0;padding:clamp(16px,3vw,28px);border:1px solid var(--rr-gold);border-radius:16px;background:#0b2839;color:#f7f0df;box-shadow:0 12px 32px rgba(8,35,52,.12)}
+.rr-dash-race-title{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding-bottom:18px;border-bottom:1px solid rgba(210,164,84,.45)}
+.rr-dash-race-title h2{margin:0;color:#f6e8c9;font:clamp(26px,4vw,38px)/1.15 Georgia,serif}
+.rr-dash-race-subtitle{margin:6px 0 0;color:#d9c8a8;font:13px/1.5 Inter,system-ui,sans-serif}
+.rr-dash-race-summary{max-width:500px;margin:14px 0 0;color:#e6d8bf;font:14px/1.55 Inter,system-ui,sans-serif}
+.rr-dash-horses{display:grid;gap:9px;margin-top:16px}
+.rr-dash-horse-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px;padding:13px 14px;border:1px solid rgba(210,164,84,.55);border-radius:10px;background:#082334}
+.rr-dash-horse-open{display:flex;align-items:center;min-width:0;gap:12px;padding:0;border:0;background:transparent;color:inherit;text-align:left;cursor:pointer}
+.rr-dash-program{display:grid;place-items:center;flex:0 0 38px;width:38px;height:38px;border:1px solid #d2a454;border-radius:50%;background:#f6e8c9;color:#082334;font:800 14px/1 Inter,system-ui,sans-serif}
+.rr-dash-horse-name{display:block;overflow:hidden;color:#f6e8c9;font:700 17px/1.3 Inter,system-ui,sans-serif;text-overflow:ellipsis}
+.rr-dash-horse-sub{display:block;margin-top:3px;color:#d9c8a8;font:11px/1.4 Inter,system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase}
+.rr-dash-win{min-width:84px;text-align:right;color:#efc26e;font:700 18px/1.1 Georgia,serif}
+.rr-dash-win small{display:block;margin-top:4px;color:#d9c8a8;font:9px/1.2 Inter,system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase}
+.rr-dash-metric-preview{grid-column:1/-1;display:flex;gap:7px;flex-wrap:wrap;padding-left:50px}
+.rr-dash-metric-chip{padding:5px 8px;border-radius:999px;background:rgba(210,164,84,.12);color:#ead5ac;font:11px/1.2 Inter,system-ui,sans-serif}
+.rr-dash-pdf-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:18px;padding-top:16px;border-top:1px solid rgba(210,164,84,.35)}
+.rr-dash-empty{padding:24px;border:1px solid var(--rr-gold);border-radius:14px;background:#fffaf0}
+.rr-dash-empty h2{margin:0 0 8px;color:#123247;font:26px/1.2 Georgia,serif}
+.rr-dash-empty p{margin:0 0 16px;color:#526b7b;font:15px/1.55 Inter,system-ui,sans-serif}
+.rr-dash-horse-dialog{width:min(94vw,700px);max-height:88vh;padding:0;border:1px solid var(--rr-gold);border-radius:14px;background:#0b2839;color:#f7f0df}
+.rr-dash-horse-dialog::backdrop{background:rgba(0,12,20,.78)}
+.rr-dash-horse-dialog-inner{padding:clamp(18px,4vw,30px)}
+.rr-dash-dialog-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid rgba(210,164,84,.5)}
+.rr-dash-dialog-head h2{margin:0;color:#f6e8c9;font:clamp(24px,5vw,34px)/1.15 Georgia,serif}
+.rr-dash-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.rr-dash-detail-value{padding:11px;border:1px solid rgba(210,164,84,.45);border-radius:8px;background:#082334}
+.rr-dash-detail-value dt{color:#d9c8a8;font:800 10px/1.3 Inter,system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase}
+.rr-dash-detail-value dd{margin:5px 0 0;color:#f6e8c9;font:16px/1.3 Inter,system-ui,sans-serif}
+.rr-dash-detail-notes{margin-top:14px;padding:14px;border-left:3px solid var(--rr-gold);background:rgba(210,164,84,.1);color:#f0e4cd;font:14px/1.55 Inter,system-ui,sans-serif;white-space:pre-wrap}
+@media(min-width:800px){.rr-dash-race-layout{grid-template-columns:74px minmax(0,1fr)}.rr-dash-races{flex-direction:column;overflow:visible;padding:0}.rr-dash-race-button{min-width:0}}
+@media(max-width:700px){.rr-dashboard-main{padding:30px 16px 56px}.rr-dash-heading{align-items:flex-start;flex-direction:column;gap:12px}.rr-dash-toolbar{padding:12px}.rr-dash-toolbar label{min-width:calc(50% - 8px);flex:1}.rr-dash-updated{width:100%;margin:0}.rr-dash-horse-row{grid-template-columns:minmax(0,1fr) auto;padding:11px}.rr-dash-horse-name{font-size:15px}.rr-dash-win{min-width:68px;font-size:16px}.rr-dash-detail-grid{grid-template-columns:1fr}}

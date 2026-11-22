@@ -1,4 +1,5 @@
 import {BUNDLE_KEY} from './bundles.js';
+import {readMemberProjectionCards} from './projections.js';
 import {ensureReleaseSchedule,ensureRacePdfExpirySchema} from './publication-schedule.js';
 
 const API_HEADERS={"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store","X-Content-Type-Options":"nosniff"};
@@ -412,6 +413,12 @@ async function verifyMagicLink(request,env){
   await env.STORE_DB.prepare("INSERT INTO membership_sessions (token_hash,email,expires_at,created_at) VALUES (?,?,?,?)").bind(sessionHash,email,expires,now).run();
   return json({ok:true},200,{"Set-Cookie":cookieHeader(sessionRaw,SESSION_SECONDS)});
 }
+async function memberProjectionData(request,env){
+  const email=await sessionEmail(request,env);
+  if(!email)return error("Sign in to access your membership.",401);
+  if(!env.CARDS_BUCKET)return error("The member dashboard is temporarily unavailable.",503);
+  return json({active:true,cards:await readMemberProjectionCards(env,await memberLibrary(env))});
+}
 async function memberDetails(request,env){
   const email=await sessionEmail(request,env);
   if(!email)return error("Sign in to access your membership.",401);
@@ -499,6 +506,7 @@ export async function handleMembershipApi(request,env,url){
     if(p==="/api/membership/verify")return await verifyMagicLink(request,env);
     if(p==="/api/membership/logout")return await logout(request,env);
     if(p==="/api/membership/me"&&request.method==="GET")return await memberDetails(request,env);
+    if(p==="/api/membership/projections"&&request.method==="GET")return await memberProjectionData(request,env);
     if(p==="/api/membership/cancel")return await cancelAtPeriodEnd(request,env);
     if(p==="/api/membership/billing-portal")return await billingPortal(request,env);
     if(/^\/api\/membership\/view\/[0-9a-f-]{36}$/i.test(p))return await memberDownload(request,env,url,true);
