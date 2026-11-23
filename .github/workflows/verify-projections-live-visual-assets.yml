@@ -1,0 +1,57 @@
+name: Verify live Projections full stakes names and genuine race chips
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/verify-projections-live-visual-assets.yml'
+      - 'public/assets/projections-dashboard.js'
+      - 'public/assets/rr-race-titles.js'
+      - 'public/assets/rr-intelligence-chips.css'
+      - 'public/admin/projections-preview.html'
+      - 'public/membership/dashboard/index.html'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  compare-live:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check exact production JS and CSS after Cloudflare deployment
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE='https://railandryeracing.com'
+          for attempt in $(seq 1 24); do
+            token="${GITHUB_SHA}-${attempt}-$(date +%s)"
+            code1=$(curl -LsS --connect-timeout 10 --max-time 20 -H 'Cache-Control: no-cache' -w '%{http_code}' -o /tmp/projections-live.js "${BASE}/assets/projections-dashboard.js?rev=${token}" || true)
+            code2=$(curl -LsS --connect-timeout 10 --max-time 20 -H 'Cache-Control: no-cache' -w '%{http_code}' -o /tmp/rr-race-titles-live.js "${BASE}/assets/rr-race-titles.js?rev=${token}" || true)
+            code3=$(curl -LsS --connect-timeout 10 --max-time 20 -H 'Cache-Control: no-cache' -w '%{http_code}' -o /tmp/rr-chips-live.css "${BASE}/assets/rr-intelligence-chips.css?rev=${token}" || true)
+            if [ "$code1" = 200 ] && [ "$code2" = 200 ] && [ "$code3" = 200 ] &&
+               cmp -s public/assets/projections-dashboard.js /tmp/projections-live.js &&
+               cmp -s public/assets/rr-race-titles.js /tmp/rr-race-titles-live.js &&
+               cmp -s public/assets/rr-intelligence-chips.css /tmp/rr-chips-live.css; then
+              echo "LIVE_PROJECTIONS_ASSETS_MATCH: Cloudflare serves exact merged saddlecloth, sponsor-free track emblems and full-stakes-name code"
+              break
+            fi
+            echo "Not deployed yet: attempt ${attempt}/24 JS=${code1}, title=${code2}, chips=${code3}"
+            if [ "$attempt" -eq 24 ]; then
+              echo "::error::Production still serves stale Projections assets after 24 checks"
+              exit 1
+            fi
+            sleep 8
+          done
+          grep -Fq 'approvedRaceSaddle(race.race_number)' /tmp/projections-live.js
+          grep -Fq 'editorialRacePresentation(race)' /tmp/projections-live.js
+          grep -Fq 'rr-dash-track-mark-letters' /tmp/projections-live.js
+          ! grep -Fq 'approvedTrackLogos={' /tmp/projections-live.js
+          grep -Fq 'rr-race-saddle-tab' /tmp/rr-chips-live.css
+          grep -Fq 'FIRST LADY' test-projection-dashboard-mobile.mjs
+          echo 'PASS: no sponsor badge, no old fake RACE plaque; actual saddlecloths and First Lady Stakes fallback'
+          for n in 1 5 10 12 20; do
+            curl -fsSL --connect-timeout 10 --max-time 20 "${BASE}/assets/approved/saddlecloths/${n}.png" -o "/tmp/saddle-${n}.png"
+            test -s "/tmp/saddle-${n}.png"
+            echo "LIVE_APPROVED_SADDLECLOTH ${n} PASS"
+          done
+          echo 'LIVE_PROJECTIONS_READY: Source-verified stakes-name and visual fixes are live.'
