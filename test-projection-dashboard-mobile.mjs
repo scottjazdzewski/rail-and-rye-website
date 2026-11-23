@@ -7,10 +7,10 @@ const js=readFileSync("public/assets/projections-dashboard.js","utf8");
 assert.match(css,/\.rr-dash-race-tiles\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/,"Phone facts must use two columns");
 assert.match(css,/\.rr-dash-metric-group\{grid-area:metrics;grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/,"Mobile ratings must occupy a single, compact five-column strip");
 assert.doesNotMatch(js,/Trainer not listed \| Jockey not listed/,"Do not repeat source-data warnings on customer runner rows");
-assert.match(css,/\.rr-dash-race-tile:last-child\{grid-column:1\/-1\}/,"Distance must use a full-width mobile row");
+assert.match(css,/\.rr-dash-race-tile:last-child\{grid-column:1\/-1(?:;|\})/,"Distance must use a full-width mobile row");
 assert.match(css,/grid-template-areas:"program horse market" "metrics metrics metrics"/,"Phone market must sit beside horse heading");
 assert.doesNotMatch(css,/grid-template-areas:"program horse" "market market"/,"Remove old tall mobile runner layout");
-assert.match(css,/\.rr-dash-horse-name\{flex:0 1 auto;overflow:visible;white-space:normal/,"Mobile horse names must not be clipped");
+assert.match(css,/\.rr-dash-horse-name\{flex:0 1 auto;[^}]*overflow:visible;[^}]*white-space:normal/,"Mobile horse names must not be clipped");
 assert.match(css,/\.rr-dash-race-purse\[data-missing="true"\]/,"Missing purse must be flagged in private preview");
 
 class Element {
