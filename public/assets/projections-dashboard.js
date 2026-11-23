@@ -178,6 +178,16 @@ function showHorse(entry){
   }
   section.append(facts);mobile.append(section);
  }
+ if(entry.f4_probabilities){
+  const f4=entry.f4_probabilities;
+  const section=makeNode("section","rr-dash-sheet-section");section.append(makeNode("h3","","F4 FINISH PROJECTIONS"));
+  const rows=makeNode("div","rr-dash-sheet-factor-list");
+  for(const [label,key] of [["WIN","exact_p1"],["SECOND","exact_p2"],["THIRD","exact_p3"],["FOURTH","exact_p4"],["FIFTH","exact_p5"],["SIXTH OR LATER","p6_plus"],["TOP 2","top2"],["TOP 3","top3"],["TOP 4","top4"]]){
+   const cell=makeNode("div","rr-dash-sheet-factor");
+   cell.append(makeNode("strong","",label),makeNode("span","rr-dash-sheet-factor-status",(100*f4[key]).toFixed(1)+"%"));rows.append(cell);
+  }
+  section.append(rows);mobile.append(section);
+ }
  const factors=makeNode("section","rr-dash-sheet-section");factors.append(makeNode("h3","","FIVE-FACTOR READOUT"));
  const factorList=makeNode("div","rr-dash-sheet-factor-list");
  for(const [label,aliases] of CARD_METRICS){
@@ -233,8 +243,10 @@ function raceBanner(race){
  meta.append(makeNode("p","rr-dash-race-runners",reviewMode?runnerCount+" VERIFIED PROJECTION"+(runnerCount===1?"":"S")+" · PARTIAL FIELD":runnerCount+" RUNNERS"));
  if(purse)meta.append(makeNode("p","rr-dash-race-purse","PURSE "+purse));
  else if(previewMode&&!reviewMode){const missing=makeNode("p","rr-dash-race-purse","PURSE MISSING FROM EXPORT");missing.dataset.missing="true";meta.append(missing);}
+ const stage=activeCard?.card?.projection_status;
+ if(stage==="prescratch")meta.append(makeNode("p","rr-dash-race-scratch-count","PRESCRATCH · NOT FINAL"));
  const scratchCount=race.scratch_count==null?(race.scratches?.length||null):race.scratch_count;
- if(scratchCount!=null)meta.append(makeNode("p","rr-dash-race-scratch-count",scratchCount+" SCRATCH"+(scratchCount===1?"":"ES")));
+ if(stage!=="prescratch"&&scratchCount!=null)meta.append(makeNode("p","rr-dash-race-scratch-count",scratchCount+" SCRATCH"+(scratchCount===1?"":"ES")));
  copy.append(meta);
  time.append(makeNode("span","","POST TIME"),makeNode("strong","",race.post_time_et||race.post_time||race.postTime||"Not listed"));
  wrapper.append(number,copy,time);return wrapper;
@@ -246,10 +258,13 @@ function renderCard(){
  const panel=q("#rr-dash-race");panel.replaceChildren(cardHeader(activeCard),raceBanner(race));
  const scratches=scratchList(race);if(scratches)panel.append(scratches);
  const tiles=makeNode("div","rr-dash-race-tiles");
- if(!reviewMode||race.pace)tiles.append(makeTile("Pace",race.pace,factBadge("pace",race.pace)));
+ if((!reviewMode&&activeCard.card.projection_status!=="prescratch")||race.pace)tiles.append(makeTile("Pace",race.pace,factBadge("pace",race.pace)));
  if(race.surface)tiles.append(makeTile("Surface",race.surface,factBadge("surface",race.surface)));
  if(race.distance)tiles.append(makeTile("Distance",race.distance,factBadge("distance",race.distance)));
  if(tiles.children.length)panel.append(tiles);
+ if(activeCard.card.projection_status==="prescratch"){
+  panel.append(makeNode("p","rr-dash-prescratch-note","Prescratch model run · official scratches and five-factor badges are not yet certified. Fair odds are exact-model net-to-1 review values, not the published house ladder."));
+ }
  if(race.summary)panel.append(makeNode("p","rr-dash-race-summary",race.summary));
  const table=makeNode("div","rr-dash-table");table.setAttribute("role","table");table.setAttribute("aria-label","Race "+race.race_number+" projections");
  const header=makeNode("div","rr-dash-table-heading");header.setAttribute("role","row");

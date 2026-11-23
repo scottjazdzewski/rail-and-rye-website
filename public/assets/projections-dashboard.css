@@ -95,6 +95,7 @@
 .rr-dash-win{display:flex;align-items:center;justify-content:center;gap:9px;min-width:0;padding:6px;color:#123567;text-align:center;white-space:nowrap}.rr-dash-win-percent{font:700 20px/1 Georgia,"Times New Roman",serif}.rr-dash-win-fair{padding-left:8px;border-left:1px solid #c99831;color:#566b7b;font:800 10px/1.2 Inter,system-ui,sans-serif;letter-spacing:.04em;text-transform:uppercase}
 .rr-dash-no-data{padding:20px;color:#657888;font:14px/1.5 Inter,system-ui,sans-serif;text-align:center}
 .rr-dash-row-analysis,.rr-dash-mobile-analysis,.rr-dash-mobile-list-heading{display:none}
+.rr-dash-prescratch-note{margin:8px 0 12px;padding:9px 11px;border:1px solid #e3d4ad;border-radius:7px;background:#fff7e6;color:#5d5032;font:600 11px/1.45 Inter,system-ui,sans-serif}
 .rr-dash-pdf-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;padding-top:14px;border-top:1px solid #d3b675}
 .rr-dash-pdf-actions a[aria-disabled="true"]{opacity:.55;pointer-events:none}
 .rr-dash-empty{padding:24px;border:1px solid #c99831;border-radius:12px;background:#fffdf6}

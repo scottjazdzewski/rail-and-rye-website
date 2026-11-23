@@ -34,7 +34,7 @@ function renderCards(){
  for(const {card,entries} of cards){
   const row=document.createElement("article");row.className="projection-match";
   const title=document.createElement("h2"),meta=document.createElement("p");
-  title.textContent=card.track_name;meta.textContent=card.race_date+" · "+card.races.length+" races · "+entries+" runners";
+  title.textContent=card.track_name;meta.textContent=card.race_date+" · "+card.races.length+" races · "+entries+" runners"+(card.projection_status==="prescratch"?" · PRESCRATCH (no scratch processing)":"");
   row.append(title,meta);matches.append(row);
  }
  upload.disabled=!cards.length||saved;
@@ -52,6 +52,7 @@ fileInput.addEventListener("change",async()=>{
   preview.textContent=cards.length+" tracks · "+raceCount+" races · "+entryCount+" runners · "+file.name+(warnings.length?" · "+warnings.length+" source-data warnings":"");
   renderCards();
   if(warnings.length)show("Check uploaded source before publishing: "+warnings.slice(0,4).join("; ")+(warnings.length>4?"; and "+(warnings.length-4)+" more":"")+". Incomplete information cannot be restored by page styling.","error");
+  else if(cards.some(item=>item.card.projection_status==="prescratch"))show("Verified TRI/F4 prescratch package loaded. This does not mark any scratch count or final release; five-factor badges stay unverified.","success");
   else show("Ready. Source-data checks passed. PDFs are linked automatically when available.","success");
  }catch(error){cards=[];show(error.message||"Choose a valid dashboard JSON file.","error");}
 });
@@ -66,7 +67,7 @@ upload.addEventListener("click",async()=>{
    throw Error((data.error||"Projection upload failed.")+savedCount);
   }
   saved=true;
-  show("Saved "+data.tracks+" dashboards, "+data.races+" races, and "+data.entries+" runners. "+data.linked_pdfs+" matching PDFs linked automatically. The PDF is optional; the on-screen dashboard uses this JSON.","success");
+  show("Saved "+data.tracks+" dashboards, "+data.races+" races, and "+data.entries+" runners"+(cards.some(item=>item.card.projection_status==="prescratch")?" as PRESCRATCH (scratches unprocessed)":"")+". "+data.linked_pdfs+" matching PDFs linked automatically. The PDF is optional; the on-screen dashboard uses this JSON.","success");
  }catch(error){show(error.message||"Projection upload failed.","error");}
  finally{renderCards();}
 });
