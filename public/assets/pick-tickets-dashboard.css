@@ -177,3 +177,12 @@
  .rr-pt-dialog .rr-pt-leg{grid-template-columns:61px minmax(0,1fr);gap:6px;padding:5px 7px}
  .rr-pt-dialog .rr-pt-chip,.rr-pt-dialog .rr-pt-chip-fallback{width:30px;height:30px}
 }
+
+/* Shared site legacy serif headings must not override app typography. */
+.rr-pt-page .rr-pt-heading h1,
+.rr-pt-page .rr-pt-sequence-copy h2,
+.rr-pt-page .rr-pt-dialog-head h2,
+.rr-pt-page .rr-pt-ticket-head h3,
+.rr-pt-page .rr-pt-mini-label{
+ font-family:Inter,Arial,system-ui,sans-serif
+}
