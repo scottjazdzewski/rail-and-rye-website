@@ -109,3 +109,13 @@ The ticket screen retains only approved source selections, status, full-precisio
 The administrator preview now defaults **only to certified private R2 editions** and no longer exposes a mock source selector or mock-serving API endpoint; source/QA-only synthetic fixtures remain in automated tests and are rejected from private R2. If no certified real tickets are staged, the page communicates that fact instead of showing hypothetical selections.
 
 PLAY/CONDITIONAL/PASS remains a recommendation classification, **not a promise of positive expected return**. Without validated payout evidence, do not call a ticket profitable or imply an overlay. This change does not bypass TRI source gates or authorize commercial launch.
+
+## November 23, 2026 verified real-source intake (admin preview only)
+
+The user-provided `1123 TIMEFORM.zip` was reopened from the original conversation and its five member PDFs confirmed: FL, MVR, MNR, PRX, ZIA. Archive SHA-256 is stored in `src/pick-tickets-intake.js`. The separately produced `TRI_1123_PRESCRATCH_367_RUNNERS.csv` was reopened as source and its **45 race-level full-precision PWIN sums** checked to approximately 100%. The dataset contains 367 runner rows: FL 8 races/60, MVR 10/92, MNR 8/77, PRX 9/65, ZIA 10/73.
+
+**Important:** A 100% PWIN mass sum is a numerical completeness check and DOES NOT certify the model's exact current-field inputs, scratches, authenticated trainer/jockey evidence, or the scoring receipt. The separate nine-page `RAIL_RYE_1123_ALL_5_TRACKS_PICK_TICKETS_EFFICIENCY_REVIEW.pdf` contains conflicting overlaid ticket figures and explicit `TRI HIT ESTIMATE: RE-SCORE PENDING` notices; it is NOT an approved source for publication.
+
+The protected `GET /api/admin/pick-tickets` includes a non-proprietary source intake summary (date, track names, race/runner counts, archive hash, missing source gates) alongside the private R2 certified ticket list. It includes no paid PWINs, selections, or ticket probabilities. When no certified tickets exist, the mobile UI now presents the actual date/track selectors, official track marks, and a visible **TICKETS ON HOLD** source card instead of a blank dashboard or fabricated plays. Certified R2 tickets take precedence automatically if properly staged later.
+
+This does not create, claim to optimize, or publish any new ticket. No R2 writes occur from the intake ledger. No PUBLIC/customer hub, checkout, login or production engine is modified. Owner review and validated certified per-sequence tickets are still required before real tickets can be posted.
