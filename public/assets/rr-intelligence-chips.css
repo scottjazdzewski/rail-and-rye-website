@@ -1,0 +1,89 @@
+/* Rail & Rye Racing Intelligence Hub — shared race/horse chip identity.
+   Race chips use branded navy/gold, never a horse's assigned saddlecloth color.
+   Horse chips always use the exact approved numbered saddlecloth art. */
+.rr-race-chip{
+ --rr-chip-bg:#102d53;--rr-chip-ink:#fff8e9;--rr-chip-border:#c99831;
+ position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;
+ box-sizing:border-box;min-width:0;isolation:isolate;overflow:visible;
+ border:2px solid var(--rr-chip-border);border-radius:12px;
+ background:var(--rr-chip-bg);color:var(--rr-chip-ink);
+ box-shadow:inset 0 0 0 2px rgba(255,244,221,.25);
+ text-align:center;font-family:Inter,Arial,system-ui,sans-serif;
+}
+.rr-race-chip::before{
+ content:"";position:absolute;pointer-events:none;inset:3px;
+ border:1px solid rgba(255,243,209,.47);border-radius:7px;z-index:-1;
+}
+.rr-race-chip strong{
+ display:block;margin:0;font:800 22px/1 Inter,Arial,system-ui,sans-serif;
+ letter-spacing:-.035em;font-variant-numeric:tabular-nums;white-space:nowrap;
+}
+.rr-race-chip__label{font:800 8px/1.15 Inter,Arial,system-ui,sans-serif;letter-spacing:.09em}
+.rr-race-chip--tab{
+ flex:0 0 47px;min-height:47px;padding:7px 5px 6px;
+ color:#fff8e9;cursor:pointer;
+ transition:border-color .12s ease,background-color .12s ease;
+}
+.rr-race-chip--tab .rr-race-chip__label{display:none}
+.rr-race-chip--tab strong{font-size:21px}
+.rr-race-chip--tab[aria-current="true"]{
+ --rr-chip-bg:#f3c450;--rr-chip-ink:#102d53;
+ --rr-chip-border:#ae791b;box-shadow:0 0 0 2px #f6f0df,inset 0 0 0 2px #fff4d4;
+}
+.rr-race-chip--tab[aria-current="true"]::before{border-color:rgba(83,52,13,.36)}
+.rr-race-chip--tab:focus-visible{
+ outline:3px solid #c99831;outline-offset:3px;
+}
+.rr-race-chip--header{
+ width:100%;min-height:51px;padding:5px 3px;box-shadow:inset 0 0 0 2px rgba(255,244,221,.2);
+}
+.rr-race-chip--header .rr-race-chip__label{font-size:8px}
+.rr-race-chip--header strong{font-size:24px}
+.rr-horse-chip{
+ display:inline-flex;position:relative;align-items:center;justify-content:center;
+ flex-shrink:0;width:42px;height:42px;max-width:100%;vertical-align:middle;
+}
+.rr-horse-chip img{
+ display:block;width:100%;height:100%;object-fit:contain;object-position:center;
+}
+.rr-horse-chip__suffix{
+ position:absolute;right:-3px;bottom:-3px;border:1px solid #e8dcc9;
+ border-radius:4px;padding:1px 3px;background:#fffdf7;color:#102d53;
+ font:800 10px/1 Inter,Arial,system-ui,sans-serif;
+}
+.rr-horse-chip__fallback{
+ display:inline-grid;place-items:center;width:100%;height:100%;
+ border:2px solid #c99831;border-radius:9px;
+ background:#102d53;color:#fff8e9;font:750 15px/1 Inter,Arial,system-ui,sans-serif;
+}
+@media(max-width:800px){
+ .rr-race-chip--tab{flex-basis:44px;min-height:44px;padding:5px 3px}
+ .rr-race-chip--tab strong{font-size:19px;line-height:1}
+ .rr-race-chip--header{min-height:45px;border-radius:9px;padding:5px 2px}
+ .rr-race-chip--header strong{font-size:23px}
+ .rr-horse-chip{width:39px;height:39px}
+}
+@media(prefers-reduced-motion:reduce){
+ .rr-race-chip--tab{transition:none}
+}
+
+/* Real track-specific artwork appears alongside the persistent R&R horseshoe. */
+.rr-dash-card-head--with-track-logo{
+ display:grid;grid-template-columns:50px minmax(0,1fr) minmax(55px,84px);
+ align-items:center;gap:12px;
+}
+.rr-dash-track-logo{
+ display:block;justify-self:end;align-self:center;width:100%;
+ max-width:84px;max-height:66px;object-fit:contain;object-position:center right;
+}
+@media(max-width:800px){
+ .rr-dash-card-head--with-track-logo{
+  grid-template-columns:44px minmax(0,1fr) minmax(40px,67px);gap:8px;
+ }
+ .rr-dash-track-logo{max-width:67px;max-height:53px}
+}
+@media(max-width:360px){
+ .rr-dash-card-head--with-track-logo{grid-template-columns:38px minmax(0,1fr) 48px;gap:6px}
+ .rr-dash-track-logo{max-width:48px;max-height:45px}
+ .rr-dash-card-head--with-track-logo .rr-dash-track-title{font-size:17px}
+}
