@@ -1,3 +1,4 @@
+import {getPickTicketsPrivateDemo} from './pick-tickets-demo.js';
 /* Pick Tickets: admin-only dashboard staging. No scoring, public data, or customer-launch route. */
 const PREFIX="pick-tickets/dashboard/";
 const ARCHIVE="pick-tickets/revisions/";
@@ -99,6 +100,8 @@ async function parseBody(request){
  let body;try{body=JSON.parse(source);}catch{throw Error("Select a valid JSON export.");}
  const raw=Array.isArray(body?.cards)?body.cards:Array.isArray(body)?body:[body];
  if(raw.length<1||raw.length>25)throw Error("Upload 1–25 track editions per batch.");
+ // Admin-only mock fixtures are never valid published/source-certified data.
+ if(raw.some(c=>c?.is_demo||c?.status==="demo"||c?.source_receipt?.reference?.startsWith("MOCK-")||c?.source_receipt?.sha256==="0".repeat(64)))throw Error("Mock layout selections cannot be uploaded as certified tickets.");
  const cards=raw.map(normalizePickTickets);
  unique(cards.map(c=>currentKey(c)),"Track/date editions");
  return cards;
@@ -117,7 +120,10 @@ async function readCards(env){
 }
 export async function handleAdminPickTickets(request,env){
  if(!env.CARDS_BUCKET)return respond({error:"Private R2 storage is not configured."},503);
- if(request.method==="GET")return respond({cards:await readCards(env)});
+ if(request.method==="GET"){
+  if(new URL(request.url).searchParams.get("demo")==="1")return respond(getPickTicketsPrivateDemo());
+  return respond({cards:await readCards(env),demo:false});
+ }
  if(request.method!=="POST")return respond({error:"Method not allowed."},405);
  let cards;try{cards=await parseBody(request);}catch(e){return respond({error:e.message},400);}
  const toWrite=[];
