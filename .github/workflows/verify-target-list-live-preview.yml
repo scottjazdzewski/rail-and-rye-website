@@ -33,6 +33,7 @@ jobs:
                grep -Fq 'const tote=value' /tmp/target-list-live.js &&
                grep -Fq 'rr-target-runner-info' /tmp/target-list-live.js &&
                grep -Fq 'rr-target-racebar-main' /tmp/target-list-live.js &&
+               grep -Fq 'rr-target-race-identifiers' /tmp/target-list-live.js &&
                grep -Fq 'Post-time order' /tmp/target-list-live.js &&
                grep -Fq 'if(meta)head.append(node("p","rr-target-race-facts",meta))' /tmp/target-list-live.js &&
                ! grep -Fq 'rr-target-race-facts-long' /tmp/target-list-live.js &&
@@ -53,6 +54,7 @@ jobs:
           grep -Fq -- '-webkit-line-clamp:unset' /tmp/target-list-live.css
           grep -Fq 'Shared Daily Research Reader V1' /tmp/target-list-live.css
           grep -Fq 'RAIL & RYE DAILY RESEARCH V9' /tmp/target-list-live.css
+          grep -Fq 'Target List: right-justified RACE / POST group' /tmp/target-list-live.css
           grep -Fq 'The navy bar includes a 2nd line' /tmp/target-list-live.css
           ! grep -Fq 'Target List: source distance/surface on the SAME navy header row' /tmp/target-list-live.css
           grep -Fq 'scroll-snap-type:x proximity' /tmp/target-list-live.css
@@ -60,7 +62,7 @@ jobs:
           grep -Fq 'font:700 25px/1.06 Tinos' /tmp/target-list-live.css
           grep -Fq 'Readable editorial:' /tmp/target-list-live.css
           ! grep -Fq 'rr-target-publisher' /tmp/target-list-live.css
-          echo 'LIVE_TARGET_HEADER_V9: Radar-matched first line and full race conditions second line; private source intact.'
+          echo 'LIVE_TARGET_HEADER_V10: grouped race number and post time right-aligned; full source race conditions second line; private source intact.'
           protected=$(curl -sS --connect-timeout 10 --max-time 20 -o /dev/null -w '%{http_code}' 'https://railandryeracing.com/api/admin/target-list-review' || true)
           echo "Unauthenticated private data endpoint: HTTP $protected"
           case "$protected" in
