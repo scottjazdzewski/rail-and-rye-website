@@ -144,7 +144,7 @@ function normalizeCard(input){
   // stakes classification from purse, field size or handicapper rankings.
   const rawGrade=race.stakes_grade??race.grade;
   const stakesGrade=rawGrade==null?"":String(rawGrade).trim();
-  if(stakesGrade&&!/^(?:(?:grade|gr\\.?|g)\\s*[- ]?\\s*)?(?:[123]|III|II|I)$/i.test(stakesGrade))
+  if(stakesGrade&&!/^(?:(?:grade|gr\.?|g)\s*[- ]?\s*)?(?:[123]|III|II|I)$/i.test(stakesGrade))
    throw Error("Stakes grade must be Grade 1, Grade 2 or Grade 3.");
   if(race.is_stakes!=null&&typeof race.is_stakes!=="boolean")
    throw Error("Stakes classification must be a boolean.");
