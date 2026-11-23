@@ -176,7 +176,20 @@ def status():
                         exact=False;break
             found.append(track)
             if exact:eligible.append(track)
+            stage=doc.get("projection_status")
+            basis=doc.get("factor_basis")
+            receipts=doc.get("model_receipts") or {}
+            fingerprint_present=all(bool(receipts.get(k)) for k in ("tri_sha256","f4_sha256","prescratch_parent_sha256","official_changes_sha256"))
+            manifest_key=f"pick-tickets/v32/scratch-manifests/2026-11-23/{name}.json"
+            try:
+                manifest=json.loads(s3.get_object(Bucket=BUCKET,Key=manifest_key)["Body"].read())
+                manifest_status=manifest.get("official_status")
+                manifest_has_hashes=all(bool(manifest.get(k)) for k in ("prescratch_sha256","postscratch_sha256"))
+            except ClientError as e:
+                if e.response.get("Error",{}).get("Code") not in ("NoSuchKey","404","NotFound"):raise
+                manifest_status="NOT_STAGED";manifest_has_hashes=False
             print(f"PRIVATE_PROJECTION_SOURCE: {track}: present, races={n}, rows={rows}, expected_count_match={complete}, exact_prescratch_pwin_f4_gate={exact}.")
+            print(f"V32_POSTSCRATCH_GATE: {track}: source_stage={stage}, factor_basis={basis}, scorer_receipts_complete={fingerprint_present}, manifest_status={manifest_status}, manifest_hashes_present={manifest_has_hashes}.")
         except ClientError as e:
             if e.response.get("Error",{}).get("Code") not in ("NoSuchKey","404","NotFound"):raise
             print(f"PRIVATE_PROJECTION_SOURCE: {track}: MISSING.")
