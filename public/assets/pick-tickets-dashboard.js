@@ -25,7 +25,30 @@
  const option=(select,key,label)=>{const o=node("option","",label);o.value=key;select.append(o)};
  const setMessage=(text,visible=true)=>{E.status.hidden=!visible;E.status.textContent=text;};
  const TRACK_LOGOS={"Finger Lakes":"finger-lakes","Mahoning Valley":"mahoning-valley","Mountaineer":"mountaineer","Parx Racing":"parx-racing","Zia Park":"zia-park"};
- const hitRate=t=>!currentIsDemo&&t?.hit_rate_display?t.hit_rate_display:"—";
+ // Only the protected mock fixtures have fictional per-runner percentages.
+ // This calculation is for presentation/interaction QA, never a TRI/F4 inference.
+ function mockHitRate(legs){
+  if(!currentIsDemo||!Array.isArray(legs)||!legs.length||!activeSeq?.race_fields)return "";
+  let probability=1;
+  for(const leg of legs){
+   const field=activeSeq.race_fields.find(r=>r.race_number===leg.race_number);
+   if(!field?.demo_win_pct||!Array.isArray(leg.programs))return "";
+   const entries=Object.values(field.demo_win_pct);
+   if(entries.length!==field.programs.length||entries.some(x=>typeof x!=="number"||x<0)||Math.abs(entries.reduce((x,y)=>x+y,0)-100)>0.00001)return "";
+   let legPercent=0;
+   for(const program of leg.programs){
+    if(!Object.prototype.hasOwnProperty.call(field.demo_win_pct,program))return "";
+    legPercent+=field.demo_win_pct[program];
+   }
+   probability*=legPercent/100;
+  }
+  const n=probability*100;
+  return new Intl.NumberFormat("en-US",{minimumFractionDigits:1,maximumFractionDigits:2}).format(n)+"%";
+ }
+ function hitRate(t){
+  if(currentIsDemo)return mockHitRate(t?.legs)||"—";
+  return t?.hit_rate_display||"—";
+ }
  const escapeText=String;
  function programChip(p){
   const wrap=node("span","rr-pt-chip"),m=/^([0-9]{1,2})([A-Z]?)$/i.exec(p);
@@ -66,7 +89,7 @@
  function stats(ticket,{custom=false,sourceTicket=null}={}){
   const band=node("div","rr-pt-ticket-stats");
   const values=[
-   ["PROJECTED HIT",hitRate(ticket),true],
+   [currentIsDemo?"DEMO HIT CHANCE":"PROJECTED HIT",hitRate(ticket),true],
    ["COMBINATIONS",String(ticket.combinations),false],
    ["BASE WAGER",money(ticket.unit_cents),false],
    ["TOTAL COST",money(ticket.total_cents),false]
@@ -168,11 +191,11 @@
   thead.append(tr);table.append(thead);
   const body=node("tbody"),original=selectedTicket();
   const rowsData=[
-   ["PROJECTED HIT",hitRate(original),exact?hitRate(exact):"—"],
+   [currentIsDemo?"DEMO HIT CHANCE":"PROJECTED HIT",hitRate(original),currentIsDemo?hitRate(computed):(exact?hitRate(exact):"—")],
    ["COMBINATIONS",String(original.combinations),String(computed.combinations)],
    ["BASE WAGER",money(original.unit_cents),money(computed.unit_cents)],
    ["TOTAL COST",money(original.total_cents),money(computed.total_cents)],
-   ["VALUE ESTIMATE","Not yet available","Not yet available"]
+   ["VALUE ESTIMATE","—","—"]
   ];
   rowsData.forEach(cells=>{
    const line=node("tr");
@@ -181,9 +204,11 @@
   });
   table.append(body);comparison.append(table);area.append(comparison);
   if(!computed.combinations)area.append(node("p","rr-pt-builder-error","Choose at least one runner in every race."));
-  area.append(node("p","rr-pt-builder-disclaimer",exact
-   ?"This selection matches a supplied ticket. A model hit chance appears only if certified for that exact ticket."
-   :"Custom hit probabilities require the approved multi-race model; payout and value estimates require verified pool data. No unsupported estimates are shown."));
+  area.append(node("p","rr-pt-builder-disclaimer",currentIsDemo
+   ?"DEMO ONLY: Illustrative percentages use fictional runner weights and simple independent-race arithmetic. They are NOT TRI/F4 projections or betting recommendations. Actual probabilities and payout/value need certified model data."
+   :exact
+    ?"This exact selection matches a source ticket. Its certified hit chance appears only if the production model supplied it. Expected payout/value remain unavailable."
+    :"Custom hit probabilities require the approved multi-race model; payout and value estimates require verified pool data. No unsupported estimates are shown."));
   const reset=node("button","rr-pt-reset-button","Reset to Rail & Rye Selections");
   reset.type="button";reset.addEventListener("click",()=>{resetBuilder();expandedRaceNumbers.clear();renderActive()});
   area.append(reset);return area;
@@ -217,7 +242,7 @@
    }));
    const meta=node("div","rr-pt-wager-meta");
    meta.append(node("span","rr-pt-wager-name",chosen.title));
-   meta.append(node("span","rr-pt-probability",hitRate(chosen)==="—"?"HIT PROBABILITY · AWAITING MODEL":"HIT PROBABILITY · "+hitRate(chosen)));
+   meta.append(node("span","rr-pt-probability",currentIsDemo?"DEMO CHANCE · NOT TRI":hitRate(chosen)==="—"?"HIT PROBABILITY · AWAITING MODEL":"CERTIFIED HIT PROBABILITY · "+hitRate(chosen)));
    box.append(meta,ticketRows(chosen),stats(chosen));
    if(activeSeq.play_status==="PASS")box.append(node("p","rr-pt-pass-note",
     currentIsDemo?"DEMONSTRATION PASS · Best possible mock ticket for layout review only."
@@ -246,7 +271,7 @@
    stage.replaceChildren();
    stage.append(tierPicker(activeSeq,i,show));
    stage.append(node("h3","rr-pt-analysis-tier",activeSeq.tickets[i].title));
-   if(hitRate(activeSeq.tickets[i])!=="—")stage.append(node("p","rr-pt-analysis-rate","Certified ticket hit chance: "+hitRate(activeSeq.tickets[i])));
+   if(hitRate(activeSeq.tickets[i])!=="—")stage.append(node("p","rr-pt-analysis-rate",(currentIsDemo?"Illustrative DEMO hit chance: ":"Certified ticket hit chance: ")+hitRate(activeSeq.tickets[i])));
    stage.append(ticketRows(activeSeq.tickets[i]),stats(activeSeq.tickets[i]));
    if(activeSeq.tickets[i].notes)stage.append(node("p","rr-pt-analysis-notes",activeSeq.tickets[i].notes));
   }
