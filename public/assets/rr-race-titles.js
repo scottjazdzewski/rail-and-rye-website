@@ -55,6 +55,8 @@
  function expandStakesTitle(value,isStakes){
   let text=clean(value);
   if(!isStakes)return text;
+  const originalLetters=text.replace(/[^A-Za-z]/g,"");
+  const originallyAllCaps=originalLetters.length>2&&originalLetters===originalLetters.toUpperCase();
   // Only abbreviations used as a racing-name suffix are expanded. This
   // avoids expanding jockey initials or unrelated racing condition codes.
   const suffixes=[
@@ -69,8 +71,7 @@
   }
   // External cards occasionally provide all-caps race names. Preserve
   // already-cased proper names, but normalize fully uppercase titles.
-  const letters=text.replace(/[^A-Za-z]/g,"");
-  if(letters.length>2&&letters===letters.toUpperCase()){
+  if(originallyAllCaps){
    text=text.toLowerCase().replace(/\b[a-z]/g,c=>c.toUpperCase())
     .replace(/\b(Of|And|The|For|At)\b/g,c=>c.toLowerCase());
    text=text.replace(/^(the)\b/,(_,word)=>word[0].toUpperCase()+word.slice(1));
