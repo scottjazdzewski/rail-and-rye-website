@@ -62,7 +62,8 @@ jobs:
           grep -Fq 'sourceRaceTitle(item)' /tmp/longshot-radar.js
           grep -Fq 'appendGradeTrophy(line,title.grade)' /tmp/longshot-radar.js
           grep -Fq 'sourceRaceTitle(entry)' /tmp/target-list-dashboard.js
-          grep -Fq 'appendGradeTrophy(facts,sourceRaceTitle(entry)?.grade)' /tmp/target-list-dashboard.js
+          grep -Fq 'appendGradeTrophy(facts,title.grade)' /tmp/target-list-dashboard.js
+          grep -Fq 'rr-ed-stakes-title' /tmp/target-list-dashboard.js
           grep -Fq 'rr-ed-grade-trophy--g1' /tmp/rr-stakes-inline.css
           grep -Fq 'rr-ed-grade-trophy--g2' /tmp/rr-stakes-inline.css
           grep -Fq 'rr-ed-grade-trophy--g3' /tmp/rr-stakes-inline.css
