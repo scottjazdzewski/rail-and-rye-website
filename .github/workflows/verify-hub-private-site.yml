@@ -1,0 +1,40 @@
+name: Verify private Racing Intelligence site review
+on:
+  pull_request:
+    paths:
+      - 'src/index.js'
+      - 'src/longshot-radar.js'
+      - 'src/target-list.js'
+      - 'public/admin/longshot-radar.html'
+      - 'public/admin/target-list-preview.html'
+      - 'public/admin/racing-intelligence-review.html'
+      - 'public/assets/longshot-radar.*'
+      - 'public/assets/target-list-dashboard.*'
+      - 'public/assets/racing-intelligence-*'
+      - 'test-hub-private-review.mjs'
+      - 'test-longshot-radar.mjs'
+      - 'test-target-list-hub.mjs'
+      - '.github/workflows/verify-hub-private-site.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  hub-security-artwork-regression:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate JS syntax
+        run: |
+          node --check src/index.js
+          node --check public/assets/longshot-radar.js
+          node --check public/assets/target-list-dashboard.js
+      - name: Verify route protection and approved graphics
+        run: node test-hub-private-review.mjs
+      - name: Verify both source and review modules
+        run: |
+          node test-longshot-radar.mjs
+          node test-target-list-hub.mjs

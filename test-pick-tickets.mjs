@@ -90,7 +90,7 @@ const js=fs.readFileSync("./public/assets/pick-tickets-dashboard.js","utf8");
 assert.match(route,/verifyAdmin\(request,env\)/,"admin routes must verify signed Access JWT");
 assert.match(route,/if\(path==="\/api\/admin\/pick-tickets"\)/);
 assert.match(route,/trustedOrigin\(request\)/);
-assert.match(route,/pickTicketsPreview\?"\/admin\/pick-tickets-preview.html"/);
+assert.ok(route.includes('["/admin/pick-tickets-preview","/admin/pick-tickets-preview.html"]'),"Pick Tickets preview must remain on the existing protected admin router.");
 assert.match(page,/PRIVATE ADMIN REVIEW/);
 assert.doesNotMatch(page,/application\/pdf|\.pdf"/i);
 assert.match(css,/@media\(max-width:800px\)/);
