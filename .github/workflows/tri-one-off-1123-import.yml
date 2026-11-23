@@ -1,0 +1,25 @@
+name: TRI November 23 — sealed private prescratch R2 import
+on:
+  push:
+    branches: [main]
+    paths: ['secure-transfer/tri-20261123.sealed.json']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    env:
+      TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+      TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+      TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install private storage and encryption client
+        run: pip install --disable-pip-version-check --quiet cryptography boto3
+      - name: Decrypt exact validated November 23 input inside runner and verify private R2 persistence
+        run: python scripts/tri_one_off_secure_delivery.py publish --sealed-file secure-transfer/tri-20261123.sealed.json
