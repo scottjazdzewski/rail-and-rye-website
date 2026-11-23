@@ -129,7 +129,9 @@ function makeMetricGroup(entry){
  return group;
 }
 function showHorse(entry){
- const dialog=q("#rr-dash-horse-dialog"),title=q("#rr-dash-horse-title"),detail=q("#rr-dash-horse-detail");setText(title,(entry.program_number?"#"+entry.program_number+"  ":"")+entry.horse_name);detail.replaceChildren();
+ const dialog=q("#rr-dash-horse-dialog"),title=q("#rr-dash-horse-title"),detail=q("#rr-dash-horse-detail");
+ setText(title,(entry.program_number?"#"+entry.program_number+"  ":"")+entry.horse_name);
+ detail.replaceChildren();
  const grid=document.createElement("dl");grid.className="rr-dash-detail-grid";
  const fields=[["Win probability",entry.win_probability==null?null:String(entry.win_probability)+"%"],["Morning line",entry.morning_line],["Fair odds",fairOdds(entry)],["Trainer",entry.trainer],["Jockey",entry.jockey]];
  for(const [label,value] of fields){if(value==null||value==="")continue;const item=makeNode("div","rr-dash-detail-value"),dt=makeNode("dt","",label),dd=makeNode("dd","",value);item.append(dt,dd);grid.append(item);}
@@ -141,7 +143,59 @@ function showHorse(entry){
   item.append(dt,dd);grid.append(item);
  }
  detail.append(grid);
- if(entry.notes){const notes=makeNode("p","rr-dash-detail-notes",entry.notes);detail.append(notes);}
+ if(entry.notes)detail.append(makeNode("p","rr-dash-detail-notes",entry.notes));
+ const mobile=makeNode("div","rr-dash-mobile-analysis");
+ const summary=makeNode("div","rr-dash-sheet-summary"),chipFrame=makeNode("div","rr-dash-sheet-chip"),program=String(entry.program_number||"");
+ const parsed=program.match(/^(\d{1,2})([A-Za-z]?)$/),chipNumber=parsed?Number(parsed[1]):NaN;
+ if(Number.isInteger(chipNumber)&&chipNumber>=1&&chipNumber<=20){
+  const image=document.createElement("img");image.src="/assets/approved/saddlecloths/"+chipNumber+".png";image.alt="Saddlecloth "+program;chipFrame.append(image);
+  if(parsed[2])chipFrame.append(makeNode("span","rr-dash-sheet-chip-suffix",parsed[2]));
+ }else chipFrame.append(makeNode("strong","",program||"—"));
+ const market=makeNode("div","rr-dash-sheet-market");
+ market.append(makeNode("span","rr-dash-sheet-kicker","WIN PROJECTION"));
+ market.append(makeNode("strong","rr-dash-sheet-win",entry.win_probability==null?"—":String(entry.win_probability)+"%"));
+ market.append(makeNode("span","rr-dash-sheet-fair","FAIR "+(fairOdds(entry)||"—")));
+ const ml=makeNode("div","rr-dash-sheet-ml","M/L "+(entry.morning_line||"—"));
+ summary.append(chipFrame,ml,market);mobile.append(summary);
+ const connections=[["TRAINER",entry.trainer],["JOCKEY",entry.jockey]].filter(([,value])=>value);
+ if(connections.length){
+  const section=makeNode("section","rr-dash-sheet-section");
+  section.append(makeNode("h3","","CONNECTIONS"));
+  const items=makeNode("div","rr-dash-sheet-connections");
+  for(const [label,value] of connections){
+   const item=makeNode("div","rr-dash-sheet-connection");item.append(makeNode("span","",label),makeNode("strong","",value));items.append(item);
+  }
+  section.append(items);mobile.append(section);
+ }
+ const race=activeCard?.card?.races?.find(item=>item.race_number===activeRace);
+ if(race){
+  const section=makeNode("section","rr-dash-sheet-section");section.append(makeNode("h3","","RACE CONTEXT"));
+  const facts=makeNode("div","rr-dash-sheet-facts");
+  for(const [label,value] of [["SURFACE",race.surface],["DISTANCE",race.distance],["PACE",race.pace]]){
+   if(!value)continue;
+   const item=makeNode("div","rr-dash-sheet-fact");item.append(makeNode("span","",label),makeNode("strong","",value));facts.append(item);
+  }
+  section.append(facts);mobile.append(section);
+ }
+ const factors=makeNode("section","rr-dash-sheet-section");factors.append(makeNode("h3","","FIVE-FACTOR READOUT"));
+ const factorList=makeNode("div","rr-dash-sheet-factor-list");
+ for(const [label,aliases] of CARD_METRICS){
+  const value=metricValue(entry,aliases),state=metricState(value);
+  const item=makeNode("div","rr-dash-sheet-factor");
+  const status=makeNode("span","rr-dash-sheet-factor-status "+(state?"rr-dash-sheet-factor-"+state:""),state?state.toUpperCase():value);
+  item.append(makeNode("strong","",label),status);factorList.append(item);
+ }
+ factors.append(factorList);mobile.append(factors);
+ if(entry.notes){
+  const notes=makeNode("section","rr-dash-sheet-section");
+  notes.append(makeNode("h3","","MODEL NOTES"),makeNode("p","rr-dash-sheet-notes",entry.notes));
+  mobile.append(notes);
+ }
+ if(activeCard?.product_id&&!previewMode){
+  const pdf=document.createElement("a");pdf.className="rr-dash-sheet-pdf";pdf.href="/api/membership/view/"+encodeURIComponent(activeCard.product_id);
+  pdf.target="_blank";pdf.rel="noopener";pdf.textContent="OPEN FULL RACE PDF";mobile.append(pdf);
+ }
+ detail.append(mobile);
  dialog.showModal();
 }
 function cardHeader(card){
@@ -228,10 +282,18 @@ function renderCard(){
   win.setAttribute("aria-label",(entry.win_probability==null?"No win probability":String(entry.win_probability)+"% win probability")+"; fair odds "+odds);
   win.append(makeNode("strong","rr-dash-win-percent",entry.win_probability==null?"—":String(entry.win_probability)+"%"));
   win.append(makeNode("small","rr-dash-win-fair","FAIR "+odds));
-  row.append(program,horseCell,metricGroup,win);list.append(row);
+  const footer=makeNode("div","rr-dash-row-analysis"),analysis=makeNode("button","rr-dash-full-analysis","Full Analysis");
+  analysis.type="button";analysis.setAttribute("aria-label","Full analysis for "+entry.horse_name);
+  analysis.addEventListener("click",()=>showHorse(entry));footer.append(analysis);
+  const connectionsBelow=[entry.trainer?"Trainer: "+entry.trainer:"",entry.jockey?"Jockey: "+entry.jockey:""].filter(Boolean).join("  |  ");
+  if(connectionsBelow)footer.append(makeNode("span","rr-dash-analysis-connections",connectionsBelow));
+  row.append(program,horseCell,metricGroup,win,footer);list.append(row);
  }
  if(!entries.length)list.append(makeNode("div","rr-dash-no-data","No runners match that search."));
- table.append(list);q("#rr-dash-horses").replaceChildren(table);
+ table.append(list);
+ const heading=makeNode("div","rr-dash-mobile-list-heading");
+ heading.append(makeNode("h2","","WIN PROJECTIONS"),makeNode("span","","Tap Full Analysis for the breakdown"));
+ q("#rr-dash-horses").replaceChildren(heading,table);
  const open=q("#rr-dash-open-pdf"),download=q("#rr-dash-download-pdf"),hasPdf=!!activeCard.product_id;
  for(const button of [open,download])button.hidden=!hasPdf;
  if(hasPdf&&previewMode){
