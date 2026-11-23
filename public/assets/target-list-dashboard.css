@@ -158,11 +158,7 @@ font-weight:850;
 font-size:12px;
 line-height:1.4;
 }
-.rr-target-page .rr-target-toolbar{
-border:1px solid #c5cdd4;
-border-top:2px solid var(--rrh-gold);
-border-radius:7px;
-}
+
 .rr-target-page .rr-target-toolbar label{
 color:#53677a;
 line-height:1.2;
