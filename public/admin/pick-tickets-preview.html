@@ -10,42 +10,31 @@
 <link rel="stylesheet" href="/assets/rail-rye-core.css?v=13">
 <link rel="stylesheet" href="/assets/rail-rye-components.css?v=11">
 <link rel="stylesheet" href="/assets/membership.css?v=17">
+<link rel="stylesheet" href="/assets/rr-hub-header.css?v=1">
 <link rel="stylesheet" href="/assets/pick-tickets-dashboard.css?v=29">
 <script defer src="/assets/pick-tickets-dashboard.js?v=pick-ticket-clean-title-20261123"></script>
 </head>
 <body class="rr-member-page rr-pt-page">
-<header class="rr-member-header">
- <div class="heritage-shell">
-  <a class="rr-member-brand" href="/admin/">
-   <img src="/assets/approved/brand/rail-rye-ivory-logo.png" alt="" width="60" height="60"><span>RAIL &amp; RYE</span>
-  </a>
-  <nav class="rr-member-nav" aria-label="Racing Intelligence navigation">
-   <a href="/admin/racing-intelligence-review/">Hub</a>
-   <a href="/admin/projections-preview/">Projections</a>
-   <a href="/admin/pick-tickets-preview/" aria-current="page">Pick Tickets</a>
-   <a href="/admin/">Publisher’s Desk</a>
-  </nav>
+<header class="rr-intel-header">
+ <div class="rr-intel-header__inner">
+  <a class="rr-intel-header__brand" href="/" aria-label="Rail and Rye Racing homepage"><img class="rr-intel-header__logo" src="/assets/approved/brand/rail-rye-ivory-logo.png" alt="" width="60" height="60"><span>RAIL &amp; RYE</span></a>
+  <nav class="rr-intel-header__nav" aria-label="Racing Intelligence pages"><a class="rr-intel-header__pill" href="/admin/racing-intelligence-review/">Hub</a><a class="rr-intel-header__pill" href="/admin/projections-preview/">Projections</a><a class="rr-intel-header__pill" href="/admin/pick-tickets-preview/" aria-current="page">Pick Tickets</a><a class="rr-intel-header__pill" href="/admin/longshot-radar/">Longshot Radar</a><a class="rr-intel-header__pill" href="/admin/target-list-preview/">Target List</a></nav>
+  <details class="rr-intel-header__mobile"><summary aria-label="Open Racing Intelligence navigation">Menu <span aria-hidden="true">☰</span></summary>
+   <nav class="rr-intel-header__mobile-links" aria-label="Mobile Racing Intelligence pages"><a class="rr-intel-header__pill" href="/admin/racing-intelligence-review/">Hub</a><a class="rr-intel-header__pill" href="/admin/projections-preview/">Projections</a><a class="rr-intel-header__pill" href="/admin/pick-tickets-preview/" aria-current="page">Pick Tickets</a><a class="rr-intel-header__pill" href="/admin/longshot-radar/">Longshot Radar</a><a class="rr-intel-header__pill" href="/admin/target-list-preview/">Target List</a></nav>
+  </details>
  </div>
 </header>
 <main class="rr-pt-main">
- <div class="rr-pt-brand-rail" aria-label="Rail and Rye and selected racetrack">
-  <a class="rr-pt-brand-id" href="/admin/" aria-label="Rail and Rye Publisher's Desk">
-   <img src="/assets/approved/brand/rail-rye-ivory-logo.png" alt="Rail and Rye" width="42" height="42">
-   <span class="rr-pt-brand-wordmark"><b>RAIL &amp; RYE</b><small>RACING INTELLIGENCE</small></span>
-  </a>
-  <span class="rr-pt-brand-module">PICK TICKETS</span>
-  <div class="rr-pt-track-mark" aria-label="Selected track logo">
-   <img id="rr-pt-track-logo" width="130" height="55" alt="" hidden>
-   <span id="rr-pt-brand-track" class="rr-pt-brand-track">Select track</span>
-  </div>
- </div>
- <div class="rr-pt-admin-line"><a class="rr-pt-back" href="/admin/">‹ Publisher’s Desk</a></div>
  <div class="rr-pt-heading">
   <div>
    <span class="rr-pt-kicker">RAIL &amp; RYE RACING INTELLIGENCE</span>
    <h1>Pick Tickets</h1>
    <p>Track → wager type → available race sequence. Open Rail &amp; Rye’s ticket or build your own.</p>
   </div>
+  <div class="rr-pt-track-mark" aria-label="Selected track logo">
+    <img id="rr-pt-track-logo" width="130" height="55" alt="" hidden>
+    <span id="rr-pt-brand-track" class="rr-pt-brand-track">Select track</span>
+   </div>
  </div>
  <section class="rr-pt-toolbar" aria-label="Pick Tickets search controls">
   <label>Date <select id="rr-pt-date" aria-label="Choose racing date"></select></label>

@@ -9,25 +9,21 @@
 <link rel="stylesheet" href="/assets/rail-rye-core.css">
 <link rel="stylesheet" href="/assets/rail-rye-components.css">
 <link rel="stylesheet" href="/assets/membership.css">
+<link rel="stylesheet" href="/assets/rr-hub-header.css?v=1">
 <link rel="stylesheet" href="/assets/target-list-dashboard.css?v=20261123-css-clean-v12">
 <link rel="stylesheet" href="/assets/rr-stakes-inline.css?v=1">
 <script src="/assets/rr-race-titles.js?v=2" defer></script>
 <script src="/assets/target-list-dashboard.js?v=20261123-class-clean-v13" defer></script>
 </head>
 <body class="rr-member-page rr-target-page" data-rr-preview="true">
-<header class="rr-member-header">
-  <div class="heritage-shell">
-    <a class="rr-member-brand" href="/admin/" aria-label="Rail and Rye Publisher's Desk">
-      <img src="/assets/approved/brand/rail-rye-ivory-logo.png" alt="" width="46" height="46"><span>RAIL &amp; RYE</span>
-    </a>
-    <nav class="rr-member-nav" aria-label="Racing Intelligence navigation">
-      <a href="/admin/racing-intelligence-review/">Hub</a>
-      <a href="/admin/projections-preview/">Projections</a>
-      <a href="/admin/pick-tickets-preview/">Pick Tickets</a>
-      <a href="/admin/longshot-radar/">Longshot Radar</a>
-      <a href="/admin/target-list-preview/" aria-current="page">Target List</a>
-    </nav>
-  </div>
+<header class="rr-intel-header">
+ <div class="rr-intel-header__inner">
+  <a class="rr-intel-header__brand" href="/" aria-label="Rail and Rye Racing homepage"><img class="rr-intel-header__logo" src="/assets/approved/brand/rail-rye-ivory-logo.png" alt="" width="60" height="60"><span>RAIL &amp; RYE</span></a>
+  <nav class="rr-intel-header__nav" aria-label="Racing Intelligence pages"><a class="rr-intel-header__pill" href="/admin/racing-intelligence-review/">Hub</a><a class="rr-intel-header__pill" href="/admin/projections-preview/">Projections</a><a class="rr-intel-header__pill" href="/admin/pick-tickets-preview/">Pick Tickets</a><a class="rr-intel-header__pill" href="/admin/longshot-radar/">Longshot Radar</a><a class="rr-intel-header__pill" href="/admin/target-list-preview/" aria-current="page">Target List</a></nav>
+  <details class="rr-intel-header__mobile"><summary aria-label="Open Racing Intelligence navigation">Menu <span aria-hidden="true">☰</span></summary>
+   <nav class="rr-intel-header__mobile-links" aria-label="Mobile Racing Intelligence pages"><a class="rr-intel-header__pill" href="/admin/racing-intelligence-review/">Hub</a><a class="rr-intel-header__pill" href="/admin/projections-preview/">Projections</a><a class="rr-intel-header__pill" href="/admin/pick-tickets-preview/">Pick Tickets</a><a class="rr-intel-header__pill" href="/admin/longshot-radar/">Longshot Radar</a><a class="rr-intel-header__pill" href="/admin/target-list-preview/" aria-current="page">Target List</a></nav>
+  </details>
+ </div>
 </header>
 <main class="rr-target-main">
   <div class="rr-target-titlebar">
@@ -67,12 +63,6 @@
   <span class="heritage-footmark">RAIL &amp; RYE</span>
   <nav aria-label="Footer"><a href="/admin/">Publisher's Desk</a> · <a href="/admin/projections-preview/">Projections</a></nav>
 </div></footer>
-<script>
-document.addEventListener("DOMContentLoaded",()=>{
-  const nav=document.querySelector(".rr-target-page .rr-member-nav");
-  const active=nav?.querySelector('[aria-current="page"]');
-  if(nav&&active&&nav.scrollWidth>nav.clientWidth)active.scrollIntoView({block:"nearest",inline:"nearest"});
-});
-</script>
+
 </body>
 </html>
