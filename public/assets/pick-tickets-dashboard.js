@@ -96,28 +96,14 @@
   count.append(el("span","","TICKET OPTIONS"),el("strong","",String(seq.tickets.length)));
   stat.append(count);article.append(stat);
 
-  const stage=el("div","rr-pt-sequence-stage"),tabs=el("div","rr-pt-tier-tabs"),body=el("div","rr-pt-primary");
-  tabs.setAttribute("role","group");tabs.setAttribute("aria-label","Ticket versions for "+seq.name);
-  let active=Math.max(0,seq.tickets.findIndex(t=>t.role==="LEAN"));
-  const buttons=[];
-  function showTicket(index){
-   active=index;
-   buttons.forEach((button,i)=>button.setAttribute("aria-pressed",String(i===index)));
-   body.replaceChildren(ticketBox(seq.tickets[index],{compact:true}));
-  }
-  if(seq.tickets.length>1){
-   seq.tickets.forEach((ticket,i)=>{
-    const button=el("button","rr-pt-tier",label(ticket.role));
-    button.type="button";button.setAttribute("aria-pressed",String(i===active));
-    button.addEventListener("click",()=>showTicket(i));
-    tabs.append(button);buttons.push(button);
-   });
-   stage.append(tabs);
-  }
-  stage.append(body);article.append(stage);
-  showTicket(active);
+  const preferred=seq.tickets.find(t=>t.role==="LEAN")||seq.tickets.find(t=>t.role==="BEST_POSSIBLE")||seq.tickets[0];
+  const glance=el("div","rr-pt-glance");
+  glance.append(el("span","rr-pt-glance-name",label(preferred.role)),
+   el("span","rr-pt-glance-combos",preferred.combinations+" combinations · "+money(preferred.unit_cents)+" base"),
+   el("strong","rr-pt-glance-total",money(preferred.total_cents)));
+  article.append(glance);
   if(seq.recommendation)article.append(el("p","rr-pt-summary",seq.recommendation));
-  const detail=el("button","rr-pt-detail-button","Full Ticket & Analysis");
+  const detail=el("button","rr-pt-detail-button","View Ticket & Analysis");
   detail.type="button";detail.addEventListener("click",()=>openDetails(seq,card));article.append(detail);
   return article;
  }
