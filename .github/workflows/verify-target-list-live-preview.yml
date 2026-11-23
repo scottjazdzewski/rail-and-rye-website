@@ -1,0 +1,40 @@
+name: Check Target List private preview on live domain
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/verify-target-list-live-preview.yml'
+      - 'public/assets/target-list-dashboard.js'
+      - 'public/admin/target-list-preview.html'
+      - 'src/target-list.js'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  live-review:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Verify production domain serves Target List private review code
+        shell: bash
+        run: |
+          set -euo pipefail
+          url='https://railandryeracing.com/assets/target-list-dashboard.js?rr_review_check=20261123'
+          for attempt in 1 2 3 4; do
+            code=$(curl -L -sS --connect-timeout 10 --max-time 20 -w '%{http_code}' -o /tmp/target-list-live.js "$url" || true)
+            echo "Production asset probe attempt $attempt: HTTP $code"
+            if [ "$code" = '200' ] && grep -Fq '/api/admin/target-list-review' /tmp/target-list-live.js; then
+              echo 'LIVE_PREVIEW_DEPLOYED: The live site serves the new private R2 review reader.'
+              break
+            fi
+            if [ "$attempt" -eq 4 ]; then
+              echo 'LIVE_PREVIEW_NOT_VERIFIED: Current site does not serve the private review module.'
+              exit 1
+            fi
+            sleep 8
+          done
+          protected=$(curl -sS --connect-timeout 10 --max-time 20 -o /dev/null -w '%{http_code}' 'https://railandryeracing.com/api/admin/target-list-review' || true)
+          echo "Unauthenticated private data endpoint: HTTP $protected"
+          case "$protected" in
+            301|302|303|307|308|401|403|404|503) ;;
+            *) echo 'ERROR: Private data endpoint must not be publicly readable.'; exit 1 ;;
+          esac
