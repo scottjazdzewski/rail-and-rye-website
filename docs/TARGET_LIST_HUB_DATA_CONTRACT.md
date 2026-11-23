@@ -23,12 +23,12 @@ The private import requires these verified producer-supplied fields:
 | `targets[].track` / `race_number` | exact source labels/number, unique track+race |
 | `targets[].tier` | optional `PRIME` or `STRONG`, only as actually assigned by production |
 | `targets[].post_time_et`, `surface`, `distance`, `conditions` | optional exact source values, never invented by renderer |
-| `targets[].favorite` / `attack` | required horse records: `program_number`, `horse_name`, `morning_line`, numerical exact published `win_probability` (percentage, not fraction), `fair_odds`; optional `trainer` and `jockey` |
+| `targets[].favorite` / `attack` | required horse records: `program_number`, `horse_name`, `morning_line`, published `win_probability` (one-decimal percentage, not fraction), certified `win_probability_exact` (unrounded full-field PWIN percentage, required for both roles), `fair_odds`; optional `trainer` and `jockey` |
 | `targets[].also_live` | optional same horse record when an additional alternative qualified |
 | `targets[].analysis` | required original approved full commentary |
 | `targets[].scratches` | optional official scratch records (`program_number`, `horse_name`) on scratch update, not on initial |
 
-The existing Target List selection gate remains **ATTACK certified PWIN strictly greater than the morning-line favorite**, with a compelling handicapping case. This is an ingest integrity rule, **not** a source of new candidates or handicapping.
+The controlling November 17 numerical gate requires **ATTACK and ALSO LIVE certified unrounded PWIN each at least 15.000000 percentage points higher than the morning-line favorite**. The server rejects an unrounded field missing from any candidate or inconsistent with the published one-decimal percentage. This is an ingest integrity rule, **not** a substitute for the source-backed favorite-vulnerability, price and handicapping judgment, or for verification of the upstream receipt by a trusted producer.
 
 ## Private Cloudflare flow
 
