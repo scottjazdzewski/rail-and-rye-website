@@ -110,7 +110,7 @@ shown=await response.json();
 assert.equal(shown.cards.length,0,"never show unrescored changes as ticket choices");
 assert.equal(shown.latest_field_versions[0].sha256,currentAudit.source_sha256);
 assert.equal(shown.latest_field_versions[0].review_status,"INPUT_CHANGED_WITHOUT_NEW_SCORE_RECEIPT");
-assert.ok(shown.source_rejections.some(x=>/new TRI\\/F4 scoring receipts/.test(x.reason)));
+assert.ok(shown.source_rejections.some(x=>x.reason.includes("new TRI/F4 scoring receipts")));
 
 // A fresh prescratch TRI/F4 receipt pair is retained by the importer and
 // clears the input-change hold, exposing the independently reoptimized field.
