@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import {normalizePickTickets,handleAdminPickTickets} from "./src/pick-tickets.js";
+import {getPickTicketsPrivateDemo} from "./src/pick-tickets-demo.js";
 
 const receipt={reference:"SYNTHETIC-TEST-ONLY",sha256:"a".repeat(64)};
 const ticket=(role="BEST_POSSIBLE")=>({
@@ -79,19 +80,17 @@ assert.equal(listing.headers.get("Cache-Control"),"private, no-store");
 const wrongBatch=[card(),({...card(),date:"2026-11-24",revision:3,sequences:[{...card().sequences[0],tickets:[]} ]})];
 result=await post({cards:wrongBatch});assert.equal(result.response.status,400);
 assert.equal(env.CARDS_BUCKET.objects.size,3,"a bad batch writes nothing");
-// Mock fixture is available ONLY through protected admin route and cannot enter paid R2 storage.
+// Test-only synthetic records must never be served through a production endpoint or written to R2.
 const demoResponse=await handleAdminPickTickets(new Request("https://railandryeracing.com/api/admin/pick-tickets?demo=1"),env);
-const mock=await demoResponse.json();
-assert.equal(mock.demo,true);
+const protectedListing=await demoResponse.json();
+assert.equal(protectedListing.demo,false,"demo URL parameter cannot select fictional cards");
+assert.equal(protectedListing.cards.length,1,"GET always returns real R2 records only");
+const mock=getPickTicketsPrivateDemo();
 assert.equal(mock.cards.length,5);
-assert.equal(mock.cards[0].card.sequences.filter(s=>s.end_race-s.start_race+1===3).length,3);
-assert.equal(mock.cards[0].card.sequences[2].play_status,"PASS");
-assert.equal(mock.cards[0].card.sequences[2].tickets[0].role,"BEST_POSSIBLE");
-assert.equal(mock.cards[0].card.sequences[0].hit_rate_display,"","mock projections may never be fabricated");
 result=await post({cards:mock.cards.map(x=>x.card)});
-assert.equal(result.response.status,400,"synthetic dashboard data cannot be saved as source-certified tickets");
+assert.equal(result.response.status,400,"synthetic test records cannot be saved as certified tickets");
 assert.match(result.body.error,/Mock layout selections cannot be uploaded/);
-assert.equal(env.CARDS_BUCKET.objects.size,3,"mock previews never alter paid R2 storage");
+assert.equal(env.CARDS_BUCKET.objects.size,3,"synthetic QA data never alters paid R2 storage");
 const route=fs.readFileSync("./src/index.js","utf8");
 const page=fs.readFileSync("./public/admin/pick-tickets-preview.html","utf8");
 const css=fs.readFileSync("./public/assets/pick-tickets-dashboard.css","utf8");
@@ -110,6 +109,12 @@ assert.match(js,/matchingSourceTicket/);
 assert.match(js,/AWAITING MODEL/);
 assert.match(page,/rr-pt-brand-rail/);
 assert.match(page,/rr-pt-track-logo/);
+assert.doesNotMatch(page,/Mock layout preview|VALUE ESTIMATE|PAYOUT|ROI/i);
+assert.doesNotMatch(js,/VALUE ESTIMATE|PAYOUT|POOL SIZE|ROI/i);
+assert.match(js,/COST CHANGE/);
+assert.match(js,/Certified private editions/);
+assert.doesNotMatch(js,/call\("\/api\/admin\/pick-tickets\?demo=1"\)/);
+
 for(const slug of ["finger-lakes","mahoning-valley","mountaineer","parx-racing","zia-park"]){
  assert.ok(fs.existsSync("./public/assets/approved/track-logos/"+slug+".webp"),"verified original artwork present for "+slug);
 }
