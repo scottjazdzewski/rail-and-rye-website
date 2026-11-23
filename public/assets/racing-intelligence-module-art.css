@@ -32,3 +32,6 @@
  .rr-review-demo-controls span{font-size:9px}
 }
 @media(max-width:350px){.rr-review-hero{width:58px}.rr-review-mark{width:30px;flex-basis:30px}}
+
+/* Full Target List editorial stays in Race Details; the daily feed shows a concise teaser. */
+.rr-target-page .rr-target-analysis-text{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;white-space:normal}
