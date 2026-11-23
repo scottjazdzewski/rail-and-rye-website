@@ -39,7 +39,9 @@ function scoreInputChanged(oldCard,newCard){
   for(const [program,e] of now){
    const p=byNumber.get(program);
    if(p.jockey!==e.jockey||p.trainer!==e.trainer||
-      !same(p.metrics,e.metrics))return true;
+      !same(p.metrics,e.metrics)||
+      p.win_probability_exact!==e.win_probability_exact||
+      !same(p.f4_probabilities,e.f4_probabilities))return true;
   }
   if(!same(was.scratches||[],race.scratches||[]))return true;
  }
@@ -59,6 +61,12 @@ function auditSequences(review,oldReview){
    hit_rate:newer.hit_rate_display,
    leg_counts:newer.legs.map(l=>l.programs.length),
    leg_coverage:s.review_meta.selected_leg_coverage,
+   previous_ticket:earlier?{
+    combinations:earlier.combinations,
+    cost_cents:earlier.total_cents,
+    hit_rate:earlier.hit_rate_display,
+    legs:earlier.legs.map(l=>({race_number:l.race_number,programs:l.programs}))
+   }:null,
    selections_changed:!earlier||identity(earlier)!==identity(newer),
    cost_changed:!earlier||earlier.total_cents!==newer.total_cents,
    hit_changed:!earlier||earlier.hit_rate_display!==newer.hit_rate_display};
