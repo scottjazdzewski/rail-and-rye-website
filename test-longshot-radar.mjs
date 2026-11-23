@@ -119,11 +119,13 @@ assert.ok(html.includes("/assets/projections-dashboard.css")); // shared visual 
 checks++;
 const publicDesign=readFileSync("public/longshot-radar-preview/index.html","utf8");
 assert.ok(publicDesign.includes('data-rr-design-only="true"')&&publicDesign.includes("FICTIONAL HORSES")&&publicDesign.includes("NOT ACTUAL PICKS"));
-assert.ok(publicDesign.includes("/assets/approved/publications/longshot-hero.jpg"));
-assert.ok(publicDesign.includes("/assets/approved/publications/longshot-mark.png"));
+assert.ok(!publicDesign.includes("/assets/approved/publications/longshot-hero.jpg"));
+assert.ok(!publicDesign.includes("/assets/approved/publications/longshot-mark.png"));
 assert.ok(publicDesign.includes("/assets/approved/brand/rail-rye-ivory-logo.png"));
 assert.ok(!publicDesign.includes('id="rr-lr-upload-form"')&&!publicDesign.includes('api/admin/'));
 assert.ok(publicDesign.includes('name="robots" content="noindex,nofollow,noarchive"'));
+assert.ok(!publicDesign.toLowerCase().includes("sample"),"No sample wording on public preview");
+assert.ok(publicDesign.includes('id="rr-lr-demo-alert"'),"Retain one truthful fictional-data disclosure");
 assert.ok(ui.includes('const designOnly=document.body?.dataset?.rrDesignOnly==="true"'));
 assert.ok(ui.includes('if(designOnly){')&&ui.includes('const demo=visualSample();'));
 checks++;
