@@ -81,27 +81,25 @@ try{
   assert.equal(await page.locator("#rr-target-dialog").evaluate(el=>el.open),false,"Escape closes drawer at "+width);
   await page.close();
  }
- // Empty private R2 must still let an admin see a conspicuously synthetic design example.
+ // Missing private data is a blank state, never synthetic "Example Downs" or fake model values.
  const preview=await browser.newPage({viewport:{width:390,height:850},deviceScaleFactor:1});
  await preview.route("**/api/admin/target-list",route=>route.fulfill({status:200,contentType:"application/json",body:JSON.stringify({dates:[],edition:null})}));
  await preview.goto("http://127.0.0.1:"+port+"/admin/target-list-preview.html",{waitUntil:"domcontentloaded"});
+ await preview.locator("#rr-target-empty").waitFor({state:"visible"});
+ assert.equal(await preview.locator(".rr-target-card").count(),0,"No actual edition means no visible fake cards.");
+ assert.equal(await preview.locator(".rr-review-artwork").count(),0,"No top page-and-horse imagery.");
+ assert.equal(await preview.locator("#rr-target-local-file").count(),0,"No manual local JSON file picker.");
+ const review={dates:["2026-11-23"],review_only:true,demo_example:false,edition:{
+  ...fixture.edition,review_only:true,customer_publish_approved:false,production_receipt_verified:false
+ }};
+ await preview.route("**/api/admin/target-list-review",route=>route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(review)}));
+ await preview.reload({waitUntil:"domcontentloaded"});
  await preview.locator(".rr-target-card").first().waitFor({timeout:10000});
- assert.match(await preview.locator("#rr-target-review-banner").innerText(),/SYNTHETIC LAYOUT EXAMPLE/);
- assert.equal(await preview.locator(".rr-target-card").count(),3,"Empty source shows synthetic layouts, never a blank preview.");
- // A local review can be previewed without uploading it, issuing a POST or granting customer access.
- const localReview={...fixture.edition,review_only:true,customer_publish_approved:false,production_receipt_verified:false};
- localReview.targets=fixture.edition.targets.slice(0,2);
- const actions=[];
- preview.on("request",req=>{if(req.method()==="POST")actions.push(req.url());});
- await preview.locator("#rr-target-local-file").setInputFiles({
-  name:"private-layout-review.json",mimeType:"application/json",buffer:Buffer.from(JSON.stringify(localReview))
- });
- await preview.getByText("Local review loaded in this browser only.").waitFor();
- assert.equal(await preview.locator(".rr-target-card").count(),2);
+ assert.equal(await preview.locator(".rr-target-card").count(),8,"Review route directly renders stored source-backed races.");
  assert.match(await preview.locator("#rr-target-review-banner").innerText(),/NOT SCORER-CERTIFIED/);
- assert.deepEqual(actions,[],"Local review must never POST paid content or persist it to a server.");
+ assert.equal(await preview.locator(".rr-review-artwork").count(),0);
  await preview.close();
- console.log("PASS: real browser Target List layouts at 320, 375, 390, 430, 768 and 1280px, protected sample and local-only data review.");
+ console.log("PASS: real browser Target List layouts at 320, 375, 390, 430, 768 and 1280px, no synthetic fallbacks and real-source private review rendering.");
 }finally{
  if(browser)await browser.close();
  await new Promise(resolve=>server.close(resolve));

@@ -33,7 +33,7 @@
   <div class="rr-target-titlebar">
     <div><span class="rr-target-kicker">RACING INTELLIGENCE / TARGET LIST</span><h1>Target List</h1>
       <p>Daily favorite vulnerabilities and ATTACK alternatives. Sort across tracks by post time or group by track.</p></div>
-    <div class="rr-review-artwork" aria-label="Approved Target List publication artwork"><img class="rr-review-mark" src="/assets/approved/publications/target-mark.png" alt="" width="70" height="90"><img class="rr-review-hero" src="/assets/approved/publications/target-hero.jpg" alt="" width="170" height="90"></div>
+    
   </div>
   <section class="rr-target-toolbar" aria-label="Daily edition and display order">
     <label>Race date<select id="rr-target-date" aria-label="Choose Target List date"></select></label>
@@ -44,7 +44,7 @@
     <span id="rr-target-freshness" class="rr-target-freshness" aria-live="polite"></span>
   </section>
   <p id="rr-target-status" class="rr-target-status" role="status" aria-live="polite">Loading private editions…</p>
-  <p id="rr-target-review-banner" class="rr-target-private" hidden>LAYOUT EXAMPLE ONLY · NOT CERTIFIED · NOT CUSTOMER-FACING</p>
+  <p id="rr-target-review-banner" class="rr-target-private" hidden>PRIVATE EDITORIAL REVIEW · NOT SCORER-CERTIFIED · NOT CUSTOMER-FACING</p>
 
   <section id="rr-target-app" aria-label="Target List opportunities" hidden>
     <div class="rr-target-summary"><h2 id="rr-target-count">The day's targets</h2><span id="rr-target-context"></span></div>
@@ -52,12 +52,9 @@
   </section>
   <section id="rr-target-empty" class="rr-target-empty" hidden>
     <h2>No Target List edition is loaded</h2>
-    <p>Verified production JSON can be submitted below for private review. No selections are manufactured if production has not supplied them.</p>
+    <p>No private source-backed edition is available for the selected date. Check the protected card feed before reviewing.</p>
   </section>
-  <div class="rr-target-review-loader">
-    <label for="rr-target-local-file">Open a local review JSON to see its real race rows (never uploaded or stored)</label>
-    <input id="rr-target-local-file" type="file" accept=".json,application/json" aria-label="Open private local review JSON">
-  </div>
+
   <details class="rr-target-publisher">
     <summary>Private source upload · JSON only</summary>
     <p>Upload a Target List structured export with its production receipt reference and exact model values. This saves only to private Cloudflare R2; it does not enable customer access or change the legacy Publication Desk.</p>

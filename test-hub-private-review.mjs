@@ -7,7 +7,7 @@ const manifest=JSON.parse(read("public/assets/approved/manifest.json"));
 const expected=[
  ["public/admin/racing-intelligence-review.html",["/assets/approved/race-cards/hero.webp","/assets/approved/publications/pick-tickets-hero.png","/assets/approved/publications/longshot-hero.jpg","/assets/approved/publications/target-hero.jpg"]],
  ["public/admin/longshot-radar.html",[manifest.publications.longshot_radar.hero,manifest.publications.longshot_radar.mark]],
- ["public/admin/target-list-preview.html",[manifest.publications.target_list.hero,manifest.publications.target_list.mark]]
+ ["public/admin/target-list-preview.html",[]] // User explicitly removed both top publication graphics from Target List reader.
 ];
 const config=JSON.parse(wrangler);
 assert.ok(config.assets.run_worker_first.includes("/admin*"),"All /admin review pages must run through worker before static assets.");
@@ -28,6 +28,8 @@ for(const [page,assets] of expected){
   assert.ok(existsSync("public"+asset),"Approved file missing from project: "+asset);
  }
 }
+const targetPage=read("public/admin/target-list-preview.html");
+assert.doesNotMatch(targetPage,/rr-review-artwork|target-hero\.jpg|target-mark\.png/,"Target List reader shows real race rows without decorative top page-and-horse images.");
 for(let i=1;i<=20;i++){
  assert.ok(existsSync("public"+manifest.saddlecloths[i]),"Missing real approved saddlecloth #"+i);
 }
@@ -41,4 +43,4 @@ for(const module of ["longshot-radar.js","target-list-dashboard.js"]){
 }
 assert.match(read("public/assets/racing-intelligence-module-art.css"),/rr-review-artwork/);
 assert.equal(config.vars.PROJECTIONS_MEMBER_LAUNCH,"off","Do not enable customer launch");
-console.log("PASS: private Hub route, fail-closed admin gate, approved logo/4 product heroes/2 product marks/all 20 real saddlecloth assets, no PDF dependency, no paid data exposure.");
+console.log("PASS: private Hub route, fail-closed admin gate, approved shared header/4 hub product heroes/Longshot Radar marks/all 20 real saddlecloth assets and Target List without decorative top art, no PDF dependency, no paid data exposure.");
