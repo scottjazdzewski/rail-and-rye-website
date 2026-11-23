@@ -232,6 +232,8 @@ function makeTile(label,value){
  const shown=(label==="Pace"||label==="Surface")&&raw
   ?raw.toLowerCase().replace(/\b[a-z]/g,letter=>letter.toUpperCase()):raw||"—";
  tile.setAttribute("role","group");
+ tile.dataset.fact=label.toLowerCase();
+ tile.dataset.value=key;
  tile.setAttribute("aria-label",label+": "+(shown==="—"?"Not listed":shown));
  tile.append(art?iconNode(art,"rr-dash-tile-mark"):makeNode("span","rr-dash-tile-mark rr-dash-tile-mark--empty"));
  tile.append(makeNode("span","rr-dash-tile-label",label),makeNode("strong","rr-dash-tile-value",shown));
@@ -361,12 +363,17 @@ function cardHeader(card){
 function scratchList(race){
  const scratches=Array.isArray(race.scratches)?race.scratches:[];
  const count=race.scratch_count==null?scratches.length:Number(race.scratch_count)||0;
- if(!scratches.length&&!count)return null;
- // Header-only scratch treatment: authentic saddlecloth chips, no names or
- // separate scratch card. Horse names stay in accessible labels/tooltips.
+ // One fixed-height lane whether or not the race has scratches.
  const strip=makeNode("div","rrp-race-head__scratch-bar rr-dash-scratch-strip"),
   list=makeNode("ul","rrp-race-head__scratch-chips rr-dash-scratch-list");
+ if(!scratches.length&&!count){
+  strip.dataset.empty="true";
+  strip.setAttribute("aria-label","No scratches listed");
+  strip.append(makeNode("strong","rrp-race-head__scratch-count rr-dash-race-scratch-count","NO SCRATCHES LISTED"));
+  return strip;
+ }
  strip.setAttribute("aria-label",count+" scratch"+(count===1?"":"es"));
+ list.setAttribute("tabindex","0");
  strip.append(makeNode("strong","rrp-race-head__scratch-count rr-dash-race-scratch-count",count+" SCRATCH"+(count===1?"":"ES")));
  strip.append(makeNode("span","rrp-race-head__scratch-rule"));
  for(const scratch of scratches){
@@ -388,7 +395,6 @@ function scratchList(race){
   }else item.append(makeNode("span","rrp-race-head__scratch-fallback rr-dash-scratch-fallback",program||"–"));
   list.append(item);
  }
- if(!scratches.length&&count)list.append(makeNode("li","rrp-race-head__scratch-missing rr-dash-scratch-missing","Details unavailable"));
  strip.append(list);return strip;
 }
 function raceBanner(race){
@@ -423,7 +429,7 @@ function raceBanner(race){
  time.append(makeNode("span","","POST TIME"),makeNode("strong","",race.post_time_et||race.post_time||race.postTime||"Not listed"));
  details.append(time);
  wrapper.append(titleRow,details);
- const scratched=scratchList(race);if(scratched)wrapper.append(scratched);
+ wrapper.append(scratchList(race));
  return wrapper;
 }
 function renderCard(){
