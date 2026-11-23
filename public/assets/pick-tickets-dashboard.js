@@ -245,6 +245,10 @@
   left.append(node("h2","",activeSeq.name+" · Races "+activeSeq.start_race+"–"+activeSeq.end_race));
   head.append(left,state(activeSeq.play_status));
   box.append(head,modeControls());
+  if(card.source_receipt?.reference?.includes("RIDER_CHANGES_PENDING")){
+   box.append(node("p","rr-pt-interim-model-label",
+    "INTERIM MODEL · Updated scratch field. Changed-jockey scoring still pending verification."));
+  }
   if(activeMode==="builder")box.append(builder());
   else{
    const chosen=selectedTicket();
