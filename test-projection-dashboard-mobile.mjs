@@ -4,8 +4,9 @@ import vm from "node:vm";
 
 const css=readFileSync("public/assets/projections-dashboard.css","utf8");
 const headerCss=readFileSync("public/assets/rr-projections-race-header.css","utf8");
+const factsCss=readFileSync("public/assets/rr-race-facts.css","utf8");
 const js=readFileSync("public/assets/projections-dashboard.js","utf8");
-assert.match(css,/\.rr-dash-race-tiles\{grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/,"Facts use the current three-column compact layout");
+assert.match(factsCss,/\.rr-dash-race-tiles\{display:grid;grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/,"Facts use the current three-column compact layout");
 assert.doesNotMatch(js,/INITIAL CARD · CURRENT|INITIAL · CURRENT|SCRATCH UPDATED · CURRENT|rr-dash-card-update-state|verified initial evaluation/,"Never reintroduce internal production-state labels.");
 assert.doesNotMatch(js,/badges are not yet certified/,"Verified initial badges must not be called uncertified");
 assert.match(js,/rr-dash-metric-bars/,"Five source-backed factor states must render as compact colored dashes");
@@ -15,10 +16,16 @@ assert.match(css,/\.rr-dash-win-percent\{font-family:"Tinos"/,"Match the approve
 assert.match(css,/\.rr-dash-metric-value\[data-state="gray"\] \.rr-dash-metric-bar/,"Neutral factors have an explicit gray dash color");
 assert.match(css,/min-height:114px/,"Runner cards no longer reserve a blank analysis footer");
 assert.match(js,/F4 FINISH PROJECTIONS/,"Full Analysis must include F4 outcomes");
-assert.doesNotMatch(js,/rr-dash-prescratch-note/,"Remove obsolete prescratch message.");
+assert.doesNotMatch(js,/rr-dash-prescratch-note|rr-dash-factor-origin-note|five-factor ratings have not been recalculated/,"No stage or recalculation commentary.");
+assert.match(js,/fact_pace_moderate|fact_pace_strong/,"Approved pace art is used.");
+assert.match(js,/fact_surface_dirt|fact_surface_turf/,"Approved surface art is used.");
+assert.match(js,/fact_distance/,"Approved distance art is used.");
+assert.doesNotMatch(css,/\.rr-dash-race-tiles\s*\{/,"Remove legacy fact-tile CSS.");
+assert.match(factsCss,/@media\(max-width:370px\)/,"Dedicated 320px badges and values.");
+assert.match(factsCss,/@media\(max-width:800px\)/,"Mobile badge scaling.");
 assert.match(css,/\.rr-dash-metric-group\{\s*grid-area:metrics;\s*grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/,"Mobile ratings remain one five-factor strip");
 assert.doesNotMatch(js,/Trainer not listed \| Jockey not listed/,"Do not repeat source-data warnings on customer runner rows");
-assert.match(css,/\.rr-dash-race-tiles\{grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/,"Compact race facts occupy three short columns");
+assert.match(factsCss,/\.rr-dash-race-tiles\{display:grid;grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/,"Compact race facts occupy three short columns");
 assert.match(css,/grid-template-areas:"program horse market" "metrics metrics metrics";/,"Runner rows should contain only identity and factor strips");
 assert.match(css,/\.rr-dash-win\{align-self:start;justify-self:end;align-items:flex-end;text-align:right/,"Numerical values remain right aligned");
 assert.match(css,/\.rr-dash-horse-dialog\{position:fixed;inset:auto 0 0/,"Mobile details must open as a bottom drawer");
@@ -308,6 +315,7 @@ const chipStyles=readFileSync("public/assets/rr-intelligence-chips.css","utf8");
 for(const html of [adminHtml,memberHtml]){
  assert.match(html,/rr-intelligence-chips\.css\?v=4/,"Load cleaned shared race/horse chip identity");
  assert.match(html,/rr-projections-race-header\.css\?v=2/,"Load the single new Projections header stylesheet");
+  assert.match(html,/rr-race-facts\.css\?v=1/,"Load the shared centered race-facts stylesheet.");
  assert.match(html,/rr-exotic-bet-builder\.css\?v=3/,"Load the responsive exotic ticket builder skin");
  assert.match(html,/rr-exotic-bet-builder\.js\?v=\d+/,"Load the source-gated no-tote Bet Builder");
 }
