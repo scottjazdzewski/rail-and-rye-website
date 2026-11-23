@@ -6,6 +6,8 @@ on:
       - 'src/index.js'
       - 'public/admin/target-list-preview.html'
       - 'public/assets/target-list-dashboard.*'
+      - 'public/assets/rr-race-titles.js'
+      - 'public/assets/rr-stakes-inline.css'
       - 'test-target-list-hub.mjs'
       - 'test-target-list-responsive.mjs'
       - 'test-target-list-private-review.mjs'
@@ -26,6 +28,7 @@ jobs:
       - name: Private edition, integrity, and UI regression
         run: |
           node test-target-list-hub.mjs
+          node test-rr-race-titles.mjs
           node test-target-list-private-review.mjs
           python3 -m py_compile scripts/target_list_private_review_bridge.py
       - name: Install Chromium browser for real viewport QA
