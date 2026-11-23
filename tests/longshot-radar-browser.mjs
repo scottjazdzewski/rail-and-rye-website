@@ -10,11 +10,11 @@ const sample={
   status:"prescratch",generated_at:"2026-11-23T03:15:00Z",
   receipts:{release_status:"PASS",model_sha256:"a".repeat(64),source_sha256:"b".repeat(64),editorial_qa_sha256:"c".repeat(64)},
   candidates:[
-   {track:"Synthetic Track",race_number:4,program_number:"11A",horse_name:"A Very Long Synthetic Horse Name For Mobile Wrap Testing",
+   {track:"Synthetic Downs",race_number:4,post_time_et:"5:40 PM ET",program_number:"11A",horse_name:"A Very Long Synthetic Horse Name For Mobile Wrap Testing",
     original_morning_line:"8/1",pwin_exact:1/6,pwin_display:16.7,fair_odds_display:"5/1",
     betting_case:"This purely synthetic QA fixture checks that a long race-specific explanation wraps without hiding any relevant price or runner data.",
     source_causal_evidence:"Fixture evidence is not a real handicapping claim.",counterargument_checked:"Fixture counterargument is not a real handicapping claim."},
-   {track:"Synthetic Track",race_number:5,program_number:"2",horse_name:"Fixture Runner B",original_morning_line:"10/1",
+   {track:"Synthetic Park",race_number:5,post_time_et:"2:10 PM ET",program_number:"2",horse_name:"Fixture Runner B",original_morning_line:"10/1",
     pwin_exact:.2,pwin_display:20,fair_odds_display:"4/1",
     betting_case:"This testing-only sentence validates the second card's structure and drawer navigation.",
     source_causal_evidence:"Synthetic evidence.",counterargument_checked:"Synthetic counterargument."}
@@ -53,16 +53,21 @@ try{
   if(size.pageWidth>width+1||size.bodyWidth>width+1)throw Error("Horizontal overflow at "+width+": "+JSON.stringify(size));
   if(await page.locator(".rr-lr-card").count()!==2)throw Error("Missing full candidate coverage at "+width);
   if(!(await page.locator(".rr-lr-stage").innerText()).includes("INITIAL"))throw Error("Prescratch status missing at "+width);
+  // Default ordering is chronological ACROSS tracks, not publication/source order.
+  if(!(await page.locator(".rr-lr-card").first().innerText()).includes("Fixture Runner B"))throw Error("Global post-time order failed at "+width);
+  await page.locator("#rr-lr-sort").selectOption("track");
+  if(!(await page.locator(".rr-lr-card").first().innerText()).includes("A Very Long Synthetic"))throw Error("Track order failed at "+width);
+  await page.locator("#rr-lr-sort").selectOption("post-time");
+  if(!(await page.locator(".rr-lr-card").first().innerText()).includes("Fixture Runner B"))throw Error("Post-time switch did not restore chronological order at "+width);
   await page.screenshot({path:join("test-artifacts","longshot-"+width+".png"),fullPage:true});
-  await page.getByRole("button",{name:/Full Longshot Radar analysis/}).first().click();
+  await page.getByRole("button",{name:/Read Longshot Radar analysis/}).first().click();
   if(!(await page.locator("#rr-lr-dialog").evaluate(el=>el.open)))throw Error("Details failed at "+width);
   await page.keyboard.press("Escape");
   if(await page.locator("#rr-lr-dialog").evaluate(el=>el.open))throw Error("Escape did not dismiss dialog at "+width);
-  await page.locator("#rr-lr-search").fill("Fixture Runner B");
-  if(await page.locator(".rr-lr-card").count()!==1)throw Error("Search filter failed at "+width);
+  if(await page.locator(".rr-lr-card").count()!==2)throw Error("Daily source candidates disappeared after sorting at "+width);
   await page.close();
  }
- console.log("PASS: mobile 320/375/390/430, tablet 768 and desktop 1280, full rows, dialog, Escape, filtering, no horizontal overflow.");
+ console.log("PASS: mobile 320/375/390/430, tablet 768 and desktop 1280, date-based daily cards, cross-track post-time/track order, dialog, Escape, no overflow.");
 }finally{
  if(browser)await browser.close();await new Promise(resolve=>server.close(resolve));
 }
