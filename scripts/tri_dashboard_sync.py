@@ -15,6 +15,7 @@ import sys
 import unicodedata
 import zipfile
 from tri_f4_finish_order import apply_certified_f4_order, F4OrderHold
+from tri_f4_exotics import make_f4_exotic_payloads, sync_f4_exotic_payloads, ExoticHold
 
 APPROVED_STATUSES = {"TRI_V4_F4_V2_MODEL_SOURCE_INPUT_ERRORS_RESOLVED_ALL_FIVE", "TRI_V4_F4_V2_PRESCRATCH_ALL_TRACKS_PASS"}
 PWIN_PASS = "PASS_TRI_TJ_V4_PERMANENT_FORWARD_RUNTIME"
@@ -395,7 +396,8 @@ def main():
     try:
         require(not args.dry_run or args.publish, "--dry-run requires --publish")
         with open(args.source_zip, "rb") as infile:
-            date, cards, payload, counts = build_cards(infile.read())
+            source_zip_bytes = infile.read()
+        date, cards, payload, counts = build_cards(source_zip_bytes)
         if args.publish:
             require(args.badge_source_zip,
                     "Current official initial cards require --badge-source-zip with original certified factors")
@@ -413,10 +415,20 @@ def main():
               f"races={counts['races']} runners={counts['runners']} "
               f"payload_bytes={len(payload)} source_sha256={counts['sha256']}")
         if args.publish:
-            updated, unchanged = sync_cards(cards, counts["sha256"], dry_run=args.dry_run)
+            exotic=make_f4_exotic_payloads(source_zip_bytes,cards,counts["sha256"])
+            require(len(exotic)==len(cards),"Verified exotic track set incomplete")
+            client=create_client(
+                os.getenv("TRI_CLOUDFLARE_ACCOUNT_ID","").strip(),
+                os.getenv("TRI_R2_ACCESS_KEY_ID","").strip(),
+                os.getenv("TRI_R2_SECRET_ACCESS_KEY","").strip())
+            # Publish only fully source-verified coefficients. Both layers
+            # cross-check the same exact model and badge hashes at read time.
+            exotic_written, exotic_same=sync_f4_exotic_payloads(exotic,client,dry_run=args.dry_run)
+            updated, unchanged = sync_cards(cards, counts["sha256"], dry_run=args.dry_run,client=client)
             print(f"TRI_R2 date={date} written={updated} unchanged={unchanged} "
+                  f"exotic_written={exotic_written} exotic_unchanged={exotic_same} "
                   f"status={'DRY_RUN' if args.dry_run else 'PRIVATE_R2_PUBLISHED'}")
-    except (Hold, ValueError, KeyError, TypeError, zipfile.BadZipFile, OSError) as exc:
+    except (Hold, ExoticHold, ValueError, KeyError, TypeError, zipfile.BadZipFile, OSError) as exc:
         print("TRI_PUBLISH_HOLD: " + str(exc), file=sys.stderr)
         sys.exit(2)
 
