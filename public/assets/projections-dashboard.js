@@ -74,19 +74,54 @@ function raceTimeline(){
   (a.card.track||a.card.card.track_name).localeCompare(b.card.track||b.card.card.track_name)||
   a.race.race_number-b.race.race_number);
 }
+// One visual language for BOTH race tabs and horses. Race numbers show
+// the corresponding authentic approved saddlecloth asset, never a simulated
+// navy/gold race plaque with competing legacy border/padding styles.
+function approvedRaceSaddle(raceNumber){
+ const number=Number(raceNumber);
+ if(Number.isInteger(number)&&number>=1&&number<=20){
+  const img=document.createElement("img");
+  img.className="rr-race-saddle-image";
+  img.src="/assets/approved/saddlecloths/"+number+".png";
+  img.alt="";img.loading="lazy";img.decoding="async";
+  return img;
+ }
+ return makeNode("span","rr-race-saddle-fallback",String(raceNumber));
+}
+function editorialRacePresentation(race){
+ const fromHelper=globalThis.RRRaceTitles?.describe?.(race);
+ if(fromHelper&&typeof fromHelper.title==="string"&&fromHelper.title.trim()&&
+    !/\b(?:S|Stk|Stks)\.$/i.test(fromHelper.title.trim()))return fromHelper;
+ // Defensive display fallback: if the separate shared helper is blocked,
+ // its absence must NEVER expose "First Lady S." to customers again.
+ const raw=String(race.stakes_name||race.race_name||race.conditions||"Race projections").trim();
+ let title=raw
+  .replace(/\s*\(\s*(?:presented|sponsored|powered)\s+by\b[^)]*\)/gi,"")
+  .replace(/\s*(?:presented|sponsored|powered)\s+by\b.*$/i,"")
+  .replace(/\s*\(\s*(?:G(?:rade)?\.?|Gr\.?)\s*[-:]?\s*(?:III|II|I|[123])\s*\)\s*$/i,"").trim();
+ // Capture casing BEFORE replacing "S." with "Stakes", otherwise the
+ // newly mixed-case suffix prevents uppercase source names from title-casing.
+ const originalLetters=title.replace(/[^A-Za-z]/g,"");
+ const originallyAllCaps=originalLetters.length>2&&originalLetters===originalLetters.toUpperCase();
+ title=title.replace(/\b(?:Stks?|Stk|S)\.?$/i,"Stakes");
+ if(originallyAllCaps)
+  title=title.toLowerCase().replace(/\b[a-z]/g,letter=>letter.toUpperCase());
+ const match=raw.match(/\(\s*(?:G(?:rade)?\.?|Gr\.?)\s*[-:]?\s*(III|II|I|[123])\s*\)/i);
+ const grade=match?({I:1,II:2,III:3}[match[1].toUpperCase()]||Number(match[1])):null;
+ return {title:title||"Race projections",grade:Number.isInteger(grade)&&grade>=1&&grade<=3?grade:null};
+}
 function renderRaceNav(card){
  const nav=q("#rr-dash-races");nav.replaceChildren();
  if(viewMode!=="track"||!card)return;
  const races=racesByPostTime(card);
  if(!races.some(race=>race.race_number===activeRace))activeRace=races[0]?.race_number||null;
  for(const race of races){
-  const button=document.createElement("button");button.type="button";button.className="rr-dash-race-button rr-race-chip rr-race-chip--tab";
+  const button=document.createElement("button");button.type="button";
+  button.className="rr-dash-race-button rr-race-saddle-tab";
   button.dataset.raceNumber=String(race.race_number);
   button.setAttribute("aria-label","Race "+race.race_number+" · "+timeLabel(race)+" · post-time order");
   button.setAttribute("aria-current",String(race.race_number===activeRace));
-  const label=document.createElement("span");label.className="rr-race-chip__label";label.textContent="RACE";
-  const number=document.createElement("strong");number.textContent=race.race_number;
-  button.append(label,number);
+  button.append(approvedRaceSaddle(race.race_number));
   button.addEventListener("click",()=>{activeRace=race.race_number;renderCard();});nav.append(button);
  }
 }
@@ -285,26 +320,28 @@ function showHorse(entry){
  dialog.showModal();
 }
 function cardHeader(card){
- const wrapper=makeNode("div","rr-dash-card-head"),logo=document.createElement("img");
- logo.className="rr-dash-card-logo";logo.src="/assets/brand/rail_rye_logo_header.png";logo.alt="Rail & Rye";
+ const wrapper=makeNode("div","rr-dash-card-head rr-dash-card-head--with-track-mark"),
+  logo=document.createElement("img");
+ logo.className="rr-dash-card-logo";
+ logo.src="/assets/brand/rail_rye_logo_header.png";logo.alt="Rail & Rye";
  const name=card.track||card.card.track_name;
- const info=document.createElement("div"),track=makeNode("h2","rr-dash-track-title",name),date=makeNode("p","rr-dash-card-date",dateLabel(card.race_date));info.append(track,date);
- wrapper.append(logo,info);
- // Keep both previously approved brand/track graphics. Unknown tracks safely
- // fall back to the R&R horseshoe, without introducing generic placeholders.
- const approvedTrackLogos={
-  "Finger Lakes":"finger-lakes.webp","Mountaineer":"mountaineer.webp",
-  "Mahoning Valley":"mahoning-valley.webp","Parx Racing":"parx-racing.webp",
-  "Zia Park":"zia-park.webp"
+ const info=document.createElement("div"),
+  track=makeNode("h2","rr-dash-track-title",name),
+  date=makeNode("p","rr-dash-card-date",dateLabel(card.race_date));
+ info.append(track,date);wrapper.append(logo,info);
+ // Retire the tiny white sponsor-logo image tiles. A compact track-specific
+ // racing mark preserves the graphic identity without advertising sponsors.
+ const approvedMarks={
+  "Finger Lakes":"FL","Mountaineer":"MNR","Mahoning Valley":"MV",
+  "Parx Racing":"PRX","Zia Park":"ZIA"
  };
- const file=approvedTrackLogos[name];
- if(file){
-  wrapper.className+=" rr-dash-card-head--with-track-logo";
-  const trackLogo=document.createElement("img");
-  trackLogo.className="rr-dash-track-logo";trackLogo.src="/assets/approved/track-logos/"+file;
-  trackLogo.alt=name+" track logo";trackLogo.loading="lazy";trackLogo.decoding="async";
-  wrapper.append(trackLogo);
- }
+ const letters=approvedMarks[name]||String(name).split(/\s+/).map(x=>x[0]).join("").slice(0,3).toUpperCase()||"TRK";
+ const mark=makeNode("div","rr-dash-track-mark");
+ mark.setAttribute("aria-label",name+" track emblem");
+ mark.append(makeNode("span","rr-dash-track-mark-rail",""),
+  makeNode("strong","rr-dash-track-mark-letters",letters),
+  makeNode("span","rr-dash-track-mark-caption","RACECOURSE"));
+ wrapper.append(mark);
  return wrapper;
 }
 function scratchList(race){
@@ -327,10 +364,13 @@ function scratchList(race){
  strip.append(list);return strip;
 }
 function raceBanner(race){
- const wrapper=makeNode("div","rr-dash-race-banner"),number=makeNode("div","rr-dash-race-number rr-race-chip rr-race-chip--header"),copy=makeNode("div","rr-dash-race-copy"),time=makeNode("div","rr-dash-post-time");
- number.append(makeNode("span","rr-race-chip__label","RACE"),makeNode("strong","",race.race_number));
- const presentation=globalThis.RRRaceTitles?.describe?.(race)||
-  {title:String(race.stakes_name||race.race_name||race.conditions||"Race projections").trim(),grade:null};
+ const wrapper=makeNode("div","rr-dash-race-banner"),
+  number=makeNode("div","rr-dash-race-number rr-race-saddle-header"),
+  copy=makeNode("div","rr-dash-race-copy"),time=makeNode("div","rr-dash-post-time");
+ number.setAttribute("role","img");
+ number.setAttribute("aria-label","Race "+race.race_number);
+ number.append(approvedRaceSaddle(race.race_number));
+ const presentation=editorialRacePresentation(race);
  const purse=String(race.purse||"").trim();
  const title=makeNode("h3","rr-dash-race-condition");
  title.append(makeNode("span","rr-dash-stakes-name",presentation.title));

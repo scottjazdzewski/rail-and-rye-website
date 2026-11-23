@@ -12,6 +12,8 @@ const check=(input,title,grade,stakes=true)=>{
  assert.equal(found.stakes,stakes,"Stakes identity must be explicit, never based on purse");
 };
 check({conditions:"Belmont S."},"Belmont Stakes",null);
+check({conditions:"FIRST LADY S."},"First Lady Stakes",null);
+check({conditions:"First Lady S."},"First Lady Stakes",null);
 check({conditions:"Belmont S. (G1)"},"Belmont Stakes",1);
 check({conditions:"Belmont S. (G1) Presented by NYRA Bets"},"Belmont Stakes",1);
 check({conditions:"Belmont Stks. (G1) Sponsored by NYRA Bets"},"Belmont Stakes",1);
@@ -49,15 +51,25 @@ const css=readFileSync("public/assets/projections-dashboard.css","utf8");
 const admin=readFileSync("public/admin/projections-preview.html","utf8");
 const member=readFileSync("public/membership/dashboard/index.html","utf8");
 for(const html of [admin,member]){
- assert.match(html,/rr-race-titles\.js\?v=1/,"Load shared race presentation helper before dashboard");
- assert.match(html,/projections-dashboard\.js\?v=29/,"Use verified stakes heading dashboard revision");
+ assert.match(html,/rr-race-titles\.js\?v=2/,"Load shared race presentation helper before dashboard");
+ assert.match(html,/projections-dashboard\.js\?v=30/,"Use verified stakes heading dashboard revision");
  assert.match(html,/projections-dashboard\.css\?v=25/,"Use correct graded trophy styles");
 }
-assert.match(js,/RRRaceTitles\?\.describe/,"Race headings must use shared canonical title helper");
+assert.match(js,/editorialRacePresentation\(race\)/,
+ "Race headings use a source-proven title and defensive fallback");
+assert.match(js,/approvedRaceSaddle\(race\.race_number\)/,
+ "Race heading must show actual saddlecloth number art rather than a fake badge");
+assert.match(js,/approvedRaceSaddle\(raceNumber\)/,
+ "Race navigation uses the same race saddlecloth source");
+assert.match(js,/rr-dash-track-mark/,
+ "Replace sponsor-backed track graphics with cleaner track-specific racing seal");
+assert.doesNotMatch(js,/approvedTrackLogos=\{/,
+ "Do not keep rendering the old tiny white advertising-logo tiles");
+
 assert.match(js,/rr-dash-graded-trophy--g/,"Graded race header must retain grade-specific trophy");
 assert.match(js,/🏆/,"Use the graded stakes trophy symbol");
 assert.match(css,/rr-dash-graded-trophy--g1/);
 assert.match(css,/rr-dash-graded-trophy--g2/);
 assert.match(css,/rr-dash-graded-trophy--g3/);
 assert.match(css,/rr-dash-race-condition\{\s*text-transform:none/,"Do not uppercase normal editorial race titles");
-console.log("PASS: Belmont S. -> Belmont Stakes; sponsor-free titles; G1/G2/G3 trophies; original nonstakes names unchanged");
+console.log("PASS: Belmont and First Lady Stakes fully written; no sponsor-logo tiles; real saddlecloth race numbers; verified graded trophies");
