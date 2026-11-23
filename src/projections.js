@@ -228,7 +228,7 @@ export async function handleAdminProjectionBatchUpload(request,env){
  // scratch-final ordered F4 distributions before allowing any dashboard writes.
  for(const card of cards){
   if(card.projection_status!=="scratch_final")continue;
-  const key="projections/f4-ordered/"+card.race_date+"/"+foldTrack(card.track_name)+".json";
+  const key="projections/f4-ordered/"+card.race_date+"/"+trackSlug(card.track_name)+".json";
   try{
    const source=await env.CARDS_BUCKET.get(key);
    if(!source)return fail("Publish matching certified scratch-final F4 joint probabilities before projections.",409);
