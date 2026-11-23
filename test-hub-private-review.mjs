@@ -34,7 +34,8 @@ for(const module of ["longshot-radar.js","target-list-dashboard.js"]){
  const source=read("public/assets/"+module);
  assert.match(source,/assets\/approved\/saddlecloths\/"/);
  assert.doesNotMatch(source,/localStorage|sessionStorage|innerHTML/,"No stored paid content or raw HTML insertion.");
- assert.match(source,/visualSample/,"Explicit protected UI samples for visual tuning required.");
+ if(module==="longshot-radar.js")assert.match(source,/visualSample/,"Radar private sample should be available.");
+ else assert.match(source,/demoData|reviewOnly|review_only/,"Preserve Target List's existing private example/review workflow.");
  assert.doesNotMatch(source,/\/api\/checkout|stripe/,"No new disconnected commerce flow.");
 }
 assert.match(read("public/assets/racing-intelligence-module-art.css"),/rr-review-artwork/);
