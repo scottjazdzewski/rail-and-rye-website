@@ -6,6 +6,7 @@ import {buildV33ScratchFieldPreview,verifyV32OwnerScratchSnapshot,PICK_MENU_1123
  from "../src/pick-tickets-auto.js";
 import {chooseV33,PICK_V33_ENGINE} from "../src/pick-tickets-v33.js";
 import {sourceIsScratchCurrent} from "../src/pick-tickets-scratch-1123.js";
+import {auditV33FieldUpload} from "../src/pick-tickets-field-audit.js";
 const input=JSON.parse(fs.readFileSync(0,"utf8"));
 const date="2026-11-23";
 const output={date,engine:PICK_V33_ENGINE,source_rows:[],tracks:[],authorized_editions:[],overall:{}};
@@ -24,9 +25,16 @@ for(const raw of input.sources||[]){
    tri:Boolean(card.model_receipts?.tri_sha256),
    f4:Boolean(card.model_receipts?.f4_sha256)
   }};
+ row.declared_scratch_count=Array.isArray(card.races)?
+  card.races.reduce((n,r)=>n+(Array.isArray(r.scratches)?r.scratches.length:0),0):0;
  output.source_rows.push(row);
  let evidence={};
  try{
+  // Cross-check the actual dashboard's new every-upload source verifier.
+  const fieldAudit=await auditV33FieldUpload(card);
+  row.upload_field_gate={ok:fieldAudit?.sequence_count===
+   PICK_MENU_1123.filter(x=>x.track===track).length,
+   status:fieldAudit?.source_signature_status||null};
   evidence=verifyV32OwnerScratchSnapshot(card);
   row.scratch_ledger_check=evidence;
   if(!evidence.ok){row.status="SCRATCH_RECONCILIATION_REJECTED";continue;}
@@ -101,6 +109,9 @@ const checked=output.tracks.flatMap(x=>x.sequences.map(s=>x.track+"|"+s.start_ra
 output.overall={
  source_tracks:output.source_rows.length,
  eligible_tracks:output.tracks.length,
+ upload_field_gate_pass:output.source_rows.filter(r=>r.upload_field_gate?.ok).length,
+ upload_field_gate_failed:output.source_rows.filter(r=>!r.upload_field_gate?.ok)
+   .map(r=>({track:r.track,reason:r.error||r.status})),
  source_runner_total:output.source_rows.reduce((n,x)=>n+x.runner_count,0),
  audited_sequences:checked.length,
  expected_sequences:expected.size,
