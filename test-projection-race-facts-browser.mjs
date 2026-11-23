@@ -20,7 +20,7 @@ const fixture={cards:[{
  }]}
 }]};
 fixture.cards[0].card.races.push({
- ...fixture.cards[0].card.races[0],race_number:5,
+ ...fixture.cards[0].card.races[0],race_number:5,pace:"Strong",
  scratches:[{program_number:"6",horse_name:"Scratch Six"},
  {program_number:"7",horse_name:"Scratch Seven"},
  {program_number:"9",horse_name:"Scratch Nine"}],scratch_count:3
@@ -109,6 +109,14 @@ try{
   const headerWithScratches=await page.locator("#rr-dash-race .rrp-race-head").evaluate(el=>el.getBoundingClientRect().height);
   assert.ok(Math.abs(headerNoScratches-headerWithScratches)<=1.1,
    "Scratch/no-scratch headers must be equal at "+width+": "+headerNoScratches+" vs "+headerWithScratches);
+  const watch=await page.locator('.rr-dash-race-tile[data-fact="pace"][data-value="strong"] img').evaluate(el=>({
+   filter:getComputedStyle(el).filter,maxWidth:parseFloat(getComputedStyle(el).maxWidth)
+  }));
+  const surface=await page.locator('.rr-dash-race-tile[data-fact="surface"] img').evaluate(el=>({
+   maxWidth:parseFloat(getComputedStyle(el).maxWidth)
+  }));
+  assert.ok(watch.filter.includes("brightness(0.68)"),"Strong watch uses deeper green at "+width);
+  assert.ok(watch.maxWidth<surface.maxWidth,"Stopwatch optically smaller than track badge at "+width);
   assert.equal(await page.locator(".rrp-race-head__scratch-chip img").count(),3,
    "All genuine scratched saddlecloths remain visible");
   const laneHeight=await page.locator(".rrp-race-head__scratch-bar").evaluate(el=>el.getBoundingClientRect().height);
