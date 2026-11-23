@@ -271,8 +271,10 @@ function renderCard(){
  let entries=[...race.entries].map((entry,index)=>({entry,index}));
  const query=String(q("#rr-dash-search")?.value||"").trim().toLowerCase();
  if(query)entries=entries.filter(({entry})=>String(entry.horse_name||"").toLowerCase().includes(query)||String(entry.program_number||"").toLowerCase().includes(query));
- if(q("#rr-dash-sort")?.value==="win")entries.sort((a,b)=>(Number(b.entry.win_probability)||0)-(Number(a.entry.win_probability)||0)||a.index-b.index);
- else entries.sort((a,b)=>(a.entry.rank??999)-(b.entry.rank??999)||a.index-b.index);
+ if(q("#rr-dash-sort")?.value==="program"){
+  const compare=new Intl.Collator("en",{numeric:true,sensitivity:"base"});
+  entries.sort((a,b)=>compare.compare(String(a.entry.program_number||""),String(b.entry.program_number||""))||a.index-b.index);
+ }else entries.sort((a,b)=>(Number(b.entry.win_probability)||0)-(Number(a.entry.win_probability)||0)||a.index-b.index);
  for(const {entry} of entries){
   const row=makeNode("div","rr-dash-runner-row");row.setAttribute("role","row");
   const program=makeNode("div","rr-dash-program");program.setAttribute("role","cell");
