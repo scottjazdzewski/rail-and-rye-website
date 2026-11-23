@@ -92,7 +92,7 @@ assert.match(css,/rr-bet-horse-choice.*aria-pressed/s,
  "Horse choices use accessible pressed state");
 for(const type of ["Exacta","Trifecta","1st-Place Key","Part-Wheel"])
  assert.ok(script.includes(type),"Builder must include approved mode "+type);
-assert.match(script,/api\\/admin\\/projections-f4/,
+assert.match(script,/api\/admin\/projections-f4/,
  "Bet Builder must load authentic frozen F4 probabilities from authenticated R2");
 assert.match(script,/credentials:"same-origin"/,
  "Private F4 model read must preserve session credentials");
