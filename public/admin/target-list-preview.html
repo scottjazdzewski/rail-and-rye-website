@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive"><meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#102d53">
+<title>Target List · Private Hub Preview | Rail &amp; Rye</title>
+<link rel="icon" href="/favicon.png" type="image/png">
+<link rel="stylesheet" href="/assets/rail-rye-core.css">
+<link rel="stylesheet" href="/assets/rail-rye-components.css">
+<link rel="stylesheet" href="/assets/membership.css">
+<link rel="stylesheet" href="/assets/target-list-dashboard.css">
+<script src="/assets/target-list-dashboard.js" defer></script>
+</head>
+<body class="rr-member-page rr-target-page" data-rr-preview="true">
+<header class="rr-member-header">
+  <div class="heritage-shell">
+    <a class="rr-member-brand" href="/admin/" aria-label="Rail and Rye Publisher's Desk">
+      <img src="/assets/approved/brand/rail-rye-ivory-logo.png" alt="" width="46" height="46"><span>RAIL &amp; RYE</span>
+    </a>
+    <nav class="rr-member-nav" aria-label="Racing Intelligence preview modules">
+      <a href="/admin/projections-preview/">Projections</a>
+      <a href="/admin/target-list-preview/" aria-current="page">Target List</a>
+      <span class="rr-target-nav-pending" aria-label="Pick Tickets not yet integrated">Pick Tickets</span>
+      <span class="rr-target-nav-pending" aria-label="Longshot Radar not yet integrated">Longshot Radar</span>
+    </nav>
+  </div>
+</header>
+<main class="rr-target-main">
+  <p class="rr-target-private">Private admin review · Customer access remains off</p>
+  <div class="rr-target-titlebar">
+    <div><span class="rr-target-kicker">RACING INTELLIGENCE / TARGET LIST</span><h1>Target List</h1>
+      <p>Source-backed favorite vulnerabilities and ATTACK alternatives, presented without PDFs.</p></div>
+    <a class="rr-target-back" href="/admin/">Publisher's Desk</a>
+  </div>
+  <section class="rr-target-toolbar" aria-label="Edition controls">
+    <label>Race date<select id="rr-target-date" aria-label="Choose Target List race date"></select></label>
+    <label>Track<select id="rr-target-track" aria-label="Filter Target List by track"><option value="">All tracks</option></select></label>
+    <label>Find a horse<input id="rr-target-search" type="search" placeholder="Horse or track" autocomplete="off" aria-label="Search Target List"></label>
+    <span id="rr-target-freshness" class="rr-target-freshness" aria-live="polite"></span>
+  </section>
+  <p id="rr-target-status" class="rr-target-status" role="status" aria-live="polite">Loading private editions…</p>
+  <section id="rr-target-app" aria-label="Target List opportunities" hidden>
+    <div class="rr-target-summary"><h2 id="rr-target-count">The day's targets</h2><span id="rr-target-context"></span></div>
+    <div id="rr-target-list" class="rr-target-list"></div>
+  </section>
+  <section id="rr-target-empty" class="rr-target-empty" hidden>
+    <h2>No Target List edition is loaded</h2>
+    <p>Verified production JSON can be submitted below for private review. No selections are manufactured if production has not supplied them.</p>
+  </section>
+  <details class="rr-target-publisher">
+    <summary>Private source upload · JSON only</summary>
+    <p>Upload a Target List structured export with its production receipt reference and exact model values. This saves only to private Cloudflare R2; it does not enable customer access or change the legacy Publication Desk.</p>
+    <form id="rr-target-upload-form">
+      <label>Certified source JSON file<input id="rr-target-file" type="file" accept=".json,application/json" required></label>
+      <button type="submit">Validate &amp; save private edition</button>
+    </form>
+    <p id="rr-target-upload-status" role="status" aria-live="polite"></p>
+  </details>
+</main>
+<dialog id="rr-target-dialog" class="rr-target-dialog" aria-labelledby="rr-target-dialog-title">
+  <div class="rr-target-dialog-inner">
+    <div class="rr-target-dialog-head"><h2 id="rr-target-dialog-title"></h2>
+      <button id="rr-target-dialog-close" type="button" aria-label="Close analysis">Close</button>
+    </div>
+    <div id="rr-target-dialog-content"></div>
+  </div>
+</dialog>
+<footer class="rr-member-footer"><div class="heritage-shell">
+  <span class="heritage-footmark">RAIL &amp; RYE</span>
+  <nav aria-label="Private footer"><a href="/admin/">Publisher's Desk</a> · <a href="/admin/projections-preview/">Projections preview</a></nav>
+  <small>Private preview · Not customer-facing</small>
+</div></footer>
+</body>
+</html>
