@@ -254,9 +254,13 @@ export async function handleAdminPickTickets(request,env){
     // input field changed without a corresponding fresh scorer receipt.
     // Preserve the source/version audit for admins, but NEVER offer these
     // selections (nor a stale earlier edition) as usable picks.
-    if(audit.input_changes_require_rescoring){
+    if(audit.input_changes_require_rescoring||
+       (card.projection_status==="scratch_final"&&
+        audit.scratch_scoring_ready!==true)){
      sourceRejects.push({track:card.track_name,
-      reason:"Updated field requires new TRI/F4 scoring receipts before Pick Tickets can be displayed."});
+      reason:card.projection_status==="scratch_final"?
+       "Scratch-adjusted runner lists are not a TRI rerun. Fresh certified postscratch TRI/F4 scores and complete field receipts are required before ticket choices can be displayed.":
+       "Updated field requires new TRI/F4 scoring receipts before Pick Tickets can be displayed."});
      continue;
     }
     reviews.push({card:review,updated_at:entry.uploaded_at,
