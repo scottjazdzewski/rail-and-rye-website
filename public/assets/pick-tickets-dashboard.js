@@ -131,7 +131,7 @@
    const extra=raceChoices(leg.race_number).filter(p=>!leg.programs.includes(p));
    if(extra.length){
     const trigger=node("button","rr-pt-add-trigger",
-     (expandedRaceNumbers.has(leg.race_number)?"− Hide field":"＋ Add runners")+" ("+extra.length+")");
+     (expandedRaceNumbers.has(leg.race_number)?"- Hide field":"+ Add runners")+" ("+extra.length+")");
     trigger.type="button";trigger.setAttribute("aria-expanded",String(expandedRaceNumbers.has(leg.race_number)));
     trigger.setAttribute("aria-label","Add runners for Race "+leg.race_number);
     trigger.addEventListener("click",()=>{
@@ -239,13 +239,14 @@
   info.append(state(activeSeq.play_status),node("span","",c.track+" · "+toDate(c.date)));
   E.dialogBody.append(info);
   if(currentIsDemo)E.dialogBody.append(node("p","rr-pt-demo-note","DEMONSTRATION ONLY. These are mock selections, not TRI predictions or approved wagers."));
-  if(activeSeq.hit_rate_display)E.dialogBody.append(node("p","rr-pt-analysis-rate","Projected hit rate: "+activeSeq.hit_rate_display));
+  // A sequence-wide legacy percentage must never masquerade as a tier-specific hit rate.
   if(activeSeq.recommendation)E.dialogBody.append(node("p","rr-pt-analysis-reason",activeSeq.recommendation));
   const stage=node("div","rr-pt-analysis-stage");
   function show(i){
    stage.replaceChildren();
    stage.append(tierPicker(activeSeq,i,show));
    stage.append(node("h3","rr-pt-analysis-tier",activeSeq.tickets[i].title));
+   if(hitRate(activeSeq.tickets[i])!=="—")stage.append(node("p","rr-pt-analysis-rate","Certified ticket hit chance: "+hitRate(activeSeq.tickets[i])));
    stage.append(ticketRows(activeSeq.tickets[i]),stats(activeSeq.tickets[i]));
    if(activeSeq.tickets[i].notes)stage.append(node("p","rr-pt-analysis-notes",activeSeq.tickets[i].notes));
   }
