@@ -35,7 +35,7 @@ jobs:
                grep -Fq 'rr-target-racebar-main' /tmp/target-list-live.js &&
                grep -Fq 'rr-target-race-identifiers' /tmp/target-list-live.js &&
                grep -Fq 'Post-time order' /tmp/target-list-live.js &&
-               grep -Fq 'if(meta)head.append(node("p","rr-target-race-facts",meta))' /tmp/target-list-live.js &&
+               grep -Fq 'appendGradeTrophy(facts,sourceRaceTitle(entry)?.grade)' /tmp/target-list-live.js &&
                ! grep -Fq 'rr-target-race-facts-long' /tmp/target-list-live.js &&
                ! grep -Eq 'DEMO_EXAMPLE|Sample Favorite|Example Downs|rr-target-local-file|rr-target-analyze|rr-target-upload-form|rr-target-file' /tmp/target-list-live.js; then
               echo 'LIVE_PREVIEW_DEPLOYED: Actual private R2 daily reader is live, with no synthetic horses or local-file loader.'
@@ -62,7 +62,7 @@ jobs:
           grep -Fq 'font:700 25px/1.06 Tinos' /tmp/target-list-live.css
           grep -Fq 'Readable editorial:' /tmp/target-list-live.css
           ! grep -Fq 'rr-target-publisher' /tmp/target-list-live.css
-          echo 'LIVE_TARGET_HEADER_V10: grouped race number and post time right-aligned; full source race conditions second line; private source intact.'
+          echo 'LIVE_TARGET_HEADER_V11: Right-aligned identifiers retained; sponsor-free canonical stakes title and verified trophy on navy facts row.'
           protected=$(curl -sS --connect-timeout 10 --max-time 20 -o /dev/null -w '%{http_code}' 'https://railandryeracing.com/api/admin/target-list-review' || true)
           echo "Unauthenticated private data endpoint: HTTP $protected"
           case "$protected" in
