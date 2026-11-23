@@ -176,6 +176,31 @@ def status():
                         exact=False;break
             found.append(track)
             if exact:eligible.append(track)
+            # Independent numerical-only validation of the post-scratch
+            # betting-interest PWIN + F4 field, not an authorization receipt.
+            current_mass_ok=n==TRACK_COUNTS[track][0] and doc.get("race_date")=="2026-11-23" and doc.get("track_name")==track and doc.get("projection_status")=="scratch_final"
+            races_seen=set()
+            if current_mass_ok:
+                for race in races:
+                    race_num=race.get("race_number")
+                    entries=race.get("entries") or []
+                    if not isinstance(race_num,int) or race_num in races_seen or not 1<=race_num<=n or len(entries)<2:
+                        current_mass_ok=False;break
+                    races_seen.add(race_num)
+                    programs=set();mass=0.0
+                    for entry in entries:
+                        program=str(entry.get("program_number","")).upper()
+                        pwin=entry.get("win_probability_exact")
+                        f4=(entry.get("f4_probabilities") or {}).get("exact_p1")
+                        if (not re.fullmatch(r"[0-9]{1,2}[A-Z]?",program) or program in programs or
+                            not isinstance(pwin,(int,float)) or isinstance(pwin,bool) or
+                            not isinstance(f4,(int,float)) or isinstance(f4,bool) or
+                            not 0<=pwin<=100 or abs(pwin-f4*100)>1e-6):
+                            current_mass_ok=False;break
+                        programs.add(program);mass+=pwin
+                    if not current_mass_ok or abs(mass-100)>1e-5:
+                        current_mass_ok=False;break
+            print(f"V32_POSTSCRATCH_MATH_INPUT: {track}: race_count={n}, current_runner_rows={rows}, complete_current_field_pwin_f4_mass={current_mass_ok}.")
             stage=doc.get("projection_status")
             basis=doc.get("factor_basis")
             receipts=doc.get("model_receipts") or {}
