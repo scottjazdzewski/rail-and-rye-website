@@ -22,7 +22,7 @@ const displayDate=value=>{
  return new Intl.DateTimeFormat("en-US",{weekday:"short",month:"short",day:"numeric",year:"numeric"}).format(new Date(year,month-1,day,12));
 };
 const option=(select,value,label)=>{const el=node("option","",label);el.value=value;select.append(el);};
-const statusText=edition=>state.reviewOnly?"REVIEW ONLY · NOT CERTIFIED":edition.status==="initial"?"INITIAL · CURRENT":"SCRATCH UPDATE · CURRENT";
+const statusText=edition=>state.reviewOnly?"EDITORIAL REVIEW":edition.status==="initial"?"INITIAL · CURRENT":"SCRATCH UPDATE · CURRENT";
 // A missing/invalid post time sorts after sourced times, never guessed from track or race number.
 function postMinutes(value){
  const match=/\b(\d{1,2}):(\d{2})\s*(AM|PM)\b/i.exec(String(value||""));
@@ -59,31 +59,44 @@ function saddle(program){
  }else wrapper.append(node("span","rr-target-saddle-text",program));
  return wrapper;
 }
+// Presentation-only: preserve stored fractional odds while using the approved
+// American tote display (9-5, 3-1); no pricing or probability recalculation.
+const tote=value=>String(value??"").replace(/^(\d+)\s*\/\s*(\d+)$/,"$1-$2");
 function stat(label,value,kind){
  const el=node("div","rr-target-stat rr-target-stat-"+kind);
  add(el,node("span","rr-target-stat-label",label),node("strong","rr-target-stat-value",value));
  return el;
 }
-function horseRow(role,runner){
- const line=node("div","rr-target-horse-row"+(role==="ATTACK"?" rr-target-attack":""));
- const identity=node("div","rr-target-horse-identity");
- add(identity,saddle(runner.program_number),node("strong","rr-target-horse-name",runner.horse_name));
- const metrics=node("div","rr-target-horse-stats");
- add(metrics,stat("ML ODDS",runner.morning_line,"ml"),
-  stat("WIN %",String(runner.win_probability)+"%","win"),
-  stat("FAIR ODDS",runner.fair_odds,"fair"));
- add(line,node("span","rr-target-horse-role",role),identity,metrics);
+function horseRow(role,runner,entry){
+ // Horse information itself opens details: no repeated oversized action button.
+ const line=node(entry?"button":"div","rr-target-horse-row"+(role==="ATTACK"?" rr-target-attack":""));
+ if(entry){
+  line.type="button";
+  line.setAttribute("aria-label","View "+runner.horse_name+" details for "+entry.track+" Race "+entry.race_number);
+  line.addEventListener("click",()=>openAnalysis(entry,line));
+ }
+ const identity=node("span","rr-target-horse-identity");
+ const copy=node("span","rr-target-horse-copy");
+ add(copy,node("strong","rr-target-horse-name",runner.horse_name),
+  node("span","rr-target-ml-inline","ML "+tote(runner.morning_line)));
+ add(identity,saddle(runner.program_number),copy);
+ const info=node("span","rr-target-runner-info");
+ add(info,node("span","rr-target-horse-role",role),identity);
+ const metrics=node("span","rr-target-horse-stats");
+ add(metrics,stat("ML",tote(runner.morning_line),"ml"),
+  stat("WIN",String(runner.win_probability)+"%","win"),
+  stat("FAIR",tote(runner.fair_odds),"fair"));
+ add(line,info,metrics);
  if(runner.trainer||runner.jockey){
-  const names=node("p","rr-target-horse-connections",[runner.trainer,runner.jockey].filter(Boolean).join(" | "));
-  line.append(names);
+  line.append(node("span","rr-target-horse-connections",[runner.trainer,runner.jockey].filter(Boolean).join(" | ")));
  }
  return line;
 }
 function headerColumns(){
  const head=node("div","rr-target-column-head");
  const metrics=node("div","rr-target-column-metrics");
- add(metrics,node("span","","ML ODDS"),node("span","","WIN %"),node("span","","FAIR ODDS"));
- add(head,node("span","",""),node("span","","HORSE"),metrics);
+ add(metrics,node("span","","ML"),node("span","","WIN %"),node("span","","FAIR ODDS"));
+ add(head,node("span","","RUNNER / SELECTION"),metrics);
  return head;
 }
 function raceMeta(entry){
@@ -122,17 +135,11 @@ function targetCard(entry){
  add(card,head);
  const meta=raceMeta(entry);
  if(meta)card.append(node("p","rr-target-race-facts",meta));
- add(card,headerColumns(),horseRow("ML FAVORITE",entry.favorite),horseRow("ATTACK",entry.attack));
- if(entry.also_live)card.append(horseRow("ALSO LIVE",entry.also_live));
+ add(card,headerColumns(),horseRow("ML FAVORITE",entry.favorite,entry),horseRow("ATTACK",entry.attack,entry));
+ if(entry.also_live)card.append(horseRow("ALSO LIVE",entry.also_live,entry));
  card.append(node("p","rr-target-analysis-text",entry.analysis));
  const scratches=scratchList(entry);
  if(scratches)card.append(scratches);
- const bottom=node("div","rr-target-card-bottom");
- const button=node("button","rr-target-analyze","Race Details");
- button.type="button";
- button.setAttribute("aria-label","Read race details for "+entry.track+" race "+entry.race_number);
- button.addEventListener("click",()=>openAnalysis(entry,button));
- bottom.append(button);card.append(bottom);
  return card;
 }
 function renderTargets(){
@@ -140,16 +147,12 @@ function renderTargets(){
  const ordered=sortedTargets(edition);
  list.replaceChildren(...ordered.map(targetCard));
  set("rr-target-count",ordered.length+" "+(ordered.length===1?"target":"targets"));
- set("rr-target-context",displayDate(edition.race_date)+" · "+statusText(edition));
+ set("rr-target-context",displayDate(edition.race_date));
  if(!ordered.length)list.append(node("p","rr-target-no-results","No qualifying Target List selections were published for this date."));
 }
 function setEdition(data,preferredDate){
  state.edition=data.edition||null;state.dates=data.dates||[];state.uploadedAt=data.uploaded_at||null;state.reviewOnly=Boolean(data.review_only);
- const reviewBanner=get("rr-target-review-banner");
- if(reviewBanner){
-  reviewBanner.hidden=!state.reviewOnly;
-  if(state.reviewOnly)reviewBanner.textContent="PRIVATE EDITORIAL REVIEW · NOT SCORER-CERTIFIED · NOT CUSTOMER-FACING";
- }
+
  const current=state.edition?.race_date||preferredDate||"";
  dateSelect.replaceChildren();
  for(const value of state.dates)option(dateSelect,value,displayDate(value));
@@ -158,7 +161,7 @@ function setEdition(data,preferredDate){
  app.hidden=!state.edition;empty.hidden=!!state.edition;
  if(!state.edition){status.textContent="No private Target List editions are available.";set("rr-target-freshness","");return;}
  status.textContent="";
- const summary=statusText(state.edition)+" · Revision "+state.edition.revision;
+ const summary="Rev "+state.edition.revision+(state.reviewOnly?" · Private editorial review":" · "+statusText(state.edition));
  set("rr-target-freshness",summary+(state.uploadedAt?" · Updated "+new Date(state.uploadedAt).toLocaleString("en-US",{timeZone:"America/New_York",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}):""));
  renderTargets();
 }

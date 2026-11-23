@@ -99,6 +99,14 @@ assert.match(css,/@media\(max-width:430px\)/);
 assert.match(css,/@media\(max-width:359px\)/);
 assert.match(css,/\.rr-target-list\{display:grid;grid-template-columns:minmax\(0,1fr\)/,"Target List reads as one compact vertical column.");
 assert.match(css,/Tinos/,"Only authoritative statistics use the card font.");
+assert.doesNotMatch(html,/id="rr-target-review-banner"/,"One concise review notice is enough.");
+assert.match(html,/target-list-dashboard\.css\?v=20261123-compact-v3/,"Phone must load the latest compact styles, not a cached rendering.");
+assert.match(css,/Target List v3 — dense mobile-first horse-racing reader/);
+assert.match(css,/-webkit-line-clamp:unset/,"Full editorial must never be cut off at two lines.");
+assert.match(js,/function horseRow\(role,runner,entry\)/,"Horse rows themselves open the detail drawer.");
+assert.doesNotMatch(js,/rr-target-analyze/,"Remove redundant full-width action button from every race.");
+assert.match(js,/const tote=value/,"Use tote-style fractional prices without editing model values.");
+
 assert.match(css,/max-height:92dvh/,"Mobile bottom drawer must scroll.");
 assert.doesNotMatch(js,/PWIN\s*[\*\/+-]/,"The client must not recompute probabilities.");
 
@@ -112,7 +120,7 @@ class El{
  showModal(){this.open=true;}
  focus(){this.focused=true;}
 }
-const ids=["rr-target-date","rr-target-sort","rr-target-status","rr-target-app","rr-target-empty","rr-target-list","rr-target-dialog","rr-target-dialog-content","rr-target-dialog-title","rr-target-count","rr-target-context","rr-target-freshness","rr-target-dialog-close","rr-target-upload-form","rr-target-file","rr-target-upload-status","rr-target-review-banner"];
+const ids=["rr-target-date","rr-target-sort","rr-target-status","rr-target-app","rr-target-empty","rr-target-list","rr-target-dialog","rr-target-dialog-content","rr-target-dialog-title","rr-target-count","rr-target-context","rr-target-freshness","rr-target-dialog-close","rr-target-upload-form","rr-target-file","rr-target-upload-status"];
 const elements=new Map(ids.map(id=>[id,new El(id.includes("dialog")?"dialog":"div")]));
 const doc={getElementById:id=>elements.get(id),createElement:tag=>new El(tag)};
 const alpha=structuredClone(good.targets[0]);alpha.rank=3;alpha.track="Alpha Test Track";alpha.race_number=7;alpha.post_time_et="8:40 PM ET";
@@ -127,8 +135,8 @@ assert.match(elements.get("rr-target-count").textContent,/3 targets/);
 const tree=(el,fn)=>fn(el)?el:el.children.map(v=>tree(v,fn)).find(Boolean)||null;
 const card=tree(elements.get("rr-target-list"),el=>el.className==="rr-target-card");
 assert.ok(card,"Render a compact target card with actual source data.");
-const action=tree(card,el=>el.className==="rr-target-analyze");
-assert.ok(action,"Render actionable Full Analysis button.");
+const action=tree(card,el=>el.className==="rr-target-horse-row rr-target-attack"&&el.tagName==="BUTTON");
+assert.ok(action,"ATTACK horse row opens full details without a redundant giant button.");
 action.events.click();
 assert.equal(elements.get("rr-target-dialog").open,true);
 assert.match(elements.get("rr-target-dialog-title").textContent,/Zulu Test Track/,"Chronological first race should open first.");
@@ -144,6 +152,9 @@ assert.deepEqual(renderedTracks(),["Zulu Test Track","Synthetic Test Track","Alp
 assert.deepEqual(fixture.edition.targets.map(entry=>entry.rank),[1,2,3],"Sorting must not mutate authoritative publication ranks.");
 assert.ok(tree(card,el=>el.className==="rr-target-analysis-text"&&el.textContent==="This is synthetic, non-customer test commentary."),"Full source narrative stays visible on every race panel.");
 assert.ok(tree(card,el=>el.className==="rr-target-horse-row rr-target-attack"),"ATTACK appears in its own compact race row.");
+assert.ok(tree(card,el=>el.className==="rr-target-ml-inline"&&el.textContent==="ML 5-1"),"Mobile shows the unchanged source morning line alongside the horse.");
+assert.ok(tree(card,el=>el.className==="rr-target-stat-value"&&el.textContent==="4-1"),"US tote-style fair-odds formatting is display-only.");
+
 assert.match(html,/id="rr-target-sort"/);
 assert.doesNotMatch(html,/rr-target-track|rr-target-search/,"Reader controls are date and independent sort only.");
 
