@@ -1,0 +1,36 @@
+name: Verify Radar and Target List reader parity
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'public/admin/longshot-radar.html'
+      - 'public/admin/target-list-preview.html'
+      - 'public/assets/longshot-radar.js'
+      - 'public/assets/target-list-dashboard.js'
+      - 'public/assets/longshot-radar.css'
+      - 'public/assets/target-list-dashboard.css'
+      - 'test-research-reader-parity.mjs'
+      - '.github/workflows/verify-research-reader-parity.yml'
+  pull_request:
+    paths:
+      - 'public/admin/longshot-radar.html'
+      - 'public/admin/target-list-preview.html'
+      - 'public/assets/longshot-radar.js'
+      - 'public/assets/target-list-dashboard.js'
+      - 'public/assets/longshot-radar.css'
+      - 'public/assets/target-list-dashboard.css'
+      - 'test-research-reader-parity.mjs'
+      - '.github/workflows/verify-research-reader-parity.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  reader-parity:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Enforce shared reader layout without source-data changes
+        run: node test-research-reader-parity.mjs
