@@ -17,6 +17,16 @@ const synthetic={cards:fixture.cards.map(x=>({...x,card:{
 }})),demo:false};
  // Regression fixture for a scratch-day source receipt carrying old wording.
  for(const entry of synthetic.cards)for(const sequence of entry.card.sequences){
+  sequence.upload_change={selections_changed:true,cost_changed:true,hit_changed:true,
+   previous_ticket:{
+    combinations:sequence.tickets[0].combinations,
+    cost_cents:sequence.tickets[0].total_cents,
+    hit_rate:sequence.tickets[0].hit_rate_display,
+    legs:sequence.tickets[0].legs.map(x=>({
+     race_number:x.race_number,programs:[...x.programs]
+    }))
+   }
+  };
   sequence.review_meta={
    method:"V3.3-TRI-ONLY-SINGLE-RECTANGLE-COVER50",
    soft_cost_scale_dollars:30,minimum_leg_coverage:.5,
@@ -151,7 +161,12 @@ try{
 
   await page.locator(".rr-pt-analysis-button").click();
   assert.equal(await page.locator("#rr-pt-dialog").evaluate(n=>n.open),true,"full analysis opens");
-  assert.equal(await page.locator("#rr-pt-dialog .rr-pt-race-row").count(),4);
+  assert.equal(await page.locator("#rr-pt-dialog .rr-pt-race-row").count(),8,
+   "Ticket Insights includes current plus prior four-leg ticket");
+  assert.equal(await page.locator("#rr-pt-dialog .rr-pt-prior-ticket").count(),1);
+  assert.match(await page.locator("#rr-pt-dialog .rr-pt-prior-ticket summary").innerText(),/Previous field/);
+  await page.locator("#rr-pt-dialog .rr-pt-prior-ticket summary").click();
+  assert.equal(await page.locator("#rr-pt-dialog .rr-pt-prior-ticket .rr-pt-race-row").count(),4);
   assert.equal(await page.locator("#rr-pt-dialog .rr-pt-coverage-line").count(),4,
    "every Pick 4 leg displays its exact modeled coverage");
   assert.equal(await page.locator("#rr-pt-dialog .rr-pt-coverage-line strong").first().innerText(),"62.0%");

@@ -6,6 +6,8 @@ import {PICK_V33_ENGINE,PICK_V33_COST_SCALE_DOLLARS,
 import {readAdminProjectionCards} from './projections.js';
 import {getNov23ScratchLedger,sourceIsScratchCurrent,officialScratchSequenceCount} from './pick-tickets-scratch-1123.js';
 import {PICK_MENU_1123} from './pick-tickets-auto.js';
+import {auditV33FieldUpload,pickUploadAuditKey,projectionFieldFingerprint,
+ matchStoredTicketToLatestSource,isPickV33Field} from './pick-tickets-field-audit.js';
 /* Pick Tickets: admin-only dashboard staging. No scoring, public data, or customer-launch route. */
 const PREFIX="pick-tickets/dashboard/";
 const ARCHIVE="pick-tickets/revisions/";
@@ -107,8 +109,15 @@ export function normalizePickTickets(input){
  const sequences=input.sequences.map(normalizeSequence);
  unique(sequences.map(s=>s.name+"|"+s.start_race+"|"+s.end_race),"Sequence identities");
  const formula_version=input.formula_version==null?"":text(input.formula_version,"Formula version",90,false);
+ const source_input_sha256=input.source_input_sha256==null?"":text(input.source_input_sha256,
+  "Source field SHA-256",64,false).toLowerCase();
+ if(source_input_sha256&&!/^[a-f0-9]{64}$/.test(source_input_sha256))
+  throw Error("Source input SHA-256 must be 64 hex.");
+ if(formula_version===PICK_V33_ENGINE&&input.date==="2026-11-23"&&
+    PICK_MENU_1123.some(x=>x.track===track)&&!source_input_sha256)
+  throw Error("Certified V3.3 Pick Tickets must identify the exact uploaded TRI field.");
  return {schema_version:1,product_type:"pick_tickets",date:input.date,track,revision,status,
-  formula_version,source_receipt:{reference,sha256},scratch_verified_at,sequences};
+  formula_version,source_input_sha256,source_receipt:{reference,sha256},scratch_verified_at,sequences};
 }
 async function sha256(source){
  const bytes=new TextEncoder().encode(source);
@@ -175,75 +184,108 @@ async function readCards(env){
 export async function handleAdminPickTickets(request,env){
  if(!env.CARDS_BUCKET)return respond({error:"Private R2 storage is not configured."},503);
  if(request.method==="GET"){
+  // Every displayed ticket must match the latest field upload; an older R2
+  // edition can never take precedence solely because its status is newer.
   const stored=await readCards(env);
-  // Old V3.2 tickets are not V3.3 trial tickets; source PWIN is unchanged,
-  // but the authorized S=30 and 50%-per-leg constraint are new math.
-  const authorized=stored.filter(x=>
-   x.card.formula_version===PICK_V33_ENGINE&&sourceIsScratchCurrent(x.card));
-  const superseded=stored.filter(x=>!authorized.includes(x)).map(x=>({
-   date:x.card.date,track:x.card.track,revision:x.card.revision,
-   reason:"Prior ticket formula or scratch snapshot; regenerated V3.3 required."
-  }));
-  const sourceRejects=[],stageCards=[];
-  let source=[];
-  try{source=await readPrivatePickProjections(env)}catch(e){
-   sourceRejects.push({reason:"Private Projections source unavailable."});
+  const sourceRejects=[],reviews=[],authorized=[],sourceVersions=[];
+  const staleRevisions=[];
+  let sources=[];
+  try{sources=await readPrivatePickProjections(env)}
+  catch(e){sourceRejects.push({reason:"Private source Projections are unavailable."})}
+  const byTrack=new Map();
+  for(const row of sources){
+   const card=row?.card||row;
+   if(!isPickV33Field(card))continue;
+   const prior=byTrack.get(card.track_name);
+   if(!prior||(prior.card.projection_status!=="scratch_final"&&
+       card.projection_status==="scratch_final"))
+    byTrack.set(card.track_name,{card,uploaded_at:row.uploaded_at||null});
   }
-  // Only the original full pre-scratch probabilities can construct a pre card.
-  const pre=buildPrescratchPickTicketReview(source.filter(x=>(x.card||x)?.projection_status==="prescratch"));
-  sourceRejects.push(...pre.rejected);
-  // Scratch-final inputs are genuinely different fields. Never renormalize
-  // prescratch PWIN or trim/replace a scratched runner to mimic a rerun.
-  for(const item of source){
-   const card=item?.card||item;
-   if(card?.projection_status!=="scratch_final")continue;
-   const track=card.track_name,old=source.find(x=>{
-    const c=x?.card||x;
-    return c?.track_name===track&&c.projection_status==="prescratch";
-   });
-   if(!old){sourceRejects.push({track,reason:"No authenticated prescratch input for field comparison."});continue}
-   const preCard=old.card||old;
-   if(card.factor_basis!=="verified_scratch_final"||
-      !card.model_receipts?.tri_sha256||!card.model_receipts?.f4_sha256){
-    sourceRejects.push({track,reason:"Fresh TRI/F4 postscratch scoring receipts not verified."});continue;
-   }
+  // Re-audit the exact current source if the ingestion-side audit has not
+  // been staged (legacy files). No guessed prior score or mixed old source.
+  const currentAudits=new Map();
+  for(const entry of byTrack.values()){
+   const card=entry.card;
    try{
-    const key="pick-tickets/v32/scratch-manifests/"+card.race_date+"/"+slug(track)+".json";
-    const storedManifest=await env.CARDS_BUCKET.get(key);
-    if(!storedManifest){sourceRejects.push({track,reason:"Matching confirmed source-hash scratch manifest not staged."});continue}
-    const manifest=JSON.parse(await storedManifest.text());
-    const validated=buildV33PostScratchReviewed({
-     before:preCard,after:card,manifest,
-     preHash:await sha256(JSON.stringify(preCard)),
-     postHash:await sha256(JSON.stringify(card))
+    const currentHash=await projectionFieldFingerprint(card);
+    let audit=null;
+    const staged=await env.CARDS_BUCKET.get(pickUploadAuditKey(card));
+    if(staged){
+     const record=JSON.parse(await staged.text());
+     if(record.source_sha256===currentHash&&record.optimizer===PICK_V33_ENGINE&&
+        record.review_only===true&&
+        record.review_card?.sequences?.length===
+          PICK_MENU_1123.filter(x=>x.track===card.track_name).length){
+      audit=record;
+     }
+    }
+    if(!audit)audit=await auditV33FieldUpload(card);
+    if(audit.source_sha256!==currentHash)
+     throw Error("Input changed while the ticket field was being verified.");
+    currentAudits.set(card.race_date+"|"+card.track_name,audit);
+    const review=structuredClone(audit.review_card);
+    review.source_input_sha256=currentHash;
+    const changed=new Map((audit.sequences||[]).map(x=>
+     [x.name+"|"+x.start_race+"|"+x.end_race,x]));
+    review.sequences=review.sequences.map(seq=>{
+     const update=changed.get(seq.name+"|"+seq.start_race+"|"+seq.end_race);
+     return {...seq,upload_change:update?{
+      selections_changed:update.selections_changed,
+      cost_changed:update.cost_changed,
+      hit_changed:update.hit_changed,
+      previous_ticket:update.previous_ticket
+     }:null};
     });
-    if(!validated){sourceRejects.push({track,reason:"Current-field V3.2 verification rejected."});continue}
-    const ticketCard={...validated,updated_at:item.uploaded_at||null};
-    stageCards.push(ticketCard);
-   }catch(e){sourceRejects.push({track,reason:"V3.3 scratch field gate: "+String(e.message||e).slice(0,125)})}
+    review.field_verification={
+     status:audit.source_signature_status,
+     source_sha256:currentHash,
+     source_changed:audit.source_changed,
+     changed_races:audit.changed_races,
+     changed_sequence_count:audit.changed_sequence_count,
+     verified_at:entry.uploaded_at,
+     source_stage:card.projection_status,
+     score_freshness_verified:audit.score_freshness_verified
+    };
+    sourceVersions.push({track:card.track_name,date:card.race_date,
+     sha256:currentHash,updated_at:entry.uploaded_at,sequence_count:audit.sequence_count,
+     changed_sequence_count:audit.changed_sequence_count,
+     review_status:audit.source_signature_status});
+    reviews.push({card:review,updated_at:entry.uploaded_at,
+     review_only:true});
+   }catch(e){sourceRejects.push({track:card.track_name,
+    reason:"Unable to verify exact uploaded field: "+String(e.message||e).slice(0,145)})}
   }
-  // Separate private mathematical review from release-cleared editions.
-  // Actual current-field PWIN may still be based on prescratch factors.
-  // This preview is NEVER placed into authorized and is NEVER written to R2.
-  const covered=new Set(authorized.map(x=>x.card.date+"|"+x.card.track));
-  const reviews=[];
-  const stageCandidates=[...stageCards,
-   ...source.map(x=>buildV33ScratchFieldPreview(x)).filter(Boolean),
-   ...pre.cards];
-  for(const view of stageCandidates){
-   const key=view.card.date+"|"+view.card.track;
-   if(covered.has(key))continue;
-   covered.add(key);reviews.push(view);
+  // Legacy paid editions outside this five-track November 23 trial retain
+  // their existing treatment. All in-scope editions require source hash,
+  // exact reoptimized picks, and explicit customer approval in the audit.
+  for(const entry of stored){
+   const c=entry.card;
+   if(c.date==="2026-11-23"&&PICK_MENU_1123.some(x=>x.track===c.track)){
+    const audited=currentAudits.get(c.date+"|"+c.track);
+    if(audited&&sourceIsScratchCurrent(c)&&
+       matchStoredTicketToLatestSource(c,audited))authorized.push(entry);
+    else staleRevisions.push({date:c.date,track:c.track,revision:c.revision,
+     reason:"Saved ticket not approved for this exact current TRI field."});
+   }else if(c.formula_version===PICK_V33_ENGINE&&sourceIsScratchCurrent(c)){
+    authorized.push(entry);
+   }else staleRevisions.push({date:c.date,track:c.track,revision:c.revision,
+    reason:"Earlier formula or scratch revision."});
   }
+  // Verified release editions outrank math reviews only when the source
+  // identity and exact selections both match. Otherwise show newly built
+  // private review tickets, never stale stored tickets.
+  const released=new Set(authorized.map(x=>x.card.date+"|"+x.card.track));
+  const reviewCards=reviews.filter(x=>!released.has(x.card.date+"|"+x.card.track));
   const scratch_update=getNov23ScratchLedger();
   scratch_update.dependent_sequences=officialScratchSequenceCount(PICK_MENU_1123);
-  return respond({cards:[...authorized,...reviews],intake:getPickTicketsIntake(),
-   scratch_update,stale_revisions:superseded,
+  return respond({cards:[...authorized,...reviewCards],
+   intake:getPickTicketsIntake(),scratch_update,
+   stale_revisions:staleRevisions,source_rejections:sourceRejects,
+   latest_field_versions:sourceVersions,
    engine:PICK_V33_ENGINE,soft_cost_scale_dollars:PICK_V33_COST_SCALE_DOLLARS,
    minimum_leg_coverage:PICK_V33_MIN_LEG_COVERAGE,
-   private_review_only:true,source_rejections:sourceRejects,
-   prescratch_sequences_calculated:pre.cards.reduce((n,x)=>n+x.card.sequences.length,0),
-   review_count:reviews.length,demo:false});
+   private_review_only:true,
+   review_count:reviewCards.length,demo:false});
  }
  if(request.method!=="POST")return respond({error:"Method not allowed."},405);
  let cards;try{cards=await parseBody(request);}catch(e){return respond({error:e.message},400);}

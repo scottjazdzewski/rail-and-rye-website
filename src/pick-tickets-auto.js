@@ -140,28 +140,51 @@ export function verifyV32OwnerScratchSnapshot(card){
  if(!track||!original)return {ok:false,reason:"OFFICIAL_SCRATCH_SOURCE_NOT_FOUND"};
  if(!Array.isArray(card.races)||card.races.length!==original.race_count)
   return {ok:false,reason:"INCOMPLETE_TRACK_RACE_FIELD"};
- const removed=track.scratch_count, expected=original.analysis_runner_count-removed;
- const activeCount=card.races.reduce((n,r)=>n+(Array.isArray(r.entries)?r.entries.length:0),0);
+ // The original 50 confirmed scratches are a baseline, not a cap. Later
+ // full official field uploads can contain ADDITIONAL scratches. Every newly
+ // declared scratch must be absent from the uploaded active runners, and the
+ // active total must reconcile to that complete uploaded scratch list.
+ const oldScratches=track.scratches;
+ const races=new Map(card.races.map(r=>[r.race_number,r]));
+ const allRaces=Array.from({length:original.race_count},(_,i)=>i+1);
+ if(races.size!==original.race_count||allRaces.some(n=>!races.has(n)))
+  return {ok:false,reason:"INCOMPLETE_TRACK_RACE_NUMBERS"};
+ let reported=0,newScratches=0;
+ for(const number of allRaces){
+  const race=races.get(number);
+  if(!Array.isArray(race.entries))return {ok:false,reason:"INVALID_RACE_ROW"};
+  const currentList=Array.isArray(race.scratches)?race.scratches:[];
+  const current=new Set(currentList.map(item=>
+   String(typeof item==="object"?item?.program_number:item??"").trim().toUpperCase()));
+  if(current.size!==currentList.length||current.has(""))
+   return {ok:false,reason:"INVALID_SCRATCH_PROGRAMS_R"+number};
+  const baseline=(oldScratches[String(number)]||[]).map(x=>x.toUpperCase());
+  if(baseline.some(p=>!current.has(p)))
+   return {ok:false,reason:"OFFICIAL_BASELINE_SCRATCH_MISSING_R"+number};
+  const active=new Set(race.entries.map(e=>String(e.program_number??"").trim().toUpperCase()));
+  if([...current].some(p=>active.has(p)))
+   return {ok:false,reason:"SCRATCHED_PROGRAM_REMAINS_ACTIVE_R"+number};
+  reported+=current.size;
+  newScratches+=current.size-baseline.length;
+ }
+ const activeCount=card.races.reduce((n,r)=>n+r.entries.length,0);
+ const expected=original.analysis_runner_count-reported;
  if(activeCount!==expected)
   return {ok:false,reason:"RACE_DAY_SCRATCH_RUNNER_TOTAL_MISMATCH",
    expected_active:expected,actual_active:activeCount};
- for(const race of card.races){
-  if(!Number.isInteger(race.race_number)||!Array.isArray(race.entries))
-   return {ok:false,reason:"INVALID_RACE_ROW"};
-  const scratched=new Set(track.scratches[String(race.race_number)]||[]);
-  if(race.entries.some(e=>scratched.has(String(e.program_number??"").trim().toUpperCase())))
-   return {ok:false,reason:"SCRATCHED_PROGRAM_REMAINS_ACTIVE_R"+race.race_number};
- }
  return {ok:true,source_snapshot_sha256:track.source_sha256,
-  original_runner_count:original.analysis_runner_count,scratched_count:removed,
-  active_runner_count:activeCount,source_snapshot_et:track.snapshot_et};
+  original_runner_count:original.analysis_runner_count,
+  scratched_count:reported,baseline_scratch_count:track.scratch_count,
+  additional_scratch_count:newScratches,active_runner_count:activeCount,
+  additional_source_verification_required:newScratches>0,
+  source_snapshot_et:track.snapshot_et};
 }
 
 /**
- * Private, administrator-only V3.2 mathematical preview from the actual
+ * Private, administrator-only V3.3 mathematical preview from the actual
  * scratch-adjusted field. No approval, release receipt, new scores or true
  * postscratch factor recalculation is implied by a normalized PWIN sum.
- * Customer publication continues to require buildV32PostScratchReviewed().
+ * Customer publication continues to require verified current field and manifests.
  */
 export function buildV33ScratchFieldPreview(wrapped){
  const card=wrapped?.card||wrapped;
@@ -179,6 +202,7 @@ export function buildV33ScratchFieldPreview(wrapped){
    model_factor_basis:card.factor_basis,
    official_scratch_source_sha256:official.source_snapshot_sha256,
    official_scratch_count:official.scratched_count,
+   additional_scratch_count:official.additional_scratch_count,
    active_runner_count:official.active_runner_count
  }};
 }
