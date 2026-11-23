@@ -93,8 +93,13 @@ assert.doesNotMatch(html,/rr-target-local-file/,"No manual review-file step for 
 assert.doesNotMatch(html,/rr-target-upload-form|rr-target-file|Private source upload|Certified source JSON file/,"Daily Target List never presents a manual JSON upload.");
 assert.doesNotMatch(js,/rr-target-upload-form|rr-target-file|\.text\(\)\}/,"Reader never contains orphaned upload form behavior.");
 assert.doesNotMatch(css,/rr-target-publisher/,"No obsolete upload form CSS.");
-assert.match(html,/target-list-dashboard\.css\?v=20261123-readable-v4/,"Ensure the readable style loads on phones.");
+assert.match(html,/target-list-dashboard\.css\?v=20261123-legible-v5/,"Ensure the readable style loads on phones.");
 assert.match(css,/font:500 15px\/1\.55 Inter/,"Published editorial gets readable 15px typography.");
+assert.match(css,/Target List v5 — legibility-first mobile race reading/,"Phone layout uses larger, no-zoom typography.");
+assert.match(css,/font-size:18px;/,"On-phone editorial body grows to 18px.");
+assert.match(css,/font-size:25px/,"On-phone win percentage remains prominent.");
+assert.match(js,/head\.append\(node\("p","rr-target-race-facts",meta\)\)/,"Full sourced distance, surface and race conditions belong inside the navy racebar.");
+assert.doesNotMatch(js,/card\.append\(node\("p","rr-target-race-facts",meta\)\)/,"Eliminate separate race facts strip.");
 
 assert.doesNotMatch(js,/DEMO_EXAMPLE|demoHorse|Sample Favorite|Example Downs|SYNTHETIC LAYOUT EXAMPLE/,"Never display invented data when the private R2 edition is unavailable.");
 assert.doesNotMatch(js,/innerHTML|localStorage/,"Never inject untrusted narrative as HTML or persist paid results.");
@@ -106,7 +111,7 @@ assert.match(css,/@media\(max-width:359px\)/);
 assert.match(css,/\.rr-target-list\{display:grid;grid-template-columns:minmax\(0,1fr\)/,"Target List reads as one compact vertical column.");
 assert.match(css,/Tinos/,"Only authoritative statistics use the card font.");
 assert.doesNotMatch(html,/id="rr-target-review-banner"/,"One concise review notice is enough.");
-assert.match(html,/target-list-dashboard\.js\?v=20261123-readable-v4/,"Phone must load the newest upload-free reader.");
+assert.match(html,/target-list-dashboard\.js\?v=20261123-legible-v5/,"Phone must load the newest upload-free reader.");
 assert.match(css,/Target List v3 — dense mobile-first horse-racing reader/);
 assert.match(css,/-webkit-line-clamp:unset/,"Full editorial must never be cut off at two lines.");
 assert.match(js,/function horseRow\(role,runner,entry\)/,"Horse rows themselves open the detail drawer.");
@@ -158,6 +163,9 @@ assert.deepEqual(renderedTracks(),["Zulu Test Track","Synthetic Test Track","Alp
 assert.deepEqual(fixture.edition.targets.map(entry=>entry.rank),[1,2,3],"Sorting must not mutate authoritative publication ranks.");
 assert.ok(tree(card,el=>el.className==="rr-target-analysis-text"&&el.textContent==="This is synthetic, non-customer test commentary."),"Full source narrative stays visible on every race panel.");
 assert.ok(tree(card,el=>el.className==="rr-target-horse-row rr-target-attack"),"ATTACK appears in its own compact race row.");
+const racebar=tree(card,el=>el.className==="rr-target-racebar");
+assert.ok(racebar,"Race has integrated navy header.");
+assert.ok(tree(racebar,el=>el.className==="rr-target-race-facts"&&el.textContent==="6 furlongs · Dirt"),"Race facts sit fully within the banner.");
 assert.ok(tree(card,el=>el.className==="rr-target-ml-inline"&&el.textContent==="ML 5-1"),"Mobile shows the unchanged source morning line alongside the horse.");
 assert.ok(tree(card,el=>el.className==="rr-target-stat-value"&&el.textContent==="4-1"),"US tote-style fair-odds formatting is display-only.");
 

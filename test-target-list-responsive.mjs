@@ -69,7 +69,7 @@ try{
     reviewNotices:document.querySelectorAll(".rr-target-private").length,
     giantButtons:document.querySelectorAll(".rr-target-analyze").length};
   });
-  assert.ok(compact.rowHeight<=116,"Extra-long horse name and source connections may wrap, but row stays within a compact natural height at "+width+": "+JSON.stringify(compact));
+  assert.ok(compact.rowHeight<=185,"Extra-long horse names and connections may wrap naturally; never shrink the type to force a short row at "+width+": "+JSON.stringify(compact));
   assert.ok(compact.analysisVisible,"Complete editorial text must be readable at "+width+": "+JSON.stringify(compact));
 
   const reading=await page.locator(".rr-target-card .rr-target-analysis-text").first().evaluate(el=>{
@@ -77,10 +77,38 @@ try{
     return {font:parseFloat(style.fontSize),lineHeight:parseFloat(style.lineHeight),background:style.backgroundColor,
       actual:el.textContent, scroll:el.scrollHeight,client:el.clientHeight};
   });
-  assert.ok(reading.font>=14,"Editorial is never tiny on mobile at "+width+": "+JSON.stringify(reading));
+  assert.ok(reading.font>= (width<=359?17:width<=800?18:16.5),"The race commentary must be legible without zooming at "+width+": "+JSON.stringify(reading));
   assert.ok(reading.lineHeight/reading.font>=1.47,"Editorial lines must be readable at "+width+": "+JSON.stringify(reading));
   assert.match(reading.actual,/The paragraph deliberately continues/,"Never replace original analysis with a clipped preview.");
   assert.equal(await page.locator("#rr-target-upload-form").count(),0,"JSON upload should never appear on Target List.");
+  const readable=await page.evaluate(()=>{
+    const target=document.querySelector(".rr-target-card");
+    const header=target.querySelector(".rr-target-racebar");
+    const meta=header.querySelector(".rr-target-race-facts");
+    const name=target.querySelector(".rr-target-horse-name");
+    const odds=target.querySelector(".rr-target-stat-win .rr-target-stat-value");
+    const fair=target.querySelector(".rr-target-stat-fair .rr-target-stat-value");
+    const role=target.querySelector(".rr-target-horse-role");
+    const ml=target.querySelector(".rr-target-ml-inline");
+    return {
+      header:parseFloat(getComputedStyle(header.querySelector("h3")).fontSize),
+      distance:parseFloat(getComputedStyle(meta).fontSize),
+      raceFacts:meta.textContent, condition:target.querySelector(".rr-target-race-facts")?.textContent,
+      name:parseFloat(getComputedStyle(name).fontSize), 
+      win:parseFloat(getComputedStyle(odds).fontSize), fair:parseFloat(getComputedStyle(fair).fontSize),
+      role:parseFloat(getComputedStyle(role).fontSize),ml:parseFloat(getComputedStyle(ml).fontSize),
+      factsInNavy:header.contains(meta), factsOutside:[...target.children].some(child=>child.classList.contains("rr-target-race-facts"))
+    };
+  });
+  assert.ok(readable.factsInNavy&&!readable.factsOutside,"Entire race description should live in the navy race banner at "+width+": "+JSON.stringify(readable));
+  assert.equal(readable.raceFacts,"7 furlongs · Dirt · Allowance / Optional Claiming");
+  assert.ok(readable.header>=16,"Track name must be easy to read at "+width+": "+JSON.stringify(readable));
+  assert.ok(readable.distance>=13,"Distance/surface/class must be readable at "+width+": "+JSON.stringify(readable));
+  assert.ok(readable.name>=16,"Horse name must be readable at "+width+": "+JSON.stringify(readable));
+  assert.ok(readable.win>=22&&readable.fair>=20,"Both price metrics must be prominent at "+width+": "+JSON.stringify(readable));
+  assert.ok(readable.role>=11,"Favorite/ATTACK roles must remain readable at "+width+": "+JSON.stringify(readable));
+  if(width<=800)assert.ok(readable.ml>=14,"ML must not require zooming on phones at "+width+": "+JSON.stringify(readable));
+
 
   assert.equal(compact.giantButtons,0,"Horse-row tap replaces repeated Race Details buttons at "+width);
   assert.equal(compact.reviewNotices,1,"Only one review notice above the feed at "+width);

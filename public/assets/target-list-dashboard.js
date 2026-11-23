@@ -130,11 +130,13 @@ function openAnalysis(entry,trigger){
 function targetCard(entry){
  const card=node("article","rr-target-card");
  const head=node("div","rr-target-racebar");
- add(head,node("h3","",entry.track),node("span","rr-target-race-number","RACE "+entry.race_number));
- if(entry.post_time_et)head.append(node("span","rr-target-post",entry.post_time_et));
- add(card,head);
+ const titleRow=node("div","rr-target-racebar-main");
+ add(titleRow,node("h3","",entry.track),node("span","rr-target-race-number","RACE "+entry.race_number));
+ if(entry.post_time_et)titleRow.append(node("span","rr-target-post",entry.post_time_et));
+ head.append(titleRow);
  const meta=raceMeta(entry);
- if(meta)card.append(node("p","rr-target-race-facts",meta));
+ if(meta)head.append(node("p","rr-target-race-facts",meta));
+ add(card,head);
  add(card,headerColumns(),horseRow("ML FAVORITE",entry.favorite,entry),horseRow("ATTACK",entry.attack,entry));
  if(entry.also_live)card.append(horseRow("ALSO LIVE",entry.also_live,entry));
  card.append(node("p","rr-target-analysis-text",entry.analysis));
