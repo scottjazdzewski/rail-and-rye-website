@@ -65,6 +65,18 @@ try{
   await page.keyboard.press("Escape");
   if(await page.locator("#rr-lr-dialog").evaluate(el=>el.open))throw Error("Escape did not dismiss dialog at "+width);
   if(await page.locator(".rr-lr-card").count()!==2)throw Error("Daily source candidates disappeared after sorting at "+width);
+  for(const img of await page.locator(".rr-review-artwork img").all()){
+    const visible=await img.evaluate(el=>el.complete&&el.naturalWidth>0);
+    if(!visible)throw Error("Approved Longshot publication image failed to load at "+width);
+  }
+  await page.locator("#rr-lr-demo-button").click();
+  if(await page.locator(".rr-lr-card").count()!==3)throw Error("Private sample mode did not show 3 example rows at "+width);
+  if(!(await page.locator("#rr-lr-demo-alert").innerText()).includes("FICTIONAL"))throw Error("Sample warning not visible at "+width);
+  for(const chip of [1,11,20]){
+    const found=await page.locator('.rr-lr-card img[src="/assets/approved/saddlecloths/'+chip+'.png"]').count();
+    if(found<1)throw Error("Approved saddlecloth #"+chip+" missing from sample at "+width);
+  }
+  await page.screenshot({path:join("test-artifacts","longshot-sample-"+width+".png"),fullPage:true});
   await page.close();
  }
  console.log("PASS: mobile 320/375/390/430, tablet 768 and desktop 1280, date-based daily cards, cross-track post-time/track order, dialog, Escape, no overflow.");
