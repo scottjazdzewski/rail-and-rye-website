@@ -4,7 +4,7 @@ Only public RSA key and encrypted payload enter public GitHub. The RSA private
 key is kept transiently in the already-private R2 bucket and destroyed after
 successful R2 readback.
 """
-import base64,datetime,hashlib,json,os,re,sys
+import base64,datetime,hashlib,json,os,re,sys,zlib
 from pathlib import Path
 from urllib.request import Request,urlopen
 from cryptography.hazmat.primitives import hashes,serialization
@@ -81,7 +81,7 @@ def encrypt(source,pubfile,outfile):
  raw=Path(source).read_bytes();verify(json.loads(raw));pubdata=Path(pubfile).read_bytes();pub=serialization.load_pem_public_key(pubdata)
  aes=AESGCM.generate_key(bit_length=256);nonce=os.urandom(12)
  wrapped=pub.encrypt(aes,padding.OAEP(mgf=padding.MGF1(algorithm=hashes.SHA256()),algorithm=hashes.SHA256(),label=AAD))
- sealed=AESGCM(aes).encrypt(nonce,raw,AAD)
+ sealed=AESGCM(aes).encrypt(nonce,zlib.compress(raw,9),AAD)
  Path(outfile).write_bytes(js({"schema_version":1,"transfer":"RAIL_RYE_20261123_SCRATCH_FINAL","pubsha256":sha(pubdata),"wrapped_key":b64(wrapped),"nonce":b64(nonce),"sealed_payload":b64(sealed)}))
  print("ENCRYPTED_RELEASE_READY: no plaintext scores in repository")
 
@@ -91,7 +91,7 @@ def publish():
  pub=private.public_key().public_bytes(serialization.Encoding.PEM,serialization.PublicFormat.SubjectPublicKeyInfo)
  check(env.get("pubsha256")==sha(pub),"Incorrect recipient key")
  session=private.decrypt(ub64(env["wrapped_key"]),padding.OAEP(mgf=padding.MGF1(algorithm=hashes.SHA256()),algorithm=hashes.SHA256(),label=AAD))
- raw=AESGCM(session).decrypt(ub64(env["nonce"]),ub64(env["sealed_payload"]),AAD)
+ raw=zlib.decompress(AESGCM(session).decrypt(ub64(env["nonce"]),ub64(env["sealed_payload"]),AAD));check(len(raw)<2_000_000,"Release exceeds verified size limit")
  cards=verify(json.loads(raw));pending=[]
  for c in cards:
   target=f"projections/dashboard/{DATE}/"+re.sub("[^a-z0-9]+","-",c["track_name"].lower()).strip("-")+".json"
