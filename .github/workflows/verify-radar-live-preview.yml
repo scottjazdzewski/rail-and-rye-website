@@ -1,43 +1,58 @@
-name: Verify live Longshot Radar design preview
+name: Verify Longshot Radar protected live reader
 on:
   push:
     branches: [main]
     paths:
       - 'public/longshot-radar-preview/**'
       - 'public/assets/longshot-radar.js'
+      - 'public/assets/longshot-radar.css'
+      - 'public/admin/longshot-radar.html'
+      - 'src/longshot-radar.js'
+      - 'src/index.js'
       - '.github/workflows/verify-radar-live-preview.yml'
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
-  verify-live-site:
+  verify-live:
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 6
     steps:
-      - name: Confirm deployed unlisted visual preview via public URL
+      - name: Verify live public URL hands off to admin and shows no paid data
         shell: bash
         run: |
           set -euo pipefail
           URL="https://railandryeracing.com/longshot-radar-preview/"
           for attempt in $(seq 1 12); do
-            if curl -fsSL --connect-timeout 10 --max-time 20 "$URL" -o /tmp/rr-radar.html; then
-              if grep -q 'data-rr-design-only="true"' /tmp/rr-radar.html &&
-                 grep -q 'FICTIONAL HORSES' /tmp/rr-radar.html &&
-                 ! grep -q '/assets/approved/publications/longshot-hero.jpg' /tmp/rr-radar.html &&
-                 ! grep -q '/assets/approved/publications/longshot-mark.png' /tmp/rr-radar.html &&
-                 ! grep -iq 'sample' /tmp/rr-radar.html &&
-                 ! grep -q 'id="rr-lr-upload-form"' /tmp/rr-radar.html; then
-                echo "PASS: live website serves safe interactive Longshot Radar design-only page."
-                break
-              fi
+            code=$(curl -LsS --connect-timeout 10 --max-time 20 -H 'Cache-Control: no-cache'               -w '%{http_code}' -o /tmp/rr-radar-landing.html "$URL?rev=${GITHUB_SHA}-$attempt" || true)
+            if [ "$code" = "200" ] &&
+               grep -Fq 'http-equiv="refresh" content="0;url=/admin/longshot-radar/"' /tmp/rr-radar-landing.html &&
+               grep -Fq 'href="/admin/longshot-radar/"' /tmp/rr-radar-landing.html &&
+               ! grep -Fq 'rr-lr-candidates' /tmp/rr-radar-landing.html &&
+               ! grep -Fq 'data-rr-design-only' /tmp/rr-radar-landing.html; then
+              echo "PASS: live former design URL routes to protected genuine Radar, no fake/paid public rows"
+              break
             fi
             if [ "$attempt" -eq 12 ]; then
-              echo "::error::New public Radar visual page not verified on Cloudflare after 12 attempts."
+              echo "::error::Cloudflare has not deployed the protected Radar handoff."
               exit 1
             fi
             sleep 10
           done
-          for path in /assets/longshot-radar.js /assets/approved/saddlecloths/1.png /assets/approved/saddlecloths/11.png /assets/approved/saddlecloths/20.png; do
-            curl -fsSL --connect-timeout 10 --max-time 20 "https://railandryeracing.com$path" -o /dev/null
-            echo "PASS asset: $path"
+          curl -fsSL --max-time 20 "https://railandryeracing.com/assets/longshot-radar.js?rev=${GITHUB_SHA}" -o /tmp/radar.js
+          grep -Fq 'rr-lr-inline-analysis' /tmp/radar.js
+          grep -Fq '/api/admin/longshot-radar-editorial' /tmp/radar.js
+          ! grep -Fq 'make("button","","Race details")' /tmp/radar.js
+          curl -fsSL --max-time 20 "https://railandryeracing.com/assets/longshot-radar.css?rev=${GITHUB_SHA}" -o /tmp/radar.css
+          grep -Fq 'Longshot Radar v4' /tmp/radar.css
+          for path in /assets/approved/brand/rail-rye-ivory-logo.png /assets/approved/saddlecloths/1.png /assets/approved/saddlecloths/11.png /assets/approved/saddlecloths/20.png; do
+            curl -fsSL --max-time 20 "https://railandryeracing.com$path" -o /dev/null
+            echo "PASS real graphic $path"
           done
+          private=$(curl -LsS --max-time 20 -w '%{http_code}' -o /tmp/radar-private-body.txt             'https://railandryeracing.com/api/admin/longshot-radar-editorial' || true)
+          echo "Unauthenticated private Radar JSON endpoint returned HTTP $private"
+          case "$private" in
+            301|302|303|307|308|401|403|404|503) ;;
+            *) echo "::error::Private Radar data exposed without admin identity"; exit 1 ;;
+          esac
+          echo "PASS: live private Radar JS and CSS, canonical saddlecloths, authenticated R2 endpoint locked"
