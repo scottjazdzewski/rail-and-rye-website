@@ -256,6 +256,14 @@
   secondary.append(el("span","",result.combos.length.toLocaleString("en-US")+" combinations"));
   secondary.append(el("strong","","Ticket cost "+CASH(result.cost)));
   summary.append(secondary);
+  if(result.firstPlaceKey)summary.append(el("span","rr-bet-summary-key",
+   "Full key: #"+result.leadHorse.program_number+" must WIN"));
+  if(result.combos.length>1&&result.modelAvailable)
+   summary.append(el("small","rr-bet-summary-assumption",
+    "Break-even assumes equal gross payouts; actual tote payouts vary."));
+  if(result.allOutcomesCovered)
+   summary.append(el("small","rr-bet-summary-caveat",
+    "100% outcome coverage does NOT guarantee a profit."));
   // Ticket calculations and receipt checks remain unchanged. Customer-facing
    // status stays in the numbers rather than explaining internal model steps.
    if(!result.modelAvailable&&!state.loading)

@@ -197,7 +197,7 @@ assert.match(readable(summary()),/Full key: #4 must WIN/,
  "Make the first-place key requirement unmissable");
 assert.match(readable(summary()),/equal gross payouts/,
  "A multiple-combination key must display the gross-payout assumption without opening help");
-assert.ok(walk(body).some(node=>node.className==="rr-bet-help"),"Long assumptions belong in disclosure");
+assert.ok(!walk(body).some(node=>node.className==="rr-bet-help"),"Remove long payout FAQ from the customer interface.");
 
 state.mode="box";state.box=new Set(six.map(x=>x.program_number));
 result=app._calculate();
@@ -217,7 +217,7 @@ assert.match(readable(summary()),/equal gross payouts/,
  "Full coverage still requires a visible payout-variation caveat");
 assert.match(readable(summary()),/Ticket cost \$30\.00/,
  "Winning every modeled finishing outcome still costs thirty dollars");
-assert.match(script,/All finishing outcomes covered \(100%\)[\s\S]*?NOT guarantee a profit/,
+assert.match(script,/100% outcome coverage does NOT guarantee a profit/,
  "100% outcome coverage must be explicitly separate from profit");
 assert.match(script,/Full key:[\s\S]*?must WIN/,
  "A fully covered second-place key still depends on its first-place horse");
