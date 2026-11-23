@@ -16,9 +16,9 @@ import sys
 import zipfile
 from zoneinfo import ZoneInfo
 
-EXPECTED_STATUS = "TRI_V4_F4_V2_MODEL_SOURCE_INPUT_ERRORS_RESOLVED_ALL_FIVE"
+APPROVED_STATUSES = {"TRI_V4_F4_V2_MODEL_SOURCE_INPUT_ERRORS_RESOLVED_ALL_FIVE", "TRI_V4_F4_V2_PRESCRATCH_ALL_TRACKS_PASS"}
 PWIN_PASS = "PASS_TRI_TJ_V4_PERMANENT_FORWARD_RUNTIME"
-ZIP_NAME_RE = re.compile(r"^RAIL_RYE_(\d{4})_TRI_V4_F4_V2_ROLE_RATING_REPAIR_ALL_FIVE_PASS\.zip$")
+ZIP_NAME_RE = re.compile(r"^RAIL_RYE_(?:\d{4}|\d{8})_(?:TRI_V4_F4_V2_ROLE_RATING_REPAIR_ALL_FIVE_PASS|TRI_DASHBOARD_VERIFIED_PRESCRATCH)\.zip$")
 TRACK_FILE_RE = re.compile(r"^([A-Z0-9]{2,4})_(\d{4})_VERIFIED_TRI_F4_SOURCE\.json$")
 F4 = ("exact_p1", "exact_p2", "exact_p3", "exact_p4", "exact_p5", "p6_plus", "top2", "top3", "top4")
 MAX_ZIP_SIZE = 16 * 1024 * 1024
@@ -69,7 +69,7 @@ def build_cards(zip_bytes):
         require(all(".." not in x.filename.split("/") and not x.filename.startswith("/") for x in z.infolist()),
                 "Unsafe ZIP file path")
         receipt = parse_json(z, "RESOLUTION_RECEIPT.json")
-        require(receipt.get("status") == EXPECTED_STATUS and receipt.get("prescratch_not_final") is True,
+        require(receipt.get("status") in APPROVED_STATUSES and receipt.get("prescratch_not_final") is True,
                 "Model-resolution receipt is not a valid prescratch PASS")
         date = receipt.get("date")
         require(isinstance(date, str) and re.fullmatch(r"20\d{2}-\d{2}-\d{2}", date),
@@ -205,7 +205,7 @@ def list_source_files(credentials, folder_id):
     credentials.refresh(Request())
     headers = {"Authorization": "Bearer " + credentials.token}
     params = {
-        "q": f"'{folder_id}' in parents and trashed = false and name contains 'TRI_V4_F4_V2_ROLE_RATING_REPAIR_ALL_FIVE_PASS'",
+        "q": f"'{folder_id}' in parents and trashed = false and name contains 'TRI'",
         "fields": "nextPageToken,files(id,name,size,mimeType,modifiedTime,md5Checksum)",
         "pageSize": 100,
         "supportsAllDrives": "true", "includeItemsFromAllDrives": "true"
