@@ -57,8 +57,8 @@ const admin=readFileSync("public/admin/projections-preview.html","utf8");
 const member=readFileSync("public/membership/dashboard/index.html","utf8");
 for(const html of [admin,member]){
  assert.match(html,/rr-race-titles\.js\?v=3/,"Load shared race presentation helper before dashboard");
- assert.match(html,/projections-dashboard\.js\?v=31/,"Use verified stakes heading dashboard revision");
- assert.match(html,/projections-dashboard\.css\?v=25/,"Use correct graded trophy styles");
+ assert.match(html,/projections-dashboard\.js\?v=32/,"Use verified stakes heading dashboard revision");
+ assert.match(html,/projections-dashboard\.css\?v=26/,"Use correct graded trophy styles");
 }
 assert.match(js,/editorialRacePresentation\(race\)/,
  "Race headings use a source-proven title and defensive fallback");
