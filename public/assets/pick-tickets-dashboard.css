@@ -382,3 +382,19 @@ gap:4px;
 .rr-pt-scratch-chip{display:inline-flex;align-items:center;min-width:37px;min-height:37px}
 .rr-pt-scratch-chip .rr-pt-chip{width:34px;height:34px}
 @media(max-width:420px){.rr-pt-scratch-race{gap:8px;padding:6px 7px}.rr-pt-scratch-race>strong{min-width:55px}.rr-pt-scratch-chips{gap:4px}}
+
+/* A scratched runner remains recognizable by its authentic saddlecloth, but
+   cannot be selected or counted in the interactive ticket builder. */
+.rr-pt-builder .rr-pt-runner-button.rr-pt-scratched,
+.rr-pt-builder .rr-pt-runner-button:disabled{
+ opacity:.28;
+ filter:grayscale(1);
+ cursor:not-allowed;
+ pointer-events:none;
+ background:#c9cdd2;
+ border-color:#a9aeb5;
+ box-shadow:none;
+}
+.rr-pt-builder .rr-pt-runner-button.rr-pt-scratched .rr-pt-chip{
+ opacity:.82;
+}

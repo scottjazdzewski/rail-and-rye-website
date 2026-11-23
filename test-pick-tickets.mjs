@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import {normalizePickTickets,handleAdminPickTickets} from "./src/pick-tickets.js";
-import {getNov23ScratchLedger,sourceIsScratchCurrent,officialScratchSequenceCount} from "./src/pick-tickets-scratch-1123.js";
+import {getNov23ScratchLedger,sourceIsScratchCurrent,officialScratchSequenceCount,restoreInterimSelection} from "./src/pick-tickets-scratch-1123.js";
 import {PICK_MENU_1123} from "./src/pick-tickets-auto.js";
 import {getPickTicketsIntake} from "./src/pick-tickets-intake.js";
 import {getPickTicketsPrivateDemo} from "./src/pick-tickets-demo.js";
@@ -88,6 +88,19 @@ assert.equal(data.scratch_update.tracks.find(t=>t.name==="Parx Racing").scratche
 assert.equal(data.scratch_update.tracks.find(t=>t.name==="Finger Lakes").score_input_changes.some(x=>x.type==="jockey"&&x.race===7),true);
 const stale={date:"2026-11-23",track:"Finger Lakes",revision:1,status:"initial_current"};
 assert.equal(sourceIsScratchCurrent(stale),false,"old prescratch cards must not be shown after real scratch changes");
+const interim=restoreInterimSelection({card:{date:"2026-11-23",track:"Finger Lakes",revision:1,
+ sequences:[{name:"Pick 3",start_race:1,end_race:3,play_status:"CONDITIONAL",hit_rate_display:"13.1%",
+ review_probabilities:{"1":{"1":40,"2":60},"2":{"3":100},"3":{"1":50,"2":50}},
+ race_fields:[{race_number:1,programs:["1","2"]},{race_number:2,programs:["3"]},{race_number:3,programs:["1","2"]}],
+ tickets:[{role:"BEST_POSSIBLE",unit_cents:50,combinations:2,total_cents:100,hit_rate_display:"13.1%",
+ legs:[{race_number:1,programs:["2"]},{race_number:2,programs:["3"]},{race_number:3,programs:["1","2"]}]}]}]}});
+assert.equal(interim.card.sequences.length,1,"retained pending suggestion");
+assert.deepEqual(interim.card.sequences[0].tickets[0].legs.map(l=>l.programs),[["1"],["3"],["1"]],"scratched runner replaced, never suggested");
+assert.equal(interim.card.sequences[0].tickets[0].combinations,1);
+assert.equal(interim.card.sequences[0].tickets[0].total_cents,50);
+assert.equal(interim.card.sequences[0].tickets[0].hit_rate_display,"","old percentages cannot masquerade as rerun");
+assert.equal(interim.card.sequences[0].race_fields[0].programs.includes("2"),false);
+
 const revision={...stale,status:"scratch_updated",revision:2,scratch_verified_at:"2026-11-23T17:30:00Z",sequences:[
  {name:"Pick 3",start_race:1,end_race:3,tickets:[{legs:[{race_number:1,programs:["2"]},{race_number:2,programs:["1"]},{race_number:3,programs:["1"]}]}],race_fields:[]}
 ]};

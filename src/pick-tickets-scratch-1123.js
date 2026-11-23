@@ -100,3 +100,48 @@ export function officialScratchSequenceCount(menu){
   return {track:track.name,impacted:impacted.length,scratches:track.scratch_count};
  });
 }
+
+/** Keep a usable suggested ticket on screen while waiting for the current-field
+ * model release. Never carry scratched runners into the recommendation and never
+ * label prescratch probabilities as updated. This is intentionally temporary:
+ * a source-verified private scratch_updated R2 record replaces it automatically.
+ */
+export function restoreInterimSelection(wrapped){
+ const card=wrapped?.card;
+ if(!card||card.date!==SCRATCH_DATE_1123||!frozenPublic[card.track])return wrapped;
+ const official=frozenPublic[card.track],seqs=[];
+ for(const sequence of card.sequences||[]){
+  const fields=(sequence.race_fields||[]).map(f=>({
+   race_number:f.race_number,
+   programs:f.programs.filter(p=>!(official.scratches[String(f.race_number)]||[]).includes(p))
+  }));
+  const byRace=new Map(fields.map(f=>[f.race_number,f.programs]));
+  const tiers=[];
+  for(const t of sequence.tickets||[]){
+   const legs=t.legs.map(leg=>{
+    const withdrawn=new Set(official.scratches[String(leg.race_number)]||[]);
+    const valid=byRace.get(leg.race_number)||[];
+    const kept=leg.programs.filter(p=>!withdrawn.has(p)&&valid.includes(p));
+    // A scratched single must be replaced by an ACTUAL starter; only original
+    // source ordering can guide this interim choice. No invented win estimates.
+    if(!kept.length&&valid.length){
+     const priors=sequence.review_probabilities?.[String(leg.race_number)]||{};
+     const ranked=[...valid].sort((a,b)=>(priors[b]||0)-(priors[a]||0));
+     kept.push(ranked[0]);
+    }
+    return {race_number:leg.race_number,programs:kept};
+   });
+   if(legs.some(x=>!x.programs.length))continue;
+   const combinations=legs.reduce((n,x)=>n*x.programs.length,1);
+   tiers.push({...t,legs,combinations,total_cents:combinations*t.unit_cents,
+    hit_rate_display:"",notes:"Interim selections with withdrawn runners removed. Recalculated TRI/F4 projections pending."});
+  }
+  if(!tiers.length)continue;
+  seqs.push({...sequence,race_fields:fields,tickets:tiers,hit_rate_display:"",
+   review_probabilities:null,play_status:"CONDITIONAL",
+   recommendation:"Interim runner selections; updated model probabilities and finishing order pending."});
+ }
+ return {...wrapped,review_only:true,card:{...card,sequences:seqs,
+  source_type:"INTERIM_SCRATCH_FILTERED_FROM_PRESCRATCH_UNTIL_SOURCE_CERTIFIED_RERUN",
+  review_only:true}};
+}
