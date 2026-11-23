@@ -174,3 +174,65 @@ async function readEdition(env,selected,dates){
  if(edition.race_date!==selected.race_date||edition.revision!==selected.revision)return fail("Stored edition identity does not match.",503);
  return response({dates:dates.map(v=>v.race_date),edition,uploaded_at:object.customMetadata?.uploaded_at||null});
 }
+
+
+/* Separated editorial review lane.
+   Never mix a displayed review with receipt-certified production editions.
+   The JSON is private R2 only, not a public static asset. */
+const REVIEW_PREFIX="racing-intelligence/target-list-review/";
+export async function readAdminTargetListReview(env,url){
+ if(!env.CARDS_BUCKET)return fail("Private Target List review storage unavailable.",503);
+ const date=url.searchParams.get("date");
+ if(date&&!dateValid(date))return fail("Invalid race date.",400);
+ const rows=[];let cursor;
+ do{
+  const page=await env.CARDS_BUCKET.list({prefix:REVIEW_PREFIX,limit:1000,...(cursor?{cursor}:{})});
+  for(const obj of page.objects||[]){
+   const matched=/^racing-intelligence\/target-list-review\/(\d{4}-\d{2}-\d{2})\/revision-(\d{4})\.json$/.exec(obj.key);
+   if(matched&&dateValid(matched[1]))rows.push({date:matched[1],revision:Number(matched[2]),key:obj.key});
+  }
+  cursor=page.truncated?page.cursor:null;
+  if(page.truncated&&!cursor)return fail("Incomplete private review index.",503);
+  if(rows.length>10000)return fail("Private review index too large.",503);
+ }while(cursor);
+ const editions=new Map();
+ for(const entry of rows){
+  const last=editions.get(entry.date);
+  if(!last||last.revision<entry.revision)editions.set(entry.date,entry);
+ }
+ const dates=[...editions.keys()].sort((a,b)=>b.localeCompare(a)).slice(0,60);
+ const chosen=date?editions.get(date):editions.get(dates[0]);
+ if(!chosen)return response({dates,edition:null,review_only:true});
+ const obj=await env.CARDS_BUCKET.get(chosen.key);
+ if(!obj)return fail("Private review edition unavailable.",503);
+ const plain=await obj.text();
+ if(plain.length>512*1024)return fail("Private review payload exceeds limit.",503);
+ const checksum=await sha256(plain);
+ if(!obj.customMetadata?.sha256||obj.customMetadata.sha256!==checksum)
+  return fail("Private review integrity check failed.",503);
+ let edition;
+ try{edition=JSON.parse(plain);}catch{return fail("Invalid stored private review.",503);}
+ if(!object(edition)||edition.schema_version!==1||edition.product_type!=="target_list"||
+    edition.review_only!==true||edition.customer_publish_approved!==false||
+    edition.production_receipt_verified!==false||
+    edition.race_date!==chosen.date||edition.revision!==chosen.revision||
+    !Array.isArray(edition.targets)||edition.targets.length>100)
+  return fail("Stored private review is not safe for preview.",503);
+ // Reuse the same exact value/role validation without asserting certified receipts.
+ try{
+  const temporary={
+   schema_version:1,product_type:"target_list",race_date:edition.race_date,
+   revision:edition.revision,status:edition.status,
+   source:{receipt_id:"editorial-review-only",sha256:edition.source?.editorial_sha256},
+   targets:edition.targets.map(t=>({...t,
+    conditions:t.conditions||"",
+    favorite:{...t.favorite},
+    attack:{...t.attack},
+    also_live:t.also_live||null,
+    scratches:t.scratches||[]}))
+  };
+  validateTargetList(temporary);
+ }catch(e){return fail("Private review fields failed validation.",503);}
+ return response({dates,edition,review_only:true,demo_example:false,
+  uploaded_at:obj.customMetadata?.uploaded_at||null});
+}
