@@ -66,7 +66,7 @@ function allClass(root,className,out=[]){if(String(root.className||"").split(/\s
 const race=els.get("rr-dash-race"),horses=els.get("rr-dash-horses");
 assert.match(race.textContent,/Claiming \$8,000/i,"Preserve claiming price");
 assert.match(race.textContent,/PURSE \$20,000/,"Display actual purse separately");
-assert.match(race.textContent,/SCRATCHES/);
+assert.match(race.textContent,/1 SCRATCH(?:ES)?/,"Official scratch count uses correct singular/plural display.");
 const scratchChip=matchClass(race,"rr-dash-scratch-chip");
 assert.ok(scratchChip&&scratchChip.src.endsWith("/3.png"),"Scratch uses official #3 saddlecloth chip");
 assert.match(race.textContent,/Scratched Runner/,"Show scratched horse name");
