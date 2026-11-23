@@ -52,7 +52,7 @@ assert.deepEqual(names,["Barrister Proof","Doo Wop Don"]);
 assert.equal(allClass(horses,"rr-dash-horse-ml")[0].textContent,"M/L 12-1");
 assert.equal(allClass(horses,"rr-dash-horse-connections")[0].textContent,"Brad Cox | Jose Ortiz");
 assert.equal(allClass(horses,"rr-dash-horse-connections").length,1,"Missing trainer and jockey must not create filler text");
-assert.equal(allClass(horses,"rr-dash-metric-group").length,2,"Both runners retain all factor groups");
+assert.equal(allClass(horses,"rr-dash-metric-group").length,3,"Two runner groups plus desktop-only table heading must remain");
 assert.equal(allClass(horses,"rr-dash-win-percent")[0].textContent,"27.5%");
 assert.equal(allClass(horses,"rr-dash-win-fair")[0].textContent,"FAIR 5/2");
 assert.ok(allClass(horses,"rr-dash-metric-value").length===10,"All five factors must remain visible on every horse");
