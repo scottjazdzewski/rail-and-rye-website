@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
-import {validateLongshotEdition,handleAdminLongshotRadar} from "./src/longshot-radar.js";
+import {validateLongshotEdition,handleAdminLongshotRadar,handleAdminLongshotEditorialPreview} from "./src/longshot-radar.js";
 
 const H="a".repeat(64),S="b".repeat(64),E="c".repeat(64);
 const base=()=>({
@@ -103,9 +103,43 @@ assert.equal(res.status,405);checks++;
 const noStore=await handleAdminLongshotRadar(req("GET"),{});
 assert.equal(noStore.status,503);checks++;
 
+// Published PDF rows are real editorial display values but MUST NOT be
+// represented as the certified full-precision original TRI PWIN.
+const editorialKey="racing-intelligence/longshot-radar-pdf-review/2026-11-23/revision-0001.json";
+const editorial={
+ schema_version:1,product_type:"longshot_radar",race_date:"2026-11-23",revision:1,
+ status:"published_pdf_reference",review_only:true,customer_publish_approved:false,
+ source:{editorial_pdf_sha256:H,timeform_zip_sha256:S,production_receipt_verified:false},
+ candidates:Array.from({length:10},(_,i)=>({
+  track:"Synthetic Course",race_number:4,program_number:String(i+1),
+  horse_name:"Source Fixture "+(i+1),post_time_et:"3:15 PM ET",
+  original_morning_line:"8/1",pwin_display:17.6,
+  fair_odds_display:"5/1",betting_case:"Document-sourced testing-only analysis, not a real race pick."
+ }))
+};
+memory.set(editorialKey,JSON.stringify(editorial));
+let editorialResponse=await handleAdminLongshotEditorialPreview(
+ new Request("https://railandryeracing.com/api/admin/longshot-radar-editorial"),env);
+assert.equal(editorialResponse.status,200);
+let editorialBody=await editorialResponse.json();
+assert.equal(editorialBody.edition.candidates.length,10);
+assert.equal(editorialBody.production_receipt_verified,false);
+assert.equal(editorialBody.customer_publish_approved,false);
+assert.equal(editorialBody.edition.status,"published_pdf_reference");
+assert.ok(!Object.hasOwn(editorialBody.edition.candidates[0],"pwin_exact"),"Do not invent unrounded PWIN from PDF.");
+checks++;
+editorialResponse=await handleAdminLongshotEditorialPreview(
+ new Request("https://railandryeracing.com/api/admin/longshot-radar-editorial",{method:"POST"}),env);
+assert.equal(editorialResponse.status,405);checks++;
+memory.delete(editorialKey);
+editorialResponse=await handleAdminLongshotEditorialPreview(
+ new Request("https://railandryeracing.com/api/admin/longshot-radar-editorial"),env);
+assert.equal(editorialResponse.status,404);checks++;
+
 const worker=readFileSync("src/index.js","utf8");
 assert.ok(worker.indexOf("const auth=await verifyAdmin(request,env)")>=0 && worker.indexOf('if(path.startsWith("/api/admin/"))return handleAdminAPI')>worker.indexOf("const auth=await verifyAdmin(request,env)"));
 assert.ok(worker.includes('if(pathname==="/api/admin/longshot-radar") return handleAdminLongshotRadar(request,env);'));
+assert.ok(worker.includes('if(pathname==="/api/admin/longshot-radar-editorial")return handleAdminLongshotEditorialPreview(request,env);'));
 assert.ok(worker.includes('["/admin/longshot-radar","/admin/longshot-radar.html"]'),"Radar preview remains mapped behind the existing admin gate.");
 checks++;
 const html=readFileSync("public/admin/longshot-radar.html","utf8");
@@ -116,9 +150,14 @@ assert.ok(!html.includes('Synthetic Unit-Test Runner'));
 assert.ok(!ui.includes("Math.round")&&!ui.includes("pwin_exact*")); // no client-side scoring
 assert.ok(css.includes("@media(max-width:800px)")&&css.includes("@media(max-width:360px)"));
 assert.ok(html.includes("/assets/projections-dashboard.css")); // shared visual baseline
+assert.ok(!html.includes("Race details")&&!html.includes('id="rr-lr-dialog"'));
+assert.ok(!html.includes("longshot-hero.jpg")&&!html.includes("longshot-mark.png"));
+assert.ok(ui.includes('make("div","rr-lr-inline-analysis")'));
+assert.ok(!ui.includes('make("button","","Race details")'));
+
 checks++;
 const publicDesign=readFileSync("public/longshot-radar-preview/index.html","utf8");
-assert.ok(publicDesign.includes('data-rr-design-only="true"')&&publicDesign.includes("FICTIONAL HORSES")&&publicDesign.includes("NOT ACTUAL PICKS"));
+assert.ok(publicDesign.includes('data-rr-design-only="true"')&&publicDesign.includes("FICTIONAL FIGURES")&&publicDesign.includes("NOT ACTUAL PICKS"));
 assert.ok(!publicDesign.includes("/assets/approved/publications/longshot-hero.jpg"));
 assert.ok(!publicDesign.includes("/assets/approved/publications/longshot-mark.png"));
 assert.ok(publicDesign.includes("/assets/approved/brand/rail-rye-ivory-logo.png"));
@@ -130,4 +169,4 @@ assert.ok(ui.includes('const designOnly=document.body?.dataset?.rrDesignOnly==="
 assert.ok(ui.includes('if(designOnly){')&&ui.includes('const demo=visualSample();'));
 checks++;
 
-console.log("PASS: "+checks+" Longshot Radar private-review unit/integration and static security/layout checks.");
+console.log("PASS: "+checks+" Longshot Radar private-review, noncertified published-PDF handoff, inline editorial and security/layout checks.");

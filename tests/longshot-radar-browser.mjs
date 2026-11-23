@@ -60,23 +60,17 @@ try{
   await page.locator("#rr-lr-sort").selectOption("post-time");
   if(!(await page.locator(".rr-lr-card").first().innerText()).includes("Fixture Runner B"))throw Error("Post-time switch did not restore chronological order at "+width);
   await page.screenshot({path:join("test-artifacts","longshot-"+width+".png"),fullPage:true});
-  await page.getByRole("button",{name:/Read Longshot Radar analysis/}).first().click();
-  if(!(await page.locator("#rr-lr-dialog").evaluate(el=>el.open)))throw Error("Details failed at "+width);
-  await page.keyboard.press("Escape");
-  if(await page.locator("#rr-lr-dialog").evaluate(el=>el.open))throw Error("Escape did not dismiss dialog at "+width);
-  if(await page.locator(".rr-lr-card").count()!==2)throw Error("Daily source candidates disappeared after sorting at "+width);
-  for(const img of await page.locator(".rr-review-artwork img").all()){
-    const visible=await img.evaluate(el=>el.complete&&el.naturalWidth>0);
-    if(!visible)throw Error("Approved Longshot publication image failed to load at "+width);
-  }
-  await page.locator("#rr-lr-demo-button").click();
-  if(await page.locator(".rr-lr-card").count()!==3)throw Error("Private sample mode did not show 3 example rows at "+width);
-  if(!(await page.locator("#rr-lr-demo-alert").innerText()).includes("FICTIONAL"))throw Error("Sample warning not visible at "+width);
-  for(const chip of [1,11,20]){
-    const found=await page.locator('.rr-lr-card img[src="/assets/approved/saddlecloths/'+chip+'.png"]').count();
-    if(found<1)throw Error("Approved saddlecloth #"+chip+" missing from sample at "+width);
-  }
-  await page.screenshot({path:join("test-artifacts","longshot-sample-"+width+".png"),fullPage:true});
+  if(await page.getByRole("button",{name:/Race details/i}).count())throw Error("Redundant Race details button remained at "+width);
+  if(await page.locator("#rr-lr-dialog").count())throw Error("Hidden analysis drawer remained at "+width);
+  if(await page.locator(".rr-review-artwork").count())throw Error("Removed decorative artwork remained at "+width);
+  const analysis=await page.locator(".rr-lr-inline-analysis .rr-lr-case").first().innerText();
+  if(!analysis.includes("testing-only sentence"))throw Error("Source editorial is not visible inline at "+width);
+  const analysisCss=await page.locator(".rr-lr-inline-analysis .rr-lr-case").first().evaluate(el=>({
+   font:parseFloat(getComputedStyle(el).fontSize),visible:el.getBoundingClientRect().height>0
+  }));
+  if(analysisCss.font<14||!analysisCss.visible)throw Error("On-card analysis too small/hidden at "+width);
+  if(await page.locator(".rr-lr-card").count()!==2)throw Error("Daily runners disappeared after sorting at "+width);
+  await page.screenshot({path:join("test-artifacts","longshot-inline-"+width+".png"),fullPage:true});
   await page.close();
  }
  // Publicly accessible DESIGN-ONLY website page must NOT request admin/purchased data.
@@ -103,15 +97,14 @@ try{
   if(!(await page.locator(".rr-lr-card").first().innerText()).includes("Example Horse Eleven"))throw Error("Design track ordering failed at "+width);
   const size=await page.evaluate(()=>({viewport:document.documentElement.clientWidth,body:document.body.scrollWidth,page:document.documentElement.scrollWidth}));
   if(size.body>width+1||size.page>width+1)throw Error("Design preview horizontal overflow at "+width+": "+JSON.stringify(size));
-  await page.getByRole("button",{name:/Read Longshot Radar analysis/}).first().click();
-  if(!(await page.locator("#rr-lr-dialog").evaluate(el=>el.open)))throw Error("Design modal failed at "+width);
-  await page.keyboard.press("Escape");
-  if(await page.locator("#rr-lr-dialog").evaluate(el=>el.open))throw Error("Design modal Escape failed at "+width);
+  if(await page.getByRole("button",{name:/Race details/i}).count())throw Error("Design still has a Race details button at "+width);
+  if(await page.locator("#rr-lr-dialog").count())throw Error("Public design retained a hidden drawer at "+width);
+  if(await page.locator(".rr-lr-inline-analysis .rr-lr-case").count()!==3)throw Error("All 3 illustrative analyses must be visible inline at "+width);
   await page.screenshot({path:join("test-artifacts","longshot-public-design-"+width+".png"),fullPage:true});
   await page.close();
  }
- console.log("PASS: public design-only preview at 320/375/390/430/768/1280 with real saddlecloth and brand art, interactive sorts, drawer, and ZERO admin API requests.");
- console.log("PASS: mobile 320/375/390/430, tablet 768 and desktop 1280, date-based daily cards, cross-track post-time/track order, dialog, Escape, no overflow.");
+ console.log("PASS: public design-only preview at 320/375/390/430/768/1280 with real saddlecloth art, interactive sorts, readable inline analysis, and ZERO admin API requests.");
+ console.log("PASS: mobile 320/375/390/430, tablet 768 and desktop 1280, date-based daily cards, cross-track post-time/track order, full visible analysis, no details buttons, no overflow.");
 }finally{
  if(browser)await browser.close();await new Promise(resolve=>server.close(resolve));
 }

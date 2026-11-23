@@ -25,6 +25,7 @@ jobs:
           node-version: "22"
       - name: Syntax and contract tests
         run: |
+          python -m py_compile scripts/radar_private_pdf_bridge.py
           node --check src/longshot-radar.js
           node --check src/index.js
           node --check public/assets/longshot-radar.js
@@ -33,7 +34,7 @@ jobs:
         run: |
           npm install --no-save playwright@1.56.1
           npx playwright install --with-deps chromium
-      - name: Check real browser viewports and drawer
+      - name: Check real browser viewports and inline analysis
         run: node tests/longshot-radar-browser.mjs
       - name: Capture private synthetic browser screenshots
         if: always()

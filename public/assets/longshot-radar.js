@@ -4,7 +4,7 @@
 const q=selector=>document.querySelector(selector);
 const designOnly=document.body?.dataset?.rrDesignOnly==="true"; // Public visual shell: NO admin API and NO paid data.
 const state={editions:[],date:"",sort:"post-time",demo:false};
-const status=q("#rr-lr-loading"),app=q("#rr-lr-app"),empty=q("#rr-lr-empty"),dialog=q("#rr-lr-dialog");
+const status=q("#rr-lr-loading"),app=q("#rr-lr-app"),empty=q("#rr-lr-empty");
 const make=(tag,cls,content)=>{
  const element=document.createElement(tag);if(cls)element.className=cls;
  if(content!==undefined&&content!==null)element.textContent=String(content);
@@ -77,30 +77,6 @@ function market(label,value,cls){
  item.append(make("span","",label),make("strong","",value));
  return item;
 }
-function showDetail(item){
- const title=q("#rr-lr-dialog-title"),body=q("#rr-lr-dialog-detail");
- title.textContent=item.horse_name;
- const summary=make("div","rr-lr-dialog-summary"),id=make("div");
- id.append(make("strong","",item.horse_name));
- id.append(make("small","",item.track+" · Race "+item.race_number+(item.post_time_et?" · "+item.post_time_et:"")));
- if(item.trainer||item.jockey)id.append(make("small","",[item.trainer,item.jockey].filter(Boolean).join(" | ")));
- summary.append(programChip(item.program_number),id);
- const stats=make("div","rr-lr-detail-stats");
- for(const [name,value] of [["ORIGINAL M/L",item.original_morning_line],["TRI WIN",String(item.pwin_display)+"%"],["FAIR ODDS",item.fair_odds_display]]){
-  const box=make("div");box.append(make("span","",name),make("strong","",value));stats.append(box);
- }
- body.replaceChildren(summary,stats);
- for(const [label,copy] of [
-  ["Why this horse at this price",item.betting_case],
-  ["Authenticated racing evidence",item.source_causal_evidence],
-  ["Checked counterargument",item.counterargument_checked]
- ]){
-  const section=make("section","rr-lr-detail-section");
-  section.append(make("h3","",label),make("p","",copy));body.append(section);
- }
- body.append(make("p","rr-lr-source-note",state.demo?"FICTIONAL DATA ONLY. No actual horses, TRI results, odds or wagering selections are included.":"Original Timeform morning line, not live tote odds. Editorial source and release receipts must be checked against the approved production package before customer publication."));
- if(!dialog.open)dialog.showModal();
-}
 function makeCard(item){
  const card=make("article","rr-lr-card"),racebar=make("div","rr-lr-racebar");
  racebar.append(make("h3","",item.track),make("span","rr-lr-race-number","RACE "+item.race_number));
@@ -117,23 +93,30 @@ function makeCard(item){
   market("FAIR ODDS",item.fair_odds_display)
  );
  top.append(programChip(item.program_number),identity,markets);
- const foot=make("div","rr-lr-card-foot");
- const detail=make("button","","Race details");detail.type="button";
- detail.setAttribute("aria-label","Read Longshot Radar analysis for "+item.horse_name+" at "+item.track+" race "+item.race_number);
- detail.addEventListener("click",()=>showDetail(item));
- foot.append(detail);
- card.append(racebar,top,make("p","rr-lr-case",item.betting_case),foot);
+ const analysis=make("div","rr-lr-inline-analysis");
+ analysis.append(make("p","rr-lr-case",item.betting_case));
+ if(item.source_causal_evidence&&!state.demo){
+  const evidence=make("div","rr-lr-evidence");
+  evidence.append(make("strong","","Evidence"),make("p","",item.source_causal_evidence));
+  analysis.append(evidence);
+ }
+ if(item.counterargument_checked&&!state.demo){
+  const counter=make("div","rr-lr-evidence");
+  counter.append(make("strong","","Counterargument"),make("p","",item.counterargument_checked));
+  analysis.append(counter);
+ }
+ card.append(racebar,top,analysis);
  return card;
 }
 function renderCandidates(){
  const edition=currentEdition(),target=q("#rr-lr-candidates");
  if(!edition)return;
  q("#rr-lr-date-title").textContent=dateLabel(edition.race_date);
- q("#rr-lr-stage").textContent=state.demo?"PREVIEW · NOT ACTUAL PICKS":(edition.status==="prescratch"?"INITIAL · CURRENT":"SCRATCH-UPDATED");
- q("#rr-lr-updated").textContent=state.demo?"Illustrative figures · not wagering recommendations":"Production "+timeLabel(edition.generated_at)+" · revision "+edition.revision;
+ q("#rr-lr-stage").textContent=state.demo?"PREVIEW · NOT ACTUAL PICKS":edition.status==="published_pdf_reference"?"NOV 23 PUBLISHED CARD":(edition.status==="prescratch"?"INITIAL · CURRENT":"SCRATCH-UPDATED");
+ q("#rr-lr-updated").textContent=state.demo?"Illustrative figures · not wagering recommendations":edition.status==="published_pdf_reference"?"As printed in the Nov 23 Rail & Rye PDF · ML is not live tote":"Production "+timeLabel(edition.generated_at)+" · revision "+edition.revision;
  let candidates=[...edition.candidates];
  candidates=orderByDay(candidates,state.sort);
- q("#rr-lr-count").textContent=candidates.length+" shown · "+edition.candidates.length+(state.demo?" illustrated runners":" approved horses")+" · "+(state.sort==="post-time"?"Post-time order":"Track order");
+ q("#rr-lr-count").textContent=candidates.length+" shown · "+edition.candidates.length+(state.demo?" illustrated runners":edition.status==="published_pdf_reference"?" published horses":" approved horses")+" · "+(state.sort==="post-time"?"Post-time order":"Track order");
  if(!candidates.length){
   target.replaceChildren(make("div","rr-lr-list-empty","No selections in this approved edition. Longshot Radar does not force a daily pick."));
  }else target.replaceChildren(...candidates.map(makeCard));
@@ -143,7 +126,17 @@ function refreshView(){
  empty.hidden=true;app.hidden=false;
 }
 async function load(){
- state.demo=false;q("#rr-lr-demo-alert").hidden=true;q("#rr-lr-demo-button").textContent="Preview sample rows";
+ state.demo=false;
+ if(q("#rr-lr-demo-alert"))q("#rr-lr-demo-alert").hidden=true;
+ if(q("#rr-lr-demo-button"))q("#rr-lr-demo-button").textContent="Preview layout";
+ const editorialResponse=await fetch("/api/admin/longshot-radar-editorial",{credentials:"same-origin",cache:"no-store"});
+ if(editorialResponse.ok){
+  const editorial=await editorialResponse.json();
+  if(editorial?.edition?.candidates?.length){
+   state.editions=[editorial.edition];state.date=editorial.edition.race_date;
+   refreshView();return;
+  }
+ }
  const response=await fetch("/api/admin/longshot-radar",{credentials:"same-origin",cache:"no-store"});
  const result=await response.json();
  if(!response.ok)throw Error(result.error||"Unable to load Radar review.");
@@ -200,7 +193,7 @@ q("#rr-lr-date").addEventListener("change",event=>{
  state.date=event.target.value;renderCandidates();
 });
 q("#rr-lr-sort").addEventListener("change",event=>{state.sort=event.target.value;renderCandidates();});
-q("#rr-lr-close").addEventListener("click",()=>dialog.close());
+
 q("#rr-lr-upload-form")?.addEventListener("submit",async event=>{
  event.preventDefault();
  const feedback=q("#rr-lr-upload-status"),file=q("#rr-lr-file").files?.[0],button=event.currentTarget.querySelector("button");

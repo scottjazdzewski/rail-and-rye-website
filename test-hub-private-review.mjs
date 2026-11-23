@@ -6,7 +6,7 @@ const logo="/assets/approved/brand/rail-rye-ivory-logo.png";
 const manifest=JSON.parse(read("public/assets/approved/manifest.json"));
 const expected=[
  ["public/admin/racing-intelligence-review.html",["/assets/approved/race-cards/hero.webp","/assets/approved/publications/pick-tickets-hero.png","/assets/approved/publications/longshot-hero.jpg","/assets/approved/publications/target-hero.jpg"]],
- ["public/admin/longshot-radar.html",[manifest.publications.longshot_radar.hero,manifest.publications.longshot_radar.mark]],
+ ["public/admin/longshot-radar.html",[]], // Radar editorial art removed at user request; header logo remains.
  ["public/admin/target-list-preview.html",[]] // User explicitly removed both top publication graphics from Target List reader.
 ];
 const config=JSON.parse(wrangler);
@@ -28,6 +28,9 @@ for(const [page,assets] of expected){
   assert.ok(existsSync("public"+asset),"Approved file missing from project: "+asset);
  }
 }
+const radarPage=read("public/admin/longshot-radar.html");
+assert.doesNotMatch(radarPage,/rr-review-artwork|longshot-hero\.jpg|longshot-mark\.png/,"Radar reader omits decorative header graphics.");
+assert.doesNotMatch(radarPage,/Race details|rr-lr-dialog/,"Radar analysis must be permanently visible, not in a details drawer.");
 const targetPage=read("public/admin/target-list-preview.html");
 assert.doesNotMatch(targetPage,/rr-review-artwork|target-hero\.jpg|target-mark\.png/,"Target List reader shows real race rows without decorative top page-and-horse images.");
 for(let i=1;i<=20;i++){
@@ -43,4 +46,4 @@ for(const module of ["longshot-radar.js","target-list-dashboard.js"]){
 }
 assert.match(read("public/assets/racing-intelligence-module-art.css"),/rr-review-artwork/);
 assert.equal(config.vars.PROJECTIONS_MEMBER_LAUNCH,"off","Do not enable customer launch");
-console.log("PASS: private Hub route, fail-closed admin gate, approved shared header/4 hub product heroes/Longshot Radar marks/all 20 real saddlecloth assets and Target List without decorative top art, no PDF dependency, no paid data exposure.");
+console.log("PASS: private Hub route, fail-closed admin gate, approved shared header/4 hub product heroes/Radar inline reasoning/all 20 real saddlecloth assets and Target List without decorative top art, no PDF dependency, no paid data exposure.");
