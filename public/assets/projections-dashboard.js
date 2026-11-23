@@ -202,10 +202,6 @@ function showHorse(entry){
   notes.append(makeNode("h3","","MODEL NOTES"),makeNode("p","rr-dash-sheet-notes",entry.notes));
   mobile.append(notes);
  }
- if(activeCard?.product_id&&!previewMode){
-  const pdf=document.createElement("a");pdf.className="rr-dash-sheet-pdf";pdf.href="/api/membership/view/"+encodeURIComponent(activeCard.product_id);
-  pdf.target="_blank";pdf.rel="noopener";pdf.textContent="OPEN FULL RACE PDF";mobile.append(pdf);
- }
  detail.append(mobile);
  dialog.showModal();
 }
