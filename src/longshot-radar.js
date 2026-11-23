@@ -77,7 +77,7 @@ export function validateLongshotEdition(input){
     model_sha256:sha(input.receipts.model_sha256,"Model receipt"),
     source_sha256:sha(input.receipts.source_sha256,"Source receipt"),
     editorial_qa_sha256:sha(input.receipts.editorial_qa_sha256,"Editorial QA receipt")};
-  if(!Array.isArray(input.candidates)||input.candidates.length>500)throw Error("candidates must be an array of 0 to 500 qualified horses.");
+  if(!Array.isArray(input.candidates))throw Error("candidates must be an array of source-qualified horses.");
   const candidates=input.candidates.map(candidate),seen=new Set();
   for(const c of candidates){
     const key=c.track.toLocaleLowerCase("en-US")+"|"+c.race_number+"|"+c.program_number;
