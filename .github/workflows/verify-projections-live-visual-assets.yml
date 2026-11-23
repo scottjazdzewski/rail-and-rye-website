@@ -32,7 +32,7 @@ jobs:
                cmp -s public/assets/projections-dashboard.js /tmp/projections-live.js &&
                cmp -s public/assets/rr-race-titles.js /tmp/rr-race-titles-live.js &&
                cmp -s public/assets/rr-intelligence-chips.css /tmp/rr-chips-live.css; then
-              echo "LIVE_PROJECTIONS_ASSETS_MATCH: Cloudflare serves exact merged saddlecloth, sponsor-free track emblems and full-stakes-name code"
+              echo "LIVE_PROJECTIONS_ASSETS_MATCH: Cloudflare serves source-authentic track logos, readable saddlecloths and full-stakes-name code"
               break
             fi
             echo "Not deployed yet: attempt ${attempt}/24 JS=${code1}, title=${code2}, chips=${code3}"
@@ -44,14 +44,23 @@ jobs:
           done
           grep -Fq 'approvedRaceSaddle(race.race_number)' /tmp/projections-live.js
           grep -Fq 'editorialRacePresentation(race)' /tmp/projections-live.js
-          grep -Fq 'rr-dash-track-mark-letters' /tmp/projections-live.js
+          grep -Fq 'rr-dash-approved-track-logo' /tmp/projections-live.js
+          grep -Fq 'officialTrackArt={' /tmp/projections-live.js
+          ! grep -Fq 'rr-dash-track-mark-letters' /tmp/projections-live.js
+          grep -Fq 'text-wrap:balance' /tmp/rr-chips-live.css
+          grep -Fq 'mix-blend-mode:multiply' /tmp/rr-chips-live.css
           ! grep -Fq 'approvedTrackLogos={' /tmp/projections-live.js
           grep -Fq 'rr-race-saddle-tab' /tmp/rr-chips-live.css
           grep -Fq 'FIRST LADY' test-projection-dashboard-mobile.mjs
-          echo 'PASS: no sponsor badge, no old fake RACE plaque; actual saddlecloths and First Lady Stakes fallback'
+          echo 'PASS: source track-logo art, balanced race titles, light-backed real saddlecloths, no invented venue monograms'
           for n in 1 5 10 12 20; do
             curl -fsSL --connect-timeout 10 --max-time 20 "${BASE}/assets/approved/saddlecloths/${n}.png" -o "/tmp/saddle-${n}.png"
             test -s "/tmp/saddle-${n}.png"
             echo "LIVE_APPROVED_SADDLECLOTH ${n} PASS"
           done
-          echo 'LIVE_PROJECTIONS_READY: Source-verified stakes-name and visual fixes are live.'
+          for logo in finger-lakes mahoning-valley mountaineer parx-racing zia-park; do
+            curl -fsSL --connect-timeout 10 --max-time 20 "${BASE}/assets/approved/track-logos/${logo}.webp" -o "/tmp/${logo}.webp"
+            test -s "/tmp/${logo}.webp"
+            echo "LIVE_APPROVED_TRACK_LOGO ${logo} PASS"
+          done
+          echo 'LIVE_PROJECTIONS_READY: Original venue logos, balanced sponsor-free stakes titles and transparent chip backing are live.'
