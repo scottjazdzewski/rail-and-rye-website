@@ -28,7 +28,8 @@ function makeSequence(kind,start,choices,status,variant){
   tickets.push(makeTicket("FULL_COVERAGE","Mock coverage alternative",start,expanded,unitCents));
  }
  return {name:types[kind],start_race:start,end_race:start+raceCount-1,play_status:status,
-  hit_rate_display:"",recommendation:"Mock selections for layout review only. No TRI projected hit rate or wagering recommendation is available.",tickets};
+  hit_rate_display:"",recommendation:"Mock selections for layout review only. No TRI projected hit rate or wagering recommendation is available.",tickets,
+  race_fields:Array.from({length:raceCount},(_,i)=>({race_number:start+i,programs:Array.from({length:12},(_,n)=>String(n+1))}))};
 }
 export function getPickTicketsPrivateDemo(){
  const cards=demoTracks.map((track,i)=>{
