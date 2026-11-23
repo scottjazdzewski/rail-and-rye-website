@@ -24,7 +24,7 @@ No one needs to download and re-upload JSON when a validated scorer ZIP appears 
 
 ## Guardrails and scope
 
-- Source ZIP name pattern: `RAIL_RYE_MMDD_TRI_V4_F4_V2_ROLE_RATING_REPAIR_ALL_FIVE_PASS.zip`. Do **not** add unverified/failing packages matching this filename.
+- Future daily production ZIP contract: `RAIL_RYE_YYYYMMDD_TRI_DASHBOARD_VERIFIED_PRESCRATCH.zip`, with a `RESOLUTION_RECEIPT.json` marked `TRI_V4_F4_V2_PRESCRATCH_ALL_TRACKS_PASS` and the same verified per-track TRI/F4/sidecar evidence structure. The existing November 23 `RAIL_RYE_1123_TRI_V4_F4_V2_ROLE_RATING_REPAIR_ALL_FIVE_PASS.zip` also remains compatible. This packaging convention does **not** change frozen scorer math. Never rename failing packages to mimic an approved ZIP.
 - The source file must contain `RESOLUTION_RECEIPT.json`, all matching `*_VERIFIED_TRI_F4_SOURCE.json` files, each track's original TRI/F4 receipts, role-audit SHA, and verified current trainer/jockey sidecar. Model math is never regenerated or changed.
 - The normalized JSON must pass full-field 100%-PWIN, F4 outcome normalization, exact PWIN=F4 winner, source hash, date, field-count and role-coverage checks.
 - Scratch status stays unknown (`scratch_count:null`), with visible **PRESCRATCH** labeling. Official scratches can be applied later by the scoring production pipeline.
