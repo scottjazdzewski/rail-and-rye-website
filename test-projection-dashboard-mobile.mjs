@@ -97,14 +97,14 @@ const adminHtml=readFileSync("public/admin/projections-preview.html","utf8");
 const memberHtml=readFileSync("public/membership/dashboard/index.html","utf8");
 assert.doesNotMatch(adminHtml,/rr-dash-review-data|review=nov23|Selected horses only|17 horses/,
  "Remove legacy selected-horse review fixtures and routes");
-assert.doesNotMatch(adminHtml,/<script[^>]*type="application\\/json"/,
+assert.doesNotMatch(adminHtml,/<script[^>]*type="application\/json"/,
  "Never embed premium racing projections in public HTML");
-assert.doesNotMatch(js,/\\breviewMode\\b|PARTIAL FIELD|rr-dash-review-data/,
+assert.doesNotMatch(js,/\breviewMode\b|PARTIAL FIELD|rr-dash-review-data/,
  "No stale partial-field runtime branches");
-assert.match(js,/api\\("\\/api\\/admin\\/projections-preview"\\)/,
+assert.match(js,/api\("\/api\/admin\/projections-preview"\)/,
  "Private admin preview must always read the secure projection API");
-assert.match(adminHtml,/projections-dashboard\\.js\\?v=23/,
+assert.match(adminHtml,/projections-dashboard\.js\?v=23/,
  "Admin dashboard must load the latest hardened shared client");
-assert.match(memberHtml,/projections-dashboard\\.js\\?v=23/,
+assert.match(memberHtml,/projections-dashboard\.js\?v=23/,
  "Member dashboard must use the same client revision");
 console.log("PASS: no embedded premium data or partial review fallback; authenticated full-field preview only");
