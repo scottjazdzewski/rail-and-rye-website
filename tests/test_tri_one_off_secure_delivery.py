@@ -76,8 +76,8 @@ class OneTimeDeliveryTests(unittest.TestCase):
                 "version": 1, "date": tri.DATE, "compression": "brotli",
                 "wrapped_key_b64": base64.b64encode(wrapped).decode(),
                 "nonce_b64": base64.b64encode(nonce).decode(),
-                "ciphertext_b64": base64.b64encode(
-                    AESGCM(aes_key).encrypt(nonce, brotli.compress(original, quality=11), tri.AAD)).decode()
+                "ciphertext_b64_chunks": [base64.b64encode(
+                    AESGCM(aes_key).encrypt(nonce, brotli.compress(original, quality=11), tri.AAD)).decode()]
             }
             with tempfile.NamedTemporaryFile(mode="w+", encoding="utf-8") as file:
                 json.dump(sealed, file)
