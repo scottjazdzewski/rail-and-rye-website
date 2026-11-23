@@ -79,8 +79,10 @@ function market(label,value,cls){
 function makeCard(item){
  const card=make("article","rr-lr-card"),racebar=make("div","rr-lr-racebar");
  const racehead=make("div","rr-lr-racebar-main");
- racehead.append(make("h3","",item.track),make("span","rr-lr-race-number","RACE "+item.race_number));
- if(item.post_time_et)racehead.append(make("span","rr-lr-post",item.post_time_et));
+ const raceMeta=make("div","rr-lr-race-meta");
+ raceMeta.append(make("span","rr-lr-race-number","RACE "+item.race_number));
+ if(item.post_time_et)raceMeta.append(make("span","rr-lr-post",item.post_time_et));
+ racehead.append(make("h3","",item.track),raceMeta);
  racebar.append(racehead);
  // Only show race facts if the approved production source actually supplies them.
  const facts=[item.distance,item.surface,item.conditions].filter(value=>typeof value==="string"&&value.trim());
