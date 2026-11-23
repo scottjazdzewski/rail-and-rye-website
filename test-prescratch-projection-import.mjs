@@ -50,5 +50,5 @@ await rejects(x=>{x.races[0].scratch_count=0;},/scratch counts/i);
 await rejects(x=>{x.races[0].entries[0].f4_probabilities.exact_p1=.64;},/F4 place probabilities|F4 first-place probability/i);
 await rejects(x=>{x.races[0].entries[0].win_probability_exact=64;},/F4 first-place probability/i);
 await rejects(x=>{x.races[0].entries[0].f4_probabilities=null;},/exact PWIN and F4/i);
-await rejects(x=>{x.races[0].entries[1].win_probability=33;x.races[0].entries[1].win_probability_exact=33; x.races[0].entries[1].f4_probabilities.exact_p1=.33;x.races[0].entries[1].f4_probabilities.p6_plus=.12;},/100%/i);
+await rejects(x=>{x.races[0].entries[1].win_probability=33;x.races[0].entries[1].win_probability_exact=33; x.races[0].entries[1].f4_probabilities.exact_p1=.33;x.races[0].entries[1].f4_probabilities.p6_plus=.12;x.races[0].entries[1].f4_probabilities.top2=.53;x.races[0].entries[1].f4_probabilities.top3=.68;x.races[0].entries[1].f4_probabilities.top4=.78;},/100%/i);
 console.log("PASS: authenticated batch endpoint schema preserves prescratch TRI + F4, keeps scratch status unknown and rejects invalid scores");
