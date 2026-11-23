@@ -76,3 +76,12 @@
  .rr-bet-stat strong{font-size:18px}
 }
 @media(max-width:350px){.rr-bet-horse-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Explain full-field 100% coverage versus first-place-only key coverage.
+   Keep these readable and distinct from the ordinary small-print disclaimer. */
+.rr-bet-coverage-note{
+ margin:0;padding:10px 12px;border-left:3px solid #b9852d;
+ border-radius:0 8px 8px 0;background:#fff2d4;color:#213d5d;
+ font:650 12px/1.48 Inter,Arial,system-ui,sans-serif;
+}
+@media(max-width:800px){.rr-bet-coverage-note{font-size:12px;line-height:1.48}}
