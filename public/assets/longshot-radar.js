@@ -2,6 +2,7 @@
 (()=>{
 "use strict";
 const q=selector=>document.querySelector(selector);
+const designOnly=document.body?.dataset?.rrDesignOnly==="true"; // Public visual shell: NO admin API and NO paid data.
 const state={editions:[],date:"",sort:"post-time",demo:false};
 const status=q("#rr-lr-loading"),app=q("#rr-lr-app"),empty=q("#rr-lr-empty"),dialog=q("#rr-lr-dialog");
 const make=(tag,cls,content)=>{
@@ -151,11 +152,19 @@ async function load(){
  refreshView();
 }
 async function initialize(){
+ if(designOnly){
+  const demo=visualSample();
+  state.editions=[demo];state.date=demo.race_date;state.demo=true;
+  q("#rr-lr-demo-alert").hidden=false;
+  refreshView();status.hidden=true;
+  return;
+ }
  try{await load();status.hidden=true;}
  catch(e){status.textContent=e.message||"Private review failed to load.";status.hidden=false;app.hidden=true;}
 }
 function visualSample(){
- // Static fictional fixture exists solely in the Access-protected admin preview UI.
+ // Static fictional fixture is shared by the Access-protected admin review and
+ // the deliberately unlisted design-only website preview; never scored or uploaded.
  // It is never sent to the production API or private R2.
  const shared={
   source_causal_evidence:"Design sample only. Approved production evidence will appear here after source verification.",
@@ -177,7 +186,8 @@ function visualSample(){
   ]
  };
 }
-q("#rr-lr-demo-button").addEventListener("click",async()=>{
+q("#rr-lr-demo-button")?.addEventListener("click",async()=>{
+ if(designOnly)return;
  if(state.demo){await initialize();return;}
  const demo=visualSample();
  state.editions=[demo];state.date=demo.race_date;state.demo=true;
@@ -191,7 +201,7 @@ q("#rr-lr-date").addEventListener("change",event=>{
 });
 q("#rr-lr-sort").addEventListener("change",event=>{state.sort=event.target.value;renderCandidates();});
 q("#rr-lr-close").addEventListener("click",()=>dialog.close());
-q("#rr-lr-upload-form").addEventListener("submit",async event=>{
+q("#rr-lr-upload-form")?.addEventListener("submit",async event=>{
  event.preventDefault();
  const feedback=q("#rr-lr-upload-status"),file=q("#rr-lr-file").files?.[0],button=event.currentTarget.querySelector("button");
  if(!file){feedback.textContent="Choose a production JSON file.";return;}

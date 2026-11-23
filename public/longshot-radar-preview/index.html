@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#102d53">
+<title>Longshot Radar · Website Design Preview | Rail &amp; Rye</title>
+<link rel="icon" href="/favicon.png" type="image/png">
+<link rel="stylesheet" href="/assets/rail-rye-core.css?v=13">
+<link rel="stylesheet" href="/assets/rail-rye-components.css?v=9">
+<link rel="stylesheet" href="/assets/membership.css?v=3">
+<link rel="stylesheet" href="/assets/projections-dashboard.css?v=22">
+<link rel="stylesheet" href="/assets/longshot-radar.css?v=3">
+<link rel="stylesheet" href="/assets/racing-intelligence-module-art.css?v=1">
+<script defer src="/assets/longshot-radar.js?v=3"></script>
+</head>
+<body class="rr-member-page rr-dashboard-page rr-lr-page" data-rr-design-only="true">
+<header class="rr-member-header">
+ <div class="heritage-shell">
+  <a class="rr-member-brand" href="/" aria-label="Rail and Rye Racing home"><img src="/assets/approved/brand/rail-rye-ivory-logo.png" alt="" width="60" height="60"><span>RAIL &amp; RYE</span></a>
+  <nav class="rr-member-nav" aria-label="Website design preview"><a href="/">Home</a><a href="/publications/">Publications</a><a href="/longshot-radar-preview/" aria-current="page">Longshot Radar</a></nav>
+ </div>
+</header>
+<main class="rr-member-main rr-dashboard-main rr-lr-main">
+ <p class="rr-dash-private-banner">DESIGN PREVIEW ONLY · FICTIONAL HORSES, ODDS AND PERCENTAGES · NOT ACTUAL PICKS</p>
+ <div class="rr-dash-heading">
+  <div><span class="rr-member-kicker">Rail &amp; Rye Racing Intelligence</span>
+   <h1 class="rr-member-title">Longshot Radar</h1>
+   <p class="rr-dash-intro">A compact, daily view of value-horse research. Sort by post time across tracks or group by track, then open any row for the full case.</p>
+  </div>
+  <div class="rr-review-artwork" aria-label="Approved Rail & Rye Longshot Radar artwork">
+   <img class="rr-review-mark" src="/assets/approved/publications/longshot-mark.png" alt="" width="70" height="90">
+   <img class="rr-review-hero" src="/assets/approved/publications/longshot-hero.jpg" alt="" width="170" height="90">
+  </div>
+ </div>
+ <div class="rr-review-demo-controls">
+  <span id="rr-lr-demo-alert" role="status">DESIGN SAMPLE · FICTIONAL HORSES AND FIGURES · NOT PICKS</span>
+ </div>
+ <p id="rr-lr-loading" class="rr-member-status" role="status" aria-live="polite">Loading layout preview…</p>
+ <section id="rr-lr-empty" class="rr-dash-empty" hidden><h2>Design preview is unavailable.</h2></section>
+ <section id="rr-lr-app" class="rr-lr-app" aria-label="Longshot Radar design preview" hidden>
+  <div class="rr-dash-toolbar rr-lr-toolbar">
+   <label>Race date<select id="rr-lr-date" aria-label="Choose Radar example date"></select></label>
+   <label>Sort candidates<select id="rr-lr-sort" aria-label="Sort Longshot Radar sample rows"><option value="post-time">Post time</option><option value="track">Track</option></select></label>
+  </div>
+  <div class="rr-lr-overview">
+   <div class="rr-lr-summary">
+    <div><span class="rr-lr-kicker">RAIL &amp; RYE / LONGSHOT RADAR</span><h2 id="rr-lr-date-title"></h2></div>
+    <span id="rr-lr-stage" class="rr-lr-stage"></span>
+   </div>
+   <div class="rr-lr-summary-meta"><span id="rr-lr-count"></span><span id="rr-lr-updated"></span></div>
+  </div>
+  <div id="rr-lr-candidates" class="rr-lr-candidates" aria-live="polite"></div>
+  <p class="rr-lr-subtle">This is a visual design sample, not a forecast or wagering recommendation. The actual product will use authenticated TRI/Timeform data and preserve the original morning-line source.</p>
+ </section>
+</main>
+<dialog id="rr-lr-dialog" class="rr-dash-horse-dialog rr-lr-dialog" aria-labelledby="rr-lr-dialog-title">
+ <div class="rr-dash-horse-dialog-inner">
+  <div class="rr-dash-dialog-head"><h2 id="rr-lr-dialog-title"></h2><button id="rr-lr-close" type="button" class="rr-member-button">Close</button></div>
+  <div id="rr-lr-dialog-detail"></div>
+ </div>
+</dialog>
+<footer class="rr-member-footer"><div class="heritage-shell">
+ <span class="heritage-footmark">RAIL &amp; RYE</span>
+ <nav aria-label="Footer"><a href="/">Home</a> · <a href="/publications/">Publications</a></nav>
+ <small>Visual design preview · No selections published</small>
+</div></footer>
+</body>
+</html>
