@@ -7,15 +7,17 @@ const js=readFileSync("public/assets/projections-dashboard.js","utf8");
 assert.match(css,/\.rr-dash-race-tiles\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/,"Phone facts must use two columns");
 assert.match(js,/INITIAL CARD · CURRENT/,"Initial cards remain current before scratches");
 assert.doesNotMatch(js,/badges are not yet certified/,"Verified initial badges must not be called uncertified");
-assert.match(js,/rr-dash-rating-badge/,"The five factors should use the existing approved badge PNG assets");
+assert.match(js,/rr-dash-metric-bars/,"Five source-backed factor states must render as compact colored dashes");
+assert.doesNotMatch(js,/iconNode\(art,"rr-dash-rating-badge"/,"No large factor PNGs in the compact runner rows");
 assert.match(css,/family=Tinos/,"Load the original racecard percentage font");
 assert.match(css,/\.rr-dash-win-percent\{font-family:"Tinos"/,"Match the approved Tinos Bold percentage font");
-assert.match(css,/\.rr-dash-rating-badge img/,"Scale badge artwork for responsive cards");
+assert.match(css,/\.rr-dash-metric-value\[data-state="gray"\] \.rr-dash-metric-bar/,"Neutral factors have an explicit gray dash color");
+assert.match(css,/min-height:150px/,"Compact runner rows target at least 150px without clipping names");
 assert.match(js,/F4 FINISH PROJECTIONS/,"Full Analysis must include F4 outcomes");
-assert.match(js,/current until official scratches are processed/,"Initial-card scratch disclaimer must remain visible");
+assert.match(js,/remain current until scratches/,"Initial-card scratch-state disclaimer must remain visible");
 assert.match(css,/\.rr-dash-metric-group\{grid-area:metrics;grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/,"Mobile ratings must occupy a single, compact five-column strip");
 assert.doesNotMatch(js,/Trainer not listed \| Jockey not listed/,"Do not repeat source-data warnings on customer runner rows");
-assert.match(css,/\.rr-dash-race-tile:last-child\{grid-column:1\/-1(?:;|\})/,"Distance must use a full-width mobile row");
+assert.match(css,/\.rr-dash-race-tiles\{grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/,"Compact race facts occupy three short columns");
 assert.match(css,/grid-template-areas:"program horse market" "metrics metrics metrics" "analysis analysis analysis"/,"Phone layout must include the dedicated analysis footer");
 assert.match(css,/\.rr-dash-win\{grid-area:market;[^}]*align-items:center/,"Mobile win and fair odds must be horizontally centered");
 assert.match(css,/\.rr-dash-horse-dialog\{position:fixed;inset:auto 0 0/,"Mobile details must open as a bottom drawer");
@@ -66,20 +68,17 @@ assert.equal(allClass(horses,"rr-dash-metric-group").length,3,"Two runner groups
 assert.equal(allClass(horses,"rr-dash-win-percent")[0].textContent,"27.5%");
 assert.equal(allClass(horses,"rr-dash-win-fair")[0].textContent,"FAIR 5/2");
 assert.ok(allClass(horses,"rr-dash-metric-value").length===10,"All five factors must remain visible on every horse");
-const approvedBadges=allClass(horses,"rr-dash-rating-badge");
-assert.equal(approvedBadges.length,5,"Every certified factor renders the matching approved PNG");
-assert.deepEqual(approvedBadges.map(el=>el.children[0].src),[
- "/assets/approved/factor-badges/speed_green.png",
- "/assets/approved/factor-badges/form_gray.png",
- "/assets/approved/factor-badges/class_red.png",
- "/assets/approved/factor-badges/pace_green.png",
- "/assets/approved/factor-badges/surface_gray.png"
-]);
+const approvedDashes=allClass(horses,"rr-dash-metric-bars");
+assert.equal(approvedDashes.length,5,"Each certified factor state renders as dashes");
+assert.ok(approvedDashes.every(el=>el.children.length===3),"Each state uses three flat dashes");
+assert.equal(allClass(horses,"rr-dash-rating-badge").length,0,"Large factor icons must not return");
 
 assert.ok(!/RANK/i.test(horses.textContent),"No visible ranking");
 const disclosure=allClass(horses,"rr-dash-full-analysis")[0];
-assert.ok(disclosure&&disclosure.events?.click,"Full Analysis must be actionable");
-assert.match(horses.textContent,/Trainer: Brad Cox  \|  Jockey: Jose Ortiz/,"Connections belong beneath Full Analysis on the phone");
+assert.ok(disclosure&&disclosure.events?.click,"Runner analysis remains actionable");
+assert.equal(disclosure.textContent,"Analysis","Compact runner action has a short label");
+assert.match(horses.textContent,/Brad Cox \| Jose Ortiz/,"Trainer and jockey remain directly beneath the horse name");
+assert.equal(allClass(horses,"rr-dash-analysis-connections").length,0,"Connections must not be repeated in the analysis footer");
 disclosure.events.click();
 assert.equal(els.get("rr-dash-horse-dialog").opened,true,"Full Analysis must open a dialog");
 const sheet=matchClass(els.get("rr-dash-horse-detail"),"rr-dash-mobile-analysis");
@@ -90,7 +89,7 @@ assert.match(sheet.textContent,/Brad Cox/);
 assert.match(sheet.textContent,/Jose Ortiz/);
 assert.match(sheet.textContent,/27.5%/);
 assert.match(sheet.textContent,/FAIR 5\/2/);
-console.log("PASS: dashboard data -> race purse, scratches/chips, ML, connections, fair odds and compact phone rules");
+console.log("PASS: compact runner rows, verified dash factor states, preserved race data, no redundant PDF action");
 
 // Review-only November 23 fixtures must be traceable to the actual Rail & Rye
 // published projections. These are NOT fabricated complete race fields.
