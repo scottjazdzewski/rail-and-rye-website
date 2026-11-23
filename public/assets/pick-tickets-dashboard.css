@@ -253,3 +253,44 @@
  .rr-pt-stat strong{font-size:17px}
  .rr-pt-mode-button{padding:7px 5px;font-size:11px}
 }
+
+
+/* Private module's legacy site header collapses to a small cross-product nav row;
+   the logo and track remain in the persistent app brand bar below. */
+.rr-pt-page .rr-member-header .heritage-shell{
+ min-height:39px;padding:4px 10px;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:6px
+}
+.rr-pt-page .rr-member-header .rr-member-brand{display:none}
+.rr-pt-page .rr-member-nav{width:100%;display:flex;justify-content:center;flex-wrap:nowrap;gap:6px;min-width:0}
+.rr-pt-page .rr-member-nav a{
+ padding:7px 9px;min-height:29px;border-radius:6px;
+ font:800 10px/1.15 Inter,Arial,system-ui,sans-serif;letter-spacing:.025em;white-space:nowrap
+}
+.rr-pt-page .rr-member-nav a[aria-current="page"]{background:#254567;color:#fff;border-color:#c99831}
+.rr-pt-builder-row{align-items:start;min-height:50px;padding:6px 5px}
+.rr-pt-builder-row .rr-pt-row-race{min-height:42px}
+.rr-pt-builder-leg-body{display:flex;flex-wrap:wrap;align-items:center;gap:5px 10px;min-width:0}
+.rr-pt-builder-chips{display:flex;align-items:center;flex-wrap:wrap;gap:4px}
+.rr-pt-add-trigger{
+ min-height:38px;display:inline-flex;align-items:center;
+ margin-left:auto;padding:5px 9px;border:1px solid #ccd4d6;border-radius:5px;background:#fff;
+ color:#244a6d;font-size:10px;font-weight:850;white-space:nowrap;cursor:pointer
+}
+.rr-pt-add-trigger[aria-expanded="true"]{background:#f5f0e7;border-color:var(--gold)}
+.rr-pt-field-grid{display:flex;align-items:center;flex-wrap:wrap;gap:4px;flex-basis:100%;padding:7px;border:1px solid #e1dacf;border-radius:6px;background:#fbfaf6}
+.rr-pt-field-grid .rr-pt-runner-button{min-height:42px;min-width:42px}
+.rr-pt-unselected{font-size:11px;color:#a34c42;font-weight:800}
+@media(max-width:800px){
+ .rr-pt-page .rr-member-header .heritage-shell{min-height:38px;padding:4px 5px}
+ .rr-pt-page .rr-member-nav a{padding:7px 6px;font-size:9px;letter-spacing:0}
+ .rr-pt-page .rr-pt-toolbar label:last-child{grid-column:auto}
+ .rr-pt-page .rr-pt-toolbar{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .rr-pt-builder-row{grid-template-columns:58px minmax(0,1fr)}
+ .rr-pt-builder-leg-body{gap:3px 6px}
+ .rr-pt-add-trigger{font-size:9px;padding:4px 6px}
+}
+@media(max-width:340px){
+ .rr-pt-page .rr-member-nav a{font-size:8px;padding:7px 5px}
+ .rr-pt-builder-row{grid-template-columns:52px minmax(0,1fr)}
+ .rr-pt-add-trigger{margin-left:0}
+}
