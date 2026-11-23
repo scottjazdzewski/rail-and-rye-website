@@ -1,0 +1,23 @@
+name: Verify private Target List hub module
+on:
+  pull_request:
+    paths:
+      - 'src/target-list.js'
+      - 'src/index.js'
+      - 'public/admin/target-list-preview.html'
+      - 'public/assets/target-list-dashboard.*'
+      - 'test-target-list-hub.mjs'
+      - '.github/workflows/verify-target-list-hub.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  target-list:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Private edition, integrity, responsive contract and UI regression
+        run: node test-target-list-hub.mjs
