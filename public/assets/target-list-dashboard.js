@@ -19,7 +19,7 @@ const add=(parent,...children)=>{parent.append(...children);return parent;};
 const displayDate=value=>{
  if(!/^\d{4}-\d{2}-\d{2}$/.test(value||""))return value||"";
  const [year,month,day]=value.split("-").map(Number);
- return new Intl.DateTimeFormat("en-US",{weekday:"short",month:"short",day:"numeric",year:"numeric"}).format(new Date(year,month-1,day,12));
+ return new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric",year:"numeric"}).format(new Date(year,month-1,day,12));
 };
 const option=(select,value,label)=>{const el=node("option","",label);el.value=value;select.append(el);};
 const statusText=edition=>state.reviewOnly?"EDITORIAL REVIEW":edition.status==="initial"?"INITIAL · CURRENT":"SCRATCH UPDATE · CURRENT";
