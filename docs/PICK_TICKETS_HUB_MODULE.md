@@ -79,3 +79,23 @@ The administrator preview now presents **track and date → wager type (Pick 3/4
 The private admin-only `GET /api/admin/pick-tickets?demo=1` response contains **five-track, clearly labeled, fictional display data**. Its projected hit rate is intentionally absent. Demo fixtures are generated at request time, never written to R2 or supplied to customers, and the POST endpoint rejects their marker and receipt. In the private preview the source selector lets administrators switch between mocked layout data and real, receipt-gated private R2 editions (if present). **This is not a customer launch or a replacement for production rules.**
 
 Before enabling a paid customer view, remove demo controls from the customer shell, verify certified ticket outputs and entitlements, then approve the module separately. The admin preview remains protected by the existing signed Cloudflare Access verification.
+
+
+## Branded reviewer and ticket builder — 2026-11-23
+
+The private module now uses a sticky Rail & Rye identity and original track marks cropped from the user-supplied PDF for Finger Lakes, Mahoning Valley, Mountaineer, Parx Racing and Zia Park. Official Rail & Rye saddlecloth PNGs 1–20 are unchanged. Typography and spacing overrides are scoped to Pick Tickets; other product modules remain untouched.
+
+**Rail & Rye Ticket** displays immutable source-provided ticket selections, the approved PLAY/CONDITIONAL/PASS badge, combinations, wager denomination, total cost, and a prominent **per-ticket projected hit chance only if the trusted producer provides it**. The mock fixture deliberately provides no hit rate.
+
+**Build My Ticket** starts with a copy of that source ticket. Clicking a selected runner removes it; selecting Add runners on an individual race reveals other eligible runner chips. Each change recalculates combinations as the Cartesian product of leg selections and total cost as combinations multiplied by the verified base wager. The original recommendation and private R2 data are never modified. Reset restores the source ticket. Comparisons show model chance only when the custom selection exactly matches a source-certified ticket with its own verified hit rate. Arbitrary custom tickets remain without a hit estimate until the approved multi-race outcome engine supplies it. We do not multiply individual PWIN percentages or invent a likelihood.
+
+**Value estimates** remain unavailable until independently verified payoff/pool data and model calibration are integrated. The builder never places wagers.
+
+**Backward-compatible optional schema inputs:**
+- ticket.hit_rate_display, a validated source-certified percentage string between 0 and 100 inclusive.
+- sequence.race_fields, an ordered set of race_number/programs objects for every sequence leg. The private validator checks order, formatting, duplicate programs, and that every submitted ticket selection belongs to that certified field.
+- If race_fields is absent, the builder can expose only runners from the supplied ticket variants, never invented full-field options.
+
+Mock selections and extra runner choices are exclusively administrator-visible. The production upload blocks the mock fixture marker, and customer launch remains disabled.
+
+Before customer access: verify authenticated entitlements, match the shared Hub shell across all four products, acquire and calibrate the trusted custom-ticket probability API, and authorize payout/value sources separately.
