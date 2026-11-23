@@ -353,36 +353,36 @@ function cardHeader(card){
  return wrapper;
 }
 function scratchList(race){
- const scratches=Array.isArray(race.scratches)?race.scratches:[],scratchCount=race.scratch_count==null?scratches.length:Number(race.scratch_count)||0;
- if(!scratches.length&&!scratchCount)return null;
- // Match the printed race cards: count first, authentic saddlecloths directly
- // beneath it, inside the race banner—not a disconnected strip below it.
- const section=makeNode("div","rr-dash-scratch-strip"),
+ const scratches=Array.isArray(race.scratches)?race.scratches:[];
+ const count=race.scratch_count==null?scratches.length:Number(race.scratch_count)||0;
+ if(!scratches.length&&!count)return null;
+ // Header-only scratch treatment: authentic saddlecloth chips, no names or
+ // separate scratch card. Horse names stay in accessible labels/tooltips.
+ const strip=makeNode("div","rr-dash-scratch-strip"),
   list=makeNode("ul","rr-dash-scratch-list");
- section.setAttribute("aria-label",scratchCount+" scratched "+(scratchCount===1?"horse":"horses"));
- section.append(makeNode("strong","rr-dash-race-scratch-count",scratchCount+" SCRATCH"+(scratchCount===1?"":"ES")));
+ strip.setAttribute("aria-label",count+" scratch"+(count===1?"":"es"));
+ strip.append(makeNode("span","rr-dash-scratch-label","SCRATCHES"));
  for(const scratch of scratches){
-  const program=String(scratch.program_number||"").trim(),
+  const program=String(scratch.program_number??"").trim(),
    horse=String(scratch.horse_name||"").trim(),
-   match=program.match(/^(\d{1,2})([A-Za-z]?)$/),number=match?Number(match[1]):NaN,
+   match=program.match(/^([0-9]{1,2})([A-Za-z]?)$/),
+   number=match?Number(match[1]):NaN,
    item=makeNode("li","rr-dash-scratch-item");
   item.title="#"+program+(horse?" "+horse:"")+" — scratched";
+  item.setAttribute("aria-label","Scratched: #"+program+(horse?" "+horse:""));
   if(Number.isInteger(number)&&number>=1&&number<=20){
    const frame=makeNode("span","rr-dash-scratch-chip-wrap"),chip=document.createElement("img");
    chip.className="rr-dash-scratch-chip";
    chip.src="/assets/approved/saddlecloths/"+number+".png";
-   chip.alt="Saddlecloth "+program;
-   chip.width=28;chip.height=28;chip.loading="lazy";chip.decoding="async";
+   chip.alt="";chip.width=29;chip.height=29;chip.loading="lazy";chip.decoding="async";
    frame.append(chip);
    if(match[2])frame.append(makeNode("span","rr-dash-scratch-suffix",match[2]));
    item.append(frame);
   }else item.append(makeNode("span","rr-dash-scratch-fallback",program||"–"));
-  if(horse)item.append(makeNode("span","rr-dash-scratch-name",horse));
   list.append(item);
  }
- if(!scratches.length&&scratchCount)list.append(makeNode("li","rr-dash-scratch-missing","Scratch details unavailable"));
- section.append(list);
- return section;
+ if(!scratches.length&&count)list.append(makeNode("li","rr-dash-scratch-missing","Details unavailable"));
+ strip.append(list);return strip;
 }
 function raceBanner(race){
  const wrapper=makeNode("div","rr-dash-race-banner"),
@@ -408,8 +408,8 @@ function raceBanner(race){
  const meta=makeNode("div","rr-dash-race-meta"),runnerCount=(race.entries||[]).length;
  meta.append(makeNode("p","rr-dash-race-runners",runnerCount+" RUNNERS"));
  if(purse)meta.append(makeNode("p","rr-dash-race-purse","PURSE "+purse));
- else if(previewMode){const missing=makeNode("p","rr-dash-race-purse","PURSE NOT LISTED");missing.dataset.missing="true";meta.append(missing);}const scratchCount=race.scratch_count==null?(race.scratches?.length||null):race.scratch_count;
- if(scratchCount>0){const scratched=scratchList(race);if(scratched)meta.append(scratched);}
+ else if(previewMode){const missing=makeNode("p","rr-dash-race-purse","PURSE NOT LISTED");missing.dataset.missing="true";meta.append(missing);}
+ const scratched=scratchList(race);if(scratched)meta.append(scratched);
  copy.append(meta);
  time.append(makeNode("span","","POST TIME"),makeNode("strong","",race.post_time_et||race.post_time||race.postTime||"Not listed"));
  wrapper.append(number,copy,time);return wrapper;
