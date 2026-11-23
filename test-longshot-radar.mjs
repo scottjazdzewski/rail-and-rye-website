@@ -189,6 +189,7 @@ assert.ok(css.includes("grid-template-columns:repeat(2,minmax(0,1fr))"),"WIN and
 checks++;
 
 assert.ok(!ui.includes("rr-lr-upload-form")&&!ui.includes("visualSample"),"Only server-provided horse data may be displayed");
+assert.ok(ui.includes('img.loading="eager"'),"Full daily Radar list loads all canonical saddlecloth images including last row");
 assert.ok(!ui.includes('make("button","","Race details")'),"Horse explanation must display inline");
 checks++;
 
