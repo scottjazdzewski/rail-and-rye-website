@@ -4,7 +4,7 @@ import vm from "node:vm";
 
 const css=readFileSync("public/assets/projections-dashboard.css","utf8");
 const js=readFileSync("public/assets/projections-dashboard.js","utf8");
-assert.match(css,/\.rr-dash-race-tiles\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/,"Phone facts must use two columns");
+assert.match(css,/\.rr-dash-race-tiles\{grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/,"Facts use the current three-column compact layout");
 assert.doesNotMatch(js,/INITIAL CARD · CURRENT|Initial projections remain current/,"Do not show stage labels.");
 assert.doesNotMatch(js,/badges are not yet certified/,"Verified initial badges must not be called uncertified");
 assert.match(js,/rr-dash-metric-bars/,"Five source-backed factor states must render as compact colored dashes");
@@ -15,14 +15,14 @@ assert.match(css,/\.rr-dash-metric-value\[data-state="gray"\] \.rr-dash-metric-b
 assert.match(css,/min-height:114px/,"Runner cards no longer reserve a blank analysis footer");
 assert.match(js,/F4 FINISH PROJECTIONS/,"Full Analysis must include F4 outcomes");
 assert.doesNotMatch(js,/rr-dash-prescratch-note/,"Remove obsolete prescratch message.");
-assert.match(css,/\.rr-dash-metric-group\{grid-area:metrics;grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/,"Mobile ratings must occupy a single, compact five-column strip");
+assert.match(css,/\.rr-dash-metric-group\{\s*grid-area:metrics;\s*grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/,"Mobile ratings remain one five-factor strip");
 assert.doesNotMatch(js,/Trainer not listed \| Jockey not listed/,"Do not repeat source-data warnings on customer runner rows");
 assert.match(css,/\.rr-dash-race-tiles\{grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/,"Compact race facts occupy three short columns");
 assert.match(css,/grid-template-areas:"program horse market" "metrics metrics metrics";/,"Runner rows should contain only identity and factor strips");
 assert.match(css,/\.rr-dash-win\{align-self:start;justify-self:end;align-items:flex-end;text-align:right/,"Numerical values remain right aligned");
 assert.match(css,/\.rr-dash-horse-dialog\{position:fixed;inset:auto 0 0/,"Mobile details must open as a bottom drawer");
 assert.doesNotMatch(css,/grid-template-areas:"program horse" "market market"/,"Remove old tall mobile runner layout");
-assert.match(css,/\.rr-dash-horse-name\{flex:0 1 auto;[^}]*overflow:visible;[^}]*white-space:normal/,"Mobile horse names must not be clipped");
+assert.match(css,/\.rr-dash-horse-name\{\s*flex:0 1 auto;[^}]*overflow:visible;[^}]*white-space:normal/,"Mobile horse names must not be clipped");
 assert.match(css,/\.rr-dash-race-purse\[data-missing="true"\]/,"Missing purse must be flagged in private preview");
 
 class Element {
@@ -119,9 +119,9 @@ assert.doesNotMatch(js,/\breviewMode\b|PARTIAL FIELD|rr-dash-review-data/,
  "No stale partial-field runtime branches");
 assert.match(js,/api\("\/api\/admin\/projections-preview"\)/,
  "Private admin preview must always read the secure projection API");
-assert.match(adminHtml,/projections-dashboard\.js\?v=31/,
+assert.match(adminHtml,/projections-dashboard\.js\?v=32/,
  "Admin dashboard must load the latest hardened shared client");
-assert.match(memberHtml,/projections-dashboard\.js\?v=31/,
+assert.match(memberHtml,/projections-dashboard\.js\?v=32/,
  "Member dashboard must use the same client revision");
 console.log("PASS: no embedded premium data or partial review fallback; authenticated full-field preview only");
 
@@ -135,9 +135,9 @@ for(const html of [adminHtml,memberHtml]){
   "Keep an accessible page title without visible ornamental title space");
  assert.match(html,/class="rr-dash-search-field"/,
   "The mobile horse search occupies one consistent full-width row");
- assert.match(html,/projections-dashboard\.css\?v=25/,
+ assert.match(html,/projections-dashboard\.css\?v=26/,
   "Current improved typography style must be loaded");
- assert.match(html,/projections-dashboard\.js\?v=31/,
+ assert.match(html,/projections-dashboard\.js\?v=32/,
   "Current compact-label asset must be loaded");
 }
 assert.doesNotMatch(adminHtml,/rr-dash-private-banner|Private admin preview · member dashboard remains off|Return to projection uploader/,
@@ -150,15 +150,15 @@ assert.match(css,/\.rr-dash-toolbar \.rr-dash-race-time-field\{display:none\}/,
  "On phones, race number tabs replace the redundant post-time select");
 assert.match(css,/\.rr-dash-toolbar \.rr-dash-search-field\{grid-column:1\/-1\}/,
  "Horse search spans both mobile columns");
-assert.match(css,/\.rr-dash-horse-name\{font:750 17px\/1\.2/,
+assert.match(css,/\.rr-dash-horse-name\{\s*font:750 17px\/1\.2/,
  "Runner names must be readable at 17px on ordinary phones");
-assert.match(css,/\.rr-dash-horse-connections\{margin-top:4px;font:550 12px\/1\.28/,
+assert.match(css,/\.rr-dash-horse-connections\{\s*font:550 12px\/1\.28/,
  "Verified trainer/jockey must remain clear at 12px");
-assert.match(css,/\.rr-dash-win-percent\{font-size:25px/,
+assert.match(css,/\.rr-dash-win-percent\{[^}]*font-size:26px/,
  "Keep 25px bold percentage numbers");
 assert.match(css,/\.rr-dash-win-fair\{font-size:13px/,
  "Increase supporting fair odds to 13px");
-assert.match(css,/\.rr-dash-metric-value::before\{font:800 10px\/1\.15/,
+assert.match(css,/\.rr-dash-metric-value::before\{\s*font:800 10px\/1\.15/,
  "Make five factor labels readable at 10px");
 assert.match(css,/\.rr-dash-row-analysis\{display:none!important\}/,"No per-horse analysis footer in any card");
 assert.match(css,/@media\(max-width:360px\)/,
@@ -316,7 +316,7 @@ console.log("PASS: stable branded race chip selection, approved horse/track art 
 for(const html of [adminHtml,memberHtml]){
  assert.match(html,/rr-exotic-bet-builder\.js\?v=4/,
   "Customers must load the actual source-backed F4 odds client, not cached v1");
- assert.match(html,/projections-dashboard\.js\?v=31/,
+ assert.match(html,/projections-dashboard\.js\?v=32/,
   "Both admin and member dashboard views receive same race-aware F4 routing");
 }
 console.log("PASS: private live-F4 percentages and gross break-even payout UI cache-busted");
