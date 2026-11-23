@@ -37,9 +37,9 @@ def make_zip(*, wrong_hash=False, wrong_mass=False, unresolved=False):
     prefix_name="TRI_F4_V2_20261123_PRESCRATCH_ORDERED_PREFIXES.csv"
     prefix_path="internal_receipts/PRX/"+prefix_name
     filemap[prefix_path]=(
-        "race_key,position_prefix,programs,probability,wager_prefix\\n"
-        "20261123|PRX|1,2,1-2,0.6,EXACTA\\n"
-        "20261123|PRX|1,2,2-1,0.4,EXACTA\\n"
+        "race_key,position_prefix,programs,probability,wager_prefix\n"
+        "20261123|PRX|1,2,1-2,0.6,EXACTA\n"
+        "20261123|PRX|1,2,2-1,0.4,EXACTA\n"
     ).encode()
     filemap[statuses["f4_receipt_sha256"]]=dump({
         "status":"PASS","model_id":"TRI_F4_ORDERING_MODEL_V2_RANK_OFFSET",
