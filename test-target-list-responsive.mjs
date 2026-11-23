@@ -12,7 +12,7 @@ const fixture={dates:["2026-11-23"],uploaded_at:"2026-11-23T04:00:00Z",edition:{
  source:{receipt_id:"viewport-fixture-only",sha256:"f".repeat(64)},
  targets:Array.from({length:8},(_,index)=>({
   rank:index+1,track:index%2?"Synthetic Park":"Synthetic Downs",race_number:index+1,
-  tier:index%2?"STRONG":"PRIME",post_time_et:"4:15 PM ET",surface:"Dirt",distance:"7 furlongs",
+  tier:index%2?"STRONG":"PRIME",post_time_et:["9:55 PM ET","3:14 PM ET","9:30 PM ET","3:26 PM ET","1:12 PM ET","8:40 PM ET","4:15 PM ET","2:20 PM ET"][index],surface:"Dirt",distance:"7 furlongs",
   conditions:"Allowance / Optional Claiming",analysis:"Synthetic full analysis — no real race results or paid recommendations.",
   favorite:runner("1",long,12),attack:runner(index===0?"12A":"20","A Wider Alternative Name",26),
   also_live:null,scratches:[]
@@ -49,7 +49,7 @@ try{
    const rootWidth=document.documentElement.scrollWidth;
    const items=[...document.querySelectorAll(".rr-target-card")];
    const overflow=items.filter(el=>el.getBoundingClientRect().right>viewport+1||el.getBoundingClientRect().left< -1).length;
-   const firstName=document.querySelector(".rr-target-runner-name strong");
+   const firstName=document.querySelector(".rr-target-horse-name");
    return {viewport,rootWidth,overflow,items:items.length,firstName:firstName?.textContent,firstWidth:firstName?.scrollWidth,firstClient:firstName?.clientWidth};
   });
   assert.equal(errors.length,0,"No browser JS errors at "+width+": "+errors.join("; "));
@@ -57,7 +57,15 @@ try{
   assert.equal(stats.overflow,0,"Cards stay within viewport at "+width);
   assert.equal(stats.items,8,"All qualifying source targets appear at "+width);
   assert.equal(stats.firstName,long,"Long horse names retain their full text at "+width);
-  await page.getByRole("button",{name:/read full analysis for/i}).first().click();
+  // Verify chronological post-time order vs independent A–Z track grouping.
+  const initialTimes=await page.locator(".rr-target-post").allTextContents();
+  assert.deepEqual(initialTimes,["1:12 PM ET","2:20 PM ET","3:14 PM ET","3:26 PM ET","4:15 PM ET","8:40 PM ET","9:30 PM ET","9:55 PM ET"],"Post-time sort must ignore original rank at "+width);
+  await page.locator("#rr-target-sort").selectOption("track");
+  const grouped=await page.locator(".rr-target-racebar h3").allTextContents();
+  assert.deepEqual(grouped,["Synthetic Downs","Synthetic Downs","Synthetic Downs","Synthetic Downs","Synthetic Park","Synthetic Park","Synthetic Park","Synthetic Park"],"Track ordering must group A–Z at "+width);
+  await page.locator("#rr-target-sort").selectOption("post-time");
+  assert.deepEqual(await page.locator(".rr-target-post").allTextContents(),initialTimes,"Chronological order must be independently restored at "+width);
+  await page.getByRole("button",{name:/read race details for/i}).first().click();
   await page.locator("#rr-target-dialog[open]").waitFor();
   const detail=await page.locator("#rr-target-dialog").evaluate(el=>({
    width:el.getBoundingClientRect().width,
