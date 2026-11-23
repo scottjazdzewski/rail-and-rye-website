@@ -10,7 +10,7 @@ const names=["Fixture One","Fixture Two","Fixture Three","Fixture Four","Fixture
              "Fixture Seven","Fixture Eight","Fixture Nine","Fixture Ten"];
 const horses=names.map((horse_name,i)=>({
  track:i%3===0?"Synthetic Downs":i%3===1?"Example Park":"Fictional Field",
- ...(i===0?{distance:"6 furlongs",surface:"Dirt",conditions:"Stakes"}:{}),
+ ...(i===0?{distance:"6½ furlongs",surface:"Dirt",conditions:"Synthetic test conditions for fillies and mares three years old and upward, with a long eligibility sentence that must wrap naturally onto extra lines without clipping or reducing the original horse or analysis text size."}:{}),
  race_number:i+1,post_time_et:(i+1)+":25 PM ET",program_number:String([11,1,20,2,3,4,5,6,7,8][i]),
  horse_name,original_morning_line:"10/1",pwin_display:19.5,
  fair_odds_display:"4/1",
@@ -134,6 +134,18 @@ try{
     throw Error("Shared V1 horizontal overflow outside swipe nav at "+width);
   if(await page.locator(".rr-lr-card .rr-lr-race-facts").count()!==1)
     throw Error("Only source-supplied race facts should appear, never invented filler at "+width);
+  const raceFacts=await page.locator(".rr-lr-card .rr-lr-race-facts").first().evaluate(el=>{
+    const cs=getComputedStyle(el),r=el.getBoundingClientRect();
+    return {text:el.textContent,font:parseFloat(cs.fontSize),
+      line:parseFloat(cs.lineHeight),height:r.height,
+      scrollHeight:el.scrollHeight,clientHeight:el.clientHeight,
+      whitespace:cs.whiteSpace};
+  });
+  if(!raceFacts.text.includes("6½ furlongs · Dirt · Synthetic test conditions for fillies")||
+    !raceFacts.text.endsWith("original horse or analysis text size.")||
+    raceFacts.font<13.9||raceFacts.scrollHeight>raceFacts.clientHeight+2||
+    (width<=430&&raceFacts.height<raceFacts.line*2-1))
+   throw Error("Full source race conditions must wrap at 14px on navy header without clipping at "+width+": "+JSON.stringify(raceFacts));
   if(await page.getByRole("button",{name:/Race details/i}).count())
     throw Error("Analysis must not require a Race details button at "+width);
   const infos=await page.locator(".rr-lr-inline-analysis .rr-lr-case").allTextContents();
