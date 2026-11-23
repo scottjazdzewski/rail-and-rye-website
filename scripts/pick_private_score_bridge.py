@@ -142,6 +142,8 @@ def status():
     s3=boto3.client("s3",endpoint_url=f"https://{account}.r2.cloudflarestorage.com",
          region_name="auto",aws_access_key_id=access,aws_secret_access_key=secret)
     found=[]
+    eligible=[]
+    ticket_sequence_counts={"Finger Lakes":7,"Mahoning Valley":12,"Mountaineer":5,"Parx Racing":12,"Zia Park":6}
     for track in TRACK_COUNTS:
         name=re.sub(r"[^a-z0-9]+","-",track.lower())
         key=f"projections/dashboard/2026-11-23/{name}.json"
@@ -152,8 +154,29 @@ def status():
             n=len(races) if isinstance(races,list) else 0
             rows=sum(len(r.get("entries") or []) for r in races or [])
             complete=n==TRACK_COUNTS[track][0] and rows==TRACK_COUNTS[track][1]
+            exact=complete and doc.get("track_name")==track and doc.get("race_date")=="2026-11-23" and doc.get("projection_status")=="prescratch"
+            used=set()
+            if exact:
+                for race in races:
+                    num=race.get("race_number")
+                    if type(num)!=int or num in used or not 1<=num<=n or race.get("scratch_count") is not None or race.get("scratches"):
+                        exact=False;break
+                    used.add(num)
+                    seen=set();mass=0
+                    for entry in race.get("entries") or []:
+                        pn=str(entry.get("program_number",""))
+                        p=entry.get("win_probability_exact")
+                        f4=(entry.get("f4_probabilities") or {}).get("exact_p1")
+                        if (not re.fullmatch(r"\d{1,2}[A-Za-z]?",pn) or pn in seen or
+                            not isinstance(p,(int,float)) or isinstance(p,bool) or not isinstance(f4,(int,float)) or
+                            isinstance(f4,bool) or not 0<=p<=100 or abs(p-100*f4)>1e-6):
+                            exact=False;break
+                        seen.add(pn);mass+=p
+                    if not exact or abs(mass-100)>1e-6:
+                        exact=False;break
             found.append(track)
-            print(f"PRIVATE_PROJECTION_SOURCE: {track}: present, races={n}, rows={rows}, expected_count_match={complete}.")
+            if exact:eligible.append(track)
+            print(f"PRIVATE_PROJECTION_SOURCE: {track}: present, races={n}, rows={rows}, expected_count_match={complete}, exact_prescratch_pwin_f4_gate={exact}.")
         except ClientError as e:
             if e.response.get("Error",{}).get("Code") not in ("NoSuchKey","404","NotFound"):raise
             print(f"PRIVATE_PROJECTION_SOURCE: {track}: MISSING.")
@@ -166,6 +189,8 @@ def status():
         if e.response.get("Error",{}).get("Code") not in ("NoSuchKey","404","NotFound"):raise
         print("PRIVATE_PICK_INTERIM_SOURCE: MISSING.")
     print(f"PRIVATE_PROJECTION_TRACKS_PRESENT: {len(found)} / 5.")
+    print(f"PRIVATE_PICK_TICKET_TRACKS_ELIGIBLE: {len(eligible)} / 5.")
+    print(f"PRIVATE_PICK_TICKET_SEQUENCES_CONSTRUCTIBLE: {sum(ticket_sequence_counts[t] for t in eligible)} / 42.")
 
 if __name__=="__main__":
     try:
