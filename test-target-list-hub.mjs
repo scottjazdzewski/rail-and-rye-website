@@ -94,7 +94,7 @@ assert.match(css,/--rrh-navy:#102d53/);
 assert.match(css,/--rrh-gold:#c99831/);
 assert.match(css,/@media\(max-width:430px\)/);
 assert.match(css,/@media\(max-width:359px\)/);
-assert.match(css,/grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+assert.match(css,/\.rr-target-list\{display:grid;grid-template-columns:minmax\(0,1fr\)/,"Target List reads as one compact vertical column.");
 assert.match(css,/Tinos/,"Only authoritative statistics use the card font.");
 assert.match(css,/max-height:92dvh/,"Mobile bottom drawer must scroll.");
 assert.doesNotMatch(js,/PWIN\s*[\*\/+-]/,"The client must not recompute probabilities.");
@@ -109,15 +109,18 @@ class El{
  showModal(){this.open=true;}
  focus(){this.focused=true;}
 }
-const ids=["rr-target-date","rr-target-track","rr-target-search","rr-target-status","rr-target-app","rr-target-empty","rr-target-list","rr-target-dialog","rr-target-dialog-content","rr-target-dialog-title","rr-target-count","rr-target-context","rr-target-freshness","rr-target-dialog-close","rr-target-upload-form","rr-target-file","rr-target-upload-status"];
+const ids=["rr-target-date","rr-target-sort","rr-target-status","rr-target-app","rr-target-empty","rr-target-list","rr-target-dialog","rr-target-dialog-content","rr-target-dialog-title","rr-target-count","rr-target-context","rr-target-freshness","rr-target-dialog-close","rr-target-upload-form","rr-target-file","rr-target-upload-status"];
 const elements=new Map(ids.map(id=>[id,new El(id.includes("dialog")?"dialog":"div")]));
 const doc={getElementById:id=>elements.get(id),createElement:tag=>new El(tag)};
-const fixture={dates:["2026-11-23"],edition:good,uploaded_at:"2026-11-23T04:00:00Z"};
+const alpha=structuredClone(good.targets[0]);alpha.rank=3;alpha.track="Alpha Test Track";alpha.race_number=7;alpha.post_time_et="8:40 PM ET";
+const zulu=structuredClone(good.targets[0]);zulu.rank=2;zulu.track="Zulu Test Track";zulu.race_number=2;zulu.post_time_et="1:10 PM ET";
+const synthetic=structuredClone(good.targets[0]);synthetic.post_time_et="3:10 PM ET";
+const fixture={dates:["2026-11-23"],edition:{...good,targets:[synthetic,zulu,alpha]},uploaded_at:"2026-11-23T04:00:00Z"};
 const context={document:doc,fetch:async()=>({ok:true,json:async()=>fixture}),Date,Intl,RegExp,Number,String,Array,Set,console,encodeURIComponent};
 vm.runInNewContext(js,context,{filename:"target-list-dashboard.js"});
 await new Promise(resolve=>setTimeout(resolve,30));
 assert.equal(elements.get("rr-target-app").hidden,false);
-assert.match(elements.get("rr-target-count").textContent,/1 target/);
+assert.match(elements.get("rr-target-count").textContent,/3 targets/);
 const tree=(el,fn)=>fn(el)?el:el.children.map(v=>tree(v,fn)).find(Boolean)||null;
 const card=tree(elements.get("rr-target-list"),el=>el.className==="rr-target-card");
 assert.ok(card,"Render a compact target card with actual source data.");
@@ -128,8 +131,17 @@ assert.equal(elements.get("rr-target-dialog").open,true);
 assert.match(elements.get("rr-target-dialog-title").textContent,/Synthetic Test Track/);
 const detail=elements.get("rr-target-dialog-content");
 assert.ok(tree(detail,el=>el.textContent==="This is synthetic, non-customer test commentary."),"Drawer preserves full certified source narrative.");
-elements.get("rr-target-search").value="missing horse";
-elements.get("rr-target-search").events.input();
-assert.ok(tree(elements.get("rr-target-list"),el=>String(el.textContent).includes("No qualifying targets")),"Filtering has a clear empty state.");
+// These sort controls only affect presentation; original rank and values remain unchanged.
+const renderedTracks=()=>elements.get("rr-target-list").children.map(card=>tree(card,el=>el.tagName==="H3").textContent);
+assert.deepEqual(renderedTracks(),["Zulu Test Track","Synthetic Test Track","Alpha Test Track"],"Post time runs chronologically across tracks, not publication rank.");
+elements.get("rr-target-sort").value="track";elements.get("rr-target-sort").events.change();
+assert.deepEqual(renderedTracks(),["Alpha Test Track","Synthetic Test Track","Zulu Test Track"],"Track sort groups tracks A–Z independently of post time.");
+elements.get("rr-target-sort").value="post-time";elements.get("rr-target-sort").events.change();
+assert.deepEqual(renderedTracks(),["Zulu Test Track","Synthetic Test Track","Alpha Test Track"],"Switching sorts restores true chronological order.");
+assert.deepEqual(fixture.edition.targets.map(entry=>entry.rank),[1,2,3],"Sorting must not mutate authoritative publication ranks.");
+assert.ok(tree(card,el=>el.className==="rr-target-analysis-text"&&el.textContent==="This is synthetic, non-customer test commentary."),"Full source narrative stays visible on every race panel.");
+assert.ok(tree(card,el=>el.className==="rr-target-horse-row rr-target-attack"),"ATTACK appears in its own compact race row.");
+assert.match(html,/id="rr-target-sort"/);
+assert.doesNotMatch(html,/rr-target-track|rr-target-search/,"Reader controls are date and independent sort only.");
 
 console.log("PASS: Target List private upload, revision protection, no forced picks, official chips, drawer, mobile contracts, and no PDF dependency");
