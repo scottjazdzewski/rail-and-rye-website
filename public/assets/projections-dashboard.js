@@ -320,7 +320,7 @@ function showHorse(entry){
  dialog.showModal();
 }
 function cardHeader(card){
- const wrapper=makeNode("div","rr-dash-card-head rr-dash-card-head--with-track-mark"),
+ const wrapper=makeNode("div","rr-dash-card-head rr-dash-card-head--official-track-logo"),
   logo=document.createElement("img");
  logo.className="rr-dash-card-logo";
  logo.src="/assets/brand/rail_rye_logo_header.png";logo.alt="Rail & Rye";
@@ -329,19 +329,25 @@ function cardHeader(card){
   track=makeNode("h2","rr-dash-track-title",name),
   date=makeNode("p","rr-dash-card-date",dateLabel(card.race_date));
  info.append(track,date);wrapper.append(logo,info);
- // Retire the tiny white sponsor-logo image tiles. A compact track-specific
- // racing mark preserves the graphic identity without advertising sponsors.
- const approvedMarks={
-  "Finger Lakes":"FL","Mountaineer":"MNR","Mahoning Valley":"MV",
-  "Parx Racing":"PRX","Zia Park":"ZIA"
+ // Restore the real approved racetrack imagery. Render the whole image on an
+ // ivory surface with no faux monogram or small framed sponsor advertisement.
+ const officialTrackArt={
+  "Finger Lakes":"finger-lakes.webp",
+  "Mountaineer":"mountaineer.webp",
+  "Mahoning Valley":"mahoning-valley.webp",
+  "Parx Racing":"parx-racing.webp",
+  "Zia Park":"zia-park.webp"
  };
- const letters=approvedMarks[name]||String(name).split(/\s+/).map(x=>x[0]).join("").slice(0,3).toUpperCase()||"TRK";
- const mark=makeNode("div","rr-dash-track-mark");
- mark.setAttribute("aria-label",name+" track emblem");
- mark.append(makeNode("span","rr-dash-track-mark-rail",""),
-  makeNode("strong","rr-dash-track-mark-letters",letters),
-  makeNode("span","rr-dash-track-mark-caption","RACECOURSE"));
- wrapper.append(mark);
+ const filename=officialTrackArt[name];
+ if(filename){
+  const frame=makeNode("div","rr-dash-approved-track-logo-wrap"),
+   image=document.createElement("img");
+  image.className="rr-dash-approved-track-logo";
+  image.src="/assets/approved/track-logos/"+filename;
+  image.alt=name+" track logo";
+  image.loading="eager";image.decoding="async";
+  frame.append(image);wrapper.append(frame);
+ }else wrapper.className="rr-dash-card-head";
  return wrapper;
 }
 function scratchList(race){
@@ -371,6 +377,7 @@ function raceBanner(race){
  number.setAttribute("aria-label","Race "+race.race_number);
  number.append(approvedRaceSaddle(race.race_number));
  const presentation=editorialRacePresentation(race);
+ if(presentation.title.length>32)wrapper.className+=" rr-dash-race-banner--extended-title";
  const purse=String(race.purse||"").trim();
  const title=makeNode("h3","rr-dash-race-condition");
  title.append(makeNode("span","rr-dash-stakes-name",presentation.title));
