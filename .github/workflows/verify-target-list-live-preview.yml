@@ -19,7 +19,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for attempt in 1 2 3 4; do
+          for attempt in 1 2 3 4 5 6 7 8 9 10 11 12; do
             url="https://railandryeracing.com/assets/target-list-dashboard.js?rr_review_check=${GITHUB_SHA}-${attempt}-$(date +%s)"
             code=$(curl -L -sS --connect-timeout 10 --max-time 20 -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' -w '%{http_code}' -o /tmp/target-list-live.js "$url" || true)
             echo "Production asset probe attempt $attempt: HTTP $code"
@@ -38,11 +38,11 @@ jobs:
               echo 'LIVE_PREVIEW_DEPLOYED: Actual private R2 daily reader is live, with no synthetic horses or local-file loader.'
               break
             fi
-            if [ "$attempt" -eq 4 ]; then
+            if [ "$attempt" -eq 12 ]; then
               echo 'LIVE_PREVIEW_NOT_VERIFIED: Current site does not serve the private review module.'
               exit 1
             fi
-            sleep 8
+            sleep 6
           done
           cssurl="https://railandryeracing.com/assets/target-list-dashboard.css?rr_layout_check=${GITHUB_SHA}-$(date +%s)"
           csscode=$(curl -L -sS --connect-timeout 10 --max-time 20 -H 'Cache-Control: no-cache' -w '%{http_code}' -o /tmp/target-list-live.css "$cssurl" || true)
