@@ -158,7 +158,7 @@ assert.equal(sourcePayload.cards[0].card.official_scratch_count,5);
 assert.equal(sourcePayload.cards[0].card.active_runner_count,55);
 assert.equal(sourcePayload.cards[0].card.official_scratch_source_sha256,previewOwner.source_sha256);
 assert.ok(sourcePayload.cards[0].card.sequences.every(x=>
- x.review_meta.soft_cost_scale_dollars===15&&x.tickets.length===1));
+ x.review_meta.soft_cost_scale_dollars===30&&x.review_meta.minimum_leg_coverage===.5&&x.tickets.length===1));
 assert.equal(liveEnv.CARDS_BUCKET.objects.size,1,"review never writes certified tickets to R2");
 const badSource=structuredClone(previewSource);
 badSource.races[0].entries[0].win_probability_exact=25;
