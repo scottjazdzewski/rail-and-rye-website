@@ -8,7 +8,7 @@ import unittest
 import zipfile
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
-from tri_dashboard_sync import build_cards, Hold
+from tri_dashboard_sync import build_cards, Hold, ZIP_NAME_RE
 
 
 def dump(value):
@@ -78,6 +78,14 @@ def make_zip(*, wrong_hash=False, wrong_mass=False, unresolved=False):
 
 
 class TestPrescratchSync(unittest.TestCase):
+    def test_verification_accepts_existing_and_future_daily_package_names(self):
+        self.assertIsNotNone(ZIP_NAME_RE.fullmatch(
+            "RAIL_RYE_1123_TRI_V4_F4_V2_ROLE_RATING_REPAIR_ALL_FIVE_PASS.zip"))
+        self.assertIsNotNone(ZIP_NAME_RE.fullmatch(
+            "RAIL_RYE_20261124_TRI_DASHBOARD_VERIFIED_PRESCRATCH.zip"))
+        self.assertIsNone(ZIP_NAME_RE.fullmatch(
+            "UNVERIFIED_MODEL_EXPORT.zip"))
+
     def test_verified_source_becomes_only_prescratch_private_import(self):
         date, cards, payload, totals = build_cards(make_zip())
         self.assertEqual(date, "2026-11-23")
