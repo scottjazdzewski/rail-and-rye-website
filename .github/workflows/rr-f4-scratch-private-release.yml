@@ -1,0 +1,31 @@
+name: Sealed certified scratch-final F4 release to private R2
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/rr-f4-scratch-private-release.yml'
+      - 'private-ingest/1123-f4-scratch.enc.json'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: rr-f4-20261123-private-release
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+      TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+      TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Bootstrap encrypted transfer or publish verified F4 to private R2
+        run: |
+          python -m pip install --disable-pip-version-check --quiet boto3 cryptography
+          python scripts/rr_f4_scratch_private_ingest.py
