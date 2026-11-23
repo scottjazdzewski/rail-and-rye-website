@@ -111,7 +111,7 @@ def audit_race(race,source):
                 "Trifecta outcome law fails verified F4 P3 marginal")
     ranks=[e["rank"] for e in entries]
     require(sorted(ranks)==list(range(1,n+1)),"Full-field finish display ranks are incomplete")
-    require(horses[max(programs,key=lambda p:pwin[index[p]])]["rank"]==1,
+    require(abs(horses[next(p for p in programs if horses[p]["rank"]==1)]["win_probability_exact"]/100-max(pwin))<1e-9,
             "Highest exact TRI win-probability horse must lead the ranking")
     return n
 
