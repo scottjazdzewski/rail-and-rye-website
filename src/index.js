@@ -320,7 +320,7 @@ export default {
           ["/admin/longshot-radar","/admin/longshot-radar.html"],
           ["/admin/racing-intelligence-review","/admin/racing-intelligence-review.html"]
         ]);
-        const normalizedAdminPath=path.endsWith("/index.html")?path.slice(0,-11):path.replace(/(?:\\/|\\.html)$/,"");
+        const normalizedAdminPath=path.endsWith("/index.html")?path.slice(0,-11):path.endsWith(".html")?path.slice(0,-5):path.endsWith("/")?path.slice(0,-1):path;
         const asset=new URL(url);
         asset.pathname=adminPages.get(normalizedAdminPath)||"/admin/index.html";
         const result=await env.ASSETS.fetch(new Request(asset.toString(),{method:request.method}));
