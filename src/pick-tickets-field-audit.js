@@ -29,21 +29,19 @@ function changedRaces(oldCard,newCard){
 }
 function scoreInputChanged(oldCard,newCard){
  if(!oldCard)return false;
+ // A horse-name/program mapping, race condition, scratched interest, jockey,
+ // weight/scoring metric, TRI/F4 probability, model identity or provenance
+ // change can make existing recommendations stale. Check the FULL normalized
+ // input, not just jockey and PWIN. Ignore presentation-only card metadata.
+ if(oldCard.projection_status!==newCard.projection_status||
+    oldCard.factor_basis!==newCard.factor_basis||
+    oldCard.model_name!==newCard.model_name)return true;
  const old=new Map((oldCard.races||[]).map(r=>[r.race_number,r]));
+ if(old.size!==newCard.races.length)return true;
  for(const race of newCard.races){
   const was=old.get(race.race_number);
   if(!was)return true;
-  const byNumber=new Map((was.entries||[]).map(e=>[String(e.program_number),e]));
-  const now=new Map((race.entries||[]).map(e=>[String(e.program_number),e]));
-  if(byNumber.size!==now.size||[...byNumber.keys()].some(k=>!now.has(k)))return true;
-  for(const [program,e] of now){
-   const p=byNumber.get(program);
-   if(p.jockey!==e.jockey||p.trainer!==e.trainer||
-      !same(p.metrics,e.metrics)||
-      p.win_probability_exact!==e.win_probability_exact||
-      !same(p.f4_probabilities,e.f4_probabilities))return true;
-  }
-  if(!same(was.scratches||[],race.scratches||[]))return true;
+  if(!same(was,race))return true;
  }
  return false;
 }
