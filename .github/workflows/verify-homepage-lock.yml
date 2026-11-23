@@ -8,6 +8,8 @@ on:
       - 'test-prescratch-projection-import.mjs'
       - 'src/projections.js'
       - 'scripts/tri_dashboard_sync.py'
+      - 'scripts/tri_f4_finish_order.py'
+      - 'tests/test_tri_f4_finish_order.py'
       - 'tests/test_tri_dashboard_sync.py'
       - '.github/workflows/verify-homepage-lock.yml'
   push:
@@ -43,4 +45,6 @@ jobs:
         with:
           python-version: '3.11'
       - name: TRI direct-to-R2 model receipt and overwrite tests
-        run: python -m unittest discover -s tests -p 'test_tri_dashboard_sync.py' -v
+        run: |
+          python -m unittest discover -s tests -p 'test_tri_dashboard_sync.py' -v
+          python -m unittest discover -s tests -p 'test_tri_f4_finish_order.py' -v
