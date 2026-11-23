@@ -5,6 +5,7 @@ on:
       - "src/longshot-radar.js"
       - "src/index.js"
       - "public/admin/longshot-radar.html"
+      - "public/longshot-radar-preview/**"
       - "public/assets/longshot-radar.*"
       - "test-longshot-radar.mjs"
       - "tests/longshot-radar-browser.mjs"
