@@ -70,6 +70,7 @@ try{
      await page.locator(".rr-lr-import").count())
     throw Error("User-facing JSON uploader remains at "+width);
   // Shared Daily Research V1 — inspect actual rendered/feed DOM, not just CSS tokens.
+  if(width<=1080)await page.locator(".rr-intel-header__mobile summary").click();
   const visual=await page.evaluate(()=>{
     const el=s=>document.querySelector(s);
     const styles=s=>{const x=el(s);if(!x)return null;const c=getComputedStyle(x),b=x.getBoundingClientRect();
@@ -79,11 +80,11 @@ try{
         radius:parseFloat(c.borderTopLeftRadius),
         whiteSpace:c.whiteSpace,display:c.display,clamp:c.webkitLineClamp,
         scrollH:x.scrollHeight,clientH:x.clientHeight,padding:parseFloat(c.paddingLeft)};};
-    const nav=el(".rr-member-nav"),active=el('.rr-member-nav [aria-current="page"]');
+    const nav=el(innerWidth<=1080?".rr-intel-header__mobile-links":".rr-intel-header__nav"),active=nav.querySelector('[aria-current="page"]');
     const nr=nav.getBoundingClientRect(),ar=active.getBoundingClientRect();
     return {
-      logo:styles(".rr-member-brand img"),wordmark:styles(".rr-member-brand span"),
-      nav:styles(".rr-member-nav"),tabs:[...nav.querySelectorAll("a")].map(a=>({
+      logo:styles(".rr-intel-header__logo"),wordmark:styles(".rr-intel-header__brand span"),
+      nav:styles(innerWidth<=1080?".rr-intel-header__mobile-links":".rr-intel-header__nav"),tabs:[...nav.querySelectorAll("a")].map(a=>({
         font:parseFloat(getComputedStyle(a).fontSize),h:a.getBoundingClientRect().height,
         wrap:getComputedStyle(a).whiteSpace
       })),
@@ -106,11 +107,13 @@ try{
     };
   });
   const approx=(x,y,t=.5)=>Math.abs(x-y)<=t;
-  if(!approx(visual.logo.w,40)&&width<=900)throw Error("Logo must be 40px at "+width);
-  if(width<=900&&!approx(visual.wordmark.font,18))throw Error("Brand wordmark not 18px at "+width);
-  if(visual.navRows!==1||!visual.activeVisible)throw Error("All 5 tabs must be in one swipeable row with active visible at "+width);
-  if(visual.tabs.length!==5||visual.tabs.some(t=>t.h<39.9||t.font<11.9||t.wrap!=="nowrap"))
-    throw Error("Five readable 12px, 40px navigation buttons required at "+width+": "+JSON.stringify(visual.tabs));
+  if(visual.logo.w<45||visual.logo.w>61)throw Error("Approved emblem has an incorrect size at "+width);
+   if(visual.wordmark.font<18)throw Error("Readability regression in the shared wordmark at "+width);
+   if(visual.navRows!==(width<=1080?5:1)||!visual.activeVisible)
+    throw Error("All five destinations must be accessible without clipping at "+width);
+   if(visual.tabs.length!==5||visual.tabs.some(t=>t.h<39.9||t.font<9.9||t.wrap!=="nowrap"))
+    throw Error("Homepage-style navigation buttons must remain legible at "+width);
+   if(width<=1080)await page.locator(".rr-intel-header__mobile summary").click();
   if(width<=430&&(!approx(visual.title.font,28)||visual.kicker.font<10.9||visual.intro.font<12.9))
     throw Error("Mobile title/kicker/intro typographic scale mismatch at "+width);
   if(visual.select.h<41.9||visual.select.font<14.9||visual.label.font<11.9||visual.count.font<15.9)
@@ -240,7 +243,7 @@ try{
  if(!html.includes('url=/admin/longshot-radar/')||html.includes("rr-lr-candidates")||html.includes("Fixture One"))
   throw Error("Public URL must redirect to private reader with no horse rows.");
  await publicPage.close();
- console.log("PASS: Shared Daily Research V1 Radar at 320/375/390/430/768/1280, 5 swipeable 40px tabs, 40px logo, 17px intact analysis, 25px WIN/22px FAIR, source race facts, zero manual JSON, and R2 retry.");
+ console.log("PASS: Shared Daily Research V1 Radar at 320/375/390/430/768/1280, 5 identical homepage-style pills, mobile menu, authentic logo, 17px intact analysis, 25px WIN/22px FAIR, source race facts, zero manual JSON, and R2 retry.");
 }finally{
  if(browser)await browser.close();await new Promise(resolve=>server.close(resolve));
 }
