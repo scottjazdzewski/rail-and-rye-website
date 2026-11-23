@@ -46,6 +46,13 @@ try{
   assert.equal(await page.locator(".rr-pt-race-row").count(),3,"Pick 3 has three complete race legs");
   assert.equal(await page.locator(".rr-pt-chip img").count(),6,"actual approved saddlecloth PNGs used");
   assert.equal(await page.locator(".rr-pt-ticket-stats strong").count(),4,"model hit, combos, base and total slots shown");
+  assert.equal(await page.locator(".rr-pt-wager-meta .rr-pt-probability").count(),0,"no duplicate hit probability near ticket title");
+  const statLabels=await page.locator(".rr-pt-ticket-stats .rr-pt-stat span").allTextContents();
+  assert.deepEqual(statLabels,["PROJECTED HIT","COMBINATIONS","BASE WAGER","TOTAL COST"]);
+  const textSizes=await page.locator(".rr-pt-ticket-stats .rr-pt-stat span").evaluateAll(items=>items.map(x=>getComputedStyle(x).fontSize));
+  assert.equal(new Set(textSizes).size,1,"all four metric labels use exactly the same font size at "+width);
+  const numberSizes=await page.locator(".rr-pt-ticket-stats .rr-pt-stat strong").evaluateAll(items=>items.map(x=>getComputedStyle(x).fontSize));
+  assert.equal(new Set(numberSizes).size,1,"all four numeric metrics use exactly the same font size at "+width);
   assert.equal(await page.locator(".rr-pt-ticket-stats strong").first().innerText(),"—","mock predictions are never fabricated");
   assert.equal(await page.locator(".rr-pt-brand-rail").count(),1,"sticky Rail & Rye and track identity exists");
   const logo=await page.locator("#rr-pt-track-logo").evaluate(n=>({src:n.getAttribute("src"),loaded:n.complete&&n.naturalWidth>0}));
