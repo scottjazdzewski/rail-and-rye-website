@@ -49,10 +49,10 @@ jobs:
             curl -fsSL --max-time 20 "https://railandryeracing.com$path" -o /dev/null
             echo "PASS real graphic $path"
           done
-          private=$(curl -LsS --max-time 20 -w '%{http_code}' -o /tmp/radar-private-body.txt             'https://railandryeracing.com/api/admin/longshot-radar-editorial' || true)
-          echo "Unauthenticated private Radar JSON endpoint returned HTTP $private"
+          private=$(curl -sS --max-time 20 -w '%{http_code}' -o /tmp/radar-private-body.txt             'https://railandryeracing.com/api/admin/longshot-radar-editorial' || true)
+          echo "Unauthenticated PRIVATE Radar URL (redirects NOT followed) returned HTTP $private"
           case "$private" in
             301|302|303|307|308|401|403|404|503) ;;
-            *) echo "::error::Private Radar data exposed without admin identity"; exit 1 ;;
+            *) echo "::error::Private Radar endpoint must not return content to an unauthenticated first request"; exit 1 ;;
           esac
           echo "PASS: live private Radar JS and CSS, canonical saddlecloths, authenticated R2 endpoint locked"
