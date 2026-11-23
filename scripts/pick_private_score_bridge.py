@@ -130,11 +130,49 @@ def ingest():
     if hashlib.sha256(confirm).hexdigest()!=checksum:raise RuntimeError("Private R2 readback failed.")
     print(f"SUCCESS: 367 real prescratch PWIN/F4 runner triplets across 45 races stored in private R2; SHA256={checksum}; review only.")
 
+def status():
+    """Check private R2 source presence without printing paid horse data."""
+    import boto3
+    from botocore.exceptions import ClientError
+    account=os.environ["TRI_CLOUDFLARE_ACCOUNT_ID"].strip()
+    access=os.environ["TRI_R2_ACCESS_KEY_ID"].strip()
+    secret=os.environ["TRI_R2_SECRET_ACCESS_KEY"].strip()
+    if not re.fullmatch(r"[a-f0-9]{32}",account) or not access or not secret:
+        raise RuntimeError("R2 credentials unavailable.")
+    s3=boto3.client("s3",endpoint_url=f"https://{account}.r2.cloudflarestorage.com",
+         region_name="auto",aws_access_key_id=access,aws_secret_access_key=secret)
+    found=[]
+    for track in TRACK_COUNTS:
+        name=re.sub(r"[^a-z0-9]+","-",track.lower())
+        key=f"projections/dashboard/2026-11-23/{name}.json"
+        try:
+            raw=s3.get_object(Bucket=BUCKET,Key=key)["Body"].read()
+            doc=json.loads(raw)
+            races=doc.get("races")
+            n=len(races) if isinstance(races,list) else 0
+            rows=sum(len(r.get("entries") or []) for r in races or [])
+            complete=n==TRACK_COUNTS[track][0] and rows==TRACK_COUNTS[track][1]
+            found.append(track)
+            print(f"PRIVATE_PROJECTION_SOURCE: {track}: present, races={n}, rows={rows}, expected_count_match={complete}.")
+        except ClientError as e:
+            if e.response.get("Error",{}).get("Code") not in ("NoSuchKey","404","NotFound"):raise
+            print(f"PRIVATE_PROJECTION_SOURCE: {track}: MISSING.")
+    try:
+        raw=s3.get_object(Bucket=BUCKET,Key=R2_KEY)["Body"].read()
+        doc=json.loads(raw)
+        validate(doc)
+        print("PRIVATE_PICK_INTERIM_SOURCE: PRESENT / 45 races / 367 runners / review-only.")
+    except ClientError as e:
+        if e.response.get("Error",{}).get("Code") not in ("NoSuchKey","404","NotFound"):raise
+        print("PRIVATE_PICK_INTERIM_SOURCE: MISSING.")
+    print(f"PRIVATE_PROJECTION_TRACKS_PRESENT: {len(found)} / 5.")
+
 if __name__=="__main__":
     try:
         if len(sys.argv)>1 and sys.argv[1]=="public-key":public_key()
+        elif len(sys.argv)>1 and sys.argv[1]=="status":status()
         elif len(sys.argv)>1 and sys.argv[1]=="ingest":ingest()
-        else:raise ValueError("Use public-key or ingest.")
+        else:raise ValueError("Use public-key, status or ingest.")
     except Exception as exc:
         print("PICK_PRIVATE_SCORE_TRANSFER_ERROR:",type(exc).__name__,str(exc)[:140],file=sys.stderr)
         sys.exit(1)
