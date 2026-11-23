@@ -24,7 +24,7 @@ def make_zip(*, wrong_hash=False, wrong_mass=False, unresolved=False):
     }
     filemap = {
         statuses["tri_receipt_sha256"]: dump({"status": "PASS_TRI_TJ_V4_PERMANENT_FORWARD_RUNTIME", "races": 1, "starters": 2}),
-        statuses["f4_receipt_sha256"]: dump({"status": "PASS", "official_scratches_verified": False}),
+        statuses["f4_receipt_sha256"]: b"",
         statuses["role_audit_sha256"]: dump({"date": date, "track": "PRX", "runner_count": 2,
                                                 "unresolved": ["trainer"] if unresolved else []}),
         "internal_receipts/PRX/sidecar.json": dump({"asof": date, "rows": [
@@ -34,10 +34,23 @@ def make_zip(*, wrong_hash=False, wrong_mass=False, unresolved=False):
              "trainer_person": "Verified Trainer 2", "jockey_person": "Verified Jockey 2"}
         ]}),
     }
-    f4a = {"exact_p1": .6, "exact_p2": .2, "exact_p3": .1, "exact_p4": .05, "exact_p5": .03, "p6_plus": .02,
-           "top2": .8, "top3": .9, "top4": .95}
-    f4b = {"exact_p1": .4, "exact_p2": .25, "exact_p3": .15, "exact_p4": .1, "exact_p5": .05, "p6_plus": .05,
-           "top2": .65, "top3": .8, "top4": .9}
+    prefix_name="TRI_F4_V2_20261123_PRESCRATCH_ORDERED_PREFIXES.csv"
+    prefix_path="internal_receipts/PRX/"+prefix_name
+    filemap[prefix_path]=(
+        "race_key,position_prefix,programs,probability,wager_prefix\\n"
+        "20261123|PRX|1,2,1-2,0.6,EXACTA\\n"
+        "20261123|PRX|1,2,2-1,0.4,EXACTA\\n"
+    ).encode()
+    filemap[statuses["f4_receipt_sha256"]]=dump({
+        "status":"PASS","model_id":"TRI_F4_ORDERING_MODEL_V2_RANK_OFFSET",
+        "expected_date":date,"scratch_state":"PRESCRATCH",
+        "race_count":1,"official_scratches_verified":False,
+        "output_hashes":{prefix_name:hashlib.sha256(filemap[prefix_path]).hexdigest()}
+    })
+    f4a = {"exact_p1": .6, "exact_p2": .4, "exact_p3": 0., "exact_p4": 0., "exact_p5": 0., "p6_plus": 0.,
+           "top2": 1., "top3": 1., "top4": 1.}
+    f4b = {"exact_p1": .4, "exact_p2": .6, "exact_p3": 0., "exact_p4": 0., "exact_p5": 0., "p6_plus": 0.,
+           "top2": 1., "top3": 1., "top4": 1.}
     scores = {
         "schema_version": 1, "output_kind": "INTERNAL_VERIFIED_MODEL_SCORE_HANDOFF_NOT_CUSTOMER_CARD",
         "race_date": date, "track_code": "PRX", "track_name": "Parx Racing",
@@ -118,6 +131,25 @@ def make_badge_source_zip(*, bad_color=False, wrong_pwin=False):
 
 
 class TestPrescratchSync(unittest.TestCase):
+    def test_source_verified_f4_display_ranks_are_complete(self):
+        date,cards,_,counts=build_cards(make_zip())
+        self.assertEqual(date,"2026-11-23")
+        self.assertEqual(counts["f4_ordered_races"],1)
+        self.assertEqual([e["rank"] for e in cards[0]["races"][0]["entries"]],[1,2])
+        self.assertEqual(cards[0]["races"][0]["entries"][0]["f4_probabilities"]["exact_p1"],.6)
+
+    def test_tampered_f4_prefix_hash_holds_entire_publish(self):
+        original=make_zip()
+        with zipfile.ZipFile(io.BytesIO(original)) as z:
+            rows={name:z.read(name) for name in z.namelist()}
+        name="internal_receipts/PRX/TRI_F4_V2_20261123_PRESCRATCH_ORDERED_PREFIXES.csv"
+        rows[name]=rows[name].replace(b"0.6,EXACTA",b"0.7,EXACTA")
+        out=io.BytesIO()
+        with zipfile.ZipFile(out,"w",zipfile.ZIP_DEFLATED) as z:
+            for path,blob in rows.items():z.writestr(path,blob)
+        with self.assertRaisesRegex(Hold,"Certified F4 finishing order unavailable"):
+            build_cards(out.getvalue())
+
     def test_keys_match_website_r2_storage(self):
         self.assertEqual(target_key({"track_name": "Parx Racing", "race_date": "2026-11-23"}),
                          "projections/dashboard/2026-11-23/parx-racing.json")
