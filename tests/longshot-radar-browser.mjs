@@ -146,6 +146,27 @@ try{
     raceFacts.font<13.9||raceFacts.scrollHeight>raceFacts.clientHeight+2||
     (width<=430&&raceFacts.height<raceFacts.line*2-1))
    throw Error("Full source race conditions must wrap at 14px on navy header without clipping at "+width+": "+JSON.stringify(raceFacts));
+  // Original type sizes remain unchanged; RACE # + post time must align
+  // together against the navy header's right edge on every device width.
+  const raceAlignment=await page.locator(".rr-lr-card").first().evaluate(card=>{
+    const rect=sel=>{const r=card.querySelector(sel).getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height};};
+    const font=sel=>parseFloat(getComputedStyle(card.querySelector(sel)).fontSize);
+    return {main:rect(".rr-lr-racebar-main"),track:rect(".rr-lr-racebar h3"),
+      group:rect(".rr-lr-race-meta"),race:rect(".rr-lr-race-number"),
+      post:rect(".rr-lr-post"),facts:rect(".rr-lr-race-facts"),
+      raceFont:font(".rr-lr-race-number"),postFont:font(".rr-lr-post"),
+      trackFont:font(".rr-lr-racebar h3")};
+  });
+  if(Math.abs(raceAlignment.group.right-raceAlignment.main.right)>1.2||
+     raceAlignment.race.right>=raceAlignment.post.left||
+     Math.abs(raceAlignment.race.top-raceAlignment.post.top)>1.2||
+     raceAlignment.raceFont<12.9||raceAlignment.postFont<12.9||raceAlignment.trackFont<16.9)
+    throw Error("Right-aligned race/post group must be on one readable row at "+width+": "+JSON.stringify(raceAlignment));
+  if(width>=360&&raceAlignment.group.left<raceAlignment.track.right-1 &&
+     raceAlignment.group.top<raceAlignment.track.bottom-1)
+    throw Error("Right-aligned race/post metadata overlaps left-aligned track at "+width);
+  if(raceAlignment.facts.top<Math.max(raceAlignment.group.bottom,raceAlignment.track.bottom)-1)
+    throw Error("Race descriptions must remain beneath the complete navy header at "+width);
   if(await page.getByRole("button",{name:/Race details/i}).count())
     throw Error("Analysis must not require a Race details button at "+width);
   const infos=await page.locator(".rr-lr-inline-analysis .rr-lr-case").allTextContents();
