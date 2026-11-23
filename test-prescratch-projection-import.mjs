@@ -25,7 +25,7 @@ const env={CARDS_BUCKET:{
 }};
 const upload=async data=>handleAdminProjectionBatchUpload(new Request("https://example.invalid/api/admin/projections/batch",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cards:[data]})}),env);
 let response=await upload(card);
-assert.equal(response.status,200,await response.text());
+assert.equal(response.status,200,await response.clone().text());
 const body=await response.json();
 assert.equal(body.tracks,1);assert.equal(body.races,1);assert.equal(body.entries,2);
 assert.equal(stored.size,1);
