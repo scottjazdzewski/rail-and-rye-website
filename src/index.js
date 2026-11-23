@@ -1,4 +1,5 @@
 import {handleAdminProjectionUpload,handleAdminProjectionBatchUpload,readAdminProjectionCards} from './projections.js';
+import {handleAdminPickTickets} from './pick-tickets.js';
 import { handleCommerce, sendQueuedEmails, checkoutReadiness, replacePdfAndNotifyBuyers, publicProductForShare } from './commerce.js';
 import {handleRacingWire,handlePreviewRacingWire,testPreviewRssFeeds,handleAdminRacingWire} from './racing-wire.js';
 import {handleAdminBundles,BUNDLE_KEY} from './bundles.js';
@@ -285,6 +286,10 @@ export default {
       if(path==="/sitemap.xml")return handleSitemap(env,request.method);
       if(path.startsWith("/api/admin/")||path==="/admin"||path.startsWith("/admin/")) {
         const auth=await verifyAdmin(request,env); if(!auth.ok)return auth.response;
+        if(path==="/api/admin/pick-tickets"){
+          if(request.method==="POST"&&!trustedOrigin(request))return fail("Same-origin request required",403);
+          return handleAdminPickTickets(request,env);
+        }
         if(path==='/api/admin/membership-plans')return handleAdminMembershipPlans(request,env);
         if(path.startsWith('/api/admin/bundles'))return handleAdminBundlesWithRaceAlerts(request,env,path,ctx);
         if(path.startsWith('/api/admin/bundle-assets')){
@@ -302,7 +307,7 @@ export default {
         if(path==="/api/admin/racing-wire-editorial")return handleAdminRacingWire(request,env);
         if(path.startsWith("/api/admin/"))return handleAdminAPI(request,env,path,ctx);
         if(request.method!=="GET"&&request.method!=="HEAD")return fail("Method not allowed",405);
-        const asset=new URL(url);const projectionDesk=path==="/admin/projections"||path==="/admin/projections/"||path==="/admin/projections.html";const projectionPreview=path==="/admin/projections-preview"||path==="/admin/projections-preview/"||path==="/admin/projections-preview.html";asset.pathname=projectionDesk?"/admin/projections.html":projectionPreview?"/admin/projections-preview.html":(path==="/admin/membership-plans"||path==="/admin/membership-plans/"||path==="/admin/membership-plans.html")?"/admin/membership-plans.html":"/admin/index.html";
+        const asset=new URL(url);const projectionDesk=path==="/admin/projections"||path==="/admin/projections/"||path==="/admin/projections.html";const projectionPreview=path==="/admin/projections-preview"||path==="/admin/projections-preview/"||path==="/admin/projections-preview.html";const pickTicketsPreview=path==="/admin/pick-tickets-preview"||path==="/admin/pick-tickets-preview/"||path==="/admin/pick-tickets-preview.html";asset.pathname=projectionDesk?"/admin/projections.html":projectionPreview?"/admin/projections-preview.html":pickTicketsPreview?"/admin/pick-tickets-preview.html":(path==="/admin/membership-plans"||path==="/admin/membership-plans/"||path==="/admin/membership-plans.html")?"/admin/membership-plans.html":"/admin/index.html";
         const result=await env.ASSETS.fetch(new Request(asset.toString(),{method:request.method}));
         const headers=new Headers(result.headers);
         headers.set("Cache-Control","no-store");headers.set("X-Frame-Options","DENY");headers.set("X-Content-Type-Options","nosniff");
