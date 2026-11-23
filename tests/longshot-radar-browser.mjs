@@ -146,6 +146,9 @@ try{
   }));
   if(analysisCss.font<14||analysisCss.height+0.1<analysisCss.lines)
     throw Error("Editorial text too small/hidden at "+width+": "+JSON.stringify(analysisCss));
+  const allChips=page.locator(".rr-lr-card .rr-lr-program img");
+  if(await allChips.count()!==10)throw Error("All ten approved saddlecloth images must be present at "+width);
+  await allChips.evaluateAll(async images=>{await Promise.all(images.map(image=>image.decode()));});
   for(const chip of [1,11,20]){
    const img=page.locator('.rr-lr-card img[src="/assets/approved/saddlecloths/'+chip+'.png"]');
    if(await img.count()!==1||!(await img.first().evaluate(el=>el.complete&&el.naturalWidth>0)))
