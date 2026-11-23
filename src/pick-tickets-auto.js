@@ -32,6 +32,7 @@ import {chooseV32,verifyV32ScratchTransition,PICK_V32_ENGINE,
  PICK_V32_COST_SCALE_DOLLARS} from "./pick-tickets-v32.js";
 import {getNov23ScratchLedger} from "./pick-tickets-scratch-1123.js";
 import {getPickTicketsIntake} from "./pick-tickets-intake.js";
+import {auditV32CostPreference} from "./pick-tickets-v32-sensitivity.js";
 
 const isNumber=n=>typeof n==="number"&&Number.isFinite(n)&&n>=0&&n<=100;
 const displayPct=n=>(n*100).toFixed(1)+"%";
@@ -88,6 +89,9 @@ function makeSequenceV32(spec,races,stage){
    method:PICK_V32_ENGINE,
    objective:"ARGMAX(log(H)-C/S)",
    soft_cost_scale_dollars:PICK_V32_COST_SCALE_DOLLARS,
+   // Diagnostic-only scenarios in protected Ticket Insights; the selected
+   // customer ticket remains the frozen S=15 V3.2 result.
+   cost_preference_comparison:auditV32CostPreference(legs,spec.unit_cents),
    frontier_points:chosen.frontier_points,
    stage,
    // Internals retained for QA only; the UI never shows a payout projection.
