@@ -23,7 +23,9 @@ jobs:
             code=$(curl -L -sS --connect-timeout 10 --max-time 20 -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' -w '%{http_code}' -o /tmp/target-list-live.js "$url" || true)
             echo "Production asset probe attempt $attempt: HTTP $code"
             if [ "$code" = '200' ] && grep -Fq '/api/admin/target-list-review' /tmp/target-list-live.js &&
-               ! grep -Eq 'DEMO_EXAMPLE|Sample Favorite|Example Downs|rr-target-local-file' /tmp/target-list-live.js; then
+               grep -Fq 'const tote=value' /tmp/target-list-live.js &&
+               grep -Fq 'rr-target-runner-info' /tmp/target-list-live.js &&
+               ! grep -Eq 'DEMO_EXAMPLE|Sample Favorite|Example Downs|rr-target-local-file|rr-target-analyze' /tmp/target-list-live.js; then
               echo 'LIVE_PREVIEW_DEPLOYED: Actual private R2 daily reader is live, with no synthetic horses or local-file loader.'
               break
             fi
@@ -33,6 +35,12 @@ jobs:
             fi
             sleep 8
           done
+          cssurl="https://railandryeracing.com/assets/target-list-dashboard.css?rr_layout_check=${GITHUB_SHA}-$(date +%s)"
+          csscode=$(curl -L -sS --connect-timeout 10 --max-time 20 -H 'Cache-Control: no-cache' -w '%{http_code}' -o /tmp/target-list-live.css "$cssurl" || true)
+          test "$csscode" = '200'
+          grep -Fq 'Target List v3' /tmp/target-list-live.css
+          grep -Fq -- '-webkit-line-clamp:unset' /tmp/target-list-live.css
+          echo 'LIVE_TARGET_LAYOUT_V3: full analysis uncut, compact racing data rows, no sample content.'
           protected=$(curl -sS --connect-timeout 10 --max-time 20 -o /dev/null -w '%{http_code}' 'https://railandryeracing.com/api/admin/target-list-review' || true)
           echo "Unauthenticated private data endpoint: HTTP $protected"
           case "$protected" in
