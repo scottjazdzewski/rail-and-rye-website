@@ -245,7 +245,7 @@
    return box;
   };
   primary.append(mainStat("PROJECTED HIT CHANCE",
-   formatChance(result.chance,result.allOutcomesCovered),"rr-bet-main-stat--chance"));
+   result.chance===null?"—":formatChance(result.chance,result.allOutcomesCovered),"rr-bet-main-stat--chance"));
   primary.append(mainStat("BREAK-EVEN GROSS PAYOUT",
    result.fair===null?"—":CASH(result.fair),"rr-bet-main-stat--payout"));
   summary.append(primary);
