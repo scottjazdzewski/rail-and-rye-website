@@ -36,6 +36,14 @@ The single source of truth for **horse saddle chips**, authentic saddlecloth-bac
 - The Bet Builder is part of Projections, not a separate product or purchase. Its model-only exacta/trifecta UI never displays made-up probability/payoff values. Exact F4 joint probabilities require a verified server-side production receipt and private, entitlement-checked delivery.
 - The user consults any actual tote prices independently; Rail & Rye does not connect to tote services or accept wagers.
 
+## Projections three-row race header — approved November 23
+- **One dedicated stylesheet:** `public/assets/rr-projections-race-header.css` controls the Projections race header; it is loaded by both `/admin/projections-preview/` and `/membership/dashboard/` after the shared chip stylesheet.
+- **Do not recreate legacy header rules** in `projections-dashboard.css` or `rr-intelligence-chips.css`. Those old race-banner/scratch layout selectors were removed rather than overridden. The shared CSS retains the general navigation, track identity and runner rows only.
+- **Fixed hierarchy:** top row = approved race saddlecloth + fully spelled-out race title and sourced graded trophy; second row = runners, gold purse and post time; bottom row = centered scratch count plus the actual numbered saddlecloth chips. The scratch row appears only when scratches are present.
+- The **scratch chips stay on the navy background without an extra tile or halo CSS**; use approved PNGs with no blend, opacity or filters. Original horse names are retained as accessible labels and title tooltips, not displayed in the compact scratch row.
+- Responsive adaptation may wrap middle-row facts and scratch chips, but never relocate scratches above the runners, purse or post time. The displayed title is never abbreviated merely to fit.
+- Production regression checks enforce the single CSS owner, full-stakes naming, actual saddlecloth art, scratch count and mobile ordering. Do not append another late override for this component.
+
 ## Stakes naming and graded trophy display — locked
 - Use a **balanced, full-width title row** for long stakes titles. Runner count/purse and post time have their own space on phones rather than competing with a two-line race name. Example: source `Hollywood Gaming Mahoning Distaff S.` → **Mahoning Distaff Stakes** (known sponsor omitted, Stakes written out). Do not strip unfamiliar proper names.
 - The authentic race saddlecloth in a dark navy header sits on an **ivory backing** matching the navigation tab so transparent image pixels do not change number or cloth colors.
