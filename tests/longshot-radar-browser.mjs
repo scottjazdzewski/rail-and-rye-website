@@ -92,14 +92,13 @@ try{
   if(jsErrors.length)throw Error("Design preview JS failed at "+width+": "+jsErrors.join(","));
   if(await page.locator(".rr-lr-card").count()!==3)throw Error("Missing design-only sample rows at "+width);
   if(!((await page.locator("#rr-lr-demo-alert").innerText()).includes("FICTIONAL")))throw Error("No prominent fictional warning at "+width);
-  if(!(await page.locator(".rr-lr-card").first().innerText()).includes("Sample Horse One"))throw Error("Design post time ordering failed at "+width);
+  if(!(await page.locator(".rr-lr-card").first().innerText()).includes("Illustration Runner One"))throw Error("Design post time ordering failed at "+width);
   for(const chip of [1,11,20]){
    const el=page.locator('.rr-lr-card img[src="/assets/approved/saddlecloths/'+chip+'.png"]');
    if(await el.count()!==1||!(await el.first().evaluate(i=>i.complete&&i.naturalWidth>0)))throw Error("Real saddlecloth #"+chip+" missing at "+width);
   }
-  for(const img of await page.locator(".rr-review-artwork img").all()){
-   if(!(await img.evaluate(i=>i.complete&&i.naturalWidth>0)))throw Error("Real approved Radar artwork missing at "+width);
-  }
+  if(await page.locator(".rr-review-artwork").count())throw Error("Removed artwork still appears at "+width);
+  if((await page.locator("body").innerText()).toLowerCase().includes("sample"))throw Error("Unwanted sample wording still visible at "+width);
   await page.locator("#rr-lr-sort").selectOption("track");
   if(!(await page.locator(".rr-lr-card").first().innerText()).includes("Example Horse Eleven"))throw Error("Design track ordering failed at "+width);
   const size=await page.evaluate(()=>({viewport:document.documentElement.clientWidth,body:document.body.scrollWidth,page:document.documentElement.scrollWidth}));

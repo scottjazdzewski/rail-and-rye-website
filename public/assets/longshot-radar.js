@@ -98,7 +98,7 @@ function showDetail(item){
   const section=make("section","rr-lr-detail-section");
   section.append(make("h3","",label),make("p","",copy));body.append(section);
  }
- body.append(make("p","rr-lr-source-note",state.demo?"FICTIONAL DESIGN SAMPLE ONLY. No actual horses, TRI results, odds or wagering selections are included.":"Original Timeform morning line, not live tote odds. Editorial source and release receipts must be checked against the approved production package before customer publication."));
+ body.append(make("p","rr-lr-source-note",state.demo?"FICTIONAL DATA ONLY. No actual horses, TRI results, odds or wagering selections are included.":"Original Timeform morning line, not live tote odds. Editorial source and release receipts must be checked against the approved production package before customer publication."));
  if(!dialog.open)dialog.showModal();
 }
 function makeCard(item){
@@ -129,11 +129,11 @@ function renderCandidates(){
  const edition=currentEdition(),target=q("#rr-lr-candidates");
  if(!edition)return;
  q("#rr-lr-date-title").textContent=dateLabel(edition.race_date);
- q("#rr-lr-stage").textContent=state.demo?"DESIGN SAMPLE · NOT PICKS":(edition.status==="prescratch"?"INITIAL · CURRENT":"SCRATCH-UPDATED");
- q("#rr-lr-updated").textContent=state.demo?"Fictional examples · no wagering recommendations":"Production "+timeLabel(edition.generated_at)+" · revision "+edition.revision;
+ q("#rr-lr-stage").textContent=state.demo?"PREVIEW · NOT ACTUAL PICKS":(edition.status==="prescratch"?"INITIAL · CURRENT":"SCRATCH-UPDATED");
+ q("#rr-lr-updated").textContent=state.demo?"Illustrative figures · not wagering recommendations":"Production "+timeLabel(edition.generated_at)+" · revision "+edition.revision;
  let candidates=[...edition.candidates];
  candidates=orderByDay(candidates,state.sort);
- q("#rr-lr-count").textContent=candidates.length+" shown · "+edition.candidates.length+(state.demo?" layout examples":" approved horses")+" · "+(state.sort==="post-time"?"Post-time order":"Track order");
+ q("#rr-lr-count").textContent=candidates.length+" shown · "+edition.candidates.length+(state.demo?" illustrated runners":" approved horses")+" · "+(state.sort==="post-time"?"Post-time order":"Track order");
  if(!candidates.length){
   target.replaceChildren(make("div","rr-lr-list-empty","No selections in this approved edition. Longshot Radar does not force a daily pick."));
  }else target.replaceChildren(...candidates.map(makeCard));
@@ -167,9 +167,9 @@ function visualSample(){
  // the deliberately unlisted design-only website preview; never scored or uploaded.
  // It is never sent to the production API or private R2.
  const shared={
-  source_causal_evidence:"Design sample only. Approved production evidence will appear here after source verification.",
-  counterargument_checked:"Design sample only. The production editor must verify the counterargument.",
-  trainer:"Sample Trainer",jockey:"Sample Jockey"
+  source_causal_evidence:"Illustrative layout text. Verified production evidence will appear here after source verification.",
+  counterargument_checked:"Illustrative layout text. Actual counterarguments require independent verification.",
+  trainer:"Illustrative Trainer",jockey:"Illustrative Jockey"
  };
  const horse=(track,race,post,number,name,ml,pct,fair)=>({
   ...shared,track,race_number:race,post_time_et:post,program_number:number,
@@ -181,7 +181,7 @@ function visualSample(){
   status:"prescratch",revision:1,generated_at:"2026-11-23T12:00:00Z",
   candidates:[
    horse("EXAMPLE PARK",5,"3:40 PM ET","11","Example Horse Eleven","8/1",18.2,"9/2"),
-   horse("SAMPLE DOWNS",2,"1:15 PM ET","1","Sample Horse One","10/1",21.4,"7/2"),
+   horse("ILLUSTRATION DOWNS",2,"1:15 PM ET","1","Illustration Runner One","10/1",21.4,"7/2"),
    horse("EXAMPLE PARK",8,"6:05 PM ET","20","Example Horse Twenty With Longer Name","12/1",16.8,"5/1")
   ]
  };
