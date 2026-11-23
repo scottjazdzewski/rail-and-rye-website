@@ -5,6 +5,7 @@ on:
     paths:
       - 'src/pick-tickets.js'
       - 'src/pick-tickets-auto.js'
+      - 'src/pick-tickets-menu-1124.js'
       - 'src/pick-tickets-v32.js'
       - 'src/pick-tickets-v33.js'
       - 'src/pick-tickets-field-audit.js'
@@ -21,6 +22,7 @@ on:
     paths:
       - 'src/pick-tickets.js'
       - 'src/pick-tickets-auto.js'
+      - 'src/pick-tickets-menu-1124.js'
       - 'src/pick-tickets-v32.js'
       - 'src/pick-tickets-v33.js'
       - 'src/pick-tickets-field-audit.js'
@@ -48,6 +50,7 @@ jobs:
         run: |
           node --check src/pick-tickets.js
           node --check src/pick-tickets-auto.js
+          node --check src/pick-tickets-menu-1124.js
           node --check src/pick-tickets-v32.js
           node --check src/pick-tickets-v33.js
           node --check src/pick-tickets-field-audit.js
