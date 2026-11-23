@@ -307,7 +307,7 @@ export default {
         const headers=new Headers(result.headers);
         headers.set("Cache-Control","no-store");headers.set("X-Frame-Options","DENY");headers.set("X-Content-Type-Options","nosniff");
         headers.set("Referrer-Policy","no-referrer");
-        headers.set("Content-Security-Policy","default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'");
+        headers.set("Content-Security-Policy","default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'");
         return new Response(result.body,{status:result.status,headers});
       }
       const memberDashboardPage=path==="/membership/dashboard"||path==="/membership/dashboard/"||path==="/membership/dashboard/index.html";

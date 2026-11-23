@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Tinos:wght@400;700&display=swap");
 /* Projection screens keep the Rail & Rye race-card language: ivory stock, navy type and gold rules. */
 .rr-dashboard-page{background:#f4f0e6;color:#102f56}
 .rr-dashboard-main{max-width:1420px;padding:28px 24px 56px}
@@ -15,15 +16,15 @@
 .rr-dash-races{display:flex;gap:8px;overflow-x:auto;padding:2px 0 6px;scrollbar-width:thin}
 .rr-dash-race-button{display:grid;place-content:center;gap:1px;flex:0 0 58px;min-height:58px;padding:6px;border:2px solid #c99831;border-radius:9px;background:#092c5d;color:#fff8e9;text-align:center;cursor:pointer}
 .rr-dash-race-button span{font:800 9px/1 Inter,system-ui,sans-serif;letter-spacing:.12em}
-.rr-dash-race-button strong{font:700 24px/1 Georgia,"Times New Roman",serif}
+.rr-dash-race-button strong{font:700 24px/1 "Tinos","Times New Roman",serif}
 .rr-dash-race-button:hover,.rr-dash-race-button:focus-visible{outline:2px solid #c99831;outline-offset:2px}
 .rr-dash-race-button[aria-current="true"]{background:#f2c14e;color:#0b2e5e;box-shadow:inset 0 0 0 2px #fff0c5}
 .rr-dash-races{position:sticky;top:0;z-index:3;padding:8px 0;background:linear-gradient(#f4f0e6 80%,rgba(244,240,230,0));scroll-snap-type:x proximity;overscroll-behavior-inline:contain}.rr-dash-race-button{scroll-snap-align:start}
 .rr-dash-race-panel{min-width:0;padding:clamp(14px,2vw,24px);border:2px solid #c99831;border-radius:16px;background:#fffdf6;color:#102f56;box-shadow:0 8px 22px rgba(16,47,86,.08)}
 .rr-dash-card-head{display:grid;grid-template-columns:96px minmax(0,1fr);align-items:center;gap:16px;padding:0 0 16px;border-bottom:2px solid #c99831}
 .rr-dash-card-logo{display:block;width:90px;height:90px;filter:brightness(0) saturate(100%) invert(14%) sepia(35%) saturate(1894%) hue-rotate(186deg) brightness(90%) contrast(92%);opacity:.9;object-fit:contain}
-.rr-dash-track-title{margin:0;color:#123567;font:700 clamp(24px,3vw,38px)/1.05 Georgia,"Times New Roman",serif;letter-spacing:.015em;text-transform:uppercase}
-.rr-dash-card-date{margin:6px 0 0;color:#123567;font:700 14px/1.35 Georgia,"Times New Roman",serif;letter-spacing:.04em;text-transform:uppercase}
+.rr-dash-track-title{margin:0;color:#123567;font:700 clamp(24px,3vw,38px)/1.05 "Tinos","Times New Roman",serif;letter-spacing:.015em;text-transform:uppercase}
+.rr-dash-card-date{margin:6px 0 0;color:#123567;font:700 14px/1.35 "Tinos","Times New Roman",serif;letter-spacing:.04em;text-transform:uppercase}
 .rr-dash-track-mark{display:flex;align-items:center;justify-content:center;gap:8px;min-height:74px;padding:8px 12px;border:2px solid #c99831;border-radius:12px;background:#fffaf0;color:#17476d;font:800 13px/1.25 Inter,system-ui,sans-serif;text-align:center;text-transform:uppercase}
 .rr-dash-track-mark img{width:36px;height:36px;object-fit:contain}
 .rr-dash-race-banner{display:grid;grid-template-columns:88px minmax(0,1fr) 150px;align-items:center;gap:14px;margin:14px 0;padding:12px;border:2px solid #c99831;border-radius:14px;background:#fffaf0;box-shadow:0 3px 10px rgba(16,47,86,.08)}
@@ -42,29 +43,29 @@
 .rr-dash-scratch-fallback{display:grid;place-items:center;min-width:27px;height:27px;padding:0 4px;border:1px solid #a28e6d;border-radius:6px;background:#fff;color:#123567;font:800 10px/1 Inter,system-ui,sans-serif}
 .rr-dash-scratch-name{max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rr-dash-race-number span{font:800 11px/1.2 Inter,system-ui,sans-serif;letter-spacing:.18em}
-.rr-dash-race-number strong{font:700 38px/1.05 Georgia,"Times New Roman",serif}
-.rr-dash-race-condition{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 9px;min-width:0;margin:0;color:#123567;font:700 clamp(20px,2.4vw,30px)/1.15 Georgia,"Times New Roman",serif;text-transform:uppercase}
+.rr-dash-race-number strong{font:700 38px/1.05 "Tinos","Times New Roman",serif}
+.rr-dash-race-condition{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 9px;min-width:0;margin:0;color:#123567;font:700 clamp(20px,2.4vw,30px)/1.15 "Tinos","Times New Roman",serif;text-transform:uppercase}
 .rr-dash-race-condition-name{min-width:0;overflow-wrap:break-word}
 .rr-dash-race-purse{margin:0;color:#123567;font:800 11px/1.3 Inter,system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase}
 .rr-dash-race-purse[data-missing="true"]{color:#946321}
 .rr-dash-race-runners,.rr-dash-race-scratch-count{margin:0;color:#17345c;font:800 12px/1.3 Inter,system-ui,sans-serif;letter-spacing:.1em;text-transform:uppercase}
 .rr-dash-post-time{padding-left:14px;border-left:1px solid #c99831;text-align:center}
 .rr-dash-post-time span{display:block;color:#17345c;font:800 10px/1.2 Inter,system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase}
-.rr-dash-post-time strong{display:block;margin-top:7px;color:#123567;font:700 22px/1.1 Georgia,"Times New Roman",serif}
+.rr-dash-post-time strong{display:block;margin-top:7px;color:#123567;font:700 22px/1.1 "Tinos","Times New Roman",serif}
 .rr-dash-race-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:14px 0}
 .rr-dash-race-tile{display:flex;align-items:center;gap:12px;min-height:74px;padding:10px 14px;border:2px solid #d6a63c;border-radius:11px;background:#fffdf7}
 .rr-dash-tile-mark{display:grid;place-items:center;flex:0 0 52px;width:52px;height:46px;border-right:1px solid #c99831;border-radius:0;background:none;color:#ad7920}
 .rr-dash-tile-mark img{display:block;width:auto;height:auto;max-width:48px;max-height:44px;object-fit:contain}
 .rr-dash-race-tile>div>span{display:block;color:#566b7b;font:800 10px/1.2 Inter,system-ui,sans-serif;letter-spacing:.13em;text-transform:uppercase}
-.rr-dash-race-tile strong{display:block;min-width:0;margin-top:4px;color:#123567;font:700 17px/1.15 Georgia,"Times New Roman",serif;text-transform:uppercase;white-space:normal;overflow-wrap:normal;word-break:normal}
+.rr-dash-race-tile strong{display:block;min-width:0;margin-top:4px;color:#123567;font:700 17px/1.15 "Tinos","Times New Roman",serif;text-transform:uppercase;white-space:normal;overflow-wrap:normal;word-break:normal}
 .rr-dash-race-summary{margin:12px 0;padding:12px 15px;border-left:3px solid #c99831;background:#f8f2e5;color:#304e68;font:14px/1.5 Inter,system-ui,sans-serif}
 .rr-dash-table{overflow:hidden;border:2px solid #c99831;border-radius:12px;background:#fff}
 .rr-dash-table-heading,.rr-dash-runner-row{display:grid;grid-template-columns:54px minmax(170px,1.6fr) minmax(410px,4fr) minmax(136px,1.2fr);align-items:stretch}
 .rr-dash-table-heading{min-height:48px;background:#0d3470;color:#fffaf0}
-.rr-dash-table-heading>span{display:grid;place-items:center;padding:7px 5px;border-right:1px solid rgba(255,255,255,.35);font:800 10px/1.2 Georgia,"Times New Roman",serif;text-align:center;text-transform:uppercase}
+.rr-dash-table-heading>span{display:grid;place-items:center;padding:7px 5px;border-right:1px solid rgba(255,255,255,.35);font:800 10px/1.2 "Tinos","Times New Roman",serif;text-align:center;text-transform:uppercase}
 .rr-dash-table-heading>span:last-child{border-right:0}
 .rr-dash-metric-group{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));min-width:0}
-.rr-dash-table-heading .rr-dash-metric-group>span{display:grid;place-items:center;padding:5px 3px;border-right:1px solid rgba(255,255,255,.35);font:800 9px/1.15 Georgia,"Times New Roman",serif;text-align:center;text-transform:uppercase}
+.rr-dash-table-heading .rr-dash-metric-group>span{display:grid;place-items:center;padding:5px 3px;border-right:1px solid rgba(255,255,255,.35);font:800 9px/1.15 "Tinos","Times New Roman",serif;text-align:center;text-transform:uppercase}
 .rr-dash-table-heading .rr-dash-metric-group>span:last-child{border-right:0}
 .rr-dash-runner-row{min-height:70px;border-top:1px solid #dfded7;background:#fffefa}
 .rr-dash-runner-row:nth-child(odd){background:#fffdf6}
@@ -76,10 +77,10 @@
 .rr-dash-program-fallback{display:grid;place-items:center;width:37px;height:37px;border:2px solid #c99831;border-radius:8px;background:#103c78;color:#fff8e9;font:800 14px/1 Inter,system-ui,sans-serif}
 .rr-dash-horse-open{display:block;width:100%;min-width:0;padding:5px 3px;border:0;background:transparent;color:#123567;text-align:left;cursor:pointer}
 .rr-dash-horse-heading{display:flex;align-items:baseline;justify-content:space-between;gap:8px;min-width:0;width:100%}
-.rr-dash-horse-name{flex:1 1 auto;min-width:0;overflow:hidden;font:700 17px/1.2 Georgia,"Times New Roman",serif;text-overflow:ellipsis;white-space:nowrap}
-.rr-dash-horse-ml{flex:0 0 auto;color:#637482;font:700 17px/1.2 Georgia,"Times New Roman",serif;white-space:nowrap}
+.rr-dash-horse-name{flex:1 1 auto;min-width:0;overflow:hidden;font:700 17px/1.2 "Tinos","Times New Roman",serif;text-overflow:ellipsis;white-space:nowrap}
+.rr-dash-horse-ml{flex:0 0 auto;color:#637482;font:700 17px/1.2 "Tinos","Times New Roman",serif;white-space:nowrap}
 .rr-dash-horse-connections{display:block;max-width:100%;margin-top:3px;color:#637482;font:11px/1.25 Inter,system-ui,sans-serif;white-space:normal;overflow-wrap:anywhere}
-.rr-dash-metric-value{place-items:center;min-width:0;color:#183755;font:700 14px/1.2 Georgia,"Times New Roman",serif;text-align:center}
+.rr-dash-metric-value{place-items:center;min-width:0;color:#183755;font:700 14px/1.2 "Tinos","Times New Roman",serif;text-align:center}
 .rr-dash-metric-value[data-state]{min-height:64px;padding:4px}
 .rr-dash-metric-bars{display:flex;align-items:center;justify-content:center;gap:3px;min-width:0;height:16px}
 .rr-dash-metric-bar{display:block;width:15px;height:6px;border-radius:2px;background:#87919b}
@@ -92,24 +93,24 @@
 .rr-dash-state-pill.rr-dash-state-green{border-color:#167447;background:linear-gradient(135deg,#6ce0a2,#19804e 60%,#0c5735);color:#fff}
 .rr-dash-state-pill.rr-dash-state-red{border-color:#a32926;background:linear-gradient(135deg,#ff8a7e,#c4312c 60%,#861c1a);color:#fff}
 .rr-dash-metric-value span{overflow:hidden;text-overflow:ellipsis}
-.rr-dash-win{display:flex;align-items:center;justify-content:center;gap:9px;min-width:0;padding:6px;color:#123567;text-align:center;white-space:nowrap}.rr-dash-win-percent{font:700 20px/1 Georgia,"Times New Roman",serif}.rr-dash-win-fair{padding-left:8px;border-left:1px solid #c99831;color:#566b7b;font:800 10px/1.2 Inter,system-ui,sans-serif;letter-spacing:.04em;text-transform:uppercase}
+.rr-dash-win{display:flex;align-items:center;justify-content:center;gap:9px;min-width:0;padding:6px;color:#123567;text-align:center;white-space:nowrap}.rr-dash-win-percent{font:700 20px/1 "Tinos","Times New Roman",serif}.rr-dash-win-fair{padding-left:8px;border-left:1px solid #c99831;color:#566b7b;font:800 10px/1.2 Inter,system-ui,sans-serif;letter-spacing:.04em;text-transform:uppercase}
 .rr-dash-no-data{padding:20px;color:#657888;font:14px/1.5 Inter,system-ui,sans-serif;text-align:center}
 .rr-dash-row-analysis,.rr-dash-mobile-analysis,.rr-dash-mobile-list-heading{display:none}
 .rr-dash-prescratch-note{margin:8px 0 12px;padding:9px 11px;border:1px solid #e3d4ad;border-radius:7px;background:#fff7e6;color:#5d5032;font:600 11px/1.45 Inter,system-ui,sans-serif}
 .rr-dash-pdf-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;padding-top:14px;border-top:1px solid #d3b675}
 .rr-dash-pdf-actions a[aria-disabled="true"]{opacity:.55;pointer-events:none}
 .rr-dash-empty{padding:24px;border:1px solid #c99831;border-radius:12px;background:#fffdf6}
-.rr-dash-empty h2{margin:0 0 8px;color:#123567;font:26px/1.2 Georgia,"Times New Roman",serif}
+.rr-dash-empty h2{margin:0 0 8px;color:#123567;font:26px/1.2 "Tinos","Times New Roman",serif}
 .rr-dash-empty p{margin:0 0 16px;color:#526b7b;font:15px/1.55 Inter,system-ui,sans-serif}
 .rr-dash-horse-dialog{width:min(94vw,720px);max-height:88vh;padding:0;border:2px solid #c99831;border-radius:14px;background:#fffdf6;color:#123567;box-shadow:0 20px 80px rgba(0,0,0,.28)}
 .rr-dash-horse-dialog::backdrop{background:rgba(4,21,42,.68)}
 .rr-dash-horse-dialog-inner{padding:clamp(18px,4vw,30px)}
 .rr-dash-dialog-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:18px;padding-bottom:14px;border-bottom:2px solid #c99831}
-.rr-dash-dialog-head h2{margin:0;color:#123567;font:clamp(24px,5vw,34px)/1.15 Georgia,"Times New Roman",serif}
+.rr-dash-dialog-head h2{margin:0;color:#123567;font:clamp(24px,5vw,34px)/1.15 "Tinos","Times New Roman",serif}
 .rr-dash-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .rr-dash-detail-value{padding:11px;border:1px solid #d2b574;border-radius:8px;background:#fffaf0}
 .rr-dash-detail-value dt{color:#657482;font:800 10px/1.3 Inter,system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase}
-.rr-dash-detail-value dd{margin:5px 0 0;color:#123567;font:700 16px/1.3 Georgia,"Times New Roman",serif}
+.rr-dash-detail-value dd{margin:5px 0 0;color:#123567;font:700 16px/1.3 "Tinos","Times New Roman",serif}
 .rr-dash-detail-notes{margin-top:14px;padding:14px;border-left:3px solid #c99831;background:#f7f0e2;color:#304e68;font:14px/1.55 Inter,system-ui,sans-serif;white-space:pre-wrap}
 /* Single responsive system for phone, tablet and desktop layouts. */
 .rr-dash-toolbar label{min-width:0}
@@ -210,7 +211,7 @@
  .rr-dash-horse-dialog::before{content:"";display:block;width:42px;height:5px;margin:10px auto 0;border-radius:3px;background:#c8ccd0}
  .rr-dash-horse-dialog-inner{padding:14px 17px max(22px,env(safe-area-inset-bottom))}
  .rr-dash-dialog-head{align-items:center;gap:12px;margin:0 0 12px;padding:0 0 13px;border-bottom:1px solid #ddd9d2}
- .rr-dash-dialog-head h2{font:700 21px/1.14 Georgia,"Times New Roman",serif;overflow-wrap:anywhere}
+ .rr-dash-dialog-head h2{font:700 21px/1.14 "Tinos","Times New Roman",serif;overflow-wrap:anywhere}
  .rr-dash-dialog-head .rr-member-button{min-height:44px;padding:8px 13px;font-size:10px}
  .rr-dash-detail-grid,.rr-dash-detail-notes{display:none}
  .rr-dash-mobile-analysis{display:block}
@@ -221,7 +222,7 @@
  .rr-dash-sheet-ml{color:#617588;font:800 12px/1.3 Inter,system-ui,sans-serif;letter-spacing:.02em}
  .rr-dash-sheet-market{display:flex;align-items:center;flex-direction:column;gap:5px;text-align:center}
  .rr-dash-sheet-kicker{color:#7f8e9b;font:800 8px/1.1 Inter,system-ui,sans-serif;letter-spacing:.05em}
- .rr-dash-sheet-win{color:#102d53;font:700 27px/1 Georgia,"Times New Roman",serif}
+ .rr-dash-sheet-win{color:#102d53;font:700 27px/1 "Tinos","Times New Roman",serif}
  .rr-dash-sheet-fair{color:#5d7182;font:800 11px/1.2 Inter,system-ui,sans-serif}
  .rr-dash-sheet-section{margin-top:17px;padding:0 1px}
  .rr-dash-sheet-section h3{margin:0 0 9px;color:#708194;font:800 10px/1.3 Inter,system-ui,sans-serif;letter-spacing:.13em}
@@ -268,4 +269,26 @@
  .rr-dash-metric-value::before{font-size:7.5px}
  .rr-dash-metric-bar{width:11px}
  .rr-dash-detail-grid{grid-template-columns:1fr}
+}
+
+/* Original approved racecards render numerics in Tinos Bold, not decorative Georgia. */
+.rr-dash-win-percent{font-family:"Tinos","Times New Roman",serif;font-weight:700;font-variant-numeric:lining-nums tabular-nums;letter-spacing:0}
+.rr-dash-win-fair{font-family:"Tinos","Times New Roman",serif;font-weight:700;letter-spacing:0;font-size:13px;font-variant-numeric:lining-nums tabular-nums}
+.rr-dash-horse-name{font-family:"Tinos","Times New Roman",serif;font-weight:700;letter-spacing:0}
+.rr-dash-race-number strong{font-family:"Tinos","Times New Roman",serif;font-variant-numeric:lining-nums}
+.rr-dash-rating-badge{display:flex;align-items:center;justify-content:center;width:100%;height:43px;min-width:0}
+.rr-dash-rating-badge img{display:block;width:100%;max-width:90px;height:100%;object-fit:contain}
+.rr-dash-sheet-factor-badge{display:inline-flex;align-items:center;justify-content:center;width:90px;height:33px;max-width:100%;flex-shrink:0}
+.rr-dash-sheet-factor-badge img{display:block;width:100%;height:100%;object-fit:contain}
+@media(max-width:800px){
+ .rr-dash-win-percent{font-size:24px;line-height:1}
+ .rr-dash-win-fair{font-size:12px;line-height:1.1}
+ .rr-dash-rating-badge{height:34px}
+ .rr-dash-rating-badge img{max-width:62px}
+ .rr-dash-sheet-factor-badge{width:78px;height:33px}
+}
+@media(max-width:370px){
+ .rr-dash-win-percent{font-size:22px}
+ .rr-dash-rating-badge{height:30px}
+ .rr-dash-rating-badge img{max-width:55px}
 }
