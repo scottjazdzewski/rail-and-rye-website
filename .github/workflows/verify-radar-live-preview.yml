@@ -7,6 +7,8 @@ on:
       - 'public/assets/longshot-radar.js'
       - 'public/assets/longshot-radar.css'
       - 'public/admin/longshot-radar.html'
+      - 'public/assets/target-list-dashboard.css'
+      - 'public/admin/target-list-preview.html'
       - 'src/longshot-radar.js'
       - 'src/index.js'
       - '.github/workflows/verify-radar-live-preview.yml'
@@ -18,6 +20,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 6
     steps:
+      - uses: actions/checkout@v4
       - name: Verify live public URL hands off to admin and shows no paid data
         shell: bash
         run: |
@@ -41,6 +44,8 @@ jobs:
           done
           curl -fsSL --max-time 20 "https://railandryeracing.com/assets/longshot-radar.js?rev=${GITHUB_SHA}" -o /tmp/radar.js
           grep -Fq 'rr-lr-inline-analysis' /tmp/radar.js
+          grep -Fq 'rr-lr-ml-inline' /tmp/radar.js
+          grep -Fq 'rr-lr-racebar-main' /tmp/radar.js
           grep -Fq '/api/admin/longshot-radar-editorial' /tmp/radar.js
           grep -Fq 'async function loadPublishedCard()' /tmp/radar.js
           grep -Fq 'retry?.addEventListener("click",initialize)' /tmp/radar.js
@@ -50,6 +55,15 @@ jobs:
           ! grep -Fq 'make("button","","Race details")' /tmp/radar.js
           curl -fsSL --max-time 20 "https://railandryeracing.com/assets/longshot-radar.css?rev=${GITHUB_SHA}" -o /tmp/radar.css
           grep -Fq 'Longshot Radar v4' /tmp/radar.css
+          grep -Fq 'SHARED DAILY RESEARCH DESIGN STANDARD V1' /tmp/radar.css
+          cmp public/assets/longshot-radar.js /tmp/radar.js
+          cmp public/assets/longshot-radar.css /tmp/radar.css
+          echo "PASS: live Cloudflare serves the exact current Radar V1 JS and CSS bytes"
+          curl -fsSL --max-time 20 "https://railandryeracing.com/assets/target-list-dashboard.css?rev=${GITHUB_SHA}" -o /tmp/target.css
+          grep -Fq 'Shared Daily Research Reader V1' /tmp/target.css
+          cmp public/assets/target-list-dashboard.css /tmp/target.css
+          echo "PASS: live Cloudflare serves matching Target List V1 reader styles"
+
           for path in /assets/approved/brand/rail-rye-ivory-logo.png /assets/approved/saddlecloths/1.png /assets/approved/saddlecloths/11.png /assets/approved/saddlecloths/20.png; do
             curl -fsSL --max-time 20 "https://railandryeracing.com$path" -o /dev/null
             echo "PASS real graphic $path"
