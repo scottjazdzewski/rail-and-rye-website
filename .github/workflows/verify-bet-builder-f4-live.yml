@@ -85,7 +85,7 @@ jobs:
             url.searchParams.set('track',card.track_name);
             url.searchParams.set('race',String(race.race_number));
             const reply=await readCertifiedF4Exotics(env,url);
-            assert.equal(reply.status,200,card.track_name+' Race '+race.race_number+': '+await reply.text());
+            if(reply.status!==200)throw Error(card.track_name+' Race '+race.race_number+': '+await reply.text());
             const data=(await reply.json()).f4;
             assert.equal(data.scratch_state,'SCRATCH_FINAL');
             assert.equal(data.status,'verified');
