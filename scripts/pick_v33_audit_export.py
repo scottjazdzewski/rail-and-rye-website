@@ -39,6 +39,82 @@ def seal(plaintext:bytes)->str:
     cipher=AESGCM(key).encrypt(nonce,zlib.compress(plaintext,9),AAD)
     return base64.b64encode(e_pub+salt+nonce+cipher).decode("ascii")
 
+def independently_optimize_v33(field_legs,unit_cents):
+    """A separate Python exact dynamic-programming implementation.
+
+    Does not call the site's JavaScript ticket selection logic.
+    """
+    import math
+    dp={1:(1.0,())}
+    for race in field_legs:
+        runners=sorted(race,key=lambda row:(-row[1],row[0]))
+        if abs(sum(r[1] for r in runners)-1)>1e-7:
+            raise ValueError("Independent source probability mass invalid")
+        mass=0
+        prefixes=[]
+        for k,(number,p) in enumerate(runners,1):
+            mass+=p
+            if mass+1e-12>=.5:
+                prefixes.append((k,mass,tuple(x[0] for x in runners[:k])))
+        nxt={}
+        for n,(prior_hit,prior_picks) in dp.items():
+            for k,covered,programs in prefixes:
+                combinations=n*k
+                h=prior_hit*covered
+                picks=prior_picks+(programs,)
+                prev=nxt.get(combinations)
+                if prev is None or h>prev[0]+1e-14 or (
+                    abs(h-prev[0])<=1e-14 and picks<prev[1]):
+                    nxt[combinations]=(h,picks)
+        dp=nxt
+        if not dp:raise ValueError("Independent optimizer has no feasible ticket")
+    best_mass=-1
+    frontier=[]
+    for combinations,(hit,picks) in sorted(dp.items()):
+        if hit>best_mass+1e-12:
+            frontier.append((combinations,hit,picks))
+            best_mass=hit
+    winner=None
+    bestscore=-float("inf")
+    for combinations,hit,picks in frontier:
+        cents=combinations*unit_cents
+        score=math.log(hit)-cents/100/30 if hit>0 else -float("inf")
+        if winner is None or score>bestscore or (
+            score==bestscore and cents<winner[0]*unit_cents):
+            winner=(combinations,hit,picks)
+            bestscore=score
+    return winner
+
+def independent_audit(concise):
+    fields={
+        (r["track"],r["race_number"]):
+          [(str(program),float(prob)) for program,prob in r["entries"]]
+        for r in concise["races"]
+    }
+    failures=[]
+    for row in concise["tickets"]:
+        name=row["track"]+" "+row["name"]+" "+str(row["start_race"])
+        try:
+            legs=[fields[(row["track"],n)] for n in range(row["start_race"],row["end_race"]+1)]
+            combos,hit,picks=independently_optimize_v33(legs,row["base_cents"])
+            actual=tuple(tuple(leg) for leg in row["picks"])
+            if combos!=row["combinations"] or combos*row["base_cents"]!=row["cost_cents"]:
+                failures.append(name+": INDEPENDENT_COMBINATION_MISMATCH")
+            if abs(hit-row["exact_hit_probability"])>1e-10:
+                failures.append(name+": INDEPENDENT_HIT_PROBABILITY_MISMATCH")
+            if actual!=picks:
+                failures.append(name+": INDEPENDENT_SELECTION_MISMATCH")
+            for i,(field,selected) in enumerate(zip(legs,row["picks"])):
+                mapped=dict(field)
+                mass=sum(mapped[x] for x in selected)
+                if mass+1e-12<.5:
+                    failures.append(name+": BELOW_FLOOR")
+                if abs(mass-row["leg_coverage"][i])>1e-10:
+                    failures.append(name+": COVERAGE_MISMATCH")
+        except Exception:
+            failures.append(name+": INDEPENDENT_VERIFICATION_ERROR")
+    return failures
+
 def main():
     import boto3
     account=os.environ["TRI_CLOUDFLARE_ACCOUNT_ID"].strip()
@@ -116,6 +192,13 @@ def main():
         "tickets":tickets,
         "stored_editions":report["authorized_editions"]
     }
+    independent_errors=independent_audit(concise)
+    concise["independent_verification_errors"]=independent_errors
+    print("RR_PRIVATE_V33_INDEPENDENT_OPTIMALITY="+json.dumps({
+        "total_sequences":len(tickets),
+        "passed":len(tickets)-len(set(x.split(":")[0] for x in independent_errors)),
+        "error_count":len(independent_errors)
+    },separators=(",",":")))
     compact_blob=json.dumps(concise,separators=(",",":"),ensure_ascii=True).encode()
     print("RR_PRIVATE_V33_COMPACT_SEALED="+seal(compact_blob))
     short={
@@ -147,6 +230,8 @@ def main():
         "source_row_total":total["source_runner_total"],
         "stored_authorized":total["stored_authorized"]
     },separators=(",",":")))
+    if independent_errors:
+        raise RuntimeError("Independent Python optimizer disagrees with private ticket math; see encrypted audit.")
     if total["audited_sequences"]!=total["expected_sequences"] or total["math_discrepancies"]:
         raise RuntimeError("Private ticket audit found incomplete data or discrepancies. See encrypted report.")
 if __name__=="__main__":
