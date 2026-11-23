@@ -65,7 +65,10 @@ function makeSequenceV32(spec,races,stage){
  const legs=Array.from({length:spec.end_race-spec.start_race+1},(_,i)=>
   races.get(spec.start_race+i));
  if(legs.some(x=>!x))return null;
- const chosen=chooseV32(legs,spec.unit_cents);
+ // V3.2 production authority fixes the cost preference at 15 USD for every stage.
+ const chosen=chooseV32(legs,spec.unit_cents,{costScaleDollars:PICK_V32_COST_SCALE_DOLLARS});
+ if(chosen.engine!==PICK_V32_ENGINE||chosen.soft_cost_scale_dollars!==15)
+  throw Error("V3.2 cost scale or engine mismatch: fail closed.");
  const picks=chosen.picks.map((programs,i)=>({race_number:spec.start_race+i,programs}));
  const fields=legs.map(l=>({race_number:l.race_number,programs:l.entries.map(e=>e.program_number)}));
  const probs=Object.fromEntries(legs.map(l=>
@@ -109,6 +112,27 @@ function buildTrackV32(card,wrapped){
   review_only:true,source_type:"PRIVATE_R2_TRI_V32_REQUIRES_SEPARATE_RELEASE_VERIFICATION",
   source_receipt:null,optimizer_basis:PICK_V32_ENGINE,sequences},
   updated_at:wrapped?.uploaded_at||null,review_only:true};
+}
+
+/**
+ * Private, administrator-only V3.2 mathematical preview from the actual
+ * scratch-adjusted field. No approval, release receipt, new scores or true
+ * postscratch factor recalculation is implied by a normalized PWIN sum.
+ * Customer publication continues to require buildV32PostScratchReviewed().
+ */
+export function buildV32ScratchFieldPreview(wrapped){
+ const card=wrapped?.card||wrapped;
+ if(!card||card.projection_status!=="scratch_final"||
+    !["verified_prescratch","verified_scratch_final"].includes(card.factor_basis))
+  return null;
+ const view=buildTrackV32(card,wrapped);
+ if(!view)return null;
+ return {...view,review_only:true,card:{
+   ...view.card,review_only:true,formula_version:PICK_V32_ENGINE,
+   source_type:"PRIVATE_R2_V32_CURRENT_FIELD_MATH_PREVIEW_NOT_PUBLISHED",
+   score_verification_status:"CURRENT_FIELD_COMPLETE_SCORING_AND_MANIFEST_PENDING",
+   model_factor_basis:card.factor_basis
+ }};
 }
 
 export function buildV32PostScratchReviewed({before,after,manifest,preHash,postHash}){
