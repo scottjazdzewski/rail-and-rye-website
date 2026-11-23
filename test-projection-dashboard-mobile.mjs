@@ -44,6 +44,12 @@ class Element {
 const ids=["rr-dash-status","rr-dash-app","rr-dash-login","rr-dash-empty","rr-dash-date","rr-dash-track","rr-dash-race-time","rr-dash-races","rr-dash-race","rr-dash-horses","rr-dash-search","rr-dash-open-pdf","rr-dash-download-pdf","rr-dash-update","rr-dash-horse-dialog","rr-dash-horse-title","rr-dash-horse-detail","rr-dash-horse-close","rr-dash-global-timeline","rr-dash-all-races","rr-dash-timeline-count","rr-dash-previous-race","rr-dash-next-race","rr-dash-mode-track","rr-dash-mode-all"];
 const els=new Map(ids.map(id=>[id,new Element(id.includes("date")||id==="rr-dash-track"||id.includes("race-time")||id==="rr-dash-all-races"||id.includes("sort")?"select":"div")]));
 const fixture={cards:[{race_date:"2026-11-22",track:"Del Mar",product_id:null,card:{track_name:"Del Mar",races:[{race_number:6,post_time_et:"6:00 PM",conditions:"Claiming $8,000",purse:"$20,000",pace:"Moderate",surface:"Dirt",distance:"5 1/2 furlongs",scratch_count:1,scratches:[{program_number:"3",horse_name:"Scratched Runner"}],entries:[{program_number:"5",horse_name:"Doo Wop Don",morning_line:"5-2",win_probability:16.6,fair_odds:"5/1",trainer:"",jockey:"",metrics:[]},{program_number:"2",horse_name:"Third Horizon",morning_line:"9-2",win_probability:20.0,fair_odds:"4/1",trainer:"",jockey:"",metrics:[]},{program_number:"12",horse_name:"Barrister Proof",morning_line:"12-1",win_probability:27.5,fair_odds:"5/2",trainer:"Brad Cox",jockey:"Jose Ortiz",metrics:[{label:"Speed",value:"green"},{label:"Form",value:"gray"},{label:"Class",value:"red"},{label:"Pace Fit",value:"green"},{label:"Surface / Distance",value:"gray"}]}]}]}}]};
+// Preserve PDF-style chips for high numbers and coupled-entry suffixes.
+fixture.cards[0].card.races[0].scratch_count=3;
+fixture.cards[0].card.races[0].scratches.push(
+ {program_number:"13",horse_name:"High Number Scratch"},
+ {program_number:"1A",horse_name:"Entry Scratch"}
+);
 // Deliberately out-of-number post order: Del Mar Race 6 is before Race 4.
 fixture.cards[0].card.races.push({race_number:4,post_time_et:"8:05 PM ET",conditions:"Belmont S. (G1) Presented by NYRA Bets",purse:"$21,000",pace:"Weak",surface:"Dirt",distance:"6 F",entries:[{program_number:"1",horse_name:"Later Del Mar Runner",win_probability:29,win_probability_exact:29,morning_line:"3-1",fair_odds:"2.45/1",metrics:[]}]});
 fixture.cards.push({race_date:"2026-11-22",track:"Zia Park",product_id:null,card:{track_name:"Zia Park",races:[{race_number:2,post_time_et:"4:30 PM ET",conditions:"Allowance",purse:"$17,000",pace:"Moderate",surface:"Dirt",distance:"6 F",entries:[{program_number:"3",horse_name:"Earlier Zia Runner",win_probability:39.7,win_probability_exact:39.7,morning_line:"3-1",fair_odds:"1.52/1",metrics:[]}]}]}});
@@ -64,6 +70,20 @@ assert.match(race.textContent,/SCRATCHES/);
 const scratchChip=matchClass(race,"rr-dash-scratch-chip");
 assert.ok(scratchChip&&scratchChip.src.endsWith("/3.png"),"Scratch uses official #3 saddlecloth chip");
 assert.match(race.textContent,/Scratched Runner/,"Show scratched horse name");
+const pdfBanner=matchClass(race,"rr-dash-race-banner");
+const bannerScratches=matchClass(pdfBanner,"rr-dash-scratch-strip");
+assert.ok(bannerScratches,"PDF scratch count and chips must appear INSIDE the race header");
+assert.equal(allClass(race,"rr-dash-scratch-strip").length,1,"No detached second scratch block beneath the race header");
+assert.match(bannerScratches.textContent,/3 SCRATCHES/,"Show the verified scratch count in the header");
+assert.equal(allClass(bannerScratches,"rr-dash-scratch-item").length,3,"List every verified scratched runner");
+const scratchedChips=allClass(bannerScratches,"rr-dash-scratch-chip");
+assert.equal(scratchedChips.length,3,"Use authentic saddlecloth PNGs for all scratched horses");
+assert.ok(scratchedChips.some(el=>el.src.endsWith("/13.png")),"High-numbered scratches keep a same-size approved #13 chip");
+assert.ok(scratchedChips.some(el=>el.src.endsWith("/1.png")),"Coupled entries use the approved base-number asset");
+assert.equal(allClass(bannerScratches,"rr-dash-scratch-suffix")[0].textContent,"A","Keep coupled-entry suffix visible");
+assert.match(bannerScratches.textContent,/High Number Scratch|Entry Scratch/,"All scratch names must remain legible");
+assert.match(css,/PDF-matched scratches:/,"Maintain dedicated PDF-style scratch header layout");
+
 const names=allClass(horses,"rr-dash-horse-name").map(el=>el.textContent);
 assert.deepEqual(names,["Barrister Proof","Doo Wop Don","Third Horizon"],"Lead must have greatest TRI PWIN, while the remaining horses retain scorer order");
 assert.equal(allClass(horses,"rr-dash-horse-ml")[0].textContent,"M/L 12-1");
