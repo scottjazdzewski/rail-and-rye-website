@@ -29,7 +29,7 @@
 .rr-target-race-facts{margin:0;padding:6px 12px 4px;color:#52697d;font-size:11px;line-height:1.3;overflow-wrap:anywhere}
 .rr-target-column-head,.rr-target-horse-row{display:grid;grid-template-columns:105px minmax(0,1fr) 310px;align-items:center;gap:8px;padding-left:12px;padding-right:12px}
 .rr-target-column-head{padding-top:7px;padding-bottom:6px;border-bottom:1px solid #d0d9df;color:#6b7885;font:850 10px/1.2 Inter,Arial,system-ui,sans-serif;letter-spacing:.04em}
-.rr-target-column-metrics,.rr-target-horse-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:center;gap:7px;text-align:center;min-width:0}
+.rr-target-column-metrics,.rr-target-horse-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:center;gap:7px;text-align:center;min-width:0}
 .rr-target-horse-row{position:relative;padding-top:8px;padding-bottom:8px;min-height:52px;border-bottom:1px solid #e0e6ea}
 .rr-target-horse-role{font:850 10px/1.25 Inter,Arial,system-ui,sans-serif;color:#51687c;letter-spacing:.035em}
 .rr-target-horse-identity{display:flex;align-items:center;gap:8px;min-width:0}
@@ -208,7 +208,7 @@ letter-spacing:.01em;
 .rr-target-page .rr-target-race-facts{margin:0;padding:4px 10px 3px;color:#5d7182;font:600 10px/1.3 Inter,Arial,system-ui,sans-serif}
 .rr-target-page .rr-target-column-head,.rr-target-page .rr-target-horse-row{display:grid;grid-template-columns:minmax(0,1fr) 290px;align-items:center;gap:8px;padding-left:10px;padding-right:10px}
 .rr-target-page .rr-target-column-head{min-height:22px;padding-top:4px;padding-bottom:3px;border-bottom:1px solid #e2e7eb;background:#f6f8fa;color:#6b7e8e;font:800 9px/1.2 Inter,Arial,system-ui,sans-serif;letter-spacing:.035em}
-.rr-target-page .rr-target-column-metrics,.rr-target-page .rr-target-horse-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:center;gap:6px;text-align:center;min-width:0}
+.rr-target-page .rr-target-column-metrics,.rr-target-page .rr-target-horse-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:center;gap:6px;text-align:center;min-width:0}
 .rr-target-page .rr-target-horse-row{
 position:relative;
 width:100%;
@@ -253,11 +253,11 @@ color:var(--rrh-navy);
 overflow-wrap:anywhere;
 }
 .rr-target-page .rr-target-ml-inline{
-display:none;
+display:block;
 color:#66788a;
 }
 .rr-target-page .rr-target-stat{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-width:0}
-.rr-target-page .rr-target-stat-label{display:none}
+.rr-target-page .rr-target-stat-label{display:block}
 .rr-target-page .rr-target-stat-value{color:var(--rrh-navy);font:800 13px/1.2 Inter,Arial,system-ui,sans-serif;font-variant-numeric:tabular-nums;white-space:nowrap}
 
 
@@ -550,9 +550,11 @@ padding:12px 11px 14px;
   font:500 13px/1.4 Inter,Arial,system-ui,sans-serif;
 }
 .rr-target-page .rr-target-toolbar{
-  margin:0 0 5px;
-  padding:8px;
-  gap:7px 9px;
+  display:grid;grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);
+  align-items:stretch;width:100%;max-width:760px;
+  margin:0 0 5px;padding:8px;gap:8px;
+  border:1px solid #c5cdd4;border-top:2px solid var(--rrh-gold);
+  border-radius:7px;background:#fff;
 }
 .rr-target-page .rr-target-toolbar label{
   min-width:0;
@@ -563,9 +565,9 @@ padding:12px 11px 14px;
 .rr-target-page .rr-target-toolbar label:first-child,
 .rr-target-page .rr-target-toolbar label:nth-child(2){flex:1 1 145px}
 .rr-target-page .rr-target-toolbar select{
-  width:100%;
-  min-height:42px;
-  padding:8px 9px;
+  width:100%;min-height:42px;padding:7px 8px;
+  border:1px solid #b99b68;border-radius:6px;
+  background:#fff;color:#102d53;
   font:700 15px/1.2 Inter,Arial,system-ui,sans-serif;
 }
 .rr-target-page .rr-target-freshness{
@@ -584,7 +586,7 @@ padding:12px 11px 14px;
   font:650 12px/1.3 Inter,Arial,system-ui,sans-serif;
 }
 .rr-target-page .rr-target-list{gap:8px}
-.rr-target-page .rr-target-card{border-radius:7px}
+.rr-target-page .rr-target-card{border-radius:7px;border-color:#b7c3ca}
 .rr-target-page .rr-target-racebar{
 gap:3px;
 }
@@ -654,6 +656,7 @@ gap:3px;
   }
 }
 @media(max-width:359px){
+  .rr-target-page .rr-target-toolbar{grid-template-columns:minmax(0,1fr)}
   .rr-target-page .rr-target-titlebar h1{font-size:27px}
   .rr-target-page .rr-target-horse-row{
     grid-template-columns:minmax(0,1fr) 113px;
