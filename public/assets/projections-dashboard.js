@@ -347,13 +347,13 @@ function cardHeader(card){
  };
  const filename=originalTrackLogos[name];
  if(filename){
-  const plaque=makeNode("div","rrp-track-head__plaque"),image=document.createElement("img");
+  const venue=makeNode("div","rrp-track-head__venue-mark"),image=document.createElement("img");
   image.className="rrp-track-head__logo";
   image.src="/assets/approved/track-logos/"+filename;
   image.alt=name+" official racetrack logo";
   image.loading="eager";image.decoding="async";
-  image.addEventListener("error",()=>{plaque.replaceChildren();wrapper.className+=" rrp-track-head--no-logo";});
-  plaque.append(image);wrapper.append(plaque);
+  image.addEventListener("error",()=>{venue.replaceChildren();wrapper.className+=" rrp-track-head--no-logo";});
+  venue.append(image);wrapper.append(venue);
  }else wrapper.className+=" rrp-track-head--no-logo";
  return wrapper;
 }

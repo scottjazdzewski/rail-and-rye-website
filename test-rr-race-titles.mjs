@@ -97,3 +97,6 @@ assert.match(css,/\.rrp-race-head__number\{[\s\S]*?background:#f4f0e6/,
 assert.match(css,/\.rrp-race-head__scratch-bar\{[\s\S]*?justify-content:center/,
  "Centered scratch row is part of the canonical layout");
 console.log("PASS: Mahoning Distaff sponsor removed, authentic venue logos restored, balanced full names and transparent saddlecloths fixed");
+
+assert.match(trackCss,/\.rrp-track-head__venue-mark\{/,"The official venue mark integrates into one editorial masthead");
+assert.doesNotMatch(trackCss,/__plaque/,"The former separate venue plaque must be entirely removed");

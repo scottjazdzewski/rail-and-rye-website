@@ -185,7 +185,7 @@ for(const html of [adminHtml,memberHtml]){
  assert.match(html,/<h1 class="rr-dash-visually-hidden">Rail &amp; Rye Projections<\/h1>/,
   "Keep an accessible page title without visible ornamental title space");
  assert.doesNotMatch(html,/rr-dash-search-field|rr-dash-search|Find a horse/,"No horse finder appears on either page");
- assert.match(html,/rr-projections-track-identity\.css\?v=1/,"Load the separate clean track identity stylesheet");
+ assert.match(html,/rr-projections-track-identity\.css\?v=2/,"Load the separate clean track identity stylesheet");
  assert.match(html,/projections-dashboard\.css\?v=(?:2[7-9]|[3-9]\d)/,
   "Current improved typography style must be loaded");
  assert.match(html,/projections-dashboard\.js\?v=\d+/,
@@ -376,3 +376,9 @@ console.log("PASS: private live-F4 percentages and gross break-even payout UI ca
 
 assert.match(trackCss,/filter:none;mix-blend-mode:normal/,"Track logos have no artificial blend or contrast filters");
 assert.doesNotMatch(trackCss,/mix-blend-mode:multiply|filter:contrast\(1\.13\)/,"Remove the ugly original contrast treatment");
+
+assert.match(trackCss,/background:#fff;/,"The entire track masthead should be white, not a white tile floating on ivory");
+assert.match(trackCss,/\.rrp-track-head__venue-mark\{/,"Use an unframed mark embedded in the whole masthead");
+assert.match(trackCss,/box-shadow:none;overflow:visible/,"No advertising-style plaque or boxed logo shadow");
+assert.doesNotMatch(trackCss,/__plaque|\.rrp-track-head__venue-mark\{[^}]*border:1px/,"Do not revive the old independent logo tile");
+assert.match(js,/rrp-track-head__venue-mark/,"The new masthead markup must use the integrated mark");

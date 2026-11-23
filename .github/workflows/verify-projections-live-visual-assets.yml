@@ -54,7 +54,7 @@ jobs:
           grep -Fq 'approvedRaceSaddle(race.race_number)' /tmp/projections-live.js
           grep -Fq 'editorialRacePresentation(race)' /tmp/projections-live.js
           grep -Fq 'rrp-track-head__logo' /tmp/projections-live.js
-          grep -Fq 'rrp-track-head__plaque' /tmp/rr-track-identity-live.css
+          grep -Fq 'rrp-track-head__venue-mark' /tmp/rr-track-identity-live.css
           grep -Fq 'originalTrackLogos={' /tmp/projections-live.js
           ! grep -Fq 'rr-dash-track-mark-letters' /tmp/projections-live.js
           grep -Fq 'text-wrap:balance' /tmp/rr-header-live.css
@@ -80,4 +80,4 @@ jobs:
             test -s "/tmp/${logo}.webp"
             echo "LIVE_APPROVED_TRACK_LOGO ${logo} PASS"
           done
-          echo 'LIVE_PROJECTIONS_READY: compact authentic venue plaques, no horse finder, full stakes and scratch badges are deployed.'
+          echo 'LIVE_PROJECTIONS_READY: seamless white editorial track masthead without advertising plaque, no horse finder, original marks and scratch badges deployed.'

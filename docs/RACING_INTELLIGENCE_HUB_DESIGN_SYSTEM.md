@@ -40,7 +40,7 @@ The single source of truth for **horse saddle chips**, authentic saddlecloth-bac
 
 - Horse selections everywhere use `/assets/approved/saddlecloths/{1..20}.png` and preserve legitimate coupled-entry suffixes; no recreated chip colors.
 - Race navigation tabs and the header race-number marker use the **exact approved saddlecloth image corresponding to the race number** (#1–20), preserving color/number art. Only the selected tab adds an outside gold ring; remove the stacked RACE caption and thick fake CSS chip borders.
-- Keep the approved Rail & Rye horseshoe and track name/date visible, and **restore the existing authentic track-logo artwork** from `/assets/approved/track-logos/*.webp` (where available). Show it uncropped in a small consistent white plaque without filters or blend-mode artifacts; do not use the interim invented `FL`/`MV`/`PRX` racing monograms. Where no approved logo exists, show the full track name and Rail & Rye horseshoe rather than inventing one.
+- Keep the approved Rail & Rye horseshoe and track name/date visible, and **restore the existing authentic track-logo artwork** from `/assets/approved/track-logos/*.webp` (where available). Show it uncropped inside the seamless white track masthead with no separate tile, border, shadow, filters or blend artifacts; do not use the interim invented `FL`/`MV`/`PRX` racing monograms. Where no approved logo exists, show the full track name and Rail & Rye horseshoe rather than inventing one.
 - The Bet Builder is part of Projections, not a separate product or purchase. Its model-only exacta/trifecta UI never displays made-up probability/payoff values. Exact F4 joint probabilities require a verified server-side production receipt and private, entitlement-checked delivery.
 - The user consults any actual tote prices independently; Rail & Rye does not connect to tote services or accept wagers.
 
@@ -48,8 +48,8 @@ The single source of truth for **horse saddle chips**, authentic saddlecloth-bac
 
 - Remove the redundant **Find a horse** input entirely from Projections and its event handlers, styles, and tests. Keep date and track selectors plus race saddlecloths; preserve All Tracks chronological mode.
 - Track identity has **one CSS owner**, `public/assets/rr-projections-track-identity.css`. Previous logo styles were removed from general and shared CSS rather than overlaid.
-- Preserve five original approved venue WebP logos. Their native source files are low-resolution; present them uncropped at or below source size on consistent white plaques with zero contrast filtering, blending, opacity adjustment or stretching. Never fabricate a logo or use invented venue initials.
-- Full track name, date and approved Rail & Rye horseshoe remain central; an unknown logo falls back to that identity alone. This edit changes no TRI/F4 data.
+- Preserve five original approved venue WebP logos. Their native source files are low-resolution; present them uncropped at or below source size, integrated on one continuous white editorial masthead (never a separate bordered white box) with zero contrast filtering, blending, opacity adjustment or stretching. Never fabricate a logo or use invented venue initials.
+- The full track masthead is a single white editorial strip with a thin gold divider; no independent advertising-style logo plaque may return. Full track name, date and approved Rail & Rye horseshoe remain central; an unknown logo falls back to that identity alone. This edit changes no TRI/F4 data.
 
 ## Projections three-row race header — approved November 23
 - **One dedicated stylesheet:** `public/assets/rr-projections-race-header.css` controls the Projections race header; it is loaded by both `/admin/projections-preview/` and `/membership/dashboard/` after the shared chip stylesheet.

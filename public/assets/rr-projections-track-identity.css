@@ -1,28 +1,40 @@
-/* RAIL & RYE PROJECTIONS: TRACK IDENTITY V1 — exclusive style owner.
-   Authentic source marks, crisp primary text, no logo filters or blend effects. */
+/* RAIL & RYE PROJECTIONS / TRACK MASTHEAD V2
+   One seamless editorial masthead. The original official track image remains
+   intact, but no longer sits inside its own advertising-style plaque.
+   This file is the only CSS authority for the track masthead. */
 .rrp-track-head{
- box-sizing:border-box;display:grid;grid-template-columns:52px minmax(0,1fr) 120px;
- align-items:center;gap:12px;min-width:0;margin:0;padding:8px 1px 12px;
- color:#132f53;border-bottom:1px solid #caa55b;
+ box-sizing:border-box;display:grid;grid-template-columns:50px minmax(0,1fr) 112px;
+ align-items:center;gap:14px;min-width:0;margin:4px 0 5px;padding:12px 14px;
+ color:#102e57;background:#fff;
+ border-top:1px solid #d5b779;border-bottom:3px solid #c99831;
+ border-radius:10px 10px 0 0;
 }
 .rrp-track-head *{box-sizing:border-box}
-.rrp-track-head--no-logo{grid-template-columns:52px minmax(0,1fr)}
-.rrp-track-head__brand{display:block;width:52px;height:52px;max-width:100%;object-fit:contain;object-position:center}
-.rrp-track-head__identity{display:grid;gap:5px;align-content:center;min-width:0}
+.rrp-track-head--no-logo{grid-template-columns:50px minmax(0,1fr)}
+.rrp-track-head__brand{
+ display:block;width:50px;height:50px;max-width:100%;
+ object-fit:contain;object-position:center;
+}
+.rrp-track-head__identity{
+ display:flex;flex-direction:column;gap:4px;justify-content:center;
+ min-width:0;
+}
 .rrp-track-head__name{
- margin:0;max-width:100%;color:#102e57;
- font:800 clamp(21px,2.7vw,34px)/1.08 Inter,Arial,system-ui,sans-serif;
- letter-spacing:-.025em;text-transform:uppercase;overflow-wrap:normal;word-break:normal;text-wrap:balance;
+ margin:0;color:#102e57;
+ font:800 clamp(21px,2.7vw,33px)/1.1 Inter,Arial,system-ui,sans-serif;
+ letter-spacing:-.026em;text-transform:uppercase;
+ text-wrap:balance;overflow-wrap:normal;word-break:normal;
 }
 .rrp-track-head__date{
- margin:0;color:#395470;font:750 clamp(11px,1.2vw,14px)/1.25 Inter,Arial,system-ui,sans-serif;
- letter-spacing:.04em;text-transform:uppercase;
+ margin:0;color:#58718c;
+ font:750 clamp(11px,1.2vw,14px)/1.25 Inter,Arial,system-ui,sans-serif;
+ letter-spacing:.025em;text-transform:uppercase;
 }
-.rrp-track-head__plaque{
- display:grid;place-items:center;justify-self:end;
- width:120px;height:66px;min-width:0;margin:0;padding:6px 7px;
- border:1px solid #ceb888;border-radius:9px;background:#fff;
- box-shadow:0 1px 1px rgba(16,45,83,.08);overflow:hidden;
+.rrp-track-head__venue-mark{
+ display:grid;place-items:center;justify-self:end;align-self:center;
+ width:112px;max-width:100%;min-width:0;height:54px;
+ margin:0;padding:0;border:0;border-radius:0;
+ background:transparent;box-shadow:none;overflow:visible;
 }
 .rrp-track-head__logo{
  display:block;width:auto;height:auto;max-width:100%;max-height:100%;
@@ -30,19 +42,25 @@
  image-rendering:auto;opacity:1;filter:none;mix-blend-mode:normal;
 }
 @media(max-width:800px){
- .rrp-track-head{grid-template-columns:43px minmax(0,1fr) 98px;gap:10px;padding:6px 1px 10px}
- .rrp-track-head--no-logo{grid-template-columns:43px minmax(0,1fr)}
- .rrp-track-head__brand{width:43px;height:43px}
+ .rrp-track-head{
+  grid-template-columns:40px minmax(0,1fr) 86px;
+  gap:9px;margin:3px 0 4px;padding:10px 10px;
+ }
+ .rrp-track-head--no-logo{grid-template-columns:40px minmax(0,1fr)}
+ .rrp-track-head__brand{width:40px;height:40px}
  .rrp-track-head__identity{gap:3px}
- .rrp-track-head__name{font-size:clamp(18px,4.5vw,23px);line-height:1.12}
- .rrp-track-head__date{font-size:11px;line-height:1.2;letter-spacing:.025em}
- .rrp-track-head__plaque{width:98px;height:56px;padding:5px 6px;border-radius:7px}
+ .rrp-track-head__name{font-size:clamp(18px,4.6vw,23px);line-height:1.13}
+ .rrp-track-head__date{font-size:11px;line-height:1.23;letter-spacing:.005em}
+ .rrp-track-head__venue-mark{width:86px;height:48px}
 }
 @media(max-width:390px){
- .rrp-track-head{grid-template-columns:38px minmax(0,1fr) 82px;gap:7px}
- .rrp-track-head--no-logo{grid-template-columns:38px minmax(0,1fr)}
- .rrp-track-head__brand{width:38px;height:38px}
- .rrp-track-head__name{font-size:clamp(16px,4.3vw,19px)}
- .rrp-track-head__date{font-size:10px;letter-spacing:.012em}
- .rrp-track-head__plaque{width:82px;height:49px;padding:4px;border-radius:6px}
+ .rrp-track-head{
+  grid-template-columns:35px minmax(0,1fr) 70px;
+  gap:7px;padding:9px 8px;
+ }
+ .rrp-track-head--no-logo{grid-template-columns:35px minmax(0,1fr)}
+ .rrp-track-head__brand{width:35px;height:35px}
+ .rrp-track-head__name{font-size:clamp(16px,4.4vw,19px)}
+ .rrp-track-head__date{font-size:10px;letter-spacing:0}
+ .rrp-track-head__venue-mark{width:70px;height:43px}
 }
