@@ -234,6 +234,23 @@
   });
   return modes;
  }
+ // Preserve internal receipt metadata while showing clean customer-facing product language.
+ function displayTicketName(ticket){
+  const raw=String(ticket?.title||"").trim();
+  return /\b(interim|focused)\b|model[ -]coverage/i.test(raw)?"Rail & Rye Ticket":(raw||"Rail & Rye Ticket");
+ }
+ function displayTicketNote(raw){
+  if(typeof raw!=="string"||!raw.trim())return "";
+  return raw
+   .replace(/^interim focused ticket:\s*/i,"Ticket comparison: ")
+   .replace(/^focused interim construction\.\s*/i,"Ticket construction. ")
+   .replace(/^interim runner selections; updated model probabilities and finishing order pending\.?/i,
+    "Selections reflect reported scratches. Hit probability appears only with a matching TRI score.")
+   .replace(/\s*No prediction of return; prescratch model review\.?/gi,"")
+   .replace(/\binterim\b/gi,"")
+   .replace(/\bprescratch model review\b/gi,"")
+   .replace(/\s{2,}/g," ").trim();
+ }
  function renderActive(){
   if(!activeSeq)return;
   E.current.replaceChildren();
@@ -245,10 +262,6 @@
   left.append(node("h2","",activeSeq.name+" · Races "+activeSeq.start_race+"–"+activeSeq.end_race));
   head.append(left,state(activeSeq.play_status));
   box.append(head,modeControls());
-  if(card.source_receipt?.reference?.includes("RIDER_CHANGES_PENDING")){
-   box.append(node("p","rr-pt-interim-model-label",
-    "INTERIM MODEL · Updated scratch field. Changed-jockey scoring still pending verification."));
-  }
   if(activeMode==="builder")box.append(builder());
   else{
    const chosen=selectedTicket();
@@ -256,7 +269,7 @@
     activeTier=i;resetBuilder();renderActive();
    }));
    const meta=node("div","rr-pt-wager-meta");
-   meta.append(node("span","rr-pt-wager-name",chosen.title));
+   meta.append(node("span","rr-pt-wager-name",displayTicketName(chosen)));
    box.append(meta,ticketRows(chosen),stats(chosen));
    if(activeSeq.play_status==="PASS")box.append(node("p","rr-pt-pass-note",
     "PASS — not recommended. Best available ticket shown for reference."));
@@ -277,15 +290,17 @@
   info.append(state(activeSeq.play_status),node("span","",c.track+" · "+toDate(c.date)));
   E.dialogBody.append(info);
   // A sequence-wide legacy percentage must never masquerade as a tier-specific hit rate.
-  if(activeSeq.recommendation)E.dialogBody.append(node("p","rr-pt-analysis-reason",activeSeq.recommendation));
+  const publicRecommendation=displayTicketNote(activeSeq.recommendation);
+  if(publicRecommendation)E.dialogBody.append(node("p","rr-pt-analysis-reason",publicRecommendation));
   const stage=node("div","rr-pt-analysis-stage");
   function show(i){
    stage.replaceChildren();
    stage.append(tierPicker(activeSeq,i,show));
-   stage.append(node("h3","rr-pt-analysis-tier",activeSeq.tickets[i].title));
+   stage.append(node("h3","rr-pt-analysis-tier",displayTicketName(activeSeq.tickets[i])));
    if(hitRate(activeSeq.tickets[i])!=="—")stage.append(node("p","rr-pt-analysis-rate","Projected hit chance: "+hitRate(activeSeq.tickets[i])));
    stage.append(ticketRows(activeSeq.tickets[i]),stats(activeSeq.tickets[i]));
-   if(activeSeq.tickets[i].notes)stage.append(node("p","rr-pt-analysis-notes",activeSeq.tickets[i].notes));
+   const publicNotes=displayTicketNote(activeSeq.tickets[i].notes);
+   if(publicNotes)stage.append(node("p","rr-pt-analysis-notes",publicNotes));
   }
   show(activeTier);E.dialogBody.append(stage);
   E.dialog.showModal();
