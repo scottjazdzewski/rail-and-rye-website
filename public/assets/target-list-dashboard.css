@@ -693,92 +693,73 @@
   .rr-target-page .rr-target-toolbar label:nth-child(2){flex:1 1 125px}
 }
 
-
-/* RAIL & RYE DAILY RESEARCH V9 — identical race-header hierarchy to
-   Longshot Radar. The navy bar includes a 2nd line for FULL race facts,
-   while the title, race number, time retain Radar's readable font sizes. */
+/* Target List — canonical Longshot Radar race header (source-aligned).
+   Single final header authority replaces obsolete V9/V10 flex patches.
+   The selectors and measurements below mirror longshot-radar.css. */
 .rr-target-page .rr-target-racebar{
-  display:flex;
-  flex-direction:column;
-  align-items:stretch;
-  gap:4px;
-  min-height:0;
-  padding:9px 11px 10px;
+  display:block;min-height:0;margin:0;padding:9px 12px 10px;
+  background:#102d53;border-top:3px solid #c99831;color:#fff;
 }
-.rr-target-page .rr-target-racebar .rr-target-racebar-main{
-  display:flex;
-  flex-wrap:wrap;
-  align-items:baseline;
-  justify-content:flex-start;
-  width:100%;
-  min-width:0;
-  gap:4px 10px;
+.rr-target-page .rr-target-racebar-main{
+  display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 12px;
 }
-.rr-target-page .rr-target-racebar .rr-target-racebar-main h3{
-  margin:0;
-  font:800 17px/1.23 Inter,Arial,system-ui,sans-serif;
-  letter-spacing:.01em;
+.rr-target-page .rr-target-racebar h3{
   text-transform:uppercase;
-  color:#fff;
-  overflow-wrap:break-word;
+  margin:0;color:#fff;
+  font:800 17px/1.23 Inter,Arial,system-ui,sans-serif;
+  letter-spacing:.01em;overflow-wrap:anywhere;
 }
-.rr-target-page .rr-target-racebar .rr-target-race-number,
-.rr-target-page .rr-target-racebar .rr-target-post{
+.rr-target-page .rr-target-race-number,.rr-target-page .rr-target-post{
+  margin:0;padding:0;border:0;color:#f4f0e6;
   font:700 13px/1.3 Inter,Arial,system-ui,sans-serif;
-  letter-spacing:0;
-  color:#f7f2e9;
-  white-space:nowrap;
+  white-space:nowrap;font-variant-numeric:tabular-nums;
 }
-.rr-target-page .rr-target-racebar .rr-target-post{margin-left:auto}
+.rr-target-page .rr-target-post{margin-left:0}
 .rr-target-page .rr-target-racebar .rr-target-race-facts{
-  display:block;
-  flex:none;
-  width:100%;
-  margin:0;
-  padding:0;
+  margin:6px 0 0;color:#e9f0f7;
   font:500 14px/1.35 Inter,Arial,system-ui,sans-serif;
-  letter-spacing:0;
-  color:#e5edf7;
-  white-space:normal;
-  overflow-wrap:break-word;
+  overflow-wrap:anywhere;white-space:normal;
 }
-@media(max-width:359px){
-  .rr-target-page .rr-target-racebar{gap:4px;padding:9px 9px 10px}
-  .rr-target-page .rr-target-racebar .rr-target-racebar-main{gap:4px 7px}
-  .rr-target-page .rr-target-racebar .rr-target-racebar-main h3{font-size:17px}
-  .rr-target-page .rr-target-racebar .rr-target-race-facts{font-size:14px}
+/* Race header alignment — preserve V1's original type scale and full race
+   description beneath. The race number and post time form one right-aligned
+   group opposite the left-aligned track name. */
+.rr-target-page .rr-target-racebar-main{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) max-content;
+  align-items:start;
+  gap:5px 10px;
 }
-
-
-/* Target List: right-justified RACE / POST group.
-   Keep track left, preserve the separate conditions line and Radar font scale. */
-.rr-target-page .rr-target-racebar .rr-target-racebar-main{
-  justify-content:flex-start;
-  align-items:baseline;
-  gap:4px 8px;
+.rr-target-page .rr-target-racebar-main h3{
+  min-width:0;
+  text-align:left;
 }
-.rr-target-page .rr-target-racebar .rr-target-race-identifiers{
-  display:inline-flex;
-  flex:0 0 auto;
+.rr-target-page .rr-target-race-identifiers{
+  display:flex;
+  flex-wrap:nowrap;
   align-items:baseline;
   justify-content:flex-end;
+  justify-self:end;
   gap:10px;
-  margin-left:auto;
+  text-align:right;
+  white-space:nowrap;
   min-width:0;
+}
+.rr-target-page .rr-target-race-identifiers .rr-target-race-number,
+.rr-target-page .rr-target-race-identifiers .rr-target-post{
+  font:700 13px/1.3 Inter,Arial,system-ui,sans-serif;
   white-space:nowrap;
   text-align:right;
 }
-.rr-target-page .rr-target-racebar .rr-target-race-identifiers .rr-target-race-number{
-  margin:0;
-  padding:0;
-  border:0;
-}
-.rr-target-page .rr-target-racebar .rr-target-race-identifiers .rr-target-post{
-  margin:0;
-  padding:0;
-}
 @media(max-width:359px){
-  .rr-target-page .rr-target-racebar .rr-target-race-identifiers{
-    gap:8px;
+  .rr-target-page .rr-target-racebar-main{
+    grid-template-columns:minmax(0,1fr);
+    row-gap:3px;
   }
+  .rr-target-page .rr-target-race-identifiers{
+    grid-column:1;
+    justify-self:end;
+  }
+}
+@media(max-width:430px){
+ .rr-target-page .rr-target-racebar{padding:9px 10px 10px}
 }

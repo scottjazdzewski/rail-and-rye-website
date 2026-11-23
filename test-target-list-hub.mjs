@@ -106,16 +106,16 @@ assert.doesNotMatch(html,/rr-target-local-file/,"No manual review-file step for 
 assert.doesNotMatch(html,/rr-target-upload-form|rr-target-file|Private source upload|Certified source JSON file/,"Daily Target List never presents a manual JSON upload.");
 assert.doesNotMatch(js,/rr-target-upload-form|rr-target-file|\.text\(\)\}/,"Reader never contains orphaned upload form behavior.");
 assert.doesNotMatch(css,/rr-target-publisher/,"No obsolete upload form CSS.");
-assert.match(html,/target-list-dashboard\.css\?v=20261123-right-aligned-v10/,"Ensure the readable style loads on phones.");
+assert.match(html,/target-list-dashboard\.css\?v=20261123-radar-parity-v11/,"Ensure the readable style loads on phones.");
 assert.match(css,/font:500 15px\/1\.55 Inter/,"Published editorial gets readable 15px typography.");
 assert.match(css,/Target List v5 — legibility-first mobile race reading/,"Phone layout uses larger, no-zoom typography.");
 assert.match(css,/Shared Daily Research Reader V1 — Target List implementation/,"Target List consumes shared cross-product mobile standard.");
-assert.match(css,/identical race-header hierarchy to/,"Match Radar typography without shrinking the conditions.");
-assert.match(css,/RAIL & RYE DAILY RESEARCH V9/,"Two-line header uses the same Radar-sized typography.");
+assert.match(css,/canonical Longshot Radar race header/,"Target List uses Radar’s exact header measurements.");
+assert.doesNotMatch(css,/RAIL & RYE DAILY RESEARCH V9|right-justified RACE \/ POST group/,"Remove redundant header patches.");
 assert.doesNotMatch(js,/rr-target-race-facts-long/,"Race facts always occupy their own readable row.");
 assert.match(css,/scroll-snap-type:x proximity/,"Navigation stays in one swipeable mobile row instead of wrapping.");
 assert.match(css,/font:500 17px\/1\.52 Inter/,"Full race analysis uses the same 17px research reader scale as Radar.");
-assert.match(html,/target-list-dashboard\.css\?v=20261123-right-aligned-v10/,"Shared v6 stylesheet must defeat stale browser cache.");
+assert.match(html,/target-list-dashboard\.css\?v=20261123-radar-parity-v11/,"Shared v6 stylesheet must defeat stale browser cache.");
 assert.match(html,/aria-current="page"/,"Active module navigation remains identifiable.");
 assert.doesNotMatch(html,/Post Time · Earliest First|Sort targets/,"Controls use concise shared labels.");
 assert.match(js,/Post-time order/,"Summary uses the current display order, not a redundant date.");
@@ -125,6 +125,8 @@ assert.match(js,/head\.append\(facts\)/,"Full canonical title and trophy appear 
 assert.match(js,/const identifiers=node\("div","rr-target-race-identifiers"\)/,"Race number and post time belong in a single right-aligned group.");
 assert.match(js,/add\(titleRow,node\("h3","",entry.track\),identifiers\)/,"Track stays left while the identifiers group aligns right.");
 assert.match(css,/\.rr-target-race-identifiers\{/,"Race number and time have dedicated right-alignment styles.");
+assert.match(css,/grid-template-columns:minmax\(0,1fr\) max-content/,"Copy Radar’s collision-proof grid alignment.");
+assert.match(js,/rr-ed-stakes-title/,"Style canonical race title like Radar instead of printing one unstyled conditions string.");
 
 assert.doesNotMatch(js,/card\.append\(node\("p","rr-target-race-facts",meta\)\)/,"Eliminate separate race facts strip.");
 
@@ -177,6 +179,7 @@ await new Promise(resolve=>setTimeout(resolve,30));
 assert.equal(elements.get("rr-target-app").hidden,false);
 assert.match(elements.get("rr-target-count").textContent,/3 targets/);
 const tree=(el,fn)=>fn(el)?el:el.children.map(v=>tree(v,fn)).find(Boolean)||null;
+const textOf=el=>!el?"":String(el.textContent||"")+(el.children||[]).map(textOf).join("");
 const card=tree(elements.get("rr-target-list"),el=>el.className==="rr-target-card");
 assert.ok(card,"Render a compact target card with actual source data.");
 const action=tree(card,el=>el.className==="rr-target-horse-row rr-target-attack"&&el.tagName==="BUTTON");
@@ -203,12 +206,12 @@ const namedCard=elements.get("rr-target-list").children.find(entry=>
  tree(entry,el=>el.tagName==="H3")?.textContent==="Synthetic Test Track");
 assert.ok(namedCard,"Stakes fixture must be rendered");
 const namedFacts=tree(namedCard,el=>el.className==="rr-target-race-facts");
-assert.ok(namedFacts?.textContent==="6 furlongs · Dirt · First Lady Stakes",
+assert.ok(textOf(namedFacts)==="6 furlongs · Dirt · First Lady Stakes",
  "Full name replaces sponsored abbreviation and keeps surface and distance");
 const grade=tree(namedFacts,el=>el.className==="rr-ed-grade-trophy rr-ed-grade-trophy--g1");
 assert.ok(grade,"Source-verified Grade 1 gets gold trophy in race header");
 assert.equal(grade["aria-label"],"Grade 1 stakes trophy");
-assert.ok(!namedFacts.textContent.includes("Venue Sponsor"),"Sponsor is not in editorial header");
+assert.ok(!textOf(namedFacts).includes("Venue Sponsor"),"Sponsor is not in editorial header");
 tree(namedCard,el=>el.className==="rr-target-horse-row rr-target-attack").events.click();
 const drawer=tree(elements.get("rr-target-dialog-content"),el=>el.className==="rr-target-drawer-meta");
 assert.ok(drawer?.textContent.includes("First Lady Stakes"),"Drawer uses same fully written race name");
@@ -221,7 +224,7 @@ elements.get("rr-target-sort").events.change();
 const fallbackCard=elements.get("rr-target-list").children.find(entry=>
  tree(entry,el=>el.tagName==="H3")?.textContent==="Synthetic Test Track");
 const fallback=tree(fallbackCard,el=>el.className==="rr-target-race-facts");
-assert.ok(fallback?.textContent.includes("First Lady Stakes"),"No fallback 'S.' leak");
+assert.ok(textOf(fallback).includes("First Lady Stakes"),"No fallback 'S.' leak");
 assert.ok(!tree(fallback,el=>String(el.className||"").includes("rr-ed-grade-trophy")),
  "Fallback may not invent a trophy without verified grade parser");
 assert.ok(tree(card,el=>el.className==="rr-target-ml-inline"&&el.textContent==="ML 5-1"),"Mobile shows the unchanged source morning line alongside the horse.");
@@ -232,6 +235,6 @@ assert.doesNotMatch(html,/rr-target-track|rr-target-search/,"Reader controls are
 
 assert.match(html,/rr-race-titles\.js\?v=2/,"Locked canonical stakes parser is present");
 assert.match(html,/rr-stakes-inline\.css\?v=1/,"Locked shared graded trophy styles are present");
-assert.match(js,/appendGradeTrophy\(facts,sourceRaceTitle\(entry\)\?\.grade\)/,
+assert.match(js,/appendGradeTrophy\(facts,title\.grade\)/,
  "Trophies require the source-backed parsed grade");
 console.log("PASS: Target List private upload, revision protection, no forced picks, official chips, drawer, mobile contracts, and no PDF dependency");

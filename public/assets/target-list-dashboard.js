@@ -164,14 +164,20 @@ function targetCard(entry){
  if(entry.post_time_et)identifiers.append(node("span","rr-target-post",entry.post_time_et));
  add(titleRow,node("h3","",entry.track),identifiers);
  head.append(titleRow);
- // Match Longshot Radar: one strong headline, full source conditions immediately
- // below it in the SAME navy banner; no shrinking, clipping, or invented values.
- const meta=raceMeta(entry);
- if(meta){
-  const facts=node("p","rr-target-race-facts",meta);
-  appendGradeTrophy(facts,sourceRaceTitle(entry)?.grade);
-  head.append(facts);
- }
+
+  // Mirror Radar's sourced facts and named-stakes presentation.
+  // Track, race and post time stay above the separate navy facts row.
+  const parts=[entry.distance,entry.surface].filter(value=>typeof value==="string"&&value.trim());
+  const title=sourceRaceTitle(entry);
+  if(parts.length||title){
+   const facts=node("p","rr-target-race-facts",parts.join(" · "));
+   if(title){
+    if(parts.length)facts.append(node("span","rr-ed-race-separator"," · "));
+    facts.append(node("span","rr-ed-stakes-title",title.title));
+    appendGradeTrophy(facts,title.grade);
+   }
+   head.append(facts);
+  }
  add(card,head);
  add(card,headerColumns(),horseRow("ML FAVORITE",entry.favorite,entry),horseRow("ATTACK",entry.attack,entry));
  if(entry.also_live)card.append(horseRow("ALSO LIVE",entry.also_live,entry));
