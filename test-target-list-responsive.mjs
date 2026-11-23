@@ -71,6 +71,17 @@ try{
   });
   assert.ok(compact.rowHeight<=116,"Extra-long horse name and source connections may wrap, but row stays within a compact natural height at "+width+": "+JSON.stringify(compact));
   assert.ok(compact.analysisVisible,"Complete editorial text must be readable at "+width+": "+JSON.stringify(compact));
+
+  const reading=await page.locator(".rr-target-card .rr-target-analysis-text").first().evaluate(el=>{
+    const style=getComputedStyle(el);
+    return {font:parseFloat(style.fontSize),lineHeight:parseFloat(style.lineHeight),background:style.backgroundColor,
+      actual:el.textContent, scroll:el.scrollHeight,client:el.clientHeight};
+  });
+  assert.ok(reading.font>=14,"Editorial is never tiny on mobile at "+width+": "+JSON.stringify(reading));
+  assert.ok(reading.lineHeight/reading.font>=1.47,"Editorial lines must be readable at "+width+": "+JSON.stringify(reading));
+  assert.match(reading.actual,/The paragraph deliberately continues/,"Never replace original analysis with a clipped preview.");
+  assert.equal(await page.locator("#rr-target-upload-form").count(),0,"JSON upload should never appear on Target List.");
+
   assert.equal(compact.giantButtons,0,"Horse-row tap replaces repeated Race Details buttons at "+width);
   assert.equal(compact.reviewNotices,1,"Only one review notice above the feed at "+width);
 
