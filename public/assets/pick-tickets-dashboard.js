@@ -26,6 +26,23 @@
  const setMessage=(text,visible=true)=>{E.status.hidden=!visible;E.status.textContent=text;};
  const TRACK_LOGOS={"Finger Lakes":"finger-lakes","Mahoning Valley":"mahoning-valley","Mountaineer":"mountaineer","Parx Racing":"parx-racing","Zia Park":"zia-park"};
  const hitRate=t=>!currentIsDemo&&t?.hit_rate_display?t.hit_rate_display:"—";
+ function reviewHitRate(legs){
+  if(!activeSeq?.review_probabilities||!Array.isArray(legs)||!legs.length)return "—";
+  let hit=1;
+  for(const leg of legs){
+   const source=activeSeq.review_probabilities[String(leg.race_number)];
+   if(!source||!Array.isArray(leg.programs)||!leg.programs.length)return "—";
+   let legMass=0;
+   for(const p of leg.programs){
+    if(!Object.prototype.hasOwnProperty.call(source,p))return "—";
+    const n=source[p];if(typeof n!=="number"||!Number.isFinite(n)||n<0||n>100)return "—";
+    legMass+=n;
+   }
+   if(legMass>100.000001)return "—";
+   hit*=legMass/100;
+  }
+  return (hit*100).toFixed(1)+"%";
+ }
  const escapeText=String;
  function programChip(p){
   const wrap=node("span","rr-pt-chip"),m=/^([0-9]{1,2})([A-Z]?)$/i.exec(p);
@@ -168,7 +185,7 @@
   thead.append(tr);table.append(thead);
   const body=node("tbody"),original=selectedTicket();
   const rowsData=[
-   ["PROJECTED HIT",hitRate(original),exact?hitRate(exact):"—"],
+   ["PROJECTED HIT",hitRate(original),activeSeq.review_probabilities?reviewHitRate(computed.legs):exact?hitRate(exact):"—"],
    ["COMBINATIONS",String(original.combinations),String(computed.combinations)],
    ["BASE WAGER",money(original.unit_cents),money(computed.unit_cents)],
    ["TOTAL COST",money(original.total_cents),money(computed.total_cents)],
@@ -181,9 +198,11 @@
   });
   table.append(body);comparison.append(table);area.append(comparison);
   if(!computed.combinations)area.append(node("p","rr-pt-builder-error","Choose at least one runner in every race."));
-  area.append(node("p","rr-pt-builder-disclaimer",exact
-   ?"This selection matches an approved source ticket. Its projected hit probability appears only when certified for that exact selection."
-   :"Projected hit probability for a custom ticket requires the approved TRI multi-race model. Only combinations and wager cost are recalculated here."));
+  area.append(node("p","rr-pt-builder-disclaimer",activeSeq.review_probabilities
+   ?"PRESCRATCH MODEL REVIEW: custom hit chance is calculated from the same exact TRI PWIN values as this source-based ticket, assuming independent race outcomes. Verify scratches and final production receipts before use. No financial-return estimate."
+   :exact
+    ?"This selection matches a source ticket. Its hit probability is displayed only when provided with that exact ticket."
+    :"A verified custom hit probability requires the approved TRI multi-race model. Combinations and total cost update immediately."));
   const reset=node("button","rr-pt-reset-button","Reset to Rail & Rye Selections");
   reset.type="button";reset.addEventListener("click",()=>{resetBuilder();expandedRaceNumbers.clear();renderActive()});
   area.append(reset);return area;
@@ -206,9 +225,12 @@
   if(!card)return;
   const box=node("section","rr-pt-ticket-screen");
   const head=node("div","rr-pt-ticket-header"),left=node("div","rr-pt-ticket-title");
-  left.append(node("span","rr-pt-kicker",currentIsDemo?"PRIVATE MOCK DISPLAY":"CERTIFIED SOURCE TICKET"));
+  left.append(node("span","rr-pt-kicker",card.review_only?"PRESCRATCH · TRI MODEL REVIEW":currentIsDemo?"PRIVATE MOCK DISPLAY":"CERTIFIED SOURCE TICKET"));
   left.append(node("h2","",activeSeq.name+" · Races "+activeSeq.start_race+"–"+activeSeq.end_race));
-  head.append(left,state(activeSeq.play_status));box.append(head,modeControls());
+  head.append(left,state(activeSeq.play_status));
+  if(card.review_only)box.append(node("p","rr-pt-review-notice",
+   "PRESCRATCH · Actual TRI PWIN-based selections for private review. Final scoring receipts, late changes and scratches still require verification. No profitability claim."));
+  box.append(head,modeControls());
   if(activeMode==="builder")box.append(builder());
   else{
    const chosen=selectedTicket();
@@ -246,7 +268,7 @@
    stage.replaceChildren();
    stage.append(tierPicker(activeSeq,i,show));
    stage.append(node("h3","rr-pt-analysis-tier",activeSeq.tickets[i].title));
-   if(hitRate(activeSeq.tickets[i])!=="—")stage.append(node("p","rr-pt-analysis-rate","Certified ticket hit chance: "+hitRate(activeSeq.tickets[i])));
+   if(hitRate(activeSeq.tickets[i])!=="—")stage.append(node("p","rr-pt-analysis-rate",(c.review_only?"Prescratch model-implied hit chance: ":"Certified ticket hit chance: ")+hitRate(activeSeq.tickets[i])));
    stage.append(ticketRows(activeSeq.tickets[i]),stats(activeSeq.tickets[i]));
    if(activeSeq.tickets[i].notes)stage.append(node("p","rr-pt-analysis-notes",activeSeq.tickets[i].notes));
   }
@@ -336,7 +358,8 @@
    if(slug){E.brandLogo.src="/assets/approved/track-logos/"+slug+".webp";E.brandLogo.alt=E.track.value+" logo";}}
   if(!entry){renderIntake();return;}
   if(E.mock)E.mock.hidden=true;
-  E.updated.textContent=(entry.card.status==="scratch_updated"?"SCRATCH UPDATED":"INITIAL · CURRENT")+
+  E.updated.textContent=(entry.card.review_only?"PRESCRATCH MODEL REVIEW · NOT CERTIFIED":
+   entry.card.status==="scratch_updated"?"SCRATCH UPDATED":"INITIAL · CURRENT")+
    " · REVISION "+entry.card.revision+" · "+entry.card.track+" · "+toDate(entry.card.date);
   renderTypes();
  }
@@ -356,7 +379,9 @@
    option(E.source,"certified","Certified private editions");
    E.source.value="certified";
    useData();
-   setMessage(certified.length?"":intake?"Real November 23 source loaded; scoring certification is pending.":"No certified Pick Tickets are staged for private review.",!certified.length);
+   const reviews=certified.filter(x=>x.review_only||x.card.review_only).length;
+   setMessage(certified.length?(reviews?"Real TRI prescratch ticket selections loaded from protected Projections. Model review only; scratches and scorer receipts remain subject to verification.":""):
+    intake?"Real November 23 source loaded. Exact full-field projections must be staged in private R2 to construct tickets.":"No source-backed Pick Tickets are available.",reviews>0||!certified.length);
   }catch(e){E.app.hidden=true;E.empty.hidden=true;setMessage(e.message)}
  }
  function useData(){
