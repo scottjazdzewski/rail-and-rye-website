@@ -250,6 +250,15 @@ export async function handleAdminPickTickets(request,env){
      sha256:currentHash,updated_at:entry.uploaded_at,sequence_count:audit.sequence_count,
      changed_sequence_count:audit.changed_sequence_count,
      review_status:audit.source_signature_status});
+    // Upload can be mathematically reoptimized and still be WRONG when the
+    // input field changed without a corresponding fresh scorer receipt.
+    // Preserve the source/version audit for admins, but NEVER offer these
+    // selections (nor a stale earlier edition) as usable picks.
+    if(audit.input_changes_require_rescoring){
+     sourceRejects.push({track:card.track_name,
+      reason:"Updated field requires new TRI/F4 scoring receipts before Pick Tickets can be displayed."});
+     continue;
+    }
     reviews.push({card:review,updated_at:entry.uploaded_at,
      review_only:true});
    }catch(e){sourceRejects.push({track:card.track_name,
@@ -266,10 +275,11 @@ export async function handleAdminPickTickets(request,env){
        matchStoredTicketToLatestSource(c,audited))authorized.push(entry);
     else staleRevisions.push({date:c.date,track:c.track,revision:c.revision,
      reason:"Saved ticket not approved for this exact current TRI field."});
-   }else if(c.formula_version===PICK_V33_ENGINE&&sourceIsScratchCurrent(c)){
+   }else if(c.formula_version===PICK_V33_ENGINE&&c.date<="2026-11-23"&&
+            sourceIsScratchCurrent(c)){
     authorized.push(entry);
    }else staleRevisions.push({date:c.date,track:c.track,revision:c.revision,
-    reason:"Earlier formula or scratch revision."});
+    reason:"No current-field audit and approved official sequence menu for this date and track."});
   }
   // Verified release editions outrank math reviews only when the source
   // identity and exact selections both match. Otherwise show newly built

@@ -202,4 +202,16 @@ for(const slug of ["finger-lakes","mahoning-valley","mountaineer","parx-racing",
  assert.ok(fs.existsSync("./public/assets/approved/track-logos/"+slug+".webp"),"verified original artwork present for "+slug);
 }
 assert.doesNotMatch(js,/localStorage|sessionStorage|\/api\/products/);
+// No later date's V3.3 ticket may enter the verified dashboard on status
+// alone when no current source audit and official wager menu are configured.
+const nextDayEdition={...card(),date:"2026-11-24",revision:1};
+await env.CARDS_BUCKET.put("pick-tickets/dashboard/2026-11-24/synthetic-qa-track.json",
+ JSON.stringify(normalizePickTickets(nextDayEdition)),{customMetadata:{}});
+const nextDayListing=await handleAdminPickTickets(new Request(
+ "https://railandryeracing.com/api/admin/pick-tickets"),env);
+const nextDayData=await nextDayListing.json();
+assert.equal(nextDayData.cards.some(c=>c.card.date==="2026-11-24"),false,
+ "future V3.3 results cannot bypass the dated official menu/source gate");
+assert.ok(nextDayData.stale_revisions.some(c=>c.date==="2026-11-24"));
+
 console.log("Pick Tickets schema, source fidelity, private R2, idempotence, revision safety, auth route and static UI checks PASS.");

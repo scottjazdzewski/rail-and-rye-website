@@ -97,6 +97,13 @@ function normalizeCard(input){
   if(!isObject(modelReceipts)||["tri_sha256","f4_sha256","prescratch_parent_sha256","official_changes_sha256"].some(key=>!(/^[a-f0-9]{64}$/i.test(String(modelReceipts[key]||"")))))
    throw Error("Scratch-final cards require verified TRI/F4, parent and official-change receipt hashes.");
  }
+ // A revised prescratch field must be able to carry fresh scorer identifiers.
+ // Previously normalizeCard() silently discarded them, preventing the Pick
+ // Tickets upload-bound audit from distinguishing rescored from stale inputs.
+ if(projectionStatus==="prescratch"&&modelReceipts!==null&&
+    (!isObject(modelReceipts)||["tri_sha256","f4_sha256"].some(
+     key=>!(/^[a-f0-9]{64}$/i.test(String(modelReceipts[key]||""))))))
+  throw Error("Prescratch score receipts must contain valid TRI and F4 SHA-256 hashes.");
  const modelName=text(input.model_name,"Model name",100);
  const fairOddsBasis=input.fair_odds_basis==null?"":text(input.fair_odds_basis,"Fair odds basis",40);
  if(fairOddsBasis&&fairOddsBasis!=="net_to_1_review")throw Error("Unknown fair odds basis.");
@@ -173,7 +180,9 @@ function normalizeCard(input){
    purse:text(race.purse,"Purse",50),pace:text(race.pace,"Pace",50),
    scratch_count:scratchCount,scratches,summary:text(race.summary,"Race summary",1000),entries};
  });
- return {schema_version:1,race_date:raceDate,track_name:trackName,projection_status:projectionStatus,model_name:modelName,fair_odds_basis:fairOddsBasis,factor_basis:factorBasis,model_receipts:modelReceipts&&projectionStatus==="scratch_final"?Object.fromEntries(["tri_sha256","f4_sha256","prescratch_parent_sha256","official_changes_sha256"].map(key=>[key,modelReceipts[key]])):null,races};
+ return {schema_version:1,race_date:raceDate,track_name:trackName,projection_status:projectionStatus,model_name:modelName,fair_odds_basis:fairOddsBasis,factor_basis:factorBasis,model_receipts:modelReceipts?Object.fromEntries((projectionStatus==="scratch_final"?
+ ["tri_sha256","f4_sha256","prescratch_parent_sha256","official_changes_sha256"]:
+ ["tri_sha256","f4_sha256"]).map(key=>[key,modelReceipts[key]])):null,races};
 }
 async function readBody(request){
  const length=Number(request.headers.get("content-length")||0);
@@ -230,7 +239,9 @@ export async function handleAdminProjectionUpload(request,env){
   return json({ok:true,product_id:product.id,title:product.title,track_name:card.track_name,race_date:card.race_date,races:card.races.length,entries:card.races.reduce((sum,race)=>sum+race.entries.length,0),uploaded_at:uploadedAt,
    ...(pickAudit?{pick_ticket_field_audit:{source_sha256:pickAudit.source_sha256,
     changed_races:pickAudit.changed_races,changed_sequences:pickAudit.changed_sequence_count,
-    status:pickAudit.source_signature_status,engine:pickAudit.optimizer}}:{})});
+    status:pickAudit.source_signature_status,engine:pickAudit.optimizer}}:
+    {pick_ticket_field_audit:{status:"NO_VERIFIED_OFFICIAL_PICK_MENU_FOR_DATE_TRACK",
+     sequences_checked:0}})});
  }catch(e){
   console.error("Projection upload failed",String(e).slice(0,120));
   return fail("Projection data could not be saved.",503);
@@ -311,7 +322,9 @@ export async function handleAdminProjectionBatchUpload(request,env){
     source_sha256:audit.source_sha256,
     changed_races:audit.changed_races,
     changed_sequences:audit.changed_sequence_count,
-    sequences_checked:audit.sequence_count}}:{})};
+    sequences_checked:audit.sequence_count}}:
+    {ticket_verification:{status:"NO_VERIFIED_OFFICIAL_PICK_MENU_FOR_DATE_TRACK",
+     sequences_checked:0}})};
  }));
  const uploaded=results.filter(result=>result.status==="fulfilled").map(result=>result.value);
  const errors=results.map((result,index)=>result.status==="rejected"?{track_name:cards[index].track_name,message:"Projection data could not be saved."}:null).filter(Boolean);

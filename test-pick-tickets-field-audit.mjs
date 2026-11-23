@@ -105,15 +105,51 @@ assert.ok(currentAudit.sequences.some(x=>x.previous_ticket));
 response=await handleAdminPickTickets(new Request(
  "https://railandryeracing.com/api/admin/pick-tickets"),env);
 shown=await response.json();
-assert.equal(shown.cards.length,1);
-assert.equal(shown.cards[0].card.source_input_sha256,currentAudit.source_sha256);
+// The newly optimized field does NOT carry a new scorer receipt. Mathematics
+// alone cannot authorize choices built from possibly stale TRI/F4 factors.
+assert.equal(shown.cards.length,0,"never show unrescored changes as ticket choices");
 assert.equal(shown.latest_field_versions[0].sha256,currentAudit.source_sha256);
-assert.ok(shown.cards[0].card.sequences.some(s=>s.upload_change?.selections_changed));
+assert.equal(shown.latest_field_versions[0].review_status,"INPUT_CHANGED_WITHOUT_NEW_SCORE_RECEIPT");
+assert.ok(shown.source_rejections.some(x=>x.reason.includes("new TRI/F4 scoring receipts")));
+
+// A fresh prescratch TRI/F4 receipt pair is retained by the importer and
+// clears the input-change hold, exposing the independently reoptimized field.
+const rescored=structuredClone(revised);
+rescored.model_receipts={tri_sha256:"a".repeat(64),f4_sha256:"b".repeat(64)};
+response=await handleAdminProjectionBatchUpload(new Request(
+ "https://railandryeracing.com/api/admin/projections/batch",{
+ method:"POST",headers:{"content-type":"application/json"},
+ body:JSON.stringify({cards:[rescored]})}),env);
+assert.equal(response.status,200,"fresh prescratch score identifiers must be accepted");
+const refreshed=JSON.parse(await (await env.CARDS_BUCKET.get(sourceKey)).text());
+assert.deepEqual(refreshed.model_receipts,rescored.model_receipts,
+ "prescratch scorer receipts must not be silently discarded");
+const refreshedAudit=JSON.parse(await (await env.CARDS_BUCKET.get(auditKey)).text());
+assert.equal(refreshedAudit.input_changes_require_rescoring,false);
+assert.equal(refreshedAudit.source_sha256,await projectionFieldFingerprint(refreshed));
+response=await handleAdminPickTickets(new Request(
+ "https://railandryeracing.com/api/admin/pick-tickets"),env);
+shown=await response.json();
+assert.equal(shown.cards.length,1,"fresh score upload unlocks the current private ticket review");
+assert.equal(shown.cards[0].card.source_input_sha256,refreshedAudit.source_sha256);
+assert.ok(shown.cards[0].card.sequences.some(x=>x.tickets[0]));
 const after=shown.cards[0].card.sequences[0].tickets[0];
 assert.notDeepEqual(after.legs,first.legs,"updated field must change dependent selections");
-assert.ok(shown.cards[0].card.sequences[0].upload_change.previous_ticket);
-assert.equal(shown.cards[0].card.sequences[0].upload_change.previous_ticket.combinations,first.combinations);
 
+// Horse identity is part of the scored field, not just PWIN: changing a name
+// while keeping the same number, factors and score receipt must HOLD picks.
+const renamed=structuredClone(refreshed);
+renamed.races[0].entries[0].horse_name="Different Entry Name";
+const renameAudit=await auditV33FieldUpload(renamed,refreshed);
+assert.equal(renameAudit.source_signature_status,"INPUT_CHANGED_WITHOUT_NEW_SCORE_RECEIPT");
+assert.equal(renameAudit.input_changes_require_rescoring,true);
+const partialReceipt=structuredClone(rescored);
+delete partialReceipt.model_receipts.f4_sha256;
+const partial=await handleAdminProjectionBatchUpload(new Request(
+ "https://railandryeracing.com/api/admin/projections/batch",{
+ method:"POST",headers:{"content-type":"application/json"},
+ body:JSON.stringify({cards:[partialReceipt]})}),env);
+assert.equal(partial.status,400,"partial TRI/F4 receipt pairs are never accepted");
 // An old certified-looking edition must never override the current source.
 const oldEdition={
  schema_version:1,product_type:"pick_tickets",date:initial.date,track:initial.track,
@@ -133,7 +169,7 @@ response=await handleAdminPickTickets(new Request(
  "https://railandryeracing.com/api/admin/pick-tickets"),env);
 shown=await response.json();
 assert.equal(shown.cards.length,1,"no stale second card");
-assert.equal(shown.cards[0].card.source_input_sha256,currentAudit.source_sha256);
+assert.equal(shown.cards[0].card.source_input_sha256,refreshedAudit.source_sha256);
 assert.equal(shown.stale_revisions.length,1,"stale stored edition detected");
 assert.equal(matchStoredTicketToLatestSource(normalized,currentAudit),false);
 
@@ -144,7 +180,7 @@ const blocked=await handleAdminProjectionBatchUpload(new Request(
  method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({cards:[invalid]})}),env);
 assert.notEqual(blocked.status,200,"incomplete source must not displace current tickets");
 assert.equal(await projectionFieldFingerprint(JSON.parse(await (await env.CARDS_BUCKET.get(sourceKey)).text())),
- currentAudit.source_sha256,"bad upload leaves published source unchanged");
+ refreshedAudit.source_sha256,"bad upload leaves published source unchanged");
 
 // A subsequent official scratched runner changes the source and must be
 // represented by a new field and new model scores; baseline alone is not enough.
@@ -165,4 +201,18 @@ assert.equal(extra.score_freshness_verified,false);
 const missing=structuredClone(more);
 missing.races[0].scratches.pop();
 await assert.rejects(()=>auditV33FieldUpload(missing,post),/cannot verify every race/);
+// The date-specific official wager menu is not optional. Other dates may
+// upload Projections without automatically manufacturing Pick Tickets from
+// the November 23 wager menu.
+const nextDay=fullTrack();
+nextDay.race_date="2026-11-24";
+const nextResponse=await handleAdminProjectionBatchUpload(new Request(
+ "https://railandryeracing.com/api/admin/projections/batch",{
+ method:"POST",headers:{"content-type":"application/json"},
+ body:JSON.stringify({cards:[nextDay]})}),env);
+assert.equal(nextResponse.status,200);
+const nextResult=await nextResponse.json();
+assert.equal(nextResult.uploaded[0].ticket_verification.status,
+ "NO_VERIFIED_OFFICIAL_PICK_MENU_FOR_DATE_TRACK");
+assert.equal(nextResult.uploaded[0].ticket_verification.sequences_checked,0);
 console.log("PASS: every latest field upload reoptimizes full-field V3.3 tickets; source hashes, new scratches, prior-choice comparison and stale edition failsafes.");
