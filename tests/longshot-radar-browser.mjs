@@ -27,7 +27,7 @@ const server=createServer((req,res)=>{
  if(path==="/api/admin/longshot-radar"){
   res.writeHead(200,{"Content-Type":"application/json"});res.end(JSON.stringify(sample));return;
  }
- const pathname=(path==="/admin/longshot-radar/"||path==="/admin/longshot-radar")?"/admin/longshot-radar.html":path;
+ const pathname=(path==="/admin/longshot-radar/"||path==="/admin/longshot-radar")?"/admin/longshot-radar.html":(path==="/longshot-radar-preview"||path==="/longshot-radar-preview/")?"/longshot-radar-preview/index.html":path;
  const file=resolve(root,"."+pathname);
  if(!(file===root||file.startsWith(root+sep))){res.writeHead(403);res.end();return;}
  try{
@@ -79,6 +79,39 @@ try{
   await page.screenshot({path:join("test-artifacts","longshot-sample-"+width+".png"),fullPage:true});
   await page.close();
  }
+ // Publicly accessible DESIGN-ONLY website page must NOT request admin/purchased data.
+ for(const width of [320,375,390,430,768,1280]){
+  const page=await browser.newPage({viewport:{width,height:850},deviceScaleFactor:1});
+  const apiRequests=[],jsErrors=[];
+  page.on("request",req=>{if(new URL(req.url()).pathname.startsWith("/api/"))apiRequests.push(req.url());});
+  page.on("pageerror",err=>jsErrors.push(err.message));
+  const response=await page.goto("http://127.0.0.1:"+port+"/longshot-radar-preview/",{waitUntil:"domcontentloaded"});
+  if(response.status()!==200)throw Error("Design URL unavailable at "+width);
+  await page.locator(".rr-lr-card").first().waitFor({timeout:15000});
+  if(apiRequests.length)throw Error("Design preview contacted private API at "+width+": "+apiRequests.join(","));
+  if(jsErrors.length)throw Error("Design preview JS failed at "+width+": "+jsErrors.join(","));
+  if(await page.locator(".rr-lr-card").count()!==3)throw Error("Missing design-only sample rows at "+width);
+  if(!((await page.locator("#rr-lr-demo-alert").innerText()).includes("FICTIONAL")))throw Error("No prominent fictional warning at "+width);
+  if(!(await page.locator(".rr-lr-card").first().innerText()).includes("Sample Horse One"))throw Error("Design post time ordering failed at "+width);
+  for(const chip of [1,11,20]){
+   const el=page.locator('.rr-lr-card img[src="/assets/approved/saddlecloths/'+chip+'.png"]');
+   if(await el.count()!==1||!(await el.first().evaluate(i=>i.complete&&i.naturalWidth>0)))throw Error("Real saddlecloth #"+chip+" missing at "+width);
+  }
+  for(const img of await page.locator(".rr-review-artwork img").all()){
+   if(!(await img.evaluate(i=>i.complete&&i.naturalWidth>0)))throw Error("Real approved Radar artwork missing at "+width);
+  }
+  await page.locator("#rr-lr-sort").selectOption("track");
+  if(!(await page.locator(".rr-lr-card").first().innerText()).includes("Example Horse Eleven"))throw Error("Design track ordering failed at "+width);
+  const size=await page.evaluate(()=>({viewport:document.documentElement.clientWidth,body:document.body.scrollWidth,page:document.documentElement.scrollWidth}));
+  if(size.body>width+1||size.page>width+1)throw Error("Design preview horizontal overflow at "+width+": "+JSON.stringify(size));
+  await page.getByRole("button",{name:/Read Longshot Radar analysis/}).first().click();
+  if(!(await page.locator("#rr-lr-dialog").evaluate(el=>el.open)))throw Error("Design modal failed at "+width);
+  await page.keyboard.press("Escape");
+  if(await page.locator("#rr-lr-dialog").evaluate(el=>el.open))throw Error("Design modal Escape failed at "+width);
+  await page.screenshot({path:join("test-artifacts","longshot-public-design-"+width+".png"),fullPage:true});
+  await page.close();
+ }
+ console.log("PASS: public design-only preview at 320/375/390/430/768/1280 with real saddlecloth and brand art, interactive sorts, drawer, and ZERO admin API requests.");
  console.log("PASS: mobile 320/375/390/430, tablet 768 and desktop 1280, date-based daily cards, cross-track post-time/track order, dialog, Escape, no overflow.");
 }finally{
  if(browser)await browser.close();await new Promise(resolve=>server.close(resolve));
