@@ -1,0 +1,28 @@
+name: Verify private Pick Tickets dashboard
+on:
+  pull_request:
+    paths:
+      - 'src/pick-tickets.js'
+      - 'src/index.js'
+      - 'public/assets/pick-tickets-dashboard.*'
+      - 'public/admin/pick-tickets-preview.html'
+      - 'test-pick-tickets.mjs'
+      - '.github/workflows/verify-pick-tickets.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  pick-tickets-private:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax check source and browser renderer
+        run: |
+          node --check src/pick-tickets.js
+          node --check src/index.js
+          node --check public/assets/pick-tickets-dashboard.js
+      - name: Certified input, ticket integrity, revisions and private-route regression
+        run: node test-pick-tickets.mjs
