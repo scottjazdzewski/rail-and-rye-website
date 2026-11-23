@@ -226,7 +226,9 @@ assert.ok(ui.includes('const facts=[item.distance,item.surface]'),"Display only 
 assert.ok(ui.includes('make("p","rr-lr-race-facts",facts.join(" · "))'),"Source race facts must appear in the navy header");
 assert.ok(ui.includes('const raceMeta=make("div","rr-lr-race-meta")'),"Race number and post time must stay grouped and right-justified");
 assert.ok(css.includes("grid-template-columns:minmax(0,1fr) max-content"),"Left track / right metadata layout is required");
-assert.ok(ui.includes('moduleNav.scrollLeft+='),"Active tab stays in view in one swipeable navigation row");
+assert.ok(!ui.includes('moduleNav.scrollLeft+='),"Old swipe-navigation repositioning must be removed");
+assert.ok(html.includes("rr-hub-header.css?v=1")&&html.includes("rr-intel-header__mobile-links"),
+ "Radar uses the shared homepage-style masthead and five-link mobile menu");
 assert.ok(css.includes("SHARED DAILY RESEARCH DESIGN STANDARD V1"),"Radar follows shared Target List research reader design authority");
 assert.ok(css.includes("font:500 17px/1.52 Inter"),"Original analysis displays at readable 17px/1.52");
 assert.ok(css.includes("grid-template-columns:repeat(2,minmax(0,1fr))"),"WIN and FAIR are two aligned columns");
