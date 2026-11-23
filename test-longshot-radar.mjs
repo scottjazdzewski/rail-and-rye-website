@@ -49,6 +49,17 @@ const memory=new Map(),bucket={
  async get(key){const value=memory.get(key);return value==null?null:{text:async()=>value};},
  async put(key,value){memory.set(key,value);}
 };
+// Simulated certified private R2 TRI projection, never shipped to the website.
+const projection={
+ schema_version:1,race_date:"2026-11-23",track_name:"Sample Course",projection_status:"prescratch",
+ races:[{race_number:4,entries:[
+  {program_number:"11A",horse_name:"Synthetic Unit-Test Runner",morning_line:"8/1",
+   win_probability_exact:100/6,win_probability:16.7,f4_probabilities:{exact_p1:1/6}},
+  {program_number:"2",horse_name:"Synthetic Other Runner",morning_line:"1/2",
+   win_probability_exact:500/6,win_probability:83.3,f4_probabilities:{exact_p1:5/6}}
+ ]}]
+};
+memory.set("projections/dashboard/2026-11-23/sample-course.json",JSON.stringify(projection));
 const env={CARDS_BUCKET:bucket};
 function req(method,item){
  return new Request("https://railandryeracing.com/api/admin/longshot-radar",{
@@ -61,6 +72,19 @@ assert.equal(res.status,200);assert.equal((await res.json()).review_only,true);c
 res=await handleAdminLongshotRadar(req("GET"),env);
 assert.equal(res.status,200);let data=await res.json();
 assert.equal(data.editions.length,1);assert.equal(data.editions[0].candidates[0].horse_name,"Synthetic Unit-Test Runner");checks++;
+// A valid editorial receipt must ALSO match the signed full-field source in R2.
+const mismatchProb=base();mismatchProb.pwin_exact=.2;mismatchProb.pwin_display=20;
+res=await handleAdminLongshotRadar(req("POST",mismatchProb),env);
+assert.equal(res.status,409);checks++; // impossible to substitute a different TRI probability
+const mismatchHorse=base();mismatchHorse.candidates[0].horse_name="Different Synthetic Runner";
+res=await handleAdminLongshotRadar(req("POST",mismatchHorse),env);
+assert.equal(res.status,409);checks++; // no unverified source identity allowed
+const mismatchMl=base();mismatchMl.candidates[0].original_morning_line="9/1";
+res=await handleAdminLongshotRadar(req("POST",mismatchMl),env);
+assert.equal(res.status,409);checks++; // no changed morning line even if price gate passes
+const matchingZero=base();matchingZero.race_date="2026-11-24";matchingZero.candidates=[];
+res=await handleAdminLongshotRadar(req("POST",matchingZero),env);
+assert.equal(res.status,409);checks++; // no results does not excuse absence of scored source
 res=await handleAdminLongshotRadar(req("POST",base()),env);
 assert.equal(res.status,409);checks++; // old revision cannot overwrite
 const revised=base();revised.revision=2;revised.generated_at="2026-11-23T03:17:00Z";revised.status="scratch_updated";
