@@ -9,6 +9,8 @@ on:
       - 'public/assets/rr-intelligence-chips.css'
       - 'public/assets/rr-projections-race-header.css'
       - 'public/assets/rr-projections-track-identity.css'
+      - 'public/assets/rr-projections-command.css'
+      - 'public/assets/rr-race-facts.css'
       - 'public/assets/projections-dashboard.css'
       - 'public/admin/projections-preview.html'
       - 'public/membership/dashboard/index.html'
@@ -34,17 +36,21 @@ jobs:
             code4=$(curl -LsS --connect-timeout 10 --max-time 20 -H 'Cache-Control: no-cache' -w '%{http_code}' -o /tmp/rr-header-live.css "${BASE}/assets/rr-projections-race-header.css?rev=${token}" || true)
             code5=$(curl -LsS --connect-timeout 10 --max-time 20 -H 'Cache-Control: no-cache' -w '%{http_code}' -o /tmp/projections-base-live.css "${BASE}/assets/projections-dashboard.css?rev=${token}" || true)
             code6=$(curl -LsS --connect-timeout 10 --max-time 20 -H 'Cache-Control: no-cache' -w '%{http_code}' -o /tmp/rr-track-identity-live.css "${BASE}/assets/rr-projections-track-identity.css?rev=${token}" || true)
-            if [ "$code1" = 200 ] && [ "$code2" = 200 ] && [ "$code3" = 200 ] && [ "$code4" = 200 ] && [ "$code5" = 200 ] && [ "$code6" = 200 ] &&
+            code7=$(curl -LsS --connect-timeout 10 --max-time 20 -H 'Cache-Control: no-cache' -w '%{http_code}' -o /tmp/rr-projections-command-live.css "${BASE}/assets/rr-projections-command.css?rev=${token}" || true)
+            code8=$(curl -LsS --connect-timeout 10 --max-time 20 -H 'Cache-Control: no-cache' -w '%{http_code}' -o /tmp/rr-race-facts-live.css "${BASE}/assets/rr-race-facts.css?rev=${token}" || true)
+            if [ "$code1" = 200 ] && [ "$code2" = 200 ] && [ "$code3" = 200 ] && [ "$code4" = 200 ] && [ "$code5" = 200 ] && [ "$code6" = 200 ] && [ "$code7" = 200 ] && [ "$code8" = 200 ] &&
                cmp -s public/assets/projections-dashboard.js /tmp/projections-live.js &&
                cmp -s public/assets/rr-race-titles.js /tmp/rr-race-titles-live.js &&
                cmp -s public/assets/rr-intelligence-chips.css /tmp/rr-chips-live.css &&
                cmp -s public/assets/rr-projections-race-header.css /tmp/rr-header-live.css &&
                cmp -s public/assets/projections-dashboard.css /tmp/projections-base-live.css &&
-               cmp -s public/assets/rr-projections-track-identity.css /tmp/rr-track-identity-live.css; then
+               cmp -s public/assets/rr-projections-track-identity.css /tmp/rr-track-identity-live.css &&
+               cmp -s public/assets/rr-projections-command.css /tmp/rr-projections-command-live.css &&
+               cmp -s public/assets/rr-race-facts.css /tmp/rr-race-facts-live.css; then
               echo "LIVE_PROJECTIONS_ASSETS_MATCH: Cloudflare serves source-authentic track logos, readable saddlecloths and full-stakes-name code"
               break
             fi
-            echo "Not deployed yet: attempt ${attempt}/24 JS=${code1}, title=${code2}, chips=${code3}, header=${code4}, base=${code5}, track=${code6}"
+            echo "Not deployed yet: attempt ${attempt}/24 JS=${code1}, title=${code2}, chips=${code3}, header=${code4}, base=${code5}, track=${code6}, command=${code7}, facts=${code8}"
             if [ "$attempt" -eq 24 ]; then
               echo "::error::Production still serves stale Projections assets after 24 checks"
               exit 1
@@ -55,6 +61,11 @@ jobs:
           grep -Fq 'editorialRacePresentation(race)' /tmp/projections-live.js
           grep -Fq 'rrp-track-head__logo' /tmp/projections-live.js
           grep -Fq 'rrp-track-head__venue-mark' /tmp/rr-track-identity-live.css
+          grep -Fq 'rrp-command__controls' /tmp/rr-projections-command-live.css
+          grep -Fq 'min-height:59px' /tmp/rr-race-facts-live.css
+          grep -Fq 'context.replaceChildren(cardHeader(activeCard))' /tmp/projections-live.js
+          ! grep -Fq '.rr-dash-mode-switch{' /tmp/projections-base-live.css
+          ! grep -Fq '.rr-dash-toolbar{' /tmp/projections-base-live.css
           grep -Fq 'originalTrackLogos={' /tmp/projections-live.js
           ! grep -Fq 'rr-dash-track-mark-letters' /tmp/projections-live.js
           grep -Fq 'text-wrap:balance' /tmp/rr-header-live.css
@@ -80,4 +91,4 @@ jobs:
             test -s "/tmp/${logo}.webp"
             echo "LIVE_APPROVED_TRACK_LOGO ${logo} PASS"
           done
-          echo 'LIVE_PROJECTIONS_READY: seamless white editorial track masthead without advertising plaque, no horse finder, original marks and scratch badges deployed.'
+          echo 'LIVE_PROJECTIONS_READY: consolidated mobile command deck, integrated race facts, compact track identity, original chips and source-safe model delivery.'
