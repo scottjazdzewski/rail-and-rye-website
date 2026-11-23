@@ -477,3 +477,44 @@
   }
   /* Preserve 17px horse names, 25px WIN, 22px FAIR, 17px analysis. */
 }
+
+/* Race header alignment — preserve V1's original type scale and full race
+   description beneath. The race number and post time form one right-aligned
+   group opposite the left-aligned track name. */
+.rr-lr-page .rr-lr-racebar-main{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) max-content;
+  align-items:start;
+  gap:5px 10px;
+}
+.rr-lr-page .rr-lr-racebar-main h3{
+  min-width:0;
+  text-align:left;
+}
+.rr-lr-page .rr-lr-race-meta{
+  display:flex;
+  flex-wrap:nowrap;
+  align-items:baseline;
+  justify-content:flex-end;
+  justify-self:end;
+  gap:10px;
+  text-align:right;
+  white-space:nowrap;
+  min-width:0;
+}
+.rr-lr-page .rr-lr-race-meta .rr-lr-race-number,
+.rr-lr-page .rr-lr-race-meta .rr-lr-post{
+  font:700 13px/1.3 Inter,Arial,system-ui,sans-serif;
+  white-space:nowrap;
+  text-align:right;
+}
+@media(max-width:359px){
+  .rr-lr-page .rr-lr-racebar-main{
+    grid-template-columns:minmax(0,1fr);
+    row-gap:3px;
+  }
+  .rr-lr-page .rr-lr-race-meta{
+    grid-column:1;
+    justify-self:end;
+  }
+}
