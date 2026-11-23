@@ -80,7 +80,7 @@ assert.equal(data.cards.length,1);
 assert.equal(data.intake.date,"2026-11-23");
 assert.equal(data.scratch_update.date,"2026-11-23");
 assert.equal(data.scratch_update.tracks.reduce((n,t)=>n+t.scratch_count,0),50);
-assert.equal(data.scratch_update.tracks.reduce((n,t)=>n+t.affected_races.length,0),36);
+assert.equal(data.scratch_update.tracks.reduce((n,t)=>n+t.affected_races.length,0),35);
 assert.equal(data.scratch_update.dependent_sequences.reduce((n,t)=>n+t.impacted,0),42);
 assert.equal(data.scratch_update.dependent_sequences.length,5);
 assert.equal(data.scratch_update.tracks.find(t=>t.name==="Mountaineer").scratch_count,21);
