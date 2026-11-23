@@ -77,6 +77,45 @@ assert.ok(Math.abs(result.chance-expected)<1e-12,"Use exact F4 conditional P2 we
 assert.equal(result.fair,Math.ceil((2/expected)*100-1e-9)/100,
  "Ticket-level break-even gross payout rounds UP to valid cents");
 assert.ok(result.probabilities.has("4|2"));
+// Exhaustive second-place coverage for a single key must NOT show 100%.
+// It can only win if the keyed runner wins (PWIN exactly .30 in this fixture).
+state.mode="key";state.type="exacta";state.base=1;
+state.positions=[new Set(["4"]),new Set(["2","6","12","1A"]),new Set()];
+result=app._calculate();
+assert.equal(result.combos.length,4,"Covering every second-place runner needs four combos");
+assert.ok(Math.abs(result.chance-.30)<1e-12,"Full key probability must equal favorite's exact TRI PWIN");
+assert.equal(result.fair,13.34,"Four-dollar full key break-even gross rounds UP to $13.34");
+assert.equal(result.firstPlaceKey,true,"Full first-place key must be recognized");
+assert.equal(result.allOutcomesCovered,false,"A full second-place key is NOT a 100% ticket");
+assert.equal(app._formatChance(result.chance,result.allOutcomesCovered),"30.00%");
+state.mode="box";state.box=new Set(entries.map(e=>e.program_number));
+result=app._calculate();
+assert.equal(result.combos.length,20,"Five-horse exacta ALL-box covers all twenty valid outcomes");
+assert.ok(Math.abs(result.chance-1)<1e-12);
+assert.equal(result.allOutcomesCovered,true,"100% coverage only when all exacta outcomes covered");
+assert.equal(result.cost,20);
+assert.equal(result.fair,20,"100% coverage still requires $20 gross to recover $20 ticket cost");
+state.type="trifecta";
+result=app._calculate();
+assert.equal(result.combos.length,60,"Five-horse trifecta ALL-box covers all 60 permutations");
+assert.ok(Math.abs(result.chance-1)<1e-12);
+assert.equal(result.allOutcomesCovered,true);
+assert.equal(result.cost,60);
+assert.equal(result.fair,60);
+state.type="exacta";state.box=new Set(["4","2","6","12"]);
+result=app._calculate();
+assert.equal(result.allOutcomesCovered,false);
+assert.ok(result.chance<1,"A four-of-five exacta box is NOT guaranteed to hit");
+state.mode="wheel";state.positions=[new Set(),new Set(),new Set()];
+result=app._calculate();
+assert.equal(result.combos.length,0);
+assert.equal(result.chance,null,"No ticket must say select horses, not a false zero or 100 percent");
+assert.equal(result.fair,null);
+assert.equal(app._formatChance(.99999,false),">99.99%",
+ "Roundoff cannot show 100% when any modeled finishing outcome is missing");
+assert.equal(app._formatChance(1,true),"100.00%");
+assert.equal(app._formatChance(.000001,false),"<0.01%",
+ "Extremely small positive chance cannot display as exact zero");
 race.f4_ordered_probabilities.receipt_sha256="";
 assert.equal(app._calculate().chance,null,"Missing receipt must fail closed");
 race.f4_ordered_probabilities.receipt_sha256=receipt;
@@ -84,6 +123,47 @@ race.f4_ordered_probabilities.p2_weights.pop();
 assert.equal(app._calculate().chance,null,"Incomplete F4 weights must fail closed");
 delete race.f4_ordered_probabilities;
 assert.equal(app._calculate().chance,null,"Never infer exotic probability from PWIN marginals");
+// Reproduce the screenshot's math with a six-runner, independently normalized
+// synthetic field. #4 on top of every other runner = exactly #4 PWIN.
+const six=[
+ row("4","Miss Stones",31.41),row("1","Lady Serenity",30.41),
+ row("3","Open Soul Autism",13.51),row("6","Cinnamon Sugar",12.41),
+ row("2","Itwillbefun",8.41),row("5","Moontown",3.85)
+];
+assert.equal(six.reduce((sum,e)=>sum+e.win_probability_exact,0).toFixed(6),"100.000000");
+const sixRace={race_number:1,entries:six};
+app.open({race:sixRace,track:"Finger Lakes",date:"2026-11-23"});
+sixRace.f4_ordered_probabilities={
+ schema_version:2,model_id:"TRI_F4_ORDERING_MODEL_V2_RANK_OFFSET",
+ status:"verified",receipt_sha256:"f".repeat(64),prefix_sha256:"e".repeat(64),
+ scratch_state:"PRESCRATCH",date:"2026-11-23",track:"Finger Lakes",race_number:1,
+ programs:six.map(x=>x.program_number),
+ pwin:six.map(x=>x.win_probability_exact/100),
+ p2_weights:six.map(()=>1),p3_weights:six.map(()=>1)
+};
+state.mode="key";state.type="exacta";state.base=1;
+state.positions=[new Set(["4"]),new Set(["1","3","6","2","5"]),new Set()];
+result=app._calculate();
+assert.equal(result.combos.length,5);
+assert.equal(result.cost,5);
+assert.ok(Math.abs(result.chance-.3141)<1e-12,
+ "Five-second-place exactas behind #4 have exactly #4's 31.41% win probability");
+assert.equal(result.fair,15.92,
+ "At a $5 total stake, break-even equal gross payout = $5/0.3141 rounded UP");
+assert.equal(result.firstPlaceKey,true);
+assert.equal(result.allOutcomesCovered,false);
+assert.equal(app._formatChance(result.chance,result.allOutcomesCovered),"31.41%");
+state.mode="box";state.box=new Set(six.map(x=>x.program_number));
+result=app._calculate();
+assert.equal(result.combos.length,30);
+assert.ok(Math.abs(result.chance-1)<1e-12);
+assert.equal(result.allOutcomesCovered,true);
+assert.equal(result.cost,30);
+assert.equal(result.fair,30);
+assert.match(script,/ALL FINISHING COMBINATIONS COVERED:[\s\S]*?NOT a guaranteed profit/,
+ "100% coverage must be explicitly separated from the odds of turning a profit");
+assert.match(script,/FIRST-PLACE KEY:[\s\S]*?ONLY if/,
+ "Exhaustive second-place selection must explain it still needs the key to win");
 assert.match(chipCSS,/\.rr-race-chip--tab\[aria-current="true"\]/,
  "Race tabs need distinct active gold/navy state");
 assert.match(chipCSS,/rr-horse-chip__suffix/,
