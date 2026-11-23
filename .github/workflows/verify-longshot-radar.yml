@@ -7,6 +7,8 @@ on:
       - "public/admin/longshot-radar.html"
       - "public/longshot-radar-preview/**"
       - "public/assets/longshot-radar.*"
+      - "public/assets/rr-race-titles.js"
+      - "public/assets/rr-stakes-inline.css"
       - "test-longshot-radar.mjs"
       - "tests/longshot-radar-browser.mjs"
       - ".github/workflows/verify-longshot-radar.yml"
@@ -30,6 +32,7 @@ jobs:
           node --check src/index.js
           node --check public/assets/longshot-radar.js
           node test-longshot-radar.mjs
+          node test-rr-race-titles.mjs
       - name: Install browser for responsive QA
         run: |
           npm install --no-save playwright@1.56.1
