@@ -375,3 +375,9 @@ gap:4px;
 .rr-pt-coverage-marginals{margin:10px 0 3px}
 .rr-pt-coverage-marginals summary{font:750 12px/1.35 Inter,Arial,system-ui,sans-serif;color:#214a6e;cursor:pointer}
 @media(max-width:350px){.rr-pt-coverage-line{grid-template-columns:1fr 70px 70px;gap:4px;font-size:11px}}
+
+/* Previous-vs-current tickets are private and visible only inside Insights. */
+.rr-pt-prior-ticket{margin:10px 0 12px;border:1px solid #d9d7cd;border-radius:8px;background:#f7f6f2;padding:8px 10px}
+.rr-pt-prior-ticket>summary{cursor:pointer;color:#264762;font:750 12px/1.45 Inter,Arial,system-ui,sans-serif}
+.rr-pt-prior-label{margin:9px 0 6px;color:#50637a;font:650 12px/1.4 Inter,Arial,system-ui,sans-serif}
+.rr-pt-prior-ticket .rr-pt-race-rows{margin:3px 0 0}
