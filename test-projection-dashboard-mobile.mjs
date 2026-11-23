@@ -206,8 +206,8 @@ console.log("PASS: true per-track and all-track race chronology; original header
 const chipStyles=readFileSync("public/assets/rr-intelligence-chips.css","utf8");
 for(const html of [adminHtml,memberHtml]){
  assert.match(html,/rr-intelligence-chips\.css\?v=1/,"Load the shared race/horse chip identity");
- assert.match(html,/rr-exotic-bet-builder\.css\?v=2/,"Load the responsive exotic ticket builder skin");
- assert.match(html,/rr-exotic-bet-builder\.js\?v=3/,"Load the source-gated no-tote Bet Builder");
+ assert.match(html,/rr-exotic-bet-builder\.css\?v=3/,"Load the responsive exotic ticket builder skin");
+ assert.match(html,/rr-exotic-bet-builder\.js\?v=4/,"Load the source-gated no-tote Bet Builder");
 }
 assert.match(js,/rr-dash-race-button rr-race-chip rr-race-chip--tab/,
  "Every race navigation tab uses the branded saddle-chip form");
@@ -236,7 +236,7 @@ assert.equal(passedRace?.date,"2026-11-22","Bet Builder retains current racing d
 console.log("PASS: stable branded race chip selection, approved horse/track art and current-race Bet Builder entry");
 
 for(const html of [adminHtml,memberHtml]){
- assert.match(html,/rr-exotic-bet-builder\.js\?v=3/,
+ assert.match(html,/rr-exotic-bet-builder\.js\?v=4/,
   "Customers must load the actual source-backed F4 odds client, not cached v1");
  assert.match(html,/projections-dashboard\.js\?v=28/,
   "Both admin and member dashboard views receive same race-aware F4 routing");

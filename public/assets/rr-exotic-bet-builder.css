@@ -85,3 +85,111 @@
  font:650 12px/1.48 Inter,Arial,system-ui,sans-serif;
 }
 @media(max-width:800px){.rr-bet-coverage-note{font-size:12px;line-height:1.48}}
+
+/* Premium mobile decision hierarchy: certified hit chance and required gross
+   payout remain in view while building the ticket. All colors are brand-native. */
+.rr-bet-body{gap:9px;padding:12px 14px 16px}
+.rr-bet-heading{
+ position:sticky;top:0;z-index:20;align-items:center;
+ margin:-12px -14px 1px;padding:10px 14px 9px;
+ border-bottom:1px solid #e0d2b5;background:#f7f3e9;
+}
+.rr-bet-context{gap:3px}
+.rr-bet-context strong{font:800 17px/1.15 Inter,Arial,system-ui,sans-serif;letter-spacing:-.012em}
+.rr-bet-context span{font-size:12px;color:#4c627a}
+.rr-bet-types,.rr-bet-constructions{gap:5px}
+.rr-bet-option{min-height:40px;font-size:12px;padding:7px 9px}
+.rr-bet-denomination{gap:8px;justify-content:flex-start;padding:1px 0}
+.rr-bet-denomination label{font-size:12px;color:#304b69}
+.rr-bet-denomination select{min-height:40px;font-size:16px}
+.rr-bet-summary{
+ position:sticky;top:54px;z-index:12;display:grid;gap:0;
+ overflow:hidden;border:1.5px solid #ba943f;border-radius:11px;
+ background:#fffdf7;box-shadow:0 4px 13px rgba(15,40,67,.12);
+}
+.rr-bet-summary-heading{
+ display:flex;justify-content:space-between;align-items:center;gap:8px;
+ padding:8px 11px 6px;background:#f9f0dd;
+ font:800 10px/1.2 Inter,Arial,system-ui,sans-serif;
+ letter-spacing:.055em;color:#244363;
+}
+.rr-bet-model-status{
+ display:inline-flex;align-items:center;border:1px solid #d6c7a8;border-radius:5px;
+ padding:3px 6px;letter-spacing:.02em;font:750 9px/1.1 Inter,Arial,system-ui,sans-serif;
+ color:#516983;background:#fffcf5;white-space:nowrap;
+}
+.rr-bet-model-status[data-state="verified"]{color:#1c684c;border-color:#aac7b7;background:#f4fbf6}
+.rr-bet-summary-primary{
+ display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:0;padding:8px 6px 5px;
+}
+.rr-bet-main-stat{display:grid;align-content:start;gap:4px;min-width:0;padding:3px 9px 6px}
+.rr-bet-main-stat+.rr-bet-main-stat{border-left:1px solid #dfd6c5}
+.rr-bet-main-stat span{
+ color:#4f6982;font:750 10px/1.18 Inter,Arial,system-ui,sans-serif;
+ letter-spacing:.015em;min-height:24px;
+}
+.rr-bet-main-stat strong{
+ color:#102d53;font:800 29px/1.05 "Tinos",Georgia,serif;
+ font-variant-numeric:tabular-nums;letter-spacing:-.015em;overflow-wrap:anywhere;
+}
+.rr-bet-summary-secondary{
+ display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:7px;
+ padding:7px 12px 6px;border-top:1px solid #e8dfd0;
+ background:#fffdf7;color:#405a72;font:700 12px/1.2 Inter,Arial,system-ui,sans-serif;
+}
+.rr-bet-summary-secondary strong{font-weight:800;color:#173c66}
+.rr-bet-summary-note{
+ margin:0;padding:7px 12px 9px;border-top:1px solid #ebe2d3;
+ background:#faf7ef;color:#4c6177;
+ font:600 11px/1.35 Inter,Arial,system-ui,sans-serif;
+}
+.rr-bet-position{gap:5px}
+.rr-bet-position-heading{display:flex;align-items:center;gap:8px;min-height:24px}
+.rr-bet-position-name{font:800 12px/1.2 Inter,Arial,system-ui,sans-serif}
+.rr-bet-selection-count{margin-left:auto;font:650 11px/1.2 Inter,Arial,system-ui,sans-serif;color:#5a7084}
+.rr-bet-clear{
+ min-height:28px;padding:4px 8px;border:1px solid #cfbb94;border-radius:6px;
+ background:#fffdf7;color:#20456a;cursor:pointer;
+ font:700 11px/1.1 Inter,Arial,system-ui,sans-serif;
+}
+.rr-bet-clear:focus-visible{outline:3px solid #c99831;outline-offset:2px}
+.rr-bet-horse-grid{gap:6px}
+.rr-bet-horse-choice{min-height:53px}
+.rr-bet-horse-name{font-size:11px;line-height:1.19;color:#1d3e61}
+.rr-bet-combos{padding:9px 10px}
+.rr-bet-help{border:1px solid #e3d9c7;border-radius:9px;background:#fcf9f0;padding:9px 10px}
+.rr-bet-help summary{font:750 12px/1.2 Inter,Arial,system-ui,sans-serif;color:#284b6c;cursor:pointer}
+.rr-bet-help p{font:550 12px/1.48 Inter,Arial,system-ui,sans-serif;color:#435e79;margin:9px 0 0}
+@media(max-width:800px){
+ .rr-bet-dialog{max-height:94dvh}
+ .rr-bet-body{gap:8px;padding:10px 12px 16px}
+ .rr-bet-heading{top:0;margin:-10px -12px 0;padding:10px 12px 8px}
+ .rr-bet-context strong{font-size:17px}
+ .rr-bet-summary{top:52px;border-radius:10px}
+ .rr-bet-summary-heading{padding:7px 10px 5px}
+ .rr-bet-summary-primary{padding:7px 4px 4px}
+ .rr-bet-main-stat{padding:3px 8px 6px}
+ .rr-bet-main-stat span{font-size:10px;min-height:22px}
+ .rr-bet-main-stat strong{font-size:28px;line-height:1}
+ .rr-bet-summary-secondary{padding:6px 10px}
+ .rr-bet-summary-note{padding:6px 10px 7px;font-size:11px}
+ .rr-bet-horse-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+ .rr-bet-horse-choice{min-height:56px;padding:4px 3px;gap:3px}
+ .rr-bet-horse-choice .rr-horse-chip{width:35px;height:35px}
+ .rr-bet-horse-name{font-size:10px;line-height:1.15}
+ .rr-bet-position-heading{min-height:22px}
+ .rr-bet-option{min-height:42px}
+ .rr-bet-combos ol{max-height:220px}
+}
+@media(max-width:350px){
+ .rr-bet-main-stat{padding:3px 5px 5px}
+ .rr-bet-main-stat span{font-size:9px}
+ .rr-bet-main-stat strong{font-size:24px}
+ .rr-bet-summary-secondary{font-size:11px}
+ .rr-bet-horse-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .rr-bet-horse-choice .rr-horse-chip{width:32px;height:32px}
+}
+@media(prefers-reduced-motion:reduce){
+ .rr-bet-dialog,.rr-bet-summary{scroll-behavior:auto}
+}

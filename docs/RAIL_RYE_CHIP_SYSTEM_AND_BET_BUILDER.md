@@ -75,6 +75,18 @@ Builder behavior:
 - **No tote integration**: customer consults live tote/pool data separately; no time/price feed, bookmaker service, wagering or guarantee of profit.
 - Late scratches/changes: fail closed until an updated matching certified joint distribution is available; never reuse stale ordered prefixes.
 
+## Bet Builder mobile readability and live feedback (locked)
+
+- Show a clean, compact top bar with **Rail & Rye · Bet Builder**, source track/race/date and a visible Close action.
+- Put the **certified F4 projected hit chance** and the **required break-even gross payout** in the largest number hierarchy, above horse-selection grids. Display cost and number of distinct combinations immediately beneath.
+- Keep the decision summary sticky while the customer scrolls through long selection grids; preserve dialog scroll offset when selecting, clearing or changing the ticket. Never clear all user choices just from a redraw.
+- Keep the source state explicit: Checking F4 / Verified F4 / F4 unavailable. A blank or incomplete ticket displays a dash for model-derived numbers until eligible picks are made; never invent a probability or payout.
+- Always label the payout **gross**, not net profit. When more than one combination is selected, visibly state that the ticket-level break-even number assumes the **same gross payout for every covered winning combination**. Actual tote returns differ. Keep the full mathematical explanation under a user-openable disclosure.
+- A full second-place key still needs the keyed horse to **win**; show that near the percent. Full-field 100% coverage must explicitly say **NOT guaranteed profit**.
+- Horse-selection controls use approved saddlecloth images and a readable name. On phones present three columns where practical, with selected count, a working Clear action for each finishing-position bucket and 44px-or-larger controls; long horse names should wrap rather than disappear.
+- Keep the conventional navy/ivory/gold Rail & Rye treatment without adding decorative badges. All descriptions, cost and probability values remain text-selectable, accessible and screen-reader meaningful.
+- The test suite must verify the real screenshot's model calculation (31.41% hit chance, five $1 combinations, $5 ticket cost, $15.92 rounded-up equal-payout threshold) in the **rendered summary**, not only the calculator. It must also verify full boxes and prevent misleading rounded 100% claims.
+
 ## Quality gate
 - Test 320, 360, 390, 430 and desktop width for 1–20 artwork, two-digit 11–20 legibility and coupled-entry suffixes.
 - Test that selecting #4 over #2/#6 creates 2 exactas; a 3-horse exacta box creates 6 ordered combinations; a 4-horse trifecta box creates 24; a horse entered in more than one position never creates impossible repeated-horse tickets.

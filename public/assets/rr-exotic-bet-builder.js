@@ -177,6 +177,8 @@
    const b=el("button","rr-bet-horse-choice");
    b.type="button";b.setAttribute("aria-pressed",String(on));
    b.setAttribute("aria-label",program+" "+e.horse_name+", "+(on?"selected":"not selected"));
+   b.dataset.betChoiceKey=String(leg)+":"+program;
+   b.setAttribute("data-bet-choice-key",b.dataset.betChoiceKey);
    b.append(horseChip(program));
    b.append(el("span","rr-bet-horse-name",e.horse_name));
    b.addEventListener("click",()=>selectHorse(program,leg));grid.append(b);
@@ -184,9 +186,15 @@
   return grid;
  }
  function group(label,entries,leg,selected){
-  const wrap=el("section","rr-bet-position");
-  wrap.append(el("h3","rr-bet-position-name",label));
-  wrap.append(selectionGrid(entries,leg,selected));return wrap;
+  const wrap=el("section","rr-bet-position"),heading=el("div","rr-bet-position-heading");
+  heading.append(el("h3","rr-bet-position-name",label));
+  heading.append(el("span","rr-bet-selection-count",selected.size?selected.size+" selected":"Select horses"));
+  if(selected.size){
+   const clear=el("button","rr-bet-clear","Clear");
+   clear.type="button";clear.setAttribute("aria-label","Clear "+label.toLowerCase()+" selections");
+   clear.addEventListener("click",()=>{selected.clear();render();});heading.append(clear);
+  }
+  wrap.append(heading,selectionGrid(entries,leg,selected));return wrap;
  }
  function render(){
   if(!dialog||!state.race)return;
@@ -201,8 +209,6 @@
   close.type="button";close.setAttribute("aria-label","Close Bet Builder");
   close.addEventListener("click",()=>dialog.close());
   title.append(context,close);body.append(title);
-  const intro=el("p","rr-bet-intro","Build single-race exotic combinations using approved saddlecloths. No live tote connection or wager placement.");
-  body.append(intro);
   const types=el("div","rr-bet-types");
   types.setAttribute("role","group");types.setAttribute("aria-label","Wager type");
   for(const type of TYPES)types.append(button(type==="exacta"?"Exacta":"Trifecta",state.type===type,()=>setType(type)));
@@ -211,12 +217,6 @@
   constructions.setAttribute("role","group");constructions.setAttribute("aria-label","Ticket construction");
   for(const mode of MODES)constructions.append(button(mode==="straight"?"Straight":mode==="box"?"Box":mode==="key"?"1st-Place Key":"Part-Wheel",state.mode===mode,()=>setMode(mode)));
   body.append(constructions);
-  if(state.mode==="box")body.append(group("BOX HORSES · any finishing order",entries,0,state.box));
-  else{
-   const positions=state.type==="exacta"?2:3;
-   const labels=["1ST PLACE","2ND PLACE","3RD PLACE"];
-   for(let i=0;i<positions;i++)body.append(group(labels[i],entries,i,state.positions[i]));
-  }
   const denom=el("div","rr-bet-denomination");
   const money=el("label","","Base wager");
   money.htmlFor="rr-bet-base";
@@ -227,30 +227,52 @@
   select.value=String(state.base);
   select.addEventListener("change",()=>{state.base=Number(select.value);render();});
   denom.append(money,select);body.append(denom);
-  const result=calculate(entries),stats=el("div","rr-bet-stats");
-  const stat=(label,value)=>{const d=el("div","rr-bet-stat");d.append(el("span","",label),el("strong","",value));return d;};
-  stats.append(stat("Combinations",result.combos.length.toLocaleString("en-US")));
-  stats.append(stat("Ticket cost",CASH(result.cost)));
-  stats.append(stat("Projected hit chance",formatChance(result.chance,result.allOutcomesCovered)));
-  stats.append(stat("Required gross payout to break even*",result.fair===null?"Not available":CASH(result.fair)));
-  body.append(stats);
-  const info=el("p","rr-bet-disclaimer",result.probabilities?
-    "F4 hit chance uses the verified ordered finish model. *For boxes/wheels, the required gross payout assumes every covered winning combination pays the SAME amount; actual payouts vary. Compare the payout for your selected denomination against the live tote yourself. Higher than break-even is needed for positive model value.":
-    result.modelAvailable&&!result.combos.length?
-    "The verified F4 ordered model is ready. Select at least one horse in each finishing position to calculate hit chance and required gross payout.":
-    state.loading?"Checking the private certified F4 finishing probabilities for this race…":
-    "Ticket cost is calculated. The current selection has no matching verified F4 ordered result: no hit chance or break-even payout can be shown.");
-  body.append(info);
-  if(result.probabilities&&result.allOutcomesCovered){
-   body.append(el("p","rr-bet-coverage-note",
-    "ALL FINISHING COMBINATIONS COVERED: This ticket has 100% modeled outcome coverage in the present field, but NOT a guaranteed profit. You still spend "+CASH(result.cost)+
-    " and the actual gross payout for the winning combination may be lower than your total stake."));
-  }else if(result.probabilities&&result.firstPlaceKey){
-   body.append(el("p","rr-bet-coverage-note",
-    "FIRST-PLACE KEY: You covered every other runner in the remaining finishing "+
-    (state.type==="exacta"?"position. ":"positions. ")+
-    "This ticket hits ONLY if #"+result.leadHorse.program_number+" "+result.leadHorse.horse_name+
-    " finishes first. Its projected "+formatChance(result.chance,false)+" hit chance is that horse's exact TRI win probability."));
+  const result=calculate(entries);
+  // Decision-critical F4 numbers appear BEFORE the horse grids and remain
+  // visible on mobile as customers change a leg, box, key or denomination.
+  const summary=el("section","rr-bet-summary");
+  summary.setAttribute("aria-label","Your exotic ticket probability and payout");
+  const summaryHeading=el("div","rr-bet-summary-heading");
+  summaryHeading.append(el("strong","","YOUR TICKET"));
+  const modelStatus=state.loading?"CHECKING F4":result.modelAvailable?"VERIFIED F4":"F4 UNAVAILABLE";
+  const modelTag=el("span","rr-bet-model-status",modelStatus);
+  modelTag.dataset.state=state.loading?"loading":result.modelAvailable?"verified":"unavailable";
+  summaryHeading.append(modelTag);summary.append(summaryHeading);
+  const primary=el("div","rr-bet-summary-primary");
+  const mainStat=(label,value,cssClass)=>{
+   const box=el("div","rr-bet-main-stat "+cssClass);
+   box.append(el("span","",label),el("strong","",value));
+   return box;
+  };
+  primary.append(mainStat("PROJECTED HIT CHANCE",
+   result.chance===null?"—":formatChance(result.chance,result.allOutcomesCovered),"rr-bet-main-stat--chance"));
+  primary.append(mainStat("BREAK-EVEN GROSS PAYOUT",
+   result.fair===null?"—":CASH(result.fair),"rr-bet-main-stat--payout"));
+  summary.append(primary);
+  const secondary=el("div","rr-bet-summary-secondary");
+  secondary.append(el("span","",result.combos.length.toLocaleString("en-US")+" combinations"));
+  secondary.append(el("strong","","Ticket cost "+CASH(result.cost)));
+  summary.append(secondary);
+  let explanation="";
+  if(state.loading)explanation="Loading the certified F4 ordered-finishing probabilities.";
+  else if(!result.modelAvailable)explanation="Verified F4 data unavailable. No modeled hit chance or payout is claimed.";
+  else if(!result.combos.length)explanation="Choose horses in every finishing position to calculate your ticket.";
+  else if(result.allOutcomesCovered)
+   explanation="All finishing outcomes covered (100%). This does NOT guarantee a profit; tote payouts can be below your cost.";
+  else if(result.firstPlaceKey)
+   explanation="Full key: #"+result.leadHorse.program_number+" must WIN. Hit chance equals that horse's exact TRI win probability.";
+  else if(result.combos.length>1)
+   explanation="For this multi-combination ticket, break-even assumes the same gross payout for every covered winner.";
+  else explanation="Required gross payout for this single combination at the chosen wager amount.";
+  if(result.probabilities&&result.combos.length>1&&!explanation.includes("same gross payout"))
+   explanation+=" Break-even assumes equal gross payouts across covered combinations; actual tote payouts vary.";
+  summary.append(el("p","rr-bet-summary-note",explanation));
+  body.append(summary);
+  if(state.mode==="box")body.append(group("BOX HORSES · any finishing order",entries,0,state.box));
+  else{
+   const positions=state.type==="exacta"?2:3;
+   const labels=["1ST PLACE","2ND PLACE","3RD PLACE"];
+   for(let i=0;i<positions;i++)body.append(group(labels[i],entries,i,state.positions[i]));
   }
   const details=el("details","rr-bet-combos");
   details.append(el("summary","","Show "+result.combos.length+" covered combinations"));
@@ -271,7 +293,24 @@
   if(result.combos.length>40)list.append(el("li","rr-bet-list-truncated",
    "Showing 40 of "+result.combos.length+" combinations."));
   details.append(list);body.append(details);
+  const help=el("details","rr-bet-help");
+  help.append(el("summary","","How to read the payout threshold"));
+  help.append(el("p","",
+   "The hit chance is the sum of the verified F4 probabilities for your covered exact finishing orders. "+
+   "The break-even figure is a GROSS payout, not net winnings: total ticket cost divided by ticket hit probability, rounded UP to cents. "+
+   "For boxes, keys and wheels it assumes every winning combination pays that SAME gross amount. Actual exotic tote payoffs vary by combination. "+
+   "Rail & Rye has no live tote connection and never places a bet; compare the tote yourself."));
+  body.append(help);
+  const previousScroll=dialog.scrollTop;
+  const focusChoice=document.activeElement?.dataset?.betChoiceKey;
   dialog.replaceChildren(body);
+  // Rebuilding a selection grid must not jump iOS users back to the top.
+  if(Number.isFinite(previousScroll)&&previousScroll>0)dialog.scrollTop=previousScroll;
+  if(focusChoice&&dialog.querySelectorAll){
+   const next=[...dialog.querySelectorAll("[data-bet-choice-key]")].find(
+    node=>node.dataset?.betChoiceKey===focusChoice);
+   if(next?.focus)next.focus({preventScroll:true});
+  }
  }
  async function loadCertifiedF4(options,sequence){
   if(typeof fetch!=="function"){
@@ -307,6 +346,7 @@
    document.body.append(dialog);
    dialog.addEventListener("click",event=>{if(event.target===dialog)dialog.close();});
   }
+  dialog.scrollTop=0;
   render();if(!dialog.open)dialog.showModal();
   loadCertifiedF4(options,request);
  }

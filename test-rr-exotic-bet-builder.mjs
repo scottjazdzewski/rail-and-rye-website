@@ -9,7 +9,7 @@ class FakeElement {
  constructor(tag){
   this.tagName=String(tag).toUpperCase();
   this.children=[];this.className="";this.attributes={};this.listeners={};
-  this.textContent="";this.open=false;this.style={};this.value="";
+  this.textContent="";this.open=false;this.style={};this.value="";this.dataset={};this.scrollTop=0;
  }
  append(...children){this.children.push(...children)}
  replaceChildren(...children){this.children=children}
@@ -31,6 +31,16 @@ app.open({race,track:"Finger Lakes",date:"2026-11-23"});
 assert.equal(body.children.length,1,"One overlay, not a new dialog per change");
 assert.equal(body.children[0].open,true,"Bet Builder dialog must open");
 const walk=(node)=>[node,...node.children.flatMap(child=>walk(child))];
+const readable=(node)=>node.textContent+node.children.map(readable).join("");
+const summary=()=>walk(body).find(node=>node.className==="rr-bet-summary");
+const selectedChoice=(key)=>walk(body).find(node=>node.dataset?.betChoiceKey===key);
+const topSections=()=>body.children[0].children[0].children.map(node=>node.className);
+assert.ok(topSections().indexOf("rr-bet-summary")>=0,"Premium projection summary must exist");
+assert.ok(topSections().indexOf("rr-bet-summary")<topSections().indexOf("rr-bet-position"),
+ "Hit probability and gross payout must appear before horse choices");
+assert.match(readable(summary()),/PROJECTED HIT CHANCE/,"Hit chance leads summary");
+assert.match(readable(summary()),/BREAK-EVEN GROSS PAYOUT/,"Break-even is visibly labeled as GROSS");
+assert.match(readable(summary()),/Ticket cost \$0\.00/,"Ticket cost is shown with the model summary");
 let nodes=walk(body);
 const urls=nodes.filter(x=>x.tagName==="IMG").map(x=>x.src);
 for(const file of ["4.png","2.png","6.png","12.png","1.png"])
@@ -154,6 +164,25 @@ assert.equal(result.fair,15.92,
 assert.equal(result.firstPlaceKey,true);
 assert.equal(result.allOutcomesCovered,false);
 assert.equal(app._formatChance(result.chance,result.allOutcomesCovered),"31.41%");
+// Trigger real user selection (not just test-only math) so the current F4
+// results are rendered in the same mobile summary the customer sees.
+body.children[0].scrollTop=186;
+const removeLast=selectedChoice("1:5");
+assert.ok(removeLast?.listeners.click,"Saddlecloth choice must be clickable");
+removeLast.listeners.click();
+assert.equal(body.children[0].scrollTop,186,"Selecting a horse must not jump the mobile drawer");
+assert.ok(selectedChoice("1:5")?.listeners.click);
+selectedChoice("1:5").listeners.click();
+assert.match(readable(summary()),/31\.41%/,"Render actual certified F4 ticket chance prominently");
+assert.match(readable(summary()),/\$15\.92/,"Render actual required gross payout prominently");
+assert.match(readable(summary()),/5 combinations/,"Show ticket size beside the projected return");
+assert.match(readable(summary()),/Ticket cost \$5\.00/,"Show total wager alongside the probability");
+assert.match(readable(summary()),/Full key: #4 must WIN/,
+ "Make the first-place key requirement unmissable");
+assert.match(readable(summary()),/equal gross payouts/,
+ "A multiple-combination key must display the gross-payout assumption without opening help");
+assert.ok(walk(body).some(node=>node.className==="rr-bet-help"),"Long assumptions belong in disclosure");
+
 state.mode="box";state.box=new Set(six.map(x=>x.program_number));
 result=app._calculate();
 assert.equal(result.combos.length,30);
@@ -161,10 +190,21 @@ assert.ok(Math.abs(result.chance-1)<1e-12);
 assert.equal(result.allOutcomesCovered,true);
 assert.equal(result.cost,30);
 assert.equal(result.fair,30);
-assert.match(script,/ALL FINISHING COMBINATIONS COVERED:[\s\S]*?NOT a guaranteed profit/,
- "100% coverage must be explicitly separated from the odds of turning a profit");
-assert.match(script,/FIRST-PLACE KEY:[\s\S]*?ONLY if/,
- "Exhaustive second-place selection must explain it still needs the key to win");
+const fullBoxChoice=selectedChoice("0:5");
+assert.ok(fullBoxChoice?.listeners.click);
+fullBoxChoice.listeners.click(); // Remove from full-field box.
+selectedChoice("0:5").listeners.click(); // Restore full coverage in UI.
+assert.match(readable(summary()),/100\.00%/,"All thirty exactas really do cover all outcomes");
+assert.match(readable(summary()),/NOT guarantee a profit/,
+ "Full-field ticket must not imply guaranteed financial gain");
+assert.match(readable(summary()),/equal gross payouts/,
+ "Full coverage still requires a visible payout-variation caveat");
+assert.match(readable(summary()),/Ticket cost \$30\.00/,
+ "Winning every modeled finishing outcome still costs thirty dollars");
+assert.match(script,/All finishing outcomes covered \(100%\)[\s\S]*?NOT guarantee a profit/,
+ "100% outcome coverage must be explicitly separate from profit");
+assert.match(script,/Full key:[\s\S]*?must WIN/,
+ "A fully covered second-place key still depends on its first-place horse");
 assert.match(chipCSS,/\.rr-race-chip--tab\[aria-current="true"\]/,
  "Race tabs need distinct active gold/navy state");
 assert.match(chipCSS,/rr-horse-chip__suffix/,
@@ -179,4 +219,16 @@ assert.match(script,/credentials:"same-origin"/,
  "Private F4 model read must preserve session credentials");
 assert.doesNotMatch(script,/XMLHttpRequest|Stripe|checkout|tote-api|sportsbook-api/i,
  "Bet Builder never connects to a tote, betting service or payment platform");
+
+assert.match(css,/\.rr-bet-summary\{[\s\S]*?position:sticky;top:54px;/,
+ "Model results must stick near the mobile dialog header while scrolling");
+assert.match(css,/\.rr-bet-main-stat strong\{/,
+ "Hit chance and payout are the largest numerical values");
+assert.match(css,/\.rr-bet-horse-choice\{min-height:56px;/,
+ "Compact chip choices should not waste the mobile viewport");
+assert.match(css,/\.rr-bet-position-heading\{/,
+ "Each horse position has clear selected counts");
+assert.match(script,/dialog\.scrollTop=previousScroll/,
+ "Re-render must preserve mobile drawer position");
+
 console.log("PASS: exact approved horse chip art, coupled entry, valid combinations/cost, F4 gated probabilities, no tote integration");
