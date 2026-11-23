@@ -10,15 +10,16 @@
 <link rel="stylesheet" href="/assets/rail-rye-core.css?v=13">
 <link rel="stylesheet" href="/assets/rail-rye-components.css?v=11">
 <link rel="stylesheet" href="/assets/membership.css?v=17">
-<link rel="stylesheet" href="/assets/pick-tickets-dashboard.css?v=2">
-<script defer src="/assets/pick-tickets-dashboard.js?v=2"></script>
+<link rel="stylesheet" href="/assets/pick-tickets-dashboard.css?v=3">
+<script defer src="/assets/pick-tickets-dashboard.js?v=3"></script>
 </head>
 <body class="rr-member-page rr-pt-page">
 <header class="rr-member-header">
  <div class="heritage-shell">
   <a class="rr-member-brand" href="/admin/"><img src="/assets/approved/brand/rail-rye-ivory-logo.png" alt="" width="60" height="60"><span>RAIL &amp; RYE</span></a>
   <nav class="rr-member-nav" aria-label="Private publisher navigation">
-   <a href="/admin/projections-preview/">Projections review</a>
+   <a href="/admin/projections-preview/">Projections</a>
+   <a href="/admin/pick-tickets-preview/" aria-current="page">Pick Tickets</a>
    <a href="/admin/">Publisher’s Desk</a>
   </nav>
  </div>
@@ -30,7 +31,7 @@
   <div>
    <span class="rr-pt-mini-label">RAIL &amp; RYE / RACING INTELLIGENCE / PICK TICKETS</span>
    <h1>Pick Tickets</h1>
-   <p>Horizontal multi-race ticket intelligence, direct from the certified production export. All selections and ticket costs are source-audited; no PDF downloads.</p>
+   <p>Review approved horizontal sequences, complete ticket selections and supporting analysis in one compact screen. The site does not construct or alter tickets.</p>
   </div>
  </div>
  <section class="rr-pt-toolbar" aria-label="Pick Tickets filters">
@@ -40,7 +41,7 @@
   <label>Track
    <select id="rr-pt-track" aria-label="Choose racetrack"></select>
   </label>
-  <label>Sequence status
+  <label>Recommendation
    <select id="rr-pt-filter" aria-label="Filter sequence recommendation">
     <option value="ALL">All sequences</option>
     <option value="PLAY">PLAY</option>
