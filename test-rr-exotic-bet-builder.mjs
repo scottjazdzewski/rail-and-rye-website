@@ -24,8 +24,8 @@ const context={document,window:{},console,Set,Map,Math,Number,Array,String,Intl}
 vm.runInNewContext(script,context,{filename:"rr-exotic-bet-builder.js"});
 const app=context.window.RRBetBuilder;
 assert.equal(typeof app.open,"function");
-const row=(p,name)=>({program_number:p,horse_name:name});
-const entries=[row("4","Miss Stones"),row("2","Other Runner"),row("6","Another Runner"),row("12","Twelve"),row("1A","Coupled")];
+const row=(p,name,pwin)=>({program_number:p,horse_name:name,win_probability_exact:pwin});
+const entries=[row("4","Miss Stones",30),row("2","Other Runner",25),row("6","Another Runner",20),row("12","Twelve",15),row("1A","Coupled",10)];
 const race={race_number:8,entries};
 app.open({race,track:"Finger Lakes",date:"2026-11-23"});
 assert.equal(body.children.length,1,"One overlay, not a new dialog per change");
@@ -60,49 +60,30 @@ assert.equal(result.cost,24);
 state.mode="key";state.type="exacta";state.positions=[new Set(["4"]),new Set(["2","6"]),new Set()];
 state.base=1;
 const receipt="f".repeat(64);
+const weights=[1,1.3,1.5,.8,.9];
+const probs=[.30,.25,.20,.15,.10];
 race.f4_ordered_probabilities={
- schema_version:1,model_id:"TRI_F4_ORDERING_MODEL_V2_RANK_OFFSET",
- status:"verified",receipt_sha256:receipt,
- exacta:[
-  {programs:["4","2"],probability:0.2},
-  {programs:["4","6"],probability:0.1},
-  {programs:["4","12"],probability:0.1},
-  {programs:["4","1A"],probability:0.05},
-  {programs:["2","4"],probability:0.06},
-  {programs:["2","6"],probability:0.07},
-  {programs:["2","12"],probability:0.04},
-  {programs:["2","1A"],probability:0.03},
-  {programs:["6","4"],probability:0.03},
-  {programs:["6","2"],probability:0.04},
-  {programs:["6","12"],probability:0.02},
-  {programs:["6","1A"],probability:0.02},
-  {programs:["12","4"],probability:0.02},
-  {programs:["12","2"],probability:0.02},
-  {programs:["12","6"],probability:0.01},
-  {programs:["12","1A"],probability:0.01},
-  {programs:["1A","4"],probability:0.04},
-  {programs:["1A","2"],probability:0.03},
-  {programs:["1A","6"],probability:0.03},
-  {programs:["1A","12"],probability:0.08}
- ]};
-const sum=race.f4_ordered_probabilities.exacta.reduce((a,b)=>a+b.probability,0);
-assert.ok(sum>0.99&&sum<1.01,"Synthetic test probabilities should nearly sum to one");
-const adjust=1/sum;
-race.f4_ordered_probabilities.exacta=race.f4_ordered_probabilities.exacta.map(x=>({
- programs:x.programs,probability:x.probability*adjust
-}));
+ schema_version:2,model_id:"TRI_F4_ORDERING_MODEL_V2_RANK_OFFSET",
+ status:"verified",receipt_sha256:receipt,prefix_sha256:"e".repeat(64),
+ scratch_state:"PRESCRATCH",date:"2026-11-23",track:"Finger Lakes",race_number:8,
+ programs:entries.map(x=>x.program_number),
+ pwin:probs,p2_weights:weights,p3_weights:weights
+};
+const denom=weights.reduce((a,b)=>a+b,0)-weights[0];
+const expected=(.30*weights[1]/denom)+(.30*weights[2]/denom);
 result=app._calculate();
-assert.ok(result.chance!==null,"Complete certified F4 prefix map should activate probability");
-const expected=(0.2+0.1)*adjust;
-assert.ok(Math.abs(result.chance-expected)<1e-10);
-assert.ok(Math.abs(result.fair-2/expected)<1e-8);
+assert.ok(result.chance!==null,"Source-verified frozen F4 conditional law activates ticket probability");
+assert.ok(Math.abs(result.chance-expected)<1e-12,"Use exact F4 conditional P2 weights");
+assert.equal(result.fair,Math.ceil((2/expected)*100-1e-9)/100,
+ "Ticket-level break-even gross payout rounds UP to valid cents");
+assert.ok(result.probabilities.has("4|2"));
 race.f4_ordered_probabilities.receipt_sha256="";
 assert.equal(app._calculate().chance,null,"Missing receipt must fail closed");
 race.f4_ordered_probabilities.receipt_sha256=receipt;
-race.f4_ordered_probabilities.exacta.pop();
-assert.equal(app._calculate().chance,null,"Incomplete ordered F4 map must fail closed");
+race.f4_ordered_probabilities.p2_weights.pop();
+assert.equal(app._calculate().chance,null,"Incomplete F4 weights must fail closed");
 delete race.f4_ordered_probabilities;
-assert.equal(app._calculate().chance,null,"Never infer from remaining horse probabilities");
+assert.equal(app._calculate().chance,null,"Never infer exotic probability from PWIN marginals");
 assert.match(chipCSS,/\.rr-race-chip--tab\[aria-current="true"\]/,
  "Race tabs need distinct active gold/navy state");
 assert.match(chipCSS,/rr-horse-chip__suffix/,
@@ -111,6 +92,10 @@ assert.match(css,/rr-bet-horse-choice.*aria-pressed/s,
  "Horse choices use accessible pressed state");
 for(const type of ["Exacta","Trifecta","1st-Place Key","Part-Wheel"])
  assert.ok(script.includes(type),"Builder must include approved mode "+type);
-assert.doesNotMatch(script,/fetch\s*\(|XMLHttpRequest|Stripe|checkout/i,
- "Bet Builder does not connect to live tote, payment or bet execution");
+assert.match(script,/api\\/admin\\/projections-f4/,
+ "Bet Builder must load authentic frozen F4 probabilities from authenticated R2");
+assert.match(script,/credentials:"same-origin"/,
+ "Private F4 model read must preserve session credentials");
+assert.doesNotMatch(script,/XMLHttpRequest|Stripe|checkout|tote-api|sportsbook-api/i,
+ "Bet Builder never connects to a tote, betting service or payment platform");
 console.log("PASS: exact approved horse chip art, coupled entry, valid combinations/cost, F4 gated probabilities, no tote integration");
