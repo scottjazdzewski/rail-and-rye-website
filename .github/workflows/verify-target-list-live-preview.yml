@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/workflows/verify-target-list-live-preview.yml'
       - 'public/assets/target-list-dashboard.js'
+      - 'public/assets/target-list-dashboard.css'
       - 'public/admin/target-list-preview.html'
       - 'src/target-list.js'
   workflow_dispatch:
@@ -31,7 +32,7 @@ jobs:
             if [ "$code" = '200' ] && grep -Fq '/api/admin/target-list-review' /tmp/target-list-live.js &&
                grep -Fq 'const tote=value' /tmp/target-list-live.js &&
                grep -Fq 'rr-target-runner-info' /tmp/target-list-live.js &&
-               ! grep -Eq 'DEMO_EXAMPLE|Sample Favorite|Example Downs|rr-target-local-file|rr-target-analyze' /tmp/target-list-live.js; then
+               ! grep -Eq 'DEMO_EXAMPLE|Sample Favorite|Example Downs|rr-target-local-file|rr-target-analyze|rr-target-upload-form|rr-target-file' /tmp/target-list-live.js; then
               echo 'LIVE_PREVIEW_DEPLOYED: Actual private R2 daily reader is live, with no synthetic horses or local-file loader.'
               break
             fi
@@ -46,7 +47,10 @@ jobs:
           test "$csscode" = '200'
           grep -Fq 'Target List v3' /tmp/target-list-live.css
           grep -Fq -- '-webkit-line-clamp:unset' /tmp/target-list-live.css
-          echo 'LIVE_TARGET_LAYOUT_V3: full analysis uncut, compact racing data rows, no sample content.'
+          grep -Fq 'Readable editorial:' /tmp/target-list-live.css
+          grep -Fq 'font:500 15px/1.55 Inter' /tmp/target-list-live.css
+          ! grep -Fq 'rr-target-publisher' /tmp/target-list-live.css
+          echo 'LIVE_TARGET_READABLE_V4: full 15px editorial analysis, compact rows and no JSON uploader.'
           protected=$(curl -sS --connect-timeout 10 --max-time 20 -o /dev/null -w '%{http_code}' 'https://railandryeracing.com/api/admin/target-list-review' || true)
           echo "Unauthenticated private data endpoint: HTTP $protected"
           case "$protected" in
