@@ -123,3 +123,57 @@
  .rr-pt-leg{padding:5px 2px}
  .rr-pt-stat-count{display:none}
 }
+
+
+/* Click-through ticket: translated from November 23 editorial race-by-race review
+   into an accessible app drawer, not a printable PDF spread. */
+.rr-pt-dialog-options{padding:13px 12px 0}
+.rr-pt-dialog-options>.rr-pt-mini-label{margin-bottom:7px}
+.rr-pt-dialog-options .rr-pt-tier-tabs{margin:0}
+.rr-pt-hit-pending{margin:10px 13px 0;color:#7b6574;font-size:11px;font-weight:800;letter-spacing:.02em}
+.rr-pt-dialog .rr-pt-ticket-grid{padding:11px 12px 13px}
+.rr-pt-dialog .rr-pt-ticket{min-width:0;overflow:hidden;padding:0;border:1px solid #ccb071;border-radius:9px;background:#fff}
+.rr-pt-dialog .rr-pt-ticket-head{
+ display:flex;align-items:center;justify-content:space-between;gap:12px;
+ margin:0;padding:12px 14px;border-bottom:1px solid #e3ddcf;background:#fffdfa
+}
+.rr-pt-dialog .rr-pt-ticket-head h3{font-size:15px}
+.rr-pt-dialog .rr-pt-ticket-cost{font-size:23px}
+.rr-pt-dialog .rr-pt-legs{
+ display:grid;grid-template-columns:minmax(0,1fr);gap:0;
+ margin:0;padding:0;border:0;border-radius:0
+}
+.rr-pt-dialog .rr-pt-leg{
+ display:grid;grid-template-columns:82px minmax(0,1fr);align-items:center;gap:10px;
+ min-height:51px;margin:0;padding:7px 12px;border:0;border-bottom:1px solid #e4e4de;border-radius:0;
+ background:#fff;text-align:left
+}
+.rr-pt-dialog .rr-pt-leg:nth-child(even){background:#f0f0ed}
+.rr-pt-dialog .rr-pt-leg:last-child{border-bottom:0}
+.rr-pt-dialog .rr-pt-leg-title{
+ display:flex;align-items:center;justify-content:flex-start;align-self:stretch;
+ margin:0;padding:0 6px 0 2px;border-right:2px solid #c99831;
+ color:#405c76;font-size:11px;letter-spacing:.025em;text-align:left;white-space:nowrap
+}
+.rr-pt-dialog .rr-pt-leg-chips{justify-content:flex-start;gap:5px;min-width:0}
+.rr-pt-dialog .rr-pt-chip{width:35px;height:35px}
+.rr-pt-dialog .rr-pt-chip-fallback{width:35px;height:35px}
+.rr-pt-dialog .rr-pt-ticket-metrics{
+ display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:start;gap:6px;
+ margin:0;padding:12px 14px;border-top:1px solid #dcd6c9;background:#faf7ef;font-size:11px
+}
+.rr-pt-dialog .rr-pt-ticket-metrics>*{min-width:0;overflow-wrap:anywhere}
+.rr-pt-dialog .rr-pt-ticket-metrics>*:last-child{text-align:right}
+.rr-pt-dialog .rr-pt-ticket-notes{margin:0;padding:11px 14px;border-top:1px solid #e7e0d5;font-size:12px}
+@media(max-width:800px){
+ .rr-pt-dialog .rr-pt-ticket-grid{padding:9px}
+ .rr-pt-dialog .rr-pt-ticket-head{padding:10px}
+ .rr-pt-dialog .rr-pt-leg{grid-template-columns:69px minmax(0,1fr);gap:8px;padding:6px 9px;min-height:46px}
+ .rr-pt-dialog .rr-pt-leg-title{padding-right:5px;font-size:10px}
+ .rr-pt-dialog .rr-pt-chip,.rr-pt-dialog .rr-pt-chip-fallback{width:32px;height:32px}
+ .rr-pt-dialog .rr-pt-ticket-metrics{padding:10px;gap:4px;font-size:10px}
+}
+@media(max-width:340px){
+ .rr-pt-dialog .rr-pt-leg{grid-template-columns:61px minmax(0,1fr);gap:6px;padding:5px 7px}
+ .rr-pt-dialog .rr-pt-chip,.rr-pt-dialog .rr-pt-chip-fallback{width:30px;height:30px}
+}
