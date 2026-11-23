@@ -85,10 +85,12 @@ function sourceRaceTitle(item){
  if(official?.title)return official;
  // Fail closed on grade if the shared source-sensitive helper cannot load.
  // Preserve readable stakes words rather than leaking e.g. FIRST LADY S.
- const allCaps=/[A-Z]/.test(raw)&&!/[a-z]/.test(raw);
  let fallback=raw.replace(/\s*(?:presented|sponsored|powered)\s+by\b.*$/i,"")
-  .replace(/\s*\(\s*(?:G(?:rade)?\.?|Gr\.?)\s*[-:]?\s*(?:III|II|I|[123])\s*\)\s*$/i,"")
-  .replace(/\b(?:S|Stk|Stks)\.?$/i,"Stakes").trim();
+  .replace(/\s*\(\s*(?:G(?:rade)?\.?|Gr\.?)\s*[-:]?\s*(?:III|II|I|[123])\s*\)\s*$/i,"").trim();
+ // Read the source title's casing AFTER removing mixed-case sponsor copy,
+ // and BEFORE expanding S. into Stakes.
+ const allCaps=/[A-Z]/.test(fallback)&&!/[a-z]/.test(fallback);
+ fallback=fallback.replace(/\b(?:S|Stk|Stks)\.?$/i,"Stakes").trim();
  if(allCaps)fallback=fallback.toLowerCase().replace(/\b[a-z]/g,x=>x.toUpperCase());
  return {title:fallback,grade:null};
 }
