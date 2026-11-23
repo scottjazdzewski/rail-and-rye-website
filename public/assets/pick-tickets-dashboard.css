@@ -11,15 +11,8 @@
 .rr-pt-page :is(button,select,input,a):focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 .rr-pt-page :is(h1,h2,h3,h4){font-family:Inter,Arial,system-ui,sans-serif}
 .rr-pt-main{max-width:1160px;width:100%;margin:0 auto;padding:14px 17px 56px}
-.rr-pt-back{
-display:inline-flex;
-color:#20476b;
-font-weight:800;
-text-decoration:none;
-}
-.rr-pt-back:hover{text-decoration:underline}
 
-.rr-pt-heading{margin-bottom:15px}
+.rr-pt-heading{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;min-width:0;margin-bottom:15px}
 .rr-pt-kicker{display:block;color:#677889;font-size:10px;font-weight:850;letter-spacing:.09em;text-transform:uppercase}
 .rr-pt-heading h1{
 margin:5px 0 5px;
@@ -204,28 +197,12 @@ border-left:1px solid #ddcfb2;
  --rr-type-main:26px;--rr-type-section:16px;--rr-type-body:13px;--rr-type-label:10px;
  --rr-space-1:4px;--rr-space-2:8px;--rr-space-3:12px;--rr-space-4:16px;
 }
-.rr-pt-brand-rail{
- position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:10px;
- min-height:62px;margin:-14px -17px 8px;padding:7px 15px;
- background:var(--navy);border-bottom:2px solid var(--gold);
- box-shadow:0 3px 9px rgba(7,25,44,.15);
-}
-.rr-pt-brand-id{display:flex;align-items:center;gap:8px;flex:none;color:#f8f6f0;text-decoration:none}
-.rr-pt-brand-id img{display:block;flex:none;width:42px;height:42px;object-fit:contain}
-.rr-pt-brand-wordmark{display:grid;gap:2px;line-height:1.1}
-.rr-pt-brand-wordmark b{font-size:13px;font-weight:850;letter-spacing:.04em;white-space:nowrap}
-.rr-pt-brand-wordmark small{font-size:8px;font-weight:750;letter-spacing:.1em;color:#e7dabb;white-space:nowrap}
-.rr-pt-brand-module{margin:auto;color:#e2dbc8;font-size:10px;font-weight:850;letter-spacing:.085em;white-space:nowrap}
 .rr-pt-track-mark{
  display:flex;align-items:center;gap:8px;justify-content:flex-end;min-width:0;
- padding:3px 6px;border-radius:6px;background:#fff;flex:none
+ padding:3px 6px;border:1px solid #d6c4a3;border-radius:7px;background:#fff;max-width:min(100%,235px);flex:none;margin-left:auto
 }
 .rr-pt-track-mark img{display:block;max-width:110px;width:auto;height:47px;object-fit:contain}
 .rr-pt-brand-track{max-width:155px;color:#15385c;font-size:10px;font-weight:850;line-height:1.2;text-align:right}
-.rr-pt-admin-line{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 7px}
-.rr-pt-admin-line span{color:#88703f;font-size:9px;font-weight:850;letter-spacing:.045em;text-align:right}
-
-.rr-pt-back{margin:2px 0;font-size:11px}
 .rr-pt-heading{margin:0 0 11px}
 .rr-pt-heading h1{font-size:var(--rr-type-main)}
 .rr-pt-heading p{font-size:12px}
@@ -290,11 +267,6 @@ height:100%;
 .rr-pt-reset-button{display:block;width:calc(100% - 24px);min-height:44px;margin:8px 12px 14px;padding:8px;border:1px solid #abc0cf;border-radius:6px;color:#214a6d;background:#fff;font-size:12px;font-weight:800;cursor:pointer}
 
 @media(max-width:800px){
- .rr-pt-brand-rail{margin:-12px -11px 7px;padding:6px 10px;min-height:57px;gap:8px}
- .rr-pt-brand-module{display:none}
- .rr-pt-brand-id img{width:39px;height:39px}
- .rr-pt-brand-wordmark b{font-size:11px}
- .rr-pt-brand-wordmark small{font-size:7px}
  .rr-pt-track-mark{margin-left:auto;gap:4px;padding:2px 4px}
  .rr-pt-track-mark img{max-width:95px;height:42px}
  .rr-pt-brand-track{display:none}
@@ -308,26 +280,11 @@ gap:4px;
  .rr-pt-runner-button{min-width:41px;min-height:41px}
 }
 @media(max-width:340px){
- .rr-pt-brand-wordmark small{display:none}
  .rr-pt-track-mark img{max-width:83px}
  .rr-pt-stat span{font-size:9px}
  .rr-pt-stat strong{font-size:19px}
  .rr-pt-mode-button{padding:7px 5px;font-size:11px}
 }
-
-
-/* Private module's legacy site header collapses to a small cross-product nav row;
-   the logo and track remain in the persistent app brand bar below. */
-.rr-pt-page .rr-member-header .heritage-shell{
- min-height:39px;padding:4px 10px;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:6px
-}
-.rr-pt-page .rr-member-header .rr-member-brand{display:none}
-.rr-pt-page .rr-member-nav{width:100%;display:flex;justify-content:center;flex-wrap:nowrap;gap:6px;min-width:0}
-.rr-pt-page .rr-member-nav a{
- padding:7px 9px;min-height:29px;border-radius:6px;
- font:800 10px/1.15 Inter,Arial,system-ui,sans-serif;letter-spacing:.025em;white-space:nowrap
-}
-.rr-pt-page .rr-member-nav a[aria-current="page"]{background:#254567;color:#fff;border-color:#c99831}
 .rr-pt-builder-row{align-items:start;min-height:50px;padding:6px 5px}
 .rr-pt-builder-row .rr-pt-row-race{min-height:42px}
 .rr-pt-builder-leg-body{display:flex;flex-wrap:wrap;align-items:center;gap:5px 10px;min-width:0}
@@ -342,8 +299,6 @@ gap:4px;
 .rr-pt-field-grid .rr-pt-runner-button{min-height:42px;min-width:42px}
 .rr-pt-unselected{font-size:11px;color:#a34c42;font-weight:800}
 @media(max-width:800px){
- .rr-pt-page .rr-member-header .heritage-shell{min-height:38px;padding:4px 5px}
- .rr-pt-page .rr-member-nav a{padding:7px 6px;font-size:9px;letter-spacing:0}
  .rr-pt-page .rr-pt-toolbar label:last-child{grid-column:auto}
  .rr-pt-page .rr-pt-toolbar{grid-template-columns:repeat(2,minmax(0,1fr))}
  .rr-pt-builder-row{grid-template-columns:58px minmax(0,1fr)}
@@ -351,7 +306,6 @@ gap:4px;
  .rr-pt-add-trigger{font-size:9px;padding:4px 6px}
 }
 @media(max-width:340px){
- .rr-pt-page .rr-member-nav a{font-size:8px;padding:7px 5px}
  .rr-pt-builder-row{grid-template-columns:52px minmax(0,1fr)}
  .rr-pt-add-trigger{margin-left:0}
 }

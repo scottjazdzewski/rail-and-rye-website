@@ -200,15 +200,11 @@ align-items:center;
 
 .rr-lr-page .rr-member-footer nav,.rr-lr-page .rr-member-footer small{font-size:10px;line-height:1.4}
 @media(max-width:760px){
- .rr-lr-page .rr-member-header .heritage-shell{min-height:0;flex-direction:column;align-items:flex-start;padding:8px 10px;gap:5px}
- .rr-lr-page .rr-member-nav{gap:4px}
- .rr-lr-page .rr-member-nav a{min-height:27px;padding:6px 7px;font-size:9px;letter-spacing:0}
  .rr-lr-page .rr-member-footer .heritage-shell{padding-top:0;padding-bottom:0}
  .rr-lr-page .rr-lr-overview{margin:5px 0 4px}
  .rr-lr-page .rr-lr-summary-meta{margin-top:2px}
 }
 @media(max-width:375px){
- .rr-lr-page .rr-member-nav a{padding-left:5px;padding-right:5px;font-size:8.5px}
  .rr-lr-page .rr-lr-racebar{min-height:35px;padding:6px 9px}
  .rr-lr-page .rr-lr-case{padding-top:5px;padding-bottom:2px}
 }
@@ -274,38 +270,6 @@ margin-top:4px;
  * Longshot Radar implementation; paired with Target List's independent V1
  * stylesheet. Presentation ONLY: no race-model or source transformations. */
 .rr-lr-page{overflow-x:clip}
-.rr-lr-page .rr-member-header .heritage-shell{
-  max-width:1180px;min-height:0;gap:12px;padding:8px 12px;
-}
-.rr-lr-page .rr-member-brand{
-  display:inline-flex;align-items:center;gap:8px;flex:0 0 auto;
-  font:800 18px/1.15 Inter,Arial,system-ui,sans-serif;
-  letter-spacing:.08em;white-space:nowrap;
-}
-.rr-lr-page .rr-member-brand img{display:block;width:40px;height:40px;object-fit:contain}
-.rr-lr-page .rr-member-brand span{font:800 18px/1.15 Inter,Arial,system-ui,sans-serif;letter-spacing:.08em}
-.rr-lr-page .rr-member-nav{
-  display:flex;align-items:stretch;flex-wrap:nowrap;gap:6px;
-  width:auto;max-width:100%;min-width:0;margin:0;padding:0 0 2px;
-  overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;
-  overscroll-behavior-x:contain;scroll-snap-type:x proximity;
-  scrollbar-width:none;
-}
-.rr-lr-page .rr-member-nav::-webkit-scrollbar{display:none}
-.rr-lr-page .rr-member-nav a{
-  flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;
-  min-height:40px;padding:10px 12px;border-radius:6px;
-  font:800 12px/1.2 Inter,Arial,system-ui,sans-serif;
-  letter-spacing:0;white-space:nowrap;scroll-snap-align:start;
-  text-transform:uppercase;
-}
-.rr-lr-page .rr-member-nav a[aria-current="page"]{
-  border-color:#f1c15f;background:#173f66;color:#fff;
-  text-decoration:underline;text-decoration-color:#f1c15f;text-underline-offset:4px;
-}
-.rr-lr-page .rr-member-nav a:focus-visible{
-  outline:3px solid #c99831;outline-offset:-3px;
-}
 .rr-lr-page .rr-lr-main{
   box-sizing:border-box;max-width:1140px;
   padding:10px 11px 32px;margin-inline:auto;
@@ -474,12 +438,6 @@ flex-wrap:wrap;
   font:500 11px/1.5 Inter,Arial,system-ui,sans-serif;
 }
 @media(max-width:900px){
-  .rr-lr-page .rr-member-header .heritage-shell{
-    display:flex;flex-direction:column;align-items:stretch;
-    flex-wrap:nowrap;gap:6px;padding:8px 10px 7px;
-  }
-  .rr-lr-page .rr-member-brand{align-self:flex-start}
-  .rr-lr-page .rr-member-nav{width:100%}
 }
 @media(max-width:430px){
   .rr-lr-page .rr-lr-main{padding:9px 10px 30px}
