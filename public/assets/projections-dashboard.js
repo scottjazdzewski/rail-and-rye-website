@@ -6,11 +6,11 @@ const previewMode=document.body.dataset.rrPreview==="true";
 const reviewMode=previewMode&&/(?:\?|&)review=nov23(?:&|$)/.test(String(globalThis.location?.search||""));
 let cards=[],activeCard=null,activeRace=null;
 const CARD_METRICS=[
- ["SPEED",["speed","speed figure","speed rating"]],
- ["FORM",["form","recent form"]],
- ["CLASS",["class","class rating"]],
- ["PACE FIT",["pace fit","pace","pacefit"]],
- ["SURFACE/DISTANCE",["surface/distance","surface distance","surface fit","distance fit","track fit"]]
+ ["SPEED",["speed","speed figure","speed rating"],"speed"],
+ ["FORM",["form","recent form"],"form"],
+ ["CLASS",["class","class rating"],"class"],
+ ["PACE FIT",["pace fit","pace","pacefit"],"pace"],
+ ["SURFACE/DISTANCE",["surface/distance","surface distance","surface fit","distance fit","track fit"],"surface"]
 ];
 const api=async url=>{
  const response=await fetch(url,{credentials:"same-origin",cache:"no-store"});
@@ -116,14 +116,13 @@ function makeTile(label,value,iconName){
 }
 function makeMetricGroup(entry){
  const group=makeNode("div","rr-dash-metric-group");group.setAttribute("role","group");group.setAttribute("aria-label","Runner ratings");
- for(const [label,aliases] of CARD_METRICS){
+ for(const [label,aliases,art] of CARD_METRICS){
   const value=metricValue(entry,aliases),state=metricState(value),cell=makeNode("div","rr-dash-metric-value");
   cell.dataset.label=label;cell.dataset.shortLabel=label==="SURFACE/DISTANCE"?"SURF/DIST":label==="PACE FIT"?"PACE":label;
   if(state){
    cell.dataset.state=state;cell.title=label+": "+state;cell.setAttribute("aria-label",label+": "+state);
-   const bars=makeNode("span","rr-dash-metric-bars");bars.setAttribute("aria-hidden","true");
-   for(let n=0;n<3;n++)bars.append(makeNode("i","rr-dash-metric-bar"));
-   cell.append(bars);
+   const badge=iconNode(art,"rr-dash-rating-badge",state);
+   if(badge)cell.append(badge);
   }else{cell.textContent=value;cell.setAttribute("aria-label",label+": "+value);}
   group.append(cell);
  }
@@ -190,10 +189,12 @@ function showHorse(entry){
  }
  const factors=makeNode("section","rr-dash-sheet-section");factors.append(makeNode("h3","","FIVE-FACTOR READOUT"));
  const factorList=makeNode("div","rr-dash-sheet-factor-list");
- for(const [label,aliases] of CARD_METRICS){
+ for(const [label,aliases,art] of CARD_METRICS){
   const value=metricValue(entry,aliases),state=metricState(value);
   const item=makeNode("div","rr-dash-sheet-factor");
-  const status=makeNode("span","rr-dash-sheet-factor-status "+(state?"rr-dash-sheet-factor-"+state:""),state?state.toUpperCase():value);
+  const badge=state?iconNode(art,"rr-dash-sheet-factor-badge",state):null;
+  const status=badge||makeNode("span","rr-dash-sheet-factor-status",value);
+  if(badge)badge.setAttribute("aria-label",label+": "+state);
   item.append(makeNode("strong","",label),status);factorList.append(item);
  }
  factors.append(factorList);mobile.append(factors);
@@ -244,7 +245,7 @@ function raceBanner(race){
  if(purse)meta.append(makeNode("p","rr-dash-race-purse","PURSE "+purse));
  else if(previewMode&&!reviewMode){const missing=makeNode("p","rr-dash-race-purse","PURSE MISSING FROM EXPORT");missing.dataset.missing="true";meta.append(missing);}
  const stage=activeCard?.card?.projection_status;
- if(stage==="prescratch")meta.append(makeNode("p","rr-dash-race-scratch-count","PRESCRATCH · NOT FINAL"));
+ if(stage==="prescratch")meta.append(makeNode("p","rr-dash-race-scratch-count","INITIAL CARD · CURRENT"));
  const scratchCount=race.scratch_count==null?(race.scratches?.length||null):race.scratch_count;
  if(stage!=="prescratch"&&scratchCount!=null)meta.append(makeNode("p","rr-dash-race-scratch-count",scratchCount+" SCRATCH"+(scratchCount===1?"":"ES")));
  copy.append(meta);
@@ -263,7 +264,7 @@ function renderCard(){
  if(race.distance)tiles.append(makeTile("Distance",race.distance,factBadge("distance",race.distance)));
  if(tiles.children.length)panel.append(tiles);
  if(activeCard.card.projection_status==="prescratch"){
-  panel.append(makeNode("p","rr-dash-prescratch-note","Prescratch model run · official scratches and five-factor badges are not yet certified. Fair odds are exact-model net-to-1 review values, not the published house ladder."));
+  panel.append(makeNode("p","rr-dash-prescratch-note","Initial TRI projections · current until official scratches are processed. Fair odds shown are model net-to-1 review values."));
  }
  if(race.summary)panel.append(makeNode("p","rr-dash-race-summary",race.summary));
  const table=makeNode("div","rr-dash-table");table.setAttribute("role","table");table.setAttribute("aria-label","Race "+race.race_number+" projections");
