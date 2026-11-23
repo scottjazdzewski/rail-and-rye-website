@@ -358,7 +358,7 @@
  function renderIntake(){
   if(!E.intakePanel)return;
   E.intakePanel.replaceChildren();
-  E.intakePanel.append(node("p","rr-pt-intake-warning","Suggested tickets for this date are being updated."));
+  E.intakePanel.append(node("p","rr-pt-intake-warning","Today's verified tickets are not yet available. Selections will appear automatically after the current race fields are approved."));
  }
  function render(){
   const entry=entries.find(x=>x.card.date===E.date.value&&x.card.track===E.track.value);
@@ -383,7 +383,7 @@
    certified=(real.cards||[]).filter(entry=>entry?.card?.status!=="demo"&&!entry?.card?.is_demo);
    intake=real.intake||null;scratchUpdate=real.scratch_update||null;
     useData();
-    setMessage(certified.length?"":"No Pick Tickets available for this date.",!certified.length);
+    setMessage(certified.length?"":"Pick Tickets will appear once today's updated TRI/F4 scores and official scratch records pass verification.",!certified.length);
   }catch(e){E.app.hidden=true;E.empty.hidden=true;setMessage(e.message)}
  }
  function useData(){
