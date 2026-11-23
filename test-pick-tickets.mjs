@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import {normalizePickTickets,handleAdminPickTickets} from "./src/pick-tickets.js";
+import {getPickTicketsIntake} from "./src/pick-tickets-intake.js";
 import {getPickTicketsPrivateDemo} from "./src/pick-tickets-demo.js";
 
 const receipt={reference:"SYNTHETIC-TEST-ONLY",sha256:"a".repeat(64)};
@@ -74,6 +75,13 @@ assert.match(result.body.error,/scratch-updated/);
 const listing=await handleAdminPickTickets(new Request("https://railandryeracing.com/api/admin/pick-tickets"),env);
 const data=await listing.json();
 assert.equal(data.cards.length,1);
+assert.equal(data.intake.date,"2026-11-23");
+assert.equal(data.intake.tracks.length,5);
+assert.equal(data.intake.tracks.reduce((n,t)=>n+t.race_count,0),45);
+assert.equal(data.intake.tracks.reduce((n,t)=>n+t.analysis_runner_count,0),367);
+assert.equal(data.intake.status,"PRESCRATCH_SOURCE_RECEIVED__TICKETS_HOLD");
+assert.match(data.intake.missing_gate,/scoring receipt/);
+assert.equal(Object.keys(getPickTicketsIntake()).some(k=>/selections|pwin|win_probability|tickets/i.test(k)),false,"intake must not leak paid runner selections or probabilities");
 assert.equal(data.cards[0].card.revision,2);
 assert.equal(data.cards[0].card.status,"scratch_updated");
 assert.equal(listing.headers.get("Cache-Control"),"private, no-store");
