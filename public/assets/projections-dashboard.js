@@ -249,7 +249,7 @@ function renderCard(){
  if(!reviewMode||race.pace)tiles.append(makeTile("Pace",race.pace,factBadge("pace",race.pace)));
  if(race.surface)tiles.append(makeTile("Surface",race.surface,factBadge("surface",race.surface)));
  if(race.distance)tiles.append(makeTile("Distance",race.distance,factBadge("distance",race.distance)));
- if(tiles.childNodes.length)panel.append(tiles);
+ if(tiles.children.length)panel.append(tiles);
  if(race.summary)panel.append(makeNode("p","rr-dash-race-summary",race.summary));
  const table=makeNode("div","rr-dash-table");table.setAttribute("role","table");table.setAttribute("aria-label","Race "+race.race_number+" projections");
  const header=makeNode("div","rr-dash-table-heading");header.setAttribute("role","row");
