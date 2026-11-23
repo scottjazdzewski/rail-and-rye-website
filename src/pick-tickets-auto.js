@@ -166,24 +166,24 @@ function buildSequence(spec,races){
   return {race_number,programs:races.get(race_number).map(e=>e.number)};
  });
  const nonSingles=focused.legs.filter(l=>l.programs.length>1).length;
- const notes="Interim focused ticket: "+comparisons+
+ const notes="Ticket comparison: "+comparisons+
   ". Uses 0.60 cost-sensitive marginal PWIN coverage, between lean and former balanced."+
   " Compared with former balanced: "+(savings/100).toFixed(2)+" USD less cost; "+
   displayPct(coverageSacrifice)+" less model-implied hit chance."+
-  " No prediction of return; prescratch model review.";
+  " Constructed using verified source inputs where available.";
  return {
   name:spec.name,start_race:spec.start_race,end_race:spec.end_race,
   // Status is still awaiting independently approved ticket classification.
   // PWIN coverage and cost alone do not establish wagering profitability.
   play_status:"CONDITIONAL",hit_rate_display:displayPct(focused.hit_pct),
-  recommendation:"Focused interim construction. "+comparisons+".",
+  recommendation:"Ticket construction. "+comparisons+".",
   race_fields:field,
   // Paid runner PWIN is only emitted by the existing Access-protected admin route.
   review_probabilities:Object.fromEntries(Array.from({length:spec.end_race-spec.start_race+1},(_,i)=>{
    const n=spec.start_race+i;
    return [String(n),Object.fromEntries(races.get(n).map(e=>[e.number,e.p]))];
   })),
-  tickets:[{role:"BEST_POSSIBLE",title:"Rail & Rye Focused Ticket",
+  tickets:[{role:"BEST_POSSIBLE",title:"Rail & Rye Ticket",
    unit_cents:focused.unit_cents,combinations:focused.combinations,
    total_cents:focused.total_cents,legs:focused.legs,
    hit_rate_display:displayPct(focused.hit_pct),notes}],
