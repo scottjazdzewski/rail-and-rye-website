@@ -168,6 +168,21 @@ try{
   assert.equal(banner.complete,"6½F · Dirt");
 
   assert.ok(readable.header>=16,"Track name must be easy to read at "+width+": "+JSON.stringify(readable));
+  const typeMatch=await page.locator(".rr-target-card .rr-target-racebar-main").first().evaluate(el=>{
+    const track=getComputedStyle(el.querySelector("h3"));
+    const facts=getComputedStyle(el.querySelector(".rr-target-race-facts"));
+    const race=getComputedStyle(el.querySelector(".rr-target-race-number"));
+    const post=getComputedStyle(el.querySelector(".rr-target-post"));
+    return {trackSize:parseFloat(track.fontSize),trackWeight:track.fontWeight,transform:track.textTransform,
+      factsSize:parseFloat(facts.fontSize),factsWeight:facts.fontWeight,raceSize:parseFloat(race.fontSize),
+      postSize:parseFloat(post.fontSize)};
+  });
+  assert.equal(typeMatch.trackSize,17,"Match Radar track name at 17px even on narrow phones: "+JSON.stringify(typeMatch));
+  assert.equal(typeMatch.transform,"uppercase","Use Radar's uppercase race-track hierarchy.");
+  assert.equal(typeMatch.factsSize,14,"Keep race conditions at Radar's readable 14px instead of shrinking: "+JSON.stringify(typeMatch));
+  assert.equal(typeMatch.raceSize,13);
+  assert.equal(typeMatch.postSize,13);
+
   assert.ok(readable.distance>=13,"Distance/surface/class must be readable at "+width+": "+JSON.stringify(readable));
   assert.ok(readable.name>=16,"Horse name must be readable at "+width+": "+JSON.stringify(readable));
   assert.ok(readable.win>=22&&readable.fair>=20,"Both price metrics must be prominent at "+width+": "+JSON.stringify(readable));
