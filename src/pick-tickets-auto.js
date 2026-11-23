@@ -103,8 +103,7 @@ function buildSequence(spec,races){
   name:spec.name,start_race:spec.start_race,end_race:spec.end_race,
   // With no combination payout evidence, do not claim a profitable PLAY.
   play_status:"CONDITIONAL",hit_rate_display:displayPct(balanced.hit_pct),
-  recommendation:"Prescratch model-coverage recommendation. "+comparisons+
-   ". No payout, pool-size, or profitability estimate.",
+  recommendation:"Prescratch model-coverage recommendation. "+comparisons+".",
   race_fields:field,
   // Only emitted by this Access-protected admin endpoint; never committed as paid data.
   review_probabilities:Object.fromEntries(Array.from({length:spec.end_race-spec.start_race+1},(_,i)=>{
