@@ -9,7 +9,8 @@ const expected=[
  ["public/admin/longshot-radar.html",[manifest.publications.longshot_radar.hero,manifest.publications.longshot_radar.mark]],
  ["public/admin/target-list-preview.html",[manifest.publications.target_list.hero,manifest.publications.target_list.mark]]
 ];
-assert.match(wrangler,/"run_worker_first":\["\/admin\*"/,"All /admin review pages must run through worker before any static asset.");
+const config=JSON.parse(wrangler);
+assert.ok(config.assets.run_worker_first.includes("/admin*"),"All /admin review pages must run through worker before static assets.");
 assert.match(router,/if\(path\.startsWith\("\/api\/admin\/"\)\|\|path==="/);
 assert.match(router,/const auth=await verifyAdmin\(request,env\); if\(!auth.ok\)return auth.response/,"Admin preview must fail closed");
 assert.match(router,/adminPages.get\(normalizedAdminPath\)/,"Only the explicit protected preview routes may be served.");
@@ -39,5 +40,5 @@ for(const module of ["longshot-radar.js","target-list-dashboard.js"]){
  assert.doesNotMatch(source,/\/api\/checkout|stripe/,"No new disconnected commerce flow.");
 }
 assert.match(read("public/assets/racing-intelligence-module-art.css"),/rr-review-artwork/);
-assert.match(wrangler,/"PROJECTIONS_MEMBER_LAUNCH":"off"/,"Do not enable customer launch");
+assert.equal(config.vars.PROJECTIONS_MEMBER_LAUNCH,"off","Do not enable customer launch");
 console.log("PASS: private Hub route, fail-closed admin gate, approved logo/4 product heroes/2 product marks/all 20 real saddlecloth assets, no PDF dependency, no paid data exposure.");
