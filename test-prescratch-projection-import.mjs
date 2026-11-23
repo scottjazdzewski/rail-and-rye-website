@@ -52,3 +52,34 @@ await rejects(x=>{x.races[0].entries[0].win_probability_exact=64;},/F4 first-pla
 await rejects(x=>{x.races[0].entries[0].f4_probabilities=null;},/exact PWIN and F4/i);
 await rejects(x=>{x.races[0].entries[1].win_probability=33;x.races[0].entries[1].win_probability_exact=33; x.races[0].entries[1].f4_probabilities.exact_p1=.33;x.races[0].entries[1].f4_probabilities.p6_plus=.12;x.races[0].entries[1].f4_probabilities.top2=.53;x.races[0].entries[1].f4_probabilities.top3=.68;x.races[0].entries[1].f4_probabilities.top4=.78;},/100%/i);
 console.log("PASS: authenticated batch endpoint schema preserves prescratch TRI + F4, keeps scratch status unknown and rejects invalid scores");
+
+
+const hashes={tri_sha256:"a".repeat(64),f4_sha256:"b".repeat(64),prescratch_parent_sha256:"c".repeat(64),official_changes_sha256:"d".repeat(64)};
+const finalized=structuredClone(card);
+finalized.projection_status="scratch_final";
+finalized.factor_basis="verified_prescratch";
+finalized.model_receipts=hashes;
+finalized.races[0].scratch_count=1;
+finalized.races[0].scratches=[{program_number:"3",horse_name:"Synthetic Scratch"}];
+response=await upload(finalized);
+assert.equal(response.status,200,await response.clone().text());
+const finalRead=await readAdminProjectionCards(env);
+const finalStored=(await finalRead.json()).cards[0].card;
+assert.equal(finalStored.projection_status,"scratch_final");
+assert.equal(finalStored.races[0].scratch_count,1);
+assert.equal(finalStored.races[0].scratches[0].program_number,"3");
+assert.deepEqual(finalStored.model_receipts,hashes);
+assert.equal(finalStored.factor_basis,"verified_prescratch");
+const downgraded=await upload(card);
+assert.equal(downgraded.status,409,"Never overwrite a scratch-final run with an older prescratch version");
+async function finalRejects(mutate,message){
+ const candidate=structuredClone(finalized);mutate(candidate);
+ const reply=await upload(candidate);
+ assert.equal(reply.status,400,await reply.clone().text());
+ assert.match((await reply.json()).error,message);
+}
+await finalRejects(x=>{delete x.model_receipts;},/receipt hashes/i);
+await finalRejects(x=>{x.races[0].scratch_count=0;},/full official scratch list/i);
+await finalRejects(x=>{x.races[0].scratches[0].program_number="1";},/scratched horse cannot remain/i);
+await finalRejects(x=>{x.races[0].entries[0].win_probability_exact=70;},/F4 first-place probability/i);
+console.log("PASS: receipt-traced scratch-final models, complete scratches, PWIN/F4 integrity and no prescratch downgrades");
