@@ -8,11 +8,11 @@
   status:$("#rr-pt-status"),app:$("#rr-pt-app"),date:$("#rr-pt-date"),track:$("#rr-pt-track"),
   source:$("#rr-pt-source"),types:$("#rr-pt-types"),sequences:$("#rr-pt-sequences"),
   updated:$("#rr-pt-updated"),current:$("#rr-pt-current"),mock:$("#rr-pt-mock"),
-  empty:$("#rr-pt-empty"),brandTrack:$("#rr-pt-brand-track"),brandLogo:$("#rr-pt-track-logo"),
+  empty:$("#rr-pt-empty"),intakePanel:$("#rr-pt-intake"),brandTrack:$("#rr-pt-brand-track"),brandLogo:$("#rr-pt-track-logo"),
   dialog:$("#rr-pt-dialog"),dialogTitle:$("#rr-pt-dialog-title"),
   dialogBody:$("#rr-pt-detail"),upload:$("#rr-pt-upload"),file:$("#rr-pt-file")
  };
- let certified=[],demo=[],entries=[],activeSeq=null,activeTier=0,currentIsDemo=true;
+ let certified=[],demo=[],entries=[],intake=null,activeSeq=null,activeTier=0,currentIsDemo=true;
  let activeMode="rail",builderLegs=[],expandedRaceNumbers=new Set();
  const node=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=String(text);return n;};
  const money=cents=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(cents/100);
@@ -297,24 +297,47 @@
  }
  function updateTrack(){
   const date=E.date.value,old=E.track.value;
-  const tracks=[...new Set(entries.filter(x=>x.card.date===date).map(x=>x.card.track))].sort();
+  const fromCards=entries.filter(x=>x.card.date===date).map(x=>x.card.track);
+  const fromIntake=intake?.date===date?intake.tracks.map(x=>x.name):[];
+  const tracks=[...new Set([...fromCards,...fromIntake])].sort();
   E.track.replaceChildren();tracks.forEach(x=>option(E.track,x,x));
   E.track.value=tracks.includes(old)?old:(tracks[0]||"");
   activeSeq=null;E.types.dataset.selected="3";render();
  }
+ function renderIntake(){
+  if(!E.intakePanel)return;
+  E.intakePanel.replaceChildren();
+  const track=intake?.tracks?.find(x=>x.name===E.track.value);
+  if(!track||intake.date!==E.date.value){
+   E.intakePanel.append(node("p","rr-pt-intake-warning","No source intake record for this track/date."));
+   return;
+  }
+  const header=node("div","rr-pt-intake-header");
+  header.append(node("strong","","PRESCRATCH · SOURCE RECEIVED"),node("span","","TICKETS ON HOLD"));
+  E.intakePanel.append(header);
+  E.intakePanel.append(node("h3","",track.name+" · "+toDate(intake.date)));
+  const stats=node("div","rr-pt-intake-stats");
+  [["RACES",track.race_count],["RUNNERS IN ANALYSIS",track.analysis_runner_count],["CERTIFIED TICKETS",0]].forEach(([label,value])=>{
+   const item=node("div","rr-pt-intake-stat");
+   item.append(node("span","",label),node("strong","",value));stats.append(item);
+  });
+  E.intakePanel.append(stats);
+  E.intakePanel.append(node("p","rr-pt-intake-desc",
+   "The actual November 23 Timeform source and a separate prescratch TRI analysis file have been located. The recorded win-probability distributions sum to approximately 100% by race. This is not production scoring certification."));
+  E.intakePanel.append(node("p","rr-pt-intake-gate","RELEASE GATE · "+intake.missing_gate));
+  E.intakePanel.append(node("p","rr-pt-intake-desc",
+   "No model-approved runner selections, ticket hit percentages, combination counts, or PLAY recommendations will be fabricated."));
+ }
  function render(){
   const entry=entries.find(x=>x.card.date===E.date.value&&x.card.track===E.track.value);
   E.app.hidden=!entry;E.empty.hidden=!!entry;
-  if(!entry)return;
+  if(E.brandTrack)E.brandTrack.textContent=E.track.value||"Select track";
+  if(E.brandLogo){const slug=TRACK_LOGOS[E.track.value];E.brandLogo.hidden=!slug;
+   if(slug){E.brandLogo.src="/assets/approved/track-logos/"+slug+".webp";E.brandLogo.alt=E.track.value+" logo";}}
+  if(!entry){renderIntake();return;}
   if(E.mock)E.mock.hidden=true;
-  if(E.brandTrack)E.brandTrack.textContent=entry.card.track;
-  if(E.brandLogo){const slug=TRACK_LOGOS[entry.card.track];E.brandLogo.hidden=!slug;
-   if(slug){E.brandLogo.src="/assets/approved/track-logos/"+slug+".webp";E.brandLogo.alt=entry.card.track+" logo";}}
- 
-  E.updated.textContent=(currentIsDemo?"MOCK PREVIEW · NEVER PUBLISHED":
-    (entry.card.status==="scratch_updated"?"SCRATCH UPDATED":"INITIAL · CURRENT")+
-    " · REVISION "+entry.card.revision)
-    +" · "+entry.card.track+" · "+toDate(entry.card.date);
+  E.updated.textContent=(entry.card.status==="scratch_updated"?"SCRATCH UPDATED":"INITIAL · CURRENT")+
+   " · REVISION "+entry.card.revision+" · "+entry.card.track+" · "+toDate(entry.card.date);
   renderTypes();
  }
  async function call(url,opts){
@@ -328,18 +351,18 @@
   try{
    const real=await call("/api/admin/pick-tickets");
    certified=(real.cards||[]).filter(entry=>entry?.card?.status!=="demo"&&!entry?.card?.is_demo);
-   demo=[];
+   intake=real.intake||null;demo=[];
    E.source.replaceChildren();
    option(E.source,"certified","Certified private editions");
    E.source.value="certified";
    useData();
-   setMessage(certified.length?"":"No certified Pick Tickets are staged for private review. Awaiting current full-precision TRI scoring receipts.",!certified.length);
+   setMessage(certified.length?"":intake?"Real November 23 source loaded; scoring certification is pending.":"No certified Pick Tickets are staged for private review.",!certified.length);
   }catch(e){E.app.hidden=true;E.empty.hidden=true;setMessage(e.message)}
  }
  function useData(){
   currentIsDemo=false;
   entries=currentIsDemo?demo:certified;activeSeq=null;E.types.dataset.selected="3";
-  const dates=[...new Set(entries.map(x=>x.card.date))].sort().reverse();
+  const dates=[...new Set([...entries.map(x=>x.card.date),...(intake?[intake.date]:[])])].sort().reverse();
   const old=E.date.value;
   E.date.replaceChildren();dates.forEach(x=>option(E.date,x,toDate(x)));
   E.date.value=dates.includes(old)?old:(dates[0]||"");
