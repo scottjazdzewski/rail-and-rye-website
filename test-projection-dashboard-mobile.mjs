@@ -101,7 +101,7 @@ const memberSort=readFileSync("public/membership/dashboard/index.html","utf8");
 for(const html of [adminSort,memberSort]){
  assert.doesNotMatch(html,/rr-dash-sort|Sort by|value="finish"|value="program"/,
    "There must be no customer-facing sorting controls");
- assert.match(html,/projections-dashboard\.js\?v=27/,"Use current locked-order client");
+ assert.match(html,/projections-dashboard\.js\?v=28/,"Use current locked-order client");
 }
 assert.doesNotMatch(js,/rr-dash-sort/,"Client must not let users reorder horses");
 console.log("PASS: compact runner rows, verified dash factor states, preserved race data, no redundant PDF action");
@@ -118,9 +118,9 @@ assert.doesNotMatch(js,/\breviewMode\b|PARTIAL FIELD|rr-dash-review-data/,
  "No stale partial-field runtime branches");
 assert.match(js,/api\("\/api\/admin\/projections-preview"\)/,
  "Private admin preview must always read the secure projection API");
-assert.match(adminHtml,/projections-dashboard\.js\?v=27/,
+assert.match(adminHtml,/projections-dashboard\.js\?v=28/,
  "Admin dashboard must load the latest hardened shared client");
-assert.match(memberHtml,/projections-dashboard\.js\?v=27/,
+assert.match(memberHtml,/projections-dashboard\.js\?v=28/,
  "Member dashboard must use the same client revision");
 console.log("PASS: no embedded premium data or partial review fallback; authenticated full-field preview only");
 
@@ -136,7 +136,7 @@ for(const html of [adminHtml,memberHtml]){
   "The mobile horse search occupies one consistent full-width row");
  assert.match(html,/projections-dashboard\.css\?v=24/,
   "Current improved typography style must be loaded");
- assert.match(html,/projections-dashboard\.js\?v=27/,
+ assert.match(html,/projections-dashboard\.js\?v=28/,
   "Current compact-label asset must be loaded");
 }
 assert.doesNotMatch(adminHtml,/rr-dash-private-banner|Private admin preview · member dashboard remains off|Return to projection uploader/,
@@ -207,7 +207,7 @@ const chipStyles=readFileSync("public/assets/rr-intelligence-chips.css","utf8");
 for(const html of [adminHtml,memberHtml]){
  assert.match(html,/rr-intelligence-chips\.css\?v=1/,"Load the shared race/horse chip identity");
  assert.match(html,/rr-exotic-bet-builder\.css\?v=1/,"Load the responsive exotic ticket builder skin");
- assert.match(html,/rr-exotic-bet-builder\.js\?v=1/,"Load the source-gated no-tote Bet Builder");
+ assert.match(html,/rr-exotic-bet-builder\.js\?v=2/,"Load the source-gated no-tote Bet Builder");
 }
 assert.match(js,/rr-dash-race-button rr-race-chip rr-race-chip--tab/,
  "Every race navigation tab uses the branded saddle-chip form");
@@ -234,3 +234,11 @@ assert.equal(passedRace?.race?.race_number,6,"Bet Builder opens the currently se
 assert.equal(passedRace?.track,"Del Mar","Bet Builder retains current track context");
 assert.equal(passedRace?.date,"2026-11-22","Bet Builder retains current racing date");
 console.log("PASS: stable branded race chip selection, approved horse/track art and current-race Bet Builder entry");
+
+for(const html of [adminHtml,memberHtml]){
+ assert.match(html,/rr-exotic-bet-builder\.js\?v=2/,
+  "Customers must load the actual source-backed F4 odds client, not cached v1");
+ assert.match(html,/projections-dashboard\.js\?v=28/,
+  "Both admin and member dashboard views receive same race-aware F4 routing");
+}
+console.log("PASS: private live-F4 percentages and gross break-even payout UI cache-busted");

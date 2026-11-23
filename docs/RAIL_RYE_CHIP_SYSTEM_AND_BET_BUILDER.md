@@ -32,28 +32,42 @@
 
 ## Proprietary F4 probability contract — do not infer from runner marginals
 
-The currently deployed private November 23 Projections API has **per-runner F4 finish-position marginals** but does not yet expose verified **joint ordered exacta/trifecta prefix probabilities**. Marginals and PWIN cannot be multiplied to approximate an exotic ticket.
+The November 23 source-backed F4 V2 ordered exacta/trifecta probabilities have now been published to the **private R2** bucket. The model uses the already-certified conditional P2 and P3+ coefficients independently reconstructed against **all 45 races, 367 horses and their original exacta/trifecta/superfecta prefixes**, with maximum absolute prefix reconstruction error less than 1e-15.
 
-When the frozen F4 signer and server endpoint are integrated, the private race payload may provide:
+The currently deployed protected endpoints are:
+- `GET /api/admin/projections-f4?date=YYYY-MM-DD&track=TRACK&race=N`: existing verified Cloudflare Access administrator authentication.
+- `GET /api/membership/projections-f4?date=YYYY-MM-DD&track=TRACK&race=N`: existing member login, current-card eligibility and `PROJECTIONS_MEMBER_LAUNCH` gate (launch remains OFF).
+
+The exact **private** single-race response is derived from a compact source-certified F4 V2 conditional law:
 
 ```json
 {
-  "f4_ordered_probabilities": {
-    "schema_version": 1,
+  "f4": {
+    "schema_version": 2,
     "model_id": "TRI_F4_ORDERING_MODEL_V2_RANK_OFFSET",
     "status": "verified",
-    "receipt_sha256": "<64-character hex digest>",
-    "exacta": [{"programs": ["4", "2"], "probability": 0.0123}],
-    "trifecta": [{"programs": ["4", "2", "6"], "probability": 0.00456}]
+    "date": "YYYY-MM-DD",
+    "track": "TRACK",
+    "race_number": 1,
+    "scratch_state": "PRESCRATCH",
+    "receipt_sha256": "<64-character scorer receipt hash>",
+    "prefix_sha256": "<64-character ordered-prefix SHA-256>",
+    "source_sha256": "<64-character model-source SHA-256>",
+    "programs": ["4", "2", "6"],
+    "pwin": [0.4, 0.35, 0.25],
+    "p2_weights": [1, 2, 3],
+    "p3_weights": [3, 2, 1]
   }
 }
 ```
 
-The arrays above show **structure only**, not actual published model data. Production ingestion must validate SHA256 and matching date/track/race, complete live field, original ordered F4 receipt and scratch version, every unique permutation and probabilities summing to one before setting `status:"verified"`. Never expose proprietary outcome tables via publicly accessible assets, GitHub or an unprotected endpoint. Existing private API authorization/entitlement rules must continue to apply.
+This is **schema illustration only, not the current real model scores**. The signed model source is not embedded in publicly accessible code or documents. The actual verified coefficients for the selected date/track/race are only delivered through the authenticated private R2-backed API, which crosschecks the current source and badge hashes, unchanged runner roster, prescratch state and F4 P1/P2/P3 marginals.
+
+For an exacta `A-B`: `P(A,B) = P1(A) × W2(B) / sum(W2 of runners except A)`. For a trifecta `A-B-C`, multiply the exacta probability by `W3(C) / sum(W3 of runners except A and B)`. These are the **existing frozen F4 V2 ordered-prefix probabilities**, not independent PWIN products or new ratings. Any mismatched current race, missing receipt or changed scratches fails closed.
 
 Builder behavior:
-- **Model unavailable**: show only verified ticket combinations and ticket cost. Clearly say joint F4 probabilities are not yet published. Do not display placeholder hit chances, fake fair payoffs, recommendation badges or a ROI claim.
-- **Model verified**: `P(ticket hits) = sum of exact ordered F4 probabilities for each distinct combination`. For a single $1 combination, the fair *gross* payout threshold is `1 / P(combo)`. For multi-combination tickets, an **equal-gross-payout** break-even illustration is `ticket cost / P(ticket hits)`, explicitly labeled with that assumption.
+- **Model unavailable or mismatched**: show only verified ticket combinations and ticket cost. Clearly say matching joint F4 probabilities are not published for this current race. Do not display placeholder hit chances, fake fair payoffs, recommendation badges or a ROI claim.
+- **Model verified**: `P(ticket hits) = sum of exact ordered F4 probabilities for each distinct combination`. The builder displays **Projected hit chance** and **Minimum break-even gross payout**, rounded up to whole cents. For a single $1 combination, the fair *gross* payout threshold is `1 / P(combo)`. For multi-combination tickets, an **equal-gross-payout** break-even illustration is `ticket cost / P(ticket hits)`, explicitly labeled with that assumption.
 - Show per-combination F4 chance and individual fair gross payout when certified; actual exotic payouts differ per winning combination. Do NOT call a multi-combo ticket profitable unless true tote payout information for every relevant combo exists, which this product does not connect to.
 - **No tote integration**: customer consults live tote/pool data separately; no time/price feed, bookmaker service, wagering or guarantee of profit.
 - Late scratches/changes: fail closed until an updated matching certified joint distribution is available; never reuse stale ordered prefixes.
@@ -63,3 +77,7 @@ Builder behavior:
 - Test that selecting #4 over #2/#6 creates 2 exactas; a 3-horse exacta box creates 6 ordered combinations; a 4-horse trifecta box creates 24; a horse entered in more than one position never creates impossible repeated-horse tickets.
 - Validate source F4 normalization, receipt and scratch matching server-side before any live probability display. Log that the builder never places bets, makes market claims or modifies frozen TRI/F4.
 - Keep this shared contract available to Pick Tickets, Longshot Radar and Target List windows. Share the **chip language**, not their independent product scoring or access rules.
+
+## November 23 verified production receipt
+
+On 2026-11-23, encrypted one-time R2 transfer job `45125942622` completed with `TRI_F4_EXOTICS_PRIVATE_R2_SUCCESS`: all five track objects written, 45 races / 367 runners, original F4 P2/P3/P4 prefixes matched, complete read-back, temporary RSA private key deleted. The temporary encrypted transfer file and workflows were subsequently deleted from the public website repository. The permanent scorer integration (`scripts/tri_f4_exotics.py` and `scripts/tri_dashboard_sync.py`) remains for future source-certified model days.
