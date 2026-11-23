@@ -261,7 +261,12 @@
   left.append(node("span","rr-pt-kicker","RAIL & RYE PICK TICKETS"));
   left.append(node("h2","",activeSeq.name+" · Races "+activeSeq.start_race+"–"+activeSeq.end_race));
   head.append(left,state(activeSeq.play_status));
-  box.append(head,modeControls());
+  box.append(head);
+  if(card.score_verification_status==="CURRENT_FIELD_COMPLETE_SCORING_AND_MANIFEST_PENDING"){
+   box.append(node("p","rr-pt-private-math-review",
+    "PRIVATE MODEL REVIEW · Uses today's scratch-adjusted TRI field; final scoring and official scratch proof have not been signed off."));
+  }
+  box.append(modeControls());
   if(activeMode==="builder")box.append(builder());
   else{
    const chosen=selectedTicket();
