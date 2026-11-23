@@ -16,6 +16,13 @@ const synthetic={cards:fixture.cards.map(x=>({...x,card:{
  source_receipt:{reference:"CI-SYNTHETIC-NOT-A-RACING-SELECTION",sha256:"a".repeat(64)}
 }})),demo:false};
  // Regression fixture for a scratch-day source receipt carrying old wording.
+ // Browser-only fixture for protected Ticket Insights comparison.
+ for(const entry of synthetic.cards)for(const sequence of entry.card.sequences){
+  sequence.review_meta={cost_preference_comparison:[15,20,25,30,40].map((scale,i)=>({
+   scale_dollars:scale,current_approved:i===0,combinations:8*(i+1),
+   total_cents:400*(i+1),hit_rate_display:(20+i*3).toFixed(1)+"%",singles:3-i%3
+  }))};
+ }
  synthetic.cards[0].card.source_receipt.reference="CI-RIDER_CHANGES_PENDING";
  synthetic.cards[0].card.score_verification_status="CURRENT_FIELD_COMPLETE_SCORING_AND_MANIFEST_PENDING";
  synthetic.cards[0].card.sequences[0].tickets[0].title="Rail & Rye Interim Focused Ticket";
@@ -139,6 +146,11 @@ try{
   await page.locator(".rr-pt-analysis-button").click();
   assert.equal(await page.locator("#rr-pt-dialog").evaluate(n=>n.open),true,"full analysis opens");
   assert.equal(await page.locator("#rr-pt-dialog .rr-pt-race-row").count(),4);
+  assert.equal(await page.locator("#rr-pt-dialog .rr-pt-sensitivity-table tbody tr").count(),5,
+   "Five private V3.2 comparison scales appear only in Ticket Insights");
+  assert.equal(await page.locator("#rr-pt-dialog .rr-pt-sensitivity-current").count(),1,
+   "Current locked $15 row distinguished from hypothetical cost scales");
+  assert.equal(await page.locator("#rr-pt-dialog .rr-pt-sensitivity-table tbody tr").first().locator("td").first().innerText(),"$15");
   assert.doesNotMatch(await page.locator("#rr-pt-dialog").innerText(),/interim|prescratch model review/i,"Ticket Insights has no legacy internal labels");
   const drawerBounds=await page.locator("#rr-pt-dialog").evaluate(n=>({left:n.getBoundingClientRect().left,right:n.getBoundingClientRect().right,width:innerWidth}));
   assert.ok(drawerBounds.left>=-1&&drawerBounds.right<=drawerBounds.width+1,"dialog overflow at "+width);
