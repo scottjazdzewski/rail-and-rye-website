@@ -128,7 +128,7 @@ assert.match(route,/verifyAdmin\(request,env\)/,"admin routes must verify signed
 assert.match(route,/if\(path==="\/api\/admin\/pick-tickets"\)/);
 assert.match(route,/trustedOrigin\(request\)/);
 assert.ok(route.includes('["/admin/pick-tickets-preview","/admin/pick-tickets-preview.html"]'),"Pick Tickets preview must remain on the existing protected admin router.");
-assert.match(page,/PRIVATE PREVIEW · CUSTOMER ACCESS OFF/);
+assert.doesNotMatch(page,/PRIVATE PREVIEW|CUSTOMER ACCESS OFF|<input[^>]+type="file"|JSON/,"No manual file input or review labels.");
 assert.doesNotMatch(page,/application\/pdf|\.pdf"/i);
 assert.match(css,/@media\(max-width:800px\)/);
 assert.match(css,/minmax\(0,1fr\)/);
@@ -141,7 +141,7 @@ assert.match(page,/rr-pt-track-logo/);
 assert.doesNotMatch(page,/Mock layout preview|VALUE ESTIMATE|PAYOUT|ROI/i);
 assert.doesNotMatch(js,/VALUE ESTIMATE|PAYOUT|POOL SIZE|ROI/i);
 assert.match(js,/COST CHANGE/);
-assert.match(js,/Certified private editions/);
+assert.doesNotMatch(js,/rr-pt-upload|rr-pt-file|PRESCRATCH MODEL REVIEW|PRIVATE MOCK DISPLAY/,"No upload controls or model-review labels.");
 assert.doesNotMatch(js,/call\("\/api\/admin\/pick-tickets\?demo=1"\)/);
 
 for(const slug of ["finger-lakes","mahoning-valley","mountaineer","parx-racing","zia-park"]){
