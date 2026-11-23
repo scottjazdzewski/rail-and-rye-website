@@ -5,7 +5,7 @@ import vm from "node:vm";
 const css=readFileSync("public/assets/projections-dashboard.css","utf8");
 const js=readFileSync("public/assets/projections-dashboard.js","utf8");
 assert.match(css,/\.rr-dash-race-tiles\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/,"Phone facts must use two columns");
-assert.match(js,/INITIAL CARD · CURRENT/,"Initial cards remain current before scratches");
+assert.doesNotMatch(js,/INITIAL CARD · CURRENT|Initial projections remain current/,"Do not show stage labels.");
 assert.doesNotMatch(js,/badges are not yet certified/,"Verified initial badges must not be called uncertified");
 assert.match(js,/rr-dash-metric-bars/,"Five source-backed factor states must render as compact colored dashes");
 assert.doesNotMatch(js,/iconNode\(art,"rr-dash-rating-badge"/,"No large factor PNGs in the compact runner rows");
@@ -14,7 +14,7 @@ assert.match(css,/\.rr-dash-win-percent\{font-family:"Tinos"/,"Match the approve
 assert.match(css,/\.rr-dash-metric-value\[data-state="gray"\] \.rr-dash-metric-bar/,"Neutral factors have an explicit gray dash color");
 assert.match(css,/min-height:114px/,"Runner cards no longer reserve a blank analysis footer");
 assert.match(js,/F4 FINISH PROJECTIONS/,"Full Analysis must include F4 outcomes");
-assert.match(js,/remain current until scratches/,"Initial-card scratch-state disclaimer must remain visible");
+assert.doesNotMatch(js,/rr-dash-prescratch-note/,"Remove obsolete prescratch message.");
 assert.match(css,/\.rr-dash-metric-group\{grid-area:metrics;grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/,"Mobile ratings must occupy a single, compact five-column strip");
 assert.doesNotMatch(js,/Trainer not listed \| Jockey not listed/,"Do not repeat source-data warnings on customer runner rows");
 assert.match(css,/\.rr-dash-race-tiles\{grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/,"Compact race facts occupy three short columns");
@@ -102,7 +102,7 @@ const memberSort=readFileSync("public/membership/dashboard/index.html","utf8");
 for(const html of [adminSort,memberSort]){
  assert.doesNotMatch(html,/rr-dash-sort|Sort by|value="finish"|value="program"/,
    "There must be no customer-facing sorting controls");
- assert.match(html,/projections-dashboard\.js\?v=31/,"Use current locked-order client");
+ assert.match(html,/projections-dashboard\.js\?v=32/,"Use current locked-order client");
 }
 assert.doesNotMatch(js,/rr-dash-sort/,"Client must not let users reorder horses");
 console.log("PASS: compact runner rows, verified dash factor states, preserved race data, no redundant PDF action");
