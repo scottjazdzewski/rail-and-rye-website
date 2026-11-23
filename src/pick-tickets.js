@@ -1,4 +1,3 @@
-import {getPickTicketsPrivateDemo} from './pick-tickets-demo.js';
 /* Pick Tickets: admin-only dashboard staging. No scoring, public data, or customer-launch route. */
 const PREFIX="pick-tickets/dashboard/";
 const ARCHIVE="pick-tickets/revisions/";
@@ -137,7 +136,6 @@ async function readCards(env){
 export async function handleAdminPickTickets(request,env){
  if(!env.CARDS_BUCKET)return respond({error:"Private R2 storage is not configured."},503);
  if(request.method==="GET"){
-  if(new URL(request.url).searchParams.get("demo")==="1")return respond(getPickTicketsPrivateDemo());
   return respond({cards:await readCards(env),demo:false});
  }
  if(request.method!=="POST")return respond({error:"Method not allowed."},405);
