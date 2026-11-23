@@ -10,6 +10,7 @@ const names=["Fixture One","Fixture Two","Fixture Three","Fixture Four","Fixture
              "Fixture Seven","Fixture Eight","Fixture Nine","Fixture Ten"];
 const horses=names.map((horse_name,i)=>({
  track:i%3===0?"Synthetic Downs":i%3===1?"Example Park":"Fictional Field",
+ ...(i===0?{distance:"6 furlongs",surface:"Dirt",conditions:"Stakes"}:{}),
  race_number:i+1,post_time_et:(i+1)+":25 PM ET",program_number:String([11,1,20,2,3,4,5,6,7,8][i]),
  horse_name,original_morning_line:"10/1",pwin_display:19.5,
  fair_odds_display:"4/1",
@@ -58,6 +59,74 @@ try{
      await page.locator('input[type="file"]').count()||
      await page.locator(".rr-lr-import").count())
     throw Error("User-facing JSON uploader remains at "+width);
+  // Shared Daily Research V1 — inspect actual rendered/feed DOM, not just CSS tokens.
+  const visual=await page.evaluate(()=>{
+    const el=s=>document.querySelector(s);
+    const styles=s=>{const x=el(s);if(!x)return null;const c=getComputedStyle(x),b=x.getBoundingClientRect();
+      return {font:parseFloat(c.fontSize),line:parseFloat(c.lineHeight),family:c.fontFamily,
+        h:b.height,w:b.width,x:b.x,y:b.y,color:c.color,bg:c.backgroundColor,
+        borderTop:c.borderTopWidth,borderTopColor:c.borderTopColor,
+        whiteSpace:c.whiteSpace,display:c.display,clamp:c.webkitLineClamp,
+        scrollH:x.scrollHeight,clientH:x.clientHeight,padding:parseFloat(c.paddingLeft)};};
+    const nav=el(".rr-member-nav"),active=el('.rr-member-nav [aria-current="page"]');
+    const nr=nav.getBoundingClientRect(),ar=active.getBoundingClientRect();
+    return {
+      logo:styles(".rr-member-brand img"),wordmark:styles(".rr-member-brand span"),
+      nav:styles(".rr-member-nav"),tabs:[...nav.querySelectorAll("a")].map(a=>({
+        font:parseFloat(getComputedStyle(a).fontSize),h:a.getBoundingClientRect().height,
+        wrap:getComputedStyle(a).whiteSpace
+      })),
+      activeVisible:ar.left>=nr.left-1&&ar.right<=nr.right+1,
+      navRows:new Set([...nav.querySelectorAll("a")].map(a=>Math.round(a.getBoundingClientRect().top))).size,
+      title:styles(".rr-dash-heading .rr-member-title"),kicker:styles(".rr-member-kicker"),
+      intro:styles(".rr-dash-intro"),notice:styles(".rr-dash-private-banner"),
+      toolbar:styles(".rr-lr-toolbar"),select:styles(".rr-lr-toolbar select"),label:styles(".rr-lr-toolbar label"),
+      count:styles("#rr-lr-count"),race:styles(".rr-lr-racebar"),track:styles(".rr-lr-racebar h3"),
+      raceNumber:styles(".rr-lr-race-number"),post:styles(".rr-lr-post"),
+      firstFacts:styles(".rr-lr-race-facts"),card:styles(".rr-lr-card"),
+      chip:styles(".rr-lr-program img"),horse:styles(".rr-lr-identity strong"),
+      ml:styles(".rr-lr-ml-inline"),win:styles(".rr-lr-model strong"),
+      fair:styles(".rr-lr-fair strong"),numericLabel:styles(".rr-lr-market span"),
+      markets:styles(".rr-lr-markets"),analysis:styles(".rr-lr-inline-analysis .rr-lr-case"),
+      marketBoxes:[...el(".rr-lr-markets").children].map(x=>x.getBoundingClientRect().top),
+      gaps:parseFloat(getComputedStyle(el(".rr-lr-candidates")).gap),
+      main:styles(".rr-lr-main"),
+      bodyWidth:document.body.scrollWidth,htmlWidth:document.documentElement.scrollWidth
+    };
+  });
+  const approx=(x,y,t=.5)=>Math.abs(x-y)<=t;
+  if(!approx(visual.logo.w,40)&&width<=900)throw Error("Logo must be 40px at "+width);
+  if(width<=900&&!approx(visual.wordmark.font,18))throw Error("Brand wordmark not 18px at "+width);
+  if(visual.navRows!==1||!visual.activeVisible)throw Error("All 5 tabs must be in one swipeable row with active visible at "+width);
+  if(visual.tabs.length!==5||visual.tabs.some(t=>t.h<39.9||t.font<11.9||t.wrap!=="nowrap"))
+    throw Error("Five readable 12px, 40px navigation buttons required at "+width+": "+JSON.stringify(visual.tabs));
+  if(width<=430&&(!approx(visual.title.font,28)||visual.kicker.font<10.9||visual.intro.font<12.9))
+    throw Error("Mobile title/kicker/intro typographic scale mismatch at "+width);
+  if(visual.select.h<41.9||visual.select.font<14.9||visual.label.font<11.9||visual.count.font<15.9)
+    throw Error("Date/sort controls or immediate summary too small at "+width);
+  if(visual.race.bg!=="rgb(16, 45, 83)"||!approx(parseFloat(visual.race.borderTop),3)||
+    visual.race.borderTopColor!=="rgb(201, 152, 49)")
+    throw Error("Navy #102d53 / 3px antique gold header required at "+width);
+  if(visual.track.font<16.9||visual.raceNumber.font<12.9||visual.post.font<12.9||visual.firstFacts.font<13.9)
+    throw Error("Race title/time/original source facts illegible at "+width);
+  if(!approx(visual.chip.w,36)||visual.horse.font<16.9||visual.ml.font<13.9)
+    throw Error("Approved chip / horse / ML minimum typography violated at "+width);
+  if(visual.win.font<24.9||visual.fair.font<21.9||visual.numericLabel.font<10.9)
+    throw Error("WIN/FAIR numbers or labels too small at "+width);
+  if(visual.analysis.font<16.9||visual.analysis.line/visual.analysis.font<1.49||
+      visual.analysis.scrollH>visual.analysis.clientH+2||visual.analysis.clamp!=="none"&&visual.analysis.clamp!=="unset")
+    throw Error("Full 17px source analysis hidden/truncated at "+width+": "+JSON.stringify(visual.analysis));
+  if(!approx(visual.gaps,8)||!approx(visual.card.h>0?parseFloat(getComputedStyle(document.querySelector(".rr-lr-card")).borderTopLeftRadius):0,7))
+    throw Error("8px row spacing and 7px card corners required at "+width);
+  if(visual.marketBoxes.some(y=>Math.abs(y-visual.marketBoxes[0])>.5)||
+    visual.markets.bg!=="rgba(0, 0, 0, 0)"&&visual.markets.bg!=="rgb(255, 255, 255)")
+    throw Error("WIN + FAIR must stay right-aligned, side-by-side, without gray box at "+width);
+  if(width<=430&&(visual.main.padding<9.9||visual.main.padding>12.1))
+    throw Error("Main left/right mobile padding must be 10–12px at "+width);
+  if(visual.bodyWidth>width+1||visual.htmlWidth>width+1)
+    throw Error("Shared V1 horizontal overflow outside swipe nav at "+width);
+  if(await page.locator(".rr-lr-card .rr-lr-race-facts").count()!==1)
+    throw Error("Only source-supplied race facts should appear, never invented filler at "+width);
   if(await page.getByRole("button",{name:/Race details/i}).count())
     throw Error("Analysis must not require a Race details button at "+width);
   const infos=await page.locator(".rr-lr-inline-analysis .rr-lr-case").allTextContents();
@@ -112,7 +181,7 @@ try{
  if(!html.includes('url=/admin/longshot-radar/')||html.includes("rr-lr-candidates")||html.includes("Fixture One"))
   throw Error("Public URL must redirect to private reader with no horse rows.");
  await publicPage.close();
- console.log("PASS: 320/375/390/430/768/1280 with ten source-shaped Radar horses, zero manual JSON, no stuck spinner, 503 recovery/retry, real saddlecloths and private public redirect.");
+ console.log("PASS: Shared Daily Research V1 Radar at 320/375/390/430/768/1280, 5 swipeable 40px tabs, 40px logo, 17px intact analysis, 25px WIN/22px FAIR, source race facts, zero manual JSON, and R2 retry.");
 }finally{
  if(browser)await browser.close();await new Promise(resolve=>server.close(resolve));
 }
