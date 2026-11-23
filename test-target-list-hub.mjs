@@ -15,6 +15,20 @@ const base={schema_version:1,product_type:"target_list",race_date:"2026-11-23",r
   analysis:"This is synthetic, non-customer test commentary."}]};
 const copy=()=>structuredClone(base);
 const good=validateTargetList(base);
+const named=structuredClone(base);
+named.targets[0].conditions="FIRST LADY S. (G1) Presented by Venue Sponsor";
+named.targets[0].stakes_name="First Lady S.";
+named.targets[0].stakes_grade="G1";
+named.targets[0].sponsor_name="Venue Sponsor";
+named.targets[0].is_stakes=true;
+const normalized=validateTargetList(named);
+assert.equal(normalized.targets[0].stakes_name,"First Lady S.");
+assert.equal(normalized.targets[0].stakes_grade,"G1");
+assert.equal(normalized.targets[0].sponsor_name,"Venue Sponsor");
+assert.equal(normalized.targets[0].is_stakes,true);
+const unverified=structuredClone(named);unverified.targets[0].stakes_grade="Grade 4";
+assert.throws(()=>validateTargetList(unverified),/grade/i,"Reject fabricated/non-graded source trophy");
+
 assert.equal(good.targets[0].attack.win_probability,35);
 assert.equal(good.targets[0].rank,1);
 assert.equal(good.status,"initial");
@@ -108,7 +122,7 @@ assert.doesNotMatch(html,/Post Time · Earliest First|Sort targets/,"Controls us
 assert.match(js,/Post-time order/,"Summary uses the current display order, not a redundant date.");
 assert.match(css,/font-size:18px;/,"On-phone editorial body grows to 18px.");
 assert.match(css,/font-size:25px/,"On-phone win percentage remains prominent.");
-assert.match(js,/head\.append\(node\("p","rr-target-race-facts",meta\)\)/,"The full race description appears on the second line inside the navy banner.");
+assert.match(js,/head\.append\(facts\)/,"The canonical race description and verified trophy stay on the second navy-banner line.");
 assert.doesNotMatch(js,/card\.append\(node\("p","rr-target-race-facts",meta\)\)/,"Eliminate separate race facts strip.");
 
 assert.doesNotMatch(js,/DEMO_EXAMPLE|demoHorse|Sample Favorite|Example Downs|SYNTHETIC LAYOUT EXAMPLE/,"Never display invented data when the private R2 edition is unavailable.");
@@ -121,7 +135,7 @@ assert.match(css,/@media\(max-width:359px\)/);
 assert.match(css,/\.rr-target-list\{display:grid;grid-template-columns:minmax\(0,1fr\)/,"Target List reads as one compact vertical column.");
 assert.match(css,/Tinos/,"Only authoritative statistics use the card font.");
 assert.doesNotMatch(html,/id="rr-target-review-banner"/,"One concise review notice is enough.");
-assert.match(html,/target-list-dashboard\.js\?v=20261123-radar-standard-v9/,"Phone must load the newest upload-free reader.");
+assert.match(html,/target-list-dashboard\.js\?v=20261123-radar-standard-v10-stakes/,"Phone must load the newest upload-free reader.");
 assert.match(css,/Target List v3 — dense mobile-first horse-racing reader/);
 assert.match(css,/-webkit-line-clamp:unset/,"Full editorial must never be cut off at two lines.");
 assert.match(js,/function horseRow\(role,runner,entry\)/,"Horse rows themselves open the detail drawer.");
@@ -147,8 +161,14 @@ const doc={getElementById:id=>elements.get(id),createElement:tag=>new El(tag)};
 const alpha=structuredClone(good.targets[0]);alpha.rank=3;alpha.track="Alpha Test Track";alpha.race_number=7;alpha.post_time_et="8:40 PM ET";
 const zulu=structuredClone(good.targets[0]);zulu.rank=2;zulu.track="Zulu Test Track";zulu.race_number=2;zulu.post_time_et="1:10 PM ET";
 const synthetic=structuredClone(good.targets[0]);synthetic.post_time_et="3:10 PM ET";
+synthetic.conditions="FIRST LADY S. (G1) Presented by Venue Sponsor";
+synthetic.stakes_name="First Lady S.";
+synthetic.stakes_grade="G1";
+synthetic.sponsor_name="Venue Sponsor";
+synthetic.is_stakes=true;
 const fixture={dates:["2026-11-23"],edition:{...good,targets:[synthetic,zulu,alpha]},uploaded_at:"2026-11-23T04:00:00Z"};
 const context={document:doc,fetch:async()=>({ok:true,json:async()=>fixture}),Date,Intl,RegExp,Number,String,Array,Set,console,encodeURIComponent};
+vm.runInNewContext(readFileSync("public/assets/rr-race-titles.js","utf8"),context,{filename:"rr-race-titles.js"});
 vm.runInNewContext(js,context,{filename:"target-list-dashboard.js"});
 await new Promise(resolve=>setTimeout(resolve,30));
 assert.equal(elements.get("rr-target-app").hidden,false);
@@ -176,10 +196,30 @@ assert.ok(tree(card,el=>el.className==="rr-target-horse-row rr-target-attack"),"
 const racebar=tree(card,el=>el.className==="rr-target-racebar");
 assert.ok(racebar,"Race has integrated navy header.");
 assert.ok(tree(racebar,el=>el.className==="rr-target-race-facts"&&el.textContent==="6 furlongs · Dirt"),"Race facts sit fully within the banner.");
+const namedCard=elements.get("rr-target-list").children.find(item=>
+ tree(item,el=>el.tagName==="H3")?.textContent==="Synthetic Test Track");
+assert.ok(namedCard,"The synthetic stakes race must be visible independently of sorting");
+const namedFacts=tree(namedCard,el=>el.className==="rr-target-race-facts");
+assert.ok(namedFacts&&namedFacts.textContent==="6 furlongs · Dirt · First Lady Stakes",
+ "Source sponsored/abbreviated title is canonicalized without changing distance or surface");
+const trophy=tree(namedFacts,el=>el.className==="rr-ed-grade-trophy rr-ed-grade-trophy--g1");
+assert.ok(trophy,"Verified Grade 1 stakes gets a real trophy in the race header");
+assert.equal(trophy["aria-label"],"Grade 1 stakes trophy");
+assert.ok(!namedFacts.textContent.includes("Venue Sponsor"),"No sponsor appears in public editorial title");
+const namedAction=tree(namedCard,el=>el.className==="rr-target-horse-row rr-target-attack");
+namedAction.events.click();
+const drawerFacts=tree(elements.get("rr-target-dialog-content"),el=>el.className==="rr-target-drawer-meta");
+assert.ok(drawerFacts?.textContent.includes("First Lady Stakes"),"Analysis drawer retains full canonical race name");
+assert.ok(tree(drawerFacts,el=>el.className==="rr-ed-grade-trophy rr-ed-grade-trophy--g1"),
+ "Grade 1 trophy stays in drawer details as well");
 assert.ok(tree(card,el=>el.className==="rr-target-ml-inline"&&el.textContent==="ML 5-1"),"Mobile shows the unchanged source morning line alongside the horse.");
 assert.ok(tree(card,el=>el.className==="rr-target-stat-value"&&el.textContent==="4-1"),"US tote-style fair-odds formatting is display-only.");
 
 assert.match(html,/id="rr-target-sort"/);
 assert.doesNotMatch(html,/rr-target-track|rr-target-search/,"Reader controls are date and independent sort only.");
 
+assert.match(html,/rr-race-titles\.js\?v=2/,"Target List loads the canonical stakes name formatter");
+assert.match(html,/rr-stakes-inline\.css\?v=1/,"Target List shares the same trophy styles as Radar");
+assert.match(js,/appendGradeTrophy\(facts,sourceRaceTitle\(entry\)\?\.grade\)/,
+ "Target List banner trophy is attached only to verified source-grade data");
 console.log("PASS: Target List private upload, revision protection, no forced picks, official chips, drawer, mobile contracts, and no PDF dependency");
