@@ -52,8 +52,10 @@ try{
   await page.locator(".rr-lr-card").first().waitFor({timeout:15000});
   const count=await page.locator(".rr-lr-card").count();
   if(count!==10)throw Error("Expected 10 published source-shaped horse rows at "+width+", got "+count);
-  if(!(await page.locator(".rr-lr-stage").innerText()).includes("PUBLISHED CARD"))
-   throw Error("Source publication status not shown at "+width);
+  if(!(await page.locator(".rr-dash-private-banner").innerText()).includes("PUBLISHED CARD"))
+   throw Error("Single publication notice must retain published-card status at "+width);
+  if(await page.locator("#rr-lr-stage,#rr-lr-date-title,#rr-lr-updated").count())
+   throw Error("Redundant title/date/status blocks remained at "+width);
   if(await page.locator("#rr-lr-loading").isVisible())throw Error("Loading status remained after cards appeared at "+width);
   if((await page.locator("body").innerText()).includes("Load a validated production JSON")||
      await page.locator('input[type="file"]').count()||
