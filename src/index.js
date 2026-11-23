@@ -1,5 +1,5 @@
 import {handleAdminProjectionUpload,handleAdminProjectionBatchUpload,readAdminProjectionCards} from './projections.js';
-import {handleAdminLongshotRadar} from './longshot-radar.js';
+import {handleAdminLongshotRadar,handleAdminLongshotEditorialPreview} from './longshot-radar.js';
 import {handleAdminPickTickets} from './pick-tickets.js';
 import {handleAdminTargetList,readAdminTargetListReview} from './target-list.js';
 import { handleCommerce, sendQueuedEmails, checkoutReadiness, replacePdfAndNotifyBuyers, publicProductForShare } from './commerce.js';
@@ -157,6 +157,7 @@ async function handleAdminAPI(request,env,pathname,ctx) {
   if(pathname==="/api/admin/target-list-review"&&request.method==="GET")return readAdminTargetListReview(env,new URL(request.url));
   if(pathname==="/api/admin/target-list") return handleAdminTargetList(request,env,new URL(request.url));
   if(pathname==="/api/admin/longshot-radar") return handleAdminLongshotRadar(request,env);
+  if(pathname==="/api/admin/longshot-radar-editorial")return handleAdminLongshotEditorialPreview(request,env);
   if(pathname==="/api/admin/projections-preview"&&request.method==="GET") return readAdminProjectionCards(env);
   if(pathname==="/api/admin/projections/batch") return handleAdminProjectionBatchUpload(request,env);
   if(pathname==="/api/admin/projections") return handleAdminProjectionUpload(request,env);
