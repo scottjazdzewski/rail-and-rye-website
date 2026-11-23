@@ -72,3 +72,10 @@ The source below is synthetic and deliberately not shipped as a UI fixture.
 - Run existing commerce/membership tests on the PR because src/index.js has a minimal protected admin dispatch addition.
 - For **visual** acceptance, branch-deploy privately and inspect 320, 375, 390, 430, 768 and desktop widths with actual source-certified editions, including 1A, chips 11–20, long track/sequence labels, multiple tickets, 6-leg sequences, PASS cards, and modal focus/scroll. CI syntax checks are not visual acceptance.
 - Validate no page overflow, no cut-off numbers, no fixed ticket caps and no leaked paid JSON before any launch. Actual R2 writes and customer permission mapping require environment-level checks and owner approval.
+
+## 2026-11-23: Grouped Pick wager / race-range private review
+The administrator preview now presents **track and date → wager type (Pick 3/4/5/6 when present) → source-provided sequence tabs (for example Races 1–3, 4–6, 7–9) → full ticket selection with approved saddlecloth art**, plus a separate Full Ticket Analysis bottom drawer. No wager type is shown without available sequences. The website uses existing Rail & Rye logos and approved PNG saddlecloths; it does not select runners.
+
+The private admin-only `GET /api/admin/pick-tickets?demo=1` response contains **five-track, clearly labeled, fictional display data**. Its projected hit rate is intentionally absent. Demo fixtures are generated at request time, never written to R2 or supplied to customers, and the POST endpoint rejects their marker and receipt. In the private preview the source selector lets administrators switch between mocked layout data and real, receipt-gated private R2 editions (if present). **This is not a customer launch or a replacement for production rules.**
+
+Before enabling a paid customer view, remove demo controls from the customer shell, verify certified ticket outputs and entitlements, then approve the module separately. The admin preview remains protected by the existing signed Cloudflare Access verification.
