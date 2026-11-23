@@ -1,0 +1,25 @@
+name: TRI Nov 23 — Private Verified F4 Exotic Model Publish
+on:
+  push:
+    branches: [main]
+    paths: ['secure-transfer/tri-20261123-f4-exotics.sealed.json']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+      TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+      TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install private R2 encrypted-transfer dependencies
+        run: python -m pip install --quiet --disable-pip-version-check boto3 brotli cryptography
+      - name: Verify signed F4 ordered probabilities, match current R2 cards and read back
+        run: python scripts/tri_1123_f4_exotics_delivery.py publish --sealed-file secure-transfer/tri-20261123-f4-exotics.sealed.json
