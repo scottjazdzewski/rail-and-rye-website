@@ -264,6 +264,8 @@
   else if(result.combos.length>1)
    explanation="For this multi-combination ticket, break-even assumes the same gross payout for every covered winner.";
   else explanation="Required gross payout for this single combination at the chosen wager amount.";
+  if(result.probabilities&&result.combos.length>1&&!explanation.includes("same gross payout"))
+   explanation+=" Break-even assumes equal gross payouts across covered combinations; actual tote payouts vary.";
   summary.append(el("p","rr-bet-summary-note",explanation));
   body.append(summary);
   if(state.mode==="box")body.append(group("BOX HORSES · any finishing order",entries,0,state.box));
