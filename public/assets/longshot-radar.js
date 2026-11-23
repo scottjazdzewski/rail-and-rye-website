@@ -199,7 +199,7 @@ async function loadAvailableEditions(){
   if(result?.review_only!==true||!Array.isArray(result.editions))
    throw Error("The protected scored Radar feed is malformed.");
   for(const row of result.editions){
-   if(!row||!/^\\d{4}-\\d{2}-\\d{2}$/.test(row.race_date)||
+   if(!row||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(row.race_date)||
       !["prescratch","scratch_updated"].includes(row.status)||
       !Array.isArray(row.candidates))throw Error("The protected Radar edition failed validation.");
    byDate.set(row.race_date,row);
