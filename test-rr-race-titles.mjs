@@ -58,10 +58,13 @@ const member=readFileSync("public/membership/dashboard/index.html","utf8");
 const revision=html=>/projections-dashboard\.js\?v=(\d+)/.exec(html)?.[1];
 assert.ok(revision(admin),"The approved client must have a cache-busting revision.");
 assert.equal(revision(admin),revision(member),"Both dashboards must load the same current client.");
+const cssVersion=html=>/projections-dashboard\.css\?v=(\d+)/.exec(html)?.[1];
+assert.ok(cssVersion(admin),"Approved dashboard CSS needs an explicit version.");
+assert.equal(cssVersion(admin),cssVersion(member),"Admin and member must load the same current dashboard CSS.");
 for(const html of [admin,member]){
  assert.match(html,/rr-race-titles\.js\?v=3/,"Load shared race presentation helper before dashboard");
  assert.match(html,/projections-dashboard\.js\?v=\d+/,"Use verified stakes heading dashboard revision");
- assert.match(html,/projections-dashboard\.css\?v=26/,"Use correct graded trophy styles");
+ assert.match(html,/projections-dashboard\.css\?v=\d+/,"Load the current graded-trophy stylesheet");
 }
 assert.match(js,/editorialRacePresentation\(race\)/,
  "Race headings use a source-proven title and defensive fallback");
