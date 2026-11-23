@@ -46,6 +46,8 @@ try{
   assert.equal(logo.loaded,true,"original track graphic must load");
   const sticky=await page.locator(".rr-pt-brand-rail").evaluate(n=>getComputedStyle(n).position);
   assert.equal(sticky,"sticky");
+  const legacyHeight=await page.locator(".rr-member-header").evaluate(n=>n.getBoundingClientRect().height);
+  assert.ok(legacyHeight<75,"legacy navigation must be compact at "+width);
   const size=await page.evaluate(()=>({inner:innerWidth,doc:document.documentElement.scrollWidth,body:document.body.scrollWidth}));
   assert.ok(size.doc<=size.inner+1&&size.body<=size.inner+1,"page horizontal overflow at "+width+": "+JSON.stringify(size));
   await page.screenshot({path:"test-artifacts/pick-tickets-"+width+".png",fullPage:true});
@@ -78,6 +80,9 @@ try{
   assert.equal(await page.locator(".rr-pt-compare-table tbody tr").count(),5);
   assert.equal(await page.getByText("Not yet available").count()>=2,true,"value stays unavailable without payout data");
   assert.equal(await page.locator(".rr-pt-compare-table tbody tr").first().locator("td").last().innerText(),"—");
+  assert.equal(await page.locator(".rr-pt-field-grid").count(),0,"extra runners stay collapsed by default");
+  await page.getByRole("button",{name:"Add runners for Race 2"}).click();
+  assert.equal(await page.locator(".rr-pt-field-grid").count(),1);
   await page.getByRole("button",{name:/Race 2 horse 12 not selected/}).click();
   const newCost=await page.locator(".rr-pt-compare-table tbody tr").nth(3).locator("td").last().innerText();
   assert.notEqual(newCost,recommendedCost,"changing ticket field changes live total");
