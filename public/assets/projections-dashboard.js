@@ -91,19 +91,19 @@ function approvedRaceSaddle(raceNumber){
 function editorialRacePresentation(race){
  const fromHelper=globalThis.RRRaceTitles?.describe?.(race);
  if(fromHelper&&typeof fromHelper.title==="string"&&fromHelper.title.trim()&&
-    !/\\b(?:S|Stk|Stks)\\.$/i.test(fromHelper.title.trim()))return fromHelper;
+    !/\b(?:S|Stk|Stks)\.$/i.test(fromHelper.title.trim()))return fromHelper;
  // Defensive display fallback: if the separate shared helper is blocked,
  // its absence must NEVER expose "First Lady S." to customers again.
  const raw=String(race.stakes_name||race.race_name||race.conditions||"Race projections").trim();
  let title=raw
-  .replace(/\\s*\\(\\s*(?:presented|sponsored|powered)\\s+by\\b[^)]*\\)/gi,"")
-  .replace(/\\s*(?:presented|sponsored|powered)\\s+by\\b.*$/i,"")
-  .replace(/\\s*\\(\\s*(?:G(?:rade)?\\.?|Gr\\.?)\\s*[-:]?\\s*(?:III|II|I|[123])\\s*\\)\\s*$/i,"")
-  .replace(/\\b(?:Stks?|Stk|S)\\.?$/i,"Stakes").trim();
+  .replace(/\s*\(\s*(?:presented|sponsored|powered)\s+by\b[^)]*\)/gi,"")
+  .replace(/\s*(?:presented|sponsored|powered)\s+by\b.*$/i,"")
+  .replace(/\s*\(\s*(?:G(?:rade)?\.?|Gr\.?)\s*[-:]?\s*(?:III|II|I|[123])\s*\)\s*$/i,"")
+  .replace(/\b(?:Stks?|Stk|S)\.?$/i,"Stakes").trim();
  const letters=title.replace(/[^A-Za-z]/g,"");
  if(letters.length>2&&letters===letters.toUpperCase())
-  title=title.toLowerCase().replace(/\\b[a-z]/g,letter=>letter.toUpperCase());
- const match=raw.match(/\\(\\s*(?:G(?:rade)?\\.?|Gr\\.?)\\s*[-:]?\\s*(III|II|I|[123])\\s*\\)/i);
+  title=title.toLowerCase().replace(/\b[a-z]/g,letter=>letter.toUpperCase());
+ const match=raw.match(/\(\s*(?:G(?:rade)?\.?|Gr\.?)\s*[-:]?\s*(III|II|I|[123])\s*\)/i);
  const grade=match?({I:1,II:2,III:3}[match[1].toUpperCase()]||Number(match[1])):null;
  return {title:title||"Race projections",grade:Number.isInteger(grade)&&grade>=1&&grade<=3?grade:null};
 }
@@ -332,7 +332,7 @@ function cardHeader(card){
   "Finger Lakes":"FL","Mountaineer":"MNR","Mahoning Valley":"MV",
   "Parx Racing":"PRX","Zia Park":"ZIA"
  };
- const letters=approvedMarks[name]||String(name).split(/\\s+/).map(x=>x[0]).join("").slice(0,3).toUpperCase()||"TRK";
+ const letters=approvedMarks[name]||String(name).split(/\s+/).map(x=>x[0]).join("").slice(0,3).toUpperCase()||"TRK";
  const mark=makeNode("div","rr-dash-track-mark");
  mark.setAttribute("aria-label",name+" track emblem");
  mark.append(makeNode("span","rr-dash-track-mark-rail",""),
