@@ -265,26 +265,32 @@ def sync_cards(cards, source_hash, bucket=BUCKET_DEFAULT, dry_run=False, client=
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Sync verified TRI prescratch package to private R2")
-    parser.add_argument("--verify-zip", help="Offline audit, no credentials/no network")
-    parser.add_argument("--out", help="Optional offline secure dashboard JSON output path")
-    parser.add_argument("--source-file-id", default="", help="Manual run: exact already-approved Drive ZIP ID")
-    parser.add_argument("--dry-run", action="store_true")
+    parser = argparse.ArgumentParser(
+        description="Validate frozen TRI/F4 model evidence and optionally send it directly to private Cloudflare R2")
+    parser.add_argument("--zip", "--verify-zip", dest="source_zip", required=True,
+                        help="Final verified scorer ZIP from TRI production")
+    parser.add_argument("--out", help="Optional local backup JSON (never pushed to public GitHub)")
+    parser.add_argument("--publish", action="store_true",
+                        help="Upload verified projection cards directly into private R2")
+    parser.add_argument("--dry-run", action="store_true",
+                        help="With --publish, test R2 access and overwrite safety without saving")
     args = parser.parse_args()
     try:
-        if args.verify_zip:
-            with open(args.verify_zip, "rb") as file:
-                date, cards, payload, counts = build_cards(file.read())
-            if args.out:
-                with open(args.out, "wb") as file:
-                    file.write(payload)
-            print(f"TRI_VERIFIED date={date} tracks={counts['tracks']} "
-                  f"races={counts['races']} runners={counts['runners']} "
-                  f"payload_bytes={len(payload)}")
-        else:
-            run_sync(args.source_file_id or None, args.dry_run)
-    except (Hold, ValueError, KeyError, TypeError, zipfile.BadZipFile) as exc:
-        print("TRI_SYNC_HOLD: " + str(exc), file=sys.stderr)
+        require(not args.dry_run or args.publish, "--dry-run requires --publish")
+        with open(args.source_zip, "rb") as infile:
+            date, cards, payload, counts = build_cards(infile.read())
+        if args.out:
+            with open(args.out, "wb") as outfile:
+                outfile.write(payload)
+        print(f"TRI_VERIFIED date={date} tracks={counts['tracks']} "
+              f"races={counts['races']} runners={counts['runners']} "
+              f"payload_bytes={len(payload)} source_sha256={counts['sha256']}")
+        if args.publish:
+            updated, unchanged = sync_cards(cards, counts["sha256"], dry_run=args.dry_run)
+            print(f"TRI_R2 date={date} written={updated} unchanged={unchanged} "
+                  f"status={'DRY_RUN' if args.dry_run else 'PRIVATE_R2_PUBLISHED'}")
+    except (Hold, ValueError, KeyError, TypeError, zipfile.BadZipFile, OSError) as exc:
+        print("TRI_PUBLISH_HOLD: " + str(exc), file=sys.stderr)
         sys.exit(2)
 
 
