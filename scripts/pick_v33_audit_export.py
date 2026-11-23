@@ -118,6 +118,24 @@ def main():
     }
     compact_blob=json.dumps(concise,separators=(",",":"),ensure_ascii=True).encode()
     print("RR_PRIVATE_V33_COMPACT_SEALED="+seal(compact_blob))
+    short={
+        "date":"2026-11-23",
+        "overall":report["overall"],
+        "sources":[{"track":r["track"],"runner_count":r["runner_count"],
+                    "stage":r["projection_status"],"factor_basis":r["factor_basis"],
+                    "status":r["status"]} for r in report["source_rows"]],
+        "tickets":[{
+            "track":r["track"],"name":r["name"],
+            "start_race":r["start_race"],"end_race":r["end_race"],
+            "wager_type":r["wager_type"],"base_cents":r["base_cents"],
+            "combinations":r["combinations"],"cost_cents":r["cost_cents"],
+            "hit_probability":r["exact_hit_probability"],
+            "leg_counts":r["leg_counts"],"leg_coverage":r["leg_coverage"],
+            "picks":r["picks"],"checks":r["internal_checks"]
+        } for r in tickets]
+    }
+    short_data=json.dumps(short,separators=(",",":"),ensure_ascii=True).encode()
+    print("RR_PRIVATE_V33_SHORT_SEALED="+seal(short_data))
 
     total=report["overall"]
     print("RR_PRIVATE_V33_AUDIT_STATUS="+json.dumps({
