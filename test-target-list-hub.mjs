@@ -109,7 +109,7 @@ class El{
  showModal(){this.open=true;}
  focus(){this.focused=true;}
 }
-const ids=["rr-target-date","rr-target-sort","rr-target-status","rr-target-app","rr-target-empty","rr-target-list","rr-target-dialog","rr-target-dialog-content","rr-target-dialog-title","rr-target-count","rr-target-context","rr-target-freshness","rr-target-dialog-close","rr-target-upload-form","rr-target-file","rr-target-upload-status"];
+const ids=["rr-target-date","rr-target-sort","rr-target-status","rr-target-app","rr-target-empty","rr-target-list","rr-target-dialog","rr-target-dialog-content","rr-target-dialog-title","rr-target-count","rr-target-context","rr-target-freshness","rr-target-dialog-close","rr-target-upload-form","rr-target-file","rr-target-upload-status","rr-target-demo-alert","rr-target-demo-button"];
 const elements=new Map(ids.map(id=>[id,new El(id.includes("dialog")?"dialog":"div")]));
 const doc={getElementById:id=>elements.get(id),createElement:tag=>new El(tag)};
 const alpha=structuredClone(good.targets[0]);alpha.rank=3;alpha.track="Alpha Test Track";alpha.race_number=7;alpha.post_time_et="8:40 PM ET";
@@ -143,5 +143,8 @@ assert.ok(tree(card,el=>el.className==="rr-target-analysis-text"&&el.textContent
 assert.ok(tree(card,el=>el.className==="rr-target-horse-row rr-target-attack"),"ATTACK appears in its own compact race row.");
 assert.match(html,/id="rr-target-sort"/);
 assert.doesNotMatch(html,/rr-target-track|rr-target-search/,"Reader controls are date and independent sort only.");
+
+assert.match(html,/id="rr-target-demo-button"/,"Private user can open a clearly marked design sample.");
+assert.match(js,/FICTIONAL|Fictional|fictional/,"Any design sample must be explicitly fictional.");
 
 console.log("PASS: Target List private upload, revision protection, no forced picks, official chips, drawer, mobile contracts, and no PDF dependency");
