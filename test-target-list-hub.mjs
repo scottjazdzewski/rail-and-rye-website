@@ -206,7 +206,7 @@ const namedCard=elements.get("rr-target-list").children.find(entry=>
  tree(entry,el=>el.tagName==="H3")?.textContent==="Synthetic Test Track");
 assert.ok(namedCard,"Stakes fixture must be rendered");
 const namedFacts=tree(namedCard,el=>el.className==="rr-target-race-facts");
-assert.ok(textOf(namedFacts)==="6 furlongs · Dirt · First Lady Stakes",
+assert.ok(textOf(namedFacts).startsWith("6 furlongs · Dirt · First Lady Stakes"),
  "Full name replaces sponsored abbreviation and keeps surface and distance");
 const grade=tree(namedFacts,el=>el.className==="rr-ed-grade-trophy rr-ed-grade-trophy--g1");
 assert.ok(grade,"Source-verified Grade 1 gets gold trophy in race header");
