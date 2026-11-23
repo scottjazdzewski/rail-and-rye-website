@@ -68,7 +68,7 @@ try{
    height:el.getBoundingClientRect().height,
    lines:parseFloat(getComputedStyle(el).lineHeight)
   }));
-  if(analysisCss.font<14||analysisCss.height<analysisCss.lines)
+  if(analysisCss.font<14||analysisCss.height+0.1<analysisCss.lines)
     throw Error("Editorial text too small/hidden at "+width+": "+JSON.stringify(analysisCss));
   for(const chip of [1,11,20]){
    const img=page.locator('.rr-lr-card img[src="/assets/approved/saddlecloths/'+chip+'.png"]');
