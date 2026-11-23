@@ -122,7 +122,7 @@ def publish_from_issue():
     comment = event.get("comment") or {}
     issue = event.get("issue") or {}
     repo = event.get("repository") or {}
-    if repo.get("full_name") != "scottjazdzewski/rail-and-rye-website" or issue.get("number") != 149 or comment.get("user", {}).get("login") != "scottjazdzewski":
+    if repo.get("full_name") != "scottjazdzewski/rail-and-rye-website" or issue.get("number") != 161 or comment.get("user", {}).get("login") != "scottjazdzewski":
         raise RuntimeError("Unauthorized Target List review transfer.")
     body = comment.get("body", "")
     if not body.startswith(PREFIX + "\n"):
