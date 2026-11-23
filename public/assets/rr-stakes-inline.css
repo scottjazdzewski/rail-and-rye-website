@@ -18,7 +18,7 @@
 .rr-lr-race-facts .rr-ed-stakes-title,
 .rr-target-race-facts .rr-ed-stakes-title,
 .rr-target-drawer-meta .rr-ed-stakes-title{
- font:750 inherit;letter-spacing:0;overflow-wrap:anywhere
+ font-weight:750;letter-spacing:0;overflow-wrap:anywhere
 }
 .rr-lr-race-facts .rr-ed-grade-trophy,
 .rr-target-race-facts .rr-ed-grade-trophy{
