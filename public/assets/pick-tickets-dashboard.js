@@ -227,7 +227,10 @@
   const head=node("div","rr-pt-ticket-header"),left=node("div","rr-pt-ticket-title");
   left.append(node("span","rr-pt-kicker",card.review_only?"PRESCRATCH · TRI MODEL REVIEW":currentIsDemo?"PRIVATE MOCK DISPLAY":"CERTIFIED SOURCE TICKET"));
   left.append(node("h2","",activeSeq.name+" · Races "+activeSeq.start_race+"–"+activeSeq.end_race));
-  head.append(left,state(activeSeq.play_status));box.append(head,modeControls());
+  head.append(left,state(activeSeq.play_status));
+  if(card.review_only)box.append(node("p","rr-pt-review-notice",
+   "PRESCRATCH · Actual TRI PWIN-based selections for private review. Final scoring receipts, late changes and scratches still require verification. No profitability claim."));
+  box.append(head,modeControls());
   if(activeMode==="builder")box.append(builder());
   else{
    const chosen=selectedTicket();
