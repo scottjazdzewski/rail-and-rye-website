@@ -117,21 +117,21 @@
  .rrp-race-head__time{gap:5px}
 }
 @media(max-width:700px){
- .rrp-race-head{margin:3px 0 0;padding:9px 13px 5px;border-radius:11px 11px 0 0}
- .rrp-race-head__title-row{gap:10px;padding:0 0 8px}
- .rrp-race-head__number{flex-basis:52px;width:52px;height:52px;padding:3px;border-radius:10px}
+ .rrp-race-head{margin:0;padding:9px 12px 3px;border-radius:11px 11px 0 0}
+ .rrp-race-head__title-row{gap:9px;padding:0 0 7px}
+ .rrp-race-head__number{flex-basis:46px;width:46px;height:46px;padding:3px;border-radius:9px}
  .rrp-race-head__condition{font-size:clamp(17px,4.8vw,22px);line-height:1.22;letter-spacing:-.018em}
  .rrp-race-head.rr-dash-race-banner--extended-title .rrp-race-head__condition{font-size:clamp(16px,4.4vw,21px)}
- .rrp-race-head__details{grid-template-columns:minmax(0,1fr) max-content;gap:7px 10px;padding:8px 0}
- .rrp-race-head__runners{border:0;padding:0;font-size:11px}
- .rrp-race-head__purse{border:0;padding:0;justify-self:end;font-size:11px}
+ .rrp-race-head__details{grid-template-columns:max-content max-content minmax(0,1fr);gap:5px 10px;padding:7px 0}
+ .rrp-race-head__runners{border:0;padding:0;font-size:10px}
+ .rrp-race-head__purse{border:0;padding:0;font-size:10px;justify-self:start}
  .rrp-race-head__time{
-  grid-column:1/-1;justify-content:space-between;gap:10px;
-  padding-top:8px;border-top:1px solid rgba(255,255,255,.19);
+  grid-column:3;justify-self:end;flex-direction:column;align-items:flex-end;
+  gap:2px;padding:0;border:0;
  }
- .rrp-race-head__time span{font-size:11px}
- .rrp-race-head__time strong{font-size:13px}
- .rrp-race-head__scratch-bar{height:40px;min-height:40px;gap:7px 9px;padding:4px 2px 2px}
+ .rrp-race-head__time span{font-size:9px;letter-spacing:.015em}
+ .rrp-race-head__time strong{font-size:11px}
+ .rrp-race-head__scratch-bar{height:36px;min-height:36px;gap:7px 9px;padding:3px 2px 2px}
  .rrp-race-head__scratch-count{font-size:11px}
  .rrp-race-head__scratch-rule{height:24px}
  .rrp-race-head__scratch-chips{gap:5px 8px}
@@ -144,10 +144,16 @@
 @media(max-width:370px){
  .rrp-race-head{padding:8px 9px 5px}
  .rrp-race-head__title-row{gap:8px}
- .rrp-race-head__number{flex-basis:45px;width:45px;height:45px}
+ .rrp-race-head__number{flex-basis:42px;width:42px;height:42px}
  .rrp-race-head__condition{font-size:16px}
  .rrp-race-head.rr-dash-race-banner--extended-title .rrp-race-head__condition{font-size:15px}
- .rrp-race-head__scratch-bar{height:38px;min-height:38px;gap:5px 7px}
+ .rrp-race-head__scratch-bar{height:36px;min-height:36px;gap:5px 7px}
+ .rrp-race-head__details{grid-template-columns:minmax(0,1fr) max-content}
+ .rrp-race-head__purse{justify-self:end}
+ .rrp-race-head__time{
+  grid-column:1/-1;flex-direction:row;align-items:center;justify-content:space-between;
+  gap:8px;padding-top:3px;border-top:1px solid rgba(255,255,255,.19);
+ }
  .rrp-race-head__scratch-count{font-size:10px}
  .rrp-race-head__scratch-chips{gap:4px 6px}
  .rrp-race-head__scratch-item{flex-basis:27px;min-width:27px}

@@ -329,15 +329,12 @@ function showHorse(entry){
  dialog.showModal();
 }
 function cardHeader(card){
- const wrapper=makeNode("div","rrp-track-head"),
-  logo=document.createElement("img");
- logo.className="rrp-track-head__brand";
- logo.src="/assets/brand/rail_rye_logo_header.png";logo.alt="Rail & Rye";
+ const wrapper=makeNode("div","rrp-track-head");
  const name=card.track||card.card.track_name,
   identity=makeNode("div","rrp-track-head__identity"),
   title=makeNode("h2","rrp-track-head__name",name),
   date=makeNode("p","rrp-track-head__date",dateLabel(card.race_date));
- identity.append(title,date);wrapper.append(logo,identity);
+ identity.append(title,date);wrapper.append(identity);
  const originalTrackLogos={
   "Finger Lakes":"finger-lakes.webp",
   "Mountaineer":"mountaineer.webp",
@@ -434,7 +431,8 @@ function renderCard(){
  if(!activeCard)return;
  renderRaceNav(activeCard);renderRaceTimeSelect(activeCard);renderTimeline();
  const race=activeCard.card.races.find(item=>item.race_number===activeRace);if(!race)return;
- const panel=q("#rr-dash-race");panel.replaceChildren(cardHeader(activeCard),raceBanner(race));
+ const context=q("#rr-dash-track-identity");context.replaceChildren(cardHeader(activeCard));
+ const panel=q("#rr-dash-race");panel.replaceChildren(raceBanner(race));
 
  const tiles=makeNode("div","rr-dash-race-tiles");
  tiles.setAttribute("role","group");tiles.setAttribute("aria-label","Race facts");

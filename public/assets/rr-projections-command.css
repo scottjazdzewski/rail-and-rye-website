@@ -1,0 +1,105 @@
+/* RAIL & RYE / PROJECTIONS — MOBILE-FIRST COMMAND DECK V1
+   One navigation surface for mode, filters, track identity, and race chips.
+   All obsolete selectors were removed from projections-dashboard.css. */
+.rrp-command{
+ box-sizing:border-box;display:grid;gap:7px;min-width:0;
+ padding:10px 12px 8px;border:1px solid #c7a55e;border-radius:12px;
+ background:#fffcf5;color:#102f56;
+}
+.rrp-command *{box-sizing:border-box}
+.rrp-command__controls{
+ display:grid;grid-template-columns:minmax(210px,.8fr) minmax(0,1.6fr);
+ gap:10px;align-items:center;min-width:0;
+}
+.rr-dash-mode-switch{
+ display:grid;grid-template-columns:1fr 1.25fr;gap:3px;
+ margin:0;padding:3px;border:1px solid #decfae;border-radius:8px;background:#ede8db;
+}
+.rr-dash-mode-button{
+ min-width:0;min-height:38px;padding:6px 7px;
+ border:1px solid transparent;border-radius:6px;background:transparent;
+ color:#425b74;cursor:pointer;font:750 12px/1.18 Inter,Arial,system-ui,sans-serif;
+}
+.rr-dash-mode-button[aria-pressed="true"]{
+ background:#fff;color:#102e54;border-color:#c6a46d;box-shadow:0 1px 2px rgba(16,46,84,.08);
+}
+.rr-dash-mode-button:focus-visible,.rr-dash-global-timeline button:focus-visible{
+ outline:3px solid #b48a39;outline-offset:2px;
+}
+.rr-dash-toolbar{
+ display:grid;grid-template-columns:minmax(115px,1fr) minmax(145px,1.15fr) minmax(130px,1fr);
+ gap:7px;min-width:0;align-items:end;margin:0;padding:0;
+ background:transparent;border:0;border-radius:0;box-shadow:none;
+}
+.rr-dash-toolbar label{
+ display:grid;gap:3px;min-width:0;width:100%;color:#3b536d;
+ font:750 10px/1.12 Inter,Arial,system-ui,sans-serif;letter-spacing:.055em;text-transform:uppercase;
+}
+.rr-dash-toolbar select,.rr-dash-timeline-controls select{
+ width:100%;min-width:0;min-height:38px;max-height:45px;
+ padding:7px 27px 7px 9px;background:#fff;
+ border:1px solid #c6b082;border-radius:7px;color:#102e54;
+ font:650 13px/1.2 Inter,Arial,system-ui,sans-serif;
+}
+.rr-dash-toolbar select:focus-visible,.rr-dash-timeline-controls select:focus-visible{
+ outline:3px solid #d1a03e;outline-offset:1px;
+}
+.rr-dash-updated{grid-column:1/-1;color:#748294;font:600 10px/1.15 Inter,Arial,system-ui,sans-serif;letter-spacing:.015em}
+.rr-dash-updated:empty{display:none}
+.rrp-command__identity{min-width:0;border-top:1px solid #e4d8c0}
+.rrp-command__race-nav{min-width:0}
+.rr-dash-races{
+ display:flex;align-items:center;gap:4px;min-width:0;
+ padding:1px 1px 2px;margin:0;
+ position:static;z-index:auto;background:transparent;
+ overflow-x:auto;overflow-y:hidden;
+ scrollbar-width:none;scroll-snap-type:x proximity;overscroll-behavior-inline:contain;
+}
+.rr-dash-races::-webkit-scrollbar{display:none}
+.rr-dash-races[hidden],.rr-dash-global-timeline[hidden]{display:none!important}
+.rr-dash-global-timeline{
+ display:grid;gap:5px;min-width:0;padding:6px 8px;
+ border:1px solid #e3d3b3;border-radius:7px;background:#fff;
+}
+.rr-dash-global-timeline>label{
+ color:#385572;font:750 10px/1.15 Inter,Arial,system-ui,sans-serif;letter-spacing:.03em;
+}
+.rr-dash-timeline-controls{
+ display:grid;grid-template-columns:40px minmax(0,1fr) 40px;gap:6px;align-items:stretch;
+}
+.rr-dash-timeline-controls button{
+ min-height:40px;border:1px solid #b6a079;border-radius:7px;
+ background:#fff;color:#15365b;cursor:pointer;font:800 23px/1 Inter,Arial,system-ui,sans-serif;
+}
+.rr-dash-timeline-controls button:disabled{opacity:.35;cursor:default}
+.rr-dash-timeline-count{color:#667a8c;font:650 10px/1.2 Inter,Arial,system-ui,sans-serif}
+.rr-dash-app[data-mode="all"] .rr-dash-track-field,
+.rr-dash-app[data-mode="all"] .rr-dash-race-time-field{display:none}
+.rr-dash-app[data-mode="all"] .rr-dash-toolbar{grid-template-columns:minmax(0,1fr)}
+@media(max-width:800px){
+ .rrp-command{gap:5px;padding:7px 9px 6px;border-radius:10px}
+ .rrp-command__controls{grid-template-columns:minmax(0,1fr);gap:5px}
+ .rr-dash-mode-switch{gap:3px;padding:2px;border-radius:7px}
+ .rr-dash-mode-button{min-height:32px;padding:5px 7px;font-size:11px}
+ .rr-dash-toolbar{grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:6px}
+ .rr-dash-toolbar label{gap:0;font-size:0;line-height:0}
+ .rr-dash-toolbar select{min-height:38px;padding:7px 23px 7px 9px;font-size:13px;line-height:1.15}
+ .rr-dash-toolbar .rr-dash-race-time-field{display:none}
+ .rr-dash-updated:not(:empty){
+  grid-column:1/-1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;
+  font-size:9px;line-height:1.1;letter-spacing:0;
+ }
+ .rrp-command__race-nav{padding:0}
+ .rr-dash-races{gap:3px;padding:1px 0 0}
+ .rr-dash-global-timeline{padding:6px 7px;gap:4px}
+ .rr-dash-global-timeline>label{font-size:9px}
+ .rr-dash-timeline-controls{grid-template-columns:36px minmax(0,1fr) 36px;gap:5px}
+ .rr-dash-timeline-controls button{min-height:38px}
+ .rr-dash-timeline-controls select{min-height:38px;max-height:none;padding:6px 7px;font-size:12px}
+}
+@media(max-width:370px){
+ .rrp-command{padding:6px 7px 5px}
+ .rr-dash-mode-button{font-size:10px}
+ .rr-dash-toolbar select{font-size:12px;padding-left:6px}
+ .rr-dash-timeline-controls{grid-template-columns:32px minmax(0,1fr) 32px;gap:4px}
+}

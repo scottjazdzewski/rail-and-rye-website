@@ -1,29 +1,31 @@
-/* Single approved Pace / Surface / Distance design — no legacy component overrides. */
-.rr-dash-race-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;min-width:0;margin:0 0 12px;padding:12px 8px 14px;border:1px solid #e4dac9;border-top:0;border-radius:0 0 14px 14px;background:#fffdf8}
-.rr-dash-race-tile{min-width:0;min-height:116px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:7px 10px;text-align:center}
+/* RAIL & RYE PROJECTIONS / COMPOSITE RACE-FACT FOOTER V4
+   Same three real centered art badges, now physically joined to the navy
+   race header so the horse list starts much higher on mobile. */
+.rr-dash-race-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;min-width:0;margin:0 0 7px;padding:6px 8px;border:1px solid #e4dac9;border-top:0;border-radius:0 0 11px 11px;background:#fffdf8}
+.rr-dash-race-tile{min-width:0;min-height:70px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:3px 6px;text-align:center}
 .rr-dash-race-tile:not(:last-child){border-right:1px solid #e2d9ca}
-.rr-dash-tile-mark{display:grid;place-items:center;flex:0 0 51px;width:58px;height:51px;margin:0 auto 1px}
-.rr-dash-tile-mark img{display:block;max-width:55px;max-height:49px;width:auto;height:auto;object-fit:contain}
+.rr-dash-tile-mark{display:grid;place-items:center;flex:0 0 35px;width:42px;height:35px;margin:0 auto}
+.rr-dash-tile-mark img{display:block;max-width:42px;max-height:34px;width:auto;height:auto;object-fit:contain;filter:none}
 .rr-dash-tile-mark--empty{visibility:hidden}
-.rr-dash-tile-label{display:block;color:#637488;font:800 11px/1.15 Inter,Arial,system-ui,sans-serif;letter-spacing:.09em;text-transform:uppercase}
-.rr-dash-tile-value{display:block;min-width:0;color:#17375f;font:750 clamp(15px,1.6vw,19px)/1.2 Inter,Arial,system-ui,sans-serif;overflow-wrap:anywhere}
-.rr-dash-sheet-facts.rr-dash-race-tiles{margin:0;padding:8px 2px;border:1px solid #e4dac9;border-radius:10px}
-.rr-dash-sheet-facts .rr-dash-race-tile{min-height:105px;padding:5px}
+.rr-dash-tile-label{display:block;color:#60758b;font:800 9px/1.1 Inter,Arial,system-ui,sans-serif;letter-spacing:.055em;text-transform:uppercase}
+.rr-dash-tile-value{display:block;min-width:0;color:#17375f;font:750 14px/1.13 Inter,Arial,system-ui,sans-serif;overflow-wrap:anywhere}
+.rr-dash-sheet-facts.rr-dash-race-tiles{margin:0;padding:8px 3px;border:1px solid #e4dac9;border-radius:10px}
+.rr-dash-sheet-facts .rr-dash-race-tile{min-height:73px;padding:5px}
 @media(max-width:800px){
- .rr-dash-race-tiles{padding:5px 3px 6px;margin-bottom:8px}
- .rr-dash-race-tile{min-height:79px;gap:2px;padding:3px 3px}
- .rr-dash-tile-mark{flex-basis:36px;height:36px;width:43px}
- .rr-dash-tile-mark img{max-width:43px;max-height:38px}
- .rr-dash-race-tile[data-fact="pace"] .rr-dash-tile-mark img{max-width:37px;max-height:35px}
- .rr-dash-tile-label{font-size:10px;letter-spacing:.04em}
- .rr-dash-tile-value{font-size:15px;line-height:1.16}
- .rr-dash-sheet-facts .rr-dash-race-tile{min-height:79px}
+ .rr-dash-race-tiles{padding:3px 3px 4px;margin-bottom:5px}
+ .rr-dash-race-tile{min-height:59px;gap:1px;padding:2px 3px}
+ .rr-dash-tile-mark{flex-basis:25px;height:25px;width:31px}
+ .rr-dash-tile-mark img{max-width:31px;max-height:25px}
+ .rr-dash-race-tile[data-fact="pace"] .rr-dash-tile-mark img{max-width:28px;max-height:24px}
+ .rr-dash-tile-label{font-size:9px;letter-spacing:.02em}
+ .rr-dash-tile-value{font-size:13px;line-height:1.12}
+ .rr-dash-sheet-facts .rr-dash-race-tile{min-height:62px}
 }
 @media(max-width:370px){
- .rr-dash-race-tiles{padding:4px 2px 5px}
- .rr-dash-race-tile{min-height:75px;padding:2px 2px}
- .rr-dash-tile-mark{flex-basis:33px;height:33px;width:39px}
- .rr-dash-tile-mark img{max-width:39px;max-height:34px}
- .rr-dash-race-tile[data-fact="pace"] .rr-dash-tile-mark img{max-width:34px;max-height:31px}
- .rr-dash-tile-value{font-size:14px}
+ .rr-dash-race-tiles{padding:2px 2px 3px}
+ .rr-dash-race-tile{min-height:56px;padding:2px}
+ .rr-dash-tile-mark{flex-basis:24px;height:24px;width:29px}
+ .rr-dash-tile-mark img{max-width:29px;max-height:24px}
+ .rr-dash-race-tile[data-fact="pace"] .rr-dash-tile-mark img{max-width:26px;max-height:22px}
+ .rr-dash-tile-value{font-size:12px}
 }
