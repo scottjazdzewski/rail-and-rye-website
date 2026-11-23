@@ -493,7 +493,8 @@ function renderCard(){
  builder.setAttribute("aria-label","Open Bet Builder for "+(activeCard.track||activeCard.card.track_name)+" Race "+race.race_number);
  builder.addEventListener("click",()=>{
   if(globalThis.RRBetBuilder?.open)globalThis.RRBetBuilder.open({
-   race,track:activeCard.track||activeCard.card.track_name,date:activeCard.race_date,preview:previewMode
+   race,track:activeCard.track||activeCard.card.track_name,date:activeCard.race_date,preview:previewMode,
+   projection_status:activeCard.card.projection_status,model_receipts:activeCard.card.model_receipts
   });
  });
  heading.append(builder);

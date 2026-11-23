@@ -223,6 +223,22 @@ export async function handleAdminProjectionBatchUpload(request,env){
    products=result.results||[];
   }catch(e){console.warn("Optional PDF matching unavailable",String(e).slice(0,100));}
  }
+ // Permanent Bet Builder publishing gate: validate all matching certified
+ // scratch-final ordered F4 distributions before allowing any dashboard writes.
+ for(const card of cards){
+  if(card.projection_status!=="scratch_final")continue;
+  const key="projections/f4-ordered/"+card.race_date+"/"+foldTrack(card.track_name)+".json";
+  try{
+   const source=await env.CARDS_BUCKET.get(key);
+   if(!source)return fail("Publish matching certified scratch-final F4 joint probabilities before projections.",409);
+   const {verifyCertifiedScratchFinalTrack}=await import("./f4-exotics.js");
+   if(!verifyCertifiedScratchFinalTrack(card,await source.json()))
+    return fail("Matching scratch-final F4 probabilities failed verification; projections were not changed.",409);
+  }catch(e){
+   console.error("Scratch-final F4 release preflight held",String(e).slice(0,90));
+   return fail("Could not verify matching F4 probabilities; projections were not changed.",503);
+  }
+ }
  // An earlier post-scratch release must never be silently downgraded by a
  // prescratch bulk re-upload. Preflight all tracks before any write.
  try{

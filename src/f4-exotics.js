@@ -19,16 +19,25 @@ function selection(url){
 }
 const relative=(a,b)=>Math.abs(a-b)<=1e-8;
 function validate(base,source,proof,expected){
+ const final=base?.projection_status==="scratch_final";
  if(!isRecord(base)||!Array.isArray(base.races)||
     base.race_date!==expected.date||base.track_name!==expected.track||
-    base.projection_status!=="prescratch"||!isRecord(source)||source.schema_version!==2||
+    (base.projection_status!=="prescratch"&&!final)||!isRecord(source)||source.schema_version!==2||
     source.model_id!==MODEL||source.date!==expected.date||
-    source.track_name!==expected.track||source.scratch_state!=="PRESCRATCH"||
+    source.track_name!==expected.track||source.scratch_state!==(final?"SCRATCH_FINAL":"PRESCRATCH")||
     !HEX.test(source.f4_receipt_sha256||"")||
     !HEX.test(source.prefix_file_sha256||"")||
-    !HEX.test(source.source_sha256||"")||!HEX.test(source.badge_sha256||""))
+    (!final&&(!HEX.test(source.source_sha256||"")||!HEX.test(source.badge_sha256||""))))
     return null;
- if(proof.source_sha256!==source.source_sha256||
+ if(final){
+  const lineage=base.model_receipts, certified=source.dashboard_receipts;
+  if(!isRecord(lineage)||!isRecord(certified)||
+     source.f4_receipt_sha256!==lineage.f4_sha256||
+     !Array.isArray(source.races)||source.races.length!==base.races.length||
+     new Set(source.races.map(r=>r.race_number)).size!==base.races.length||
+     ["tri_sha256","f4_sha256","prescratch_parent_sha256","official_changes_sha256"]
+       .some(k=>!HEX.test(String(lineage[k]||""))||lineage[k]!==certified[k]))return null;
+ }else if(proof.source_sha256!==source.source_sha256||
     proof.badge_sha256!==source.badge_sha256)return null;
  const race=base.races.find(r=>r.race_number===expected.race),
        model=source.races?.find(r=>r.race_number===expected.race);
@@ -38,7 +47,12 @@ function validate(base,source,proof,expected){
     !Array.isArray(model.pwin)||!Array.isArray(model.p2_weights)||
     !Array.isArray(model.p3_weights)||model.pwin.length!==n||
     model.p2_weights.length!==n||model.p3_weights.length!==n)return null;
- if(Array.isArray(race.scratches)&&race.scratches.length>0)return null;
+ const scratches=Array.isArray(race.scratches)?race.scratches:[];
+ if(final){
+  if(race.scratch_count!==scratches.length||
+     new Set(scratches.map(s=>String(s.program_number))).size!==scratches.length||
+     scratches.some(s=>programs.includes(String(s.program_number))))return null;
+ }else if(scratches.length>0)return null;
  const runners=new Map(race.entries.map(e=>[String(e.program_number),e]));
  if(runners.size!==n||programs.some(p=>!runners.has(p)))return null;
  const p1=new Map(),w2=new Map(),w3=new Map();
@@ -79,9 +93,18 @@ function validate(base,source,proof,expected){
  return {schema_version:2,model_id:MODEL,status:"verified",
   receipt_sha256:source.f4_receipt_sha256,
   prefix_sha256:source.prefix_file_sha256,
-  source_sha256:source.source_sha256,scratch_state:"PRESCRATCH",
+  ...(final?{dashboard_receipts:source.dashboard_receipts}:{source_sha256:source.source_sha256}),
+  scratch_state:final?"SCRATCH_FINAL":"PRESCRATCH",
   date:expected.date,track:expected.track,race_number:expected.race,
   programs,pwin:model.pwin,p2_weights:model.p2_weights,p3_weights:model.p3_weights};
+}
+export function verifyCertifiedScratchFinalTrack(card,source){
+ if(!isRecord(card)||card.projection_status!=="scratch_final"||
+    !Array.isArray(card.races)||!isRecord(source)||!Array.isArray(source.races)||
+    card.races.length!==source.races.length)return false;
+ return card.races.every(r=>validate(card,source,{},{
+  date:card.race_date,track:card.track_name,race:r.race_number
+ })!==null);
 }
 export async function readCertifiedF4Exotics(env,url){
  const expected=selection(url);

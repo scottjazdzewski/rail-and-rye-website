@@ -86,9 +86,15 @@
  function verifiedDistribution(entries,kind){
   const dist=state.race?.f4_ordered_probabilities;
   if(!dist||dist.schema_version!==2||dist.model_id!==F4_MODEL||
-    dist.status!=="verified"||dist.scratch_state!=="PRESCRATCH"||
+    dist.status!=="verified"||dist.scratch_state!==(state.snapshotStatus==="scratch_final"?"SCRATCH_FINAL":"PRESCRATCH")||
     dist.date!==state.date||dist.track!==state.track||
     dist.race_number!==state.race?.race_number||
+     (state.snapshotStatus==="scratch_final"&&(
+      !state.modelReceipts||!dist.dashboard_receipts||
+      ["tri_sha256","f4_sha256","prescratch_parent_sha256","official_changes_sha256"].some(
+       k=>!(/^[a-f0-9]{64}$/i.test(String(state.modelReceipts[k]||"")))||
+          state.modelReceipts[k]!==dist.dashboard_receipts[k])||
+      dist.receipt_sha256!==state.modelReceipts.f4_sha256))||
     !(/^[a-f0-9]{64}$/i.test(String(dist.receipt_sha256||"")))||
     !(/^[a-f0-9]{64}$/i.test(String(dist.prefix_sha256||""))))return null;
   const programs=dist.programs;
@@ -337,6 +343,8 @@
   if(!race||!Array.isArray(race.entries)||race.entries.length<2)return;
   state.race=race;state.track=String(options.track||"");state.date=String(options.date||"");
   state.type="exacta";state.mode="wheel";state.base=1;state.loading=true;state.modelError="";
+   state.snapshotStatus=options.projection_status==="scratch_final"?"scratch_final":"prescratch";
+   state.modelReceipts=options.model_receipts||null;
   state.positions=[new Set(),new Set(),new Set()];state.box=new Set();
   delete state.race.f4_ordered_probabilities;
   const request=++state.requestId;
