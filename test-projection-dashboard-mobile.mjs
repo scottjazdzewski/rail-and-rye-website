@@ -377,7 +377,8 @@ console.log("PASS: private live-F4 percentages and gross break-even payout UI ca
 assert.match(trackCss,/filter:none;mix-blend-mode:normal/,"Track logos have no artificial blend or contrast filters");
 assert.doesNotMatch(trackCss,/mix-blend-mode:multiply|filter:contrast\(1\.13\)/,"Remove the ugly original contrast treatment");
 
-assert.match(trackCss,/background:#fff;/,"The entire track masthead should be white, not a white tile floating on ivory");
+assert.match(trackCss,/background:transparent;/,"The track identity lives inside the unified navigation deck, not another white card");
+assert.match(commandCss,/background:#fffcf5/,"The single command deck provides the continuous light editorial background");
 assert.match(trackCss,/\.rrp-track-head__venue-mark\{/,"Use an unframed mark embedded in the whole masthead");
 assert.match(trackCss,/box-shadow:none;overflow:visible/,"No advertising-style plaque or boxed logo shadow");
 assert.doesNotMatch(trackCss,/__plaque|\.rrp-track-head__venue-mark\{[^}]*border:1px/,"Do not revive the old independent logo tile");
