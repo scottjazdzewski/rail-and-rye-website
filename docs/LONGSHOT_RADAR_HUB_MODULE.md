@@ -36,6 +36,17 @@ Each candidate requires:
 - `source_causal_evidence` and `counterargument_checked`: verifiable production-authored details used in the analysis drawer.
 - Optional `post_time_et`, `trainer`, `jockey`, only if verified by production.
 
+## Daily research presentation — shared with Target List
+
+As approved for both Longshot Radar and Target List, the primary screen is a **date-specific daily research list**, not a document reproduction, separate product portal, or wide dashboard table. One **Race date** selector and one **Sort** selector control the list:
+
+- **Post time · Earliest first** (default) sorts across ALL source tracks as one chronological sequence, regardless of track. Parse only declared Eastern post times; missing/unparseable times go last in original editorial order.
+- **Track · A to Z** groups tracks alphabetically, with races ordered within track. Sorting affects presentation only, never the source-certified editorial choices, rank, scoring or numerical values.
+- Each Radar result uses the same small navy/gold **track / race / post time** header as Target List, authentic saddlecloth, readable horse name, three clearly labeled **ML ODDS / WIN % / FAIR ODDS** columns (Tinos Bold for racing stats), and the approved one-sentence betting case; **Race details** opens a native analysis drawer.
+- Target List's corresponding result retains its **ML FAVORITE / ATTACK / optional ALSO LIVE** comparison rows, with the same saddlecloth/stat/analysis conventions. Never force Radar into the Target List's specific selection methodology or vice versa.
+- Do not add extra sort by model percentage, rank or horse name. Existing source publication order remains intact in storage. At phone widths, metric cells wrap beneath the identity without horizontal overflow.
+- Radar code changes reside in this branch. Target List owns its own branch [draft PR #149](https://github.com/scottjazdzewski/rail-and-rye-website/pull/149); the shared design direction was communicated there rather than overwriting another module's concurrent work.
+
 ## Additional exact TRI cross-check on private uploads
 
 The Radar admin POST now reads the existing private `projections/dashboard/YYYY-MM-DD/*.json` projection cards for that race date. It refuses an upload unless the complete TRI card is available and every source race sums to 100% exact PWIN with matching F4 first-place probabilities. For every proposed candidate, server-side checks require the **same original track, race number, saddlecloth/program number, horse identity, unrounded exact TRI PWIN, displayed win percentage and original Timeform morning line**. No matching private projection card means **HOLD**, including an approved empty day. A scratch-updated Radar cannot be matched to a prescratch-only projection. This is provenance cross-checking, **not scoring** and does not verify independent handicapping rationale or actual source receipts.
@@ -63,6 +74,6 @@ For prescratch, customer language is **INITIAL · CURRENT** until an approved sc
 
 ## QA
 - `node test-longshot-radar.mjs` tests admission logic, no pick cap, revision safety, R2 behavior, the private route and static UI contract.
-- `node tests/longshot-radar-browser.mjs` tests the real browser at 320/375/390/430/768/1280px, card coverage, overflow, analysis drawer, Escape and filtering using only synthetic test fixtures.
+- `node tests/longshot-radar-browser.mjs` tests the real browser at 320/375/390/430/768/1280px, card coverage and independent time/track ordering, overflow, analysis drawer, Escape and filtering using only synthetic test fixtures.
 - `.github/workflows/verify-longshot-radar.yml` runs these checks and uploads synthetic screenshots for human inspection.
 - The review is **not** a claim of actual card source certification, R2 deployment, Stripe entitlement completion, or customer launch.
