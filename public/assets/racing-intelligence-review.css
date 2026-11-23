@@ -2,7 +2,6 @@
 .rr-hub-review-page{--hub-navy:#102d53;--hub-ivory:#f4f0e6;--hub-gold:#c99831;--hub-muted:#637483;background:var(--hub-ivory);color:var(--hub-navy);font-family:Inter,Arial,system-ui,sans-serif;overflow-x:clip}
 .rr-hub-review-page *{box-sizing:border-box}
 .rr-hub-review-main{width:min(1180px,100%);margin-inline:auto;padding:18px 14px 42px}
-.rr-hub-review-private{margin:0 0 15px;display:inline-flex;padding:6px 9px;border-left:3px solid var(--hub-gold);background:#fff8e8;color:#795a23;font:800 10px/1.25 Inter,Arial,sans-serif;letter-spacing:.055em}
 .rr-hub-review-intro{margin:0 0 17px}
 .rr-hub-review-intro>span,.rr-hub-review-index{color:#886b39;font:800 10px/1.25 Inter,Arial,sans-serif;letter-spacing:.11em}
 .rr-hub-review-intro h1{margin:2px 0 6px;font:800 clamp(26px,3.2vw,38px)/1.1 Inter,Arial,system-ui,sans-serif;letter-spacing:-.025em}
@@ -16,7 +15,6 @@
 .rr-hub-review-detail a{display:inline-flex;align-items:center;gap:5px;min-height:37px;margin-top:9px;padding:7px 11px;border:1px solid var(--hub-navy);border-radius:5px;background:var(--hub-navy);color:#fff;font:800 11px/1.2 Inter,Arial,sans-serif;text-decoration:none}
 .rr-hub-review-detail a:hover{background:#204c7c}
 .rr-hub-review-pending{margin-top:9px;color:#586c7e;font:800 11px/1.4 Inter,Arial,sans-serif}
-.rr-hub-review-footnote{margin:15px 0 0;color:#607181;font:500 11px/1.5 Inter,Arial,sans-serif}
 .rr-hub-review-page :is(a,button):focus-visible{outline:3px solid var(--hub-gold);outline-offset:3px}
 @media(max-width:800px){.rr-hub-review-grid{grid-template-columns:1fr}.rr-hub-review-card{grid-template-columns:38% minmax(0,1fr)}}
 @media(max-width:430px){.rr-hub-review-main{padding:12px 9px 24px}.rr-hub-review-card{grid-template-columns:112px minmax(0,1fr);min-height:150px}.rr-hub-review-art{min-height:150px}.rr-hub-review-detail{padding:9px 10px;gap:4px}.rr-hub-review-detail h2{font-size:17px}.rr-hub-review-detail p{font-size:11px}.rr-hub-review-detail a{padding:7px 9px;font-size:10px;min-height:36px}.rr-hub-review-index{font-size:9px}}

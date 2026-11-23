@@ -11,7 +11,6 @@
 .rr-target-nav-pending{display:inline-flex;align-items:center;color:#e6e1d7;border:1px solid #56677e;opacity:.65}
 .rr-target-page .rr-member-footer .heritage-footmark{font:800 19px Inter,Arial,system-ui,sans-serif;letter-spacing:.1em}
 .rr-target-main{width:min(100%,1130px);margin:0 auto;padding:14px 16px 44px;min-width:0}
-.rr-target-private{display:inline-block;margin:0 0 10px;padding:6px 10px;border-left:3px solid var(--rrh-gold);background:#fff8e8;color:#6d4b12;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
 .rr-target-titlebar{display:flex;align-items:end;justify-content:space-between;gap:16px;margin-bottom:14px}
 .rr-target-kicker{color:#695222;font-size:10px;font-weight:800;letter-spacing:.13em}
 .rr-target-titlebar h1{font:800 clamp(25px,3vw,33px)/1.1 Inter,Arial,system-ui,sans-serif;letter-spacing:-.025em;margin:4px 0 5px}
@@ -147,53 +146,136 @@
    This stylesheet is intentionally loaded AFTER shared module chrome.
    =============================================================== */
 .rr-target-page [hidden]{display:none!important}
-
-.rr-target-page .rr-target-private{display:inline-block;margin:0 0 6px;padding:4px 8px;border-left:3px solid var(--rrh-gold);background:#fff8e9;color:#795517;font-size:9px;line-height:1.25;font-weight:850;letter-spacing:.045em;text-transform:uppercase}
-.rr-target-page .rr-target-titlebar{display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:9px;margin:0 0 8px}
-.rr-target-page .rr-target-titlebar h1{margin:2px 0;color:var(--rrh-navy);font:850 clamp(25px,2.8vw,32px)/1.07 Inter,Arial,system-ui,sans-serif}
-.rr-target-page .rr-target-kicker{display:block;color:#6c7580;font-size:9px;line-height:1.3;font-weight:850;letter-spacing:.09em}
-.rr-target-page .rr-target-titlebar p{margin:0;color:#52687b;font-size:12px;line-height:1.4}
-.rr-target-page .rr-target-toolbar{margin:0 0 6px;padding:7px 9px;gap:7px 10px;border:1px solid #c5cdd4;border-top:2px solid var(--rrh-gold);border-radius:7px}
-.rr-target-page .rr-target-toolbar label{flex:1 1 170px;gap:3px;color:#53677a;font-size:10px;line-height:1.2;font-weight:850;letter-spacing:.035em}
+.rr-target-page .rr-target-titlebar{
+display:flex;
+flex-direction:row;
+justify-content:space-between;
+gap:9px;
+}
+.rr-target-page .rr-target-titlebar h1{
+color:var(--rrh-navy);
+}
+.rr-target-page .rr-target-kicker{
+display:block;
+color:#6c7580;
+font-size:9px;
+line-height:1.3;
+font-weight:850;
+}
+.rr-target-page .rr-target-titlebar p{
+font-size:12px;
+line-height:1.4;
+}
+.rr-target-page .rr-target-toolbar{
+border:1px solid #c5cdd4;
+border-top:2px solid var(--rrh-gold);
+border-radius:7px;
+}
+.rr-target-page .rr-target-toolbar label{
+color:#53677a;
+line-height:1.2;
+font-weight:850;
+letter-spacing:.035em;
+}
 .rr-target-page .rr-target-toolbar label:first-child,.rr-target-page .rr-target-toolbar label:nth-child(2){flex:1 1 170px}
 
-.rr-target-page .rr-target-freshness{flex:1 1 100%;margin:0;color:#53687b;font-size:10px;line-height:1.25;font-weight:650;align-self:start}
+.rr-target-page .rr-target-freshness{
+flex:1 1 100%;
+color:#53687b;
+font-size:10px;
+line-height:1.25;
+font-weight:650;
+align-self:start;
+}
 .rr-target-page .rr-target-status{min-height:0;margin:2px 0;color:#4c6074;font-size:12px;line-height:1.3}
 .rr-target-page .rr-target-status:empty{display:none}
-.rr-target-page .rr-target-summary{margin:4px 0 7px;align-items:baseline;gap:8px}
+.rr-target-page .rr-target-summary{
+align-items:baseline;
+}
 
-.rr-target-page .rr-target-summary>span{color:#607286;font:650 10px/1.25 Inter,Arial,system-ui,sans-serif}
-.rr-target-page .rr-target-list{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
-.rr-target-page .rr-target-card{min-width:0;overflow:hidden;border:1px solid #becbd5;border-radius:7px;box-shadow:none;background:#fff}
+.rr-target-page .rr-target-summary>span{
+color:#607286;
+}
+.rr-target-page .rr-target-list{
+display:grid;
+grid-template-columns:minmax(0,1fr);
+}
+.rr-target-page .rr-target-card{
+min-width:0;
+overflow:hidden;
+border:1px solid #becbd5;
+box-shadow:none;
+background:#fff;
+}
 
 
-.rr-target-page .rr-target-race-number,.rr-target-page .rr-target-post{font:800 10px/1.2 Inter,Arial,system-ui,sans-serif;color:#f4f0e6;letter-spacing:.01em}
+.rr-target-page .rr-target-race-number,.rr-target-page .rr-target-post{
+letter-spacing:.01em;
+}
 
 .rr-target-page .rr-target-race-facts{margin:0;padding:4px 10px 3px;color:#5d7182;font:600 10px/1.3 Inter,Arial,system-ui,sans-serif}
 .rr-target-page .rr-target-column-head,.rr-target-page .rr-target-horse-row{display:grid;grid-template-columns:minmax(0,1fr) 290px;align-items:center;gap:8px;padding-left:10px;padding-right:10px}
 .rr-target-page .rr-target-column-head{min-height:22px;padding-top:4px;padding-bottom:3px;border-bottom:1px solid #e2e7eb;background:#f6f8fa;color:#6b7e8e;font:800 9px/1.2 Inter,Arial,system-ui,sans-serif;letter-spacing:.035em}
 .rr-target-page .rr-target-column-metrics,.rr-target-page .rr-target-horse-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:center;gap:6px;text-align:center;min-width:0}
-.rr-target-page .rr-target-horse-row{position:relative;width:100%;min-width:0;min-height:51px;margin:0;padding-top:6px;padding-bottom:6px;border:0;border-bottom:1px solid #e2e8ec;border-radius:0;background:#fff;color:var(--rrh-navy);text-align:left;font-family:Inter,Arial,system-ui,sans-serif;cursor:pointer;appearance:none}
+.rr-target-page .rr-target-horse-row{
+position:relative;
+width:100%;
+min-width:0;
+margin:0;
+border:0;
+border-bottom:1px solid #e2e8ec;
+border-radius:0;
+background:#fff;
+color:var(--rrh-navy);
+text-align:left;
+font-family:Inter,Arial,system-ui,sans-serif;
+cursor:pointer;
+appearance:none;
+}
 .rr-target-page button.rr-target-horse-row:hover{background:#f1f5f9}
 .rr-target-page .rr-target-horse-row.rr-target-attack{background:#fcfaf5;box-shadow:inset 3px 0 0 var(--rrh-gold)}
 .rr-target-page button.rr-target-attack:hover{background:#f7f0de}
-.rr-target-page .rr-target-runner-info{display:grid;grid-template-columns:93px minmax(0,1fr);align-items:center;gap:5px;min-width:0}
-.rr-target-page .rr-target-horse-role{display:block;color:#627488;font:850 10px/1.22 Inter,Arial,system-ui,sans-serif;letter-spacing:.015em}
+.rr-target-page .rr-target-runner-info{
+display:grid;
+align-items:center;
+min-width:0;
+}
+.rr-target-page .rr-target-horse-role{
+display:block;
+letter-spacing:.015em;
+}
 .rr-target-page .rr-target-attack .rr-target-horse-role{color:#906819}
-.rr-target-page .rr-target-horse-identity{display:flex;align-items:center;gap:6px;min-width:0}
+.rr-target-page .rr-target-horse-identity{
+display:flex;
+align-items:center;
+min-width:0;
+}
 .rr-target-page .rr-target-saddle,.rr-target-page .rr-target-saddle img{width:27px;height:27px}
 
 
 .rr-target-page .rr-target-horse-copy{display:block;min-width:0}
-.rr-target-page .rr-target-horse-name{display:block;min-width:0;color:var(--rrh-navy);font:800 13px/1.22 Inter,Arial,system-ui,sans-serif;overflow-wrap:anywhere}
-.rr-target-page .rr-target-ml-inline{display:none;color:#66788a;font:750 10px/1.25 Inter,Arial,system-ui,sans-serif}
+.rr-target-page .rr-target-horse-name{
+display:block;
+min-width:0;
+color:var(--rrh-navy);
+overflow-wrap:anywhere;
+}
+.rr-target-page .rr-target-ml-inline{
+display:none;
+color:#66788a;
+}
 .rr-target-page .rr-target-stat{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-width:0}
 .rr-target-page .rr-target-stat-label{display:none}
 .rr-target-page .rr-target-stat-value{color:var(--rrh-navy);font:800 13px/1.2 Inter,Arial,system-ui,sans-serif;font-variant-numeric:tabular-nums;white-space:nowrap}
 
 
-.rr-target-page .rr-target-horse-connections{grid-column:1/-1;margin:0;color:#5e7182;font:550 10px/1.22 Inter,Arial,system-ui,sans-serif}
-.rr-target-page .rr-target-analysis-text{display:block;white-space:normal;overflow:visible;-webkit-line-clamp:unset;-webkit-box-orient:initial;margin:0;padding:8px 10px 10px;color:#29445c;font:500 12.5px/1.47 Inter,Arial,system-ui,sans-serif;overflow-wrap:anywhere}
+.rr-target-page .rr-target-horse-connections{
+grid-column:1/-1;
+margin:0;
+}
+.rr-target-page .rr-target-analysis-text{
+-webkit-box-orient:initial;
+}
 .rr-target-page .rr-target-card-bottom{display:none}
 .rr-target-page .rr-target-scratches{padding:5px 10px}
 .rr-target-page .rr-target-dialog .rr-target-horse-row{cursor:default}
@@ -209,7 +291,6 @@
  .rr-target-page .rr-target-titlebar{gap:5px;margin-bottom:6px}
  .rr-target-page .rr-target-titlebar h1{font-size:26px}
  .rr-target-page .rr-target-titlebar p{display:none}
- .rr-target-page .rr-target-private{margin:0 0 5px;font-size:9px}
  .rr-target-page .rr-target-toolbar label:first-child,.rr-target-page .rr-target-toolbar label:nth-child(2){flex:1 1 135px}
  
  
@@ -217,16 +298,41 @@
  
  .rr-target-page .rr-target-race-facts{padding:4px 9px 2px;font-size:10px}
  .rr-target-page .rr-target-column-head{display:none}
- .rr-target-page .rr-target-horse-row{grid-template-columns:minmax(0,1fr) 120px;grid-template-areas:none;min-height:58px;gap:5px;padding:6px 9px}
- .rr-target-page .rr-target-runner-info{display:block;min-width:0}
- .rr-target-page .rr-target-horse-role{font-size:9px;line-height:1.22;margin-bottom:3px;letter-spacing:.02em}
+ .rr-target-page .rr-target-horse-row{
+grid-template-areas:none;
+}
+ .rr-target-page .rr-target-runner-info{
+min-width:0;
+}
+ .rr-target-page .rr-target-horse-role{
+line-height:1.22;
+letter-spacing:.02em;
+}
  
  
- .rr-target-page .rr-target-ml-inline{display:block;margin-top:2px;font-size:10px;line-height:1.1}
- .rr-target-page .rr-target-horse-stats{grid-area:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:center;gap:2px;padding:0;margin:0;background:transparent;border:0}
+ .rr-target-page .rr-target-ml-inline{
+display:block;
+margin-top:2px;
+line-height:1.1;
+}
+ .rr-target-page .rr-target-horse-stats{
+grid-area:auto;
+display:grid;
+grid-template-columns:repeat(2,minmax(0,1fr));
+align-items:center;
+padding:0;
+margin:0;
+background:transparent;
+border:0;
+}
  .rr-target-page .rr-target-attack .rr-target-horse-stats{background:transparent}
  .rr-target-page .rr-target-stat-ml{display:none}
- .rr-target-page .rr-target-stat-label{display:block;color:#667a8b;font-size:8px;line-height:1.15;font-weight:850}
+ .rr-target-page .rr-target-stat-label{
+display:block;
+color:#667a8b;
+line-height:1.15;
+font-weight:850;
+}
  
  
  .rr-target-page .rr-target-horse-connections{grid-area:auto;grid-column:1/-1;padding-left:32px;font-size:10px}
@@ -243,20 +349,9 @@
 
 /* Readable editorial: preserve original narrative verbatim, never clamp or scroll it. */
 .rr-target-page .rr-target-analysis-text{
-  display:block;
-  margin:0;
-  padding:11px 12px 12px;
-  max-width:none;
-  color:#253e55;
-  background:#fbfcfd;
-  border-top:1px solid #dfe6eb;
-  font:500 15px/1.55 Inter,Arial,system-ui,sans-serif;
-  letter-spacing:0;
-  overflow:visible;
-  white-space:pre-line;
-  -webkit-line-clamp:unset;
-  overflow-wrap:break-word;
-  text-wrap:pretty;
+max-width:none;
+border-top:1px solid #dfe6eb;
+overflow-wrap:break-word;
 }
 .rr-target-page .rr-target-drawer-analysis p{
   font:500 15px/1.6 Inter,Arial,system-ui,sans-serif;
@@ -277,52 +372,34 @@
 /* Target List v5 — legibility-first mobile race reading.
    Applies only inside Target List; original model/PWIN and source text unchanged. */
 .rr-target-page .rr-target-racebar{
-  display:flex;
-  flex-direction:column;
-  align-items:stretch;
-  justify-content:center;
-  gap:4px;
-  padding:9px 12px 10px;
-  border-top:3px solid var(--rrh-gold);
+flex-direction:column;
+align-items:stretch;
+justify-content:center;
 }
 .rr-target-page .rr-target-racebar-main{
-  display:flex;
-  align-items:baseline;
-  flex-wrap:wrap;
-  gap:5px 12px;
-  min-width:0;
+min-width:0;
 }
 
 .rr-target-page .rr-target-race-number,
 .rr-target-page .rr-target-post{
-  color:#f7f2e9;
-  font:750 13px/1.3 Inter,Arial,system-ui,sans-serif;
-  letter-spacing:.015em;
+color:#f7f2e9;
+letter-spacing:.015em;
 }
 .rr-target-page .rr-target-race-number{padding-left:10px}
 
 .rr-target-page .rr-target-racebar .rr-target-race-facts{
-  display:block;
-  width:100%;
-  max-width:100%;
-  margin:0;
-  padding:0;
-  color:#e5edf7;
-  font:600 14px/1.38 Inter,Arial,system-ui,sans-serif;
-  letter-spacing:0;
-  overflow-wrap:break-word;
-  white-space:normal;
+display:block;
+width:100%;
+max-width:100%;
+padding:0;
+letter-spacing:0;
 }
 .rr-target-page .rr-target-horse-row{
-  min-height:69px;
-  padding-top:10px;
-  padding-bottom:10px;
-  gap:9px;
+gap:9px;
 }
 .rr-target-page .rr-target-runner-info{grid-template-columns:112px minmax(0,1fr);gap:8px}
 .rr-target-page .rr-target-horse-role{
-  color:#4b6176;
-  font:850 12px/1.3 Inter,Arial,system-ui,sans-serif;
+color:#4b6176;
 }
 .rr-target-page .rr-target-horse-identity{gap:9px}
 .rr-target-page .rr-target-saddle,
@@ -332,8 +409,7 @@
 
 .rr-target-page .rr-target-horse-stats{gap:8px}
 .rr-target-page .rr-target-stat-label{
-  color:#455c72;
-  font:850 11px/1.2 Inter,Arial,system-ui,sans-serif;
+color:#455c72;
 }
 
 
@@ -342,18 +418,14 @@
   font:550 12px/1.4 Inter,Arial,system-ui,sans-serif;
 }
 .rr-target-page .rr-target-analysis-text{
-  padding:14px 15px 16px;
-  color:#233a51;
-  background:#fbfcfd;
-  font:500 17px/1.55 Inter,Arial,system-ui,sans-serif;
-  letter-spacing:0;
-  white-space:pre-line;
-  -webkit-line-clamp:unset;
-  text-wrap:pretty;
-  overflow:visible;
+background:#fbfcfd;
+letter-spacing:0;
+text-wrap:pretty;
 }
 .rr-target-page .rr-target-toolbar label{font-size:12px}
-.rr-target-page .rr-target-toolbar select{font-size:15px;min-height:42px}
+.rr-target-page .rr-target-toolbar select{
+font-size:15px;
+}
 .rr-target-page .rr-target-summary h2{font-size:17px}
 .rr-target-page .rr-target-summary>span{font-size:12px}
 @media(min-width:801px){
@@ -439,10 +511,8 @@
 }
 @media(max-width:359px){
  .rr-target-page .rr-target-horse-row{
-   grid-template-columns:minmax(0,1fr) 113px;
-   padding:10px 8px;
-   gap:4px;
- }
+padding:10px 8px;
+}
  
  
  .rr-target-page .rr-target-horse-identity{gap:4px}
@@ -455,10 +525,8 @@
  .rr-target-page .rr-target-racebar .rr-target-race-facts{font-size:13px}
  .rr-target-page .rr-target-race-number,.rr-target-page .rr-target-post{font-size:12px}
  .rr-target-page .rr-target-analysis-text{
-   padding:12px 11px 14px;
-   font-size:17px;
-   line-height:1.52;
- }
+padding:12px 11px 14px;
+}
 }
 
 
@@ -468,13 +536,6 @@
 .rr-target-page .rr-target-main{
   max-width:1140px;
   padding:10px 11px 34px;
-}
-.rr-target-page .rr-target-private{
-  margin:0 0 7px;
-  padding:5px 9px;
-  font:800 11px/1.3 Inter,Arial,system-ui,sans-serif;
-  letter-spacing:.012em;
-  text-transform:uppercase;
 }
 .rr-target-page .rr-target-titlebar{
   align-items:flex-start;
@@ -533,8 +594,7 @@
 .rr-target-page .rr-target-list{gap:8px}
 .rr-target-page .rr-target-card{border-radius:7px}
 .rr-target-page .rr-target-racebar{
-  padding:9px 11px 10px;
-  gap:3px;
+gap:3px;
 }
 
 .rr-target-page .rr-target-race-number,
@@ -681,7 +741,7 @@
   background:#102d53;border-top:3px solid #c99831;color:#fff;
 }
 .rr-target-page .rr-target-racebar-main{
-  display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 12px;
+flex-wrap:wrap;
 }
 .rr-target-page .rr-target-racebar h3{
   text-transform:uppercase;
