@@ -77,10 +77,48 @@ try{
     return {font:parseFloat(style.fontSize),lineHeight:parseFloat(style.lineHeight),background:style.backgroundColor,
       actual:el.textContent, scroll:el.scrollHeight,client:el.clientHeight};
   });
-  assert.ok(reading.font>= (width<=359?17:width<=800?18:16.5),"The race commentary must be legible without zooming at "+width+": "+JSON.stringify(reading));
+  assert.ok(reading.font>= (width<=800?17:16.5),"Both research products must use readable 17px phone analysis, without zooming at "+width+": "+JSON.stringify(reading));
   assert.ok(reading.lineHeight/reading.font>=1.47,"Editorial lines must be readable at "+width+": "+JSON.stringify(reading));
   assert.match(reading.actual,/The paragraph deliberately continues/,"Never replace original analysis with a clipped preview.");
   assert.equal(await page.locator("#rr-target-upload-form").count(),0,"JSON upload should never appear on Target List.");
+
+  const shell=await page.evaluate(()=>{
+   const nav=document.querySelector(".rr-target-page .rr-member-nav");
+   const tabs=[...nav.querySelectorAll("a")];
+   const active=nav.querySelector('[aria-current="page"]');
+   const title=document.querySelector(".rr-target-titlebar h1");
+   const intro=document.querySelector(".rr-target-titlebar p");
+   const bar=document.querySelector(".rr-target-toolbar");
+   const select=bar.querySelector("select");
+   const summary=document.querySelector("#rr-target-context");
+   const navBox=nav.getBoundingClientRect();
+   const activeBox=active.getBoundingClientRect();
+   return {
+     navWrap:getComputedStyle(nav).flexWrap,navHeight:navBox.height,
+     navClientWidth:nav.clientWidth,navScrollWidth:nav.scrollWidth,
+     tabHeights:tabs.map(el=>el.getBoundingClientRect().height),
+     activeVisible:activeBox.left>=navBox.left-2&&activeBox.right<=navBox.right+2,
+     titleSize:parseFloat(getComputedStyle(title).fontSize),
+     introSize:parseFloat(getComputedStyle(intro).fontSize),
+     introVisible:getComputedStyle(intro).display!=="none",
+     selectSize:parseFloat(getComputedStyle(select).fontSize),
+     selectHeight:select.getBoundingClientRect().height,
+     sortContext:summary.textContent,
+     controlsCount:bar.querySelectorAll("select").length
+   };
+  });
+  if(width<=760){
+    assert.equal(shell.navWrap,"nowrap","Five modules belong in one swipeable navigation row at "+width);
+    assert.ok(shell.navHeight<=47,"No second line of navigation at "+width+": "+JSON.stringify(shell));
+    assert.ok(shell.tabHeights.every(v=>v>=40),"Readable navigation tabs keep 40px tap targets at "+width+": "+JSON.stringify(shell));
+    assert.ok(shell.activeVisible,"Active Target List tab should be in the swipeable viewport at "+width+": "+JSON.stringify(shell));
+    assert.ok(shell.titleSize>=27,"Headings use common 28px mobile scale at "+width);
+    assert.ok(shell.introVisible&&shell.introSize>=13,"Short module description remains readable at "+width);
+    assert.ok(shell.selectSize>=15&&shell.selectHeight>=42,"Date and sort controls share readable type at "+width);
+  }
+  assert.equal(shell.controlsCount,2,"Only Date and Sort needed for the daily reader.");
+  assert.equal(shell.sortContext,"Post-time order","Summary should show sort state instead of repeating date.");
+
   const readable=await page.evaluate(()=>{
     const target=document.querySelector(".rr-target-card");
     const header=target.querySelector(".rr-target-racebar");
@@ -117,6 +155,7 @@ try{
   const initialTimes=await page.locator(".rr-target-post").allTextContents();
   assert.deepEqual(initialTimes,["1:12 PM ET","2:20 PM ET","3:14 PM ET","3:26 PM ET","4:15 PM ET","8:40 PM ET","9:30 PM ET","9:55 PM ET"],"Post-time sort must ignore original rank at "+width);
   await page.locator("#rr-target-sort").selectOption("track");
+  assert.equal(await page.locator("#rr-target-context").innerText(),"Track order","Summary reflects track sorting.");
   const grouped=await page.locator(".rr-target-racebar h3").allTextContents();
   assert.deepEqual(grouped,["Synthetic Downs","Synthetic Downs","Synthetic Downs","Synthetic Downs","Synthetic Park","Synthetic Park","Synthetic Park","Synthetic Park"],"Track ordering must group A–Z at "+width);
   await page.locator("#rr-target-sort").selectOption("post-time");
