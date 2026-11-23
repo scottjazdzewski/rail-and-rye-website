@@ -153,7 +153,7 @@ assert.ok(html.includes("/assets/projections-dashboard.css")); // shared visual 
 assert.ok(!html.includes("Race details")&&!html.includes('id="rr-lr-dialog"'));
 assert.ok(!html.includes("rr-lr-import")&&!html.includes("rr-lr-file")&&!html.includes("rr-lr-upload-form"),"No user-supplied JSON form");
 assert.ok(html.includes("id=\"rr-lr-retry\""),"A failed R2 load must permit retry");
-assert.ok(html.includes("longshot-radar.js?v=push-20261123-2"),"Bust the stale cached script that referenced removed form controls");
+assert.ok(html.includes("longshot-radar.js?v=shared-v1-20261123"),"Render updated Shared Research V1 client without a stale cache");
 assert.ok(!html.includes("longshot-hero.jpg")&&!html.includes("longshot-mark.png"));
 assert.ok(ui.includes('make("div","rr-lr-inline-analysis")'));
 assert.ok(!ui.includes('make("button","","Race details")'));
