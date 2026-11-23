@@ -11,7 +11,7 @@ const ticket=(role="BEST_POSSIBLE")=>({
 });
 const card=()=>({
  schema_version:1,product_type:"pick_tickets",date:"2026-11-23",track:"Synthetic QA Track",
- revision:1,status:"initial_current",source_receipt:receipt,sequences:[
+ revision:1,status:"initial_current",source_receipt:{...receipt},sequences:[
  {name:"Synthetic Pick 3",start_race:1,end_race:3,play_status:"PASS",
   hit_rate_display:"12.345%",recommendation:"Test only",tickets:[ticket()]}
  ]});
