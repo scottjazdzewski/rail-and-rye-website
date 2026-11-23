@@ -8,7 +8,7 @@ import unittest
 import zipfile
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
-from tri_dashboard_sync import build_cards, Hold, ZIP_NAME_RE
+from tri_dashboard_sync import build_cards, Hold, sync_cards, target_key
 
 
 def dump(value):
@@ -78,13 +78,46 @@ def make_zip(*, wrong_hash=False, wrong_mass=False, unresolved=False):
 
 
 class TestPrescratchSync(unittest.TestCase):
-    def test_verification_accepts_existing_and_future_daily_package_names(self):
-        self.assertIsNotNone(ZIP_NAME_RE.fullmatch(
-            "RAIL_RYE_1123_TRI_V4_F4_V2_ROLE_RATING_REPAIR_ALL_FIVE_PASS.zip"))
-        self.assertIsNotNone(ZIP_NAME_RE.fullmatch(
-            "RAIL_RYE_20261124_TRI_DASHBOARD_VERIFIED_PRESCRATCH.zip"))
-        self.assertIsNone(ZIP_NAME_RE.fullmatch(
-            "UNVERIFIED_MODEL_EXPORT.zip"))
+    def test_keys_match_website_r2_storage(self):
+        self.assertEqual(target_key({"track_name": "Parx Racing", "race_date": "2026-11-23"}),
+                         "projections/dashboard/2026-11-23/parx-racing.json")
+        self.assertEqual(target_key({"track_name": "M\u00e1hon\u00edng Valley", "race_date": "2026-11-23"}),
+                         "projections/dashboard/2026-11-23/mahoning-valley.json")
+
+    def test_direct_private_r2_write_is_idempotent_and_protects_final_cards(self):
+        class Missing(Exception):
+            def __init__(self):
+                self.response = {"Error": {"Code": "NoSuchKey"}}
+        class Body:
+            def __init__(self, value):
+                self.value = value
+            def read(self, _limit=None):
+                return self.value
+        class FakeR2:
+            def __init__(self):
+                self.saved = {}
+                self.writes = 0
+            def get_object(self, Bucket, Key):
+                if Key not in self.saved:
+                    raise Missing()
+                item = self.saved[Key]
+                return {"Body": Body(item["Body"]), "Metadata": item["Metadata"]}
+            def put_object(self, Bucket, Key, Body, Metadata, **kwargs):
+                self.writes += 1
+                self.saved[Key] = {"Body": Body, "Metadata": Metadata}
+        _, cards, _, result = build_cards(make_zip())
+        client = FakeR2()
+        self.assertEqual(sync_cards(cards, result["sha256"], client=client, dry_run=True), (1, 0))
+        self.assertEqual(client.writes, 0)
+        self.assertEqual(sync_cards(cards, result["sha256"], client=client), (1, 0))
+        self.assertEqual(sync_cards(cards, result["sha256"], client=client), (0, 1))
+        self.assertEqual(client.writes, 1)
+        key = target_key(cards[0])
+        self.assertEqual(json.loads(client.saved[key]["Body"])["projection_status"], "prescratch")
+        client.saved[key]["Body"] = dump({"schema_version": 1, "projection_status": "post-scratch"})
+        with self.assertRaisesRegex(Hold, "scratch-updated"):
+            sync_cards(cards, result["sha256"], client=client)
+        self.assertEqual(client.writes, 1, "A newer post-scratch card must remain untouched")
 
     def test_verified_source_becomes_only_prescratch_private_import(self):
         date, cards, payload, totals = build_cards(make_zip())

@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-"""Secure TRI V4.1/F4 V2 prescratch ZIP -> private Cloudflare R2 dashboard sync.
+"""Publish verified frozen TRI V4.1/F4 V2 prescratch ZIP directly to Cloudflare R2.
 
-No runner scores or source files are stored in GitHub. The source ZIP is fetched
-from a privately shared Google Drive folder using a read-only service account.
-Requires google-auth, requests, boto3 only in --sync mode.
+Run from the TRI production process after the model passes all gates.
+No Google Cloud, Google Drive sync or GitHub scheduled runner required.
 """
 import argparse
 import datetime as dt
@@ -13,19 +12,17 @@ import json
 import os
 import re
 import sys
+import unicodedata
 import zipfile
-from zoneinfo import ZoneInfo
 
 APPROVED_STATUSES = {"TRI_V4_F4_V2_MODEL_SOURCE_INPUT_ERRORS_RESOLVED_ALL_FIVE", "TRI_V4_F4_V2_PRESCRATCH_ALL_TRACKS_PASS"}
 PWIN_PASS = "PASS_TRI_TJ_V4_PERMANENT_FORWARD_RUNTIME"
-ZIP_NAME_RE = re.compile(r"^RAIL_RYE_(?:\d{4}|\d{8})_(?:TRI_V4_F4_V2_ROLE_RATING_REPAIR_ALL_FIVE_PASS|TRI_DASHBOARD_VERIFIED_PRESCRATCH)\.zip$")
 TRACK_FILE_RE = re.compile(r"^([A-Z0-9]{2,4})_(\d{4})_VERIFIED_TRI_F4_SOURCE\.json$")
 F4 = ("exact_p1", "exact_p2", "exact_p3", "exact_p4", "exact_p5", "p6_plus", "top2", "top3", "top4")
 MAX_ZIP_SIZE = 16 * 1024 * 1024
 MAX_UNCOMPRESSED = 35 * 1024 * 1024
 MAX_IMPORT_SIZE = 1024 * 1024
 BUCKET_DEFAULT = "rail-and-rye-private-cards"
-FOLDER_DEFAULT = "1yR79Mp8BndMd1KQfGEsbUOKvq-BJ2Vzd"
 
 
 class Hold(RuntimeError):
@@ -199,155 +196,102 @@ def build_cards(zip_bytes):
                                       "runners": runner_total, "sha256": digest(zip_bytes)}
 
 
-def list_source_files(credentials, folder_id):
-    import requests
-    from google.auth.transport.requests import Request
-    credentials.refresh(Request())
-    headers = {"Authorization": "Bearer " + credentials.token}
-    params = {
-        "q": f"'{folder_id}' in parents and trashed = false and name contains 'TRI'",
-        "fields": "nextPageToken,files(id,name,size,mimeType,modifiedTime,md5Checksum)",
-        "pageSize": 100,
-        "supportsAllDrives": "true", "includeItemsFromAllDrives": "true"
-    }
-    found = []
-    for _ in range(5):
-        res = requests.get("https://www.googleapis.com/drive/v3/files",
-                           params=params, headers=headers, timeout=25)
-        res.raise_for_status()
-        result = res.json()
-        found.extend(result.get("files", []))
-        if not result.get("nextPageToken"):
-            break
-        params["pageToken"] = result["nextPageToken"]
-    return found, headers
+def target_key(card):
+    """Match the website's trackSlug key convention exactly."""
+    normalized = unicodedata.normalize("NFD", card["track_name"])
+    normalized = "".join(ch for ch in normalized if not unicodedata.combining(ch))
+    slug = re.sub(r"[^a-z0-9]+", "-", normalized.lower()).strip("-")[:80] or "track"
+    return f"projections/dashboard/{card['race_date']}/{slug}.json"
 
 
-def get_source_zip(file_id, headers):
-    import requests
-    require(bool(re.fullmatch(r"[A-Za-z0-9_-]{10,128}", file_id)), "Invalid Drive source file ID")
-    res = requests.get("https://www.googleapis.com/drive/v3/files/" + file_id,
-                       params={"alt": "media", "supportsAllDrives": "true"},
-                       headers=headers, timeout=70)
-    res.raise_for_status()
-    require(len(res.content) <= MAX_ZIP_SIZE, "Downloaded source exceeds ZIP limit")
-    return res.content
-
-
-def sync_cards(cards, source_hash, source_id, bucket, account_id, key_id, secret, preview=False):
+def create_client(account_id, access_key_id, secret_access_key):
     import boto3
-    from botocore.exceptions import ClientError
-    session = boto3.session.Session()
-    r2 = session.client("s3", region_name="auto",
-                        endpoint_url=f"https://{account_id}.r2.cloudflarestorage.com",
-                        aws_access_key_id=key_id, aws_secret_access_key=secret)
+    require(bool(account_id and access_key_id and secret_access_key),
+            "Cloudflare R2 credentials are not configured in the TRI scoring environment")
+    require(re.fullmatch(r"[0-9a-fA-F]{32}", account_id) is not None,
+            "Cloudflare account ID must be 32 hexadecimal characters")
+    return boto3.session.Session().client(
+        "s3", region_name="auto",
+        endpoint_url=f"https://{account_id}.r2.cloudflarestorage.com",
+        aws_access_key_id=access_key_id, aws_secret_access_key=secret_access_key)
+
+
+def is_not_found(error):
+    response = getattr(error, "response", None)
+    code = response.get("Error", {}).get("Code") if isinstance(response, dict) else None
+    return code in ("NoSuchKey", "404", "NotFound")
+
+
+def sync_cards(cards, source_hash, bucket=BUCKET_DEFAULT, dry_run=False, client=None):
+    """Preflight all targets before writes; never downgrade a scratch-updated card."""
+    if client is None:
+        client = create_client(
+            os.getenv("TRI_CLOUDFLARE_ACCOUNT_ID", "").strip(),
+            os.getenv("TRI_R2_ACCESS_KEY_ID", "").strip(),
+            os.getenv("TRI_R2_SECRET_ACCESS_KEY", "").strip())
+    require(bucket == BUCKET_DEFAULT, "TRI cannot publish to an unexpected R2 bucket")
     actions = []
-    # Preflight every target before the first write. NEVER restore prescratch
-    # over a scratch-updated or manually finalized dashboard.
+    seen = set()
     for card in cards:
-        slug = re.sub(r"[^a-z0-9]+", "-", card["track_name"].lower()).strip("-")
-        target = f"projections/dashboard/{card['race_date']}/{slug}.json"
+        target = target_key(card)
+        require(target not in seen, "Two TRI tracks would overwrite the same R2 key")
+        seen.add(target)
         prior = None
         metadata = {}
         try:
-            existing = r2.get_object(Bucket=bucket, Key=target)
-            metadata = existing.get("Metadata", {})
+            current = client.get_object(Bucket=bucket, Key=target)
+            metadata = current.get("Metadata") or {}
+            blob = current["Body"].read(MAX_IMPORT_SIZE + 1)
+            require(len(blob) <= MAX_IMPORT_SIZE, "Existing R2 projection exceeds the 1 MB limit")
+            prior = json.loads(blob)
+        except Exception as exc:
+            if not is_not_found(exc):
+                raise
+        if prior is not None:
+            require(isinstance(prior, dict) and prior.get("projection_status") == "prescratch",
+                    "Refusing to overwrite an existing scratch-updated/final card: " + target)
             if metadata.get("source_sha256") == source_hash:
                 actions.append((target, card, "same"))
                 continue
-            prior = json.loads(existing["Body"].read(MAX_IMPORT_SIZE + 1))
-        except ClientError as exc:
-            if exc.response["Error"].get("Code") not in ("NoSuchKey", "404", "NotFound"):
-                raise
-        require(prior is None or prior.get("projection_status") == "prescratch",
-                "Refusing to replace existing scratch-updated/final dashboard: " + target)
         actions.append((target, card, "write"))
-    needed = [row for row in actions if row[2] == "write"]
-    if preview:
-        return len(needed), len(actions) - len(needed)
-    for target, card, action in needed:
-        r2.put_object(Bucket=bucket, Key=target, Body=compact_json(card),
-                      ContentType="application/json; charset=utf-8",
-                      CacheControl="private, no-store",
-                      Metadata={"source_sha256": source_hash,
-                                "source_file_id": source_id, "stage": "prescratch"})
-    return len(needed), len(actions) - len(needed)
-
-
-def run_sync(source_file_id=None, dry_run=False):
-    from google.oauth2 import service_account
-    sa = os.getenv("TRI_GOOGLE_SERVICE_ACCOUNT_JSON", "").strip()
-    account = os.getenv("TRI_CLOUDFLARE_ACCOUNT_ID", "").strip()
-    key = os.getenv("TRI_R2_ACCESS_KEY_ID", "").strip()
-    secret = os.getenv("TRI_R2_SECRET_ACCESS_KEY", "").strip()
-    folder = os.getenv("TRI_DRIVE_FOLDER_ID", FOLDER_DEFAULT).strip()
-    require(sa and account and key and secret, "One-time Google Drive and R2 credentials are not configured")
-    require(re.fullmatch(r"[A-Za-z0-9_-]{10,128}", folder) is not None, "Invalid configured Drive folder")
-    credentials = service_account.Credentials.from_service_account_info(
-        json.loads(sa), scopes=["https://www.googleapis.com/auth/drive.readonly"])
-    available, headers = list_source_files(credentials, folder)
-    today = dt.datetime.now(ZoneInfo("America/New_York")).date()
-    files = []
-    for item in available:
-        match = ZIP_NAME_RE.fullmatch(str(item.get("name", "")))
-        if not match:
-            continue
-        if item.get("mimeType") != "application/zip" and item.get("mimeType") != "application/x-zip-compressed":
-            continue
-        if int(item.get("size", "0")) > MAX_ZIP_SIZE:
-            continue
-        files.append(item)
-    if source_file_id:
-        files = [item for item in files if item["id"] == source_file_id]
-        require(files, "Specified source ZIP is not in the approved production folder")
-    else:
-        # Filename uses MMDD only; exact year comes from the signed receipt.
-        files.sort(key=lambda item: item.get("modifiedTime", ""), reverse=True)
-    if not files:
-        print("NO_APPROVED_SOURCE_PACKAGES")
-        return
-    completed = 0
-    processed_dates = set()
-    for item in files[:10]:
-        raw = get_source_zip(item["id"], headers)
-        date, cards, _, counts = build_cards(raw)
-        race_day = dt.date.fromisoformat(date)
-        if not source_file_id and race_day not in (today, today + dt.timedelta(days=1)):
-            continue
-        if date in processed_dates:
-            continue
-        processed_dates.add(date)
-        wrote, same = sync_cards(cards, counts["sha256"], item["id"], BUCKET_DEFAULT,
-                                 account, key, secret, preview=dry_run)
-        completed += 1
-        print(f"TRI_SYNC date={date} tracks={counts['tracks']} races={counts['races']} "
-              f"runners={counts['runners']} written={wrote} unchanged={same} "
-              f"mode={'DRY_RUN' if dry_run else 'PRIVATE_R2'}")
-    if not completed:
-        print("NO_CURRENT_PRESCRATCH_PACKAGE")
+    pending = [(target, card) for target, card, action in actions if action == "write"]
+    if dry_run:
+        return len(pending), len(actions) - len(pending)
+    for target, card in pending:
+        client.put_object(Bucket=bucket, Key=target, Body=compact_json(card),
+                          ContentType="application/json; charset=utf-8",
+                          CacheControl="private, no-store",
+                          Metadata={"source_sha256": source_hash, "stage": "prescratch"})
+    return len(pending), len(actions) - len(pending)
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Sync verified TRI prescratch package to private R2")
-    parser.add_argument("--verify-zip", help="Offline audit, no credentials/no network")
-    parser.add_argument("--out", help="Optional offline secure dashboard JSON output path")
-    parser.add_argument("--source-file-id", default="", help="Manual run: exact already-approved Drive ZIP ID")
-    parser.add_argument("--dry-run", action="store_true")
+    parser = argparse.ArgumentParser(
+        description="Validate frozen TRI/F4 model evidence and optionally send it directly to private Cloudflare R2")
+    parser.add_argument("--zip", "--verify-zip", dest="source_zip", required=True,
+                        help="Final verified scorer ZIP from TRI production")
+    parser.add_argument("--out", help="Optional local backup JSON (never pushed to public GitHub)")
+    parser.add_argument("--publish", action="store_true",
+                        help="Upload verified projection cards directly into private R2")
+    parser.add_argument("--dry-run", action="store_true",
+                        help="With --publish, test R2 access and overwrite safety without saving")
     args = parser.parse_args()
     try:
-        if args.verify_zip:
-            with open(args.verify_zip, "rb") as file:
-                date, cards, payload, counts = build_cards(file.read())
-            if args.out:
-                with open(args.out, "wb") as file:
-                    file.write(payload)
-            print(f"TRI_VERIFIED date={date} tracks={counts['tracks']} "
-                  f"races={counts['races']} runners={counts['runners']} "
-                  f"payload_bytes={len(payload)}")
-        else:
-            run_sync(args.source_file_id or None, args.dry_run)
-    except (Hold, ValueError, KeyError, TypeError, zipfile.BadZipFile) as exc:
-        print("TRI_SYNC_HOLD: " + str(exc), file=sys.stderr)
+        require(not args.dry_run or args.publish, "--dry-run requires --publish")
+        with open(args.source_zip, "rb") as infile:
+            date, cards, payload, counts = build_cards(infile.read())
+        if args.out:
+            with open(args.out, "wb") as outfile:
+                outfile.write(payload)
+        print(f"TRI_VERIFIED date={date} tracks={counts['tracks']} "
+              f"races={counts['races']} runners={counts['runners']} "
+              f"payload_bytes={len(payload)} source_sha256={counts['sha256']}")
+        if args.publish:
+            updated, unchanged = sync_cards(cards, counts["sha256"], dry_run=args.dry_run)
+            print(f"TRI_R2 date={date} written={updated} unchanged={unchanged} "
+                  f"status={'DRY_RUN' if args.dry_run else 'PRIVATE_R2_PUBLISHED'}")
+    except (Hold, ValueError, KeyError, TypeError, zipfile.BadZipFile, OSError) as exc:
+        print("TRI_PUBLISH_HOLD: " + str(exc), file=sys.stderr)
         sys.exit(2)
 
 
