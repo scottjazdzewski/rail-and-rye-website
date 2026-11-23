@@ -69,7 +69,7 @@ assert.match(race.textContent,/PURSE \$20,000/,"Display actual purse separately"
 assert.match(race.textContent,/3 SCRATCHES/,"Official scratch count uses correct plural display.");
 const scratchChip=matchClass(race,"rr-dash-scratch-chip");
 assert.ok(scratchChip&&scratchChip.src.endsWith("/3.png"),"Scratch uses official #3 saddlecloth chip");
-assert.match(race.textContent,/Scratched Runner/,"Show scratched horse name");
+assert.ok(allClass(race,"rr-dash-scratch-item").some(item=>item.getAttribute("aria-label")?.includes("Scratched Runner")),"Keep scratched horse names accessible without crowding the PDF-style banner");
 const pdfBanner=matchClass(race,"rr-dash-race-banner");
 const bannerScratches=matchClass(pdfBanner,"rr-dash-scratch-strip");
 assert.ok(bannerScratches,"PDF scratch count and chips must appear INSIDE the race header");
@@ -81,7 +81,7 @@ assert.equal(scratchedChips.length,3,"Use authentic saddlecloth PNGs for all scr
 assert.ok(scratchedChips.some(el=>el.src.endsWith("/13.png")),"High-numbered scratches keep a same-size approved #13 chip");
 assert.ok(scratchedChips.some(el=>el.src.endsWith("/1.png")),"Coupled entries use the approved base-number asset");
 assert.equal(allClass(bannerScratches,"rr-dash-scratch-suffix")[0].textContent,"A","Keep coupled-entry suffix visible");
-assert.match(bannerScratches.textContent,/High Number Scratch|Entry Scratch/,"All scratch names must remain legible");
+assert.ok(allClass(bannerScratches,"rr-dash-scratch-item").every(item=>item.title.includes("Scratch")),"All scratch names remain available as tooltips and accessible labels");
 assert.match(css,/PDF-matched scratches:/,"Maintain dedicated PDF-style scratch header layout");
 
 const names=allClass(horses,"rr-dash-horse-name").map(el=>el.textContent);
