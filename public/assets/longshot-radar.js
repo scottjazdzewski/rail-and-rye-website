@@ -168,22 +168,56 @@ function refreshView(){
 // Native Radar reader: all actual horses arrive from the protected Cloudflare
 // R2 endpoint. No manual JSON uploader, fictional fixture or public paid JSON.
 const retry=q("#rr-lr-retry");
-async function loadPublishedCard(){
+// Read real approved editions directly from the protected R2-backed server.
+// The legacy published-PDF November 23 edition is retained as history;
+// new dates are accepted ONLY from the existing server-validated production
+// Radar review store. This UI never scores, qualifies or writes selections.
+async function fetchPrivateRadarJSON(url,signal){
+ const response=await fetch(url,{
+  credentials:"same-origin",cache:"no-store",redirect:"follow",signal,
+  headers:{"Accept":"application/json"}
+ });
+ if(response.redirected||!String(response.headers.get("content-type")||"").toLowerCase().includes("application/json"))
+  throw Error("Your private review session may have expired. Sign in again, then retry.");
+ if(!response.ok)throw Error("Radar private feed unavailable (HTTP "+response.status+").");
+ return response.json();
+}
+async function loadAvailableEditions(){
  const controller=new AbortController();
  const timeout=setTimeout(()=>controller.abort(),12000);
- let response;
+ let responses;
  try{
-  response=await fetch("/api/admin/longshot-radar-editorial",{credentials:"same-origin",cache:"no-store",redirect:"follow",signal:controller.signal,headers:{"Accept":"application/json"}});
+  responses=await Promise.allSettled([
+   fetchPrivateRadarJSON("/api/admin/longshot-radar",controller.signal),
+   fetchPrivateRadarJSON("/api/admin/longshot-radar-editorial",controller.signal)
+  ]);
  }finally{clearTimeout(timeout);}
- if(response.redirected||!String(response.headers.get("content-type")||"").toLowerCase().includes("application/json"))
-  throw Error("Your session may have expired. Sign in again, then retry.");
- if(!response.ok)throw Error("The published Radar feed is unavailable (HTTP "+response.status+"). Please try again.");
- const result=await response.json();
- const edition=result?.edition;
- if(result?.review_only!==true||result?.customer_publish_approved!==false||edition?.status!=="published_pdf_reference"||
-    !Array.isArray(edition.candidates)||edition.candidates.length!==10)
-  throw Error("Longshot Radar is unavailable. Please try again.");
- return edition;
+ const byDate=new Map();
+ const modern=responses[0];
+ if(modern.status==="fulfilled"){
+  const result=modern.value;
+  if(result?.review_only!==true||!Array.isArray(result.editions))
+   throw Error("The protected scored Radar feed is malformed.");
+  for(const row of result.editions){
+   if(!row||!/^\\d{4}-\\d{2}-\\d{2}$/.test(row.race_date)||
+      !["prescratch","scratch_updated"].includes(row.status)||
+      !Array.isArray(row.candidates))throw Error("The protected Radar edition failed validation.");
+   byDate.set(row.race_date,row);
+  }
+ }
+ const old=responses[1];
+ if(old.status==="fulfilled"){
+  const result=old.value,edition=result?.edition;
+  if(result?.review_only!==true||result?.customer_publish_approved!==false||
+     edition?.status!=="published_pdf_reference"||!Array.isArray(edition.candidates))
+   throw Error("The protected historical publication failed validation.");
+  if(!byDate.has(edition.race_date))byDate.set(edition.race_date,edition);
+ }
+ if(!byDate.size){
+  const failures=responses.filter(x=>x.status==="rejected").map(x=>String(x.reason?.message||"Source unavailable."));
+  throw Error(failures[0]||"No approved Radar edition is available in private storage.");
+ }
+ return [...byDate.values()].sort((a,b)=>b.race_date.localeCompare(a.race_date));
 }
 async function initialize(){
  status.hidden=false;
@@ -192,9 +226,8 @@ async function initialize(){
  app.hidden=true;
  empty.hidden=true;
  try{
-  const edition=await loadPublishedCard();
-  state.editions=[edition];
-  state.date=edition.race_date;
+  state.editions=await loadAvailableEditions();
+  state.date=state.editions[0].race_date;
   refreshView();
   status.hidden=true;
  }catch(e){
