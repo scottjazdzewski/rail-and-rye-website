@@ -7,6 +7,8 @@ on:
       - 'public/assets/projections-dashboard.js'
       - 'public/assets/rr-race-titles.js'
       - 'public/assets/rr-intelligence-chips.css'
+      - 'public/assets/rr-projections-race-header.css'
+      - 'public/assets/projections-dashboard.css'
       - 'public/admin/projections-preview.html'
       - 'public/membership/dashboard/index.html'
   workflow_dispatch:
@@ -28,14 +30,18 @@ jobs:
             code1=$(curl -LsS --connect-timeout 10 --max-time 20 -H 'Cache-Control: no-cache' -w '%{http_code}' -o /tmp/projections-live.js "${BASE}/assets/projections-dashboard.js?rev=${token}" || true)
             code2=$(curl -LsS --connect-timeout 10 --max-time 20 -H 'Cache-Control: no-cache' -w '%{http_code}' -o /tmp/rr-race-titles-live.js "${BASE}/assets/rr-race-titles.js?rev=${token}" || true)
             code3=$(curl -LsS --connect-timeout 10 --max-time 20 -H 'Cache-Control: no-cache' -w '%{http_code}' -o /tmp/rr-chips-live.css "${BASE}/assets/rr-intelligence-chips.css?rev=${token}" || true)
-            if [ "$code1" = 200 ] && [ "$code2" = 200 ] && [ "$code3" = 200 ] &&
+            code4=$(curl -LsS --connect-timeout 10 --max-time 20 -H 'Cache-Control: no-cache' -w '%{http_code}' -o /tmp/rr-header-live.css "${BASE}/assets/rr-projections-race-header.css?rev=${token}" || true)
+            code5=$(curl -LsS --connect-timeout 10 --max-time 20 -H 'Cache-Control: no-cache' -w '%{http_code}' -o /tmp/projections-base-live.css "${BASE}/assets/projections-dashboard.css?rev=${token}" || true)
+            if [ "$code1" = 200 ] && [ "$code2" = 200 ] && [ "$code3" = 200 ] && [ "$code4" = 200 ] && [ "$code5" = 200 ] &&
                cmp -s public/assets/projections-dashboard.js /tmp/projections-live.js &&
                cmp -s public/assets/rr-race-titles.js /tmp/rr-race-titles-live.js &&
-               cmp -s public/assets/rr-intelligence-chips.css /tmp/rr-chips-live.css; then
+               cmp -s public/assets/rr-intelligence-chips.css /tmp/rr-chips-live.css &&
+               cmp -s public/assets/rr-projections-race-header.css /tmp/rr-header-live.css &&
+               cmp -s public/assets/projections-dashboard.css /tmp/projections-base-live.css; then
               echo "LIVE_PROJECTIONS_ASSETS_MATCH: Cloudflare serves source-authentic track logos, readable saddlecloths and full-stakes-name code"
               break
             fi
-            echo "Not deployed yet: attempt ${attempt}/24 JS=${code1}, title=${code2}, chips=${code3}"
+            echo "Not deployed yet: attempt ${attempt}/24 JS=${code1}, title=${code2}, chips=${code3}, header=${code4}, base=${code5}"
             if [ "$attempt" -eq 24 ]; then
               echo "::error::Production still serves stale Projections assets after 24 checks"
               exit 1
@@ -47,7 +53,11 @@ jobs:
           grep -Fq 'rr-dash-approved-track-logo' /tmp/projections-live.js
           grep -Fq 'officialTrackArt={' /tmp/projections-live.js
           ! grep -Fq 'rr-dash-track-mark-letters' /tmp/projections-live.js
-          grep -Fq 'text-wrap:balance' /tmp/rr-chips-live.css
+          grep -Fq 'text-wrap:balance' /tmp/rr-header-live.css
+          grep -Fq 'rrp-race-head__scratch-bar' /tmp/rr-header-live.css
+          grep -Fq 'justify-content:center' /tmp/rr-header-live.css
+          ! grep -Fq '.rr-dash-race-banner{' /tmp/rr-chips-live.css
+          ! grep -Fq '.rr-dash-race-banner{' /tmp/projections-base-live.css
           grep -Fq 'mix-blend-mode:multiply' /tmp/rr-chips-live.css
           ! grep -Fq 'approvedTrackLogos={' /tmp/projections-live.js
           grep -Fq 'rr-race-saddle-tab' /tmp/rr-chips-live.css
@@ -63,4 +73,4 @@ jobs:
             test -s "/tmp/${logo}.webp"
             echo "LIVE_APPROVED_TRACK_LOGO ${logo} PASS"
           done
-          echo 'LIVE_PROJECTIONS_READY: Original venue logos, balanced sponsor-free stakes titles and transparent chip backing are live.'
+          echo 'LIVE_PROJECTIONS_READY: One new race-header stylesheet, centered scratch chips, original venue logos and complete stakes names are deployed.'
