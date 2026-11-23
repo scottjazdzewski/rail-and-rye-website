@@ -329,35 +329,32 @@ function showHorse(entry){
  dialog.showModal();
 }
 function cardHeader(card){
- const wrapper=makeNode("div","rr-dash-card-head rr-dash-card-head--official-track-logo"),
+ const wrapper=makeNode("div","rrp-track-head"),
   logo=document.createElement("img");
- logo.className="rr-dash-card-logo";
+ logo.className="rrp-track-head__brand";
  logo.src="/assets/brand/rail_rye_logo_header.png";logo.alt="Rail & Rye";
- const name=card.track||card.card.track_name;
- const info=document.createElement("div"),
-  track=makeNode("h2","rr-dash-track-title",name),
-  date=makeNode("p","rr-dash-card-date",dateLabel(card.race_date));
- info.append(track,date);
- wrapper.append(logo,info);
- // Restore the real approved racetrack imagery. Render the whole image on an
- // ivory surface with no faux monogram or small framed sponsor advertisement.
- const officialTrackArt={
+ const name=card.track||card.card.track_name,
+  identity=makeNode("div","rrp-track-head__identity"),
+  title=makeNode("h2","rrp-track-head__name",name),
+  date=makeNode("p","rrp-track-head__date",dateLabel(card.race_date));
+ identity.append(title,date);wrapper.append(logo,identity);
+ const originalTrackLogos={
   "Finger Lakes":"finger-lakes.webp",
   "Mountaineer":"mountaineer.webp",
   "Mahoning Valley":"mahoning-valley.webp",
   "Parx Racing":"parx-racing.webp",
   "Zia Park":"zia-park.webp"
  };
- const filename=officialTrackArt[name];
+ const filename=originalTrackLogos[name];
  if(filename){
-  const frame=makeNode("div","rr-dash-approved-track-logo-wrap"),
-   image=document.createElement("img");
-  image.className="rr-dash-approved-track-logo";
+  const plaque=makeNode("div","rrp-track-head__plaque"),image=document.createElement("img");
+  image.className="rrp-track-head__logo";
   image.src="/assets/approved/track-logos/"+filename;
-  image.alt=name+" track logo";
+  image.alt=name+" official racetrack logo";
   image.loading="eager";image.decoding="async";
-  frame.append(image);wrapper.append(frame);
- }else wrapper.className="rr-dash-card-head";
+  image.addEventListener("error",()=>{plaque.replaceChildren();wrapper.className+=" rrp-track-head--no-logo";});
+  plaque.append(image);wrapper.append(plaque);
+ }else wrapper.className+=" rrp-track-head--no-logo";
  return wrapper;
 }
 function scratchList(race){
@@ -451,9 +448,7 @@ function renderCard(){
  for(const [label] of CARD_METRICS){const cell=makeNode("span","",label);cell.setAttribute("role","columnheader");metricHead.append(cell);}
  header.append(metricHead);const marketHead=makeNode("span","","WIN % · FAIR ODDS");marketHead.setAttribute("role","columnheader");header.append(marketHead);table.append(header);
  const list=makeNode("div","rr-dash-runner-list");list.setAttribute("role","rowgroup");
- let entries=[...race.entries].map((entry,index)=>({entry,index}));
- const query=String(q("#rr-dash-search")?.value||"").trim().toLowerCase();
- if(query)entries=entries.filter(({entry})=>String(entry.horse_name||"").toLowerCase().includes(query)||String(entry.program_number||"").toLowerCase().includes(query));
+ const entries=[...race.entries].map((entry,index)=>({entry,index}));
  // Rail & Rye's locked projection ordering:
  // 1. The strongest exact TRI win-probability candidate leads.
  // 2. Every other runner follows the source-certified projected finish order.
@@ -540,7 +535,6 @@ async function init(){
   q("#rr-dash-date").addEventListener("change",onFiltersChanged);
   q("#rr-dash-track").addEventListener("change",()=>{if(viewMode==="track")onFiltersChanged();});
   q("#rr-dash-race-time").addEventListener("change",()=>{activeRace=Number(q("#rr-dash-race-time").value);renderCard();});
-  q("#rr-dash-search").addEventListener("input",renderCard);
   q("#rr-dash-mode-track").addEventListener("click",()=>changeViewMode("track"));
   q("#rr-dash-mode-all").addEventListener("click",()=>changeViewMode("all"));
   q("#rr-dash-all-races").addEventListener("change",()=>selectTimeline(Number(q("#rr-dash-all-races").value)));

@@ -67,25 +67,15 @@
  .rr-race-chip--tab{transition:none}
 }
 
-/* Real track-specific artwork appears alongside the persistent R&R horseshoe. */
-.rr-dash-card-head--with-track-logo{
- display:grid;grid-template-columns:50px minmax(0,1fr) minmax(55px,84px);
- align-items:center;gap:12px;
-}
-.rr-dash-track-logo{
- display:block;justify-self:end;align-self:center;width:100%;
- max-width:84px;max-height:66px;object-fit:contain;object-position:center right;
-}
+
 @media(max-width:800px){
- .rr-dash-card-head--with-track-logo{
-  grid-template-columns:44px minmax(0,1fr) minmax(40px,67px);gap:8px;
- }
- .rr-dash-track-logo{max-width:67px;max-height:53px}
+
+
 }
 @media(max-width:360px){
- .rr-dash-card-head--with-track-logo{grid-template-columns:38px minmax(0,1fr) 48px;gap:6px}
- .rr-dash-track-logo{max-width:48px;max-height:45px}
- .rr-dash-card-head--with-track-logo .rr-dash-track-title{font-size:17px}
+
+
+
 }
 
 /* R&R V3: Real horse-saddlecloth files ARE the race numbers too.
@@ -124,33 +114,9 @@
 }
 
 
-/* Clean track identity: branded track-specific racing seal, not miniature
-   white-backed sponsor advertisements or stretched low-resolution logos. */
-.rr-dash-card-head.rr-dash-card-head--with-track-mark{
- display:grid;grid-template-columns:50px minmax(0,1fr) 80px;
- align-items:center;gap:11px;
-}
-.rr-dash-track-mark{
- position:relative;isolation:isolate;box-sizing:border-box;
- display:flex;flex-direction:column;align-items:center;justify-content:center;
- flex:0 0 auto;width:78px;height:62px;justify-self:end;
- overflow:hidden;border:2px solid #bd9140;border-radius:14px;
- background:#102d53;color:#fff3d7;
- box-shadow:inset 0 0 0 3px #193d68;
- text-align:center;
-}
-.rr-dash-track-mark-rail{
- position:absolute;inset:6px 8px;z-index:0;pointer-events:none;border:1.4px solid #e5c37e;
- border-radius:48% / 50%;opacity:.78;
-}
-.rr-dash-track-mark-letters{
- display:block;position:relative;z-index:1;margin:0;font:850 21px/1 Inter,Arial,system-ui,sans-serif;
- letter-spacing:-.045em;white-space:nowrap;
-}
-.rr-dash-track-mark-caption{
- position:relative;z-index:1;margin-top:4px;font:750 6px/1 Inter,Arial,system-ui,sans-serif;
- letter-spacing:.11em;color:#e6cd9d;
-}
+
+
+
 @media(max-width:800px){
  .rr-dash-races .rr-dash-race-button.rr-race-saddle-tab{
   flex-basis:49px;min-width:49px;width:49px;min-height:49px;height:49px;
@@ -162,53 +128,22 @@
 
 
 
- .rr-dash-card-head.rr-dash-card-head--with-track-mark{
-  grid-template-columns:43px minmax(0,1fr) 67px;gap:7px;
-  padding:6px 1px 10px;
- }
- .rr-dash-track-mark{width:66px;height:53px;border-radius:12px}
- .rr-dash-track-mark-rail{inset:5px 6px}
- .rr-dash-track-mark-letters{font-size:19px}
- .rr-dash-track-mark-caption{font-size:5px;letter-spacing:.095em;margin-top:3px}
- .rr-dash-card-head--with-track-mark .rr-dash-track-title{
-  font-size:clamp(18px,4.8vw,21px);line-height:1.08;overflow-wrap:anywhere;
- }
+
+
+
 }
 @media(max-width:370px){
- .rr-dash-card-head.rr-dash-card-head--with-track-mark{
-  grid-template-columns:38px minmax(0,1fr) 56px;gap:6px;
- }
- .rr-dash-track-mark{width:55px;height:47px}
- .rr-dash-track-mark-rail{inset:4px 5px}
- .rr-dash-track-mark-letters{font-size:17px}
- .rr-dash-track-mark-caption{font-size:4.5px}
- .rr-dash-card-head--with-track-mark .rr-dash-track-title{font-size:17px}
+
+
+
+
+
+
 }
 
-/* 2026-11-23: premium racing header V4.
-   This rule set intentionally supersedes the old fake track monograms and
-   conflicting CSS plaques. Actual approved venue artwork is never replaced. */
-.rr-dash-card-head.rr-dash-card-head--official-track-logo{
- display:grid;grid-template-columns:50px minmax(0,1fr) 128px;
- align-items:center;gap:12px;padding:8px 0 12px;
-}
-.rr-dash-card-head--official-track-logo .rr-dash-track-title{
- min-width:0;font:800 clamp(21px,2.6vw,31px)/1.09 Inter,Arial,system-ui,sans-serif;
- letter-spacing:-.018em;text-transform:uppercase;
- overflow-wrap:normal;word-break:normal;
-}
-.rr-dash-approved-track-logo-wrap{
- display:flex;align-items:center;justify-content:center;justify-self:end;
- box-sizing:border-box;width:128px;height:78px;padding:5px 2px;
- border:0;border-radius:0;background:#f4f0e6;
- overflow:hidden;
-}
-.rr-dash-approved-track-logo{
- display:block;width:100%;height:100%;object-fit:contain;object-position:center;
- /* On source logos with white backgrounds this blends the white into the
-    ivory surface without cropping lettering or falsifying the original. */
- mix-blend-mode:multiply;filter:contrast(1.13);
-}
+
+
+
 
 
 
@@ -219,16 +154,9 @@
 
 
 @media(max-width:800px){
- .rr-dash-card-head.rr-dash-card-head--official-track-logo{
-  grid-template-columns:43px minmax(0,1fr) 95px;
-  gap:9px;padding:7px 1px 10px;
- }
- .rr-dash-card-head--official-track-logo .rr-dash-track-title{
-  font-size:clamp(18px,4.6vw,23px);line-height:1.12;letter-spacing:-.02em;
- }
- .rr-dash-approved-track-logo-wrap{
-  width:95px;height:66px;padding:4px 0;background:#f4f0e6;
- }
+
+
+
 
 
 
@@ -239,13 +167,9 @@
 
 }
 @media(max-width:390px){
- .rr-dash-card-head.rr-dash-card-head--official-track-logo{
-  grid-template-columns:38px minmax(0,1fr) 79px;gap:7px;
- }
- .rr-dash-approved-track-logo-wrap{width:79px;height:58px;padding:3px 0}
- .rr-dash-card-head--official-track-logo .rr-dash-track-title{
-  font-size:18px;line-height:1.1;
- }
+
+
+
 
 
 
