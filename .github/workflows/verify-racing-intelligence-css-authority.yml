@@ -1,0 +1,32 @@
+name: Verify Racing Intelligence CSS authority
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'public/assets/projections-dashboard.css'
+      - 'public/assets/pick-tickets-dashboard.css'
+      - 'public/assets/longshot-radar.css'
+      - 'public/assets/target-list-dashboard.css'
+      - 'test-racing-intelligence-css-authority.mjs'
+      - '.github/workflows/verify-racing-intelligence-css-authority.yml'
+  pull_request:
+    paths:
+      - 'public/assets/projections-dashboard.css'
+      - 'public/assets/pick-tickets-dashboard.css'
+      - 'public/assets/longshot-radar.css'
+      - 'public/assets/target-list-dashboard.css'
+      - 'test-racing-intelligence-css-authority.mjs'
+      - '.github/workflows/verify-racing-intelligence-css-authority.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  cascade-authority:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Enforce one declaration authority per selector and media scope
+        run: node test-racing-intelligence-css-authority.mjs
