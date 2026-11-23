@@ -25,6 +25,7 @@ on:
     paths:
       - 'public/**'
       - 'test-homepage-lock.mjs'
+      - 'test-projection-dashboard-mobile.mjs'
       - 'test-prescratch-projection-import.mjs'
       - 'src/projections.js'
       - 'scripts/tri_dashboard_sync.py'
