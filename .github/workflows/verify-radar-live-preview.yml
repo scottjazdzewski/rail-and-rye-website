@@ -1,0 +1,41 @@
+name: Verify live Longshot Radar design preview
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'public/longshot-radar-preview/**'
+      - 'public/assets/longshot-radar.js'
+      - '.github/workflows/verify-radar-live-preview.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify-live-site:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Confirm deployed unlisted visual preview via public URL
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="https://railandryeracing.com/longshot-radar-preview/"
+          for attempt in $(seq 1 12); do
+            if curl -fsSL --connect-timeout 10 --max-time 20 "$URL" -o /tmp/rr-radar.html; then
+              if grep -q 'data-rr-design-only="true"' /tmp/rr-radar.html &&
+                 grep -q 'FICTIONAL HORSES' /tmp/rr-radar.html &&
+                 grep -q '/assets/approved/publications/longshot-hero.jpg' /tmp/rr-radar.html &&
+                 ! grep -q 'id="rr-lr-upload-form"' /tmp/rr-radar.html; then
+                echo "PASS: live website serves safe interactive Longshot Radar design-only page."
+                break
+              fi
+            fi
+            if [ "$attempt" -eq 12 ]; then
+              echo "::error::New public Radar visual page not verified on Cloudflare after 12 attempts."
+              exit 1
+            fi
+            sleep 10
+          done
+          for path in /assets/longshot-radar.js /assets/approved/saddlecloths/1.png /assets/approved/saddlecloths/11.png /assets/approved/saddlecloths/20.png /assets/approved/publications/longshot-mark.png /assets/approved/publications/longshot-hero.jpg; do
+            curl -fsSL --connect-timeout 10 --max-time 20 "https://railandryeracing.com$path" -o /dev/null
+            echo "PASS asset: $path"
+          done
