@@ -93,14 +93,24 @@ export async function auditV33FieldUpload(card,previousCard=null){
  const inputChanged=scoreInputChanged(previousCard,card);
  const oldReceipts=previousCard?.model_receipts||{};
  const newReceipts=card.model_receipts||{};
- const scoreUpdated=!previousCard||oldReceipts.tri_sha256!==newReceipts.tri_sha256||
-  oldReceipts.f4_sha256!==newReceipts.f4_sha256;
+ // A fresh result is a PAIR of TRI + F4 scoring runs. Changing just one
+ // receipt (or merely renormalizing prescratch PWIN after scratches) cannot
+ // certify a newly scored betting-interest field.
+ const hasFreshReceiptPair=!!newReceipts.tri_sha256&&!!newReceipts.f4_sha256&&
+  (!previousCard||(
+   oldReceipts.tri_sha256!==newReceipts.tri_sha256&&
+   oldReceipts.f4_sha256!==newReceipts.f4_sha256));
  const signedFinal=card.projection_status==="scratch_final"&&
   card.factor_basis==="verified_scratch_final"&&
   !!newReceipts.tri_sha256&&!!newReceipts.f4_sha256&&
   !!newReceipts.official_changes_sha256&&!!newReceipts.prescratch_parent_sha256;
- const sourceInputHold=inputChanged&&!scoreUpdated;
+ const sourceInputHold=inputChanged&&!hasFreshReceiptPair;
  const newScratches=Number(review.additional_scratch_count||0);
+ // This is NOT a synthetic scratch elimination or post-scratch renormalization.
+ // The separate TRI scorer must rerun and attest the fresh complete field
+ // BEFORE the optimizer's calculated tickets can be served even for review.
+ const scratchScoringReady=card.projection_status!=="scratch_final"||
+  (!sourceInputHold&&signedFinal&&newScratches===0);
  return {
   schema_version:1,date:card.race_date,track:card.track_name,
   source_sha256:sourceSha,previous_source_sha256:priorSha,
@@ -109,7 +119,9 @@ export async function auditV33FieldUpload(card,previousCard=null){
   source_signature_status:sourceInputHold?"INPUT_CHANGED_WITHOUT_NEW_SCORE_RECEIPT":
    !signedFinal?"AWAITING_CERTIFIED_CURRENT_SCORING":
    newScratches>0?"ADDITIONAL_SCRATCH_PROOF_PENDING":"MATH_VERIFIED_RELEASE_GATED",
-  score_freshness_verified:!sourceInputHold&&signedFinal&&newScratches===0,
+  score_freshness_verified:card.projection_status==="scratch_final"&&scratchScoringReady,
+  scratch_scoring_ready:card.projection_status!=="scratch_final"?null:scratchScoringReady,
+  requires_external_tri_rescoring:card.projection_status==="scratch_final"&&!scratchScoringReady,
   production_release_approved:false,
   input_changes_require_rescoring:sourceInputHold,
   new_scratch_count:newScratches,
