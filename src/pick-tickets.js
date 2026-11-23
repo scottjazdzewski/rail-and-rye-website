@@ -1,4 +1,6 @@
 import {getPickTicketsIntake} from './pick-tickets-intake.js';
+import {buildPrescratchPickTicketReview} from './pick-tickets-auto.js';
+import {readAdminProjectionCards} from './projections.js';
 /* Pick Tickets: admin-only dashboard staging. No scoring, public data, or customer-launch route. */
 const PREFIX="pick-tickets/dashboard/";
 const ARCHIVE="pick-tickets/revisions/";
@@ -137,7 +139,19 @@ async function readCards(env){
 export async function handleAdminPickTickets(request,env){
  if(!env.CARDS_BUCKET)return respond({error:"Private R2 storage is not configured."},503);
  if(request.method==="GET"){
-  return respond({cards:await readCards(env),intake:getPickTicketsIntake(),demo:false});
+  const certified=await readCards(env);
+  let prescratch={cards:[],rejected:[]};
+  try{
+   const result=await readAdminProjectionCards(env);
+   if(result.ok){
+    const source=await result.json();
+    prescratch=buildPrescratchPickTicketReview(source.cards||[]);
+   }
+  }catch(e){console.warn("Private provisional Pick Tickets projection intake unavailable",String(e).slice(0,160));}
+  const saved=new Set(certified.map(x=>x.card.date+"|"+x.card.track));
+  const review=prescratch.cards.filter(x=>!saved.has(x.card.date+"|"+x.card.track));
+  return respond({cards:[...certified,...review],intake:getPickTicketsIntake(),
+   review_count:review.length,review_rejected:prescratch.rejected,demo:false});
  }
  if(request.method!=="POST")return respond({error:"Method not allowed."},405);
  let cards;try{cards=await parseBody(request);}catch(e){return respond({error:e.message},400);}
