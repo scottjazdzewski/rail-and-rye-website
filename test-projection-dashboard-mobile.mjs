@@ -102,7 +102,7 @@ const memberSort=readFileSync("public/membership/dashboard/index.html","utf8");
 for(const html of [adminSort,memberSort]){
  assert.doesNotMatch(html,/rr-dash-sort|Sort by|value="finish"|value="program"/,
    "There must be no customer-facing sorting controls");
- assert.match(html,/projections-dashboard\.js\?v=29/,"Use current locked-order client");
+ assert.match(html,/projections-dashboard\.js\?v=30/,"Use current locked-order client");
 }
 assert.doesNotMatch(js,/rr-dash-sort/,"Client must not let users reorder horses");
 console.log("PASS: compact runner rows, verified dash factor states, preserved race data, no redundant PDF action");
@@ -119,9 +119,9 @@ assert.doesNotMatch(js,/\breviewMode\b|PARTIAL FIELD|rr-dash-review-data/,
  "No stale partial-field runtime branches");
 assert.match(js,/api\("\/api\/admin\/projections-preview"\)/,
  "Private admin preview must always read the secure projection API");
-assert.match(adminHtml,/projections-dashboard\.js\?v=29/,
+assert.match(adminHtml,/projections-dashboard\.js\?v=30/,
  "Admin dashboard must load the latest hardened shared client");
-assert.match(memberHtml,/projections-dashboard\.js\?v=29/,
+assert.match(memberHtml,/projections-dashboard\.js\?v=30/,
  "Member dashboard must use the same client revision");
 console.log("PASS: no embedded premium data or partial review fallback; authenticated full-field preview only");
 
@@ -137,7 +137,7 @@ for(const html of [adminHtml,memberHtml]){
   "The mobile horse search occupies one consistent full-width row");
  assert.match(html,/projections-dashboard\.css\?v=25/,
   "Current improved typography style must be loaded");
- assert.match(html,/projections-dashboard\.js\?v=29/,
+ assert.match(html,/projections-dashboard\.js\?v=30/,
   "Current compact-label asset must be loaded");
 }
 assert.doesNotMatch(adminHtml,/rr-dash-private-banner|Private admin preview · member dashboard remains off|Return to projection uploader/,
@@ -214,6 +214,29 @@ const trophy=matchClass(displayedRace,"rr-dash-graded-trophy");
 assert.ok(trophy,"A source-verified G1 stakes race must display a trophy");
 assert.match(trophy.className,/--g1/,"Grade 1 trophy must use gold distinction");
 assert.equal(trophy.getAttribute("aria-label"),"Grade 1 stakes trophy");
+const realRaceHeaderChip=matchClass(displayedRace,"rr-race-saddle-image");
+assert.ok(realRaceHeaderChip&&realRaceHeaderChip.src.endsWith("/4.png"),
+ "Race 4 header MUST show real #4 saddlecloth artwork");
+const racingMark=matchClass(displayedRace,"rr-dash-track-mark");
+assert.ok(racingMark,"Current track must show a branded emblem instead of an advertising tile");
+assert.match(racingMark.textContent,/RACECOURSE/);
+assert.equal(allClass(displayedRace,"rr-dash-track-logo").length,0,
+ "Remove white-backed sponsored track logo tiles");
+assert.equal(allClass(displayedRace,"rr-race-chip__label").length,0,
+ "Remove old stacked RACE caption competing with two-digit numbers");
+// Reproduce the user's real First Lady S. screenshot, both with and WITHOUT
+// the independently loaded title helper. Neither may leak 'S.'.
+fixture.cards[0].card.races[1].conditions="FIRST LADY S.";
+laterRace.events.click();
+assert.match(els.get("rr-dash-race").textContent,/First Lady Stakes/,
+ "Mahoning Valley-style abbreviated stakes names must expand in the full race header");
+assert.doesNotMatch(els.get("rr-dash-race").textContent,/FIRST LADY S\./);
+context.RRRaceTitles=undefined;
+laterRace.events.click();
+assert.match(els.get("rr-dash-race").textContent,/First Lady Stakes/,
+ "If the external title file fails to load, Projections itself still expands S. to Stakes");
+context.RRRaceTitles={describe:()=>({title:"First Lady Stakes",grade:null})};
+
 const originalRace=els.get("rr-dash-races").children.find(x=>x.dataset.raceNumber==="6");
 assert.ok(originalRace?.events?.click,"Original current race must remain available");
 originalRace.events.click();
@@ -223,16 +246,16 @@ console.log("PASS: true per-track and all-track race chronology; original header
 // Canonical cross-module chips and Bet Builder live in the protected projection view.
 const chipStyles=readFileSync("public/assets/rr-intelligence-chips.css","utf8");
 for(const html of [adminHtml,memberHtml]){
- assert.match(html,/rr-intelligence-chips\.css\?v=1/,"Load the shared race/horse chip identity");
+ assert.match(html,/rr-intelligence-chips\.css\?v=2/,"Load the shared race/horse chip identity");
  assert.match(html,/rr-exotic-bet-builder\.css\?v=3/,"Load the responsive exotic ticket builder skin");
  assert.match(html,/rr-exotic-bet-builder\.js\?v=4/,"Load the source-gated no-tote Bet Builder");
 }
-assert.match(js,/rr-dash-race-button rr-race-chip rr-race-chip--tab/,
+assert.match(js,/rr-dash-race-button rr-race-saddle-tab/,
  "Every race navigation tab uses the branded saddle-chip form");
-assert.match(js,/rr-dash-race-number rr-race-chip rr-race-chip--header/,
+assert.match(js,/rr-dash-race-number rr-race-saddle-header/,
  "Race number plaque uses same standardized chip grammar");
-assert.match(js,/approvedTrackLogos=\{/,
- "Use approved track-specific logo assets, not generated placeholders");
+assert.match(js,/rr-dash-track-mark-letters/,"A compact, sponsor-free track-specific mark replaces old tiny white-backed artwork");
+assert.doesNotMatch(js,/approvedTrackLogos=\{/,"Do not render legacy sponsor-logo image tiles");
 assert.match(js,/logo\.src="\/assets\/brand\/rail_rye_logo_header\.png"/,
  "Never lose the persistent R&R horseshoe in track header");
 assert.match(js,/button\.dataset\.raceNumber=String\(race\.race_number\)/,
@@ -241,8 +264,8 @@ assert.match(js,/Number\(button\.dataset\.raceNumber\)===activeRace/,
  "Post-time labels cannot break active race tab highlighting");
 assert.match(chipStyles,/\.rr-horse-chip img/,
  "Horse selection graphics reuse exact approved saddlecloth images");
-assert.match(chipStyles,/\.rr-race-chip--tab\[aria-current="true"\]/,
- "Active race uses gold state instead of horse saddlecloth colors");
+assert.match(chipStyles,/\.rr-dash-races \.rr-dash-race-button\.rr-race-saddle-tab\[aria-current="true"\]/,
+ "Active selected race shows a gold focus ring while maintaining the authentic saddlecloth color");
 const betLaunch=allClass(els.get("rr-dash-horses"),"rr-bet-launch")[0];
 assert.ok(betLaunch?.events?.click,"Current race needs a usable Bet Builder launch");
 let passedRace=null;
@@ -251,12 +274,25 @@ betLaunch.events.click();
 assert.equal(passedRace?.race?.race_number,6,"Bet Builder opens the currently selected race");
 assert.equal(passedRace?.track,"Del Mar","Bet Builder retains current track context");
 assert.equal(passedRace?.date,"2026-11-22","Bet Builder retains current racing date");
+// Two-digit race badges are now authentic saddlecloths too, with no RACE
+// caption or extra CSS plaque layers.
+fixture.cards[0].card.races[1].race_number=10;
+const firstTab=els.get("rr-dash-races").children.find(x=>x.dataset.raceNumber==="6");
+firstTab.events.click();
+const tenthTab=els.get("rr-dash-races").children.find(x=>x.dataset.raceNumber==="10");
+assert.ok(tenthTab,"Race 10 remains navigable after post-time sorting");
+assert.equal(allClass(tenthTab,"rr-race-saddle-image")[0].src,
+ "/assets/approved/saddlecloths/10.png","Race 10 must use actual #10 saddlecloth artwork");
+tenthTab.events.click();
+assert.equal(allClass(els.get("rr-dash-race"),"rr-race-saddle-image")[0].src,
+ "/assets/approved/saddlecloths/10.png","Race header uses the same authentic two-digit saddlecloth");
+
 console.log("PASS: stable branded race chip selection, approved horse/track art and current-race Bet Builder entry");
 
 for(const html of [adminHtml,memberHtml]){
  assert.match(html,/rr-exotic-bet-builder\.js\?v=4/,
   "Customers must load the actual source-backed F4 odds client, not cached v1");
- assert.match(html,/projections-dashboard\.js\?v=29/,
+ assert.match(html,/projections-dashboard\.js\?v=30/,
   "Both admin and member dashboard views receive same race-aware F4 routing");
 }
 console.log("PASS: private live-F4 percentages and gross break-even payout UI cache-busted");
