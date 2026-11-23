@@ -157,7 +157,6 @@ text-transform:uppercase;
 .rr-dash-race-panel,.rr-dash-table,.rr-dash-runner-row{min-width:0}
 .rr-dash-post-time{min-width:0;padding-left:12px}
 
-.rr-dash-race-meta{display:flex;flex-wrap:wrap;align-items:center;gap:4px 14px;margin-top:7px}
 .rr-dash-post-time strong{overflow-wrap:anywhere}
 @media(max-width:1100px){
  .rr-dash-toolbar{grid-template-columns:repeat(3,minmax(0,1fr))}
