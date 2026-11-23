@@ -17,6 +17,14 @@ This is ONE application shell with four product views, NOT four independent site
 - Four cards/tabs in hub landing; show each product's entitlement state (Available / Locked / Purchase). User sees only content they have purchased; locked products may have a clearly labeled overview/upgrade pathway without leaking paid data.
 - Shared header, Rail & Rye logo, brand pill/navigation, member identity/sign-in status, consistent back-to-hub affordance; shared footer. Do not rebuild global header or footer in each module.
 
+### Locked masthead and navigation — homepage authority
+- **Single active CSS authority:** `public/assets/rr-hub-header.css`. The Hub, all four protected readers, and member Projections share identical `.rr-intel-header` markup. The official ivory Rail & Rye horseshoe and serif wordmark follow the homepage's branding, and the five rounded, antique-gold outlined buttons are always: **Hub · Projections · Pick Tickets · Longshot Radar · Target List**.
+- Desktop shows all five pills in one row; narrow screens use an accessible **Menu** disclosure with all five pill links. No partial horizontal-scroll positions, clipped text, inconsistent active-state treatments, duplicate header logos, or page-specific `.rr-member-header` overrides. Pick Tickets may display the verified track logo in its page heading but never another Rail & Rye header bar.
+- The masthead HTML for all six pages must stay in sync; `node test-racing-intelligence-header.mjs` checks structure, labels and mobile controls. Do not replace this with another CSS override or an independently styled module masthead.
+- **Scratch chips:** On every screen use the real approved numbered saddlecloth PNGs, with an **opaque white backing** behind any transparent source pixels. Do not fade, blend, gray out or reduce opacity of the numbered artwork in the scratch display; a scratched selection can remain unselectable without losing readability.
+- **Production text lock:** Never show `INITIAL`, `PRELIMINARY`, `PRESCRATCH`, `PRE-SCRATCH`, `CURRENT` or model/test/review-stage badges as publication labels. Keep private source status for TRI/F4 and revisions unchanged; only omit production-stage language from reader UI. Enforce `node test-racing-intelligence-customer-copy.mjs` on each production change.
+
+
 ## Design tokens and production appearance
 - Core palette: dark navy `#102d53` / `#123567`; ivory `#f4f0e6`; white `#fff`; restrained antique gold `#c99831`; subdued text `#637483`.
 - Data colors: **green `#18835a`**, neutral **gray `#88929d`**, **red `#b54842`**. These are data states, not product identity colors.
