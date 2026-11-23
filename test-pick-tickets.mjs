@@ -206,7 +206,7 @@ assert.doesNotMatch(js,/localStorage|sessionStorage|\/api\/products/);
 // alone when no current source audit and official wager menu are configured.
 const nextDayEdition={...card(),date:"2026-11-24",revision:1};
 await env.CARDS_BUCKET.put("pick-tickets/dashboard/2026-11-24/synthetic-qa-track.json",
- JSON.stringify(normalizePickTickets(nextDayEdition)));
+ JSON.stringify(normalizePickTickets(nextDayEdition)),{customMetadata:{}});
 const nextDayListing=await handleAdminPickTickets(new Request(
  "https://railandryeracing.com/api/admin/pick-tickets"),env);
 const nextDayData=await nextDayListing.json();
