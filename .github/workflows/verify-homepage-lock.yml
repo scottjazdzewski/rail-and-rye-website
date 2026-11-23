@@ -9,7 +9,6 @@ on:
       - 'src/projections.js'
       - 'scripts/tri_dashboard_sync.py'
       - 'tests/test_tri_dashboard_sync.py'
-      - '.github/workflows/tri-dashboard-auto-sync.yml'
       - '.github/workflows/verify-homepage-lock.yml'
   push:
     branches: [main]
