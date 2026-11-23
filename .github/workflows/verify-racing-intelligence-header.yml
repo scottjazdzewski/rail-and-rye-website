@@ -1,0 +1,36 @@
+name: Verify Racing Intelligence shared masthead and scratch chips
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'public/admin/*'
+      - 'public/membership/dashboard/index.html'
+      - 'public/assets/rr-hub-header.css'
+      - 'public/assets/rr-projections-race-header.css'
+      - 'public/assets/pick-tickets-dashboard.css'
+      - 'public/assets/target-list-dashboard.css'
+      - 'test-racing-intelligence-header.mjs'
+      - '.github/workflows/verify-racing-intelligence-header.yml'
+  pull_request:
+    paths:
+      - 'public/admin/*'
+      - 'public/membership/dashboard/index.html'
+      - 'public/assets/rr-hub-header.css'
+      - 'public/assets/rr-projections-race-header.css'
+      - 'public/assets/pick-tickets-dashboard.css'
+      - 'public/assets/target-list-dashboard.css'
+      - 'test-racing-intelligence-header.mjs'
+      - '.github/workflows/verify-racing-intelligence-header.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ui-contract:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Enforce shared header, same buttons, no duplicate bars and opaque chips
+        run: node test-racing-intelligence-header.mjs
