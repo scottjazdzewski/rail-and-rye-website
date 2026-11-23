@@ -147,7 +147,7 @@ export async function readPrivatePickProjections(env){
       src.customer_publish_approved===false&&
       src.source_status==="PRESCRATCH_SCORES_PASSED__SCRATCHES_AND_BADGES_NOT_CERTIFIED"&&
       Array.isArray(src.tracks)&&src.tracks.length===5){
-    const names=new Set(direct.map(x=>x.card.track_name));
+    const names=new Set(direct.filter(x=>x.card.projection_status==="prescratch").map(x=>x.card.track_name));
     for(const track of src.tracks){
      if(!Object.hasOwn(counts,track.track)||names.has(track.track)||!Array.isArray(track.races))continue;
      const c={race_date:PICK_DAY,track_name:track.track,projection_status:"prescratch",
