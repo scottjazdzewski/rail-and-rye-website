@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
 import {PICK_MENU_1123,buildPrescratchPickTicketReview,readPrivatePickProjections,
- buildV33PostScratchReviewed,buildV33ScratchFieldPreview,verifyV32OwnerScratchSnapshot}
+ buildV33PostScratchReviewed,buildV33ScratchFieldPreview,verifyV32OwnerScratchSnapshot,readPrivatePickProjections1124}
  from "./src/pick-tickets-auto.js";
 import {getNov23ScratchLedger} from "./src/pick-tickets-scratch-1123.js";
 import {getPickTicketsIntake} from "./src/pick-tickets-intake.js";
+import {PICK_MENU_1124,PICK_TRACK_COUNTS_1124} from "./src/pick-tickets-menu-1124.js";
 import {chooseV33,PICK_V33_ENGINE,PICK_V33_COST_SCALE_DOLLARS}
  from "./src/pick-tickets-v33.js";
 
@@ -183,4 +184,33 @@ assert.equal(buildV33ScratchFieldPreview(sample("Finger Lakes")),null,
  "prescratch input is not misrepresented as current-field review");
 assert.equal(PICK_MENU_1123.find(x=>x.name==="Buckeye Pick 6").unit_cents,20);
 assert.equal(PICK_MENU_1123.find(x=>x.name==="Philly Big 5").unit_cents,50);
+// November 24 is a separate official wager menu, never a copy of November 23.
+// Synthetic results below exercise the PRIVATE math only; never customer picks.
+assert.equal(PICK_MENU_1124.length,50);
+assert.equal(Object.values(PICK_TRACK_COUNTS_1124).reduce((a,b)=>a+b,0),51);
+assert.deepEqual(Object.keys(PICK_TRACK_COUNTS_1124).sort(),
+ ["Delta Downs","Finger Lakes","Mahoning Valley","Mountaineer","Parx Racing","Zia Park"].sort());
+assert.ok(PICK_MENU_1124.every(x=>x.start_race>=1&&x.end_race<=PICK_TRACK_COUNTS_1124[x.track]));
+assert.equal(PICK_MENU_1124.find(x=>x.name==="Buckeye Pick 6").unit_cents,20);
+assert.equal(PICK_MENU_1124.filter(x=>x.track==="Parx Racing"&&x.name==="Pick 3")
+ .every(x=>x.unit_cents===100),true);
+const nov24=Object.entries(PICK_TRACK_COUNTS_1124).map(([track,number])=>({
+ card:{race_date:"2026-11-24",track_name:track,projection_status:"prescratch",
+ races:Array.from({length:number},(_,i)=>({race_number:i+1,
+  scratch_count:null,scratches:[],
+  entries:[38,27,18,12,5].map((p,j)=>({program_number:String(j+1),
+   horse_name:"QA "+j,win_probability_exact:p,
+   f4_probabilities:{exact_p1:p/100}}))}))}
+}));
+const tomorrowReview=buildPrescratchPickTicketReview(nov24);
+assert.deepEqual(tomorrowReview.rejected,[]);
+assert.equal(tomorrowReview.cards.length,6);
+assert.equal(tomorrowReview.cards.reduce((n,x)=>n+x.card.sequences.length,0),50);
+assert.ok(tomorrowReview.cards.every(x=>x.card.date==="2026-11-24"&&x.card.review_only===true&&x.card.source_receipt===null));
+assert.ok(tomorrowReview.cards.every(x=>x.card.sequences.every(q=>
+ q.play_status==="CONDITIONAL"&&q.tickets.length===1&&q.tickets[0].combinations===
+ q.tickets[0].legs.reduce((m,l)=>m*l.programs.length,1))));
+assert.deepEqual(await readPrivatePickProjections1124({CARDS_BUCKET:{get:async()=>null}}),[],
+ "No private TRI results means NO invented November 24 tickets");
+console.log("PASS: 11/24 official six-track/50-sequence private V3.3 route; no prior-day or fabricated PWIN fallback.");
 console.log("PASS: exact V3.3 on all 42 official sequences, single ticket, same pre/post method, independent field/scratch gates.");
