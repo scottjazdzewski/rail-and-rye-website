@@ -3,6 +3,9 @@ on:
   pull_request:
     paths:
       - 'src/pick-tickets.js'
+      - 'src/pick-tickets-auto.js'
+      - 'src/pick-tickets-intake.js'
+      - 'src/projections.js'
       - 'src/index.js'
       - 'public/assets/pick-tickets-dashboard.*'
       - 'public/admin/pick-tickets-preview.html'
@@ -22,10 +25,13 @@ jobs:
       - name: Syntax check source and browser renderer
         run: |
           node --check src/pick-tickets.js
+          node --check src/pick-tickets-auto.js
           node --check src/index.js
           node --check public/assets/pick-tickets-dashboard.js
       - name: Certified input, ticket integrity, revisions and private-route regression
         run: node test-pick-tickets.mjs
+      - name: Current-date source-built tickets, exact PWIN and official wager menu
+        run: node test-pick-tickets-auto.mjs
       - name: Install Playwright and headless Chromium
         run: |
           npm install --no-save playwright@1.56.0
