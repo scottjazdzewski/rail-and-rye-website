@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import {normalizePickTickets,handleAdminPickTickets} from "./src/pick-tickets.js";
 import {getNov23ScratchLedger,sourceIsScratchCurrent,officialScratchSequenceCount} from "./src/pick-tickets-scratch-1123.js";
-import {PICK_V32_ENGINE} from "./src/pick-tickets-v32.js";
+import {PICK_V33_ENGINE} from "./src/pick-tickets-v33.js";
 import {PICK_MENU_1123} from "./src/pick-tickets-auto.js";
 import {getPickTicketsIntake} from "./src/pick-tickets-intake.js";
 import {getPickTicketsPrivateDemo} from "./src/pick-tickets-demo.js";
@@ -16,7 +16,7 @@ const ticket=(role="BEST_POSSIBLE")=>({
 });
 const card=()=>({
  schema_version:1,product_type:"pick_tickets",date:"2026-11-23",track:"Synthetic QA Track",
- revision:1,status:"initial_current",formula_version:PICK_V32_ENGINE,source_receipt:{...receipt},sequences:[
+ revision:1,status:"initial_current",formula_version:PICK_V33_ENGINE,source_receipt:{...receipt},sequences:[
  {name:"Synthetic Pick 3",start_race:1,end_race:3,play_status:"PASS",
   hit_rate_display:"12.345%",recommendation:"Test only",tickets:[ticket()]}
  ]});
@@ -109,8 +109,8 @@ assert.match(data.intake.missing_gate,/scoring receipt/);
 assert.equal(Object.keys(getPickTicketsIntake()).some(k=>/selections|pwin|win_probability|tickets/i.test(k)),false,"intake must not leak paid runner selections or probabilities");
 assert.equal(data.cards[0].card.revision,2);
 assert.equal(data.cards[0].card.status,"scratch_updated");
-assert.equal(data.cards[0].card.formula_version,PICK_V32_ENGINE);
-assert.equal(data.engine,PICK_V32_ENGINE);
+assert.equal(data.cards[0].card.formula_version,PICK_V33_ENGINE);
+assert.equal(data.engine,PICK_V33_ENGINE);
 assert.equal(listing.headers.get("Cache-Control"),"private, no-store");
 const wrongBatch=[card(),({...card(),date:"2026-11-24",revision:3,sequences:[{...card().sequences[0],tickets:[]} ]})];
 result=await post({cards:wrongBatch});assert.equal(result.response.status,400);
@@ -143,12 +143,13 @@ liveEnv.CARDS_BUCKET.objects.set("projections/dashboard/2026-11-23/finger-lakes.
 const sourcePreview=await handleAdminPickTickets(
  new Request("https://railandryeracing.com/api/admin/pick-tickets"),liveEnv);
 const sourcePayload=await sourcePreview.json();
-assert.equal(sourcePayload.engine,PICK_V32_ENGINE);
-assert.equal(sourcePayload.soft_cost_scale_dollars,15);
+assert.equal(sourcePayload.engine,PICK_V33_ENGINE);
+assert.equal(sourcePayload.soft_cost_scale_dollars,30);
+assert.equal(sourcePayload.minimum_leg_coverage,.5);
 assert.equal(sourcePayload.private_review_only,true);
 assert.equal(sourcePayload.review_count,1);
 assert.equal(sourcePayload.cards.length,1);
-assert.equal(sourcePayload.cards[0].card.formula_version,PICK_V32_ENGINE);
+assert.equal(sourcePayload.cards[0].card.formula_version,PICK_V33_ENGINE);
 assert.equal(sourcePayload.cards[0].card.score_verification_status,
  "CURRENT_FIELD_COMPLETE_SCORING_AND_MANIFEST_PENDING");
 assert.equal(sourcePayload.cards[0].card.review_only,true);
