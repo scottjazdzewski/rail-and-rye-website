@@ -133,6 +133,36 @@ async function readCards(env){
    const file=await env.CARDS_BUCKET.get(obj.key);
    if(!file)return null;
    const card=normalizePickTickets(JSON.parse(await file.text()));
+   // Authenticated administrator-only R2 audit allows source-based custom
+   // ticket hit recalculation after the model's actual scratch-final run.
+   // Never put private runner PWIN in a public JS file, git JSON or open route.
+   if(card.date==="2026-11-23"&&card.status==="scratch_updated"&&
+      ["Mountaineer","Zia Park"].includes(card.track)){
+    try{
+     const auditKey="pick-tickets/scorer-audit/"+card.date+"/"+slug(card.track)+".json";
+     const result=await env.CARDS_BUCKET.get(auditKey);
+     if(result){
+      const audit=JSON.parse(await result.text());
+      if(audit.track===card.track&&
+         audit.f4_receipt_sha256===card.source_receipt.sha256&&
+         audit.source_input_changes?.length===0&&audit.active_runners){
+       const proofs=new Map();
+       for(const [race,rows] of Object.entries(audit.active_runners)){
+        if(!Array.isArray(rows)||!rows.length)throw Error("R2 source audit has no complete field.");
+        const mass=rows.reduce((v,r)=>v+(Number.isFinite(r.pwin)?r.pwin:0),0);
+        if(Math.abs(mass-1)>1e-10||rows.some(r=>!Number.isFinite(r.pwin)||r.pwin<0||
+           r.pwin>1||Math.abs(r.pwin-r.f4_p1)>1e-12))throw Error("F4/PWIN source audit mismatch.");
+        proofs.set(race,Object.fromEntries(rows.map(r=>[String(r.program),r.pwin*100])));
+       }
+       for(const sequence of card.sequences){
+        if(!sequence.race_fields?.every(x=>Object.keys(proofs.get(String(x.race_number))||{}).length===x.programs.length))continue;
+        sequence.review_probabilities=Object.fromEntries(sequence.race_fields.map(x=>[
+         String(x.race_number),proofs.get(String(x.race_number))]));
+       }
+      }
+     }
+    }catch(e){console.warn("Scratch-final private ticket audit unavailable",String(e).slice(0,100));}
+   }
    return {card,updated_at:file.customMetadata?.updated_at||null,content_sha256:file.customMetadata?.content_sha256||null};
   }catch(e){console.warn("Invalid private Pick Tickets edition skipped",obj.key,String(e).slice(0,100));return null;}
  }));
