@@ -321,7 +321,7 @@ const chipStyles=readFileSync("public/assets/rr-intelligence-chips.css","utf8");
 for(const html of [adminHtml,memberHtml]){
  assert.match(html,/rr-intelligence-chips\.css\?v=4/,"Load cleaned shared race/horse chip identity");
  assert.match(html,/rr-projections-race-header\.css\?v=3/,"Load the single new Projections header stylesheet");
-  assert.match(html,/rr-race-facts\.css\?v=2/,"Load the shared centered race-facts stylesheet.");
+  assert.match(html,/rr-race-facts\.css\?v=3/,"Load the shared centered race-facts stylesheet.");
  assert.match(html,/rr-exotic-bet-builder\.css\?v=3/,"Load the responsive exotic ticket builder skin");
  assert.match(html,/rr-exotic-bet-builder\.js\?v=\d+/,"Load the source-gated no-tote Bet Builder");
 }
