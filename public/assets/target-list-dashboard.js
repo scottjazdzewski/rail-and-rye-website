@@ -202,13 +202,13 @@ function setEdition(data,preferredDate){
  if(current&&!state.dates.includes(current))option(dateSelect,current,displayDate(current));
  if(current)dateSelect.value=current;
  app.hidden=!state.edition;empty.hidden=!!state.edition;
- if(!state.edition){status.textContent="No private Target List editions are available.";set("rr-target-freshness","");return;}
+ if(!state.edition){status.textContent="No Target List selections are available.";set("rr-target-freshness","");return;}
  status.textContent="";
  set("rr-target-freshness",state.uploadedAt?"Updated "+new Date(state.uploadedAt).toLocaleString("en-US",{timeZone:"America/New_York",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}):"");
  renderTargets();
 }
 async function load(date){
- status.textContent="Loading private Target List…";
+ status.textContent="Loading Target List…";
  try{
   const suffix=date?"?date="+encodeURIComponent(date):"";
   const reviewRes=await fetch("/api/admin/target-list-review"+suffix,{credentials:"same-origin",cache:"no-store"});
@@ -220,7 +220,7 @@ async function load(date){
   if(!reviewRes.ok)throw Error(review.error||"Target List service unavailable.");
   const res=await fetch("/api/admin/target-list"+suffix,{credentials:"same-origin",cache:"no-store"});
   const data=await res.json().catch(()=>({}));
-  if(!res.ok)throw Error(data.error||"Unable to retrieve the private edition.");
+  if(!res.ok)throw Error(data.error||"Unable to load Target List.");
   setEdition(data,date);
  }catch(e){
   app.hidden=true;empty.hidden=false;status.textContent=String(e.message||"Target List unavailable.");

@@ -93,7 +93,7 @@ assert.equal(allClass(bannerScratches,"rr-dash-scratch-suffix")[0].textContent,"
 assert.ok(allClass(bannerScratches,"rr-dash-scratch-item").every(item=>item.title.includes("Scratch")),"All scratch names remain available as tooltips and accessible labels");
 assert.match(headerCss,/\.rrp-race-head__scratch-bar\{[^}]*justify-content:center/,"Center the scratch block in the newly rebuilt header.");
 assert.match(headerCss,/\.rrp-race-head__details\{[^}]*grid-template-columns:/,"Metadata has its own complete row.");
-assert.match(headerCss,/\.rrp-race-head__scratch-chip\{[^}]*background:transparent/,"Scratch chip frames are transparent.");
+assert.match(headerCss,/\.rrp-race-head__scratch-chip\{[^}]*background:#fff/,"Original scratch saddlecloths have opaque backing and no dark bleed-through.");
 assert.doesNotMatch(css,/\.rr-dash-race-banner\s*\{/,"No old race banner CSS remains in the general dashboard stylesheet.");
 assert.doesNotMatch(css,/\.rr-dash-scratch-strip\s*\{/,"No legacy scratch-strip CSS remains.");
 
