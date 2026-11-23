@@ -78,6 +78,47 @@ def main():
     if len(blob)>2000000:raise RuntimeError("Unexpected audit payload")
     # One-time-key encrypted evidence; logs contain no proprietary plaintext.
     print("RR_PRIVATE_V33_AUDIT_SEALED="+seal(blob))
+    # A smaller, independently auditable sealed dataset stores each race's
+    # probability distribution once, rather than repeating complete fields
+    # for every overlapping Pick 3/4/5/6 sequence. No plaintext is logged.
+    unique_races={}
+    tickets=[]
+    for track in report.get("tracks",[]):
+        for sequence in track.get("sequences",[]):
+            for leg in sequence["complete_leg_fields"]:
+                key=(track["track"],leg["race_number"])
+                source_rows=[(x["program_number"],x["pwin"]) for x in leg["entries"]]
+                if key in unique_races and unique_races[key]!=source_rows:
+                    raise RuntimeError("Overlapping sequences have different source probability fields")
+                unique_races[key]=source_rows
+            tickets.append({
+                "track":track["track"],
+                "name":sequence["name"],
+                "start_race":sequence["start_race"],
+                "end_race":sequence["end_race"],
+                "wager_type":sequence["wager_type"],
+                "base_cents":sequence["base_cents"],
+                "combinations":sequence["combinations"],
+                "cost_cents":sequence["cost_cents"],
+                "displayed_hit_rate":sequence["displayed_hit_rate"],
+                "exact_hit_probability":sequence["exact_hit_probability"],
+                "score":sequence["score"],
+                "leg_counts":sequence["leg_counts"],
+                "leg_coverage":sequence["leg_coverage"],
+                "picks":sequence["runner_numbers"],
+                "internal_checks":sequence["internal_checks"]
+            })
+    concise={
+        "overall":report["overall"],
+        "source_rows":report["source_rows"],
+        "races":[{"track":t,"race_number":n,
+           "entries":v} for (t,n),v in sorted(unique_races.items())],
+        "tickets":tickets,
+        "stored_editions":report["authorized_editions"]
+    }
+    compact_blob=json.dumps(concise,separators=(",",":"),ensure_ascii=True).encode()
+    print("RR_PRIVATE_V33_COMPACT_SEALED="+seal(compact_blob))
+
     total=report["overall"]
     print("RR_PRIVATE_V33_AUDIT_STATUS="+json.dumps({
         "source_tracks":total["source_tracks"],
