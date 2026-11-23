@@ -1,4 +1,5 @@
 import base64
+import brotli
 import contextlib
 import hashlib
 import io
@@ -72,11 +73,11 @@ class OneTimeDeliveryTests(unittest.TestCase):
             wrapped = public.encrypt(aes_key, padding.OAEP(
                 mgf=padding.MGF1(hashes.SHA256()), algorithm=hashes.SHA256(), label=None))
             sealed = {
-                "version": 1, "date": tri.DATE,
+                "version": 1, "date": tri.DATE, "compression": "brotli",
                 "wrapped_key_b64": base64.b64encode(wrapped).decode(),
                 "nonce_b64": base64.b64encode(nonce).decode(),
                 "ciphertext_b64": base64.b64encode(
-                    AESGCM(aes_key).encrypt(nonce, original, tri.AAD)).decode()
+                    AESGCM(aes_key).encrypt(nonce, brotli.compress(original, quality=11), tri.AAD)).decode()
             }
             with tempfile.NamedTemporaryFile(mode="w+", encoding="utf-8") as file:
                 json.dump(sealed, file)
