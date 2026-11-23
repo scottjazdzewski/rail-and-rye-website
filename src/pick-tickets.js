@@ -1,7 +1,7 @@
 import {getPickTicketsIntake} from './pick-tickets-intake.js';
 import {buildPrescratchPickTicketReview,readPrivatePickProjections} from './pick-tickets-auto.js';
 import {readAdminProjectionCards} from './projections.js';
-import {getNov23ScratchLedger,sourceIsScratchCurrent,officialScratchSequenceCount} from './pick-tickets-scratch-1123.js';
+import {getNov23ScratchLedger,sourceIsScratchCurrent,officialScratchSequenceCount,restoreInterimSelection} from './pick-tickets-scratch-1123.js';
 import {PICK_MENU_1123} from './pick-tickets-auto.js';
 /* Pick Tickets: admin-only dashboard staging. No scoring, public data, or customer-launch route. */
 const PREFIX="pick-tickets/dashboard/";
@@ -166,10 +166,11 @@ export async function handleAdminPickTickets(request,env){
    }
   }catch(e){console.warn("Private provisional Pick Tickets projection intake unavailable",String(e).slice(0,160));}
   const saved=new Set(certified.map(x=>x.card.date+"|"+x.card.track));
-  // All 42 official Nov 23 Pick sequences are touched by the reported
-  // scratches/rider input changes; none may reuse a prescratch hit estimate.
-  const review=prescratch.cards.filter(x=>x.card.date!=="2026-11-23"&&
-   !saved.has(x.card.date+"|"+x.card.track));
+  // Suggestions remain visible during the certified scratch rerun.
+  // Pending editions remove withdrawn runners and hide stale hit probabilities.
+  // A real source-certified scratch_updated R2 revision always wins.
+  const review=prescratch.cards.filter(x=>!saved.has(x.card.date+"|"+x.card.track))
+   .map(restoreInterimSelection).filter(x=>x.card.sequences.length);
   const scratch_update=getNov23ScratchLedger();
   scratch_update.dependent_sequences=officialScratchSequenceCount(PICK_MENU_1123);
   return respond({cards:[...certified,...review],intake:getPickTicketsIntake(),
