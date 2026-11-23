@@ -282,6 +282,20 @@
   const info=node("div","rr-pt-dialog-info");
   info.append(state(activeSeq.play_status),node("span","",c.track+" · "+toDate(c.date)));
   E.dialogBody.append(info);
+  // Before/after selections appear only when a later verified field upload
+  // changed this exact wager sequence. Keep the main ticket layout compact.
+  const change=activeSeq.upload_change;
+  if(change?.previous_ticket){
+   const prior=change.previous_ticket;
+   const compare=node("details","rr-pt-prior-ticket");
+   compare.append(node("summary","",
+    "Previous field · "+prior.combinations+" combinations · "+money(prior.cost_cents)));
+   const label=node("div","rr-pt-prior-label",
+    "Previous selection · "+prior.hit_rate+" projected hit");
+   const previousRows=ticketRows({legs:prior.legs});
+   compare.append(label,previousRows);
+   E.dialogBody.append(compare);
+  }
   // A sequence-wide legacy percentage must never masquerade as a tier-specific hit rate.
   const publicRecommendation=displayTicketNote(activeSeq.recommendation);
   if(publicRecommendation)E.dialogBody.append(node("p","rr-pt-analysis-reason",publicRecommendation));
