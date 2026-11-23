@@ -329,9 +329,20 @@ function scratchList(race){
 function raceBanner(race){
  const wrapper=makeNode("div","rr-dash-race-banner"),number=makeNode("div","rr-dash-race-number rr-race-chip rr-race-chip--header"),copy=makeNode("div","rr-dash-race-copy"),time=makeNode("div","rr-dash-post-time");
  number.append(makeNode("span","rr-race-chip__label","RACE"),makeNode("strong","",race.race_number));
- const condition=String(race.conditions||"Race projections").trim(),purse=String(race.purse||"").trim();
+ const presentation=globalThis.RRRaceTitles?.describe?.(race)||
+  {title:String(race.stakes_name||race.race_name||race.conditions||"Race projections").trim(),grade:null};
+ const purse=String(race.purse||"").trim();
  const title=makeNode("h3","rr-dash-race-condition");
- title.textContent=condition;copy.append(title);
+ title.append(makeNode("span","rr-dash-stakes-name",presentation.title));
+ if(presentation.grade){
+  const graded=makeNode("span","rr-dash-graded-trophy rr-dash-graded-trophy--g"+presentation.grade);
+  graded.setAttribute("aria-label","Grade "+presentation.grade+" stakes trophy");
+  graded.setAttribute("title","Grade "+presentation.grade+" Stakes");
+  graded.append(makeNode("span","rr-dash-trophy-icon","🏆"),
+   makeNode("strong","rr-dash-grade-label","G"+presentation.grade));
+  title.append(graded);
+ }
+ copy.append(title);
  const meta=makeNode("div","rr-dash-race-meta"),runnerCount=(race.entries||[]).length;
  meta.append(makeNode("p","rr-dash-race-runners",runnerCount+" RUNNERS"));
  if(purse)meta.append(makeNode("p","rr-dash-race-purse","PURSE "+purse));

@@ -500,3 +500,38 @@
  .rr-dash-metric-value::before{font-size:9px;letter-spacing:0}
  .rr-dash-metric-bar{width:11px}
 }
+
+/* Stakes names: full editorial titles without sponsor copy.
+   Grade is an actual race classification, not inferred from purse or class. */
+.rr-dash-race-condition{
+ text-transform:none;
+ align-items:center;
+ gap:6px 10px;
+ overflow-wrap:anywhere;
+}
+.rr-dash-stakes-name{
+ min-width:0;flex:0 1 auto;
+ text-transform:none;overflow-wrap:anywhere;
+}
+.rr-dash-graded-trophy{
+ display:inline-flex;align-items:center;justify-content:center;
+ gap:4px;flex:0 0 auto;min-height:28px;
+ padding:4px 8px;border:1px solid #d6ab47;border-radius:7px;
+ background:#f9df8f;color:#422c0a;vertical-align:middle;
+ font:800 11px/1.12 Inter,Arial,system-ui,sans-serif;
+ white-space:nowrap;letter-spacing:.015em;
+}
+.rr-dash-graded-trophy--g1{background:#f9dd80;border-color:#ca9d34;color:#52370c}
+.rr-dash-graded-trophy--g2{background:#edf0f2;border-color:#a5b1bd;color:#314457}
+.rr-dash-graded-trophy--g3{background:#edd0b4;border-color:#bc8557;color:#60391f}
+.rr-dash-trophy-icon{font-size:15px;line-height:1}
+.rr-dash-grade-label{font:800 11px/1 Inter,Arial,system-ui,sans-serif}
+@media(max-width:800px){
+ .rr-dash-race-condition{gap:5px 8px;font-size:17px;line-height:1.25}
+ .rr-dash-graded-trophy{min-height:26px;padding:4px 7px}
+ .rr-dash-trophy-icon{font-size:14px}
+}
+@media(max-width:360px){
+ .rr-dash-race-condition{font-size:16px}
+ .rr-dash-graded-trophy{min-height:25px}
+}

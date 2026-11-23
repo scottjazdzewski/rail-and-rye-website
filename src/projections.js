@@ -140,7 +140,23 @@ function normalizeCard(input){
    const mass=entries.reduce((sum,entry)=>sum+entry.win_probability_exact,0);
    if(Math.abs(mass-100)>0.000001)throw Error("Prescratch race win probabilities must total 100%.");
   }
-  return {race_number:number,post_time_et:text(race.post_time_et,"Post time",40),surface:text(race.surface,"Surface",50),distance:text(race.distance,"Distance",60),conditions:text(race.conditions,"Race conditions",240),purse:text(race.purse,"Purse",50),pace:text(race.pace,"Pace",50),scratch_count:scratchCount,scratches,summary:text(race.summary,"Race summary",1000),entries};
+  // Optional editorial metadata is source-supplied; never infer a graded
+  // stakes classification from purse, field size or handicapper rankings.
+  const rawGrade=race.stakes_grade??race.grade;
+  const stakesGrade=rawGrade==null?"":String(rawGrade).trim();
+  if(stakesGrade&&!/^(?:(?:grade|gr\.?|g)\s*[- ]?\s*)?(?:[123]|III|II|I)$/i.test(stakesGrade))
+   throw Error("Stakes grade must be Grade 1, Grade 2 or Grade 3.");
+  if(race.is_stakes!=null&&typeof race.is_stakes!=="boolean")
+   throw Error("Stakes classification must be a boolean.");
+  return {race_number:number,post_time_et:text(race.post_time_et,"Post time",40),
+   surface:text(race.surface,"Surface",50),distance:text(race.distance,"Distance",60),
+   conditions:text(race.conditions,"Race conditions",240),
+   race_name:text(race.race_name,"Race name",240),
+   stakes_name:text(race.stakes_name,"Canonical stakes name",240),
+   stakes_grade:stakesGrade,sponsor_name:text(race.sponsor_name,"Sponsor name",120),
+   is_stakes:race.is_stakes===true,
+   purse:text(race.purse,"Purse",50),pace:text(race.pace,"Pace",50),
+   scratch_count:scratchCount,scratches,summary:text(race.summary,"Race summary",1000),entries};
  });
  return {schema_version:1,race_date:raceDate,track_name:trackName,projection_status:projectionStatus,model_name:modelName,fair_odds_basis:fairOddsBasis,races};
 }

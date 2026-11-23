@@ -36,6 +36,15 @@ The single source of truth for **horse saddle chips**, branded **race chips**, o
 - The Bet Builder is part of Projections, not a separate product or purchase. Its model-only exacta/trifecta UI never displays made-up probability/payoff values. Exact F4 joint probabilities require a verified server-side production receipt and private, entitlement-checked delivery.
 - The user consults any actual tote prices independently; Rail & Rye does not connect to tote services or accept wagers.
 
+## Stakes naming and graded trophy display — locked
+
+- Always display the **full canonical stakes race name**. Example: **Belmont S. → Belmont Stakes**, **Frizette Stks. → Frizette Stakes**, and **Carter H. → Carter Handicap** when the source confirms it is a stakes race. Never leave bare abbreviation `S.` as the stakes suffix.
+- Remove separate sponsor language such as `Presented by …`, `Sponsored by …`, `Powered by …`, and named sponsor prefixes/suffixes where a separately supplied sponsor field makes removal unambiguous. Do **not** guess or delete words that may be part of an actual named race.
+- Prefer independently supplied source-certified `stakes_name` for the clean official name, then `race_name`, then legacy `conditions`. Keep original event attributes and TRI/F4 model data unchanged. Future publication uploads may additionally supply `stakes_grade`, `sponsor_name`, and `is_stakes`; these are presentation metadata only.
+- Graded stakes show the existing racing **trophy**, distinguished as **G1 gold**, **G2 silver**, and **G3 bronze**, only when actual source grade metadata or an explicit grade suffix supports it. Do not infer grade from a purse amount, race reputation, or a missing label. Ungraded stakes do not receive a trophy.
+- Render full title in readable editorial case without forced all-caps CSS; let names wrap naturally on mobile without hiding purse, race number, time or runner count. Share the identical naming and trophy treatment across Projections, Pick Tickets, Longshot Radar and Target List.
+- The canonical client utility is `/assets/rr-race-titles.js`. Its behavior is regression-tested with sponsor, legacy abbreviation, nongraded and G1/G2/G3 examples. A conflict between explicit grade and source title's grade **must not** silently display the wrong trophy.
+
 ## Mobile-first layout rules
 - Build for narrow phone first (320, 375, 390, 430px), then 768px/tablet, then desktop. Responsive layouts must avoid horizontal page overflow (only the race-tab strip may scroll horizontally).
 - Compact Projections runner rows target **about 114–135px** for ordinary names on a normal phone: first line actual saddlecloth, horse/ML, probability/fair odds; trainer | jockey directly beneath horse; the five-factor dashed strip beneath; tap anywhere to open details, with NO repeated Analysis buttons. Long names wrap; never truncate critical horse name or model %.
