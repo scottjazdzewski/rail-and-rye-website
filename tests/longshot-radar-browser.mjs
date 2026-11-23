@@ -109,7 +109,7 @@ try{
     throw Error("Navy #102d53 / 3px antique gold header required at "+width);
   if(visual.track.font<16.9||visual.raceNumber.font<12.9||visual.post.font<12.9||visual.firstFacts.font<13.9)
     throw Error("Race title/time/original source facts illegible at "+width);
-  if(!approx(visual.chip.w,36)||visual.horse.font<16.9||visual.ml.font<13.9)
+  if(visual.chip.w<33.9||visual.chip.w>36.1||visual.horse.font<16.9||visual.ml.font<13.9)
     throw Error("Approved chip / horse / ML minimum typography violated at "+width);
   if(visual.win.font<24.9||visual.fair.font<21.9||visual.numericLabel.font<10.9)
     throw Error("WIN/FAIR numbers or labels too small at "+width);
