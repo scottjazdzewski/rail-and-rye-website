@@ -1,0 +1,37 @@
+/* Shared private visual preview chrome, approved imagery; no PDF mockups. */
+.rr-lr-page .rr-dash-heading,.rr-target-page .rr-target-titlebar{display:flex;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:12px;min-width:0;margin-bottom:8px}
+.rr-lr-page .rr-dash-heading>div:first-child,.rr-target-page .rr-target-titlebar>div:first-child{min-width:0;flex:1 1 auto}
+.rr-review-artwork{flex:0 0 auto;display:flex;align-items:center;gap:5px;padding:4px;background:#fff;border:1px solid #d2c5ac;border-radius:7px;max-width:38%}
+.rr-review-mark{display:block;width:63px;height:81px;object-fit:contain;flex:0 1 63px}
+.rr-review-hero{display:block;width:160px;height:81px;object-fit:cover;flex:1 1 auto;min-width:0;border-radius:4px}
+.rr-review-demo-controls{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:5px 0 11px}
+.rr-review-demo-controls button{min-height:35px;border:1px solid #102d53;border-radius:5px;padding:6px 11px;background:#fff;color:#102d53;font:800 11px/1.2 Inter,Arial,system-ui,sans-serif;cursor:pointer}
+.rr-review-demo-controls button:hover{background:#102d53;color:#fff}
+.rr-review-demo-controls button:focus-visible{outline:3px solid #c99831;outline-offset:3px}
+.rr-review-demo-controls span{display:inline-flex;align-items:center;min-height:30px;border-left:3px solid #c99831;background:#fff8e8;padding:6px 8px;color:#76561b;font:800 10px/1.3 Inter,Arial,system-ui,sans-serif;letter-spacing:.02em}
+.rr-review-demo-controls [hidden]{display:none!important}
+.rr-lr-page .rr-dash-private-banner{margin-bottom:9px}
+.rr-lr-page .rr-dash-heading .rr-member-title{margin:3px 0}
+.rr-lr-page .rr-dash-heading .rr-dash-intro{max-width:630px;font-size:12px;line-height:1.4}
+.rr-target-page .rr-target-titlebar{margin-bottom:8px}
+.rr-target-page .rr-target-titlebar h1{margin:3px 0}
+.rr-target-page .rr-target-titlebar p{max-width:610px;font-size:12px}
+@media(max-width:650px){
+ .rr-review-mark{width:45px;height:67px;flex-basis:45px}
+ .rr-review-hero{height:67px;width:90px}
+ .rr-review-artwork{max-width:40%;gap:3px;padding:3px}
+ .rr-lr-page .rr-dash-heading .rr-member-title,.rr-target-page .rr-target-titlebar h1{font-size:clamp(24px,6vw,31px)}
+ .rr-lr-page .rr-dash-heading .rr-dash-intro,.rr-target-page .rr-target-titlebar p{font-size:11px;line-height:1.35}
+}
+@media(max-width:430px){
+ .rr-review-mark{width:34px;height:57px;flex-basis:34px}
+ .rr-review-hero{width:69px;height:57px}
+ .rr-review-artwork{max-width:39%;padding:2px}
+ .rr-lr-page .rr-dash-heading,.rr-target-page .rr-target-titlebar{gap:6px}
+ .rr-review-demo-controls button{min-height:34px;font-size:10px;padding:6px 9px}
+ .rr-review-demo-controls span{font-size:9px}
+}
+@media(max-width:350px){.rr-review-hero{width:58px}.rr-review-mark{width:30px;flex-basis:30px}}
+
+/* Full Target List editorial stays in Race Details; the daily feed shows a concise teaser. */
+.rr-target-page .rr-target-analysis-text{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;white-space:normal}
