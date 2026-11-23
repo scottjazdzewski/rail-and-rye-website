@@ -68,6 +68,7 @@ try{
       return {font:parseFloat(c.fontSize),line:parseFloat(c.lineHeight),family:c.fontFamily,
         h:b.height,w:b.width,x:b.x,y:b.y,color:c.color,bg:c.backgroundColor,
         borderTop:c.borderTopWidth,borderTopColor:c.borderTopColor,
+        radius:parseFloat(c.borderTopLeftRadius),
         whiteSpace:c.whiteSpace,display:c.display,clamp:c.webkitLineClamp,
         scrollH:x.scrollHeight,clientH:x.clientHeight,padding:parseFloat(c.paddingLeft)};};
     const nav=el(".rr-member-nav"),active=el('.rr-member-nav [aria-current="page"]');
@@ -118,7 +119,7 @@ try{
   if(visual.analysis.font<16.9||visual.analysis.line/visual.analysis.font<1.49||
       visual.analysis.scrollH>visual.analysis.clientH+2||visual.analysis.clamp!=="none"&&visual.analysis.clamp!=="unset")
     throw Error("Full 17px source analysis hidden/truncated at "+width+": "+JSON.stringify(visual.analysis));
-  if(!approx(visual.gaps,8)||!approx(visual.card.h>0?parseFloat(getComputedStyle(document.querySelector(".rr-lr-card")).borderTopLeftRadius):0,7))
+  if(!approx(visual.gaps,8)||!approx(visual.card.radius,7))
     throw Error("8px row spacing and 7px card corners required at "+width);
   if(visual.marketBoxes.some(y=>Math.abs(y-visual.marketBoxes[0])>.5)||
     visual.markets.bg!=="rgba(0, 0, 0, 0)"&&visual.markets.bg!=="rgb(255, 255, 255)")
