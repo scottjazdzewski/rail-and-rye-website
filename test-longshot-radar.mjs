@@ -117,6 +117,18 @@ const editorial={
   fair_odds_display:"5/1",betting_case:"Document-sourced testing-only analysis, not a real race pick."
  }))
 };
+// A frozen full-field TRI card supplies race descriptions, never PDF guesses.
+const originalRaceFactsKey="projections/dashboard/2026-11-23/synthetic-course.json";
+const originalRaceFacts={
+ schema_version:1,race_date:"2026-11-23",track_name:"Synthetic Course",
+ races:[{race_number:4,distance:"6½ furlongs",surface:"Dirt",
+  conditions:"Original source allowance conditions for this race, without truncation.",
+  entries:[
+   {program_number:"1",horse_name:"Source Fixture 1"},
+   {program_number:"2",horse_name:"Different race horse"}
+  ]}]
+};
+memory.set(originalRaceFactsKey,JSON.stringify(originalRaceFacts));
 memory.set(editorialKey,JSON.stringify(editorial));
 let editorialResponse=await handleAdminLongshotEditorialPreview(
  new Request("https://railandryeracing.com/api/admin/longshot-radar-editorial"),env);
@@ -127,6 +139,29 @@ assert.equal(editorialBody.production_receipt_verified,false);
 assert.equal(editorialBody.customer_publish_approved,false);
 assert.equal(editorialBody.edition.status,"published_pdf_reference");
 assert.ok(!Object.hasOwn(editorialBody.edition.candidates[0],"pwin_exact"),"Do not invent unrounded PWIN from PDF.");
+assert.equal(editorialBody.edition.candidates[0].distance,"6½ furlongs");
+assert.equal(editorialBody.edition.candidates[0].surface,"Dirt");
+assert.equal(editorialBody.edition.candidates[0].conditions,originalRaceFacts.races[0].conditions);
+assert.ok(!Object.hasOwn(editorialBody.edition.candidates[1],"conditions"),"No race conditions for a PDF runner absent from frozen TRI source");
+assert.equal(editorialBody.edition.candidates[0].horse_name,"Source Fixture 1");
+assert.equal(editorialBody.edition.candidates[0].pwin_display,17.6,"Presentation join must not alter model/display value");
+checks++;
+// A conflicting second projection card makes descriptive facts ambiguous;
+// omit the facts instead of guessing or changing the published selection.
+memory.set("projections/dashboard/2026-11-23/duplicate-synthetic-course.json",JSON.stringify(originalRaceFacts));
+let conflicting=await handleAdminLongshotEditorialPreview(new Request("https://railandryeracing.com/api/admin/longshot-radar-editorial"),env);
+assert.equal(conflicting.status,200);
+assert.ok(!Object.hasOwn((await conflicting.json()).edition.candidates[0],"conditions"),"Ambiguous race metadata cannot be displayed");
+memory.delete("projections/dashboard/2026-11-23/duplicate-synthetic-course.json");
+checks++;
+// An unavailable optional source never blocks the verified PDF rows.
+memory.delete(originalRaceFactsKey);
+let absentFacts=await handleAdminLongshotEditorialPreview(new Request("https://railandryeracing.com/api/admin/longshot-radar-editorial"),env);
+assert.equal(absentFacts.status,200);
+assert.equal((await absentFacts.json()).edition.candidates.length,10,"Missing description must not prevent the daily feed");
+memory.set(originalRaceFactsKey,JSON.stringify(originalRaceFacts));
+checks++;
+
 checks++;
 editorialResponse=await handleAdminLongshotEditorialPreview(
  new Request("https://railandryeracing.com/api/admin/longshot-radar-editorial",{method:"POST"}),env);
