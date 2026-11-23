@@ -87,7 +87,12 @@ assert.equal(mock.cards.length,5);
 assert.equal(mock.cards[0].card.sequences.filter(s=>s.end_race-s.start_race+1===3).length,3);
 assert.equal(mock.cards[0].card.sequences[2].play_status,"PASS");
 assert.equal(mock.cards[0].card.sequences[2].tickets[0].role,"BEST_POSSIBLE");
-assert.equal(mock.cards[0].card.sequences[0].hit_rate_display,"","mock projections may never be fabricated");
+assert.equal(mock.cards[0].card.sequences[0].hit_rate_display,"","mock fixtures cannot claim certified model projections");
+for(const entry of mock.cards){for(const sequence of entry.card.sequences){for(const field of sequence.race_fields){
+ assert.equal(Object.values(field.demo_win_pct).reduce((a,b)=>a+b,0),100,"only demo fields carry normalized fictional chance weights");
+ assert.equal(Object.keys(field.demo_win_pct).length,field.programs.length);
+}}}
+assert.equal(normalizePickTickets(card()).sequences[0].tickets[0].hit_rate_display,"");
 result=await post({cards:mock.cards.map(x=>x.card)});
 assert.equal(result.response.status,400,"synthetic dashboard data cannot be saved as source-certified tickets");
 assert.match(result.body.error,/Mock layout selections cannot be uploaded/);
