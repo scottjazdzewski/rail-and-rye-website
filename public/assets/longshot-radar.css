@@ -165,3 +165,34 @@
  .rr-lr-identity strong{font-size:12px}
  .rr-lr-race-number{padding-left:8px}
 }
+
+
+/* 2026-11-23 private design QA: compact first-data viewport, faithful chip sizes.
+ * Only Radar CSS is scoped here; do not change other products' UI ownership. */
+.rr-lr-page .rr-member-header .heritage-shell{min-height:58px;gap:11px}
+.rr-lr-page .rr-member-brand{font:800 18px/1.15 Inter,Arial,system-ui,sans-serif;letter-spacing:.1em;gap:7px}
+.rr-lr-page .rr-member-brand img{width:40px;height:40px}
+.rr-lr-page .rr-member-nav{gap:5px}
+.rr-lr-page .rr-member-nav a{min-height:30px;padding:7px 10px;border-radius:5px;font:800 10px/1.1 Inter,Arial,system-ui,sans-serif;letter-spacing:.015em}
+.rr-lr-page .rr-dash-heading{margin-bottom:5px}
+.rr-lr-page .rr-review-demo-controls{margin-top:4px;margin-bottom:7px}
+.rr-lr-page .rr-dash-private-banner{margin-bottom:6px;padding:4px 7px;font-size:10px}
+.rr-lr-page .rr-lr-card-foot{padding-top:0}
+.rr-lr-page .rr-member-footer{padding:9px 0}
+.rr-lr-page .rr-member-footer .heritage-shell{gap:6px 14px;align-items:center}
+.rr-lr-page .rr-member-footer .heritage-footmark{font:800 15px/1 Inter,Arial,system-ui,sans-serif;letter-spacing:.13em}
+.rr-lr-page .rr-member-footer nav,.rr-lr-page .rr-member-footer small{font-size:10px;line-height:1.4}
+@media(max-width:760px){
+ .rr-lr-page .rr-member-header .heritage-shell{min-height:0;flex-direction:column;align-items:flex-start;padding:8px 10px;gap:5px}
+ .rr-lr-page .rr-member-nav{gap:4px}
+ .rr-lr-page .rr-member-nav a{min-height:27px;padding:6px 7px;font-size:9px;letter-spacing:0}
+ .rr-lr-page .rr-member-footer .heritage-shell{padding-top:0;padding-bottom:0}
+ .rr-lr-page .rr-lr-overview{margin:5px 0 4px}
+ .rr-lr-page .rr-lr-summary-meta{margin-top:2px}
+}
+@media(max-width:375px){
+ .rr-lr-page .rr-member-nav a{padding-left:5px;padding-right:5px;font-size:8.5px}
+ .rr-lr-page .rr-lr-racebar{min-height:35px;padding:6px 9px}
+ .rr-lr-page .rr-lr-case{padding-top:5px;padding-bottom:2px}
+ .rr-lr-page .rr-lr-card-foot{padding-bottom:6px}
+}
