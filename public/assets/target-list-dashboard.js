@@ -110,6 +110,7 @@ function sourceRaceTitle(entry){
  // is unavailable; still expand a terminal stakes suffix for readability.
  const allCaps=/[A-Z]/.test(raw)&&!/[a-z]/.test(raw);
  let fallback=raw.replace(/\s*(?:presented|sponsored|powered)\s+by\b.*$/i,"")
+  .replace(/\s*\(\s*(?:G(?:rade)?\.?|Gr\.?)\s*[-:]?\s*(?:III|II|I|[123])\s*\)\s*$/i,"")
   .replace(/\b(?:S|Stk|Stks)\.?$/i,"Stakes").trim();
  if(allCaps)fallback=fallback.toLowerCase().replace(/\b[a-z]/g,x=>x.toUpperCase());
  return {title:fallback,grade:null};
