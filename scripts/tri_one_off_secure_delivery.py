@@ -12,6 +12,7 @@ Never print decrypted projections, unwrapped keys or private-key bytes.
 """
 import argparse
 import base64
+import brotli
 import hashlib
 import json
 import os
@@ -154,13 +155,20 @@ def publish(client, sealed_file):
     private = serialization.load_pem_private_key(private_object["Body"].read(), password=None)
     wrapped = base64.b64decode(sealed["wrapped_key_b64"], validate=True)
     nonce = base64.b64decode(sealed["nonce_b64"], validate=True)
-    ciphertext = base64.b64decode(sealed["ciphertext_b64"], validate=True)
+    chunks = sealed.get("ciphertext_b64_chunks")
+    require(isinstance(chunks, list) and len(chunks) <= 100
+            and all(isinstance(chunk, str) and len(chunk) <= 1500 for chunk in chunks),
+            "Encrypted transport chunks missing or oversized")
+    ciphertext = base64.b64decode("".join(chunks), validate=True)
     require(len(nonce) == 12 and len(ciphertext) < 1_000_000, "Invalid sealed payload size")
     aes_key = private.decrypt(wrapped, padding.OAEP(
         mgf=padding.MGF1(algorithm=hashes.SHA256()),
         algorithm=hashes.SHA256(), label=None))
     require(len(aes_key) == 32, "Invalid unwrapped AES key")
-    plaintext = AESGCM(aes_key).decrypt(nonce, ciphertext, AAD)
+    compressed = AESGCM(aes_key).decrypt(nonce, ciphertext, AAD)
+    require(sealed.get("compression") == "brotli", "Expected Brotli compressed encrypted transfer")
+    plaintext = brotli.decompress(compressed)
+    require(len(plaintext) <= 1024*1024, "Decompressed transfer unexpectedly exceeds 1 MB")
     cards = validate(plaintext)
 
     # Check every object *before* the first write. Never roll over a scratch-

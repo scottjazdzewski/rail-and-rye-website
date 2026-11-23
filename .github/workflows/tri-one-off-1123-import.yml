@@ -20,6 +20,6 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install private storage and encryption client
-        run: pip install --disable-pip-version-check --quiet cryptography boto3
+        run: pip install --disable-pip-version-check --quiet cryptography boto3 brotli
       - name: Decrypt exact validated November 23 input inside runner and verify private R2 persistence
         run: python scripts/tri_one_off_secure_delivery.py publish --sealed-file secure-transfer/tri-20261123.sealed.json
