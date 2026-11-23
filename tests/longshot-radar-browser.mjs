@@ -140,8 +140,8 @@ try{
     throw Error("Main left/right mobile padding must be 10–12px at "+width);
   if(visual.bodyWidth>width+1||visual.htmlWidth>width+1)
     throw Error("Shared V1 horizontal overflow outside swipe nav at "+width);
-  if(await page.locator(".rr-lr-card .rr-lr-race-facts").count()!==1)
-    throw Error("Only source-supplied race facts should appear, never invented filler at "+width);
+  if(await page.locator(".rr-lr-card .rr-lr-race-facts").count()!==2)
+    throw Error("Only the TWO source-supplied race descriptions should appear, never invented filler at "+width);
   const raceFacts=await page.locator(".rr-lr-card .rr-lr-race-facts").first().evaluate(el=>{
     const cs=getComputedStyle(el),r=el.getBoundingClientRect();
     return {text:el.textContent,font:parseFloat(cs.fontSize),
