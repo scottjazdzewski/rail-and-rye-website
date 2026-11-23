@@ -75,7 +75,7 @@ const noStore=await handleAdminLongshotRadar(req("GET"),{});
 assert.equal(noStore.status,503);checks++;
 
 const worker=readFileSync("src/index.js","utf8");
-assert.ok(worker.indexOf("const auth=await verifyAdmin(request,env)")<worker.indexOf("if(path.startsWith('/api/admin/'))return handleAdminAPI"));
+assert.ok(worker.indexOf("const auth=await verifyAdmin(request,env)")>=0 && worker.indexOf('if(path.startsWith("/api/admin/"))return handleAdminAPI')>worker.indexOf("const auth=await verifyAdmin(request,env)"));
 assert.ok(worker.includes('if(pathname==="/api/admin/longshot-radar") return handleAdminLongshotRadar(request,env);'));
 assert.ok(worker.includes('radarReview?"/admin/longshot-radar.html"'));
 checks++;
