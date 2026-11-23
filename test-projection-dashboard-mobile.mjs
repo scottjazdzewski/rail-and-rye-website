@@ -5,7 +5,12 @@ import vm from "node:vm";
 const css=readFileSync("public/assets/projections-dashboard.css","utf8");
 const js=readFileSync("public/assets/projections-dashboard.js","utf8");
 assert.match(css,/\.rr-dash-race-tiles\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/,"Phone facts must use two columns");
-assert.match(js,/PRESCRATCH · NOT FINAL/,"Prescratch cards must be labeled");
+assert.match(js,/INITIAL CARD · CURRENT/,"Initial cards remain current before scratches");
+assert.doesNotMatch(js,/badges are not yet certified/,"Verified initial badges must not be called uncertified");
+assert.match(js,/rr-dash-rating-badge/,"The five factors should use the existing approved badge PNG assets");
+assert.match(css,/family=Tinos/,"Load the original racecard percentage font");
+assert.match(css,/\.rr-dash-win-percent\{font-family:"Tinos"/,"Match the approved Tinos Bold percentage font");
+assert.match(css,/\.rr-dash-rating-badge img/,"Scale badge artwork for responsive cards");
 assert.match(js,/F4 FINISH PROJECTIONS/,"Full Analysis must include F4 outcomes");
 assert.match(js,/scratches and five-factor badges are not yet certified/,"Prescratch limitations must remain visible");
 assert.match(css,/\.rr-dash-metric-group\{grid-area:metrics;grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/,"Mobile ratings must occupy a single, compact five-column strip");
@@ -37,7 +42,7 @@ class Element {
 const ids=["rr-dash-status","rr-dash-app","rr-dash-login","rr-dash-empty","rr-dash-date","rr-dash-track","rr-dash-race-time","rr-dash-races","rr-dash-race","rr-dash-horses","rr-dash-search","rr-dash-sort","rr-dash-open-pdf","rr-dash-download-pdf","rr-dash-update","rr-dash-horse-dialog","rr-dash-horse-title","rr-dash-horse-detail","rr-dash-horse-close"];
 const els=new Map(ids.map(id=>[id,new Element(id.includes("date")||id.includes("track")||id.includes("race-time")||id.includes("sort")?"select":"div")]));
 els.get("rr-dash-sort").value="finish";
-const fixture={cards:[{race_date:"2026-11-22",track:"Del Mar",product_id:null,card:{track_name:"Del Mar",races:[{race_number:6,post_time_et:"6:00 PM",conditions:"Claiming $8,000",purse:"$20,000",pace:"Moderate",surface:"Dirt",distance:"5 1/2 furlongs",scratch_count:1,scratches:[{program_number:"3",horse_name:"Scratched Runner"}],entries:[{program_number:"5",horse_name:"Barrister Proof",rank:1,morning_line:"12-1",win_probability:27.5,fair_odds:"5/2",trainer:"Brad Cox",jockey:"Jose Ortiz",metrics:[]},{program_number:"12",horse_name:"Doo Wop Don",rank:2,morning_line:"5-2",win_probability:16.6,fair_odds:"5/1",trainer:"",jockey:"",metrics:[]}]}]}}]};
+const fixture={cards:[{race_date:"2026-11-22",track:"Del Mar",product_id:null,card:{track_name:"Del Mar",races:[{race_number:6,post_time_et:"6:00 PM",conditions:"Claiming $8,000",purse:"$20,000",pace:"Moderate",surface:"Dirt",distance:"5 1/2 furlongs",scratch_count:1,scratches:[{program_number:"3",horse_name:"Scratched Runner"}],entries:[{program_number:"5",horse_name:"Barrister Proof",rank:1,morning_line:"12-1",win_probability:27.5,fair_odds:"5/2",trainer:"Brad Cox",jockey:"Jose Ortiz",metrics:[{label:"Speed",value:"green"},{label:"Form",value:"gray"},{label:"Class",value:"red"},{label:"Pace Fit",value:"green"},{label:"Surface / Distance",value:"gray"}]},{program_number:"12",horse_name:"Doo Wop Don",rank:2,morning_line:"5-2",win_probability:16.6,fair_odds:"5/1",trainer:"",jockey:"",metrics:[]}]}]}}]};
 const document={body:{dataset:{rrPreview:"true"}},querySelector(selector){return els.get(selector.slice(1))??null;},createElement(tag){return new Element(tag);}};
 const context={document,fetch:async()=>({ok:true,json:async()=>fixture}),Intl,Date,Number,String,Array,Error,console,encodeURIComponent};
 vm.runInNewContext(js,context,{filename:"projections-dashboard.js"});
@@ -61,6 +66,16 @@ assert.equal(allClass(horses,"rr-dash-metric-group").length,3,"Two runner groups
 assert.equal(allClass(horses,"rr-dash-win-percent")[0].textContent,"27.5%");
 assert.equal(allClass(horses,"rr-dash-win-fair")[0].textContent,"FAIR 5/2");
 assert.ok(allClass(horses,"rr-dash-metric-value").length===10,"All five factors must remain visible on every horse");
+const approvedBadges=allClass(horses,"rr-dash-rating-badge");
+assert.equal(approvedBadges.length,5,"Every certified factor renders the matching approved PNG");
+assert.deepEqual(approvedBadges.map(el=>el.children[0].src),[
+ "/assets/approved/factor-badges/speed_green.png",
+ "/assets/approved/factor-badges/form_gray.png",
+ "/assets/approved/factor-badges/class_red.png",
+ "/assets/approved/factor-badges/pace_green.png",
+ "/assets/approved/factor-badges/surface_gray.png"
+]);
+
 assert.ok(!/RANK/i.test(horses.textContent),"No visible ranking");
 const disclosure=allClass(horses,"rr-dash-full-analysis")[0];
 assert.ok(disclosure&&disclosure.events?.click,"Full Analysis must be actionable");
