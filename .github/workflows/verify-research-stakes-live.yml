@@ -1,0 +1,85 @@
+name: Verify Radar and Target canonical stakes naming LIVE
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'public/assets/rr-race-titles.js'
+      - 'public/assets/rr-stakes-inline.css'
+      - 'public/assets/longshot-radar.js'
+      - 'public/assets/target-list-dashboard.js'
+      - 'public/admin/longshot-radar.html'
+      - 'public/admin/target-list-preview.html'
+      - '.github/workflows/verify-research-stakes-live.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  live-stakes:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify locked source titles and grade regression
+        run: |
+          node test-rr-race-titles.mjs
+          node test-longshot-radar.mjs
+          node test-target-list-hub.mjs
+      - name: Confirm Cloudflare serves exact source-controlled research readers
+        shell: bash
+        run: |
+          set -euo pipefail
+          base='https://railandryeracing.com'
+          assets=(
+            'assets/rr-race-titles.js'
+            'assets/rr-stakes-inline.css'
+            'assets/longshot-radar.js'
+            'assets/target-list-dashboard.js'
+          )
+          success=0
+          for attempt in $(seq 1 25); do
+            ok=1
+            for asset in "${assets[@]}"; do
+              output="/tmp/$(basename "$asset")"
+              code=$(curl -LsS --connect-timeout 10 --max-time 20 \
+                -H 'Cache-Control: no-cache' -w '%{http_code}' -o "$output" \
+                "$base/$asset?rr_canonical=${GITHUB_SHA}-${attempt}-$(date +%s)" || true)
+              if [ "$code" != 200 ] || ! cmp -s "public/$asset" "$output"; then
+                echo "Deployment pending ${asset} HTTP=${code} attempt=${attempt}"
+                ok=0
+                break
+              fi
+            done
+            if [ "$ok" = 1 ]; then success=1;break;fi
+            sleep 8
+          done
+          if [ "$success" != 1 ]; then
+            echo "::error::Cloudflare does not yet serve source-locked canonical research readers"
+            exit 1
+          fi
+          grep -Fq 'sourceRaceTitle(item)' /tmp/longshot-radar.js
+          grep -Fq 'appendGradeTrophy(line,title.grade)' /tmp/longshot-radar.js
+          grep -Fq 'sourceRaceTitle(entry)' /tmp/target-list-dashboard.js
+          grep -Fq 'appendGradeTrophy(facts,sourceRaceTitle(entry)?.grade)' /tmp/target-list-dashboard.js
+          grep -Fq 'rr-ed-grade-trophy--g1' /tmp/rr-stakes-inline.css
+          grep -Fq 'rr-ed-grade-trophy--g2' /tmp/rr-stakes-inline.css
+          grep -Fq 'rr-ed-grade-trophy--g3' /tmp/rr-stakes-inline.css
+          grep -Fq 'root.RRRaceTitles=Object.freeze' /tmp/rr-race-titles.js
+          echo 'LIVE_RESEARCH_STAKES_NAMES_LOCKED: Cloudflare Radar + Target List + shared title/trophy assets byte-match main'
+      - name: Verify customer-facing research source remains protected
+        shell: bash
+        run: |
+          set -euo pipefail
+          base='https://railandryeracing.com'
+          for path in /api/admin/longshot-radar-editorial /api/admin/target-list-review; do
+            code=$(curl -sS --connect-timeout 10 --max-time 20 \
+              -w '%{http_code}' -o /tmp/private-research-check "$base$path" || true)
+            echo "Unauthenticated $path HTTP=$code"
+            case "$code" in
+              301|302|303|307|308|401|403|404|503) ;;
+              *) echo "::error::Research private endpoint unexpectedly accessible";exit 1 ;;
+            esac
+          done
+          echo 'PASS: Private Radar and Target List access remains closed to unauthenticated clients'
