@@ -277,8 +277,9 @@ assert.match(js,/rr-dash-race-button rr-race-saddle-tab/,
  "Every race navigation tab uses the branded saddle-chip form");
 assert.match(js,/rr-dash-race-number rr-race-saddle-header/,
  "Race number plaque uses same standardized chip grammar");
-assert.match(js,/rr-dash-track-mark-letters/,"A compact, sponsor-free track-specific mark replaces old tiny white-backed artwork");
-assert.doesNotMatch(js,/approvedTrackLogos=\{/,"Do not render legacy sponsor-logo image tiles");
+assert.match(js,/officialTrackArt=\{/,"Restore the real previously approved venue logo files");
+assert.match(js,/rr-dash-approved-track-logo/,"Source venue artwork is displayed, not a fabricated monogram");
+assert.doesNotMatch(js,/rr-dash-track-mark-letters/,"Remove interim venue initials from live headers");
 assert.match(js,/logo\.src="\/assets\/brand\/rail_rye_logo_header\.png"/,
  "Never lose the persistent R&R horseshoe in track header");
 assert.match(js,/button\.dataset\.raceNumber=String\(race\.race_number\)/,
