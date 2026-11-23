@@ -87,6 +87,85 @@ export function validateLongshotEdition(input){
   return {schema_version:1,product_type:"longshot_radar",race_date,revision,status:input.status,
     generated_at,receipts,candidates};
 }
+function sourceTrackName(value){
+  return String(value||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .toLocaleLowerCase("en-US").replace(/[^a-z0-9]+/g," ").trim();
+}
+function sourceHorseName(value){
+  return String(value||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .toLocaleLowerCase("en-US").replace(/\s+/g," ").trim();
+}
+function oddsNet(raw){
+  const value=String(raw||"").trim().match(/^(\d+)\s*(?:\/|-)\s*(\d+)$/);
+  if(!value||Number(value[2])<=0)return null;
+  return Number(value[1])/Number(value[2]);
+}
+/**
+ * Match each candidate to the ORIGINAL frozen TRI output already in private R2.
+ * Never infer a PWIN from the candidate's display value or change source data.
+ * This additional gate does not replace the production's original signed role
+ * audit, full release receipt, independent evidence or editorial assessment.
+ */
+export async function verifyRadarAgainstStoredTri(edition,env){
+  if(!env.CARDS_BUCKET)throw Error("Private projection storage is unavailable.");
+  if(edition.status!=="prescratch")
+    throw Error("Scratch-updated Radar requires independently verified matching scratch-updated TRI source; prescratch projections are insufficient.");
+  const prefix="projections/dashboard/"+edition.race_date+"/";
+  const listed=await env.CARDS_BUCKET.list({prefix,limit:1000});
+  if(listed.truncated)throw Error("The matching TRI source listing is incomplete.");
+  const projections=new Map();
+  let validTracks=0;
+  for(const obj of listed.objects||[]){
+    if(!obj.key.startsWith(prefix)||!obj.key.endsWith(".json"))continue;
+    const stored=await env.CARDS_BUCKET.get(obj.key);
+    if(!stored)continue;
+    let card;
+    try{card=JSON.parse(await stored.text());}
+    catch{throw Error("The stored TRI source is unreadable.");}
+    if(card?.race_date!==edition.race_date||card?.schema_version!==1||
+       card?.projection_status!=="prescratch"||!Array.isArray(card?.races))
+      throw Error("Stored TRI source for the requested date is incomplete or not prescratch.");
+    const track=sourceTrackName(card.track_name),seenRaces=new Set();
+    if(!track||projections.has(track))throw Error("Duplicate or unnamed TRI track in private storage.");
+    for(const race of card.races){
+      const raceNumber=Number(race.race_number);
+      if(!Number.isInteger(raceNumber)||seenRaces.has(raceNumber)||!Array.isArray(race.entries)||!race.entries.length)
+        throw Error("Stored TRI source has a malformed race or missing field.");
+      seenRaces.add(raceNumber);
+      let mass=0;
+      for(const runner of race.entries){
+        const exact=runner.win_probability_exact;
+        if(typeof exact!=="number"||!Number.isFinite(exact)||exact<0||exact>100||
+           !runner.f4_probabilities||Math.abs(Number(runner.f4_probabilities.exact_p1)*100-exact)>0.000001)
+          throw Error("Stored TRI source lacks signed exact whole-field PWIN/F4.");
+        mass+=exact;
+      }
+      if(Math.abs(mass-100)>0.000001)throw Error("Stored TRI source does not preserve whole-field 100% probability.");
+    }
+    projections.set(track,card);
+    validTracks++;
+  }
+  if(!validTracks)throw Error("No matching private frozen TRI projection card is available for this race date.");
+  for(const c of edition.candidates){
+    const card=projections.get(sourceTrackName(c.track));
+    if(!card)throw Error("Longshot candidate track does not match certified private TRI projections: "+c.track);
+    const race=card.races.find(r=>Number(r.race_number)===c.race_number);
+    if(!race)throw Error("Longshot candidate race is absent from verified TRI card: "+c.track+" R"+c.race_number);
+    const runner=race.entries.filter(row=>
+      String(row.program_number||"").trim().toUpperCase()===c.program_number &&
+      sourceHorseName(row.horse_name)===sourceHorseName(c.horse_name));
+    if(runner.length!==1)throw Error("Longshot candidate program/horse cannot be uniquely matched to TRI source: "+c.track+" R"+c.race_number+" #"+c.program_number);
+    const original=runner[0],prob=original.win_probability_exact/100;
+    if(Math.abs(prob-c.pwin_exact)>1e-10||
+       Math.abs(Number(original.win_probability)-c.pwin_display)>1e-9)
+      throw Error("Longshot candidate PWIN differs from the frozen exact TRI source: "+c.track+" R"+c.race_number+" #"+c.program_number);
+    const originalMl=oddsNet(original.morning_line),candidateMl=oddsNet(c.original_morning_line);
+    if(originalMl==null||candidateMl==null||Math.abs(originalMl-candidateMl)>1e-10)
+      throw Error("Longshot original morning line differs from verified TRI source: "+c.track+" R"+c.race_number+" #"+c.program_number);
+  }
+  return {matched_candidates:edition.candidates.length,verified_projection_tracks:validTracks};
+}
+
 async function readAll(env){
   const result=await env.CARDS_BUCKET.list({prefix:PREFIX,limit:1000});
   if(result.truncated)throw Error("Longshot review listing exceeded the safe page size.");
@@ -118,6 +197,9 @@ export async function handleAdminLongshotRadar(request,env){
   let edition;
   try{edition=validateLongshotEdition(JSON.parse(raw));}
   catch(e){return error(e.message||"Invalid Radar review payload.");}
+  let matchReceipt;
+  try{matchReceipt=await verifyRadarAgainstStoredTri(edition,env);}
+  catch(e){return error("TRI cross-check hold: "+String(e.message||e).slice(0,250),409);}
   const key=PREFIX+edition.race_date+".json";
   try{
     const previous=await env.CARDS_BUCKET.get(key);
@@ -131,7 +213,7 @@ export async function handleAdminLongshotRadar(request,env){
       httpMetadata:{contentType:"application/json; charset=utf-8",cacheControl:"private, no-store"},
       customMetadata:{revision:String(edition.revision),review_only:"true"}
     });
-    return json({ok:true,review_only:true,race_date:edition.race_date,revision:edition.revision,candidates:edition.candidates.length});
+    return json({ok:true,review_only:true,race_date:edition.race_date,revision:edition.revision,candidates:edition.candidates.length,tri_cross_check:matchReceipt});
   }catch(e){
     console.error("Radar private write failed",String(e).slice(0,130));
     return error("Radar review upload could not be saved.",503);
