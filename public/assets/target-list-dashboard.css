@@ -694,76 +694,57 @@
 }
 
 
-/* Target List: source distance/surface on the SAME navy header row when space permits.
-   Do not reduce typographic readability or truncate longer race conditions. */
+/* RAIL & RYE DAILY RESEARCH V9 — identical race-header hierarchy to
+   Longshot Radar. The navy bar includes a 2nd line for FULL race facts,
+   while the title, race number, time retain Radar's readable font sizes. */
 .rr-target-page .rr-target-racebar{
-  display:block;
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  gap:4px;
   min-height:0;
-  padding:8px 10px 9px;
+  padding:9px 11px 10px;
 }
 .rr-target-page .rr-target-racebar .rr-target-racebar-main{
   display:flex;
   flex-wrap:wrap;
   align-items:baseline;
   justify-content:flex-start;
-  gap:3px 9px;
   width:100%;
   min-width:0;
-}
-.rr-target-page .rr-target-racebar .rr-target-racebar-main h3,
-.rr-target-page .rr-target-racebar .rr-target-racebar-main .rr-target-race-number,
-.rr-target-page .rr-target-racebar .rr-target-racebar-main .rr-target-post{
-  white-space:nowrap;
-}
-.rr-target-page .rr-target-racebar .rr-target-racebar-main .rr-target-race-facts{
-  display:inline;
-  flex:0 0 auto;
-  width:auto;
-  max-width:100%;
-  margin:0;
-  padding:0;
-  white-space:nowrap;
-  font:600 13px/1.3 Inter,Arial,system-ui,sans-serif;
-  color:#e5edf7;
-}
-.rr-target-page .rr-target-racebar .rr-target-racebar-main .rr-target-race-facts-long{
-  flex:1 0 100%;
-  white-space:normal;
-  overflow-wrap:break-word;
-}
-.rr-target-page .rr-target-racebar .rr-target-post{
-  margin-left:auto;
-}
-@media(max-width:359px){
-  .rr-target-page .rr-target-racebar .rr-target-racebar-main{gap:3px 7px}
-  .rr-target-page .rr-target-racebar .rr-target-racebar-main .rr-target-race-facts{font-size:13px}
-}
-
-
-/* Match Longshot Radar race-banner type exactly without squeezing conditions.
-   Track 17px/800 uppercase, race/time 13px/700, supplied facts 14px/500.
-   Flex may wrap an overlong track/class; no truncation or font reductions. */
-.rr-target-page .rr-target-racebar .rr-target-racebar-main{
-  gap:3px 6px;
+  gap:4px 10px;
 }
 .rr-target-page .rr-target-racebar .rr-target-racebar-main h3{
+  margin:0;
   font:800 17px/1.23 Inter,Arial,system-ui,sans-serif;
   letter-spacing:.01em;
   text-transform:uppercase;
+  color:#fff;
+  overflow-wrap:break-word;
 }
-.rr-target-page .rr-target-racebar .rr-target-racebar-main .rr-target-race-number,
-.rr-target-page .rr-target-racebar .rr-target-racebar-main .rr-target-post{
+.rr-target-page .rr-target-racebar .rr-target-race-number,
+.rr-target-page .rr-target-racebar .rr-target-post{
   font:700 13px/1.3 Inter,Arial,system-ui,sans-serif;
   letter-spacing:0;
+  color:#f7f2e9;
+  white-space:nowrap;
 }
-.rr-target-page .rr-target-racebar .rr-target-racebar-main .rr-target-race-facts{
+.rr-target-page .rr-target-racebar .rr-target-post{margin-left:auto}
+.rr-target-page .rr-target-racebar .rr-target-race-facts{
+  display:block;
+  flex:none;
+  width:100%;
+  margin:0;
+  padding:0;
   font:500 14px/1.35 Inter,Arial,system-ui,sans-serif;
   letter-spacing:0;
+  color:#e5edf7;
+  white-space:normal;
+  overflow-wrap:break-word;
 }
 @media(max-width:359px){
-  .rr-target-page .rr-target-racebar .rr-target-racebar-main{gap:3px 5px}
+  .rr-target-page .rr-target-racebar{gap:4px;padding:9px 9px 10px}
+  .rr-target-page .rr-target-racebar .rr-target-racebar-main{gap:4px 7px}
   .rr-target-page .rr-target-racebar .rr-target-racebar-main h3{font-size:17px}
-  .rr-target-page .rr-target-racebar .rr-target-racebar-main .rr-target-race-number,
-  .rr-target-page .rr-target-racebar .rr-target-racebar-main .rr-target-post{font-size:13px}
-  .rr-target-page .rr-target-racebar .rr-target-racebar-main .rr-target-race-facts{font-size:14px}
+  .rr-target-page .rr-target-racebar .rr-target-race-facts{font-size:14px}
 }
