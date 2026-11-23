@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import {normalizePickTickets,handleAdminPickTickets} from "./src/pick-tickets.js";
-import {getNov23ScratchLedger,sourceIsScratchCurrent,officialScratchSequenceCount,restoreInterimSelection} from "./src/pick-tickets-scratch-1123.js";
+import {getNov23ScratchLedger,sourceIsScratchCurrent,officialScratchSequenceCount} from "./src/pick-tickets-scratch-1123.js";
+import {PICK_V32_ENGINE} from "./src/pick-tickets-v32.js";
 import {PICK_MENU_1123} from "./src/pick-tickets-auto.js";
 import {getPickTicketsIntake} from "./src/pick-tickets-intake.js";
 import {getPickTicketsPrivateDemo} from "./src/pick-tickets-demo.js";
@@ -15,7 +16,7 @@ const ticket=(role="BEST_POSSIBLE")=>({
 });
 const card=()=>({
  schema_version:1,product_type:"pick_tickets",date:"2026-11-23",track:"Synthetic QA Track",
- revision:1,status:"initial_current",source_receipt:{...receipt},sequences:[
+ revision:1,status:"initial_current",formula_version:PICK_V32_ENGINE,source_receipt:{...receipt},sequences:[
  {name:"Synthetic Pick 3",start_race:1,end_race:3,play_status:"PASS",
   hit_rate_display:"12.345%",recommendation:"Test only",tickets:[ticket()]}
  ]});
@@ -88,19 +89,9 @@ assert.equal(data.scratch_update.tracks.find(t=>t.name==="Parx Racing").scratche
 assert.equal(data.scratch_update.tracks.find(t=>t.name==="Finger Lakes").score_input_changes.some(x=>x.type==="jockey"&&x.race===7),true);
 const stale={date:"2026-11-23",track:"Finger Lakes",revision:1,status:"initial_current"};
 assert.equal(sourceIsScratchCurrent(stale),false,"old prescratch cards must not be shown after real scratch changes");
-const interim=restoreInterimSelection({card:{date:"2026-11-23",track:"Finger Lakes",revision:1,
- sequences:[{name:"Pick 3",start_race:1,end_race:3,play_status:"CONDITIONAL",hit_rate_display:"13.1%",
- review_probabilities:{"1":{"1":40,"2":60},"2":{"3":100},"3":{"1":50,"2":50}},
- race_fields:[{race_number:1,programs:["1","2"]},{race_number:2,programs:["3"]},{race_number:3,programs:["1","2"]}],
- tickets:[{role:"BEST_POSSIBLE",unit_cents:50,combinations:2,total_cents:100,hit_rate_display:"13.1%",
- legs:[{race_number:1,programs:["2"]},{race_number:2,programs:["3"]},{race_number:3,programs:["1","2"]}]}]}]}});
-assert.equal(interim.card.sequences.length,1,"retained pending suggestion");
-assert.deepEqual(interim.card.sequences[0].tickets[0].legs.map(l=>l.programs),[["1"],["3"],["1"]],"scratched runner replaced, never suggested");
-assert.equal(interim.card.sequences[0].tickets[0].combinations,1);
-assert.equal(interim.card.sequences[0].tickets[0].total_cents,50);
-assert.equal(interim.card.sequences[0].tickets[0].hit_rate_display,"","old percentages cannot masquerade as rerun");
-assert.equal(interim.card.sequences[0].race_fields[0].programs.includes("2"),false);
-
+// V3.2 release must not carry forward stale prescratch horses or hit estimates.
+const ticketApi=fs.readFileSync("./src/pick-tickets.js","utf8");
+assert.doesNotMatch(ticketApi,/\.map\(restoreInterimSelection\)/,"V3.2 never uses scratch-only filtered old picks");
 const revision={...stale,status:"scratch_updated",revision:2,scratch_verified_at:"2026-11-23T17:30:00Z",sequences:[
  {name:"Pick 3",start_race:1,end_race:3,tickets:[{legs:[{race_number:1,programs:["2"]},{race_number:2,programs:["1"]},{race_number:3,programs:["1"]}]}],race_fields:[]}
 ]};
@@ -118,6 +109,8 @@ assert.match(data.intake.missing_gate,/scoring receipt/);
 assert.equal(Object.keys(getPickTicketsIntake()).some(k=>/selections|pwin|win_probability|tickets/i.test(k)),false,"intake must not leak paid runner selections or probabilities");
 assert.equal(data.cards[0].card.revision,2);
 assert.equal(data.cards[0].card.status,"scratch_updated");
+assert.equal(data.cards[0].card.formula_version,PICK_V32_ENGINE);
+assert.equal(data.engine,PICK_V32_ENGINE);
 assert.equal(listing.headers.get("Cache-Control"),"private, no-store");
 const wrongBatch=[card(),({...card(),date:"2026-11-24",revision:3,sequences:[{...card().sequences[0],tickets:[]} ]})];
 result=await post({cards:wrongBatch});assert.equal(result.response.status,400);
