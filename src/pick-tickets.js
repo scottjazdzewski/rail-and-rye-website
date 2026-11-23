@@ -225,6 +225,17 @@ export async function handleAdminPickTickets(request,env){
     currentAudits.set(card.race_date+"|"+card.track_name,audit);
     const review=structuredClone(audit.review_card);
     review.source_input_sha256=currentHash;
+    const changed=new Map((audit.sequences||[]).map(x=>
+     [x.name+"|"+x.start_race+"|"+x.end_race,x]));
+    review.sequences=review.sequences.map(seq=>{
+     const update=changed.get(seq.name+"|"+seq.start_race+"|"+seq.end_race);
+     return {...seq,upload_change:update?{
+      selections_changed:update.selections_changed,
+      cost_changed:update.cost_changed,
+      hit_changed:update.hit_changed,
+      previous_ticket:update.previous_ticket
+     }:null};
+    });
     review.field_verification={
      status:audit.source_signature_status,
      source_sha256:currentHash,
