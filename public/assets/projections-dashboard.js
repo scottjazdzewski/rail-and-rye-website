@@ -108,11 +108,11 @@ function iconNode(name,className,state){
  const image=document.createElement("img");image.src="/assets/approved/factor-badges/"+name+(state?"_"+state:"")+".png";image.alt="";image.loading="lazy";image.decoding="async";
  node.append(image);return node;
 }
-function makeTile(label,value,iconName){
+function makeTile(label,value){
  const tile=makeNode("div","rr-dash-race-tile"),copy=document.createElement("div");
  tile.setAttribute("aria-label",label+": "+(value||"Not listed"));
  copy.append(makeNode("span","",label),makeNode("strong","",value||"Not listed"));
- const icon=iconNode(iconName,"rr-dash-tile-mark");if(icon)tile.append(icon);tile.append(copy);return tile;
+ tile.append(copy);return tile;
 }
 function makeMetricGroup(entry){
  const group=makeNode("div","rr-dash-metric-group");group.setAttribute("role","group");group.setAttribute("aria-label","Runner ratings");
@@ -121,8 +121,9 @@ function makeMetricGroup(entry){
   cell.dataset.label=label;cell.dataset.shortLabel=label==="SURFACE/DISTANCE"?"SURF/DIST":label==="PACE FIT"?"PACE":label;
   if(state){
    cell.dataset.state=state;cell.title=label+": "+state;cell.setAttribute("aria-label",label+": "+state);
-   const badge=iconNode(art,"rr-dash-rating-badge",state);
-   if(badge)cell.append(badge);
+   const bars=makeNode("span","rr-dash-metric-bars");bars.setAttribute("aria-hidden","true");
+   for(let n=0;n<3;n++)bars.append(makeNode("i","rr-dash-metric-bar"));
+   cell.append(bars);
   }else{cell.textContent=value;cell.setAttribute("aria-label",label+": "+value);}
   group.append(cell);
  }
@@ -192,9 +193,7 @@ function showHorse(entry){
  for(const [label,aliases,art] of CARD_METRICS){
   const value=metricValue(entry,aliases),state=metricState(value);
   const item=makeNode("div","rr-dash-sheet-factor");
-  const badge=state?iconNode(art,"rr-dash-sheet-factor-badge",state):null;
-  const status=badge||makeNode("span","rr-dash-sheet-factor-status",value);
-  if(badge)badge.setAttribute("aria-label",label+": "+state);
+  const status=makeNode("span","rr-dash-sheet-factor-status "+(state?"rr-dash-sheet-factor-"+state:""),state?state.toUpperCase():value);
   item.append(makeNode("strong","",label),status);factorList.append(item);
  }
  factors.append(factorList);mobile.append(factors);
@@ -202,10 +201,6 @@ function showHorse(entry){
   const notes=makeNode("section","rr-dash-sheet-section");
   notes.append(makeNode("h3","","MODEL NOTES"),makeNode("p","rr-dash-sheet-notes",entry.notes));
   mobile.append(notes);
- }
- if(activeCard?.product_id&&!previewMode){
-  const pdf=document.createElement("a");pdf.className="rr-dash-sheet-pdf";pdf.href="/api/membership/view/"+encodeURIComponent(activeCard.product_id);
-  pdf.target="_blank";pdf.rel="noopener";pdf.textContent="OPEN FULL RACE PDF";mobile.append(pdf);
  }
  detail.append(mobile);
  dialog.showModal();
@@ -259,12 +254,12 @@ function renderCard(){
  const panel=q("#rr-dash-race");panel.replaceChildren(cardHeader(activeCard),raceBanner(race));
  const scratches=scratchList(race);if(scratches)panel.append(scratches);
  const tiles=makeNode("div","rr-dash-race-tiles");
- if((!reviewMode&&activeCard.card.projection_status!=="prescratch")||race.pace)tiles.append(makeTile("Pace",race.pace,factBadge("pace",race.pace)));
- if(race.surface)tiles.append(makeTile("Surface",race.surface,factBadge("surface",race.surface)));
- if(race.distance)tiles.append(makeTile("Distance",race.distance,factBadge("distance",race.distance)));
+ if((!reviewMode&&activeCard.card.projection_status!=="prescratch")||race.pace)tiles.append(makeTile("Pace",race.pace));
+ if(race.surface)tiles.append(makeTile("Surface",race.surface));
+ if(race.distance)tiles.append(makeTile("Distance",race.distance));
  if(tiles.children.length)panel.append(tiles);
  if(activeCard.card.projection_status==="prescratch"){
-  panel.append(makeNode("p","rr-dash-prescratch-note","Initial TRI projections · current until official scratches are processed. Fair odds shown are model net-to-1 review values."));
+  panel.append(makeNode("p","rr-dash-prescratch-note","Initial projections remain current until scratches. Fair odds are exact model net-to-1 values."));
  }
  if(race.summary)panel.append(makeNode("p","rr-dash-race-summary",race.summary));
  const table=makeNode("div","rr-dash-table");table.setAttribute("role","table");table.setAttribute("aria-label","Race "+race.race_number+" projections");
@@ -303,28 +298,18 @@ function renderCard(){
   win.setAttribute("aria-label",(entry.win_probability==null?"No win probability":String(entry.win_probability)+"% win probability")+"; fair odds "+odds);
   win.append(makeNode("strong","rr-dash-win-percent",entry.win_probability==null?"—":String(entry.win_probability)+"%"));
   win.append(makeNode("small","rr-dash-win-fair","FAIR "+odds));
-  const footer=makeNode("div","rr-dash-row-analysis"),analysis=makeNode("button","rr-dash-full-analysis","Full Analysis");
+  const footer=makeNode("div","rr-dash-row-analysis"),analysis=makeNode("button","rr-dash-full-analysis","Analysis");
   analysis.type="button";analysis.setAttribute("aria-label","Full analysis for "+entry.horse_name);
   analysis.addEventListener("click",()=>showHorse(entry));footer.append(analysis);
-  const connectionsBelow=[entry.trainer?"Trainer: "+entry.trainer:"",entry.jockey?"Jockey: "+entry.jockey:""].filter(Boolean).join("  |  ");
-  if(connectionsBelow)footer.append(makeNode("span","rr-dash-analysis-connections",connectionsBelow));
+  row.addEventListener("click",event=>{if(event?.target?.closest?.("button"))return;showHorse(entry);});
   row.append(program,horseCell,metricGroup,win,footer);list.append(row);
  }
  if(!entries.length)list.append(makeNode("div","rr-dash-no-data","No runners match that search."));
  table.append(list);
  const heading=makeNode("div","rr-dash-mobile-list-heading");
- heading.append(makeNode("h2","","WIN PROJECTIONS"),makeNode("span","","Tap Full Analysis for the breakdown"));
+ heading.append(makeNode("h2","","WIN PROJECTIONS"),makeNode("span","","Tap a runner for analysis"));
  q("#rr-dash-horses").replaceChildren(heading,table);
- const open=q("#rr-dash-open-pdf"),download=q("#rr-dash-download-pdf"),hasPdf=!!activeCard.product_id;
- for(const button of [open,download])button.hidden=!hasPdf;
- if(hasPdf&&previewMode){
-  for(const button of [open,download]){button.removeAttribute("href");button.setAttribute("aria-disabled","true");}
-  setText(open,"PDF opens after launch");setText(download,"PDF download after launch");
- }else if(hasPdf){
-  open.href="/api/membership/view/"+encodeURIComponent(activeCard.product_id);download.href="/api/membership/download/"+encodeURIComponent(activeCard.product_id);
-  open.removeAttribute("aria-disabled");download.removeAttribute("aria-disabled");
-  setText(open,"Open full PDF");setText(download,"Download PDF");
- }
+ // Digital-first dashboard: no redundant PDF actions or downloads in the race view.
  setText(q("#rr-dash-update"),activeCard.uploaded_at?"Projection updated "+new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}).format(new Date(activeCard.uploaded_at))+" ET":previewMode?"Private admin preview":"");
  for(const button of q("#rr-dash-races").querySelectorAll("button"))button.setAttribute("aria-current",String(Number(button.getAttribute("aria-label").replace("Race ",""))===activeRace));
 }
