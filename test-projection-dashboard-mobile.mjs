@@ -3,6 +3,7 @@ import {readFileSync} from "node:fs";
 import vm from "node:vm";
 
 const css=readFileSync("public/assets/projections-dashboard.css","utf8");
+const commandCss=readFileSync("public/assets/rr-projections-command.css","utf8");
 const trackCss=readFileSync("public/assets/rr-projections-track-identity.css","utf8");
 const headerCss=readFileSync("public/assets/rr-projections-race-header.css","utf8");
 const factsCss=readFileSync("public/assets/rr-race-facts.css","utf8");
@@ -50,7 +51,7 @@ class Element {
  showModal(){this.opened=true;}
  close(){}
 }
-const ids=["rr-dash-status","rr-dash-app","rr-dash-login","rr-dash-empty","rr-dash-date","rr-dash-track","rr-dash-race-time","rr-dash-races","rr-dash-race","rr-dash-horses","rr-dash-open-pdf","rr-dash-download-pdf","rr-dash-update","rr-dash-horse-dialog","rr-dash-horse-title","rr-dash-horse-detail","rr-dash-horse-close","rr-dash-global-timeline","rr-dash-all-races","rr-dash-timeline-count","rr-dash-previous-race","rr-dash-next-race","rr-dash-mode-track","rr-dash-mode-all"];
+const ids=["rr-dash-status","rr-dash-app","rr-dash-login","rr-dash-empty","rr-dash-date","rr-dash-track","rr-dash-race-time","rr-dash-races","rr-dash-track-identity","rr-dash-race","rr-dash-horses","rr-dash-open-pdf","rr-dash-download-pdf","rr-dash-update","rr-dash-horse-dialog","rr-dash-horse-title","rr-dash-horse-detail","rr-dash-horse-close","rr-dash-global-timeline","rr-dash-all-races","rr-dash-timeline-count","rr-dash-previous-race","rr-dash-next-race","rr-dash-mode-track","rr-dash-mode-all"];
 const els=new Map(ids.map(id=>[id,new Element(id.includes("date")||id==="rr-dash-track"||id.includes("race-time")||id==="rr-dash-all-races"||id.includes("sort")?"select":"div")]));
 const fixture={cards:[{race_date:"2026-11-22",track:"Del Mar",product_id:null,card:{track_name:"Del Mar",races:[{race_number:6,post_time_et:"6:00 PM",conditions:"Claiming $8,000",purse:"$20,000",pace:"Moderate",surface:"Dirt",distance:"5 1/2 furlongs",scratch_count:1,scratches:[{program_number:"3",horse_name:"Scratched Runner"}],entries:[{program_number:"5",horse_name:"Doo Wop Don",morning_line:"5-2",win_probability:16.6,fair_odds:"5/1",trainer:"",jockey:"",metrics:[]},{program_number:"2",horse_name:"Third Horizon",morning_line:"9-2",win_probability:20.0,fair_odds:"4/1",trainer:"",jockey:"",metrics:[]},{program_number:"12",horse_name:"Barrister Proof",morning_line:"12-1",win_probability:27.5,fair_odds:"5/2",trainer:"Brad Cox",jockey:"Jose Ortiz",metrics:[{label:"Speed",value:"green"},{label:"Form",value:"gray"},{label:"Class",value:"red"},{label:"Pace Fit",value:"green"},{label:"Surface / Distance",value:"gray"}]}]}]}}]};
 // Preserve PDF-style chips for high numbers and coupled-entry suffixes.
@@ -105,7 +106,7 @@ assert.match(js,/NO SCRATCHES LISTED/,"Empty scratch row uses neutral fact wordi
 assert.match(factsCss,/data-fact="pace"/,"Pace watch gets independent optical scale.");
 assert.doesNotMatch(factsCss,/brightness\(|hue-rotate\(/,"Never darken an entire watch image; use the selective green asset.");
 assert.match(js,/fact_pace_strong.*_forest\.svg/,"Strong pace uses selectively tinted artwork.");
-assert.match(factsCss,/min-height:79px/,"Mobile fact triplet is shorter.");
+assert.match(factsCss,/min-height:59px/,"Genuine fact badges fit in a 59px mobile race-panel footer");
 assert.match(headerCss,/\.rrp-race-head__details\{[^}]*grid-template-columns:/,"Metadata has its own complete row.");
 assert.match(headerCss,/\.rrp-race-head__scratch-chip\{[^}]*background:#fff/,"Original scratch saddlecloths have opaque backing and no dark bleed-through.");
 assert.doesNotMatch(css,/\.rr-dash-race-banner\s*\{/,"No old race banner CSS remains in the general dashboard stylesheet.");
@@ -185,7 +186,7 @@ for(const html of [adminHtml,memberHtml]){
  assert.match(html,/<h1 class="rr-dash-visually-hidden">Rail &amp; Rye Projections<\/h1>/,
   "Keep an accessible page title without visible ornamental title space");
  assert.doesNotMatch(html,/rr-dash-search-field|rr-dash-search|Find a horse/,"No horse finder appears on either page");
- assert.match(html,/rr-projections-track-identity\.css\?v=2/,"Load the separate clean track identity stylesheet");
+ assert.match(html,/rr-projections-track-identity\.css\?v=3/,"Load the separate clean track identity stylesheet");
  assert.match(html,/projections-dashboard\.css\?v=(?:2[7-9]|[3-9]\d)/,
   "Current improved typography style must be loaded");
  assert.match(html,/projections-dashboard\.js\?v=\d+/,
@@ -197,11 +198,10 @@ assert.doesNotMatch(js,/previewMode\?"Private admin preview"/,
  "Do not put redundant admin labels in the filter toolbar");
 assert.match(css,/\.rr-dash-visually-hidden\{/,
  "Accessible title must remain off-screen");
-assert.match(css,/\.rr-dash-toolbar \.rr-dash-race-time-field\{display:none\}/,
- "On phones, race number tabs replace the redundant post-time select");
+assert.match(commandCss,/\.rr-dash-toolbar \.rr-dash-race-time-field\{display:none\}/,"Hide redundant race-by-time control on phones");
 assert.doesNotMatch(css,/\.rr-dash-search-field/,"No outdated search-field CSS remains");
 assert.doesNotMatch(js,/rr-dash-search/,"No horse-search JS handler remains");
-assert.match(css,/\.rr-dash-toolbar\{display:grid;grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/,"Desktop toolbar has only 3 controls");
+assert.match(commandCss,/\.rr-dash-toolbar\{[^}]*grid-template-columns:/,"Unified control deck owns all track/date selectors");
 assert.match(css,/\.rr-dash-horse-name\{\s*font:750 17px\/1\.2/,
  "Runner names must be readable at 17px on ordinary phones");
 assert.match(css,/\.rr-dash-horse-connections\{\s*font:550 12px\/1\.28/,
@@ -228,9 +228,9 @@ for(const html of [adminHtml,memberHtml]){
  assert.match(html,/id="rr-dash-mode-all"/,"All Tracks post-time mode exists");
  assert.match(html,/id="rr-dash-all-races"/,"Chronological global race selector exists");
 }
-assert.match(trackCss,/\.rrp-track-head__brand\{/,"Preserve the real Rail & Rye horseshoe in track identity");
-assert.match(js,/logo\.src="\/assets\/brand\/rail_rye_logo_header\.png"/,
- "Retain original approved track header graphic");
+assert.doesNotMatch(trackCss,/\.rrp-track-head__brand\{/,"Do not repeat the global Rail & Rye horseshoe in track identity");
+assert.doesNotMatch(js,/logo\.src="\/assets\/brand\/rail_rye_logo_header\.png"/,
+ "Avoid a duplicate Rail & Rye logo in the track strip");
 const raceTabs=els.get("rr-dash-races").children.map(button=>button.getAttribute("aria-label"));
 assert.match(raceTabs[0],/Race 6 · 6:00 PM/,"By Track tabs must follow post time, not race number");
 assert.match(raceTabs[1],/Race 4 · 8:05 PM/,"Late race should be second in actual chronology");
@@ -244,9 +244,9 @@ assert.deepEqual(els.get("rr-dash-all-races").children.map(option=>option.textCo
 ],"Full-day timeline must sort races across all returned tracks by real post times");
 assert.equal(els.get("rr-dash-all-races").value,"1","Current selected race remains in its true timeline position");
 els.get("rr-dash-previous-race").events.click();
-assert.match(els.get("rr-dash-race").textContent,/ZIA PARK/i,"Previous takes user to chronologically earlier track");
+assert.match(els.get("rr-dash-track-identity").textContent,/ZIA PARK/i,"Previous takes user to chronologically earlier track");
 els.get("rr-dash-next-race").events.click();
-assert.match(els.get("rr-dash-race").textContent,/DEL MAR/i,"Next returns to chronologically later race");
+assert.match(els.get("rr-dash-track-identity").textContent,/DEL MAR/i,"Next returns to chronologically later race");
 assert.equal(els.get("rr-dash-mode-all").attributes["aria-pressed"],"true");
 els.get("rr-dash-mode-track").events.click();
 assert.equal(els.get("rr-dash-app").dataset.mode,"track");
@@ -270,7 +270,7 @@ assert.ok(realRaceHeaderChip&&realRaceHeaderChip.src.endsWith("/4.png"),
  "Race 4 header MUST show real #4 saddlecloth artwork");
 assert.equal(allClass(displayedRace,"rr-dash-track-mark-letters").length,0,
  "No synthetic FL/MNR track initials should replace actual artwork");
-assert.equal(allClass(displayedRace,"rrp-track-head__logo").length,0,
+assert.equal(allClass(els.get("rr-dash-track-identity"),"rrp-track-head__logo").length,0,
  "Unknown track logo assets must not be invented or borrowed from another venue");
 assert.equal(allClass(displayedRace,"rr-race-chip__label").length,0,
  "Remove old stacked RACE caption competing with two-digit numbers");
@@ -306,7 +306,7 @@ originalRace.events.click();
 // not test the real track selector.
 els.get("rr-dash-track").value="Zia Park";
 els.get("rr-dash-track").events.change();
-const sourceTrackLogo=matchClass(els.get("rr-dash-race"),"rrp-track-head__logo");
+const sourceTrackLogo=matchClass(els.get("rr-dash-track-identity"),"rrp-track-head__logo");
 assert.ok(sourceTrackLogo,"Real venue-specific logo is restored on approved tracks");
 assert.equal(sourceTrackLogo.src,"/assets/approved/track-logos/zia-park.webp");
 assert.equal(sourceTrackLogo.alt,"Zia Park official racetrack logo");
@@ -321,8 +321,8 @@ console.log("PASS: true per-track chronology; authentic logos and race artwork; 
 const chipStyles=readFileSync("public/assets/rr-intelligence-chips.css","utf8");
 for(const html of [adminHtml,memberHtml]){
  assert.match(html,/rr-intelligence-chips\.css\?v=5/,"Load cleaned shared race/horse chip identity");
- assert.match(html,/rr-projections-race-header\.css\?v=3/,"Load the single new Projections header stylesheet");
-  assert.match(html,/rr-race-facts\.css\?v=3/,"Load the shared centered race-facts stylesheet.");
+ assert.match(html,/rr-projections-race-header\.css\?v=4/,"Load the single new Projections header stylesheet");
+  assert.match(html,/rr-race-facts\.css\?v=4/,"Load the shared centered race-facts stylesheet.");
  assert.match(html,/rr-exotic-bet-builder\.css\?v=3/,"Load the responsive exotic ticket builder skin");
  assert.match(html,/rr-exotic-bet-builder\.js\?v=\d+/,"Load the source-gated no-tote Bet Builder");
 }
@@ -333,8 +333,8 @@ assert.match(js,/rr-dash-race-number rr-race-saddle-header/,
 assert.match(js,/originalTrackLogos=\{/,"Retain approved venue-specific track logo sources");
 assert.match(js,/rrp-track-head__logo/,"Render approved source logos in the new compact plaque");
 assert.doesNotMatch(js,/rr-dash-track-mark-letters/,"Remove interim venue initials from live headers");
-assert.match(js,/logo\.src="\/assets\/brand\/rail_rye_logo_header\.png"/,
- "Never lose the persistent R&R horseshoe in track header");
+assert.doesNotMatch(js,/logo\.src="\/assets\/brand\/rail_rye_logo_header\.png"/,
+ "Global site header already supplies the persistent R&R horseshoe");
 assert.match(js,/button\.dataset\.raceNumber=String\(race\.race_number\)/,
  "Active race chips must be keyed to actual race numbers, not parsed full labels");
 assert.match(js,/Number\(button\.dataset\.raceNumber\)===activeRace/,
@@ -382,3 +382,18 @@ assert.match(trackCss,/\.rrp-track-head__venue-mark\{/,"Use an unframed mark emb
 assert.match(trackCss,/box-shadow:none;overflow:visible/,"No advertising-style plaque or boxed logo shadow");
 assert.doesNotMatch(trackCss,/__plaque|\.rrp-track-head__venue-mark\{[^}]*border:1px/,"Do not revive the old independent logo tile");
 assert.match(js,/rrp-track-head__venue-mark/,"The new masthead markup must use the integrated mark");
+
+for(const html of [adminHtml,memberHtml]){
+ assert.match(html,/class="rrp-command"/,"Mode, venue and race tabs share one navigation surface");
+ assert.match(html,/id="rr-dash-track-identity"/,"Track identity is inside the navigation deck");
+ assert.match(html,/rr-projections-command\.css\?v=1/,"Dedicated new command-deck stylesheet loaded");
+ assert.ok(html.indexOf('id="rr-dash-track-identity"')<html.indexOf('id="rr-dash-races"'),"Venue identity before race tabs");
+ assert.ok(html.indexOf('id="rr-dash-races"')<html.indexOf('id="rr-dash-race"'),"Race tabs before the projection panel");
+}
+assert.match(commandCss,/\.rrp-command__controls\{/,"Mode and date/track controls truly consolidated");
+assert.doesNotMatch(css,/\.rr-dash-mode-switch\s*\{|\.rr-dash-toolbar\s*\{/,"Obsolete layout CSS completely removed");
+assert.match(trackCss,/grid-template-columns:minmax\(0,1fr\) 64px/,"Venue mark compact on phones");
+assert.doesNotMatch(js,/panel\.replaceChildren\(cardHeader\(/,"No additional track masthead under race tabs");
+assert.match(js,/context\.replaceChildren\(cardHeader\(activeCard\)\)/,"Update track identity inside shared command deck");
+assert.match(factsCss,/min-height:59px/,"The Pace/Surface/Distance band is much shorter");
+assert.match(headerCss,/grid-template-columns:max-content max-content minmax\(0,1fr\)/,"Runners, purse and post time share compact metadata row");

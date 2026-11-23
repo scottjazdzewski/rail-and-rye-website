@@ -100,3 +100,5 @@ console.log("PASS: Mahoning Distaff sponsor removed, authentic venue logos resto
 
 assert.match(trackCss,/\.rrp-track-head__venue-mark\{/,"The official venue mark integrates into one editorial masthead");
 assert.doesNotMatch(trackCss,/__plaque/,"The former separate venue plaque must be entirely removed");
+
+assert.match(js,/context\.replaceChildren\(cardHeader\(activeCard\)\)/,"Track title belongs in one integrated navigation deck");

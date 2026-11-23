@@ -4,6 +4,8 @@ import {readFileSync} from "node:fs";
 const stylesheets=[
  "public/assets/projections-dashboard.css",
  "public/assets/rr-projections-race-header.css",
+ "public/assets/rr-projections-command.css",
+ "public/assets/rr-race-facts.css",
  "public/assets/rr-projections-track-identity.css",
  "public/assets/pick-tickets-dashboard.css",
  "public/assets/longshot-radar.css",
@@ -89,3 +91,7 @@ for(const [filename,content] of [["projections-dashboard.css",general],["rr-inte
   filename+": legacy scratch-bar CSS was not removed");
 }
 console.log("PASS: dedicated projection header owns all race metadata and scratch chip presentation");
+
+const navCss=readFileSync("public/assets/rr-projections-command.css","utf8");
+assert.match(navCss,/\.rrp-command\{/,"A single deck replaces old mode/filter/venue boxes");
+assert.doesNotMatch(general,/\.rr-dash-mode-switch\s*\{|\.rr-dash-toolbar\s*\{/,"Old navigation styles must not compete");

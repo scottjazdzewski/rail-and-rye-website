@@ -58,6 +58,10 @@ try{
   const triplet=page.locator("#rr-dash-race .rr-dash-race-tiles");
   await triplet.waitFor({state:"visible",timeout:15000});
   const headerNoScratches=await page.locator("#rr-dash-race .rrp-race-head").evaluate(el=>el.getBoundingClientRect().height);
+  const firstRunnerTop=await page.locator("#rr-dash-horses .rr-dash-runner-row").first().evaluate(el=>el.getBoundingClientRect().top);
+  assert.ok(firstRunnerTop < 805,"First projection should start before y=805 at "+width+": "+firstRunnerTop);
+  assert.equal(await page.locator(".rrp-command").count(),1,"The navigation exists as one integrated deck");
+  assert.equal(await page.locator("#rr-dash-track-identity .rrp-track-head").count(),1,"No duplicate track masthead");
   assert.match(await page.locator("#rr-dash-race .rrp-race-head__scratch-bar").innerText(),/NO SCRATCHES LISTED/);
   const result=await page.evaluate(()=>{
    const tiles=[...document.querySelectorAll("#rr-dash-race .rr-dash-race-tile")];
@@ -90,7 +94,7 @@ try{
   assert.equal(result.stripGrid,3,"Three centered columns at "+width);
   assert.ok(result.documentWidth<=result.viewport+1,"No horizontal overflow at "+width);
   assert.equal(result.extraneousNote,false,"No old model or calculation explanation");
-  assert.ok(result.tripletHeight<=92,"Compact centered facts at "+width+": "+result.tripletHeight);
+  assert.ok(result.tripletHeight<=72,"Slim composite race facts at "+width+": "+result.tripletHeight);
   const expected=["fact_pace_moderate.png","fact_surface_dirt.png","fact_distance.png"];
   for(let i=0;i<3;i++){
    const tile=result.tiles[i];
@@ -104,6 +108,8 @@ try{
    if(i)assert.ok(Math.abs(tile.rect.width-result.tiles[0].rect.width)<=1.1,"All tiles equal width at "+width);
   }
   await triplet.screenshot({path:"test-artifacts/race-facts-mobile-"+width+".png"});
+  await page.locator(".rrp-command").screenshot({path:"test-artifacts/compact-navigation-"+width+".png"});
+  await page.screenshot({path:"test-artifacts/projections-first-runner-"+width+".png",fullPage:false});
   await page.locator('#rr-dash-races .rr-dash-race-button[data-race-number="5"]').click();
   await page.locator("#rr-dash-race .rrp-race-head__scratch-count").getByText("3 SCRATCHES").waitFor();
   const headerWithScratches=await page.locator("#rr-dash-race .rrp-race-head").evaluate(el=>el.getBoundingClientRect().height);

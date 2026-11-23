@@ -51,6 +51,15 @@ The single source of truth for **horse saddle chips**, authentic saddlecloth-bac
 - Preserve five original approved venue WebP logos. Their native source files are low-resolution; present them uncropped at or below source size, integrated on one continuous white editorial masthead (never a separate bordered white box) with zero contrast filtering, blending, opacity adjustment or stretching. Never fabricate a logo or use invented venue initials.
 - The full track masthead is a single white editorial strip with a thin gold divider; no independent advertising-style logo plaque may return. Full track name, date and approved Rail & Rye horseshoe remain central; an unknown logo falls back to that identity alone. This edit changes no TRI/F4 data.
 
+## Projections integrated command layout — approved November 23, 2026
+
+- On admin/member Projections, date/track selectors, By Track/All Tracks switch, the full official venue title/date/mark, and genuine race saddlecloth tabs form **one compact navigation deck**. Do not restore several separate vertical cards.
+- The shared site header already displays Rail & Rye's horseshoe. The compact venue identity keeps its full name/date and original racetrack mark, but no extra branded emblem.
+- `public/assets/rr-projections-command.css` is the only navigation style authority. Previous mode/toolbar/race-tab-container styles were retired from `projections-dashboard.css`, not overlaid.
+- The race title, purse/runners/post time and centered scratch chips retain their exact approved hierarchy. On normal phone widths metadata shares one slim row; at narrow widths it wraps to preserve text.
+- Pace, Surface and Distance remain authentic, equal, center-aligned picture badges, now attached directly beneath the navy race header in a **short integrated band**, not a large separate card.
+- Screenshot regression: on 320–430px phones in an 850px viewport, the first horse projection should start before y=805. All original paid TRI/F4 probabilities, Bet Builder hit chances and break-even payouts remain unchanged.
+
 ## Projections three-row race header — approved November 23
 - **One dedicated stylesheet:** `public/assets/rr-projections-race-header.css` controls the Projections race header; it is loaded by both `/admin/projections-preview/` and `/membership/dashboard/` after the shared chip stylesheet.
 - **Do not recreate legacy header rules** in `projections-dashboard.css` or `rr-intelligence-chips.css`. Those old race-banner/scratch layout selectors were removed rather than overridden. The shared CSS retains the general navigation, track identity and runner rows only.
