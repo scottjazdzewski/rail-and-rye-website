@@ -1,6 +1,7 @@
-import {getPickTicketsIntake} from './pick-tickets-intake.js';
+import {getPickTicketsIntake,getPickTicketsIntake1124} from './pick-tickets-intake.js';
 import {buildPrescratchPickTicketReview,buildV33PostScratchReviewed,
- buildV33ScratchFieldPreview,readPrivatePickProjections} from './pick-tickets-auto.js';
+ buildV33ScratchFieldPreview,readPrivatePickProjections,readPrivatePickProjections1124,
+ pickMenuForDate} from './pick-tickets-auto.js';
 import {PICK_V33_ENGINE,PICK_V33_COST_SCALE_DOLLARS,
  PICK_V33_MIN_LEG_COVERAGE} from './pick-tickets-v33.js';
 import {readAdminProjectionCards} from './projections.js';
@@ -190,16 +191,17 @@ export async function handleAdminPickTickets(request,env){
   const sourceRejects=[],reviews=[],authorized=[],sourceVersions=[];
   const staleRevisions=[];
   let sources=[];
-  try{sources=await readPrivatePickProjections(env)}
+  try{sources=[...await readPrivatePickProjections(env),...await readPrivatePickProjections1124(env)]}
   catch(e){sourceRejects.push({reason:"Private source Projections are unavailable."})}
   const byTrack=new Map();
   for(const row of sources){
    const card=row?.card||row;
    if(!isPickV33Field(card))continue;
-   const prior=byTrack.get(card.track_name);
+   const sourceKey=card.race_date+'|'+card.track_name;
+   const prior=byTrack.get(sourceKey);
    if(!prior||(prior.card.projection_status!=="scratch_final"&&
        card.projection_status==="scratch_final"))
-    byTrack.set(card.track_name,{card,uploaded_at:row.uploaded_at||null});
+    byTrack.set(sourceKey,{card,uploaded_at:row.uploaded_at||null});
   }
   // Re-audit the exact current source if the ingestion-side audit has not
   // been staged (legacy files). No guessed prior score or mixed old source.
@@ -215,7 +217,7 @@ export async function handleAdminPickTickets(request,env){
      if(record.source_sha256===currentHash&&record.optimizer===PICK_V33_ENGINE&&
         record.review_only===true&&
         record.review_card?.sequences?.length===
-          PICK_MENU_1123.filter(x=>x.track===card.track_name).length){
+          pickMenuForDate(card.race_date).filter(x=>x.track===card.track_name).length){
       audit=record;
      }
     }
@@ -293,7 +295,7 @@ export async function handleAdminPickTickets(request,env){
   const scratch_update=getNov23ScratchLedger();
   scratch_update.dependent_sequences=officialScratchSequenceCount(PICK_MENU_1123);
   return respond({cards:[...authorized,...reviewCards],
-   intake:getPickTicketsIntake(),scratch_update,
+   intake:getPickTicketsIntake1124(),scratch_update,
    stale_revisions:staleRevisions,source_rejections:sourceRejects,
    latest_field_versions:sourceVersions,
    engine:PICK_V33_ENGINE,soft_cost_scale_dollars:PICK_V33_COST_SCALE_DOLLARS,
