@@ -80,7 +80,7 @@ function normalizeSequence(s,index){
  }
  return {name,start_race:first,end_race:last,play_status,hit_rate_display:hit_rate,
   recommendation:s.recommendation==null?"":text(s.recommendation,label+" recommendation",1500,false),
-  tickets,race_fields};
+  tickets,...(s.race_fields!==undefined?{race_fields}:{})};
 }
 export function normalizePickTickets(input){
  if(!obj(input)||input.schema_version!==1||input.product_type!=="pick_tickets")throw Error("Expected certified Pick Tickets schema version 1.");
