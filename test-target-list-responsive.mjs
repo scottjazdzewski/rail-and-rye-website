@@ -13,7 +13,7 @@ const fixture={dates:["2026-11-23"],uploaded_at:"2026-11-23T04:00:00Z",edition:{
  targets:Array.from({length:8},(_,index)=>({
   rank:index+1,track:index%2?"Synthetic Park":"Synthetic Downs",race_number:index+1,
   tier:index%2?"STRONG":"PRIME",post_time_et:["9:55 PM ET","3:14 PM ET","9:30 PM ET","3:26 PM ET","1:12 PM ET","8:40 PM ET","4:15 PM ET","2:20 PM ET"][index],surface:"Dirt",distance:"7 furlongs",
-  conditions:"Allowance / Optional Claiming",analysis:"Synthetic full analysis — no real race results or paid recommendations.",
+  conditions:"Allowance / Optional Claiming",analysis:"Synthetic full analysis — no real race results or paid recommendations. The paragraph deliberately continues for multiple sentences so that any two-line truncation is caught in every viewport. No source material may be clipped or hidden behind a repeated details button.",
   favorite:runner("1",long,12),attack:runner(index===0?"12A":"20","A Wider Alternative Name",26),
   also_live:null,scratches:[]
  }))
@@ -60,6 +60,20 @@ try{
   assert.equal(stats.overflow,0,"Cards stay within viewport at "+width);
   assert.equal(stats.items,8,"All qualifying source targets appear at "+width);
   assert.equal(stats.firstName,long,"Long horse names retain their full text at "+width);
+  const compact=await page.evaluate(()=>{
+   const row=document.querySelector(".rr-target-card .rr-target-horse-row");
+   const analysis=document.querySelector(".rr-target-card .rr-target-analysis-text");
+   return {rowHeight:row.getBoundingClientRect().height,
+    analysisVisible:analysis.scrollHeight<=analysis.clientHeight+2,
+    analysisClamp:getComputedStyle(analysis).webkitLineClamp,
+    reviewNotices:document.querySelectorAll(".rr-target-private").length,
+    giantButtons:document.querySelectorAll(".rr-target-analyze").length};
+  });
+  assert.ok(compact.rowHeight<=100,"Horse row remains concise even with long names at "+width+": "+JSON.stringify(compact));
+  assert.ok(compact.analysisVisible,"Complete editorial text must be readable at "+width+": "+JSON.stringify(compact));
+  assert.equal(compact.giantButtons,0,"Horse-row tap replaces repeated Race Details buttons at "+width);
+  assert.equal(compact.reviewNotices,1,"Only one review notice above the feed at "+width);
+
   // Verify chronological post-time order vs independent A–Z track grouping.
   const initialTimes=await page.locator(".rr-target-post").allTextContents();
   assert.deepEqual(initialTimes,["1:12 PM ET","2:20 PM ET","3:14 PM ET","3:26 PM ET","4:15 PM ET","8:40 PM ET","9:30 PM ET","9:55 PM ET"],"Post-time sort must ignore original rank at "+width);
@@ -68,7 +82,7 @@ try{
   assert.deepEqual(grouped,["Synthetic Downs","Synthetic Downs","Synthetic Downs","Synthetic Downs","Synthetic Park","Synthetic Park","Synthetic Park","Synthetic Park"],"Track ordering must group A–Z at "+width);
   await page.locator("#rr-target-sort").selectOption("post-time");
   assert.deepEqual(await page.locator(".rr-target-post").allTextContents(),initialTimes,"Chronological order must be independently restored at "+width);
-  await page.getByRole("button",{name:/read race details for/i}).first().click();
+  await page.getByRole("button",{name:/view .* details for/i}).first().click();
   await page.locator("#rr-target-dialog[open]").waitFor();
   const detail=await page.locator("#rr-target-dialog").evaluate(el=>({
    width:el.getBoundingClientRect().width,
@@ -96,7 +110,7 @@ try{
  await preview.reload({waitUntil:"domcontentloaded"});
  await preview.locator(".rr-target-card").first().waitFor({timeout:10000});
  assert.equal(await preview.locator(".rr-target-card").count(),8,"Review route directly renders stored source-backed races.");
- assert.match(await preview.locator("#rr-target-review-banner").innerText(),/NOT SCORER-CERTIFIED/);
+ assert.match(await preview.locator(".rr-target-private").first().innerText(),/NOT SCORER-CERTIFIED/);
  assert.equal(await preview.locator(".rr-review-artwork").count(),0);
  await preview.close();
  console.log("PASS: real browser Target List layouts at 320, 375, 390, 430, 768 and 1280px, no synthetic fallbacks and real-source private review rendering.");
