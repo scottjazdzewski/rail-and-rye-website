@@ -1,0 +1,169 @@
+/* Rail & Rye Target List: private, receipt-referenced structured editorial preview.
+   Customer-facing entitlement and launch routes deliberately not enabled here. */
+const HEADERS={"Content-Type":"application/json; charset=utf-8","Cache-Control":"private, no-store","X-Content-Type-Options":"nosniff","X-Robots-Tag":"noindex, nofollow, noarchive"};
+const PREFIX="racing-intelligence/target-list/";
+const MAX_BYTES=512*1024;
+const response=(value,status=200)=>new Response(JSON.stringify(value),{status,headers:HEADERS});
+const fail=(message,status=400)=>response({error:message},status);
+const object=value=>!!value&&typeof value==="object"&&!Array.isArray(value);
+const dateValid=value=>typeof value==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&!Number.isNaN(Date.parse(value+"T00:00:00Z"))&&new Date(value+"T00:00:00Z").toISOString().slice(0,10)===value;
+function field(value,label,max,required=true){
+ if(value==null&&!required)return "";
+ if(typeof value!=="string")throw Error(label+" must be text.");
+ const result=value.trim();
+ if(required&&!result)throw Error(label+" is required.");
+ if(result.length>max)throw Error(label+" is too long.");
+ return result;
+}
+function runner(input,label){
+ if(!object(input))throw Error(label+" must contain a horse.");
+ const program_number=field(input.program_number,label+" saddlecloth",4);
+ if(!/^\d{1,2}[A-Za-z]?$/.test(program_number))throw Error(label+" saddlecloth must be a valid program number.");
+ const horse_name=field(input.horse_name,label+" horse",120);
+ const morning_line=field(input.morning_line,label+" morning line",24);
+ if(typeof input.win_probability!=="number"||!Number.isFinite(input.win_probability)||input.win_probability<0||input.win_probability>100)
+  throw Error(label+" win probability must be an exact supplied number from 0 through 100.");
+ const fair_odds=field(input.fair_odds,label+" fair odds",32);
+ const trainer=field(input.trainer,label+" trainer",100,false);
+ const jockey=field(input.jockey,label+" jockey",100,false);
+ return {program_number,horse_name,morning_line,win_probability:input.win_probability,fair_odds,trainer,jockey};
+}
+export function validateTargetList(input){
+ if(!object(input))throw Error("Target List must be a structured JSON object.");
+ if(input.schema_version!==1||input.product_type!=="target_list")throw Error("Expected Target List schema version 1.");
+ if(!dateValid(input.race_date))throw Error("Valid race_date is required.");
+ if(!Number.isInteger(input.revision)||input.revision<1||input.revision>10000)throw Error("Revision must be a positive integer.");
+ if(!["initial","scratch_update"].includes(input.status))throw Error("Status must be initial or scratch_update.");
+ if(input.revision===1&&input.status!=="initial"||input.revision>1&&input.status!=="scratch_update")
+  throw Error("Initial edition must be revision 1; scratch updates must increment the revision.");
+ if(!object(input.source))throw Error("A trusted production source receipt reference is required.");
+ const receipt_id=field(input.source.receipt_id,"Production receipt ID",200);
+ const sha256=field(input.source.sha256,"Production source SHA-256",64);
+ if(!/^[a-f0-9]{64}$/i.test(sha256))throw Error("Production source SHA-256 must be a 64-character digest.");
+ if(!Array.isArray(input.targets)||input.targets.length>100)throw Error("Targets must be an array with up to 100 selected races. Zero is allowed.");
+ const ranks=new Set(),races=new Set();
+ const targets=input.targets.map((entry,index)=>{
+  if(!object(entry))throw Error("Target "+(index+1)+" must be a record.");
+  const rank=entry.rank;
+  if(!Number.isInteger(rank)||rank<1||rank>10000||ranks.has(rank))throw Error("Each target requires a distinct, source-supplied positive rank.");
+  ranks.add(rank);
+  const track=field(entry.track,"Target track",100);
+  const race_number=entry.race_number;
+  if(!Number.isInteger(race_number)||race_number<1||race_number>99)throw Error("Target race number must be supplied.");
+  const identity=track.toLowerCase()+"|"+race_number;
+  if(races.has(identity))throw Error("Duplicate target race in the same edition.");
+  races.add(identity);
+  const tier=field(entry.tier,"Target tier",16,false).toUpperCase();
+  if(tier&&tier!=="PRIME"&&tier!=="STRONG")throw Error("Target tier must be PRIME or STRONG only when supplied by production.");
+  const favorite=runner(entry.favorite,"Favorite");
+  const attack=runner(entry.attack,"ATTACK");
+  if(attack.win_probability<=favorite.win_probability)throw Error("ATTACK must have higher certified PWIN than the favorite.");
+  if(attack.program_number===favorite.program_number)throw Error("Favorite and ATTACK must be different horses.");
+  const also_live=entry.also_live==null?null:runner(entry.also_live,"ALSO LIVE");
+  const programs=[favorite.program_number,attack.program_number,also_live?.program_number].filter(Boolean);
+  if(new Set(programs).size!==programs.length)throw Error("Horse roles must refer to distinct program numbers.");
+  const scratches=entry.scratches==null?[]:entry.scratches;
+  if(!Array.isArray(scratches)||scratches.length>40)throw Error("Scratches must be a source-backed array.");
+  if(input.status==="initial"&&scratches.length)throw Error("Initial edition may not claim official scratches.");
+  const normalizedScratches=scratches.map((scratch)=>{
+   if(!object(scratch))throw Error("Scratch requires a horse and saddlecloth.");
+   return {program_number:field(scratch.program_number,"Scratch number",4),horse_name:field(scratch.horse_name,"Scratched horse",120)};
+  });
+  return {rank,track,race_number,tier,post_time_et:field(entry.post_time_et,"Post time",40,false),
+   surface:field(entry.surface,"Surface",50,false),distance:field(entry.distance,"Distance",80,false),
+   conditions:field(entry.conditions,"Conditions",200,false),analysis:field(entry.analysis,"The Rail & Rye Analysis",4000),
+   favorite,attack,also_live,scratches:normalizedScratches};
+ });
+ targets.sort((a,b)=>a.rank-b.rank);
+ return {schema_version:1,product_type:"target_list",race_date:input.race_date,revision:input.revision,
+  status:input.status,source:{receipt_id,sha256:sha256.toLowerCase()},targets};
+}
+const keyFor=(date,revision)=>PREFIX+date+"/revision-"+String(revision).padStart(4,"0")+".json";
+async function findRevisions(env,date){
+ const found=[];
+ let cursor;
+ do{
+  const page=await env.CARDS_BUCKET.list({prefix:PREFIX+date+"/",limit:1000,...(cursor?{cursor}:{})});
+  for(const item of page.objects||[]){
+   const m=RegExp("^"+PREFIX+date+"/revision-(\\d{4,5})\\.json$").exec(item.key);
+   if(m)found.push({revision:Number(m[1]),key:item.key});
+  }
+  cursor=page.truncated?page.cursor:null;
+  if(page.truncated&&!cursor)throw Error("R2 listing is incomplete.");
+  if(found.length>10000)throw Error("R2 revision listing exceeds safety limit.");
+ }while(cursor);
+ return found.sort((a,b)=>b.revision-a.revision);
+}
+async function recentDates(env){
+ let cursor;const keys=[];
+ do{
+  const page=await env.CARDS_BUCKET.list({prefix:PREFIX,limit:1000,...(cursor?{cursor}:{})});
+  for(const item of page.objects||[]){
+   const match=/^racing-intelligence\/target-list\/(\d{4}-\d{2}-\d{2})\/revision-(\d{4,5})\.json$/.exec(item.key);
+   if(match)keys.push({race_date:match[1],revision:Number(match[2]),key:item.key});
+  }
+  cursor=page.truncated?page.cursor:null;
+  if(page.truncated&&!cursor)throw Error("R2 listing is incomplete.");
+  if(keys.length>20000)throw Error("R2 edition listing exceeds safety limit.");
+ }while(cursor);
+ const latest=new Map();
+ for(const item of keys){
+  const prior=latest.get(item.race_date);
+  if(!prior||item.revision>prior.revision)latest.set(item.race_date,item);
+ }
+ return [...latest.values()].sort((a,b)=>b.race_date.localeCompare(a.race_date)).slice(0,30);
+}
+async function sha256(value){
+ const bytes=new TextEncoder().encode(value);
+ const digest=await crypto.subtle.digest("SHA-256",bytes);
+ return [...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+export async function handleAdminTargetList(request,env,url){
+ if(!env.CARDS_BUCKET)return fail("Private Target List storage unavailable.",503);
+ if(request.method==="GET"){
+  const dates=await recentDates(env);
+  const requested=url.searchParams.get("date");
+  if(requested&&!dateValid(requested))return fail("Invalid date.",400);
+  const selected=requested?dates.find(v=>v.race_date===requested):dates[0];
+  if(requested&&!selected){
+   const revisions=await findRevisions(env,requested);
+   if(revisions[0])return readEdition(env,{...revisions[0],race_date:requested},dates);
+  }
+  if(!selected)return response({dates:dates.map(v=>v.race_date),edition:null});
+  return readEdition(env,selected,dates);
+ }
+ if(request.method!=="POST")return fail("Method not allowed.",405);
+ const size=Number(request.headers.get("content-length")||0);
+ if(size>MAX_BYTES)return fail("Target List exceeds the private upload limit.",413);
+ let raw;
+ try{raw=await request.text();}catch{return fail("Could not read the submitted JSON.");}
+ if(new TextEncoder().encode(raw).byteLength>MAX_BYTES)return fail("Target List exceeds the private upload limit.",413);
+ let edition;
+ try{edition=validateTargetList(JSON.parse(raw));}catch(e){return fail(String(e.message||"Invalid Target List."),400);}
+ const revisions=await findRevisions(env,edition.race_date),latest=revisions[0];
+ const objectKey=keyFor(edition.race_date,edition.revision);
+ const sourceJson=JSON.stringify(edition),checksum=await sha256(sourceJson);
+ if(latest&&edition.revision<=latest.revision){
+  const prior=await env.CARDS_BUCKET.get(objectKey);
+  if(prior&&(prior.customMetadata?.sha256===checksum||await sha256(await prior.text())===checksum))
+   return response({ok:true,unchanged:true,race_date:edition.race_date,revision:edition.revision});
+  return fail("A different or newer revision already exists; never overwrite finalized analysis.",409);
+ }
+ if(!latest&&edition.revision!==1||latest&&edition.revision!==latest.revision+1)
+  return fail("Revisions must begin at 1 and advance one verified update at a time.",409);
+ const uploaded_at=new Date().toISOString();
+ await env.CARDS_BUCKET.put(objectKey,sourceJson,{
+  httpMetadata:{contentType:"application/json; charset=utf-8",cacheControl:"private, no-store"},
+  customMetadata:{sha256:checksum,source_sha256:edition.source.sha256,receipt_id:edition.source.receipt_id,uploaded_at}
+ });
+ return response({ok:true,private_preview:true,race_date:edition.race_date,revision:edition.revision,targets:edition.targets.length,sha256:checksum},201);
+}
+async function readEdition(env,selected,dates){
+ const object=await env.CARDS_BUCKET.get(selected.key);
+ if(!object)return fail("The selected edition is unavailable.",503);
+ let edition;
+ try{edition=validateTargetList(JSON.parse(await object.text()));}
+ catch{return fail("The stored edition failed validation.",503);}
+ if(edition.race_date!==selected.race_date||edition.revision!==selected.revision)return fail("Stored edition identity does not match.",503);
+ return response({dates:dates.map(v=>v.race_date),edition,uploaded_at:object.customMetadata?.uploaded_at||null});
+}
