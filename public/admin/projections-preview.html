@@ -11,8 +11,8 @@
 <link rel="stylesheet" href="/assets/rail-rye-core.css?v=12">
 <link rel="stylesheet" href="/assets/rail-rye-components.css?v=9">
 <link rel="stylesheet" href="/assets/membership.css?v=3">
-<link rel="stylesheet" href="/assets/projections-dashboard.css?v=22">
-<script defer src="/assets/projections-dashboard.js?v=24"></script>
+<link rel="stylesheet" href="/assets/projections-dashboard.css?v=23">
+<script defer src="/assets/projections-dashboard.js?v=25"></script>
 </head>
 <body class="rr-member-page rr-dashboard-page" data-rr-preview="true">
 <header class="rr-member-header">
@@ -25,11 +25,7 @@
  </div>
 </header>
 <main class="rr-member-main rr-dashboard-main">
- <p class="rr-dash-private-banner">Private admin preview · member dashboard remains off until launch</p>
- <div class="rr-dash-heading">
-  <div><span class="rr-member-kicker">Private admin preview</span><h1 class="rr-member-title">Race cards, on screen.</h1><p class="rr-dash-intro">Review the verified private projections by date, track, race, and runner. Tap any horse for its complete analysis.</p></div>
-  <a class="rr-member-button rr-dash-library-link" href="/admin/projections/">Return to projection uploader</a>
- </div>
+ <h1 class="rr-dash-visually-hidden">Rail &amp; Rye Projections</h1>
  <p id="rr-dash-status" class="rr-member-status" role="status" aria-live="polite">Loading your available race cards…</p>
  <section id="rr-dash-login" class="rr-dash-empty" hidden>
   <h2>Sign in to see your cards.</h2><p>Use your membership email to open the member library.</p>
@@ -44,7 +40,7 @@
    <label>Date<select id="rr-dash-date" aria-label="Choose race date"></select></label>
    <label>Track<select id="rr-dash-track" aria-label="Choose track"></select></label>
    <label class="rr-dash-race-time-field">Race by post time<select id="rr-dash-race-time" aria-label="Choose race by post time"></select></label>
-   <label>Find a horse<input id="rr-dash-search" type="search" placeholder="Name or program #" autocomplete="off"></label>
+   <label class="rr-dash-search-field">Find a horse<input id="rr-dash-search" type="search" placeholder="Name or program #" autocomplete="off"></label>
    
    <span id="rr-dash-update" class="rr-dash-updated"></span>
   </div>
@@ -63,7 +59,7 @@
   <div id="rr-dash-horse-detail"></div>
  </div>
 </dialog>
-<footer class="rr-member-footer"><div class="heritage-shell"><span class="heritage-footmark">RAIL &amp; RYE</span><nav aria-label="Footer"><a href="/admin/">Publisher’s Desk</a> · <a href="/admin/projections/">Projection uploader</a></nav><small>Private admin review · member access is off</small></div></footer>
+<footer class="rr-member-footer"><div class="heritage-shell"><span class="heritage-footmark">RAIL &amp; RYE</span><nav aria-label="Footer"><a href="/admin/">Publisher’s Desk</a> · <a href="/admin/projections/">Projection uploader</a></nav></div></footer>
 
 </body>
 </html>
