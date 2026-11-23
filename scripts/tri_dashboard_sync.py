@@ -14,6 +14,7 @@ import re
 import sys
 import unicodedata
 import zipfile
+from tri_f4_finish_order import apply_certified_f4_order, F4OrderHold
 
 APPROVED_STATUSES = {"TRI_V4_F4_V2_MODEL_SOURCE_INPUT_ERRORS_RESOLVED_ALL_FIVE", "TRI_V4_F4_V2_PRESCRATCH_ALL_TRACKS_PASS"}
 PWIN_PASS = "PASS_TRI_TJ_V4_PERMANENT_FORWARD_RUNTIME"
@@ -82,6 +83,7 @@ def build_cards(zip_bytes):
         actual_files = [x for x in names if TRACK_FILE_RE.fullmatch(x)]
         require(len(actual_files) == len(expected), "Track export count differs from resolution receipt")
         cards = []
+        f4_receipts = {}
         race_total = runner_total = role_total = 0
         for proof in expected:
             code = proof["track"]
@@ -108,6 +110,7 @@ def build_cards(zip_bytes):
             roles_audit = parse_json(z, paths["role_audit_sha256"])
             require(tri.get("status") == PWIN_PASS and f4r.get("status") == "PASS",
                     "Frozen scorer receipt did not PASS for " + code)
+            f4_receipts[code] = f4r
             require(f4r.get("official_scratches_verified") is False,
                     "Prescratch-only importer does not accept finalized scratch outputs")
             require(not roles_audit.get("unresolved"), "Unresolved trainer/jockey evidence for " + code)
@@ -190,10 +193,16 @@ def build_cards(zip_bytes):
                 "Combined race/runner counts differ from signed-off receipt")
         require(role_total == receipt["role_cells_verified"],
                 "Combined trainer/jockey count differs from proof")
+        try:
+            ordered_races = apply_certified_f4_order(cards, z, date, f4_receipts)
+        except F4OrderHold as exc:
+            raise Hold("Certified F4 finishing order unavailable: " + str(exc)) from exc
+        require(ordered_races == race_total,
+                "Certified F4 finishing order did not cover all scored races")
         payload = compact_json({"cards": cards})
         require(len(payload) <= MAX_IMPORT_SIZE, "Dashboard payload exceeds API size limit")
         return date, cards, payload, {"tracks": len(cards), "races": race_total,
-                                      "runners": runner_total, "sha256": digest(zip_bytes)}
+                                      "runners": runner_total, "f4_ordered_races": ordered_races, "sha256": digest(zip_bytes)}
 
 
 def attach_verified_badges(cards, badge_zip_bytes):
