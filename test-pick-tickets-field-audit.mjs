@@ -157,6 +157,7 @@ const scratchRace=more.races[0];
 const newly=scratchRace.entries.pop().program_number;
 scratchRace.scratches.push({program_number:newly,horse_name:"QA Extra Scratch"});
 scratchRace.scratch_count+=1;
+scratchRace.entries=raceEntries(scratchRace.entries.map(x=>x.program_number));
 const extra=await auditV33FieldUpload(more,post);
 assert.equal(extra.new_scratch_count,1);
 assert.equal(extra.source_signature_status,"INPUT_CHANGED_WITHOUT_NEW_SCORE_RECEIPT");
