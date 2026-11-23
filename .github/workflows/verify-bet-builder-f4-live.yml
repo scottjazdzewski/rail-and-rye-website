@@ -1,0 +1,114 @@
+name: Verify certified Bet Builder probabilities in private R2
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/f4-exotics.js'
+      - 'src/projections.js'
+      - 'public/assets/rr-exotic-bet-builder.js'
+      - 'public/assets/projections-dashboard.js'
+      - 'test-rr-f4-exotics-api.mjs'
+      - 'test-rr-exotic-bet-builder.mjs'
+      - '.github/workflows/verify-bet-builder-f4-live.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify-certified-f4:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    env:
+      TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+      TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+      TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Regression-check F4 source, Bet Builder and batch release gate
+        run: |
+          node test-rr-f4-exotics-api.mjs
+          node test-rr-exotic-bet-builder.mjs
+          node test-prescratch-projection-import.mjs
+      - name: Read current racecards and signed joint model objects from private R2
+        run: |
+          python -m pip install --disable-pip-version-check --quiet boto3
+          python - <<'PY'
+          import boto3,os,json,datetime,pathlib
+          from zoneinfo import ZoneInfo
+          account=os.environ['TRI_CLOUDFLARE_ACCOUNT_ID']
+          r2=boto3.session.Session().client('s3',region_name='auto',endpoint_url='https://'+account+'.r2.cloudflarestorage.com',aws_access_key_id=os.environ['TRI_R2_ACCESS_KEY_ID'],aws_secret_access_key=os.environ['TRI_R2_SECRET_ACCESS_KEY'])
+          date=datetime.datetime.now(ZoneInfo("America/New_York")).date().isoformat()
+          root=pathlib.Path('/tmp/rr-f4-private-check');root.mkdir(mode=0o700,exist_ok=True)
+          bucket='rail-and-rye-private-cards'
+          pre=f'projections/dashboard/{date}/'
+          files=r2.list_objects_v2(Bucket=bucket,Prefix=pre).get('Contents',[])
+          count=0
+          for record in files:
+           key=record['Key']
+           if not key.endswith('.json'):continue
+           card=json.loads(r2.get_object(Bucket=bucket,Key=key)['Body'].read())
+           if card.get('projection_status')!='scratch_final':continue
+           other=key.replace('projections/dashboard/','projections/f4-ordered/',1)
+           f4=json.loads(r2.get_object(Bucket=bucket,Key=other)['Body'].read())
+           name=key.rsplit('/',1)[-1]
+           (root/('card-'+name)).write_text(json.dumps(card))
+           (root/('f4-'+name)).write_text(json.dumps(f4))
+           count+=1
+          (root/'date.txt').write_text(date)
+          print('PRIVATE_F4_VERIFICATION_INPUTS',date,'scratch_final_tracks',count)
+          PY
+      - name: Exercise protected F4 endpoint validator against every live scratch-final race
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          import assert from 'node:assert/strict';
+          import {readCertifiedF4Exotics} from './src/f4-exotics.js';
+          const dir='/tmp/rr-f4-private-check';
+          const files=fs.readdirSync(dir).filter(x=>x.startsWith('card-'));
+          let races=0;
+          for(const file of files){
+           const card=JSON.parse(fs.readFileSync(dir+'/'+file,'utf8'));
+           const model=JSON.parse(fs.readFileSync(dir+'/f4-'+file.slice(5),'utf8'));
+           const env={CARDS_BUCKET:{get:async key=>{
+            if(key.startsWith('projections/dashboard/'))return {json:async()=>card,customMetadata:{}};
+            if(key.startsWith('projections/f4-ordered/'))return {json:async()=>model};
+            throw Error('Unexpected private key');
+           }}};
+           for(const race of card.races){
+            const url=new URL('https://railandryeracing.com/api/admin/projections-f4');
+            url.searchParams.set('date',card.race_date);
+            url.searchParams.set('track',card.track_name);
+            url.searchParams.set('race',String(race.race_number));
+            const reply=await readCertifiedF4Exotics(env,url);
+            assert.equal(reply.status,200,card.track_name+' Race '+race.race_number+': '+await reply.text());
+            const data=(await reply.json()).f4;
+            assert.equal(data.scratch_state,'SCRATCH_FINAL');
+            assert.equal(data.status,'verified');
+            assert.equal(data.receipt_sha256,card.model_receipts.f4_sha256);
+            races++;
+           }
+          }
+          console.log('PRIVATE_F4_ENDPOINT_VALIDATION_PASS tracks='+files.length+' races='+races);
+          JS
+          rm -rf /tmp/rr-f4-private-check
+      - name: Confirm production Bet Builder assets use current certified source logic
+        run: |
+          set -euo pipefail
+          BASE=https://railandryeracing.com
+          for retry in $(seq 1 20); do
+            token="${GITHUB_SHA}-${retry}-$(date +%s)"
+            curl -fsSL --max-time 20 -H 'Cache-Control: no-cache' "${BASE}/assets/rr-exotic-bet-builder.js?proof=${token}" -o /tmp/rr-bet-live.js || true
+            curl -fsSL --max-time 20 -H 'Cache-Control: no-cache' "${BASE}/assets/projections-dashboard.js?proof=${token}" -o /tmp/rr-projections-live.js || true
+            if cmp -s public/assets/rr-exotic-bet-builder.js /tmp/rr-bet-live.js &&
+               cmp -s public/assets/projections-dashboard.js /tmp/rr-projections-live.js; then
+              echo BET_BUILDER_LIVE_ASSETS_MATCH
+              exit 0
+            fi
+            if [ "$retry" -eq 20 ]; then echo '::error::Deployed Bet Builder assets have not updated'; exit 1; fi
+            sleep 8
+          done
