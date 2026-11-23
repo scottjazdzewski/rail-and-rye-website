@@ -3,7 +3,7 @@
 **Current design:** Frozen TRI V4.1 + F4 V2 produces a fully receipt-verified, prescratch ZIP. A single publisher uploads the resulting dashboard cards directly to the existing private Cloudflare R2 bucket. The website reads those R2 objects.
 
 ```text
-TRI scoring run → verified source ZIP → private Cloudflare R2 → Rail & Rye admin dashboard
+TRI scoring run + certified badge-evaluator QA → direct private R2 publisher → Rail & Rye admin dashboard
 ```
 
 **Removed:** Google Cloud project, Google Drive API service account, Google Drive folder polling, Google Drive-to-R2 transfer, recurring manual JSON file conversions, and the unused two-hour GitHub Actions polling job. Keep Google Drive only for the existing production archive if desired.
@@ -24,11 +24,18 @@ After the scorer generates the same validated package that contains the `RESOLUT
 # Validate all receipts and produce a local preview; requires no credentials:
 python scripts/tri_dashboard_sync.py --zip "/path/to/VERIFIED_TRI_SOURCE.zip"
 
-# Send it directly into the same private R2 bucket as the website's dashboard:
-python scripts/tri_dashboard_sync.py --zip "/path/to/VERIFIED_TRI_SOURCE.zip" --publish
+# Certify the scorer AND exact five-color badge evidence offline:
+python scripts/tri_dashboard_sync.py --zip "/path/to/VERIFIED_TRI_SOURCE.zip" \
+  --badge-source-zip "/path/to/APPROVED_RACECARD_BADGE_QA.zip"
+
+# The production scorer calls this once after both current-source gates PASS:
+python scripts/tri_dashboard_sync.py --zip "/path/to/VERIFIED_TRI_SOURCE.zip" \
+  --badge-source-zip "/path/to/APPROVED_RACECARD_BADGE_QA.zip" --publish
 ```
 
-The second command should be invoked **once, automatically, by the model runner**, only after its frozen scoring and receipt gates pass. It is idempotent by scored source SHA-256. For a no-write R2 permission/preflight test add `--dry-run` to `--publish`.
+The publishing command **requires** the second source-verified badge QA ZIP. It will not publish an incomplete initial card that is missing its five factors. The QA ZIP must contain `SHA256_MANIFEST.json`, `output/FINAL_QA_RECEIPT.json`, all `data/<TRACK>/badge_audit_ledger.json` and `data/<TRACK>/<TRACK>_RACE_ONLY_INPUT.json`, and current-root renderer self-test proof. The exact evaluator release is `TBS_FACTOR_BADGE_EVALUATOR_V1_2_6_FIT_CLASS_FORM_GUARDS`. The publisher crosschecks every race, purse, original program/horse, frozen PWIN and all five colors against both evidence sets. No re-scoring or new color thresholds are performed.
+
+This command must be invoked **once, automatically, by the model runner**, only after its frozen scoring, badge-evaluator and receipt gates pass. It is idempotent by scored source SHA-256. For a no-write R2 permission/preflight test add `--dry-run` to `--publish`.
 
 Run `python -m unittest discover -s tests -p 'test_tri_dashboard_sync.py' -v` for the synthetic QA.
 
@@ -54,3 +61,9 @@ Requires `boto3` in the publishing runtime (`pip install boto3`). No `google-aut
 ## Notes on operational simplicity
 
 A service that cannot access the scorer's verified ZIP cannot perform this upload just because a GitHub secret was created. Adding another file transfer/polling service does not solve that. The integration point must be the process that actually **has the scored ZIP**. Keep the current production archive where convenient, but avoid introducing extra credential providers for a copy.
+
+## November 23 implementation confirmation
+
+The initial 2026-11-23 private R2 dashboard (45 races, 367 horses) was updated separately from an authenticated, encrypted source-backed badge patch. GitHub Actions receipt `45106762595` confirmed **1,835 badges / 445 green / 1,216 gray / 174 red, 5 track objects written and read back**. The original verified model PWIN and F4 entries remained unchanged. The front end displays the exact existing badge PNG assets and uses **Tinos Bold**, the approved racecard numeric face, for win percentages/fair odds. It labels the scored prescratch initial card as current until scratches; this does not assert scratch-final status.
+
+The scorer's external hosting/execution remains outside the website repo. For future dates it must provide BOTH current source packages and call the publisher. No Google Cloud account or Drive service account is necessary.
