@@ -66,7 +66,7 @@ function allClass(root,className,out=[]){if(String(root.className||"").split(/\s
 const race=els.get("rr-dash-race"),horses=els.get("rr-dash-horses");
 assert.match(race.textContent,/Claiming \$8,000/i,"Preserve claiming price");
 assert.match(race.textContent,/PURSE \$20,000/,"Display actual purse separately");
-assert.match(race.textContent,/3 SCRATCHES/,"Official scratch count uses correct plural display.");
+assert.match(race.textContent,/SCRATCHES/,"Identify scratched saddlecloths with a compact header label.");
 const scratchChip=matchClass(race,"rr-dash-scratch-chip");
 assert.ok(scratchChip&&scratchChip.src.endsWith("/3.png"),"Scratch uses official #3 saddlecloth chip");
 assert.ok(allClass(race,"rr-dash-scratch-item").some(item=>item.getAttribute("aria-label")?.includes("Scratched Runner")),"Keep scratched horse names accessible without crowding the PDF-style banner");
@@ -74,7 +74,9 @@ const pdfBanner=matchClass(race,"rr-dash-race-banner");
 const bannerScratches=matchClass(pdfBanner,"rr-dash-scratch-strip");
 assert.ok(bannerScratches,"PDF scratch count and chips must appear INSIDE the race header");
 assert.equal(allClass(race,"rr-dash-scratch-strip").length,1,"No detached second scratch block beneath the race header");
-assert.match(bannerScratches.textContent,/3 SCRATCHES/,"Show the verified scratch count in the header");
+assert.match(bannerScratches.textContent,/SCRATCHES/,"Use a small label rather than a separate scratch-count card.");
+assert.doesNotMatch(bannerScratches.textContent,/Scratched Runner|High Number Scratch|Entry Scratch/,"Do not print horse names in the race header.");
+assert.equal(allClass(bannerScratches,"rr-dash-scratch-name").length,0,"No old scratch-name labels remain.");
 assert.equal(allClass(bannerScratches,"rr-dash-scratch-item").length,3,"List every verified scratched runner");
 const scratchedChips=allClass(bannerScratches,"rr-dash-scratch-chip");
 assert.equal(scratchedChips.length,3,"Use authentic saddlecloth PNGs for all scratched horses");
@@ -82,7 +84,8 @@ assert.ok(scratchedChips.some(el=>el.src.endsWith("/13.png")),"High-numbered scr
 assert.ok(scratchedChips.some(el=>el.src.endsWith("/1.png")),"Coupled entries use the approved base-number asset");
 assert.equal(allClass(bannerScratches,"rr-dash-scratch-suffix")[0].textContent,"A","Keep coupled-entry suffix visible");
 assert.ok(allClass(bannerScratches,"rr-dash-scratch-item").every(item=>item.title.includes("Scratch")),"All scratch names remain available as tooltips and accessible labels");
-assert.match(css,/PDF-matched scratches:/,"Maintain dedicated PDF-style scratch header layout");
+assert.match(css,/\.rr-dash-scratch-strip\{display:inline-flex;[^}]*background:transparent\}/,"Render chips inline without a white scratch box.");
+assert.doesNotMatch(css,/PDF-matched scratches:/,"Remove obsolete scratch-card CSS cascade.");
 
 const names=allClass(horses,"rr-dash-horse-name").map(el=>el.textContent);
 assert.deepEqual(names,["Barrister Proof","Doo Wop Don","Third Horizon"],"Lead must have greatest TRI PWIN, while the remaining horses retain scorer order");
