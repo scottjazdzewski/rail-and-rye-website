@@ -98,10 +98,13 @@ function editorialRacePresentation(race){
  let title=raw
   .replace(/\s*\(\s*(?:presented|sponsored|powered)\s+by\b[^)]*\)/gi,"")
   .replace(/\s*(?:presented|sponsored|powered)\s+by\b.*$/i,"")
-  .replace(/\s*\(\s*(?:G(?:rade)?\.?|Gr\.?)\s*[-:]?\s*(?:III|II|I|[123])\s*\)\s*$/i,"")
-  .replace(/\b(?:Stks?|Stk|S)\.?$/i,"Stakes").trim();
- const letters=title.replace(/[^A-Za-z]/g,"");
- if(letters.length>2&&letters===letters.toUpperCase())
+  .replace(/\s*\(\s*(?:G(?:rade)?\.?|Gr\.?)\s*[-:]?\s*(?:III|II|I|[123])\s*\)\s*$/i,"").trim();
+ // Capture casing BEFORE replacing "S." with "Stakes", otherwise the
+ // newly mixed-case suffix prevents uppercase source names from title-casing.
+ const originalLetters=title.replace(/[^A-Za-z]/g,"");
+ const originallyAllCaps=originalLetters.length>2&&originalLetters===originalLetters.toUpperCase();
+ title=title.replace(/\b(?:Stks?|Stk|S)\.?$/i,"Stakes");
+ if(originallyAllCaps)
   title=title.toLowerCase().replace(/\b[a-z]/g,letter=>letter.toUpperCase());
  const match=raw.match(/\(\s*(?:G(?:rade)?\.?|Gr\.?)\s*[-:]?\s*(III|II|I|[123])\s*\)/i);
  const grade=match?({I:1,II:2,III:3}[match[1].toUpperCase()]||Number(match[1])):null;
