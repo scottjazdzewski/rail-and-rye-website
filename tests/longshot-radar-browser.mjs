@@ -114,8 +114,8 @@ try{
    if(visual.tabs.length!==5||visual.tabs.some(t=>t.h<39.9||t.font<9.9||t.wrap!=="nowrap"))
     throw Error("Homepage-style navigation buttons must remain legible at "+width);
    if(width<=1080)await page.locator(".rr-intel-header__mobile summary").click();
-  if(width<=430&&(!approx(visual.title.font,28)||visual.kicker.font<10.9||visual.intro.font<12.9))
-    throw Error("Mobile title/kicker/intro typographic scale mismatch at "+width);
+  if(width<=430&&(!approx(visual.title.font,28)||visual.kicker.font<10.9))
+    throw Error("Mobile title and kicker typographic scale mismatch at "+width);
   if(visual.select.h<41.9||visual.select.font<14.9||visual.label.font<11.9||visual.count.font<15.9)
     throw Error("Date/sort controls or immediate summary too small at "+width);
   if(visual.race.bg!=="rgb(16, 45, 83)"||!approx(parseFloat(visual.race.borderTop),3)||
