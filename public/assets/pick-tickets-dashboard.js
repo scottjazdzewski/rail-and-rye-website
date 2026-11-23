@@ -12,7 +12,7 @@
   dialog:$("#rr-pt-dialog"),dialogTitle:$("#rr-pt-dialog-title"),
   dialogBody:$("#rr-pt-detail"),upload:$("#rr-pt-upload"),file:$("#rr-pt-file")
  };
- let certified=[],demo=[],entries=[],intake=null,activeSeq=null,activeTier=0,currentIsDemo=true;
+ let certified=[],demo=[],entries=[],intake=null,scratchUpdate=null,activeSeq=null,activeTier=0,currentIsDemo=true;
  let activeMode="rail",builderLegs=[],expandedRaceNumbers=new Set();
  const node=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=String(text);return n;};
  const money=cents=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(cents/100);
@@ -328,6 +328,44 @@
  function renderIntake(){
   if(!E.intakePanel)return;
   E.intakePanel.replaceChildren();
+  const official=scratchUpdate?.date===E.date.value?
+   scratchUpdate.tracks.find(x=>x.name===E.track.value):null;
+  if(official){
+   const impact=scratchUpdate.dependent_sequences?.find(x=>x.track===official.name);
+   const base=intake?.tracks?.find(x=>x.name===official.name);
+   const head=node("div","rr-pt-intake-header");
+   head.append(node("strong","","OFFICIAL NOVEMBER 23 SCRATCH UPDATE"),
+    node("span","","TRI/F4 TICKET REVISION IN REVIEW"));
+   E.intakePanel.append(head);
+   E.intakePanel.append(node("h3","",official.name+" · "+toDate(scratchUpdate.date)));
+   const rows=node("div","rr-pt-intake-stats");
+   [["SCRATCHED",official.scratch_count],["ACTIVE FIELD",(base?.analysis_runner_count||0)-official.scratch_count],
+    ["PICK SEQUENCES TO REBUILD",impact?.impacted??"—"]].forEach(([label,value])=>{
+    const stat=node("div","rr-pt-intake-stat");
+    stat.append(node("span","",label),node("strong","",value));rows.append(stat);
+   });
+   E.intakePanel.append(rows);
+   E.intakePanel.append(node("p","rr-pt-intake-desc",
+    "The official scratch list is loaded for this track. A frozen TRI V4.1 scratch-only rerun has passed, but changed-rider source evidence and the F4 V2 finishing-order rerun must be verified before updated Pick tickets can replace the earlier selections."));
+   const info=node("div","rr-pt-scratch-list");
+   for(const [race,programs] of Object.entries(official.scratches).sort((a,b)=>Number(a[0])-Number(b[0]))){
+    const line=node("div","rr-pt-scratch-race");
+    line.append(node("strong","","RACE "+race));
+    const chips=node("div","rr-pt-scratch-chips");
+    programs.forEach(p=>{
+     const wrap=node("span","rr-pt-scratch-chip");
+     wrap.append(programChip(p));chips.append(wrap);
+    });
+    line.append(chips);info.append(line);
+   }
+   E.intakePanel.append(info);
+   const changed=official.score_input_changes||[];
+   if(changed.length)E.intakePanel.append(node("p","rr-pt-intake-gate",
+    "Additional changes: "+changed.length+" jockey, apprentice or weight items reported. Inputs and rider ratings must be reconciled before an approved scoring revision."));
+   E.intakePanel.append(node("p","rr-pt-intake-gate",
+    "All official sequences on this card are affected. Old prescratch percentages and selections are not displayed as scratch-final. No tickets or values have been fabricated."));
+   return;
+  }
   const track=intake?.tracks?.find(x=>x.name===E.track.value);
   if(!track||intake.date!==E.date.value){
    E.intakePanel.append(node("p","rr-pt-intake-warning","No source intake record for this track/date."));
@@ -373,14 +411,15 @@
   try{
    const real=await call("/api/admin/pick-tickets");
    certified=(real.cards||[]).filter(entry=>entry?.card?.status!=="demo"&&!entry?.card?.is_demo);
-   intake=real.intake||null;demo=[];
+   intake=real.intake||null;scratchUpdate=real.scratch_update||null;demo=[];
    E.source.replaceChildren();
    option(E.source,"certified","Certified private editions");
    E.source.value="certified";
    useData();
    const reviews=certified.filter(x=>x.review_only||x.card.review_only).length;
-   setMessage(certified.length?(reviews?"Real TRI prescratch ticket selections loaded from protected Projections. Model review only; scratches and scorer receipts remain subject to verification.":""):
-    intake?"Real November 23 source loaded. Exact full-field projections must be staged in private R2 to construct tickets.":"No source-backed Pick Tickets are available.",reviews>0||!certified.length);
+   setMessage(certified.length?(reviews?"Private source ticket review; verify current official scratch status.":""):
+    scratchUpdate?"Official November 23 scratch lists loaded for all five tracks. Existing prescratch tickets are superseded; post-scratch TRI/F4 scoring proof is required before revised tickets appear.":
+    intake?"Source loaded. Current-field scored selections are required.":"No source-backed Pick Tickets are available.",reviews>0||!certified.length);
   }catch(e){E.app.hidden=true;E.empty.hidden=true;setMessage(e.message)}
  }
  function useData(){
