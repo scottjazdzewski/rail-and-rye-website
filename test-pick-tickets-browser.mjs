@@ -77,7 +77,7 @@ try{
   // All five track names select independently and remain grouped by available wager.
   await page.selectOption("#rr-pt-track","Zia Park");
   assert.equal(await page.locator(".rr-pt-sequence-tab").count(),3);
-  assert.equal(await page.locator(".rr-pt-race-row").count(),3);
+  assert.equal(await page.locator("#rr-pt-current .rr-pt-race-row").count(),3,"new track updates the active ticket, not hidden dialog history");
   await page.close();
  }
  console.log("PASS: track → Pick type → Races 1–3/4–6/7–9 tabs, tier switch, mock label, official chips, full analysis, six responsive widths.");
