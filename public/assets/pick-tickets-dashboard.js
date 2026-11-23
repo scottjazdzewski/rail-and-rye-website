@@ -172,7 +172,7 @@
    ["COMBINATIONS",String(original.combinations),String(computed.combinations)],
    ["BASE WAGER",money(original.unit_cents),money(computed.unit_cents)],
    ["TOTAL COST",money(original.total_cents),money(computed.total_cents)],
-   ["VALUE ESTIMATE","Not yet available","Not yet available"]
+   ["COST CHANGE","—",(computed.total_cents===original.total_cents?"$0.00":(computed.total_cents>original.total_cents?"+":"−")+money(Math.abs(computed.total_cents-original.total_cents)))]
   ];
   rowsData.forEach(cells=>{
    const line=node("tr");
@@ -182,8 +182,8 @@
   table.append(body);comparison.append(table);area.append(comparison);
   if(!computed.combinations)area.append(node("p","rr-pt-builder-error","Choose at least one runner in every race."));
   area.append(node("p","rr-pt-builder-disclaimer",exact
-   ?"This selection matches a supplied ticket. A model hit chance appears only if certified for that exact ticket."
-   :"Custom hit probabilities require the approved multi-race model; payout and value estimates require verified pool data. No unsupported estimates are shown."));
+   ?"This selection matches an approved source ticket. Its projected hit probability appears only when certified for that exact selection."
+   :"Projected hit probability for a custom ticket requires the approved TRI multi-race model. Only combinations and wager cost are recalculated here."));
   const reset=node("button","rr-pt-reset-button","Reset to Rail & Rye Selections");
   reset.type="button";reset.addEventListener("click",()=>{resetBuilder();expandedRaceNumbers.clear();renderActive()});
   area.append(reset);return area;
@@ -306,7 +306,7 @@
   const entry=entries.find(x=>x.card.date===E.date.value&&x.card.track===E.track.value);
   E.app.hidden=!entry;E.empty.hidden=!!entry;
   if(!entry)return;
-  E.mock.hidden=!currentIsDemo;
+  if(E.mock)E.mock.hidden=true;
   if(E.brandTrack)E.brandTrack.textContent=entry.card.track;
   if(E.brandLogo){const slug=TRACK_LOGOS[entry.card.track];E.brandLogo.hidden=!slug;
    if(slug){E.brandLogo.src="/assets/approved/track-logos/"+slug+".webp";E.brandLogo.alt=entry.card.track+" logo";}}
@@ -324,22 +324,20 @@
   return data;
  }
  async function load(){
-  setMessage("Loading private Pick Tickets…");
+  setMessage("Loading certified private Pick Tickets…");
   try{
-   const [real,sample]=await Promise.all([
-    call("/api/admin/pick-tickets"),call("/api/admin/pick-tickets?demo=1")
-   ]);
-   certified=real.cards||[];demo=sample.cards||[];
+   const real=await call("/api/admin/pick-tickets");
+   certified=(real.cards||[]).filter(entry=>entry?.card?.status!=="demo"&&!entry?.card?.is_demo);
+   demo=[];
    E.source.replaceChildren();
-   option(E.source,"demo","Mock layout preview");
-   if(certified.length)option(E.source,"certified","Certified private editions");
-   if(!certified.length||E.source.value!=="certified")E.source.value="demo";
+   option(E.source,"certified","Certified private editions");
+   E.source.value="certified";
    useData();
-   setMessage("",false);
+   setMessage(certified.length?"":"No certified Pick Tickets are staged for private review. Awaiting current full-precision TRI scoring receipts.",!certified.length);
   }catch(e){E.app.hidden=true;E.empty.hidden=true;setMessage(e.message)}
  }
  function useData(){
-  currentIsDemo=E.source.value!=="certified";
+  currentIsDemo=false;
   entries=currentIsDemo?demo:certified;activeSeq=null;E.types.dataset.selected="3";
   const dates=[...new Set(entries.map(x=>x.card.date))].sort().reverse();
   const old=E.date.value;
