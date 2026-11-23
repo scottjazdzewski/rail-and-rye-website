@@ -106,7 +106,7 @@ assert.equal(noStore.status,503);checks++;
 const worker=readFileSync("src/index.js","utf8");
 assert.ok(worker.indexOf("const auth=await verifyAdmin(request,env)")>=0 && worker.indexOf('if(path.startsWith("/api/admin/"))return handleAdminAPI')>worker.indexOf("const auth=await verifyAdmin(request,env)"));
 assert.ok(worker.includes('if(pathname==="/api/admin/longshot-radar") return handleAdminLongshotRadar(request,env);'));
-assert.ok(worker.includes('radarReview?"/admin/longshot-radar.html"'));
+assert.ok(worker.includes('["/admin/longshot-radar","/admin/longshot-radar.html"]'),"Radar preview remains mapped behind the existing admin gate.");
 checks++;
 const html=readFileSync("public/admin/longshot-radar.html","utf8");
 const ui=readFileSync("public/assets/longshot-radar.js","utf8");
