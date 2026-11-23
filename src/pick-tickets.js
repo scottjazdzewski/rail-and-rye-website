@@ -250,6 +250,15 @@ export async function handleAdminPickTickets(request,env){
      sha256:currentHash,updated_at:entry.uploaded_at,sequence_count:audit.sequence_count,
      changed_sequence_count:audit.changed_sequence_count,
      review_status:audit.source_signature_status});
+    // Upload can be mathematically reoptimized and still be WRONG when the
+    // input field changed without a corresponding fresh scorer receipt.
+    // Preserve the source/version audit for admins, but NEVER offer these
+    // selections (nor a stale earlier edition) as usable picks.
+    if(audit.input_changes_require_rescoring){
+     sourceRejects.push({track:card.track_name,
+      reason:"Updated field requires new TRI/F4 scoring receipts before Pick Tickets can be displayed."});
+     continue;
+    }
     reviews.push({card:review,updated_at:entry.uploaded_at,
      review_only:true});
    }catch(e){sourceRejects.push({track:card.track_name,
