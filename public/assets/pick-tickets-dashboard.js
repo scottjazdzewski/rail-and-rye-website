@@ -306,7 +306,7 @@
   const entry=entries.find(x=>x.card.date===E.date.value&&x.card.track===E.track.value);
   E.app.hidden=!entry;E.empty.hidden=!!entry;
   if(!entry)return;
-  E.mock.hidden=!currentIsDemo;
+  if(E.mock)E.mock.hidden=true;
   if(E.brandTrack)E.brandTrack.textContent=entry.card.track;
   if(E.brandLogo){const slug=TRACK_LOGOS[entry.card.track];E.brandLogo.hidden=!slug;
    if(slug){E.brandLogo.src="/assets/approved/track-logos/"+slug+".webp";E.brandLogo.alt=entry.card.track+" logo";}}
@@ -324,22 +324,20 @@
   return data;
  }
  async function load(){
-  setMessage("Loading private Pick Tickets…");
+  setMessage("Loading certified private Pick Tickets…");
   try{
-   const [real,sample]=await Promise.all([
-    call("/api/admin/pick-tickets"),call("/api/admin/pick-tickets?demo=1")
-   ]);
-   certified=real.cards||[];demo=sample.cards||[];
+   const real=await call("/api/admin/pick-tickets");
+   certified=(real.cards||[]).filter(entry=>entry?.card?.status!=="demo"&&!entry?.card?.is_demo);
+   demo=[];
    E.source.replaceChildren();
-   option(E.source,"demo","Mock layout preview");
-   if(certified.length)option(E.source,"certified","Certified private editions");
-   if(!certified.length||E.source.value!=="certified")E.source.value="demo";
+   option(E.source,"certified","Certified private editions");
+   E.source.value="certified";
    useData();
-   setMessage("",false);
+   setMessage(certified.length?"":"No certified Pick Tickets are staged for private review. Awaiting current full-precision TRI scoring receipts.",!certified.length);
   }catch(e){E.app.hidden=true;E.empty.hidden=true;setMessage(e.message)}
  }
  function useData(){
-  currentIsDemo=E.source.value!=="certified";
+  currentIsDemo=false;
   entries=currentIsDemo?demo:certified;activeSeq=null;E.types.dataset.selected="3";
   const dates=[...new Set(entries.map(x=>x.card.date))].sort().reverse();
   const old=E.date.value;
