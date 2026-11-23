@@ -215,10 +215,15 @@ assert.ok(publicDesign.includes('name="robots" content="noindex,nofollow,noarchi
 assert.ok(!publicDesign.toLowerCase().includes("sample"),"Public page must not advertise fake samples");
 
 assert.ok(ui.includes('/api/admin/longshot-radar-editorial'),"Real PDF viewer must read the protected R2 endpoint");
+assert.ok(ui.includes('fetchPrivateRadarJSON("/api/admin/longshot-radar"'),"Reader must also retrieve future exact TRI-verified Radar editions from private R2");
+assert.ok(ui.includes('function loadAvailableEditions()')||ui.includes('async function loadAvailableEditions()'),"Future daily editions must be automatic without user upload");
+assert.ok(ui.includes('byDate.set(row.race_date,row)'),"Date-specific verified scored editions must remain distinct");
+assert.ok(ui.includes('!byDate.has(edition.race_date)'),"Legacy published PDF is used only when no scored edition exists for the same date");
+assert.ok(!ui.includes("edition.candidates.length!==10"),"No fixed horse quota in new daily productions");
 assert.ok(ui.includes("AbortController")&&ui.includes("retry?.addEventListener"),"Show a recoverable error rather than a permanent loading spinner");
 
 assert.ok(html.includes("longshot-radar.css?v=reader-parity-v3-20261123"),"Load uncached shared V1 Radar stylesheet");
-assert.ok(html.includes("longshot-radar.js?v=reader-parity-v3-20261123"),"Load matching uncached V1 reader");
+assert.ok(html.includes("longshot-radar.js?v=auto-private-dates-20261124"),"Load daily date-aware private Radar without stale browser cache");
 assert.ok(!html.includes('id="rr-lr-stage"')&&!html.includes('id="rr-lr-date-title"')&&!html.includes('id="rr-lr-updated"'),"No duplicate date/status/product summaries");
 assert.ok(ui.includes('make("span","rr-lr-ml-inline","ML "+tote(item.original_morning_line))'),"Morning line must sit by horse identity, not a third stat cell");
 assert.ok(!ui.includes('market("ML ODDS"'),"WIN and FAIR are the only two right-side metrics");
