@@ -33,6 +33,8 @@
 .rr-pt-ticket-grid>.rr-pt-ticket:only-child{grid-column:1/-1}
 .rr-pt-ticket{min-width:0;padding:10px 10px 7px;border:1px solid #e2d8c7;border-radius:8px;background:#fffefb}
 .rr-pt-ticket-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:9px}
+.rr-pt-ticket-labels{min-width:0}
+.rr-pt-ticket-role{display:block;margin-bottom:2px;color:#6c7b8c;font-size:9px;font-weight:850;letter-spacing:.07em;text-transform:uppercase}
 .rr-pt-ticket-head h3{min-width:0;margin:0;color:#213d5b;font-size:13px;font-weight:800;overflow-wrap:anywhere}
 .rr-pt-ticket-cost{color:#132e54;font:700 19px/1 "Tinos","Times New Roman",serif;white-space:nowrap}
 .rr-pt-legs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
