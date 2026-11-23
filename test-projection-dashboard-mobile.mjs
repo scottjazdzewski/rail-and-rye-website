@@ -99,6 +99,11 @@ assert.ok(scratchedChips.some(el=>el.src.endsWith("/1.png")),"Coupled entries us
 assert.equal(allClass(bannerScratches,"rr-dash-scratch-suffix")[0].textContent,"A","Keep coupled-entry suffix visible");
 assert.ok(allClass(bannerScratches,"rr-dash-scratch-item").every(item=>item.title.includes("Scratch")),"All scratch names remain available as tooltips and accessible labels");
 assert.match(headerCss,/\.rrp-race-head__scratch-bar\{[^}]*justify-content:center/,"Center the scratch block in the newly rebuilt header.");
+assert.match(headerCss,/height:48px;min-height:48px/,"Fixed scratch lane keeps race-card height stable.");
+assert.match(js,/NO SCRATCHES LISTED/,"Empty scratch row uses neutral fact wording.");
+assert.match(factsCss,/data-fact="pace"/,"Pace watch gets independent optical scale.");
+assert.match(factsCss,/brightness\(\.68\)/,"Strong pace uses darker green.");
+assert.match(factsCss,/min-height:79px/,"Mobile fact triplet is shorter.");
 assert.match(headerCss,/\.rrp-race-head__details\{[^}]*grid-template-columns:/,"Metadata has its own complete row.");
 assert.match(headerCss,/\.rrp-race-head__scratch-chip\{[^}]*background:#fff/,"Original scratch saddlecloths have opaque backing and no dark bleed-through.");
 assert.doesNotMatch(css,/\.rr-dash-race-banner\s*\{/,"No old race banner CSS remains in the general dashboard stylesheet.");
@@ -314,8 +319,8 @@ console.log("PASS: true per-track chronology; authentic logos and race artwork; 
 const chipStyles=readFileSync("public/assets/rr-intelligence-chips.css","utf8");
 for(const html of [adminHtml,memberHtml]){
  assert.match(html,/rr-intelligence-chips\.css\?v=4/,"Load cleaned shared race/horse chip identity");
- assert.match(html,/rr-projections-race-header\.css\?v=2/,"Load the single new Projections header stylesheet");
-  assert.match(html,/rr-race-facts\.css\?v=1/,"Load the shared centered race-facts stylesheet.");
+ assert.match(html,/rr-projections-race-header\.css\?v=3/,"Load the single new Projections header stylesheet");
+  assert.match(html,/rr-race-facts\.css\?v=2/,"Load the shared centered race-facts stylesheet.");
  assert.match(html,/rr-exotic-bet-builder\.css\?v=3/,"Load the responsive exotic ticket builder skin");
  assert.match(html,/rr-exotic-bet-builder\.js\?v=\d+/,"Load the source-gated no-tote Bet Builder");
 }
