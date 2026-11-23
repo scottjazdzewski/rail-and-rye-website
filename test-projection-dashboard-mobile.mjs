@@ -91,22 +91,20 @@ assert.match(sheet.textContent,/27.5%/);
 assert.match(sheet.textContent,/FAIR 5\/2/);
 console.log("PASS: compact runner rows, verified dash factor states, preserved race data, no redundant PDF action");
 
-// Review-only November 23 fixtures must be traceable to the actual Rail & Rye
-// published projections. These are NOT fabricated complete race fields.
-const reviewHtml=readFileSync("public/admin/projections-preview.html","utf8");
-const payloadMatch=reviewHtml.match(/<script id="rr-dash-review-data" type="application\/json">([^<]+)<\/script>/);
-assert.ok(payloadMatch,"Private admin preview must embed verified source review data");
-const review=JSON.parse(payloadMatch[1]);
-const count=review.tracks.flatMap(track=>track.races.flatMap(race=>race.entries));
-assert.equal(review.race_date,"2026-11-23");
-assert.equal(review.tracks.length,4);
-assert.equal(review.tracks.reduce((sum,track)=>sum+track.races.length,0),11);
-assert.equal(count.length,17);
-assert.ok(count.every(horse=>Number.isFinite(horse.win_probability)&&horse.fair_odds&&horse.morning_line&&horse.trainer&&horse.jockey),"Every review horse has authentic probability, fair odds, ML, trainer and jockey");
-assert.ok(count.every(horse=>Array.isArray(horse.metrics)&&horse.metrics.length===0),"Never invent factor states from selected-pick publications");
-const get=(name)=>count.find(horse=>horse.horse_name===name);
-assert.equal(get("Formaggio").win_probability,37.8);
-assert.equal(get("Gates of Heaven").fair_odds,"6/5");
-assert.equal(get("Haywire").program_number,"6");
-assert.equal(get("Snitch Dorada").win_probability,39.7);
-assert.match(js,/PARTIAL FIELD/,"Actual review must not misrepresent selected picks as full fields");
+// No partial historic preview data is allowed in the public website assets.
+// Admin previews must always load full-field data from the authenticated R2 API.
+const adminHtml=readFileSync("public/admin/projections-preview.html","utf8");
+const memberHtml=readFileSync("public/membership/dashboard/index.html","utf8");
+assert.doesNotMatch(adminHtml,/rr-dash-review-data|review=nov23|Selected horses only|17 horses/,
+ "Remove legacy selected-horse review fixtures and routes");
+assert.doesNotMatch(adminHtml,/<script[^>]*type="application\/json"/,
+ "Never embed premium racing projections in public HTML");
+assert.doesNotMatch(js,/\breviewMode\b|PARTIAL FIELD|rr-dash-review-data/,
+ "No stale partial-field runtime branches");
+assert.match(js,/api\("\/api\/admin\/projections-preview"\)/,
+ "Private admin preview must always read the secure projection API");
+assert.match(adminHtml,/projections-dashboard\.js\?v=23/,
+ "Admin dashboard must load the latest hardened shared client");
+assert.match(memberHtml,/projections-dashboard\.js\?v=23/,
+ "Member dashboard must use the same client revision");
+console.log("PASS: no embedded premium data or partial review fallback; authenticated full-field preview only");

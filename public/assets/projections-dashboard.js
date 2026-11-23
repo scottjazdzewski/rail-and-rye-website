@@ -3,7 +3,6 @@
 const q=(selector,root=document)=>root.querySelector(selector);
 const status=q("#rr-dash-status"),app=q("#rr-dash-app"),login=q("#rr-dash-login"),empty=q("#rr-dash-empty");
 const previewMode=document.body.dataset.rrPreview==="true";
-const reviewMode=previewMode&&/(?:\?|&)review=nov23(?:&|$)/.test(String(globalThis.location?.search||""));
 let cards=[],activeCard=null,activeRace=null;
 const CARD_METRICS=[
  ["SPEED",["speed","speed figure","speed rating"],"speed"],
@@ -236,9 +235,9 @@ function raceBanner(race){
  const title=makeNode("h3","rr-dash-race-condition");
  title.textContent=condition;copy.append(title);
  const meta=makeNode("div","rr-dash-race-meta"),runnerCount=(race.entries||[]).length;
- meta.append(makeNode("p","rr-dash-race-runners",reviewMode?runnerCount+" VERIFIED PROJECTION"+(runnerCount===1?"":"S")+" · PARTIAL FIELD":runnerCount+" RUNNERS"));
+ meta.append(makeNode("p","rr-dash-race-runners",runnerCount+" RUNNERS"));
  if(purse)meta.append(makeNode("p","rr-dash-race-purse","PURSE "+purse));
- else if(previewMode&&!reviewMode){const missing=makeNode("p","rr-dash-race-purse","PURSE MISSING FROM EXPORT");missing.dataset.missing="true";meta.append(missing);}
+ else if(previewMode){const missing=makeNode("p","rr-dash-race-purse","PURSE MISSING FROM EXPORT");missing.dataset.missing="true";meta.append(missing);}
  const stage=activeCard?.card?.projection_status;
  if(stage==="prescratch")meta.append(makeNode("p","rr-dash-race-scratch-count","INITIAL CARD · CURRENT"));
  const scratchCount=race.scratch_count==null?(race.scratches?.length||null):race.scratch_count;
@@ -254,7 +253,7 @@ function renderCard(){
  const panel=q("#rr-dash-race");panel.replaceChildren(cardHeader(activeCard),raceBanner(race));
  const scratches=scratchList(race);if(scratches)panel.append(scratches);
  const tiles=makeNode("div","rr-dash-race-tiles");
- if((!reviewMode&&activeCard.card.projection_status!=="prescratch")||race.pace)tiles.append(makeTile("Pace",race.pace));
+ if(activeCard.card.projection_status!=="prescratch"||race.pace)tiles.append(makeTile("Pace",race.pace));
  if(race.surface)tiles.append(makeTile("Surface",race.surface));
  if(race.distance)tiles.append(makeTile("Distance",race.distance));
  if(tiles.children.length)panel.append(tiles);
@@ -318,21 +317,12 @@ function onFiltersChanged(){
 }
 async function init(){
  try{
-  if(previewMode&&reviewMode){
-   const data=JSON.parse(q("#rr-dash-review-data")?.textContent||"{}");
-   cards=(data.tracks||[]).map(track=>({
-    race_date:data.race_date,track:track.track,uploaded_at:null,product_id:null,
-    card:{schema_version:1,race_date:data.race_date,track_name:track.track,races:track.races||[]}
-   }));
-   const notice=q("#rr-dash-review-notice");if(notice)notice.hidden=false;
-   document.title="November 23 Real Projections | Rail & Rye Private Review";
-  }else if(previewMode){const data=await api("/api/admin/projections-preview");cards=data.cards||[];}
+  if(previewMode){const data=await api("/api/admin/projections-preview");cards=data.cards||[];}
   else {const data=await api("/api/membership/projections");cards=data.cards||[];}
   status.hidden=true;
   if(!cards.length){empty.hidden=false;return;}
   app.hidden=false;renderDates();renderTracks();
-  if(reviewMode)q("#rr-dash-track").value="Parx Racing";
-  activeCard=selectedCard();activeRace=reviewMode&&activeCard?.card?.races?.some(item=>item.race_number===8)?8:racesByPostTime(activeCard)[0]?.race_number||null;renderCard();
+  activeCard=selectedCard();activeRace=racesByPostTime(activeCard)[0]?.race_number||null;renderCard();
   q("#rr-dash-date").addEventListener("change",onFiltersChanged);q("#rr-dash-track").addEventListener("change",onFiltersChanged);
   q("#rr-dash-race-time").addEventListener("change",()=>{activeRace=Number(q("#rr-dash-race-time").value);renderCard();});
   q("#rr-dash-search").addEventListener("input",renderCard);q("#rr-dash-sort").addEventListener("change",renderCard);
