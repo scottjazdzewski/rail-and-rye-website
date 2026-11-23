@@ -32,11 +32,14 @@ The single source of truth for **horse saddle chips**, authentic saddlecloth-bac
 
 - Horse selections everywhere use `/assets/approved/saddlecloths/{1..20}.png` and preserve legitimate coupled-entry suffixes; no recreated chip colors.
 - Race navigation tabs and the header race-number marker use the **exact approved saddlecloth image corresponding to the race number** (#1–20), preserving color/number art. Only the selected tab adds an outside gold ring; remove the stacked RACE caption and thick fake CSS chip borders.
-- Keep the approved Rail & Rye horseshoe and track name/date visible, and replace tiny sponsor-backed track-logo tiles with a clean track-specific Rail & Rye editorial racing mark (venue initials, rail oval, RACECOURSE). Do not invent official venue logos.
+- Keep the approved Rail & Rye horseshoe and track name/date visible, and **restore the existing authentic track-logo artwork** from `/assets/approved/track-logos/*.webp` (where available). Show it uncropped on an ivory background with white-tile blending; do not use the interim invented `FL`/`MV`/`PRX` racing monograms. Where no approved logo exists, show the full track name and Rail & Rye horseshoe rather than inventing one.
 - The Bet Builder is part of Projections, not a separate product or purchase. Its model-only exacta/trifecta UI never displays made-up probability/payoff values. Exact F4 joint probabilities require a verified server-side production receipt and private, entitlement-checked delivery.
 - The user consults any actual tote prices independently; Rail & Rye does not connect to tote services or accept wagers.
 
 ## Stakes naming and graded trophy display — locked
+- Use a **balanced, full-width title row** for long stakes titles. Runner count/purse and post time have their own space on phones rather than competing with a two-line race name. Example: source `Hollywood Gaming Mahoning Distaff S.` → **Mahoning Distaff Stakes** (known sponsor omitted, Stakes written out). Do not strip unfamiliar proper names.
+- The authentic race saddlecloth in a dark navy header sits on an **ivory backing** matching the navigation tab so transparent image pixels do not change number or cloth colors.
+
 - **Regression safeguard for real Nov 23 Mahoning Valley Race 5:** source title `FIRST LADY S.` must display **First Lady Stakes** even if the standalone title utility fails to load. Any abbreviated terminal `S.` for a verified stakes race is never a finished customer-facing name.
 
 
