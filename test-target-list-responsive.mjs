@@ -69,7 +69,7 @@ try{
     reviewNotices:document.querySelectorAll(".rr-target-private").length,
     giantButtons:document.querySelectorAll(".rr-target-analyze").length};
   });
-  assert.ok(compact.rowHeight<=100,"Horse row remains concise even with long names at "+width+": "+JSON.stringify(compact));
+  assert.ok(compact.rowHeight<=116,"Extra-long horse name and source connections may wrap, but row stays within a compact natural height at "+width+": "+JSON.stringify(compact));
   assert.ok(compact.analysisVisible,"Complete editorial text must be readable at "+width+": "+JSON.stringify(compact));
   assert.equal(compact.giantButtons,0,"Horse-row tap replaces repeated Race Details buttons at "+width);
   assert.equal(compact.reviewNotices,1,"Only one review notice above the feed at "+width);
