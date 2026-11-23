@@ -1,5 +1,5 @@
 @import url("https://fonts.googleapis.com/css2?family=Tinos:wght@700&display=swap");
-/* Module-scoped compact Rail & Rye Target List UI; no edits to Projections styles. */
+/* Rail & Rye — compact Target List daily reader. Module-only styling. */
 .rr-target-page{--rrh-navy:#102d53;--rrh-navy-dark:#123567;--rrh-ivory:#f4f0e6;--rrh-gold:#c99831;--rrh-gray:#88929d;--rrh-muted:#637483;--rrh-green:#18835a;--rrh-red:#b54842;background:var(--rrh-ivory);color:var(--rrh-navy);font-family:Inter,Arial,system-ui,sans-serif;overflow-x:clip}
 .rr-target-page *{box-sizing:border-box}
 .rr-target-page .rr-member-brand{font:800 19px/1.1 Inter,Arial,system-ui,sans-serif;letter-spacing:.14em}
@@ -10,51 +10,54 @@
 .rr-target-page .rr-member-nav a[aria-current="page"]{color:var(--rrh-navy);background:var(--rrh-ivory)}
 .rr-target-nav-pending{display:inline-flex;align-items:center;color:#e6e1d7;border:1px solid #56677e;opacity:.65}
 .rr-target-page .rr-member-footer .heritage-footmark{font:800 19px Inter,Arial,system-ui,sans-serif;letter-spacing:.1em}
-.rr-target-main{width:min(100%,1360px);margin:0 auto;padding:16px 16px 44px;min-width:0}
+.rr-target-main{width:min(100%,1130px);margin:0 auto;padding:14px 16px 44px;min-width:0}
 .rr-target-private{display:inline-block;margin:0 0 10px;padding:6px 10px;border-left:3px solid var(--rrh-gold);background:#fff8e8;color:#6d4b12;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
-.rr-target-titlebar{display:flex;align-items:end;justify-content:space-between;gap:16px;margin-bottom:16px}
+.rr-target-titlebar{display:flex;align-items:end;justify-content:space-between;gap:16px;margin-bottom:14px}
 .rr-target-kicker{color:#695222;font-size:10px;font-weight:800;letter-spacing:.13em}
-.rr-target-titlebar h1{font:800 clamp(25px,3vw,35px)/1.1 Inter,Arial,system-ui,sans-serif;letter-spacing:-.025em;margin:5px 0 6px}
+.rr-target-titlebar h1{font:800 clamp(25px,3vw,33px)/1.1 Inter,Arial,system-ui,sans-serif;letter-spacing:-.025em;margin:4px 0 5px}
 .rr-target-titlebar p{font-size:13px;line-height:1.4;color:var(--rrh-muted);margin:0}
 .rr-target-back{display:inline-flex;align-items:center;justify-content:center;min-height:39px;border:1px solid var(--rrh-navy);border-radius:6px;padding:8px 12px;color:var(--rrh-navy);font-size:12px;font-weight:800;text-decoration:none;white-space:nowrap}
-.rr-target-toolbar{display:grid;grid-template-columns:minmax(140px,1fr) minmax(130px,1fr) minmax(160px,1.3fr) minmax(200px,1.7fr);gap:9px;align-items:end;border:1px solid #bac3c9;border-top:3px solid var(--rrh-gold);border-radius:9px;padding:12px;background:#fff}
-.rr-target-toolbar label,.rr-target-publisher label{display:flex;min-width:0;flex-direction:column;gap:5px;color:var(--rrh-navy);font-size:11px;font-weight:800}
-.rr-target-toolbar select,.rr-target-toolbar input,.rr-target-publisher input{width:100%;min-width:0;min-height:39px;background:#fff;color:var(--rrh-navy);border:1px solid #b7c1ca;border-radius:5px;padding:7px 9px;font:500 14px Inter,Arial,system-ui,sans-serif}
-.rr-target-freshness{font-size:11px;color:#39536e;font-weight:750;line-height:1.35;align-self:center}
-.rr-target-status{min-height:22px;margin:9px 0;color:#435669;font-size:13px}
-.rr-target-summary{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:6px 0 11px}
+.rr-target-toolbar{display:flex;flex-wrap:wrap;gap:9px;align-items:end;border:1px solid #bac3c9;border-top:3px solid var(--rrh-gold);border-radius:7px;padding:10px 12px;background:#fff}
+.rr-target-toolbar label,.rr-target-publisher label{display:flex;min-width:0;flex-direction:column;gap:4px;color:var(--rrh-navy);font-size:11px;font-weight:800}
+.rr-target-toolbar label:first-child{flex:0 1 245px}
+.rr-target-toolbar label:nth-child(2){flex:0 1 245px}
+.rr-target-toolbar select,.rr-target-publisher input{width:100%;min-width:0;min-height:38px;background:#fff;color:var(--rrh-navy);border:1px solid #b7c1ca;border-radius:5px;padding:6px 9px;font:500 13px Inter,Arial,system-ui,sans-serif}
+.rr-target-freshness{font-size:11px;color:#39536e;font-weight:700;line-height:1.4;margin-left:auto;align-self:center;overflow-wrap:anywhere}
+.rr-target-status{min-height:20px;margin:7px 0;color:#435669;font-size:13px}
+.rr-target-summary{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:4px 0 8px}
 .rr-target-summary h2{margin:0;font:800 16px Inter,Arial,system-ui,sans-serif}
 .rr-target-summary>span{font-size:11px;color:var(--rrh-muted);font-weight:700;text-align:right}
-.rr-target-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;gap:11px}
-.rr-target-card{min-width:0;border:1px solid #b7c3ca;border-top:3px solid var(--rrh-gold);border-radius:8px;background:#fff;overflow:hidden}
-.rr-target-card-top{display:flex;justify-content:space-between;align-items:start;gap:8px;padding:11px 12px 3px}
-.rr-target-card-label{min-width:0}
-.rr-target-rank{font-size:10px;color:#9b731f;font-weight:900;letter-spacing:.08em}
-.rr-target-card h3{margin:3px 0 0;color:var(--rrh-navy);font:800 16px/1.2 Inter,Arial,system-ui,sans-serif;overflow-wrap:anywhere}
-.rr-target-card-meta{display:flex;flex-direction:column;gap:4px;align-items:end;flex-shrink:0}
-.rr-target-tier{display:inline-flex;align-items:center;justify-content:center;border:1px solid #caa85f;border-radius:3px;color:#6e511b;background:#fffaf0;padding:3px 6px;font:800 10px/1.2 Inter,Arial,system-ui,sans-serif;letter-spacing:.05em}
-.rr-target-tier-strong{border-color:#8c9cad;color:#485b6f;background:#f4f6f8}
-.rr-target-post{font-size:11px;color:#4d6376;white-space:nowrap}
-.rr-target-race-facts{margin:0;min-height:17px;padding:0 12px 9px;color:#667786;font-size:11px;line-height:1.3;overflow-wrap:anywhere}
-.rr-target-compare{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:0 12px 10px}
-.rr-target-runner{min-width:0;padding:10px;border:1px solid #d5dce2;border-radius:6px;background:#f8fafb}
-.rr-target-role{display:block;color:#5f6e7e;letter-spacing:.045em;font:800 10px/1.2 Inter,Arial,system-ui,sans-serif;margin-bottom:6px}
-.rr-target-runner-name{display:flex;align-items:center;gap:7px;min-width:0;color:#102d53;font:800 13px/1.2 Inter,Arial,system-ui,sans-serif}
-.rr-target-runner-name strong{min-width:0;overflow-wrap:anywhere}
-.rr-target-saddle{position:relative;display:inline-grid;place-items:center;width:36px;height:36px;flex:0 0 36px}
-.rr-target-saddle img{display:block;width:36px;height:36px;object-fit:contain}
-.rr-target-saddle-text{display:inline-grid;place-items:center;width:33px;height:33px;background:var(--rrh-navy);color:#fff;border-radius:4px;font-size:13px;font-weight:900}
-.rr-target-suffix{position:absolute;bottom:-3px;right:-3px;background:var(--rrh-ivory);color:#102d53;border:1px solid #647482;border-radius:3px;padding:1px 2px;font-size:9px;font-weight:900}
-.rr-target-ml{display:block;margin:4px 0 0 43px;color:#4d6274;font-size:11px;font-weight:700}
-.rr-target-markets{display:flex;justify-content:space-between;gap:8px;margin-top:9px;border-top:1px solid #d5dce2;padding-top:7px}
-.rr-target-win,.rr-target-fair{display:flex;flex-direction:column;gap:1px;min-width:0}
-.rr-target-win strong{font:700 23px/1 Tinos,Georgia,serif;color:var(--rrh-navy);font-variant-numeric:tabular-nums}
-.rr-target-fair strong{font:700 17px/1.1 Tinos,Georgia,serif;color:var(--rrh-navy)}
-.rr-target-market-caption{font-size:9px;font-weight:900;letter-spacing:.07em;color:#687a88}
-.rr-target-connections{margin:7px 0 0;color:#4b6174;font-size:11px;line-height:1.4;overflow-wrap:anywhere}
-.rr-target-card-bottom{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px;padding:9px 12px;border-top:1px solid #e2e6e9}
-.rr-target-analysis-teaser{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin:0;min-width:0;font-size:11px;line-height:1.45;color:#506373;overflow-wrap:anywhere}
-.rr-target-analyze,.rr-target-dialog-head button,.rr-target-publisher button{min-height:40px;border:1px solid var(--rrh-navy);border-radius:5px;background:var(--rrh-navy);color:#fff;padding:8px 11px;font:800 11px Inter,Arial,system-ui,sans-serif;cursor:pointer}
+.rr-target-list{display:grid;grid-template-columns:minmax(0,1fr);align-items:start;gap:9px}
+.rr-target-card{min-width:0;border:1px solid #b7c3ca;border-radius:7px;background:#fff;overflow:hidden}
+.rr-target-racebar{display:flex;flex-wrap:wrap;align-items:center;gap:7px 12px;min-height:39px;padding:8px 12px;border-top:3px solid var(--rrh-gold);background:var(--rrh-navy);color:#fff}
+.rr-target-racebar h3{margin:0;font:850 14px/1.2 Inter,Arial,system-ui,sans-serif;letter-spacing:.035em;overflow-wrap:anywhere}
+.rr-target-race-number,.rr-target-post{font:750 11px/1.3 Inter,Arial,system-ui,sans-serif;color:#f4f0e6}
+.rr-target-race-number{padding-left:11px;border-left:1px solid #b3c2d255}
+.rr-target-post{margin-left:auto;font-variant-numeric:tabular-nums}
+.rr-target-race-facts{margin:0;padding:6px 12px 4px;color:#52697d;font-size:11px;line-height:1.3;overflow-wrap:anywhere}
+.rr-target-column-head,.rr-target-horse-row{display:grid;grid-template-columns:105px minmax(0,1fr) 310px;align-items:center;gap:8px;padding-left:12px;padding-right:12px}
+.rr-target-column-head{padding-top:7px;padding-bottom:6px;border-bottom:1px solid #d0d9df;color:#6b7885;font:850 10px/1.2 Inter,Arial,system-ui,sans-serif;letter-spacing:.04em}
+.rr-target-column-metrics,.rr-target-horse-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:center;gap:7px;text-align:center;min-width:0}
+.rr-target-horse-row{position:relative;padding-top:8px;padding-bottom:8px;min-height:52px;border-bottom:1px solid #e0e6ea}
+.rr-target-horse-role{font:850 10px/1.25 Inter,Arial,system-ui,sans-serif;color:#51687c;letter-spacing:.035em}
+.rr-target-horse-identity{display:flex;align-items:center;gap:8px;min-width:0}
+.rr-target-horse-name{font:800 14px/1.22 Inter,Arial,system-ui,sans-serif;overflow-wrap:anywhere;min-width:0}
+.rr-target-horse-row.rr-target-attack{background:#fcf9f0}
+.rr-target-attack .rr-target-horse-role{color:#8e6516}
+.rr-target-attack .rr-target-horse-name{color:#102d53}
+.rr-target-saddle{position:relative;display:inline-grid;place-items:center;width:30px;height:30px;flex:0 0 30px}
+.rr-target-saddle img{display:block;width:30px;height:30px;object-fit:contain}
+.rr-target-saddle-text{display:inline-grid;place-items:center;width:29px;height:29px;border-radius:4px;background:var(--rrh-navy);color:#fff;font:850 12px Inter,Arial,system-ui,sans-serif}
+.rr-target-suffix{position:absolute;bottom:-3px;right:-3px;background:var(--rrh-ivory);color:var(--rrh-navy);border:1px solid #647482;border-radius:3px;padding:1px 2px;font-size:9px;font-weight:900}
+.rr-target-stat{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0}
+.rr-target-stat-label{display:none}
+.rr-target-stat-value{color:#102d53;font:800 14px/1.15 Inter,Arial,system-ui,sans-serif;font-variant-numeric:tabular-nums}
+.rr-target-stat-win .rr-target-stat-value{font:700 21px/1.1 Tinos,"Times New Roman",serif;font-variant-numeric:tabular-nums}
+.rr-target-stat-fair .rr-target-stat-value{font:700 16px/1.1 Tinos,"Times New Roman",serif;font-variant-numeric:tabular-nums}
+.rr-target-horse-connections{grid-column:2/-1;margin:0;color:#607283;font:500 10px/1.3 Inter,Arial,system-ui,sans-serif}
+.rr-target-analysis-text{margin:0;padding:9px 12px 4px;color:#253f56;font:500 13px/1.5 Inter,Arial,system-ui,sans-serif;white-space:pre-line;overflow-wrap:anywhere}
+.rr-target-card-bottom{display:flex;justify-content:flex-end;align-items:center;padding:2px 12px 9px}
+.rr-target-analyze,.rr-target-dialog-head button,.rr-target-publisher button{min-height:35px;border:1px solid var(--rrh-navy);border-radius:5px;background:var(--rrh-navy);color:#fff;padding:7px 12px;font:800 11px Inter,Arial,system-ui,sans-serif;cursor:pointer}
 .rr-target-analyze:hover,.rr-target-dialog-head button:hover,.rr-target-publisher button:hover{background:#1d4a7d}
 .rr-target-empty,.rr-target-publisher{margin-top:12px;padding:16px;border:1px solid #c9d1d7;border-radius:8px;background:#fff;color:var(--rrh-navy)}
 .rr-target-empty h2{margin:0 0 5px;font-size:17px}
@@ -64,23 +67,69 @@
 .rr-target-publisher form{display:flex;align-items:end;flex-wrap:wrap;gap:10px}
 .rr-target-publisher form label{flex:1 1 250px}
 .rr-target-publisher button{flex:0 0 auto}
-.rr-target-dialog{padding:0;width:min(680px,calc(100% - 24px));max-width:680px;max-height:min(90dvh,800px);border:1px solid #8092a4;border-radius:10px;background:#fff;color:#102d53;box-shadow:0 15px 50px #071d3266}
+.rr-target-scratches{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;padding:7px 12px;font-size:11px;color:#5b6a75}
+.rr-target-scratches>strong{font:850 10px Inter,Arial,system-ui,sans-serif;letter-spacing:.04em}
+.rr-target-scratch{display:inline-flex;align-items:center;gap:5px}
+.rr-target-scratch .rr-target-saddle,.rr-target-scratch .rr-target-saddle img{height:22px;width:22px}
+.rr-target-scratch .rr-target-saddle{flex-basis:22px}
+.rr-target-dialog{padding:0;width:min(730px,calc(100% - 24px));max-width:730px;max-height:min(90dvh,800px);border:1px solid #8092a4;border-radius:10px;background:#fff;color:#102d53;box-shadow:0 15px 50px #071d3266}
 .rr-target-dialog::backdrop{background:#071f37a8}
 .rr-target-dialog-inner{max-height:min(90dvh,800px);overflow-y:auto;overscroll-behavior:contain;padding:16px}
 .rr-target-dialog-head{display:flex;align-items:start;justify-content:space-between;gap:10px;margin-bottom:9px}
 .rr-target-dialog-head h2{font:800 19px/1.2 Inter,Arial,system-ui,sans-serif;margin:3px 0;overflow-wrap:anywhere}
 .rr-target-dialog-head button{flex-shrink:0}
-.rr-target-drawer-meta{margin:0 0 10px;color:#4e6679;font-size:12px;overflow-wrap:anywhere}
-.rr-target-drawer-context{display:flex;justify-content:space-between;align-items:center;gap:8px}
-.rr-target-dialog .rr-target-compare{padding:0;gap:10px}
-.rr-target-dialog .rr-target-runner{padding:12px}
-.rr-target-drawer-analysis,.rr-target-also,.rr-target-scratches{margin-top:12px;padding-top:10px;border-top:1px solid #d6dde3}
-.rr-target-drawer-analysis h3,.rr-target-also h3,.rr-target-scratches h3{margin:0 0 8px;font:850 12px Inter,Arial,system-ui,sans-serif;color:#7b5b1f;letter-spacing:.06em}
+.rr-target-drawer-meta{margin:0 0 11px;color:#4e6679;font-size:12px;overflow-wrap:anywhere}
+.rr-target-drawer-analysis{margin-top:12px;padding-top:10px;border-top:1px solid #d6dde3}
+.rr-target-drawer-analysis h3{margin:0 0 8px;font:850 12px Inter,Arial,system-ui,sans-serif;color:#7b5b1f;letter-spacing:.06em}
 .rr-target-drawer-analysis p{margin:0;white-space:pre-line;overflow-wrap:anywhere;color:#243d53;font-size:14px;line-height:1.58}
-.rr-target-scratch{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:13px}
 .rr-target-page :is(a,button,input,select,summary):focus-visible{outline:3px solid #bb8b28;outline-offset:3px}
-@media(max-width:980px){.rr-target-list{grid-template-columns:minmax(0,1fr)}.rr-target-toolbar{grid-template-columns:repeat(2,minmax(0,1fr))}.rr-target-freshness{grid-column:1/-1}}
-@media(max-width:760px){.rr-target-page .rr-member-header .heritage-shell{gap:8px;flex-direction:column;align-items:stretch;padding-top:10px;padding-bottom:10px}.rr-target-page .rr-member-nav{display:flex;flex-wrap:wrap}.rr-target-titlebar{align-items:start}.rr-target-back{white-space:normal}.rr-target-page .rr-member-footer .heritage-shell{gap:8px}.rr-target-card-top{padding:10px 10px 3px}.rr-target-race-facts{padding-left:10px;padding-right:10px}.rr-target-compare{padding-left:10px;padding-right:10px;gap:6px}.rr-target-card-bottom{padding:8px 10px}}
-@media(max-width:430px){.rr-target-main{padding:10px 9px 28px}.rr-target-titlebar{flex-direction:column;gap:8px}.rr-target-back{min-height:35px}.rr-target-toolbar{padding:9px;gap:7px}.rr-target-runner{padding:7px}.rr-target-runner-name{gap:5px;font-size:12px}.rr-target-runner .rr-target-saddle{width:29px;height:29px;flex-basis:29px}.rr-target-runner .rr-target-saddle img{width:29px;height:29px}.rr-target-ml{margin-left:34px}.rr-target-win strong{font-size:21px}.rr-target-fair strong{font-size:15px}.rr-target-post{font-size:10px}.rr-target-role{font-size:9px}.rr-target-dialog{width:100%;max-width:100%;max-height:92dvh;border-radius:12px 12px 0 0;margin:auto 0 0}.rr-target-dialog-inner{max-height:92dvh;padding:12px}.rr-target-drawer-context{align-items:start;flex-direction:column}.rr-target-dialog .rr-target-compare{gap:6px}}
-@media(max-width:359px){.rr-target-card-bottom{grid-template-columns:minmax(0,1fr)}.rr-target-analyze{justify-self:start}.rr-target-toolbar{grid-template-columns:minmax(0,1fr)}.rr-target-freshness{grid-column:auto}.rr-target-runner-name strong{font-size:11px}.rr-target-compare{gap:5px}}
+@media(max-width:800px){
+ .rr-target-page .rr-member-header .heritage-shell{gap:8px;flex-direction:column;align-items:stretch;padding-top:10px;padding-bottom:10px}
+ .rr-target-page .rr-member-nav{display:flex;flex-wrap:wrap}
+ .rr-target-main{padding:12px 12px 32px}
+ .rr-target-column-head,.rr-target-horse-row{grid-template-columns:90px minmax(0,1fr) 240px}
+ .rr-target-titlebar{align-items:start}
+ .rr-target-freshness{flex:1 1 100%;margin-left:0}
+}
+@media(max-width:620px){
+ .rr-target-titlebar{flex-direction:column;gap:8px}
+ .rr-target-toolbar label:first-child,.rr-target-toolbar label:nth-child(2){flex:1 1 140px}
+ .rr-target-racebar{gap:6px 9px;padding:7px 10px}
+ .rr-target-racebar h3{font-size:13px}
+ .rr-target-race-facts{padding:6px 10px 4px}
+ .rr-target-column-head{display:none}
+ .rr-target-horse-row{grid-template-columns:90px minmax(0,1fr);grid-template-areas:"role horse" "stats stats" "conn conn";gap:4px 8px;padding:7px 10px}
+ .rr-target-horse-role{grid-area:role;font-size:10px}
+ .rr-target-horse-identity{grid-area:horse;gap:7px}
+ .rr-target-horse-name{font-size:13px}
+ .rr-target-horse-stats{grid-area:stats;gap:3px;background:#f5f7f9;border-radius:4px;padding:5px 6px}
+ .rr-target-horse-row.rr-target-attack .rr-target-horse-stats{background:#f5efdf}
+ .rr-target-stat-label{display:block;font:800 9px/1.1 Inter,Arial,system-ui,sans-serif;color:#6b7885}
+ .rr-target-stat-value{font-size:13px}
+ .rr-target-stat-win .rr-target-stat-value{font-size:20px}
+ .rr-target-stat-fair .rr-target-stat-value{font-size:16px}
+ .rr-target-horse-connections{grid-area:conn;grid-column:auto;font-size:10px}
+ .rr-target-analysis-text{padding:8px 10px 3px;font-size:12px}
+ .rr-target-card-bottom{padding:2px 10px 8px}
+ .rr-target-scratches{padding:5px 10px}
+ .rr-target-race-number{padding-left:8px}
+ .rr-target-post{margin-left:0}
+}
+@media(max-width:430px){
+ .rr-target-main{padding:9px 9px 28px}
+ .rr-target-toolbar{padding:8px;gap:7px}
+ .rr-target-toolbar label:first-child,.rr-target-toolbar label:nth-child(2){flex-basis:135px}
+ .rr-target-dialog{width:100%;max-width:100%;max-height:92dvh;border-radius:12px 12px 0 0;margin:auto 0 0}
+ .rr-target-dialog-inner{max-height:92dvh;padding:11px}
+ .rr-target-dialog-head h2{font-size:16px}
+}
+@media(max-width:359px){
+ .rr-target-horse-row{grid-template-columns:76px minmax(0,1fr);gap:4px 5px}
+ .rr-target-horse-role{font-size:9px}
+ .rr-target-horse-identity{gap:4px}
+ .rr-target-horse-name{font-size:12px}
+ .rr-target-racebar h3{font-size:12px}
+ .rr-target-titlebar h1{font-size:25px}
+ .rr-target-toolbar label:first-child,.rr-target-toolbar label:nth-child(2){flex-basis:100%}
+}
 @media(prefers-reduced-motion:reduce){.rr-target-page *{scroll-behavior:auto!important}}
