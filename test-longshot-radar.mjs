@@ -217,8 +217,8 @@ assert.ok(!publicDesign.toLowerCase().includes("sample"),"Public page must not a
 assert.ok(ui.includes('/api/admin/longshot-radar-editorial'),"Real PDF viewer must read the protected R2 endpoint");
 assert.ok(ui.includes("AbortController")&&ui.includes("retry?.addEventListener"),"Show a recoverable error rather than a permanent loading spinner");
 
-assert.ok(html.includes("longshot-radar.css?v=reader-parity-v2-20261123"),"Load uncached shared V1 Radar stylesheet");
-assert.ok(html.includes("longshot-radar.js?v=reader-parity-v2-20261123"),"Load matching uncached V1 reader");
+assert.ok(html.includes("longshot-radar.css?v=reader-parity-v3-20261123"),"Load uncached shared V1 Radar stylesheet");
+assert.ok(html.includes("longshot-radar.js?v=reader-parity-v3-20261123"),"Load matching uncached V1 reader");
 assert.ok(!html.includes('id="rr-lr-stage"')&&!html.includes('id="rr-lr-date-title"')&&!html.includes('id="rr-lr-updated"'),"No duplicate date/status/product summaries");
 assert.ok(ui.includes('make("span","rr-lr-ml-inline","ML "+tote(item.original_morning_line))'),"Morning line must sit by horse identity, not a third stat cell");
 assert.ok(!ui.includes('market("ML ODDS"'),"WIN and FAIR are the only two right-side metrics");
