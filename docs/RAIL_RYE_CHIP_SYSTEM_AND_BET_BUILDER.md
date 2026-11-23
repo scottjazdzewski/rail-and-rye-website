@@ -100,3 +100,16 @@ Builder behavior:
 ## November 23 verified production receipt
 
 On 2026-11-23, encrypted one-time R2 transfer job `45125942622` completed with `TRI_F4_EXOTICS_PRIVATE_R2_SUCCESS`: all five track objects written, 45 races / 367 runners, original F4 P2/P3/P4 prefixes matched, complete read-back, temporary RSA private key deleted. The temporary encrypted transfer file and workflows were subsequently deleted from the public website repository. The permanent scorer integration (`scripts/tri_f4_exotics.py` and `scripts/tri_dashboard_sync.py`) remains for future source-certified model days.
+
+## Permanent scratch-final Bet Builder availability contract — November 23, 2026
+
+**Do not remove Projected Hit Chance or Break-Even Gross Payout from the Bet Builder.** Both remain prominent above the horse-selection grid for every certified race; a missing verified source must not be replaced with fabricated values.
+
+- Prescratch release: only use a matching authenticated `PRESCRATCH` F4 ordered source and original live source/badge hashes.
+- Scratch-final release: only use a matching authenticated `SCRATCH_FINAL` ordered source containing **identical** `tri_sha256`, `f4_sha256`, `prescratch_parent_sha256` and `official_changes_sha256` receipt hashes as the current private dashboard, and exact active roster, scratch count, PWIN, P2 and P3 marginals.
+- **Publication order is mandatory: certified ordered F4 first, scratch-adjusted Projections second.** The dashboard batch publisher must preflight matching F4 for every race in each scratch-final card, and reject changes without a matching verified source. Re-uploading older prescratch cards must not silently downgrade a scratch-final release.
+- The immutable scoring model is unchanged. Exacta/trifecta probabilities derive from certified frozen F4 conditional P2/P3 weights, **not independent products of runner win percentages**; hit chance is the sum over covered permutations, and the displayed break-even payout is a gross equal-winning-payout threshold.
+- An all-second-place first-place key is **not** a 100% hit unless the first-place runner itself has a 100% win chance. Display 100% only for complete coverage of all ordered outcomes, with the explicit warning that profit is not assured.
+- The continuous integration workflow `.github/workflows/verify-bet-builder-f4-live.yml` regression-tests source receipts, stale/missing F4 rejection, rendered ticket summary, current private R2 F4 snapshots, the protected model validator for every current scratch-final race, and the actual deployed Bet Builder assets.
+- Completed November 23 recovery: **5 tracks, 45 races, 317 active runners, 50 scratches**. The sealed private R2 upload and per-track readbacks passed; the protected F4 endpoint validation passed 45/45 and current Cloudflare JavaScript assets matched the repository. Never ship public source files containing private model weights.
+
