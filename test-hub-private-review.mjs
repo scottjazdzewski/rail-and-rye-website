@@ -30,7 +30,7 @@ for(const [page,assets] of expected){
 }
 const radarPage=read("public/admin/longshot-radar.html");
 assert.doesNotMatch(radarPage,/rr-review-artwork|longshot-hero\.jpg|longshot-mark\.png/,"Radar reader omits decorative header graphics.");
-assert.doesNotMatch(radarPage,/Race details|rr-lr-dialog/,"Radar analysis must be permanently visible, not in a details drawer.");
+assert.doesNotMatch(radarPage,/Race details|rr-lr-dialog|rr-lr-upload-form|rr-lr-import/,"Radar must be read-only with permanently visible analysis and no JSON uploader.");
 const targetPage=read("public/admin/target-list-preview.html");
 assert.doesNotMatch(targetPage,/rr-review-artwork|target-hero\.jpg|target-mark\.png/,"Target List reader shows real race rows without decorative top page-and-horse images.");
 for(let i=1;i<=20;i++){
@@ -40,7 +40,7 @@ for(const module of ["longshot-radar.js","target-list-dashboard.js"]){
  const source=read("public/assets/"+module);
  assert.match(source,/assets\/approved\/saddlecloths\/"/);
  assert.doesNotMatch(source,/localStorage|sessionStorage|innerHTML/,"No stored paid content or raw HTML insertion.");
- if(module==="longshot-radar.js")assert.match(source,/visualSample/,"Radar private sample should be available.");
+ if(module==="longshot-radar.js"){assert.match(source,/loadPublishedCard/,"Radar must load private published data directly.");assert.doesNotMatch(source,/visualSample|rr-lr-upload-form/,"Radar must not require manual JSON upload or fictional source.");}
  else assert.match(source,/demoData|reviewOnly|review_only/,"Preserve Target List's existing private example/review workflow.");
  assert.doesNotMatch(source,/\/api\/checkout|stripe/,"No new disconnected commerce flow.");
 }

@@ -2,8 +2,7 @@
 (()=>{
 "use strict";
 const q=selector=>document.querySelector(selector);
-const designOnly=document.body?.dataset?.rrDesignOnly==="true"; // Public visual shell: NO admin API and NO paid data.
-const state={editions:[],date:"",sort:"post-time",demo:false};
+const state={editions:[],date:"",sort:"post-time"};
 const status=q("#rr-lr-loading"),app=q("#rr-lr-app"),empty=q("#rr-lr-empty");
 const make=(tag,cls,content)=>{
  const element=document.createElement(tag);if(cls)element.className=cls;
@@ -95,12 +94,12 @@ function makeCard(item){
  top.append(programChip(item.program_number),identity,markets);
  const analysis=make("div","rr-lr-inline-analysis");
  analysis.append(make("p","rr-lr-case",item.betting_case));
- if(item.source_causal_evidence&&!state.demo){
+ if(item.source_causal_evidence){
   const evidence=make("div","rr-lr-evidence");
   evidence.append(make("strong","","Evidence"),make("p","",item.source_causal_evidence));
   analysis.append(evidence);
  }
- if(item.counterargument_checked&&!state.demo){
+ if(item.counterargument_checked){
   const counter=make("div","rr-lr-evidence");
   counter.append(make("strong","","Counterargument"),make("p","",item.counterargument_checked));
   analysis.append(counter);
@@ -112,11 +111,11 @@ function renderCandidates(){
  const edition=currentEdition(),target=q("#rr-lr-candidates");
  if(!edition)return;
  q("#rr-lr-date-title").textContent=dateLabel(edition.race_date);
- q("#rr-lr-stage").textContent=state.demo?"PREVIEW · NOT ACTUAL PICKS":edition.status==="published_pdf_reference"?"NOV 23 PUBLISHED CARD":(edition.status==="prescratch"?"INITIAL · CURRENT":"SCRATCH-UPDATED");
- q("#rr-lr-updated").textContent=state.demo?"Illustrative figures · not wagering recommendations":edition.status==="published_pdf_reference"?"As printed in the Nov 23 Rail & Rye PDF · ML is not live tote":"Production "+timeLabel(edition.generated_at)+" · revision "+edition.revision;
+ q("#rr-lr-stage").textContent=edition.status==="published_pdf_reference"?"PUBLISHED CARD":(edition.status==="prescratch"?"INITIAL · CURRENT":"SCRATCH-UPDATED");
+ q("#rr-lr-updated").textContent=edition.status==="published_pdf_reference"?"November 23 publication · original morning line, not live tote":"Production "+timeLabel(edition.generated_at)+" · revision "+edition.revision;
  let candidates=[...edition.candidates];
  candidates=orderByDay(candidates,state.sort);
- q("#rr-lr-count").textContent=candidates.length+" shown · "+edition.candidates.length+(state.demo?" illustrated runners":edition.status==="published_pdf_reference"?" published horses":" approved horses")+" · "+(state.sort==="post-time"?"Post-time order":"Track order");
+ q("#rr-lr-count").textContent=candidates.length+" horses · "+(state.sort==="post-time"?"Post-time order":"Track order");
  if(!candidates.length){
   target.replaceChildren(make("div","rr-lr-list-empty","No selections in this approved edition. Longshot Radar does not force a daily pick."));
  }else target.replaceChildren(...candidates.map(makeCard));
@@ -125,91 +124,53 @@ function refreshView(){
  renderDates();renderCandidates();
  empty.hidden=true;app.hidden=false;
 }
-async function load(){
- state.demo=false;
- if(q("#rr-lr-demo-alert"))q("#rr-lr-demo-alert").hidden=true;
- if(q("#rr-lr-demo-button"))q("#rr-lr-demo-button").textContent="Preview layout";
- const editorialResponse=await fetch("/api/admin/longshot-radar-editorial",{credentials:"same-origin",cache:"no-store"});
- if(editorialResponse.ok){
-  const editorial=await editorialResponse.json();
-  if(editorial?.edition?.candidates?.length){
-   state.editions=[editorial.edition];state.date=editorial.edition.race_date;
-   refreshView();return;
-  }
- }
- const response=await fetch("/api/admin/longshot-radar",{credentials:"same-origin",cache:"no-store"});
+// Native Radar reader: all actual horses arrive from the protected Cloudflare
+// R2 endpoint. No manual JSON uploader, fictional fixture or public paid JSON.
+const retry=q("#rr-lr-retry");
+async function loadPublishedCard(){
+ const controller=new AbortController();
+ const timeout=setTimeout(()=>controller.abort(),12000);
+ let response;
+ try{
+  response=await fetch("/api/admin/longshot-radar-editorial",{credentials:"same-origin",cache:"no-store",redirect:"follow",signal:controller.signal,headers:{"Accept":"application/json"}});
+ }finally{clearTimeout(timeout);}
+ if(response.redirected||!String(response.headers.get("content-type")||"").toLowerCase().includes("application/json"))
+  throw Error("Your private review session may have expired. Sign in again, then retry.");
+ if(!response.ok)throw Error("The published Radar feed is unavailable (HTTP "+response.status+"). Please try again.");
  const result=await response.json();
- if(!response.ok)throw Error(result.error||"Unable to load Radar review.");
- state.editions=Array.isArray(result.editions)?result.editions:[];
- if(!state.editions.length){app.hidden=true;empty.hidden=false;return;}
- refreshView();
+ const edition=result?.edition;
+ if(result?.review_only!==true||result?.customer_publish_approved!==false||edition?.status!=="published_pdf_reference"||
+    !Array.isArray(edition.candidates)||edition.candidates.length!==10)
+  throw Error("The November 23 Radar feed is incomplete. Nothing was substituted or fabricated.");
+ return edition;
 }
 async function initialize(){
- if(designOnly){
-  const demo=visualSample();
-  state.editions=[demo];state.date=demo.race_date;state.demo=true;
-  q("#rr-lr-demo-alert").hidden=false;
-  refreshView();status.hidden=true;
-  return;
+ status.hidden=false;
+ status.textContent="Loading the November 23 published Radar…";
+ if(retry)retry.hidden=true;
+ app.hidden=true;
+ empty.hidden=true;
+ try{
+  const edition=await loadPublishedCard();
+  state.editions=[edition];
+  state.date=edition.race_date;
+  refreshView();
+  status.hidden=true;
+ }catch(e){
+  console.warn("Radar protected feed could not initialize:",e instanceof Error?e.name:"unknown");
+  status.textContent=e?.name==="AbortError"?
+    "The Radar feed timed out. Check your connection and try again.":
+    String(e?.message||"The Radar feed could not be loaded.");
+  status.hidden=false;
+  if(retry)retry.hidden=false;
+  app.hidden=true;
  }
- try{await load();status.hidden=true;}
- catch(e){status.textContent=e.message||"Private review failed to load.";status.hidden=false;app.hidden=true;}
 }
-function visualSample(){
- // Static fictional fixture is shared by the Access-protected admin review and
- // the deliberately unlisted design-only website preview; never scored or uploaded.
- // It is never sent to the production API or private R2.
- const shared={
-  source_causal_evidence:"Illustrative layout text. Verified production evidence will appear here after source verification.",
-  counterargument_checked:"Illustrative layout text. Actual counterarguments require independent verification.",
-  trainer:"Illustrative Trainer",jockey:"Illustrative Jockey"
- };
- const horse=(track,race,post,number,name,ml,pct,fair)=>({
-  ...shared,track,race_number:race,post_time_et:post,program_number:number,
-  horse_name:name,original_morning_line:ml,pwin_display:pct,fair_odds_display:fair,
-  betting_case:"Illustrative one-sentence analysis for layout review; no actual racing recommendation."
- });
- return {
-  schema_version:1,product_type:"longshot_radar",race_date:"2026-11-23",
-  status:"prescratch",revision:1,generated_at:"2026-11-23T12:00:00Z",
-  candidates:[
-   horse("EXAMPLE PARK",5,"3:40 PM ET","11","Example Horse Eleven","8/1",18.2,"9/2"),
-   horse("ILLUSTRATION DOWNS",2,"1:15 PM ET","1","Illustration Runner One","10/1",21.4,"7/2"),
-   horse("EXAMPLE PARK",8,"6:05 PM ET","20","Example Horse Twenty With Longer Name","12/1",16.8,"5/1")
-  ]
- };
-}
-q("#rr-lr-demo-button")?.addEventListener("click",async()=>{
- if(designOnly)return;
- if(state.demo){await initialize();return;}
- const demo=visualSample();
- state.editions=[demo];state.date=demo.race_date;state.demo=true;
- q("#rr-lr-demo-alert").hidden=false;
- q("#rr-lr-demo-button").textContent="Return to verified data";
- refreshView();status.hidden=true;
-});
-
+retry?.addEventListener("click",initialize);
 q("#rr-lr-date").addEventListener("change",event=>{
  state.date=event.target.value;renderCandidates();
 });
 q("#rr-lr-sort").addEventListener("change",event=>{state.sort=event.target.value;renderCandidates();});
 
-q("#rr-lr-upload-form")?.addEventListener("submit",async event=>{
- event.preventDefault();
- const feedback=q("#rr-lr-upload-status"),file=q("#rr-lr-file").files?.[0],button=event.currentTarget.querySelector("button");
- if(!file){feedback.textContent="Choose a production JSON file.";return;}
- if(file.size>512*1024){feedback.textContent="JSON file exceeds the private 512 KB limit.";return;}
- button.disabled=true;feedback.textContent="Checking structured production data…";
- try{
-  const raw=await file.text(),input=JSON.parse(raw);
-  const response=await fetch("/api/admin/longshot-radar",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify(input)});
-  const result=await response.json();
-  if(!response.ok)throw Error(result.error||"Unable to save Radar review.");
-  feedback.textContent="Private review saved for "+result.race_date+" · revision "+result.revision+". No customer publication occurred.";
-  state.date=result.race_date;
-  await load();
- }catch(e){feedback.textContent=e.message||"Unable to read the file.";}
- finally{button.disabled=false;}
-});
 initialize();
 })();

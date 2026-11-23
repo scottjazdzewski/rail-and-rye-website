@@ -9,7 +9,7 @@
 - Private API: `GET /api/admin/longshot-radar`, `POST /api/admin/longshot-radar`.
 - Data stays in the existing **private** `CARDS_BUCKET` at `intelligence/longshot-radar/review/YYYY-MM-DD.json`. There is no public feed for this review.
 - `POST` validates a complete JSON edition and refuses stale revisions or replacement of `scratch_updated` results with earlier `prescratch` data. No public product, Stripe entitlement or customer launch flag is changed.
-- Admin UI includes an optional file uploader for already-authorized structured production outputs. **No PDF parser, no invented source, no browser-side re-scoring, and no PDF viewer.**
+- **No manual user JSON uploads.** The native admin Radar page reads protected published editions directly from Cloudflare R2. Radar selections are pushed from the production/chat workflow to R2 via the existing owner-authorized encrypted GitHub Actions handoff; the browser has no file picker, upload button, fake data or second publishing step. **No PDF parser, invented source or browser-side re-scoring.**
 - A text receipt hash is an *attestation reference*, not an independent cryptographic check of the referenced model-run artifact. The production engine must authenticate and approve the actual source/feature/role/probability/QA receipts before this review JSON is created.
 
 ## Accepted JSON (schema_version=1)
@@ -47,12 +47,19 @@ As approved for both Longshot Radar and Target List, the primary screen is a **d
 - Do not add extra sort by model percentage, rank or horse name. Existing source publication order remains intact in storage. At phone widths, metric cells wrap beneath the identity without horizontal overflow.
 - Radar code changes reside in this branch. Target List owns its own branch [draft PR #149](https://github.com/scottjazdzewski/rail-and-rye-website/pull/149); the shared design direction was communicated there rather than overwriting another module's concurrent work.
 
+## November 23 loading fix and push-only authority
+
+- On November 23, a newer private HTML page still referenced `longshot-radar.js?v=1`, allowing iPhone/browser caches to retain legacy JavaScript expecting UI elements that were removed. That prevented initialization, leaving “Checking private Radar editions…” visible indefinitely.
+- The revised HTML uses a fresh versioned JavaScript asset, removes the JSON-upload accordion entirely, and loads the **10 actual 2026-11-23 published horses automatically** via the existing Access-gated read-only `/api/admin/longshot-radar-editorial` R2 endpoint.
+- A 12-second client timeout and explicit error/retry state replace an indefinite blank page. If Cloudflare Access sends a login HTML redirect instead of JSON, the page reports that authentication is needed. Browser tests exercise the same 10-horse API response structure and deliberate 503 recovery on six screen widths.
+- The private editorial transfer already wrote the real 10-source-horse R2 object with readback confirmation and 10/10 identity and displayed win-percentage matches to frozen TRI projections. For subsequent dates, the assistant must arrange a new verified, encrypted, server-side production source handoff; **never instruct the customer to choose or upload JSON**. Exact unrounded TRI release certification and customer entitlement launch remain independent gates.
+
 ## November 23 authentic published-card private reader
 
 - Owner publication: LONGSHOT_RADAR_11_23_26.pdf (10 horses, 2 pages). PDF SHA256: 99fc4df3807b2713afc2043ebacf2360b93943ad0ecfdc25bce9378fa67edb1d. Source Timeform ZIP SHA256: 5d4f1bdeefc07ef85445a0168cea064867c10a3342dbefbded510e96a97e89e1.
 - Preserve printed horse names, actual saddlecloth numbers, track/race/post, original Timeform morning line, approved PDF win %, published fair odds and the complete one-sentence evidence. Do not invent trainer, jockey, scratches or exact PWIN.
 - Admin-only GET /api/admin/longshot-radar-editorial reads from private R2 racing-intelligence/longshot-radar-pdf-review/2026-11-23/revision-0001.json after the existing Cloudflare Access JWT gate. No paid selections live in public HTML, GitHub JS, or a public endpoint.
-- The owner-only PR #173 sealed-box comment transfers encrypted source rows to a GitHub Action that validates source hashes, writes an immutable R2 record and checks readback integrity. The live public design page continues to show fictional layout-only values and links to the protected actual-data preview.
+- The owner-only PR #173 sealed-box comment transfers encrypted source rows to a GitHub Action that validates source hashes, writes an immutable R2 record and checks readback integrity. The old unlisted public design address now redirects directly to the protected actual-data reader; it never includes actual paid selections in its public HTML.
 - Published PDF values are labeled published_pdf_reference and production_receipt_verified:false. They are original one-decimal printed percentages and MUST NOT be treated as independently confirmed original unrounded TRI probabilities. Any matching TRI display check is not a full receipt certification.
 - Source analyst prose remains completely readable at approximately 15px on phones; saddlecloth sizing is fixed; no Race details button or hidden analysis drawer.
 ## Additional exact TRI cross-check on private uploads
@@ -82,6 +89,6 @@ For prescratch, customer language is **INITIAL · CURRENT** until an approved sc
 
 ## QA
 - `node test-longshot-radar.mjs` tests admission logic, no pick cap, revision safety, R2 behavior, the private route and static UI contract.
-- `node tests/longshot-radar-browser.mjs` tests the real browser at 320/375/390/430/768/1280px, card coverage and independent time/track ordering, overflow, analysis drawer, Escape and filtering using only synthetic test fixtures.
+- `node tests/longshot-radar-browser.mjs` tests ten source-shaped (synthetic) private Radar rows at 320/375/390/430/768/1280px, cross-track post time/track sorting, inline analysis, absence of JSON file pickers, timeout/error recovery via retry, responsive saddlecloths, and no horizontal overflow.
 - `.github/workflows/verify-longshot-radar.yml` runs these checks and uploads synthetic screenshots for human inspection.
 - The review is **not** a claim of actual card source certification, R2 deployment, Stripe entitlement completion, or customer launch.
