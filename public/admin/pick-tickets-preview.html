@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#102d53">
+<title>Private Pick Tickets Review | Rail &amp; Rye</title>
+<link rel="icon" href="/favicon.png" type="image/png">
+<link rel="stylesheet" href="/assets/rail-rye-core.css?v=13">
+<link rel="stylesheet" href="/assets/rail-rye-components.css?v=11">
+<link rel="stylesheet" href="/assets/membership.css?v=17">
+<link rel="stylesheet" href="/assets/pick-tickets-dashboard.css?v=8">
+<script defer src="/assets/pick-tickets-dashboard.js?v=8"></script>
+</head>
+<body class="rr-member-page rr-pt-page">
+<header class="rr-member-header">
+ <div class="heritage-shell">
+  <a class="rr-member-brand" href="/admin/">
+   <img src="/assets/approved/brand/rail-rye-ivory-logo.png" alt="" width="60" height="60"><span>RAIL &amp; RYE</span>
+  </a>
+  <nav class="rr-member-nav" aria-label="Publisher navigation">
+   <a href="/admin/projections-preview/">Projections</a>
+   <a href="/admin/pick-tickets-preview/" aria-current="page">Pick Tickets</a>
+   <a href="/admin/">Publisher’s Desk</a>
+  </nav>
+ </div>
+</header>
+<main class="rr-pt-main">
+ <a class="rr-pt-back" href="/admin/">‹ Publisher’s Desk</a>
+ <p class="rr-pt-private">PRIVATE ADMIN REVIEW · CUSTOMER ACCESS DISABLED</p>
+ <div class="rr-pt-heading">
+  <div>
+   <span class="rr-pt-kicker">RAIL &amp; RYE RACING INTELLIGENCE</span>
+   <h1>Pick Tickets</h1>
+   <p>Choose a track, a wager type and an available race sequence. Select any sequence to see its complete ticket.</p>
+  </div>
+ </div>
+ <section class="rr-pt-toolbar" aria-label="Pick Tickets search controls">
+  <label>Date <select id="rr-pt-date" aria-label="Choose racing date"></select></label>
+  <label>Track <select id="rr-pt-track" aria-label="Choose racetrack"></select></label>
+  <label>Private data source <select id="rr-pt-source" aria-label="Choose private preview data">
+   <option value="demo">Mock layout preview</option>
+  </select></label>
+ </section>
+ <p id="rr-pt-status" class="rr-pt-message" role="status" aria-live="polite">Loading protected Pick Tickets…</p>
+ <section id="rr-pt-app" hidden aria-label="Pick Tickets private dashboard">
+  <div id="rr-pt-mock" class="rr-pt-demo-warning" hidden>
+   <strong>MOCK PICKS · LAYOUT PREVIEW ONLY</strong>
+   <span>Sample horse numbers, statuses and costs are fictional. Not model-scored, not published and not wagering recommendations.</span>
+  </div>
+  <p id="rr-pt-updated" class="rr-pt-updated" role="status" aria-live="polite"></p>
+  <div class="rr-pt-product-nav">
+   <div class="rr-pt-section-label">SELECT WAGER TYPE</div>
+   <nav id="rr-pt-types" class="rr-pt-types" aria-label="Select Pick wager type"></nav>
+  </div>
+  <div class="rr-pt-sequence-nav">
+   <div class="rr-pt-section-label">AVAILABLE SEQUENCES <span>Tap a range to open its ticket</span></div>
+   <nav id="rr-pt-sequences" class="rr-pt-sequences" aria-label="Available race sequences"></nav>
+  </div>
+  <div id="rr-pt-current" class="rr-pt-current" aria-live="polite"></div>
+ </section>
+ <section id="rr-pt-empty" class="rr-pt-empty" hidden>
+  <strong>No Pick Tickets available for this date and track.</strong>
+  <p>Only published source sequences will appear in customer dashboards.</p>
+ </section>
+ <section class="rr-pt-upload" aria-label="Administrator source file">
+  <label for="rr-pt-file">Certified ticket JSON (private R2 staging)
+   <input type="file" id="rr-pt-file" accept=".json,application/json">
+  </label>
+  <button type="button" id="rr-pt-upload">Load verified production file</button>
+  <small>Source-certified outputs only. The fictional display preview cannot be published or uploaded as a certified edition.</small>
+ </section>
+</main>
+<dialog id="rr-pt-dialog" class="rr-pt-dialog" aria-labelledby="rr-pt-dialog-title">
+ <div class="rr-pt-dialog-head">
+  <h2 id="rr-pt-dialog-title">Full Ticket Analysis</h2>
+  <button id="rr-pt-close" type="button" class="rr-pt-close" aria-label="Close full ticket analysis">Close</button>
+ </div>
+ <div id="rr-pt-detail"></div>
+</dialog>
+<footer class="rr-member-footer">
+ <div class="heritage-shell"><span class="heritage-footmark">RAIL &amp; RYE</span><nav aria-label="Footer"><a href="/admin/">Publisher’s Desk</a> · <a href="/admin/projections-preview/">Projections</a></nav><small>Private Racing Intelligence review · Not a customer release</small></div>
+</footer>
+</body>
+</html>
