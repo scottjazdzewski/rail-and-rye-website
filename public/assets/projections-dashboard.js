@@ -367,7 +367,7 @@ function scratchList(race){
  for(const scratch of scratches){
   const program=String(scratch.program_number||"").trim(),
    horse=String(scratch.horse_name||"").trim(),
-   match=program.match(/^(\\d{1,2})([A-Za-z]?)$/),number=match?Number(match[1]):NaN,
+   match=program.match(/^(\d{1,2})([A-Za-z]?)$/),number=match?Number(match[1]):NaN,
    item=makeNode("li","rr-dash-scratch-item");
   item.title="#"+program+(horse?" "+horse:"")+" — scratched";
   if(Number.isInteger(number)&&number>=1&&number<=20){
