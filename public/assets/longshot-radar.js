@@ -78,18 +78,22 @@ function market(label,value,cls){
 }
 function makeCard(item){
  const card=make("article","rr-lr-card"),racebar=make("div","rr-lr-racebar");
- racebar.append(make("h3","",item.track),make("span","rr-lr-race-number","RACE "+item.race_number));
- if(item.post_time_et)racebar.append(make("span","rr-lr-post",item.post_time_et));
+ const racehead=make("div","rr-lr-racebar-main");
+ racehead.append(make("h3","",item.track),make("span","rr-lr-race-number","RACE "+item.race_number));
+ if(item.post_time_et)racehead.append(make("span","rr-lr-post",item.post_time_et));
+ racebar.append(racehead);
+ // Only show race facts if the approved production source actually supplies them.
+ const facts=[item.distance,item.surface,item.conditions].filter(value=>typeof value==="string"&&value.trim());
+ if(facts.length)racebar.append(make("p","rr-lr-race-facts",facts.join(" · ")));
  const top=make("div","rr-lr-top"),identity=make("div","rr-lr-identity");
- identity.append(make("strong","",item.horse_name));
+ identity.append(make("strong","",item.horse_name),make("span","rr-lr-ml-inline","ML "+item.original_morning_line));
  if(item.trainer||item.jockey){
   identity.append(make("small","",[item.trainer,item.jockey].filter(Boolean).join(" | ")));
  }
  const markets=make("div","rr-lr-markets");
  markets.append(
-  market("ML ODDS",item.original_morning_line),
   market("WIN %",String(item.pwin_display)+"%","rr-lr-model"),
-  market("FAIR ODDS",item.fair_odds_display)
+  market("FAIR ODDS",item.fair_odds_display,"rr-lr-fair")
  );
  top.append(programChip(item.program_number),identity,markets);
  const analysis=make("div","rr-lr-inline-analysis");
@@ -110,12 +114,10 @@ function makeCard(item){
 function renderCandidates(){
  const edition=currentEdition(),target=q("#rr-lr-candidates");
  if(!edition)return;
- q("#rr-lr-date-title").textContent=dateLabel(edition.race_date);
- q("#rr-lr-stage").textContent=edition.status==="published_pdf_reference"?"PUBLISHED CARD":(edition.status==="prescratch"?"INITIAL · CURRENT":"SCRATCH-UPDATED");
- q("#rr-lr-updated").textContent=edition.status==="published_pdf_reference"?"November 23 publication · original morning line, not live tote":"Production "+timeLabel(edition.generated_at)+" · revision "+edition.revision;
+
  let candidates=[...edition.candidates];
  candidates=orderByDay(candidates,state.sort);
- q("#rr-lr-count").textContent=candidates.length+" horses · "+(state.sort==="post-time"?"Post-time order":"Track order");
+ q("#rr-lr-count").textContent=candidates.length+" "+(candidates.length===1?"selection":"selections")+" · "+(state.sort==="post-time"?"Post-time order":"Track order");
  if(!candidates.length){
   target.replaceChildren(make("div","rr-lr-list-empty","No selections in this approved edition. Longshot Radar does not force a daily pick."));
  }else target.replaceChildren(...candidates.map(makeCard));
@@ -172,5 +174,14 @@ q("#rr-lr-date").addEventListener("change",event=>{
 });
 q("#rr-lr-sort").addEventListener("change",event=>{state.sort=event.target.value;renderCandidates();});
 
+// Keep the selected module visible in a single swipeable navigation strip.
+const moduleNav=q(".rr-lr-page .rr-member-nav");
+const selectedTab=moduleNav?.querySelector('[aria-current="page"]');
+if(moduleNav&&selectedTab){
+ requestAnimationFrame(()=>{
+  const navRect=moduleNav.getBoundingClientRect(),tabRect=selectedTab.getBoundingClientRect();
+  moduleNav.scrollLeft+=tabRect.left-navRect.left-(navRect.width-tabRect.width)/2;
+ });
+}
 initialize();
 })();
