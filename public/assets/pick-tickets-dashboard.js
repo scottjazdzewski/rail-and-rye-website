@@ -263,8 +263,8 @@
   head.append(left,state(activeSeq.play_status));
   box.append(head);
   if(card.score_verification_status==="CURRENT_FIELD_COMPLETE_SCORING_AND_MANIFEST_PENDING"){
-   box.append(node("p","rr-pt-private-math-review",
-    "PRIVATE MODEL REVIEW · Uses today's scratch-adjusted TRI field; final scoring and official scratch proof have not been signed off."));
+   box.append(node("p","rr-pt-source-check",
+    "SOURCE CHECK · Scratch-adjusted field loaded. Customer access remains disabled pending final scoring and source approval."));
   }
   box.append(modeControls());
   if(activeMode==="builder")box.append(builder());
