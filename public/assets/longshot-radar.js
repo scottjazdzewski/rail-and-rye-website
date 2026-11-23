@@ -147,7 +147,7 @@ async function loadPublishedCard(){
 async function initialize(){
  status.hidden=false;
  status.textContent="Loading the November 23 published Radar…";
- retry.hidden=true;
+ if(retry)retry.hidden=true;
  app.hidden=true;
  empty.hidden=true;
  try{
@@ -162,11 +162,11 @@ async function initialize(){
     "The Radar feed timed out. Check your connection and try again.":
     String(e?.message||"The Radar feed could not be loaded.");
   status.hidden=false;
-  retry.hidden=false;
+  if(retry)retry.hidden=false;
   app.hidden=true;
  }
 }
-retry.addEventListener("click",initialize);
+retry?.addEventListener("click",initialize);
 q("#rr-lr-date").addEventListener("change",event=>{
  state.date=event.target.value;renderCandidates();
 });
