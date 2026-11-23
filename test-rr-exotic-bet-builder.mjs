@@ -179,6 +179,8 @@ assert.match(readable(summary()),/5 combinations/,"Show ticket size beside the p
 assert.match(readable(summary()),/Ticket cost \$5\.00/,"Show total wager alongside the probability");
 assert.match(readable(summary()),/Full key: #4 must WIN/,
  "Make the first-place key requirement unmissable");
+assert.match(readable(summary()),/equal gross payouts/,
+ "A multiple-combination key must display the gross-payout assumption without opening help");
 assert.ok(walk(body).some(node=>node.className==="rr-bet-help"),"Long assumptions belong in disclosure");
 
 state.mode="box";state.box=new Set(six.map(x=>x.program_number));
@@ -195,6 +197,8 @@ selectedChoice("0:5").listeners.click(); // Restore full coverage in UI.
 assert.match(readable(summary()),/100\.00%/,"All thirty exactas really do cover all outcomes");
 assert.match(readable(summary()),/NOT guarantee a profit/,
  "Full-field ticket must not imply guaranteed financial gain");
+assert.match(readable(summary()),/equal gross payouts/,
+ "Full coverage still requires a visible payout-variation caveat");
 assert.match(readable(summary()),/Ticket cost \$30\.00/,
  "Winning every modeled finishing outcome still costs thirty dollars");
 assert.match(script,/All finishing outcomes covered \(100%\)[\s\S]*?NOT guarantee a profit/,
