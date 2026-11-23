@@ -189,6 +189,58 @@ async function readEdition(env,selected,dates){
 }
 
 
+
+const targetTrackKey=value=>String(value||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+ .toLocaleLowerCase("en-US").replace(/[^a-z0-9]+/g," ").trim();
+const targetHorseKey=value=>String(value||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+ .toLocaleLowerCase("en-US").replace(/\s+/g," ").trim();
+// Same source-authenticated track/race/horse join as Longshot Radar: display only.
+async function targetOriginalRaceFacts(env,date){
+ const prefix="projections/dashboard/"+date+"/",records=new Map(),conflicts=new Set();
+ try{
+  const page=await env.CARDS_BUCKET.list({prefix,limit:1000});
+  if(page.truncated)return records;
+  for(const item of page.objects||[]){
+   if(!item.key.startsWith(prefix)||!item.key.endsWith(".json"))continue;
+   const obj=await env.CARDS_BUCKET.get(item.key);if(!obj)continue;
+   let card;try{card=JSON.parse(await obj.text());}catch{continue;}
+   if(card?.schema_version!==1||card.race_date!==date||
+      typeof card.track_name!=="string"||!Array.isArray(card.races))continue;
+   const track=targetTrackKey(card.track_name);
+   for(const race of card.races){
+    const n=Number(race?.race_number),id=track+"|"+n;
+    if(!track||!Number.isInteger(n)||n<1||n>30||!Array.isArray(race.entries)||conflicts.has(id))continue;
+    if(records.has(id)){records.delete(id);conflicts.add(id);continue;}
+    const facts={};
+    for(const [key,max] of [["distance",60],["surface",50],["conditions",240],
+      ["race_name",240],["stakes_name",240],["stakes_grade",30],["sponsor_name",120]]){
+     if(typeof race[key]==="string"&&race[key].trim()&&race[key].length<=max)
+      facts[key]=race[key].trim();
+    }
+    if(race.is_stakes===true)facts.is_stakes=true;
+    const horses=new Set();
+    for(const runner of race.entries){
+     const program=String(runner?.program_number||"").trim().toUpperCase();
+     const name=targetHorseKey(runner?.horse_name);
+     if(program&&name)horses.add(program+"|"+name);
+    }
+    if(Object.keys(facts).length&&horses.size)records.set(id,{facts,horses});
+   }
+  }
+ }catch{return new Map();}
+ return records;
+}
+function enrichTargetRace(entry,all){
+ const original=all.get(targetTrackKey(entry.track)+"|"+entry.race_number);
+ if(!original)return entry;
+ const matches=runner=>runner&&original.horses.has(String(runner.program_number||"")
+   .trim().toUpperCase()+"|"+targetHorseKey(runner.horse_name));
+ if(!matches(entry.favorite)&&!matches(entry.attack))return entry;
+ const copy={...entry};
+ for(const [key,value] of Object.entries(original.facts))if(!copy[key])copy[key]=value;
+ return copy;
+}
+
 /* Separated editorial review lane.
    Never mix a displayed review with receipt-certified production editions.
    The JSON is private R2 only, not a public static asset. */
@@ -263,6 +315,8 @@ export async function readAdminTargetListReview(env,url){
    if(item.scratches!=null&&(!Array.isArray(item.scratches)||edition.status==='initial'&&item.scratches.length))throw Error('Invalid scratch status.');
   }
  }catch(e){return fail('Private review fields failed validation.',503);}
- return response({dates,edition,review_only:true,demo_example:false,
+ const raceFacts=await targetOriginalRaceFacts(env,edition.race_date);
+ const displayEdition={...edition,targets:edition.targets.map(entry=>enrichTargetRace(entry,raceFacts))};
+ return response({dates,edition:displayEdition,review_only:true,demo_example:false,
   uploaded_at:obj.customMetadata?.uploaded_at||null});
 }

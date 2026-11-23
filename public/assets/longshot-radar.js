@@ -174,7 +174,7 @@ async function loadPublishedCard(){
   response=await fetch("/api/admin/longshot-radar-editorial",{credentials:"same-origin",cache:"no-store",redirect:"follow",signal:controller.signal,headers:{"Accept":"application/json"}});
  }finally{clearTimeout(timeout);}
  if(response.redirected||!String(response.headers.get("content-type")||"").toLowerCase().includes("application/json"))
-  throw Error("Your private review session may have expired. Sign in again, then retry.");
+  throw Error("Your session may have expired. Sign in again, then retry.");
  if(!response.ok)throw Error("The published Radar feed is unavailable (HTTP "+response.status+"). Please try again.");
  const result=await response.json();
  const edition=result?.edition;

@@ -22,7 +22,6 @@ const displayDate=value=>{
  return new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric",year:"numeric"}).format(new Date(year,month-1,day,12));
 };
 const option=(select,value,label)=>{const el=node("option","",label);el.value=value;select.append(el);};
-const statusText=edition=>state.reviewOnly?"EDITORIAL REVIEW":edition.status==="initial"?"INITIAL · CURRENT":"SCRATCH UPDATE · CURRENT";
 // A missing/invalid post time sorts after sourced times, never guessed from track or race number.
 function postMinutes(value){
  const match=/\b(\d{1,2}):(\d{2})\s*(AM|PM)\b/i.exec(String(value||""));
@@ -205,8 +204,7 @@ function setEdition(data,preferredDate){
  app.hidden=!state.edition;empty.hidden=!!state.edition;
  if(!state.edition){status.textContent="No private Target List editions are available.";set("rr-target-freshness","");return;}
  status.textContent="";
- const summary="Rev "+state.edition.revision+(state.reviewOnly?"":" · "+statusText(state.edition));
- set("rr-target-freshness",summary+(state.uploadedAt?" · Updated "+new Date(state.uploadedAt).toLocaleString("en-US",{timeZone:"America/New_York",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}):""));
+ set("rr-target-freshness",state.uploadedAt?"Updated "+new Date(state.uploadedAt).toLocaleString("en-US",{timeZone:"America/New_York",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}):"");
  renderTargets();
 }
 async function load(date){
@@ -219,7 +217,7 @@ async function load(date){
    setEdition({...review,review_only:true},date);
    return;
   }
-  if(!reviewRes.ok)throw Error(review.error||"Private review service unavailable.");
+  if(!reviewRes.ok)throw Error(review.error||"Target List service unavailable.");
   const res=await fetch("/api/admin/target-list"+suffix,{credentials:"same-origin",cache:"no-store"});
   const data=await res.json().catch(()=>({}));
   if(!res.ok)throw Error(data.error||"Unable to retrieve the private edition.");
