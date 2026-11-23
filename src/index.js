@@ -1,7 +1,7 @@
 import {handleAdminProjectionUpload,handleAdminProjectionBatchUpload,readAdminProjectionCards} from './projections.js';
 import {handleAdminLongshotRadar} from './longshot-radar.js';
 import {handleAdminPickTickets} from './pick-tickets.js';
-import {handleAdminTargetList} from './target-list.js';
+import {handleAdminTargetList,readAdminTargetListReview} from './target-list.js';
 import { handleCommerce, sendQueuedEmails, checkoutReadiness, replacePdfAndNotifyBuyers, publicProductForShare } from './commerce.js';
 import {handleRacingWire,handlePreviewRacingWire,testPreviewRssFeeds,handleAdminRacingWire} from './racing-wire.js';
 import {handleAdminBundles,BUNDLE_KEY} from './bundles.js';
@@ -154,6 +154,7 @@ async function handleAdminAPI(request,env,pathname,ctx) {
   if(request.method!=="GET"&&!trustedOrigin(request)) return fail("Same-origin request required",403);
   // Projection uploads and previews use R2 directly. Keep them independent of
   // product schedule maintenance so JSON dashboards remain usable when D1 is busy.
+  if(pathname==="/api/admin/target-list-review"&&request.method==="GET")return readAdminTargetListReview(env,new URL(request.url));
   if(pathname==="/api/admin/target-list") return handleAdminTargetList(request,env,new URL(request.url));
   if(pathname==="/api/admin/longshot-radar") return handleAdminLongshotRadar(request,env);
   if(pathname==="/api/admin/projections-preview"&&request.method==="GET") return readAdminProjectionCards(env);

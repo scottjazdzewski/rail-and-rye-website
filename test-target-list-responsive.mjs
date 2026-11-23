@@ -22,6 +22,9 @@ const base=resolve("public");
 const contentType=path=>({".html":"text/html;charset=utf-8",".css":"text/css;charset=utf-8",".js":"text/javascript;charset=utf-8",".png":"image/png",".webp":"image/webp",".ico":"image/x-icon"}[extname(path)]||"application/octet-stream");
 const server=createServer((req,res)=>{
  const pathname=new URL(req.url,"http://localhost").pathname;
+ if(pathname==="/api/admin/target-list-review"){
+  res.writeHead(200,{"Content-Type":"application/json","Cache-Control":"no-store"});res.end(JSON.stringify({dates:[],edition:null,review_only:true}));return;
+ }
  if(pathname==="/api/admin/target-list"){
   res.writeHead(200,{"Content-Type":"application/json","Cache-Control":"no-store"});res.end(JSON.stringify(fixture));return;
  }

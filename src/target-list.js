@@ -174,3 +174,82 @@ async function readEdition(env,selected,dates){
  if(edition.race_date!==selected.race_date||edition.revision!==selected.revision)return fail("Stored edition identity does not match.",503);
  return response({dates:dates.map(v=>v.race_date),edition,uploaded_at:object.customMetadata?.uploaded_at||null});
 }
+
+
+/* Separated editorial review lane.
+   Never mix a displayed review with receipt-certified production editions.
+   The JSON is private R2 only, not a public static asset. */
+const REVIEW_PREFIX="racing-intelligence/target-list-review/";
+export async function readAdminTargetListReview(env,url){
+ if(!env.CARDS_BUCKET)return fail("Private Target List review storage unavailable.",503);
+ const date=url.searchParams.get("date");
+ if(date&&!dateValid(date))return fail("Invalid race date.",400);
+ const rows=[];let cursor;
+ do{
+  const page=await env.CARDS_BUCKET.list({prefix:REVIEW_PREFIX,limit:1000,...(cursor?{cursor}:{})});
+  for(const obj of page.objects||[]){
+   const matched=/^racing-intelligence\/target-list-review\/(\d{4}-\d{2}-\d{2})\/revision-(\d{4})\.json$/.exec(obj.key);
+   if(matched&&dateValid(matched[1]))rows.push({date:matched[1],revision:Number(matched[2]),key:obj.key});
+  }
+  cursor=page.truncated?page.cursor:null;
+  if(page.truncated&&!cursor)return fail("Incomplete private review index.",503);
+  if(rows.length>10000)return fail("Private review index too large.",503);
+ }while(cursor);
+ const editions=new Map();
+ for(const entry of rows){
+  const last=editions.get(entry.date);
+  if(!last||last.revision<entry.revision)editions.set(entry.date,entry);
+ }
+ const dates=[...editions.keys()].sort((a,b)=>b.localeCompare(a)).slice(0,60);
+ const chosen=date?editions.get(date):editions.get(dates[0]);
+ if(!chosen)return response({dates,edition:null,review_only:true});
+ const obj=await env.CARDS_BUCKET.get(chosen.key);
+ if(!obj)return fail("Private review edition unavailable.",503);
+ const plain=await obj.text();
+ if(plain.length>512*1024)return fail("Private review payload exceeds limit.",503);
+ const checksum=await sha256(plain);
+ if(!obj.customMetadata?.sha256||obj.customMetadata.sha256!==checksum)
+  return fail("Private review integrity check failed.",503);
+ let edition;
+ try{edition=JSON.parse(plain);}catch{return fail("Invalid stored private review.",503);}
+ if(!object(edition)||edition.schema_version!==1||edition.product_type!=="target_list"||
+    edition.review_only!==true||edition.customer_publish_approved!==false||
+    edition.production_receipt_verified!==false||
+    edition.race_date!==chosen.date||edition.revision!==chosen.revision||
+    !Array.isArray(edition.targets)||edition.targets.length>100)
+  return fail("Stored private review is not safe for preview.",503);
+ // A reviewer can inspect the original published values without pretending they
+ // are certified unrounded TRI figures. Certified uploads use validateTargetList().
+ try{
+  if(!object(edition.source)||!/^[a-f0-9]{64}$/.test(edition.source.editorial_sha256||'')||
+     !/^[a-f0-9]{64}$/.test(edition.source.timeforms_zip_sha256||'')||
+     edition.source.tri_full_field_receipt_id!=null||edition.source.tri_unrounded_scoring_receipt_sha256!=null)
+   throw Error('Missing review-only source custody.');
+  if(edition.status!=='initial'&&edition.status!=='scratch_update')throw Error('Invalid review status.');
+  if(edition.revision===1&&edition.status!=='initial'||edition.revision>1&&edition.status!=='scratch_update')throw Error('Invalid review revision.');
+  const ids=new Set(),ranks=new Set();
+  for(const item of edition.targets){
+   if(!object(item)||!Number.isInteger(item.rank)||item.rank<1||ranks.has(item.rank))throw Error('Invalid rank.');
+   ranks.add(item.rank);const track=field(item.track,'Track',100);
+   if(!Number.isInteger(item.race_number)||item.race_number<1||item.race_number>99)throw Error('Invalid race.');
+   const id=track.toLowerCase()+'|'+item.race_number;
+   if(ids.has(id))throw Error('Duplicate race.');ids.add(id);
+   field(item.analysis,'Editorial analysis',4000);
+   field(item.post_time_et,'Post time',40,false);
+   for(const role of ['favorite','attack']){
+    const horse=item[role];if(!object(horse))throw Error('Missing source horse.');
+    if(!/^\d{1,2}[A-Za-z]?$/.test(field(horse.program_number,'Saddlecloth',4)))throw Error('Invalid saddlecloth.');
+    field(horse.horse_name,'Horse',120);field(horse.morning_line,'Morning line',24);field(horse.fair_odds,'Fair odds',32);
+    if(typeof horse.win_probability!=='number'||!Number.isFinite(horse.win_probability)||horse.win_probability<0||horse.win_probability>100)
+     throw Error('Invalid displayed PWIN.');
+    if(horse.win_probability_exact!=null||horse.unrounded_verified_pwin!=null)throw Error('Uncertified review cannot claim verified exact scores.');
+   }
+   if(item.attack.program_number===item.favorite.program_number||item.attack.win_probability<=item.favorite.win_probability)
+    throw Error('Invalid ATTACK candidate.');
+   if(item.also_live!=null)throw Error('Unverified secondary runner.');
+   if(item.scratches!=null&&(!Array.isArray(item.scratches)||edition.status==='initial'&&item.scratches.length))throw Error('Invalid scratch status.');
+  }
+ }catch(e){return fail('Private review fields failed validation.',503);}
+ return response({dates,edition,review_only:true,demo_example:false,
+  uploaded_at:obj.customMetadata?.uploaded_at||null});
+}

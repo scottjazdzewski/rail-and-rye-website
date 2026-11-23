@@ -8,6 +8,9 @@ on:
       - 'public/assets/target-list-dashboard.*'
       - 'test-target-list-hub.mjs'
       - 'test-target-list-responsive.mjs'
+      - 'test-target-list-private-review.mjs'
+      - 'scripts/target_list_private_review_bridge.py'
+      - '.github/workflows/private-target-list-review-transfer.yml'
       - '.github/workflows/verify-target-list-hub.yml'
   workflow_dispatch:
 permissions:
@@ -21,7 +24,10 @@ jobs:
         with:
           node-version: '22'
       - name: Private edition, integrity, and UI regression
-        run: node test-target-list-hub.mjs
+        run: |
+          node test-target-list-hub.mjs
+          node test-target-list-private-review.mjs
+          python3 -m py_compile scripts/target_list_private_review_bridge.py
       - name: Install Chromium browser for real viewport QA
         run: |
           npm install --no-save --no-package-lock playwright@1.56.1

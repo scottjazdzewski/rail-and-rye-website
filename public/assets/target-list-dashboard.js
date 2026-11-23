@@ -165,8 +165,15 @@ function setEdition(data,preferredDate){
 async function load(date){
  status.textContent="Loading private Target List…";
  try{
-  const url="/api/admin/target-list"+(date?"?date="+encodeURIComponent(date):"");
-  const res=await fetch(url,{credentials:"same-origin",cache:"no-store"});
+  const suffix=date?"?date="+encodeURIComponent(date):"";
+  const reviewRes=await fetch("/api/admin/target-list-review"+suffix,{credentials:"same-origin",cache:"no-store"});
+  const review=await reviewRes.json().catch(()=>({}));
+  if(reviewRes.ok&&review.edition){
+   setEdition({...review,review_only:true},date);
+   return;
+  }
+  if(!reviewRes.ok)throw Error(review.error||"Private review service unavailable.");
+  const res=await fetch("/api/admin/target-list"+suffix,{credentials:"same-origin",cache:"no-store"});
   const data=await res.json().catch(()=>({}));
   if(!res.ok)throw Error(data.error||"Unable to retrieve the private edition.");
   setEdition(!date&&!data.edition?DEMO_EXAMPLE:data,date);
