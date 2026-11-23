@@ -6,7 +6,7 @@ on:
       - 'src/index.js'
       - 'public/assets/pick-tickets-dashboard.*'
       - 'public/admin/pick-tickets-preview.html'
-      - 'test-pick-tickets.mjs'
+      - 'test-pick-tickets*.mjs'
       - '.github/workflows/verify-pick-tickets.yml'
   workflow_dispatch:
 permissions:
@@ -26,3 +26,16 @@ jobs:
           node --check public/assets/pick-tickets-dashboard.js
       - name: Certified input, ticket integrity, revisions and private-route regression
         run: node test-pick-tickets.mjs
+      - name: Install Playwright and headless Chromium
+        run: |
+          npm install --no-save playwright@1.56.0
+          npx playwright install chromium
+      - name: Six-viewport live DOM and overflow verification
+        run: node test-pick-tickets-browser.mjs
+      - name: Save private synthetic UI screenshots for review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pick-tickets-responsive-qa
+          path: test-artifacts/pick-tickets-*.png
+          if-no-files-found: ignore
