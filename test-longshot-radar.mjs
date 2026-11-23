@@ -87,9 +87,14 @@ res=await handleAdminLongshotRadar(req("POST",matchingZero),env);
 assert.equal(res.status,409);checks++; // no results does not excuse absence of scored source
 res=await handleAdminLongshotRadar(req("POST",base()),env);
 assert.equal(res.status,409);checks++; // old revision cannot overwrite
-const revised=base();revised.revision=2;revised.generated_at="2026-11-23T03:17:00Z";revised.status="scratch_updated";
+const invalidScratch=base();invalidScratch.revision=2;invalidScratch.generated_at="2026-11-23T03:17:00Z";invalidScratch.status="scratch_updated";
+res=await handleAdminLongshotRadar(req("POST",invalidScratch),env);
+assert.equal(res.status,409);checks++; // no fresh scratch-certified TRI source: cannot claim revised status
+const revised=base();revised.revision=2;revised.generated_at="2026-11-23T03:17:00Z";
 res=await handleAdminLongshotRadar(req("POST",revised),env);
 assert.equal(res.status,200);checks++;
+// Simulate an existing previously authenticated scratch-updated review; reject a downgrade.
+memory.set("intelligence/longshot-radar/review/2026-11-23.json",JSON.stringify({...revised,status:"scratch_updated"}));
 const downgrade=base();downgrade.revision=3;downgrade.generated_at="2026-11-23T03:18:00Z";
 res=await handleAdminLongshotRadar(req("POST",downgrade),env);
 assert.equal(res.status,409);checks++; // never overwrite scratch updates with prescratch
