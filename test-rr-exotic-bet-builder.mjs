@@ -110,6 +110,7 @@ state.mode="wheel";state.positions=[new Set(),new Set(),new Set()];
 result=app._calculate();
 assert.equal(result.combos.length,0);
 assert.equal(result.chance,null,"No ticket must say select horses, not a false zero or 100 percent");
+assert.equal(result.modelAvailable,true,"No selection must not be reported as a missing verified F4 model");
 assert.equal(result.fair,null);
 assert.equal(app._formatChance(.99999,false),">99.99%",
  "Roundoff cannot show 100% when any modeled finishing outcome is missing");
