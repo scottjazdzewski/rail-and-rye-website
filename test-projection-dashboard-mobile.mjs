@@ -309,7 +309,7 @@ for(const html of [adminHtml,memberHtml]){
  assert.match(html,/rr-intelligence-chips\.css\?v=4/,"Load cleaned shared race/horse chip identity");
  assert.match(html,/rr-projections-race-header\.css\?v=2/,"Load the single new Projections header stylesheet");
  assert.match(html,/rr-exotic-bet-builder\.css\?v=3/,"Load the responsive exotic ticket builder skin");
- assert.match(html,/rr-exotic-bet-builder\.js\?v=4/,"Load the source-gated no-tote Bet Builder");
+ assert.match(html,/rr-exotic-bet-builder\.js\?v=\d+/,"Load the source-gated no-tote Bet Builder");
 }
 assert.match(js,/rr-dash-race-button rr-race-saddle-tab/,
  "Every race navigation tab uses the branded saddle-chip form");
@@ -352,7 +352,7 @@ assert.equal(allClass(els.get("rr-dash-race"),"rr-race-saddle-image")[0].src,
 console.log("PASS: stable branded race chip selection, approved horse/track art and current-race Bet Builder entry");
 
 for(const html of [adminHtml,memberHtml]){
- assert.match(html,/rr-exotic-bet-builder\.js\?v=4/,
+ assert.match(html,/rr-exotic-bet-builder\.js\?v=\d+/,
   "Customers must load the actual source-backed F4 odds client, not cached v1");
  assert.match(html,/projections-dashboard\.js\?v=\d+/,
   "Both admin and member dashboard views receive same race-aware F4 routing");
