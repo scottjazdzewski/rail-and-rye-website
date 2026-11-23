@@ -368,7 +368,7 @@ overflow-wrap:anywhere;
 /* Original approved racecards render numerics in Tinos Bold, not decorative Georgia. */
 .rr-dash-win-percent{font-family:"Tinos","Times New Roman",serif;font-weight:700;font-variant-numeric:lining-nums tabular-nums;letter-spacing:0}
 .rr-dash-win-fair{font-family:"Tinos","Times New Roman",serif;font-weight:700;letter-spacing:0;font-size:13px;font-variant-numeric:lining-nums tabular-nums}
-.rr-dash-horse-name{font-family:"Tinos","Times New Roman",serif;font-weight:700;letter-spacing:0}
+.rr-dash-horse-name{font-weight:700}
 
 .rr-dash-rating-badge{display:flex;align-items:center;justify-content:center;width:100%;height:43px;min-width:0}
 .rr-dash-rating-badge img{display:block;width:100%;max-width:90px;height:100%;object-fit:contain}
