@@ -178,7 +178,7 @@ try{
       distanceFromRightEdge:Math.abs(right.right-header.right),
       raceTimeTogether:raceBox.right<=postBox.left+1 && Math.abs(raceBox.top-postBox.top)<=6,
       trackDoesNotOverlap:track.right<=right.left+1||track.bottom<=right.top+1,
-      groupText:group.textContent,
+      groupText:group.textContent,raceText:race.textContent,postText:post.textContent,
       groupMinHeight:right.height,
       raceFont:parseFloat(getComputedStyle(race).fontSize),
       postFont:parseFloat(getComputedStyle(post).fontSize),
@@ -189,7 +189,8 @@ try{
   assert.ok(rightAligned.distanceFromRightEdge<=2,"Race number and post time must be anchored to the RIGHT at "+width+": "+JSON.stringify(rightAligned));
   assert.ok(rightAligned.raceTimeTogether,"Race number and post time stay together at "+width+": "+JSON.stringify(rightAligned));
   assert.ok(rightAligned.trackDoesNotOverlap,"Track must never collide with the right-aligned pair at "+width+": "+JSON.stringify(rightAligned));
-  assert.equal(rightAligned.groupText,"RACE 1"+"1:12 PM ET","Source numbers and post times remain unchanged.");
+  assert.equal(rightAligned.raceText,"RACE 5","First sorted synthetic fixture must retain Race 5.");
+  assert.equal(rightAligned.postText,"1:12 PM ET","Post time must remain unchanged.");
   assert.ok(rightAligned.conditionsSecondLine,"Full race conditions remain on the second navy line at "+width);
   assert.equal(rightAligned.raceFont,13);
   assert.equal(rightAligned.postFont,13);
