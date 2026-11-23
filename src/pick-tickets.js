@@ -1,7 +1,9 @@
 import {getPickTicketsIntake} from './pick-tickets-intake.js';
-import {buildPrescratchPickTicketReview,readPrivatePickProjections} from './pick-tickets-auto.js';
+import {buildPrescratchPickTicketReview,buildV32PostScratchReviewed,
+ readPrivatePickProjections} from './pick-tickets-auto.js';
+import {PICK_V32_ENGINE} from './pick-tickets-v32.js';
 import {readAdminProjectionCards} from './projections.js';
-import {getNov23ScratchLedger,sourceIsScratchCurrent,officialScratchSequenceCount,restoreInterimSelection} from './pick-tickets-scratch-1123.js';
+import {getNov23ScratchLedger,sourceIsScratchCurrent,officialScratchSequenceCount} from './pick-tickets-scratch-1123.js';
 import {PICK_MENU_1123} from './pick-tickets-auto.js';
 /* Pick Tickets: admin-only dashboard staging. No scoring, public data, or customer-launch route. */
 const PREFIX="pick-tickets/dashboard/";
@@ -103,8 +105,9 @@ export function normalizePickTickets(input){
  if(!Array.isArray(input.sequences)||input.sequences.length<1||input.sequences.length>80)throw Error("Include between 1 and 80 source-certified sequences.");
  const sequences=input.sequences.map(normalizeSequence);
  unique(sequences.map(s=>s.name+"|"+s.start_race+"|"+s.end_race),"Sequence identities");
+ const formula_version=input.formula_version==null?"":text(input.formula_version,"Formula version",90,false);
  return {schema_version:1,product_type:"pick_tickets",date:input.date,track,revision,status,
-  source_receipt:{reference,sha256},scratch_verified_at,sequences};
+  formula_version,source_receipt:{reference,sha256},scratch_verified_at,sequences};
 }
 async function sha256(source){
  const bytes=new TextEncoder().encode(source);
@@ -171,41 +174,62 @@ async function readCards(env){
 export async function handleAdminPickTickets(request,env){
  if(!env.CARDS_BUCKET)return respond({error:"Private R2 storage is not configured."},503);
  if(request.method==="GET"){
-  const savedAll=await readCards(env);
-  // On official scratch day, do not show stale initial R2 editions as current.
-  // Scratch revisions are accepted only with a revision/date proof AND no
-  // officially withdrawn runner in a ticket or eligible field.
-  const certified=savedAll.filter(x=>sourceIsScratchCurrent(x.card));
-  const stale_revisions=savedAll.filter(x=>!sourceIsScratchCurrent(x.card)).map(x=>({
+  const stored=await readCards(env);
+  // Old ticket editions are not a substitute for V3.2, even with a good
+  // TRI/F4 receipt: they were selected by another mathematical method.
+  const authorized=stored.filter(x=>
+   x.card.formula_version===PICK_V32_ENGINE&&sourceIsScratchCurrent(x.card));
+  const superseded=stored.filter(x=>!authorized.includes(x)).map(x=>({
    date:x.card.date,track:x.card.track,revision:x.card.revision,
-   reason:"Superseded by the owner-provided official 2026-11-23 scratch ledger."
+   reason:"Prior ticket formula or scratch snapshot; regenerated V3.2 required."
   }));
-  let prescratch={cards:[],rejected:[]};
-  try{
-   // Prefer the five current date-keyed R2 projections; no legacy D1/PDF lookup.
-   const direct=await readPrivatePickProjections(env);
-   if(direct.length)prescratch=buildPrescratchPickTicketReview(direct);
-   if(prescratch.cards.length===0){
-    // Backward-compatible fallback for authorized legacy projection revisions.
-    const result=await readAdminProjectionCards(env);
-    if(result.ok){
-     const source=await result.json();
-     const legacy=buildPrescratchPickTicketReview(source.cards||[]);
-     if(legacy.cards.length)prescratch=legacy;
-    }
+  const sourceRejects=[],stageCards=[];
+  let source=[];
+  try{source=await readPrivatePickProjections(env)}catch(e){
+   sourceRejects.push({reason:"Private Projections source unavailable."});
+  }
+  // Only the original full pre-scratch probabilities can construct a pre card.
+  const pre=buildPrescratchPickTicketReview(source);
+  sourceRejects.push(...pre.rejected);
+  // Scratch-final inputs are genuinely different fields. Never renormalize
+  // prescratch PWIN or trim/replace a scratched runner to mimic a rerun.
+  for(const item of source){
+   const card=item?.card||item;
+   if(card?.projection_status!=="scratch_final")continue;
+   const track=card.track_name,old=source.find(x=>{
+    const c=x?.card||x;
+    return c?.track_name===track&&c.projection_status==="prescratch";
+   });
+   if(!old){sourceRejects.push({track,reason:"No authenticated prescratch input for field comparison."});continue}
+   const preCard=old.card||old;
+   if(card.factor_basis!=="verified_scratch_final"||
+      !card.model_receipts?.tri_sha256||!card.model_receipts?.f4_sha256){
+    sourceRejects.push({track,reason:"Fresh TRI/F4 postscratch scoring receipts not verified."});continue;
    }
-  }catch(e){console.warn("Private provisional Pick Tickets projection intake unavailable",String(e).slice(0,160));}
-  const saved=new Set(certified.map(x=>x.card.date+"|"+x.card.track));
-  // Suggestions remain visible during the certified scratch rerun.
-  // Pending editions remove withdrawn runners and hide stale hit probabilities.
-  // A real source-certified scratch_updated R2 revision always wins.
-  const review=prescratch.cards.filter(x=>!saved.has(x.card.date+"|"+x.card.track))
-   .map(restoreInterimSelection).filter(x=>x.card.sequences.length);
+   try{
+    const key="pick-tickets/v32/scratch-manifests/"+card.race_date+"/"+slug(track)+".json";
+    const storedManifest=await env.CARDS_BUCKET.get(key);
+    if(!storedManifest){sourceRejects.push({track,reason:"Matching confirmed source-hash scratch manifest not staged."});continue}
+    const manifest=JSON.parse(await storedManifest.text());
+    const validated=buildV32PostScratchReviewed({
+     before:preCard,after:card,manifest,
+     preHash:await sha256(JSON.stringify(preCard)),
+     postHash:await sha256(JSON.stringify(card))
+    });
+    if(!validated){sourceRejects.push({track,reason:"Current-field V3.2 verification rejected."});continue}
+    const ticketCard={...validated,updated_at:item.uploaded_at||null};
+    stageCards.push(ticketCard);
+   }catch(e){sourceRejects.push({track,reason:"V3.2 scratch field gate: "+String(e.message||e).slice(0,125)})}
+  }
+  const covered=new Set(authorized.map(x=>x.card.date+"|"+x.card.track));
+  const reviews=stageCards.filter(x=>!covered.has(x.card.date+"|"+x.card.track));
   const scratch_update=getNov23ScratchLedger();
   scratch_update.dependent_sequences=officialScratchSequenceCount(PICK_MENU_1123);
-  return respond({cards:[...certified,...review],intake:getPickTicketsIntake(),
-   scratch_update,stale_revisions,
-   review_count:review.length,review_rejected:prescratch.rejected,demo:false});
+  return respond({cards:[...authorized,...reviews],intake:getPickTicketsIntake(),
+   scratch_update,stale_revisions:superseded,
+   engine:PICK_V32_ENGINE,source_rejections:sourceRejects,
+   prescratch_sequences_calculated:pre.cards.reduce((n,x)=>n+x.card.sequences.length,0),
+   review_count:reviews.length,demo:false});
  }
  if(request.method!=="POST")return respond({error:"Method not allowed."},405);
  let cards;try{cards=await parseBody(request);}catch(e){return respond({error:e.message},400);}
