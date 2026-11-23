@@ -86,7 +86,14 @@ function normalizeCard(input){
  if(!isoDate(raceDate))throw Error("Race date must use YYYY-MM-DD.");
  const trackName=text(input.track_name,"Track name",100,true);
  const projectionStatus=input.projection_status==null?"":text(input.projection_status,"Projection status",24);
- if(projectionStatus&&projectionStatus!=="prescratch")throw Error("Unknown projection status.");
+ if(projectionStatus&&!["prescratch","scratch_final"].includes(projectionStatus))throw Error("Unknown projection status.");
+ const modelReceipts=input.model_receipts==null?null:input.model_receipts;
+ const factorBasis=input.factor_basis==null?"":text(input.factor_basis,"Factor source status",40);
+ if(factorBasis&&!["verified_prescratch","verified_scratch_final"].includes(factorBasis))throw Error("Unknown factor provenance status.");
+ if(projectionStatus==="scratch_final"){
+  if(!isObject(modelReceipts)||["tri_sha256","f4_sha256","prescratch_parent_sha256","official_changes_sha256"].some(key=>!(/^[a-f0-9]{64}$/i.test(String(modelReceipts[key]||"")))))
+   throw Error("Scratch-final cards require verified TRI/F4, parent and official-change receipt hashes.");
+ }
  const modelName=text(input.model_name,"Model name",100);
  const fairOddsBasis=input.fair_odds_basis==null?"":text(input.fair_odds_basis,"Fair odds basis",40);
  if(fairOddsBasis&&fairOddsBasis!=="net_to_1_review")throw Error("Unknown fair odds basis.");
@@ -134,11 +141,16 @@ function normalizeCard(input){
    }
    return {program_number:program,horse_name:horseName,rank,win_probability:win,win_probability_exact:exactWin,fair_odds_net_to_1_exact:exactFair,morning_line:morning,fair_odds:fairOdds,jockey,trainer,metrics:normalizeMetrics(entry.metrics),notes,f4_probabilities:f4};
   });
-  if(projectionStatus==="prescratch"){
-   if(scratchCount!==null||scratches.length)throw Error("Prescratch projection must not assert scratch counts.");
-   if(!entries.every(entry=>entry.f4_probabilities&&entry.win_probability_exact!==null))throw Error("Prescratch TRI review requires all runners' exact PWIN and F4 results.");
+  if(projectionStatus==="prescratch"||projectionStatus==="scratch_final"){
+   if(projectionStatus==="prescratch"&&(scratchCount!==null||scratches.length))throw Error("Prescratch projection must not assert scratch counts.");
+   if(projectionStatus==="scratch_final"){
+    if(scratchCount!==scratches.length)throw Error("Scratch-final count must match the full official scratch list.");
+    if(new Set(scratches.map(item=>item.program_number)).size!==scratches.length)throw Error("Duplicate scratch program.");
+    if(scratches.some(item=>seenPrograms.has(item.program_number)))throw Error("A scratched horse cannot remain in the active field.");
+   }
+   if(!entries.every(entry=>entry.f4_probabilities&&entry.win_probability_exact!==null))throw Error("Verified TRI/F4 release requires all active runners' exact PWIN and F4 results.");
    const mass=entries.reduce((sum,entry)=>sum+entry.win_probability_exact,0);
-   if(Math.abs(mass-100)>0.000001)throw Error("Prescratch race win probabilities must total 100%.");
+   if(Math.abs(mass-100)>0.000001)throw Error("Verified TRI/F4 race win probabilities must total 100%.");
   }
   // Optional editorial metadata is source-supplied; never infer a graded
   // stakes classification from purse, field size or handicapper rankings.
@@ -158,7 +170,7 @@ function normalizeCard(input){
    purse:text(race.purse,"Purse",50),pace:text(race.pace,"Pace",50),
    scratch_count:scratchCount,scratches,summary:text(race.summary,"Race summary",1000),entries};
  });
- return {schema_version:1,race_date:raceDate,track_name:trackName,projection_status:projectionStatus,model_name:modelName,fair_odds_basis:fairOddsBasis,races};
+ return {schema_version:1,race_date:raceDate,track_name:trackName,projection_status:projectionStatus,model_name:modelName,fair_odds_basis:fairOddsBasis,factor_basis:factorBasis,model_receipts:modelReceipts&&projectionStatus==="scratch_final"?Object.fromEntries(["tri_sha256","f4_sha256","prescratch_parent_sha256","official_changes_sha256"].map(key=>[key,modelReceipts[key]])):null,races};
 }
 async function readBody(request){
  const length=Number(request.headers.get("content-length")||0);
@@ -210,6 +222,20 @@ export async function handleAdminProjectionBatchUpload(request,env){
    const result=await env.STORE_DB.prepare("SELECT id,title,track,race_date,pdf_expires_at FROM products WHERE category='Race Cards' AND pdf_key IS NOT NULL AND pdf_key!='__rr_bundle__' AND NOT EXISTS(SELECT 1 FROM bundle_only_assets a WHERE a.product_id=products.id) ORDER BY created_at DESC LIMIT 250").all();
    products=result.results||[];
   }catch(e){console.warn("Optional PDF matching unavailable",String(e).slice(0,100));}
+ }
+ // An earlier post-scratch release must never be silently downgraded by a
+ // prescratch bulk re-upload. Preflight all tracks before any write.
+ try{
+  for(const card of cards){
+   const prior=await env.CARDS_BUCKET.get(dashboardKey(card));
+   if(!prior)continue;
+   const current=JSON.parse(await prior.text());
+   if(current.projection_status==="scratch_final"&&card.projection_status!=="scratch_final")
+    return fail("Refusing to replace a scratch-final projection with an older initial card.",409);
+  }
+ }catch(e){
+  console.error("Scratch revision preflight failed",String(e).slice(0,100));
+  return fail("Could not verify existing dashboard revision; no projections were saved.",503);
  }
  const uploadedAt=new Date().toISOString();
  const results=await Promise.allSettled(cards.map(async card=>{
