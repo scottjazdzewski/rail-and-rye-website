@@ -50,7 +50,7 @@ function programChip(value){
  const chip=make("span","rr-lr-program"),program=String(value||""),match=program.match(/^(\d{1,2})([A-Za-z]?)$/),number=match?Number(match[1]):NaN;
  if(Number.isInteger(number)&&number>=1&&number<=20){
   const img=document.createElement("img");
-  img.src="/assets/approved/saddlecloths/"+number+".png";img.alt="Saddlecloth "+program;img.width=38;img.height=38;img.loading="lazy";
+  img.src="/assets/approved/saddlecloths/"+number+".png";img.alt="Saddlecloth "+program;img.width=38;img.height=38;img.loading="eager";
   chip.append(img);
   if(match[2])chip.append(make("span","rr-lr-program-suffix",match[2].toUpperCase()));
  }else{
