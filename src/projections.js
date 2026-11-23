@@ -65,11 +65,31 @@ function normalizeMetrics(value){
   return {label,value:v};
  });
 }
+const F4_NAMES=["exact_p1","exact_p2","exact_p3","exact_p4","exact_p5","p6_plus","top2","top3","top4"];
+function probability(value,label,max=1){
+ const v=Number(value);
+ if(value==null||typeof value==="boolean"||!Number.isFinite(v)||v<0||v>max)throw Error(label+" must be a finite probability.");
+ return v;
+}
+function normalizeF4(value){
+ if(value==null)return null;
+ if(!isObject(value))throw Error("F4 probabilities must be a record.");
+ const result={};
+ for(const name of F4_NAMES)result[name]=probability(value[name],"F4 "+name);
+ if(Math.abs(result.exact_p1+result.exact_p2+result.exact_p3+result.exact_p4+result.exact_p5+result.p6_plus-1)>0.0000001)throw Error("F4 place probabilities must total 100%.");
+ if(Math.abs(result.top2-(result.exact_p1+result.exact_p2))>0.0000001||Math.abs(result.top3-(result.top2+result.exact_p3))>0.0000001||Math.abs(result.top4-(result.top3+result.exact_p4))>0.0000001)throw Error("F4 cumulative probabilities disagree with place probabilities.");
+ return result;
+}
 function normalizeCard(input){
  if(!isObject(input)||input.schema_version!==1)throw Error("This file must use projection schema version 1.");
  const raceDate=input.race_date;
  if(!isoDate(raceDate))throw Error("Race date must use YYYY-MM-DD.");
  const trackName=text(input.track_name,"Track name",100,true);
+ const projectionStatus=input.projection_status==null?"":text(input.projection_status,"Projection status",24);
+ if(projectionStatus&&projectionStatus!=="prescratch")throw Error("Unknown projection status.");
+ const modelName=text(input.model_name,"Model name",100);
+ const fairOddsBasis=input.fair_odds_basis==null?"":text(input.fair_odds_basis,"Fair odds basis",40);
+ if(fairOddsBasis&&fairOddsBasis!=="net_to_1_review")throw Error("Unknown fair odds basis.");
  if(!Array.isArray(input.races)||input.races.length<1||input.races.length>20)throw Error("Include between 1 and 20 races.");
  const seenRaces=new Set();
  const races=input.races.map((race,index)=>{
@@ -105,11 +125,24 @@ function normalizeCard(input){
    const jockey=text(entry.jockey,"Jockey",100);
    const trainer=text(entry.trainer,"Trainer",100);
    const notes=text(entry.notes,"Horse notes",1200);
-   return {program_number:program,horse_name:horseName,rank,win_probability:win,morning_line:morning,fair_odds:fairOdds,jockey,trainer,metrics:normalizeMetrics(entry.metrics),notes};
+   const exactWin=entry.win_probability_exact==null?null:probability(entry.win_probability_exact,"Exact win probability",100);
+   const exactFair=entry.fair_odds_net_to_1_exact==null?null:probability(entry.fair_odds_net_to_1_exact,"Exact fair odds",100000);
+   const f4=normalizeF4(entry.f4_probabilities);
+   if(f4){
+    if(exactWin===null||Math.abs(f4.exact_p1*100-exactWin)>0.000001)throw Error("F4 first-place probability must match exact TRI PWIN.");
+    if(win===null||Math.abs(win-exactWin)>0.051)throw Error("Displayed TRI PWIN must agree with exact win probability.");
+   }
+   return {program_number:program,horse_name:horseName,rank,win_probability:win,win_probability_exact:exactWin,fair_odds_net_to_1_exact:exactFair,morning_line:morning,fair_odds:fairOdds,jockey,trainer,metrics:normalizeMetrics(entry.metrics),notes,f4_probabilities:f4};
   });
+  if(projectionStatus==="prescratch"){
+   if(scratchCount!==null||scratches.length)throw Error("Prescratch projection must not assert scratch counts.");
+   if(!entries.every(entry=>entry.f4_probabilities&&entry.win_probability_exact!==null))throw Error("Prescratch TRI review requires all runners' exact PWIN and F4 results.");
+   const mass=entries.reduce((sum,entry)=>sum+entry.win_probability_exact,0);
+   if(Math.abs(mass-100)>0.000001)throw Error("Prescratch race win probabilities must total 100%.");
+  }
   return {race_number:number,post_time_et:text(race.post_time_et,"Post time",40),surface:text(race.surface,"Surface",50),distance:text(race.distance,"Distance",60),conditions:text(race.conditions,"Race conditions",240),purse:text(race.purse,"Purse",50),pace:text(race.pace,"Pace",50),scratch_count:scratchCount,scratches,summary:text(race.summary,"Race summary",1000),entries};
  });
- return {schema_version:1,race_date:raceDate,track_name:trackName,races};
+ return {schema_version:1,race_date:raceDate,track_name:trackName,projection_status:projectionStatus,model_name:modelName,fair_odds_basis:fairOddsBasis,races};
 }
 async function readBody(request){
  const length=Number(request.headers.get("content-length")||0);
