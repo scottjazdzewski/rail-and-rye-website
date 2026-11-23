@@ -24,7 +24,7 @@ One object per **daily slate**; there is no arbitrary eight-horse cap. Empty `ca
 | `status` | `"prescratch"` or `"scratch_updated"` |
 | `generated_at` | true production time in UTC ISO format |
 | `receipts` | `release_status:"PASS"`, and 64-hex `model_sha256`, `source_sha256`, `editorial_qa_sha256` |
-| `candidates` | 0–500 source-approved candidates in the **production-approved editorial order** |
+| `candidates` | 0 or more source-approved candidates in the **production-approved editorial order** |
 
 Each candidate requires:
 - `track`, `race_number`, `program_number`, `horse_name`.
