@@ -191,7 +191,7 @@ assert.ok(html.includes('name="robots" content="noindex,nofollow,noarchive"'));
 assert.ok(!html.includes('Synthetic Unit-Test Runner'));
 assert.ok(!ui.includes("Math.round")&&!ui.includes("pwin_exact*")); // no client-side scoring
 assert.ok(css.includes("@media(max-width:800px)")&&css.includes("@media(max-width:360px)"));
-assert.ok(html.includes("/assets/projections-dashboard.css")); // shared visual baseline
+assert.ok(!html.includes("/assets/projections-dashboard.css"),"Radar must never import an older Projections UI layer");
 assert.ok(!html.includes("Race details")&&!html.includes('id="rr-lr-dialog"'));
 assert.ok(!html.includes("rr-lr-import")&&!html.includes("rr-lr-file")&&!html.includes("rr-lr-upload-form"),"No user-supplied JSON form");
 assert.ok(html.includes("id=\"rr-lr-retry\""),"A failed R2 load must permit retry");
@@ -217,7 +217,7 @@ assert.ok(!publicDesign.toLowerCase().includes("sample"),"Public page must not a
 assert.ok(ui.includes('/api/admin/longshot-radar-editorial'),"Real PDF viewer must read the protected R2 endpoint");
 assert.ok(ui.includes("AbortController")&&ui.includes("retry?.addEventListener"),"Show a recoverable error rather than a permanent loading spinner");
 
-assert.ok(html.includes("longshot-radar.css?v=clean-ui-20261123"),"Load uncached shared V1 Radar stylesheet");
+assert.ok(html.includes("longshot-radar.css?v=standalone-ui-20261123"),"Load uncached shared V1 Radar stylesheet");
 assert.ok(html.includes("longshot-radar.js?v=clean-reader-20261123"),"Load matching uncached V1 reader");
 assert.ok(!html.includes('id="rr-lr-stage"')&&!html.includes('id="rr-lr-date-title"')&&!html.includes('id="rr-lr-updated"'),"No duplicate date/status/product summaries");
 assert.ok(ui.includes('make("span","rr-lr-ml-inline","ML "+item.original_morning_line)'),"Morning line must sit by horse identity, not a third stat cell");
