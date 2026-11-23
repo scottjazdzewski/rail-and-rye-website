@@ -358,61 +358,67 @@ function scratchList(race){
  if(!scratches.length&&!count)return null;
  // Header-only scratch treatment: authentic saddlecloth chips, no names or
  // separate scratch card. Horse names stay in accessible labels/tooltips.
- const strip=makeNode("div","rr-dash-scratch-strip"),
-  list=makeNode("ul","rr-dash-scratch-list");
+ const strip=makeNode("div","rrp-race-head__scratch-bar rr-dash-scratch-strip"),
+  list=makeNode("ul","rrp-race-head__scratch-chips rr-dash-scratch-list");
  strip.setAttribute("aria-label",count+" scratch"+(count===1?"":"es"));
- strip.append(makeNode("strong","rr-dash-race-scratch-count",count+" SCRATCH"+(count===1?"":"ES")));
+ strip.append(makeNode("strong","rrp-race-head__scratch-count rr-dash-race-scratch-count",count+" SCRATCH"+(count===1?"":"ES")));
+ strip.append(makeNode("span","rrp-race-head__scratch-rule"));
  for(const scratch of scratches){
   const program=String(scratch.program_number??"").trim(),
    horse=String(scratch.horse_name||"").trim(),
    match=program.match(/^([0-9]{1,2})([A-Za-z]?)$/),
    number=match?Number(match[1]):NaN,
-   item=makeNode("li","rr-dash-scratch-item");
+   item=makeNode("li","rrp-race-head__scratch-item rr-dash-scratch-item");
   item.title="#"+program+(horse?" "+horse:"")+" — scratched";
   item.setAttribute("aria-label","Scratched: #"+program+(horse?" "+horse:""));
   if(Number.isInteger(number)&&number>=1&&number<=20){
-   const frame=makeNode("span","rr-dash-scratch-chip-wrap"),chip=document.createElement("img");
-   chip.className="rr-dash-scratch-chip";
+   const frame=makeNode("span","rrp-race-head__scratch-chip rr-dash-scratch-chip-wrap"),chip=document.createElement("img");
+   chip.className="rrp-race-head__scratch-img rr-dash-scratch-chip";
    chip.src="/assets/approved/saddlecloths/"+number+".png";
    chip.alt="";chip.width=29;chip.height=29;chip.loading="lazy";chip.decoding="async";
    frame.append(chip);
-   if(match[2])frame.append(makeNode("span","rr-dash-scratch-suffix",match[2]));
+   if(match[2])frame.append(makeNode("span","rrp-race-head__scratch-suffix rr-dash-scratch-suffix",match[2]));
    item.append(frame);
-  }else item.append(makeNode("span","rr-dash-scratch-fallback",program||"–"));
+  }else item.append(makeNode("span","rrp-race-head__scratch-fallback rr-dash-scratch-fallback",program||"–"));
   list.append(item);
  }
- if(!scratches.length&&count)list.append(makeNode("li","rr-dash-scratch-missing","Details unavailable"));
+ if(!scratches.length&&count)list.append(makeNode("li","rrp-race-head__scratch-missing rr-dash-scratch-missing","Details unavailable"));
  strip.append(list);return strip;
 }
 function raceBanner(race){
- const wrapper=makeNode("div","rr-dash-race-banner"),
-  number=makeNode("div","rr-dash-race-number rr-race-saddle-header"),
-  copy=makeNode("div","rr-dash-race-copy"),time=makeNode("div","rr-dash-post-time");
+ const wrapper=makeNode("section","rrp-race-head rr-dash-race-banner"),
+  titleRow=makeNode("div","rrp-race-head__title-row"),
+  number=makeNode("div","rrp-race-head__number rr-dash-race-number rr-race-saddle-header");
  number.setAttribute("role","img");
  number.setAttribute("aria-label","Race "+race.race_number);
  number.append(approvedRaceSaddle(race.race_number));
  const presentation=editorialRacePresentation(race);
  if(presentation.title.length>28)wrapper.className+=" rr-dash-race-banner--extended-title";
- const purse=String(race.purse||"").trim();
- const title=makeNode("h3","rr-dash-race-condition");
- title.append(makeNode("span","rr-dash-stakes-name",presentation.title));
+ const title=makeNode("h3","rrp-race-head__condition rr-dash-race-condition");
+ title.append(makeNode("span","rrp-race-head__stakes-name rr-dash-stakes-name",presentation.title));
  if(presentation.grade){
-  const graded=makeNode("span","rr-dash-graded-trophy rr-dash-graded-trophy--g"+presentation.grade);
-  graded.setAttribute("aria-label","Grade "+presentation.grade+" stakes trophy");
-  graded.setAttribute("title","Grade "+presentation.grade+" Stakes");
-  graded.append(makeNode("span","rr-dash-trophy-icon","🏆"),
-   makeNode("strong","rr-dash-grade-label","G"+presentation.grade));
-  title.append(graded);
+  const trophy=makeNode("span","rrp-race-head__trophy rrp-race-head__trophy--g"+presentation.grade+" rr-dash-graded-trophy rr-dash-graded-trophy--g"+presentation.grade);
+  trophy.setAttribute("aria-label","Grade "+presentation.grade+" stakes trophy");
+  trophy.setAttribute("title","Grade "+presentation.grade+" Stakes");
+  trophy.append(makeNode("span","rrp-race-head__trophy-icon rr-dash-trophy-icon","🏆"),
+   makeNode("strong","rrp-race-head__grade rr-dash-grade-label","G"+presentation.grade));
+  title.append(trophy);
  }
- copy.append(title);
- const meta=makeNode("div","rr-dash-race-meta"),runnerCount=(race.entries||[]).length;
- meta.append(makeNode("p","rr-dash-race-runners",runnerCount+" RUNNERS"));
- if(purse)meta.append(makeNode("p","rr-dash-race-purse","PURSE "+purse));
- else if(previewMode){const missing=makeNode("p","rr-dash-race-purse","PURSE NOT LISTED");missing.dataset.missing="true";meta.append(missing);}
- const scratched=scratchList(race);if(scratched)meta.append(scratched);
- copy.append(meta);
+ titleRow.append(number,title);
+ const details=makeNode("div","rrp-race-head__details rr-dash-race-meta"),
+  runnerCount=(race.entries||[]).length,purse=String(race.purse||"").trim();
+ details.append(makeNode("p","rrp-race-head__runners rr-dash-race-runners",runnerCount+" RUNNERS"));
+ if(purse)details.append(makeNode("p","rrp-race-head__purse rr-dash-race-purse","PURSE "+purse));
+ else if(previewMode){
+  const missing=makeNode("p","rrp-race-head__purse rr-dash-race-purse","PURSE NOT LISTED");
+  missing.dataset.missing="true";details.append(missing);
+ }else details.append(makeNode("p","rrp-race-head__purse rr-dash-race-purse",""));
+ const time=makeNode("div","rrp-race-head__time rr-dash-post-time");
  time.append(makeNode("span","","POST TIME"),makeNode("strong","",race.post_time_et||race.post_time||race.postTime||"Not listed"));
- wrapper.append(number,copy,time);return wrapper;
+ details.append(time);
+ wrapper.append(titleRow,details);
+ const scratched=scratchList(race);if(scratched)wrapper.append(scratched);
+ return wrapper;
 }
 function renderCard(){
  if(viewMode==="track")activeCard=selectedCard();

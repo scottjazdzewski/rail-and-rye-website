@@ -114,25 +114,15 @@
  display:block;flex:0 0 auto;width:44px;height:44px;max-width:100%;
  object-fit:contain;object-position:center;
 }
-.rr-dash-race-number.rr-race-saddle-header{
- display:flex;align-items:center;justify-content:center;
- box-sizing:border-box;width:50px;height:50px;min-height:0!important;
- padding:0!important;margin:0;
- border:0!important;border-radius:0!important;
- background:transparent!important;box-shadow:none!important;color:inherit;
-}
-.rr-dash-race-number.rr-race-saddle-header::before,
-.rr-dash-race-number.rr-race-saddle-header::after{display:none!important}
-.rr-dash-race-number.rr-race-saddle-header .rr-race-saddle-image{
- display:block;width:50px;height:50px;max-width:100%;max-height:100%;
- object-fit:contain;object-position:center;
-}
+
+
+
 .rr-race-saddle-fallback{
  display:grid;place-items:center;width:44px;height:44px;
  border:2px solid #c99831;border-radius:9px;background:#fff9e9;
  color:#132e54;font:800 18px/1 Inter,Arial,system-ui,sans-serif;
 }
-.rr-dash-race-banner{grid-template-columns:50px minmax(0,1fr) 150px}
+
 
 /* Clean track identity: branded track-specific racing seal, not miniature
    white-backed sponsor advertisements or stretched low-resolution logos. */
@@ -169,14 +159,9 @@
  .rr-dash-race-button.rr-race-saddle-tab .rr-race-saddle-image{
   width:43px;height:43px;
  }
- .rr-dash-race-number.rr-race-saddle-header{width:46px;height:46px;min-height:0}
- .rr-dash-race-number.rr-race-saddle-header .rr-race-saddle-image{
-  width:46px;height:46px;
- }
- .rr-dash-race-banner{
-  grid-template-columns:46px minmax(0,1fr);
-  gap:7px 10px;
- }
+
+
+
  .rr-dash-card-head.rr-dash-card-head--with-track-mark{
   grid-template-columns:43px minmax(0,1fr) 67px;gap:7px;
   padding:6px 1px 10px;
@@ -225,55 +210,14 @@
  mix-blend-mode:multiply;filter:contrast(1.13);
 }
 
-/* Separate the complete editorial race name from the metadata and post time.
-   Long event titles wrap at word boundaries in balanced lines, never in a
-   narrow row that strands the word "Stakes" under the saddlecloth. */
-.rr-dash-race-banner{
- display:grid;grid-template-columns:56px minmax(0,1fr) 152px;
- grid-template-areas:"number title time" "number meta time";
- align-items:center;column-gap:14px;row-gap:6px;
-}
-.rr-dash-race-copy{display:contents}
-.rr-dash-race-condition{
- grid-area:title;min-width:0;display:flex;flex-wrap:wrap;
- align-items:center;gap:6px 10px;
- margin:0;color:inherit;
- font:750 clamp(19px,2.25vw,28px)/1.15 Inter,Arial,system-ui,sans-serif;
- letter-spacing:-.018em;text-transform:none;
- word-break:normal;overflow-wrap:normal;
- text-wrap:balance;
-}
-.rr-dash-stakes-name{
- display:inline;flex:0 1 auto;min-width:0;max-width:100%;
- text-wrap:balance;word-break:normal;overflow-wrap:normal;hyphens:none;
-}
-.rr-dash-race-meta{
- grid-area:meta;display:flex;flex-wrap:wrap;align-items:center;
- gap:4px 13px;margin:0;min-width:0;
-}
-.rr-dash-post-time{
- grid-area:time;align-self:center;min-width:0;
-}
-.rr-dash-race-banner--extended-title .rr-dash-race-condition{
- font-size:clamp(18px,2vw,25px);line-height:1.18;
-}
-/* Approved saddlecloths contain see-through pixels. Give the header image
-   the SAME light backing as race navigation; transparent numerals can no
-   longer inherit the dark navy banner and change contrast or apparent color. */
-.rr-dash-race-number.rr-race-saddle-header{
- grid-area:number;align-self:start;justify-self:start;
- box-sizing:border-box;width:56px;height:56px;min-height:56px!important;
- padding:3px!important;
- border:0!important;border-radius:12px!important;
- background:#f4f0e6!important;
- box-shadow:inset 0 0 0 1px rgba(201,152,49,.32)!important;
- isolation:isolate;
-}
-.rr-dash-race-number.rr-race-saddle-header .rr-race-saddle-image{
- display:block;width:50px;height:50px;max-width:100%;max-height:100%;
- object-fit:contain;object-position:center;
- mix-blend-mode:normal;opacity:1;filter:none;
-}
+
+
+
+
+
+
+
+
 @media(max-width:800px){
  .rr-dash-card-head.rr-dash-card-head--official-track-logo{
   grid-template-columns:43px minmax(0,1fr) 95px;
@@ -285,39 +229,14 @@
  .rr-dash-approved-track-logo-wrap{
   width:95px;height:66px;padding:4px 0;background:#f4f0e6;
  }
- .rr-dash-race-banner{
-  grid-template-columns:52px minmax(0,1fr);
-  grid-template-areas:"number title" "meta meta" "time time";
-  column-gap:10px;row-gap:8px;padding:12px 12px 10px;
-  align-items:center;
- }
- .rr-dash-race-number.rr-race-saddle-header{
-  width:52px;height:52px;min-height:52px!important;
-  border-radius:11px!important;padding:3px!important;
- }
- .rr-dash-race-number.rr-race-saddle-header .rr-race-saddle-image{
-  width:46px;height:46px;
- }
- .rr-dash-race-condition{
-  font:750 clamp(18px,4.5vw,21px)/1.19 Inter,Arial,system-ui,sans-serif;
-  letter-spacing:-.015em;gap:6px 8px;
- }
- .rr-dash-race-banner--extended-title .rr-dash-race-condition{
-  font-size:clamp(17px,4.25vw,20px);line-height:1.2;
- }
- .rr-dash-race-meta{
-  grid-area:meta;gap:4px 12px;
-  border-top:1px solid rgba(255,255,255,.22);
-  padding-top:8px;margin-top:0;
- }
- .rr-dash-race-runners,.rr-dash-race-purse,.rr-dash-race-scratch-count{
-  font-size:11px;line-height:1.28;
- }
- .rr-dash-post-time{
-  grid-area:time;display:flex;justify-content:space-between;align-items:center;
-  border-top:1px solid rgba(255,255,255,.22);
-  border-left:0;padding:7px 0 0;gap:10px;margin:0;
- }
+
+
+
+
+
+
+
+
 }
 @media(max-width:390px){
  .rr-dash-card-head.rr-dash-card-head--official-track-logo{
@@ -327,19 +246,10 @@
  .rr-dash-card-head--official-track-logo .rr-dash-track-title{
   font-size:18px;line-height:1.1;
  }
- .rr-dash-race-banner{
-  grid-template-columns:48px minmax(0,1fr);column-gap:9px;
-  row-gap:7px;padding:10px 10px 8px;
- }
- .rr-dash-race-number.rr-race-saddle-header{
-  width:48px;height:48px;min-height:48px!important;padding:2px!important;
- }
- .rr-dash-race-number.rr-race-saddle-header .rr-race-saddle-image{
-  width:44px;height:44px;
- }
- .rr-dash-race-condition{font-size:17.5px;line-height:1.21}
- .rr-dash-race-banner--extended-title .rr-dash-race-condition{
-  font-size:17px;line-height:1.22;
- }
- .rr-dash-race-meta{gap:4px 10px;padding-top:7px}
+
+
+
+
+
+
 }
