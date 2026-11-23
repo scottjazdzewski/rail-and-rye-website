@@ -13,7 +13,7 @@
 .rr-pt-main{max-width:1160px;width:100%;margin:0 auto;padding:14px 17px 56px}
 .rr-pt-back{display:inline-flex;margin:2px 0 10px;color:#20476b;font-size:12px;font-weight:800;text-decoration:none}
 .rr-pt-back:hover{text-decoration:underline}
-.rr-pt-private{margin:0 0 11px;padding:7px 10px;border:1px solid #d0b374;border-radius:6px;background:#fff9e9;color:#72500f;font-size:10px;font-weight:850;letter-spacing:.07em}
+
 .rr-pt-heading{margin-bottom:15px}
 .rr-pt-kicker{display:block;color:#677889;font-size:10px;font-weight:850;letter-spacing:.09em;text-transform:uppercase}
 .rr-pt-heading h1{margin:5px 0 5px;color:var(--navy);font-size:clamp(26px,3vw,35px);line-height:1.05;font-weight:850}
@@ -22,8 +22,8 @@
 .rr-pt-toolbar label{display:grid;gap:4px;min-width:0;color:#596e81;font-size:10px;font-weight:850;letter-spacing:.045em;text-transform:uppercase}
 .rr-pt-toolbar select{display:block;min-width:0;width:100%;min-height:42px;padding:8px 10px;border:1px solid #bec7cf;border-radius:6px;background:#fff;color:var(--navy);font-size:13px;font-weight:650}
 .rr-pt-message,.rr-pt-empty{margin:10px 0;padding:12px;border:1px solid #dfd8cb;border-radius:8px;background:#fff;color:#52677c;font-size:13px}
-.rr-pt-demo-warning{display:flex;align-items:center;gap:6px 14px;flex-wrap:wrap;margin:12px 0 7px;padding:9px 12px;border-left:3px solid #b54842;background:#fff1ee;color:#763b37;font-size:11px;line-height:1.4}
-.rr-pt-demo-warning strong{font-size:10px;letter-spacing:.05em}
+
+
 .rr-pt-updated{margin:10px 2px 14px;color:#708193;font-size:11px;font-weight:600;line-height:1.4}
 .rr-pt-product-nav,.rr-pt-sequence-nav{margin:0 0 12px;min-width:0}
 .rr-pt-section-label{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0 0 7px;color:#5c6d7e;font-size:10px;font-weight:850;letter-spacing:.08em}
@@ -86,12 +86,12 @@
 .rr-pt-ticket-actions{display:flex;justify-content:flex-end;padding:7px 12px;border-top:1px solid #ece8dd}
 .rr-pt-analysis-button{min-height:42px;padding:8px 12px;border:0;background:transparent;color:#173d64;font-size:12px;font-weight:850;cursor:pointer}
 .rr-pt-analysis-button::after{content:"›";margin-left:9px;color:#b98e3d;font-size:19px;vertical-align:-1px}
-.rr-pt-upload{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:22px 0 0;padding:12px;border:1px solid #ded8cb;border-radius:8px;background:#fff}
-.rr-pt-upload label{flex:1 1 220px;color:#61758a;font-size:11px;font-weight:750}
-.rr-pt-upload input{display:block;width:100%;margin-top:6px;font-size:12px}
+
+
+
 .rr-pt-upload button,.rr-pt-close{min-height:43px;padding:8px 13px;border:1px solid var(--navy);border-radius:7px;background:var(--navy);color:white;font-size:11px;font-weight:850;cursor:pointer}
-.rr-pt-upload button:disabled{opacity:.55;cursor:not-allowed}
-.rr-pt-upload small{flex-basis:100%;color:#78889a;font-size:10px;line-height:1.4}
+
+
 .rr-pt-dialog{width:min(820px,calc(100% - 24px));max-height:89dvh;margin:auto;padding:0;border:0;border-radius:13px;background:var(--ivory);overflow-y:auto;box-shadow:0 22px 65px rgba(5,23,44,.3)}
 .rr-pt-dialog::backdrop{background:rgba(5,23,42,.60)}
 .rr-pt-dialog-head{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 15px;border-bottom:1px solid #e0d7c9;background:#fff}
@@ -120,8 +120,8 @@
  .rr-pt-race-row{grid-template-columns:65px minmax(0,1fr);min-height:47px;gap:8px;padding:6px 5px}
  .rr-pt-row-race{font-size:10px}
  .rr-pt-chip,.rr-pt-chip-fallback{width:33px;height:33px}
- .rr-pt-ticket-stats{padding:10px;gap:6px}
- .rr-pt-stat strong{font-size:20px}
+ 
+ 
  .rr-pt-dialog{position:fixed;inset:auto 0 0;width:100%;max-width:none;max-height:89dvh;margin:0;border-radius:18px 18px 0 0;padding-bottom:env(safe-area-inset-bottom)}
  .rr-pt-dialog::before{content:"";display:block;width:40px;height:4px;margin:9px auto 0;border-radius:6px;background:#bcc3c9}
  .rr-pt-dialog-head{padding:11px 13px}
@@ -131,8 +131,8 @@
  .rr-pt-type{min-width:65px}
  .rr-pt-ticket-header .rr-pt-state{font-size:10px}
  .rr-pt-chip,.rr-pt-chip-fallback{width:31px;height:31px}
- .rr-pt-stat span{font-size:8px}
- .rr-pt-stat strong{font-size:19px}
+ 
+ 
 }
 
 
@@ -161,7 +161,7 @@
 .rr-pt-brand-track{max-width:155px;color:#15385c;font-size:10px;font-weight:850;line-height:1.2;text-align:right}
 .rr-pt-admin-line{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 7px}
 .rr-pt-admin-line span{color:#88703f;font-size:9px;font-weight:850;letter-spacing:.045em;text-align:right}
-.rr-pt-private{display:none}
+
 .rr-pt-back{margin:2px 0;font-size:11px}
 .rr-pt-heading{margin:0 0 11px}
 .rr-pt-heading h1{font-size:var(--rr-type-main)}
@@ -169,8 +169,8 @@
 .rr-pt-toolbar{grid-template-columns:repeat(2,minmax(0,1fr));padding:8px;gap:7px}
 .rr-pt-toolbar label{font-size:var(--rr-type-label)}
 .rr-pt-toolbar select{min-height:42px}
-.rr-pt-demo-warning{margin:9px 0 4px;padding:6px 9px;gap:6px 9px;font-size:10px;background:#fcf1ec}
-.rr-pt-demo-warning strong{white-space:nowrap;font-size:9px}
+
+
 .rr-pt-updated{margin:5px 0 10px;font-size:10px}
 .rr-pt-product-nav,.rr-pt-sequence-nav{margin-bottom:9px}
 .rr-pt-types .rr-pt-type{min-height:39px}
@@ -200,7 +200,7 @@
 }
 .rr-pt-builder-row:nth-child(even){background:#f2f3f0}
 .rr-pt-builder-row .rr-pt-row-race{height:100%;min-height:42px}
-.rr-pt-builder-chips{display:flex;flex-wrap:wrap;align-items:center;gap:4px}
+
 .rr-pt-runner-button{
  min-width:43px;min-height:43px;display:grid;place-items:center;padding:2px;border:2px solid transparent;
  border-radius:6px;background:transparent;cursor:pointer;transition:background-color .1s
@@ -226,7 +226,7 @@
 .rr-pt-admin-body{padding:0 12px 13px}
 .rr-pt-admin-body>label{display:grid;gap:6px;font-size:11px;font-weight:800;color:#617589}
 .rr-pt-admin-body select{min-height:43px;border:1px solid #bac7d0;border-radius:6px;background:#fff;color:var(--navy);padding:9px}
-.rr-pt-upload{margin-top:12px}
+
 @media(max-width:800px){
  .rr-pt-brand-rail{margin:-12px -11px 7px;padding:6px 10px;min-height:57px;gap:8px}
  .rr-pt-brand-module{display:none}
@@ -306,8 +306,8 @@
 .rr-pt-intake-warning{color:#8d433e;font-size:12px}
 @media(max-width:340px){.rr-pt-intake-stats{gap:5px}.rr-pt-intake-stat{padding:8px 6px}.rr-pt-intake-stat span{font-size:9px}}
 
-.rr-pt-review-notice{margin:0;padding:9px 12px;border-bottom:1px solid #e0d0b0;background:#fff7e7;color:#5c4b29;font:750 11px/1.4 Inter,Arial,system-ui,sans-serif}
-.rr-pt-ticket-screen .rr-pt-review-notice+.rr-pt-ticket-header{border-top:0}
+
+
 
 /* Dated official source changes, not an approximation of scored winners. */
 .rr-pt-scratch-list{display:grid;gap:4px;padding:4px 0 9px}
