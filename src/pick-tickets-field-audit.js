@@ -114,7 +114,8 @@ export async function auditV33FieldUpload(card,previousCard=null){
  };
 }
 export function matchStoredTicketToLatestSource(stored,audit){
- if(!audit||stored.formula_version!==PICK_V33_ENGINE||
+ if(!audit||audit.production_release_approved!==true||
+    stored.formula_version!==PICK_V33_ENGINE||
     stored.source_input_sha256!==audit.source_sha256||
     !audit.score_freshness_verified||!Array.isArray(stored.sequences)||
     stored.sequences.length!==audit.review_card.sequences.length)return false;
