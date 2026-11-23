@@ -101,11 +101,27 @@
   const ticket=selectedTicket();
   builderLegs=ticket?ticket.legs.map(l=>({race_number:l.race_number,programs:[...l.programs]})):[];
  }
+ function scratchedInRace(race){
+  if(scratchUpdate?.date!==E.date.value)return [];
+  const track=scratchUpdate.tracks?.find(t=>t.name===E.track.value);
+  return track?.scratches?.[String(race)]||[];
+ }
+ function isScratched(race,program){return scratchedInRace(race).includes(program);}
+ function disableScratchButton(button,race,program){
+  if(!isScratched(race,program))return false;
+  button.disabled=true;button.classList.add("rr-pt-scratched");
+  button.setAttribute("aria-disabled","true");
+  button.setAttribute("aria-label","Race "+race+" horse "+program+" scratched — unavailable");
+  button.title="Scratched — unavailable";
+  return true;
+ }
  function raceChoices(race){
   const verified=activeSeq?.race_fields?.find(x=>x.race_number===race)?.programs;
   const fromTiers=activeSeq?.tickets.flatMap(t=>t.legs.find(l=>l.race_number===race)?.programs||[])||[];
   const values=verified?.length?verified:fromTiers;
-  return [...new Set(values)].sort((a,b)=>Number.parseInt(a,10)-Number.parseInt(b,10)||a.localeCompare(b));
+  // Keep the historical program chip in the builder, but prevent selection.
+  return [...new Set([...values,...scratchedInRace(race)])]
+   .sort((a,b)=>Number.parseInt(a,10)-Number.parseInt(b,10)||a.localeCompare(b));
  }
  function builderTotals(){
   const unit=selectedTicket()?.unit_cents||0;
@@ -137,7 +153,8 @@
     button.type="button";button.setAttribute("aria-pressed","true");
     button.setAttribute("aria-label","Race "+leg.race_number+" horse "+program+" selected");
     button.append(programChip(program));
-    button.addEventListener("click",()=>{leg.programs=leg.programs.filter(x=>x!==program);renderActive()});
+    disableScratchButton(button,leg.race_number,program);
+    button.addEventListener("click",()=>{if(isScratched(leg.race_number,program))return;leg.programs=leg.programs.filter(x=>x!==program);renderActive()});
     return button;
    });
    if(!chosen.length)picks.append(node("span","rr-pt-unselected","No horses selected"));
@@ -163,7 +180,8 @@
       button.type="button";button.setAttribute("aria-pressed","false");
       button.setAttribute("aria-label","Race "+leg.race_number+" horse "+program+" not selected");
       button.append(programChip(program));
-      button.addEventListener("click",()=>{leg.programs.push(program);renderActive()});
+      disableScratchButton(button,leg.race_number,program);
+      button.addEventListener("click",()=>{if(isScratched(leg.race_number,program))return;leg.programs.push(program);renderActive()});
       field.append(button);
      });
      body.append(field);
@@ -321,25 +339,7 @@
  function renderIntake(){
   if(!E.intakePanel)return;
   E.intakePanel.replaceChildren();
-  const official=scratchUpdate?.date===E.date.value?
-   scratchUpdate.tracks.find(x=>x.name===E.track.value):null;
-  if(official?.scratch_count){
-   E.intakePanel.append(node("h3","","Official Scratches · "+E.track.value));
-   const scratches=node("div","rr-pt-scratch-list");
-   for(const [race,programs] of Object.entries(official.scratches||{}).sort((a,b)=>Number(a[0])-Number(b[0]))){
-    const line=node("div","rr-pt-scratch-race");
-    line.append(node("strong","","RACE "+race));
-    const chips=node("div","rr-pt-scratch-chips");
-    for(const program of programs){
-     const wrap=node("span","rr-pt-scratch-chip");
-     wrap.append(programChip(program));chips.append(wrap);
-    }
-    line.append(chips);scratches.append(line);
-   }
-   E.intakePanel.append(scratches);
-  }
-  if(E.track.value)E.intakePanel.append(node("p","rr-pt-intake-warning",
-   "No Pick Tickets are available for "+E.track.value+" on "+toDate(E.date.value)+"."));
+  E.intakePanel.append(node("p","rr-pt-intake-warning","Suggested tickets for this date are being updated."));
  }
  function render(){
   const entry=entries.find(x=>x.card.date===E.date.value&&x.card.track===E.track.value);
