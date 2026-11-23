@@ -93,7 +93,7 @@ assert.doesNotMatch(html,/rr-target-local-file/,"No manual review-file step for 
 assert.doesNotMatch(html,/rr-target-upload-form|rr-target-file|Private source upload|Certified source JSON file/,"Daily Target List never presents a manual JSON upload.");
 assert.doesNotMatch(js,/rr-target-upload-form|rr-target-file|\.text\(\)\}/,"Reader never contains orphaned upload form behavior.");
 assert.doesNotMatch(css,/rr-target-publisher/,"No obsolete upload form CSS.");
-assert.match(html,/target-list-dashboard\.css\?v=20261123-radar-standard-v9/,"Ensure the readable style loads on phones.");
+assert.match(html,/target-list-dashboard\.css\?v=20261123-right-aligned-v10/,"Ensure the readable style loads on phones.");
 assert.match(css,/font:500 15px\/1\.55 Inter/,"Published editorial gets readable 15px typography.");
 assert.match(css,/Target List v5 — legibility-first mobile race reading/,"Phone layout uses larger, no-zoom typography.");
 assert.match(css,/Shared Daily Research Reader V1 — Target List implementation/,"Target List consumes shared cross-product mobile standard.");
@@ -102,13 +102,17 @@ assert.match(css,/RAIL & RYE DAILY RESEARCH V9/,"Two-line header uses the same R
 assert.doesNotMatch(js,/rr-target-race-facts-long/,"Race facts always occupy their own readable row.");
 assert.match(css,/scroll-snap-type:x proximity/,"Navigation stays in one swipeable mobile row instead of wrapping.");
 assert.match(css,/font:500 17px\/1\.52 Inter/,"Full race analysis uses the same 17px research reader scale as Radar.");
-assert.match(html,/target-list-dashboard\.css\?v=20261123-radar-standard-v9/,"Shared v6 stylesheet must defeat stale browser cache.");
+assert.match(html,/target-list-dashboard\.css\?v=20261123-right-aligned-v10/,"Shared v6 stylesheet must defeat stale browser cache.");
 assert.match(html,/aria-current="page"/,"Active module navigation remains identifiable.");
 assert.doesNotMatch(html,/Post Time · Earliest First|Sort targets/,"Controls use concise shared labels.");
 assert.match(js,/Post-time order/,"Summary uses the current display order, not a redundant date.");
 assert.match(css,/font-size:18px;/,"On-phone editorial body grows to 18px.");
 assert.match(css,/font-size:25px/,"On-phone win percentage remains prominent.");
 assert.match(js,/head\.append\(node\("p","rr-target-race-facts",meta\)\)/,"The full race description appears on the second line inside the navy banner.");
+assert.match(js,/const identifiers=node\("div","rr-target-race-identifiers"\)/,"Race number and post time belong in a single right-aligned group.");
+assert.match(js,/add\(titleRow,node\("h3","",entry.track\),identifiers\)/,"Track stays left while the identifiers group aligns right.");
+assert.match(css,/\.rr-target-race-identifiers\{/,"Race number and time have dedicated right-alignment styles.");
+
 assert.doesNotMatch(js,/card\.append\(node\("p","rr-target-race-facts",meta\)\)/,"Eliminate separate race facts strip.");
 
 assert.doesNotMatch(js,/DEMO_EXAMPLE|demoHorse|Sample Favorite|Example Downs|SYNTHETIC LAYOUT EXAMPLE/,"Never display invented data when the private R2 edition is unavailable.");
@@ -121,7 +125,7 @@ assert.match(css,/@media\(max-width:359px\)/);
 assert.match(css,/\.rr-target-list\{display:grid;grid-template-columns:minmax\(0,1fr\)/,"Target List reads as one compact vertical column.");
 assert.match(css,/Tinos/,"Only authoritative statistics use the card font.");
 assert.doesNotMatch(html,/id="rr-target-review-banner"/,"One concise review notice is enough.");
-assert.match(html,/target-list-dashboard\.js\?v=20261123-radar-standard-v9/,"Phone must load the newest upload-free reader.");
+assert.match(html,/target-list-dashboard\.js\?v=20261123-right-aligned-v10/,"Phone must load the newest upload-free reader.");
 assert.match(css,/Target List v3 — dense mobile-first horse-racing reader/);
 assert.match(css,/-webkit-line-clamp:unset/,"Full editorial must never be cut off at two lines.");
 assert.match(js,/function horseRow\(role,runner,entry\)/,"Horse rows themselves open the detail drawer.");

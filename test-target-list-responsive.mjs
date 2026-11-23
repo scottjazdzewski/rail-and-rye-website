@@ -167,6 +167,34 @@ try{
     "Complete sourced race description remains readable at "+width+": "+JSON.stringify(banner));
   assert.equal(banner.fullText,"7 furlongs · Dirt · Allowance / Optional Claiming");
   assert.equal(banner.font,14,"Race conditions retain the Radar 14px font rather than shrinking.");
+
+  const rightAligned=await page.locator(".rr-target-card .rr-target-racebar-main").first().evaluate(row=>{
+    const group=row.querySelector(".rr-target-race-identifiers");
+    const race=group?.querySelector(".rr-target-race-number");
+    const post=group?.querySelector(".rr-target-post");
+    const box=el=>el.getBoundingClientRect();
+    const header=box(row),right=box(group),raceBox=box(race),postBox=box(post),track=box(row.querySelector("h3"));
+    return {
+      distanceFromRightEdge:Math.abs(right.right-header.right),
+      raceTimeTogether:raceBox.right<=postBox.left+1 && Math.abs(raceBox.top-postBox.top)<=6,
+      trackDoesNotOverlap:track.right<=right.left+1||track.bottom<=right.top+1,
+      groupText:group.textContent,raceText:race.textContent,postText:post.textContent,
+      groupMinHeight:right.height,
+      raceFont:parseFloat(getComputedStyle(race).fontSize),
+      postFont:parseFloat(getComputedStyle(post).fontSize),
+      conditionsSecondLine:document.querySelector(".rr-target-card .rr-target-race-facts").getBoundingClientRect().top>=header.bottom-1,
+      fullWidth:document.documentElement.scrollWidth
+    };
+  });
+  assert.ok(rightAligned.distanceFromRightEdge<=2,"Race number and post time must be anchored to the RIGHT at "+width+": "+JSON.stringify(rightAligned));
+  assert.ok(rightAligned.raceTimeTogether,"Race number and post time stay together at "+width+": "+JSON.stringify(rightAligned));
+  assert.ok(rightAligned.trackDoesNotOverlap,"Track must never collide with the right-aligned pair at "+width+": "+JSON.stringify(rightAligned));
+  assert.equal(rightAligned.raceText,"RACE 5","First sorted synthetic fixture must retain Race 5.");
+  assert.equal(rightAligned.postText,"1:12 PM ET","Post time must remain unchanged.");
+  assert.ok(rightAligned.conditionsSecondLine,"Full race conditions remain on the second navy line at "+width);
+  assert.equal(rightAligned.raceFont,13);
+  assert.equal(rightAligned.postFont,13);
+
   assert.ok(readable.header>=16,"Track name must be easy to read at "+width+": "+JSON.stringify(readable));
   const typeMatch=await page.locator(".rr-target-card .rr-target-racebar").first().evaluate(header=>{
     const el=header.querySelector(".rr-target-racebar-main");

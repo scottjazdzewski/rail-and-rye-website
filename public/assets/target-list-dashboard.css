@@ -748,3 +748,37 @@
   .rr-target-page .rr-target-racebar .rr-target-racebar-main h3{font-size:17px}
   .rr-target-page .rr-target-racebar .rr-target-race-facts{font-size:14px}
 }
+
+
+/* Target List: right-justified RACE / POST group.
+   Keep track left, preserve the separate conditions line and Radar font scale. */
+.rr-target-page .rr-target-racebar .rr-target-racebar-main{
+  justify-content:flex-start;
+  align-items:baseline;
+  gap:4px 8px;
+}
+.rr-target-page .rr-target-racebar .rr-target-race-identifiers{
+  display:inline-flex;
+  flex:0 0 auto;
+  align-items:baseline;
+  justify-content:flex-end;
+  gap:10px;
+  margin-left:auto;
+  min-width:0;
+  white-space:nowrap;
+  text-align:right;
+}
+.rr-target-page .rr-target-racebar .rr-target-race-identifiers .rr-target-race-number{
+  margin:0;
+  padding:0;
+  border:0;
+}
+.rr-target-page .rr-target-racebar .rr-target-race-identifiers .rr-target-post{
+  margin:0;
+  padding:0;
+}
+@media(max-width:359px){
+  .rr-target-page .rr-target-racebar .rr-target-race-identifiers{
+    gap:8px;
+  }
+}
