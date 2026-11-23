@@ -12,7 +12,7 @@ const make=(tag,cls,content)=>{
 const dateLabel=value=>{
  const match=String(value||"").match(/^(\d{4})-(\d{2})-(\d{2})$/);
  if(!match)return value||"";
- return new Intl.DateTimeFormat("en-US",{month:"long",day:"numeric",year:"numeric",timeZone:"UTC"})
+ return new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric",year:"numeric",timeZone:"UTC"})
  .format(new Date(Date.UTC(Number(match[1]),Number(match[2])-1,Number(match[3]))));
 };
 const timeLabel=value=>{
@@ -117,7 +117,6 @@ function makeCard(item){
  );
  top.append(programChip(item.program_number),identity,markets);
  const foot=make("div","rr-lr-card-foot");
- foot.append(make("span","","Original Timeform ML · Model price"));
  const detail=make("button","","Race details");detail.type="button";
  detail.setAttribute("aria-label","Read Longshot Radar analysis for "+item.horse_name+" at "+item.track+" race "+item.race_number);
  detail.addEventListener("click",()=>showDetail(item));
