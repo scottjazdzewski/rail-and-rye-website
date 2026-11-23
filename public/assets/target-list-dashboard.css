@@ -650,7 +650,7 @@
     font:800 12px/1.2 Inter,Arial,system-ui,sans-serif;
     letter-spacing:0;
     white-space:nowrap;
-    scroll-snap-align:nearest;
+    scroll-snap-align:start;
   }
   .rr-target-page .rr-target-main{
     padding:9px 10px 30px;
