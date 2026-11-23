@@ -7,6 +7,9 @@ on:
       - 'test-projection-dashboard-mobile.mjs'
       - 'test-prescratch-projection-import.mjs'
       - 'src/projections.js'
+      - 'scripts/tri_dashboard_sync.py'
+      - 'tests/test_tri_dashboard_sync.py'
+      - '.github/workflows/tri-dashboard-auto-sync.yml'
       - '.github/workflows/verify-homepage-lock.yml'
   push:
     branches: [main]
@@ -35,3 +38,8 @@ jobs:
         run: node test-projection-dashboard-mobile.mjs
       - name: Prescratch TRI F4 model roundtrip and release-label guard
         run: node test-prescratch-projection-import.mjs
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: TRI Drive source package validation tests
+        run: python -m unittest discover -s tests -p 'test_tri_dashboard_sync.py' -v
