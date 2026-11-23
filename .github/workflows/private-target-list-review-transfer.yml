@@ -30,7 +30,7 @@ jobs:
           path: target-list-review-public-key.txt
           retention-days: 1
   encrypted-review-ingest:
-    if: github.event_name == 'issue_comment' && github.event.issue.number == 149 && github.event.comment.user.login == 'scottjazdzewski' && startsWith(github.event.comment.body, 'RR_TARGET_REVIEW_ENCRYPTED_V1')
+    if: github.event_name == 'issue_comment' && github.event.issue.number == 161 && github.event.comment.user.login == 'scottjazdzewski' && startsWith(github.event.comment.body, 'RR_TARGET_REVIEW_ENCRYPTED_V1')
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
