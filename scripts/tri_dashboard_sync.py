@@ -1,31 +1,27 @@
 #!/usr/bin/env python3
-"""Secure TRI V4.1/F4 V2 prescratch ZIP -> private Cloudflare R2 dashboard sync.
+"""Publish verified frozen TRI V4.1/F4 V2 prescratch ZIP directly to Cloudflare R2.
 
-No runner scores or source files are stored in GitHub. The source ZIP is fetched
-from a privately shared Google Drive folder using a read-only service account.
-Requires google-auth, requests, boto3 only in --sync mode.
+Run from the TRI production process after the model passes all gates.
+No Google Cloud, Google Drive sync or GitHub scheduled runner required.
 """
 import argparse
-import datetime as dt
 import hashlib
 import io
 import json
 import os
 import re
 import sys
+import unicodedata
 import zipfile
-from zoneinfo import ZoneInfo
 
 APPROVED_STATUSES = {"TRI_V4_F4_V2_MODEL_SOURCE_INPUT_ERRORS_RESOLVED_ALL_FIVE", "TRI_V4_F4_V2_PRESCRATCH_ALL_TRACKS_PASS"}
 PWIN_PASS = "PASS_TRI_TJ_V4_PERMANENT_FORWARD_RUNTIME"
-ZIP_NAME_RE = re.compile(r"^RAIL_RYE_(?:\d{4}|\d{8})_(?:TRI_V4_F4_V2_ROLE_RATING_REPAIR_ALL_FIVE_PASS|TRI_DASHBOARD_VERIFIED_PRESCRATCH)\.zip$")
 TRACK_FILE_RE = re.compile(r"^([A-Z0-9]{2,4})_(\d{4})_VERIFIED_TRI_F4_SOURCE\.json$")
 F4 = ("exact_p1", "exact_p2", "exact_p3", "exact_p4", "exact_p5", "p6_plus", "top2", "top3", "top4")
 MAX_ZIP_SIZE = 16 * 1024 * 1024
 MAX_UNCOMPRESSED = 35 * 1024 * 1024
 MAX_IMPORT_SIZE = 1024 * 1024
 BUCKET_DEFAULT = "rail-and-rye-private-cards"
-FOLDER_DEFAULT = "1yR79Mp8BndMd1KQfGEsbUOKvq-BJ2Vzd"
 
 
 class Hold(RuntimeError):
@@ -197,41 +193,6 @@ def build_cards(zip_bytes):
         require(len(payload) <= MAX_IMPORT_SIZE, "Dashboard payload exceeds API size limit")
         return date, cards, payload, {"tracks": len(cards), "races": race_total,
                                       "runners": runner_total, "sha256": digest(zip_bytes)}
-
-
-def list_source_files(credentials, folder_id):
-    import requests
-    from google.auth.transport.requests import Request
-    credentials.refresh(Request())
-    headers = {"Authorization": "Bearer " + credentials.token}
-    params = {
-        "q": f"'{folder_id}' in parents and trashed = false and name contains 'TRI'",
-        "fields": "nextPageToken,files(id,name,size,mimeType,modifiedTime,md5Checksum)",
-        "pageSize": 100,
-        "supportsAllDrives": "true", "includeItemsFromAllDrives": "true"
-    }
-    found = []
-    for _ in range(5):
-        res = requests.get("https://www.googleapis.com/drive/v3/files",
-                           params=params, headers=headers, timeout=25)
-        res.raise_for_status()
-        result = res.json()
-        found.extend(result.get("files", []))
-        if not result.get("nextPageToken"):
-            break
-        params["pageToken"] = result["nextPageToken"]
-    return found, headers
-
-
-def get_source_zip(file_id, headers):
-    import requests
-    require(bool(re.fullmatch(r"[A-Za-z0-9_-]{10,128}", file_id)), "Invalid Drive source file ID")
-    res = requests.get("https://www.googleapis.com/drive/v3/files/" + file_id,
-                       params={"alt": "media", "supportsAllDrives": "true"},
-                       headers=headers, timeout=70)
-    res.raise_for_status()
-    require(len(res.content) <= MAX_ZIP_SIZE, "Downloaded source exceeds ZIP limit")
-    return res.content
 
 
 def sync_cards(cards, source_hash, source_id, bucket, account_id, key_id, secret, preview=False):
