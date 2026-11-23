@@ -76,6 +76,15 @@ try{
   await page.screenshot({path:"target-list-viewport-screenshots/target-"+width+".png",fullPage:false});
   await page.keyboard.press("Escape");
   assert.equal(await page.locator("#rr-target-dialog").evaluate(el=>el.open),false,"Escape closes drawer at "+width);
+  for(const img of await page.locator(".rr-review-artwork img").all())
+    assert.ok(await img.evaluate(el=>el.complete&&el.naturalWidth>0),"Approved Target List publication art loads at "+width);
+  await page.locator("#rr-target-demo-button").click();
+  assert.equal(await page.locator(".rr-target-card").count(),3,"Design sample must contain 3 fake races at "+width);
+  assert.match(await page.locator("#rr-target-demo-alert").innerText(),/FICTIONAL/,"Sample must be labeled conspicuously");
+  for(const chip of [1,11,20])
+    assert.ok(await page.locator('.rr-target-card img[src="/assets/approved/saddlecloths/'+chip+'.png"]').count()>0,
+      "Sample should exercise canonical chip #"+chip+" at "+width);
+  await page.screenshot({path:"target-list-viewport-screenshots/target-sample-"+width+".png",fullPage:true});
   await page.close();
  }
  console.log("PASS: real browser Target List layouts at 320, 375, 390, 430, 768 and 1280px with details and no horizontal clipping.");
