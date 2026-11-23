@@ -199,7 +199,7 @@
   table.append(body);comparison.append(table);area.append(comparison);
   if(!computed.combinations)area.append(node("p","rr-pt-builder-error","Choose at least one runner in every race."));
   area.append(node("p","rr-pt-builder-disclaimer",activeSeq.review_probabilities
-   ?"PRESCRATCH MODEL REVIEW: custom hit chance is calculated from the same exact TRI PWIN values as this source-based ticket, assuming independent race outcomes. Verify scratches and final production receipts before use. No payout or profit estimate."
+   ?"PRESCRATCH MODEL REVIEW: custom hit chance is calculated from the same exact TRI PWIN values as this source-based ticket, assuming independent race outcomes. Verify scratches and final production receipts before use. No financial-return estimate."
    :exact
     ?"This selection matches a source ticket. Its hit probability is displayed only when provided with that exact ticket."
     :"A verified custom hit probability requires the approved TRI multi-race model. Combinations and total cost update immediately."));
