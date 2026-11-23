@@ -46,3 +46,9 @@ The website tests are:
 ## Future revisions
 
 Keep V3.2 mathematical implementation unchanged until a new approved version is explicitly supplied by the owner. Profitability validation and model development belong to separate workstreams. Do not silently retune S or change the live website back to the V2 Focused strategy.
+
+## Private V3.2 coverage comparison (not a formula change)
+
+Ticket Insights in the Access-gated admin review offers a read-only diagnostic at cost scales $15, $20, $25, $30, and $40, calculated from the same exact V3.2 DP frontier and protected TRI scores. It displays combinations, complete-sequence hit probability, cost, and singles count. The **S=$15 ticket stays the sole approved selection**; comparisons do not create an alternate product or a claim about profitability.
+
+Any decision to revise S requires explicit owner approval, new versioning and testing. No arbitrary minimum ticket cost, fixed combination count, or minimum horses per leg has been added.

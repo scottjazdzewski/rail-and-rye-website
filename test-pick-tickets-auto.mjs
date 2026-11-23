@@ -42,6 +42,12 @@ for(const item of generated.cards){
   assert.equal(sequence.tickets.length,1,"V3.2 is exactly one rectangular ticket");
   assert.equal(sequence.review_meta.method,PICK_V32_ENGINE);
   assert.equal(sequence.review_meta.soft_cost_scale_dollars,PICK_V32_COST_SCALE_DOLLARS);
+  const scenario=sequence.review_meta.cost_preference_comparison;
+  assert.deepEqual(scenario.map(r=>r.scale_dollars),[15,20,25,30,40]);
+  assert.equal(scenario[0].current_approved,true);
+  assert.equal(scenario[0].combinations,sequence.tickets[0].combinations);
+  assert.equal(scenario[0].total_cents,sequence.tickets[0].total_cents);
+  assert.ok(scenario.every((r,i)=>i===0||r.combinations>=scenario[i-1].combinations));
   assert.equal(sequence.play_status,"CONDITIONAL","no green status from probabilities alone");
   const t=sequence.tickets[0];
   assert.equal(t.combinations,t.legs.reduce((n,l)=>n*l.programs.length,1));
