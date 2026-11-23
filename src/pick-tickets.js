@@ -1,5 +1,5 @@
 import {getPickTicketsIntake} from './pick-tickets-intake.js';
-import {buildPrescratchPickTicketReview} from './pick-tickets-auto.js';
+import {buildPrescratchPickTicketReview,readPrivatePickProjections} from './pick-tickets-auto.js';
 import {readAdminProjectionCards} from './projections.js';
 /* Pick Tickets: admin-only dashboard staging. No scoring, public data, or customer-launch route. */
 const PREFIX="pick-tickets/dashboard/";
@@ -142,10 +142,17 @@ export async function handleAdminPickTickets(request,env){
   const certified=await readCards(env);
   let prescratch={cards:[],rejected:[]};
   try{
-   const result=await readAdminProjectionCards(env);
-   if(result.ok){
-    const source=await result.json();
-    prescratch=buildPrescratchPickTicketReview(source.cards||[]);
+   // Prefer the five current date-keyed R2 projections; no legacy D1/PDF lookup.
+   const direct=await readPrivatePickProjections(env);
+   if(direct.length)prescratch=buildPrescratchPickTicketReview(direct);
+   if(prescratch.cards.length===0){
+    // Backward-compatible fallback for authorized legacy projection revisions.
+    const result=await readAdminProjectionCards(env);
+    if(result.ok){
+     const source=await result.json();
+     const legacy=buildPrescratchPickTicketReview(source.cards||[]);
+     if(legacy.cards.length)prescratch=legacy;
+    }
    }
   }catch(e){console.warn("Private provisional Pick Tickets projection intake unavailable",String(e).slice(0,160));}
   const saved=new Set(certified.map(x=>x.card.date+"|"+x.card.track));
