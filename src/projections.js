@@ -97,6 +97,13 @@ function normalizeCard(input){
   if(!isObject(modelReceipts)||["tri_sha256","f4_sha256","prescratch_parent_sha256","official_changes_sha256"].some(key=>!(/^[a-f0-9]{64}$/i.test(String(modelReceipts[key]||"")))))
    throw Error("Scratch-final cards require verified TRI/F4, parent and official-change receipt hashes.");
  }
+ // A revised prescratch field must be able to carry fresh scorer identifiers.
+ // Previously normalizeCard() silently discarded them, preventing the Pick
+ // Tickets upload-bound audit from distinguishing rescored from stale inputs.
+ if(projectionStatus==="prescratch"&&modelReceipts!==null&&
+    (!isObject(modelReceipts)||["tri_sha256","f4_sha256"].some(
+     key=>!(/^[a-f0-9]{64}$/i.test(String(modelReceipts[key]||""))))))
+  throw Error("Prescratch score receipts must contain valid TRI and F4 SHA-256 hashes.");
  const modelName=text(input.model_name,"Model name",100);
  const fairOddsBasis=input.fair_odds_basis==null?"":text(input.fair_odds_basis,"Fair odds basis",40);
  if(fairOddsBasis&&fairOddsBasis!=="net_to_1_review")throw Error("Unknown fair odds basis.");
@@ -173,7 +180,9 @@ function normalizeCard(input){
    purse:text(race.purse,"Purse",50),pace:text(race.pace,"Pace",50),
    scratch_count:scratchCount,scratches,summary:text(race.summary,"Race summary",1000),entries};
  });
- return {schema_version:1,race_date:raceDate,track_name:trackName,projection_status:projectionStatus,model_name:modelName,fair_odds_basis:fairOddsBasis,factor_basis:factorBasis,model_receipts:modelReceipts&&projectionStatus==="scratch_final"?Object.fromEntries(["tri_sha256","f4_sha256","prescratch_parent_sha256","official_changes_sha256"].map(key=>[key,modelReceipts[key]])):null,races};
+ return {schema_version:1,race_date:raceDate,track_name:trackName,projection_status:projectionStatus,model_name:modelName,fair_odds_basis:fairOddsBasis,factor_basis:factorBasis,model_receipts:modelReceipts?Object.fromEntries((projectionStatus==="scratch_final"?
+ ["tri_sha256","f4_sha256","prescratch_parent_sha256","official_changes_sha256"]:
+ ["tri_sha256","f4_sha256"]).map(key=>[key,modelReceipts[key]])):null,races};
 }
 async function readBody(request){
  const length=Number(request.headers.get("content-length")||0);
