@@ -117,4 +117,15 @@ assert.ok(!ui.includes("Math.round")&&!ui.includes("pwin_exact*")); // no client
 assert.ok(css.includes("@media(max-width:800px)")&&css.includes("@media(max-width:360px)"));
 assert.ok(html.includes("/assets/projections-dashboard.css")); // shared visual baseline
 checks++;
+const publicDesign=readFileSync("public/longshot-radar-preview/index.html","utf8");
+assert.ok(publicDesign.includes('data-rr-design-only="true"')&&publicDesign.includes("FICTIONAL HORSES")&&publicDesign.includes("NOT ACTUAL PICKS"));
+assert.ok(publicDesign.includes("/assets/approved/publications/longshot-hero.jpg"));
+assert.ok(publicDesign.includes("/assets/approved/publications/longshot-mark.png"));
+assert.ok(publicDesign.includes("/assets/approved/brand/rail-rye-ivory-logo.png"));
+assert.ok(!publicDesign.includes('id="rr-lr-upload-form"')&&!publicDesign.includes('api/admin/'));
+assert.ok(publicDesign.includes('name="robots" content="noindex,nofollow,noarchive"'));
+assert.ok(ui.includes('const designOnly=document.body?.dataset?.rrDesignOnly==="true"'));
+assert.ok(ui.includes('if(designOnly){')&&ui.includes('const demo=visualSample();'));
+checks++;
+
 console.log("PASS: "+checks+" Longshot Radar private-review unit/integration and static security/layout checks.");
