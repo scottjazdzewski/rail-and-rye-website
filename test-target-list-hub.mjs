@@ -140,7 +140,7 @@ assert.match(css,/@media\(max-width:359px\)/);
 assert.match(css,/\.rr-target-list\{display:grid;grid-template-columns:minmax\(0,1fr\)/,"Target List reads as one compact vertical column.");
 assert.match(css,/Tinos/,"Only authoritative statistics use the card font.");
 assert.doesNotMatch(html,/id="rr-target-review-banner"/,"One concise review notice is enough.");
-assert.match(html,/target-list-dashboard\.js\?v=20261123-radar-parity-v12/,"Phone must load the newest upload-free reader.");
+assert.match(html,/target-list-dashboard\.js\?v=20261123-class-clean-v13/,"Phone must load the newest upload-free reader.");
 assert.match(css,/Target List v3 — dense mobile-first horse-racing reader/);
 assert.match(css,/-webkit-line-clamp:unset/,"Full editorial must never be cut off at two lines.");
 assert.match(js,/function horseRow\(role,runner,entry\)/,"Horse rows themselves open the detail drawer.");
