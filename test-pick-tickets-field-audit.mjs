@@ -143,6 +143,13 @@ renamed.races[0].entries[0].horse_name="Different Entry Name";
 const renameAudit=await auditV33FieldUpload(renamed,refreshed);
 assert.equal(renameAudit.source_signature_status,"INPUT_CHANGED_WITHOUT_NEW_SCORE_RECEIPT");
 assert.equal(renameAudit.input_changes_require_rescoring,true);
+const partialReceipt=structuredClone(rescored);
+delete partialReceipt.model_receipts.f4_sha256;
+const partial=await handleAdminProjectionBatchUpload(new Request(
+ "https://railandryeracing.com/api/admin/projections/batch",{
+ method:"POST",headers:{"content-type":"application/json"},
+ body:JSON.stringify({cards:[partialReceipt]})}),env);
+assert.equal(partial.status,400,"partial TRI/F4 receipt pairs are never accepted");
 // An old certified-looking edition must never override the current source.
 const oldEdition={
  schema_version:1,product_type:"pick_tickets",date:initial.date,track:initial.track,
@@ -194,4 +201,18 @@ assert.equal(extra.score_freshness_verified,false);
 const missing=structuredClone(more);
 missing.races[0].scratches.pop();
 await assert.rejects(()=>auditV33FieldUpload(missing,post),/cannot verify every race/);
+// The date-specific official wager menu is not optional. Other dates may
+// upload Projections without automatically manufacturing Pick Tickets from
+// the November 23 wager menu.
+const nextDay=fullTrack();
+nextDay.race_date="2026-11-24";
+const nextResponse=await handleAdminProjectionBatchUpload(new Request(
+ "https://railandryeracing.com/api/admin/projections/batch",{
+ method:"POST",headers:{"content-type":"application/json"},
+ body:JSON.stringify({cards:[nextDay]})}),env);
+assert.equal(nextResponse.status,200);
+const nextResult=await nextResponse.json();
+assert.equal(nextResult.uploaded[0].ticket_verification.status,
+ "NO_VERIFIED_OFFICIAL_PICK_MENU_FOR_DATE_TRACK");
+assert.equal(nextResult.uploaded[0].ticket_verification.sequences_checked,0);
 console.log("PASS: every latest field upload reoptimizes full-field V3.3 tickets; source hashes, new scratches, prior-choice comparison and stale edition failsafes.");
