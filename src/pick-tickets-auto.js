@@ -134,7 +134,35 @@ export async function readPrivatePickProjections(env){
    return {card:JSON.parse(await file.text()),uploaded_at:file.customMetadata?.uploaded_at||null};
   }catch(e){console.warn("Unreadable source Projections card for private ticket preview",track);return null}
  }));
- return found.filter(Boolean);
+ const direct=found.filter(Boolean);
+ // Secure encrypted issue-comment handoff writes source scores to private R2,
+ // so the interface can show the actual 11/23 model tickets even if the
+ // independent Projections module has not yet staged its own dashboard JSON.
+ try{
+  const stored=await env.CARDS_BUCKET.get("pick-tickets/interim/2026-11-23/revision-0001.json");
+  if(stored){
+   const src=JSON.parse(await stored.text());
+   if(src?.schema_version===1&&src?.product_type==="pick_tickets_interim_pwin"&&
+      src.race_date===PICK_DAY&&src.review_only===true&&
+      src.customer_publish_approved===false&&
+      src.source_status==="PRESCRATCH_SCORES_PASSED__SCRATCHES_AND_BADGES_NOT_CERTIFIED"&&
+      Array.isArray(src.tracks)&&src.tracks.length===5){
+    const names=new Set(direct.map(x=>x.card.track_name));
+    for(const track of src.tracks){
+     if(!Object.hasOwn(counts,track.track)||names.has(track.track)||!Array.isArray(track.races))continue;
+     const c={race_date:PICK_DAY,track_name:track.track,projection_status:"prescratch",
+      races:track.races.map(r=>({
+       race_number:r.race_number,scratch_count:null,scratches:[],
+       entries:(r.entries||[]).map(e=>({
+        program_number:e[0],win_probability_exact:e[1],f4_probabilities:{exact_p1:e[2]}
+       }))
+      }))};
+     direct.push({card:c,uploaded_at:stored.customMetadata?.uploaded_at||null});
+    }
+   }
+  }
+ }catch(e){console.warn("Sealed private interim PWIN intake unreadable; skipping",String(e).slice(0,110));}
+ return direct;
 }
 export function buildPrescratchPickTicketReview(cards){
  const results=[],rejected=[];
