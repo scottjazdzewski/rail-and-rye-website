@@ -30,7 +30,7 @@
  </div>
 </header>
 <main class="rr-member-main rr-dashboard-main rr-lr-main">
- <p class="rr-dash-private-banner">Private Access-protected review · No customer access · Not published</p>
+ <p class="rr-dash-private-banner">Private design review</p>
  <div class="rr-dash-heading">
   <div><span class="rr-member-kicker">Racing Intelligence / Longshot Radar</span>
    <h1 class="rr-member-title">Longshot Radar</h1>
@@ -39,18 +39,7 @@
   <div class="rr-review-artwork" aria-label="Approved Longshot Radar publication artwork"><img class="rr-review-mark" src="/assets/approved/publications/longshot-mark.png" alt="" width="70" height="90"><img class="rr-review-hero" src="/assets/approved/publications/longshot-hero.jpg" alt="" width="170" height="90"></div>
  </div>
  <div class="rr-review-demo-controls"><button id="rr-lr-demo-button" type="button">Preview sample rows</button><span id="rr-lr-demo-alert" role="status" hidden>DESIGN SAMPLE · FICTIONAL HORSES AND FIGURES · NOT PICKS</span></div>
- <details class="rr-lr-import">
-  <summary>Load a validated production JSON for private review</summary>
-  <div class="rr-lr-import-content">
-   <p>Review only. The model, original Timeform morning line, price gate and editorial thesis must already be approved by production. Uploading never launches a customer product or certifies a source receipt.</p>
-   <form id="rr-lr-upload-form" class="rr-lr-upload-form">
-    <label for="rr-lr-file">Production output (.json)</label>
-    <input id="rr-lr-file" type="file" accept=".json,application/json" required>
-    <button type="submit" class="rr-member-button">Save private review</button>
-   </form>
-   <p id="rr-lr-upload-status" class="rr-lr-subtle" role="status" aria-live="polite"></p>
-  </div>
- </details>
+
  <p id="rr-lr-loading" class="rr-member-status" role="status" aria-live="polite">Checking private Radar editions…</p>
  <section id="rr-lr-empty" class="rr-dash-empty" hidden aria-label="No Radar editions">
   <h2>No Longshot Radar review is loaded.</h2>
@@ -75,6 +64,18 @@
   <div id="rr-lr-candidates" class="rr-lr-candidates" aria-live="polite"></div>
   <p class="rr-lr-subtle">Theoretical edge is measured against the original Timeform morning line. It is not a verified available wagering price or a demonstrated return. Recheck actual odds independently.</p>
  </section>
+ <details class="rr-lr-import">
+  <summary>Load a validated production JSON for private review</summary>
+  <div class="rr-lr-import-content">
+   <p>Review only. The model, original Timeform morning line, price gate and editorial thesis must already be approved by production. Uploading never launches a customer product or certifies a source receipt.</p>
+   <form id="rr-lr-upload-form" class="rr-lr-upload-form">
+    <label for="rr-lr-file">Production output (.json)</label>
+    <input id="rr-lr-file" type="file" accept=".json,application/json" required>
+    <button type="submit" class="rr-member-button">Save private review</button>
+   </form>
+   <p id="rr-lr-upload-status" class="rr-lr-subtle" role="status" aria-live="polite"></p>
+  </div>
+ </details>
 </main>
 <dialog id="rr-lr-dialog" class="rr-dash-horse-dialog rr-lr-dialog" aria-labelledby="rr-lr-dialog-title">
  <div class="rr-dash-horse-dialog-inner">
