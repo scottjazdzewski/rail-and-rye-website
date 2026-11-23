@@ -1,0 +1,160 @@
+/* Longshot Radar native review UI. No scoring, ranking or real-odds inference. */
+(()=>{
+"use strict";
+const q=selector=>document.querySelector(selector);
+const state={editions:[],date:"",track:"",query:"",sort:"editorial"};
+const status=q("#rr-lr-loading"),app=q("#rr-lr-app"),empty=q("#rr-lr-empty"),dialog=q("#rr-lr-dialog");
+const make=(tag,cls,content)=>{
+ const element=document.createElement(tag);if(cls)element.className=cls;
+ if(content!==undefined&&content!==null)element.textContent=String(content);
+ return element;
+};
+const dateLabel=value=>{
+ const match=String(value||"").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+ if(!match)return value||"";
+ return new Intl.DateTimeFormat("en-US",{month:"long",day:"numeric",year:"numeric",timeZone:"UTC"})
+ .format(new Date(Date.UTC(Number(match[1]),Number(match[2])-1,Number(match[3]))));
+};
+const timeLabel=value=>{
+ const parsed=Date.parse(String(value||""));
+ if(!Number.isFinite(parsed))return "";
+ return new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",month:"short",day:"numeric",hour:"numeric",minute:"2-digit",timeZoneName:"short"}).format(new Date(parsed));
+};
+function programChip(value){
+ const chip=make("span","rr-lr-program"),program=String(value||""),match=program.match(/^(\d{1,2})([A-Za-z]?)$/),number=match?Number(match[1]):NaN;
+ if(Number.isInteger(number)&&number>=1&&number<=20){
+  const img=document.createElement("img");
+  img.src="/assets/approved/saddlecloths/"+number+".png";img.alt="Saddlecloth "+program;img.width=38;img.height=38;img.loading="lazy";
+  chip.append(img);
+  if(match[2])chip.append(make("span","rr-lr-program-suffix",match[2].toUpperCase()));
+ }else{
+  chip.append(make("strong","rr-lr-program-fallback",program));
+ }
+ return chip;
+}
+function currentEdition(){return state.editions.find(item=>item.race_date===state.date)||null;}
+function options(select,values,selected){
+ select.replaceChildren();
+ for(const [value,label] of values){
+  const option=make("option","",label);option.value=value;select.append(option);
+ }
+ select.value=values.some(([value])=>value===selected)?selected:values[0]?.[0]||"";
+ return select.value;
+}
+function renderDates(){
+ const dates=state.editions.map(item=>[item.race_date,dateLabel(item.race_date)]);
+ state.date=options(q("#rr-lr-date"),dates,state.date);
+}
+function renderTracks(){
+ const edition=currentEdition();
+ const tracks=[...new Set((edition?.candidates||[]).map(item=>item.track))].sort((a,b)=>a.localeCompare(b));
+ state.track=options(q("#rr-lr-track"),[["","All tracks"],...tracks.map(track=>[track,track])],state.track);
+}
+function market(label,value,cls){
+ const item=make("div","rr-lr-market "+(cls||""));
+ item.append(make("span","",label),make("strong","",value));
+ return item;
+}
+function showDetail(item){
+ const title=q("#rr-lr-dialog-title"),body=q("#rr-lr-dialog-detail");
+ title.textContent=item.horse_name;
+ const summary=make("div","rr-lr-dialog-summary"),id=make("div");
+ id.append(make("strong","",item.horse_name));
+ id.append(make("small","",item.track+" · Race "+item.race_number+(item.post_time_et?" · "+item.post_time_et:"")));
+ if(item.trainer||item.jockey)id.append(make("small","",[item.trainer,item.jockey].filter(Boolean).join(" | ")));
+ summary.append(programChip(item.program_number),id);
+ const stats=make("div","rr-lr-detail-stats");
+ for(const [name,value] of [["ORIGINAL M/L",item.original_morning_line],["TRI WIN",String(item.pwin_display)+"%"],["FAIR ODDS",item.fair_odds_display]]){
+  const box=make("div");box.append(make("span","",name),make("strong","",value));stats.append(box);
+ }
+ body.replaceChildren(summary,stats);
+ for(const [label,copy] of [
+  ["Why this horse at this price",item.betting_case],
+  ["Authenticated racing evidence",item.source_causal_evidence],
+  ["Checked counterargument",item.counterargument_checked]
+ ]){
+  const section=make("section","rr-lr-detail-section");
+  section.append(make("h3","",label),make("p","",copy));body.append(section);
+ }
+ body.append(make("p","rr-lr-source-note","Original Timeform morning line, not live tote odds. Editorial source and release receipts must be checked against the approved production package before customer publication."));
+ if(!dialog.open)dialog.showModal();
+}
+function makeCard(item){
+ const card=make("article","rr-lr-card"),top=make("div","rr-lr-top"),identity=make("div","rr-lr-identity");
+ identity.append(make("strong","",item.horse_name));
+ const parts=[item.track,"Race "+item.race_number];
+ if(item.post_time_et)parts.push(item.post_time_et);
+ identity.append(make("small","",parts.join(" · ")));
+ const markets=make("div","rr-lr-markets");
+ markets.append(
+  market("ORIGINAL M/L",item.original_morning_line),
+  market("TRI WIN",String(item.pwin_display)+"%","rr-lr-model"),
+  market("FAIR ODDS",item.fair_odds_display)
+ );
+ top.append(programChip(item.program_number),identity,markets);
+ const foot=make("div","rr-lr-card-foot");
+ foot.append(make("span","","Source-backed selection · Research only"));
+ const detail=make("button","","Full analysis");detail.type="button";
+ detail.setAttribute("aria-label","Full Longshot Radar analysis for "+item.horse_name);
+ detail.addEventListener("click",()=>showDetail(item));
+ foot.append(detail);
+ card.append(top,make("p","rr-lr-case",item.betting_case),foot);
+ return card;
+}
+function renderCandidates(){
+ const edition=currentEdition(),target=q("#rr-lr-candidates");
+ if(!edition)return;
+ q("#rr-lr-date-title").textContent=dateLabel(edition.race_date);
+ q("#rr-lr-stage").textContent=edition.status==="prescratch"?"INITIAL · CURRENT":"SCRATCH-UPDATED";
+ q("#rr-lr-updated").textContent="Production "+timeLabel(edition.generated_at)+" · revision "+edition.revision;
+ let candidates=edition.candidates.filter(item=>(!state.track||item.track===state.track)&&(
+  !state.query||[item.horse_name,item.track,"race "+item.race_number,item.program_number].some(value=>String(value).toLocaleLowerCase("en-US").includes(state.query))
+ ));
+ if(state.sort==="race")candidates=[...candidates].sort((a,b)=>a.track.localeCompare(b.track)||a.race_number-b.race_number);
+ q("#rr-lr-count").textContent=candidates.length+" shown · "+edition.candidates.length+" qualified"+(edition.candidates.length===1?" horse":" horses")+" in today's approved output";
+ if(!candidates.length){
+  target.replaceChildren(make("div","rr-lr-list-empty",edition.candidates.length?"No candidates match these filters.":"No selections in this approved edition. Longshot Radar does not force a daily pick."));
+ }else target.replaceChildren(...candidates.map(makeCard));
+}
+function refreshView(){
+ renderDates();renderTracks();renderCandidates();
+ empty.hidden=true;app.hidden=false;
+}
+async function load(){
+ const response=await fetch("/api/admin/longshot-radar",{credentials:"same-origin",cache:"no-store"});
+ const result=await response.json();
+ if(!response.ok)throw Error(result.error||"Unable to load Radar review.");
+ state.editions=Array.isArray(result.editions)?result.editions:[];
+ if(!state.editions.length){app.hidden=true;empty.hidden=false;return;}
+ refreshView();
+}
+async function initialize(){
+ try{await load();status.hidden=true;}
+ catch(e){status.textContent=e.message||"Private review failed to load.";status.hidden=false;app.hidden=true;}
+}
+q("#rr-lr-date").addEventListener("change",event=>{
+ state.date=event.target.value;state.track="";state.query="";q("#rr-lr-search").value="";renderTracks();renderCandidates();
+});
+q("#rr-lr-track").addEventListener("change",event=>{state.track=event.target.value;renderCandidates();});
+q("#rr-lr-search").addEventListener("input",event=>{state.query=event.target.value.trim().toLocaleLowerCase("en-US");renderCandidates();});
+q("#rr-lr-sort").addEventListener("change",event=>{state.sort=event.target.value;renderCandidates();});
+q("#rr-lr-close").addEventListener("click",()=>dialog.close());
+q("#rr-lr-upload-form").addEventListener("submit",async event=>{
+ event.preventDefault();
+ const feedback=q("#rr-lr-upload-status"),file=q("#rr-lr-file").files?.[0],button=event.currentTarget.querySelector("button");
+ if(!file){feedback.textContent="Choose a production JSON file.";return;}
+ if(file.size>512*1024){feedback.textContent="JSON file exceeds the private 512 KB limit.";return;}
+ button.disabled=true;feedback.textContent="Checking structured production data…";
+ try{
+  const raw=await file.text(),input=JSON.parse(raw);
+  const response=await fetch("/api/admin/longshot-radar",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify(input)});
+  const result=await response.json();
+  if(!response.ok)throw Error(result.error||"Unable to save Radar review.");
+  feedback.textContent="Private review saved for "+result.race_date+" · revision "+result.revision+". No customer publication occurred.";
+  state.date=result.race_date;state.track="";state.query="";q("#rr-lr-search").value="";
+  await load();
+ }catch(e){feedback.textContent=e.message||"Unable to read the file.";}
+ finally{button.disabled=false;}
+});
+initialize();
+})();
