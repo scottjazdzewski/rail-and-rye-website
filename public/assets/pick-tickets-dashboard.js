@@ -23,7 +23,9 @@
  function ticketBox(ticket){
   const panel=el("section","rr-pt-ticket");
   const head=el("div","rr-pt-ticket-head");
-  head.append(el("h3","",label(ticket.role)));
+  const titles=el("div","rr-pt-ticket-labels");
+  titles.append(el("span","rr-pt-ticket-role",label(ticket.role)),el("h3","",ticket.title));
+  head.append(titles);
   const costs=el("span","rr-pt-ticket-cost",money(ticket.total_cents));head.append(costs);panel.append(head);
   const legs=el("div","rr-pt-legs");
   for(const leg of ticket.legs){
