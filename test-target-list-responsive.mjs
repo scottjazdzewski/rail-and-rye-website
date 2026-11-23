@@ -142,35 +142,36 @@ try{
   assert.equal(readable.raceFacts,"7 furlongs · Dirt · Allowance / Optional Claiming");
 
   const banner=await page.evaluate(()=>{
-   const head=document.querySelector(".rr-target-card .rr-target-racebar-main");
-   const facts=head.querySelector(".rr-target-race-facts");
-   const post=head.querySelector(".rr-target-post");
-   const track=head.querySelector("h3");
-   const originalTrack=track.textContent,originalFacts=facts.textContent;
-   // Local DOM-only short-race case, never a user-facing selection or saved fixture.
-   track.textContent="Parx Racing";facts.textContent="6½F · Dirt";
-   facts.classList.remove("rr-target-race-facts-long");
-   head.insertBefore(facts,post);
-   const top=el=>Math.round(el.getBoundingClientRect().top);
-   const result={track:top(track),race:top(head.querySelector(".rr-target-race-number")),
-    facts:top(facts),post:top(post),complete:facts.textContent};
-   track.textContent=originalTrack;facts.textContent=originalFacts;
-   facts.classList.add("rr-target-race-facts-long");
-   head.append(facts);
-   return result;
+    const header=document.querySelector(".rr-target-card .rr-target-racebar");
+    const first=header.querySelector(".rr-target-racebar-main");
+    const facts=header.querySelector(".rr-target-race-facts");
+    const time=first.querySelector(".rr-target-post");
+    const rect=node=>node.getBoundingClientRect();
+    return {
+      firstBottom:rect(first).bottom,
+      factsTop:rect(facts).top,
+      factsHeight:rect(facts).height,
+      fullText:facts.textContent,
+      factsInsideHeader:header.contains(facts),
+      factsIsSibling: facts.parentElement===header,
+      postBeforeFacts:rect(time).top<rect(facts).top,
+      unclipped:getComputedStyle(facts).overflow!=="hidden",
+      font:parseFloat(getComputedStyle(facts).fontSize)
+    };
   });
-  if(width>=375){
-   // Baseline alignment gives a few px of different top offsets for 17px vs 13px text.
-   assert.ok(Math.abs(banner.track-banner.race)<=6,"Track and race share a row at "+width+": "+JSON.stringify(banner));
-   assert.ok(Math.abs(banner.facts-banner.track)<=6,"Short distance/surface shares that row at "+width+": "+JSON.stringify(banner));
-   assert.ok(Math.abs(banner.post-banner.track)<=6,"Source post time shares that row at "+width+": "+JSON.stringify(banner));
-  }
-  assert.equal(banner.complete,"6½F · Dirt");
-
+  assert.ok(banner.factsInsideHeader&&banner.factsIsSibling,
+    "All conditions should be a second line INSIDE the same navy banner at "+width+": "+JSON.stringify(banner));
+  assert.ok(banner.factsTop>=banner.firstBottom-1&&banner.postBeforeFacts,
+    "Radar-style second line must follow track, race and time at "+width+": "+JSON.stringify(banner));
+  assert.ok(banner.factsHeight>12&&banner.unclipped,
+    "Complete sourced race description remains readable at "+width+": "+JSON.stringify(banner));
+  assert.equal(banner.fullText,"7 furlongs · Dirt · Allowance / Optional Claiming");
+  assert.equal(banner.font,14,"Race conditions retain the Radar 14px font rather than shrinking.");
   assert.ok(readable.header>=16,"Track name must be easy to read at "+width+": "+JSON.stringify(readable));
-  const typeMatch=await page.locator(".rr-target-card .rr-target-racebar-main").first().evaluate(el=>{
+  const typeMatch=await page.locator(".rr-target-card .rr-target-racebar").first().evaluate(header=>{
+    const el=header.querySelector(".rr-target-racebar-main");
     const track=getComputedStyle(el.querySelector("h3"));
-    const facts=getComputedStyle(el.querySelector(".rr-target-race-facts"));
+    const facts=getComputedStyle(header.querySelector(".rr-target-race-facts"));
     const race=getComputedStyle(el.querySelector(".rr-target-race-number"));
     const post=getComputedStyle(el.querySelector(".rr-target-post"));
     return {trackSize:parseFloat(track.fontSize),trackWeight:track.fontWeight,transform:track.textTransform,
