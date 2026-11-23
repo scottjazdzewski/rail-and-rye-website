@@ -20,14 +20,14 @@
   wrap.setAttribute("aria-label","Saddlecloth "+program);
   return wrap;
  }
- function ticketBox(ticket){
-  const panel=el("section","rr-pt-ticket");
+ function ticketBox(ticket,{compact=false}={}){
+  const panel=el("section","rr-pt-ticket"+(compact?" rr-pt-ticket-compact":""));
   const head=el("div","rr-pt-ticket-head");
   const titles=el("div","rr-pt-ticket-labels");
   titles.append(el("span","rr-pt-ticket-role",label(ticket.role)),el("h3","",ticket.title));
   head.append(titles);
   const costs=el("span","rr-pt-ticket-cost",money(ticket.total_cents));head.append(costs);panel.append(head);
-  const legs=el("div","rr-pt-legs");
+  const legs=el("div","rr-pt-legs");legs.style.setProperty("--pt-leg-count",String(ticket.legs.length));
   for(const leg of ticket.legs){
    const box=el("div","rr-pt-leg"),title=el("span","rr-pt-leg-title","RACE "+leg.race_number),chips=el("div","rr-pt-leg-chips");
    for(const number of leg.programs)chips.append(chip(number));
@@ -35,9 +35,9 @@
   }
   panel.append(legs);
   const footer=el("div","rr-pt-ticket-metrics");
-  footer.append(el("span","","COMBINATIONS "+ticket.combinations),el("span","","BASE "+money(ticket.unit_cents)));
+  footer.append(el("span","",""+ticket.combinations+" COMBINATIONS"),el("span","",""+money(ticket.unit_cents)+" BASE"),el("strong","rr-pt-total","TOTAL "+money(ticket.total_cents)));
   panel.append(footer);
-  if(ticket.notes)panel.append(el("p","rr-pt-ticket-notes",ticket.notes));
+  if(ticket.notes&&!compact)panel.append(el("p","rr-pt-ticket-notes",ticket.notes));
   return panel;
  }
  function openDetails(sequence,card){
@@ -63,15 +63,42 @@
   copy.append(el("h2","",seq.name),el("p","","Races "+seq.start_race+"–"+seq.end_race));
   const state=el("span","rr-pt-state",statusLabel(seq.play_status));state.dataset.status=seq.play_status;
   head.append(copy,state);article.append(head);
+
+  const stat=el("div","rr-pt-sequence-stats");
+  const range=el("div","rr-pt-stat"),rangeTitle=el("span","","SEQUENCE");
+  range.append(rangeTitle,el("strong","rr-pt-stat-range","Races "+seq.start_race+"–"+seq.end_race));
+  stat.append(range);
   if(seq.hit_rate_display){
-   const hit=el("div","rr-pt-hit-strip");
-   hit.append(el("span","","MODEL HIT RATE"),el("strong","",seq.hit_rate_display));article.append(hit);
+   const hit=el("div","rr-pt-stat rr-pt-stat-hit");
+   hit.append(el("span","","PROJECTED HIT RATE"),el("strong","",seq.hit_rate_display));
+   stat.append(hit);
   }
-  const grid=el("div","rr-pt-ticket-grid");
-  for(const ticket of seq.tickets)grid.append(ticketBox(ticket));
-  article.append(grid);
+  const count=el("div","rr-pt-stat rr-pt-stat-count");
+  count.append(el("span","","TICKET OPTIONS"),el("strong","",String(seq.tickets.length)));
+  stat.append(count);article.append(stat);
+
+  const stage=el("div","rr-pt-sequence-stage"),tabs=el("div","rr-pt-tier-tabs"),body=el("div","rr-pt-primary");
+  tabs.setAttribute("role","group");tabs.setAttribute("aria-label","Ticket versions for "+seq.name);
+  let active=Math.max(0,seq.tickets.findIndex(t=>t.role==="LEAN"));
+  const buttons=[];
+  function showTicket(index){
+   active=index;
+   buttons.forEach((button,i)=>button.setAttribute("aria-pressed",String(i===index)));
+   body.replaceChildren(ticketBox(seq.tickets[index],{compact:true}));
+  }
+  if(seq.tickets.length>1){
+   seq.tickets.forEach((ticket,i)=>{
+    const button=el("button","rr-pt-tier",label(ticket.role));
+    button.type="button";button.setAttribute("aria-pressed",String(i===active));
+    button.addEventListener("click",()=>showTicket(i));
+    tabs.append(button);buttons.push(button);
+   });
+   stage.append(tabs);
+  }
+  stage.append(body);article.append(stage);
+  showTicket(active);
   if(seq.recommendation)article.append(el("p","rr-pt-summary",seq.recommendation));
-  const detail=el("button","rr-pt-detail-button","Full Sequence Analysis");
+  const detail=el("button","rr-pt-detail-button","Full Ticket & Analysis");
   detail.type="button";detail.addEventListener("click",()=>openDetails(seq,card));article.append(detail);
   return article;
  }
