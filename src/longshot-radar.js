@@ -219,3 +219,63 @@ export async function handleAdminLongshotRadar(request,env){
     return error("Radar review upload could not be saved.",503);
   }
 }
+
+
+// November 23 published-card transcription: a SEPARATE, explicitly noncertified
+// admin-only visual review stream. Unlike the certified Radar edition above,
+// this read NEVER accepts a rounded PDF percentage as the unrounded TRI PWIN.
+// Protected by the existing Cloudflare Access admin JWT in src/index.js.
+// R2 contents are encrypted before handoff and are not committed as plaintext.
+const EDITORIAL_REVIEW_KEY="racing-intelligence/longshot-radar-pdf-review/2026-11-23/revision-0001.json";
+export async function handleAdminLongshotEditorialPreview(request,env){
+ if(request.method!=="GET")return error("Method not allowed",405);
+ if(!env.CARDS_BUCKET)return error("Private Radar storage is not configured.",503);
+ try{
+  const file=await env.CARDS_BUCKET.get(EDITORIAL_REVIEW_KEY);
+  if(!file)return error("No source-backed Radar PDF review loaded yet.",404);
+  const edition=JSON.parse(await file.text());
+  if(edition?.schema_version!==1||edition?.product_type!=="longshot_radar"||
+     edition?.race_date!=="2026-11-23"||edition?.status!=="published_pdf_reference"||
+     edition?.review_only!==true||edition?.customer_publish_approved!==false||
+     edition?.source?.production_receipt_verified!==false||
+     !HASH.test(edition?.source?.editorial_pdf_sha256)||
+     !HASH.test(edition?.source?.timeform_zip_sha256)||
+     !Array.isArray(edition.candidates)||edition.candidates.length>100)
+    return error("Stored Radar editorial review is invalid.",503);
+  const rows=[],seen=new Set();
+  for(const value of edition.candidates){
+    if(!object(value))return error("Stored Radar horse is malformed.",503);
+    const track=requiredText(value.track,"Track",100);
+    const race=Number(value.race_number);
+    const program=requiredText(value.program_number,"Saddlecloth",8);
+    const horse=requiredText(value.horse_name,"Horse",100);
+    if(!Number.isInteger(race)||race<1||race>30||
+       !/^\d{1,2}[A-Za-z]?$/.test(program)||Number(program.match(/^\d+/)[0])>20)
+      return error("Stored Radar horse identity is invalid.",503);
+    const key=[track.toLowerCase(),race,program].join("|");
+    if(seen.has(key))return error("Duplicate horse in Radar PDF review.",503);
+    seen.add(key);
+    const ml=originalMl(value.original_morning_line);
+    const display=Number(value.pwin_display);
+    if(!Number.isFinite(display)||display<0||display>100)
+      return error("Stored Radar displayed percentage is invalid.",503);
+    rows.push({
+      track,race_number:race,program_number:program,horse_name:horse,
+      post_time_et:requiredText(value.post_time_et,"Published post time",50),
+      original_morning_line:ml.raw,pwin_display:display,
+      fair_odds_display:requiredText(value.fair_odds_display,"Published fair odds",20),
+      betting_case:requiredText(value.betting_case,"Published one-sentence analysis",360)
+    });
+  }
+  return json({
+    review_only:true,
+    customer_publish_approved:false,
+    source_type:"rail_rye_published_pdf",
+    production_receipt_verified:false,
+    edition:{race_date:edition.race_date,revision:edition.revision,status:edition.status,candidates:rows}
+  });
+ }catch(e){
+  console.error("Source-backed Radar PDF review read failed",String(e).slice(0,160));
+  return error("Unable to read published Radar PDF review.",503);
+ }
+}
