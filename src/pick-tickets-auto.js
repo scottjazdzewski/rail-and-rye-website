@@ -28,11 +28,12 @@ export const PICK_MENU_1123=Object.freeze([
 ]);
 
 const counts={"Finger Lakes":8,"Mahoning Valley":10,"Mountaineer":8,"Parx Racing":9,"Zia Park":10};
-import {chooseV32,verifyV32ScratchTransition,PICK_V32_ENGINE,
- PICK_V32_COST_SCALE_DOLLARS} from "./pick-tickets-v32.js";
+import {verifyV32ScratchTransition} from "./pick-tickets-v32.js";
+import {chooseV33,PICK_V33_ENGINE,PICK_V33_COST_SCALE_DOLLARS,
+ PICK_V33_MIN_LEG_COVERAGE} from "./pick-tickets-v33.js";
 import {getNov23ScratchLedger} from "./pick-tickets-scratch-1123.js";
 import {getPickTicketsIntake} from "./pick-tickets-intake.js";
-import {auditV32CostPreference} from "./pick-tickets-v32-sensitivity.js";
+
 
 const isNumber=n=>typeof n==="number"&&Number.isFinite(n)&&n>=0&&n<=100;
 const displayPct=n=>(n*100).toFixed(1)+"%";
@@ -64,14 +65,17 @@ function checkedCurrentFields(card){
  if(out.size!==counts[card.track_name])return null;
  return out;
 }
-function makeSequenceV32(spec,races,stage){
+function makeSequenceV33(spec,races,stage){
  const legs=Array.from({length:spec.end_race-spec.start_race+1},(_,i)=>
   races.get(spec.start_race+i));
  if(legs.some(x=>!x))return null;
- // V3.2 production authority fixes the cost preference at 15 USD for every stage.
- const chosen=chooseV32(legs,spec.unit_cents,{costScaleDollars:PICK_V32_COST_SCALE_DOLLARS});
- if(chosen.engine!==PICK_V32_ENGINE||chosen.soft_cost_scale_dollars!==15)
-  throw Error("V3.2 cost scale or engine mismatch: fail closed.");
+ // Owner-authorized V3.3 trial: exact S=$30 and >=50% TRI mass per leg.
+ const chosen=chooseV33(legs,spec.unit_cents);
+ if(chosen.engine!==PICK_V33_ENGINE||
+    chosen.soft_cost_scale_dollars!==PICK_V33_COST_SCALE_DOLLARS||
+    chosen.minimum_leg_coverage!==PICK_V33_MIN_LEG_COVERAGE||
+    chosen.leg_coverage.some(x=>x+1e-12<PICK_V33_MIN_LEG_COVERAGE))
+  throw Error("V3.3 cost scale or per-leg coverage mismatch.");
  const picks=chosen.picks.map((programs,i)=>({race_number:spec.start_race+i,programs}));
  const fields=legs.map(l=>({race_number:l.race_number,programs:l.entries.map(e=>e.program_number)}));
  const probs=Object.fromEntries(legs.map(l=>
@@ -79,42 +83,44 @@ function makeSequenceV32(spec,races,stage){
  const ticket={role:"BEST_POSSIBLE",title:"Rail & Rye Ticket",
   unit_cents:spec.unit_cents,combinations:chosen.combinations,total_cents:chosen.total_cents,
   legs:picks,hit_rate_display:displayPct(chosen.hit_probability),
-  notes:"One ticket per sequence using the exact TRI-only cost/probability frontier."};
+  notes:"One ticket per sequence using exact TRI probabilities and additional ticket cost."};
  return {name:spec.name,start_race:spec.start_race,end_race:spec.end_race,
   play_status:"CONDITIONAL",
-  recommendation:"One ticket per official sequence using TRI win probabilities.",
+  recommendation:"Selections balance full-field TRI coverage against added ticket cost.",
   hit_rate_display:ticket.hit_rate_display,race_fields:fields,review_probabilities:probs,
   tickets:[ticket],
   review_meta:{
-   method:PICK_V32_ENGINE,
-   objective:"ARGMAX(log(H)-C/S)",
-   soft_cost_scale_dollars:PICK_V32_COST_SCALE_DOLLARS,
-   cost_preference_comparison:auditV32CostPreference(legs,spec.unit_cents),
+   method:PICK_V33_ENGINE,
+   objective:chosen.selection_objective,
+   soft_cost_scale_dollars:PICK_V33_COST_SCALE_DOLLARS,
+   minimum_leg_coverage:PICK_V33_MIN_LEG_COVERAGE,
+   selected_leg_coverage:chosen.leg_coverage,
+   marginal_opportunity_cost:chosen.marginal_opportunity_cost,
    frontier_points:chosen.frontier_points,
    stage,
    // Internals retained for QA only; the UI never shows a payout projection.
    required_break_even_dividend:chosen.break_even_average_winning_dividend,
-   marginal_additions:chosen.marginal_additions,
-   marginal_removals:chosen.marginal_removals,
+
    profitability_validation:"NOT_PERFORMED",
    publication_qualified:false
   }};
 }
-function buildTrackV32(card,wrapped){
+function buildTrackV33(card,wrapped){
  const current=checkedCurrentFields(card);
  if(!current)return null;
  const stage=card.projection_status==="scratch_final"?"POSTSCRATCH":"PRESCRATCH";
  // Source authenticity/official scratch changes are separately verified by
  // the private scoring and release gates. This result is NEVER customer-approved.
  const sequences=PICK_MENU_1123.filter(x=>x.track===card.track_name)
-  .map(x=>makeSequenceV32(x,current,stage));
+  .map(x=>makeSequenceV33(x,current,stage));
  if(sequences.some(x=>!x))return null;
  sequences.sort((a,b)=>a.start_race-b.start_race||
   (a.end_race-a.start_race)-(b.end_race-b.start_race)||a.name.localeCompare(b.name));
  return {card:{schema_version:1,product_type:"pick_tickets",
   date:PICK_DAY,track:card.track_name,revision:1,status:stage==="POSTSCRATCH"?"scratch_updated":"initial_current",
-  review_only:true,source_type:"PRIVATE_R2_TRI_V32_REQUIRES_SEPARATE_RELEASE_VERIFICATION",
-  source_receipt:null,optimizer_basis:PICK_V32_ENGINE,sequences},
+  review_only:true,formula_version:PICK_V33_ENGINE,
+  source_type:"PRIVATE_R2_TRI_V33_REQUIRES_SEPARATE_RELEASE_VERIFICATION",
+  source_receipt:null,optimizer_basis:PICK_V33_ENGINE,sequences},
   updated_at:wrapped?.uploaded_at||null,review_only:true};
 }
 
@@ -157,18 +163,18 @@ export function verifyV32OwnerScratchSnapshot(card){
  * postscratch factor recalculation is implied by a normalized PWIN sum.
  * Customer publication continues to require buildV32PostScratchReviewed().
  */
-export function buildV32ScratchFieldPreview(wrapped){
+export function buildV33ScratchFieldPreview(wrapped){
  const card=wrapped?.card||wrapped;
  if(!card||card.projection_status!=="scratch_final"||
     !["verified_prescratch","verified_scratch_final"].includes(card.factor_basis))
   return null;
  const official=verifyV32OwnerScratchSnapshot(card);
  if(!official.ok)return null;
- const view=buildTrackV32(card,wrapped);
+ const view=buildTrackV33(card,wrapped);
  if(!view)return null;
  return {...view,review_only:true,card:{
-   ...view.card,review_only:true,formula_version:PICK_V32_ENGINE,
-   source_type:"PRIVATE_R2_V32_CURRENT_FIELD_MATH_PREVIEW_NOT_PUBLISHED",
+   ...view.card,review_only:true,formula_version:PICK_V33_ENGINE,
+   source_type:"PRIVATE_R2_V33_CURRENT_FIELD_MATH_PREVIEW_NOT_PUBLISHED",
    score_verification_status:"CURRENT_FIELD_COMPLETE_SCORING_AND_MANIFEST_PENDING",
    model_factor_basis:card.factor_basis,
    official_scratch_source_sha256:official.source_snapshot_sha256,
@@ -177,7 +183,7 @@ export function buildV32ScratchFieldPreview(wrapped){
  }};
 }
 
-export function buildV32PostScratchReviewed({before,after,manifest,preHash,postHash}){
+export function buildV33PostScratchReviewed({before,after,manifest,preHash,postHash}){
  const old=checkedCurrentFields(before),now=checkedCurrentFields(after);
  if(!old||!now||before.projection_status!=="prescratch"||
    after.projection_status!=="scratch_final"||
@@ -187,7 +193,7 @@ export function buildV32PostScratchReviewed({before,after,manifest,preHash,postH
  const newSeq={date:PICK_DAY,track:after.track_name,source_sha256:postHash,
   legs:[...now.values()]};
  verifyV32ScratchTransition(oldSeq,newSeq,manifest);
- return buildTrackV32(after,null);
+ return buildTrackV33(after,null);
 }
 // Current Projections data lives in this same private bucket. Read exact known
 // track/date objects without requiring any legacy products/PDF or D1 table.
@@ -243,11 +249,11 @@ export function buildPrescratchPickTicketReview(cards){
    continue;
   }
   try{
-   const result=buildTrackV32(card,wrapped);
+   const result=buildTrackV33(card,wrapped);
    if(result)results.push(result);
    else rejected.push({track:card.track_name,reason:"Incomplete or invalid TRI PWIN/F4 betting-interest field."});
-  }catch(e){rejected.push({track:card.track_name,reason:"V3.2 source gate: "+String(e.message||e).slice(0,115)})}
+  }catch(e){rejected.push({track:card.track_name,reason:"V3.3 source gate: "+String(e.message||e).slice(0,115)})}
  }
  return {cards:results,rejected,source:"private_r2_projections",review_only:true,
-  engine:PICK_V32_ENGINE};
+  engine:PICK_V33_ENGINE};
 }
