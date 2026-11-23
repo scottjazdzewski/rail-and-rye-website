@@ -42,6 +42,11 @@ jobs:
           curl -fsSL --max-time 20 "https://railandryeracing.com/assets/longshot-radar.js?rev=${GITHUB_SHA}" -o /tmp/radar.js
           grep -Fq 'rr-lr-inline-analysis' /tmp/radar.js
           grep -Fq '/api/admin/longshot-radar-editorial' /tmp/radar.js
+          grep -Fq 'async function loadPublishedCard()' /tmp/radar.js
+          grep -Fq 'retry?.addEventListener("click",initialize)' /tmp/radar.js
+          ! grep -Fq 'visualSample()' /tmp/radar.js
+          ! grep -Fq 'rr-lr-upload-form' /tmp/radar.js
+          echo "PASS: live Radar script auto-loads private R2 source without any user JSON picker"
           ! grep -Fq 'make("button","","Race details")' /tmp/radar.js
           curl -fsSL --max-time 20 "https://railandryeracing.com/assets/longshot-radar.css?rev=${GITHUB_SHA}" -o /tmp/radar.css
           grep -Fq 'Longshot Radar v4' /tmp/radar.css
