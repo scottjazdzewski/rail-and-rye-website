@@ -159,7 +159,7 @@ for(const html of [adminHtml,memberHtml]){
   "Keep an accessible page title without visible ornamental title space");
  assert.match(html,/class="rr-dash-search-field"/,
   "The mobile horse search occupies one consistent full-width row");
- assert.match(html,/projections-dashboard\.css\?v=26/,
+ assert.match(html,/projections-dashboard\.css\?v=(?:2[7-9]|[3-9]\d)/,
   "Current improved typography style must be loaded");
  assert.match(html,/projections-dashboard\.js\?v=\d+/,
   "Current compact-label asset must be loaded");
