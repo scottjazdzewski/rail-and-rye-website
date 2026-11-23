@@ -28,179 +28,97 @@ export const PICK_MENU_1123=Object.freeze([
 ]);
 
 const counts={"Finger Lakes":8,"Mahoning Valley":10,"Mountaineer":8,"Parx Racing":9,"Zia Park":10};
+import {chooseV32,verifyV32ScratchTransition,PICK_V32_ENGINE,
+ PICK_V32_COST_SCALE_DOLLARS} from "./pick-tickets-v32.js";
+
 const isNumber=n=>typeof n==="number"&&Number.isFinite(n)&&n>=0&&n<=100;
-const displayPct=n=>(Math.round(n*10)/10).toFixed(1)+"%";
-function checkCard(card){
- if(!card||card.race_date!==PICK_DAY||card.projection_status!=="prescratch"||
-   !Object.hasOwn(counts,card.track_name)||
-   !Array.isArray(card.races)||card.races.length!==counts[card.track_name])return null;
- const races=new Map();
- for(const r of card.races){
-  if(!Number.isInteger(r.race_number)||races.has(r.race_number)||r.scratch_count!==null||
-    (r.scratches?.length||0)>0||!Array.isArray(r.entries)||r.entries.length<2)return null;
+const displayPct=n=>(n*100).toFixed(1)+"%";
+
+/** Current betting interests only. Never infer a missing horse, field, jockey, or PWIN. */
+function checkedCurrentFields(card){
+ if(!card||card.race_date!==PICK_DAY||!Object.hasOwn(counts,card.track_name)||
+    !["prescratch","scratch_final"].includes(card.projection_status)||
+    !Array.isArray(card.races)||card.races.length!==counts[card.track_name])return null;
+ const out=new Map();
+ for(const race of card.races){
+  const number=race.race_number;
+  if(!Number.isInteger(number)||number<1||number>counts[card.track_name]||
+     out.has(number)||!Array.isArray(race.entries)||race.entries.length<2)return null;
   const seen=new Set(),entries=[];
-  for(const e of r.entries){
-   const number=String(e.program_number||"").toUpperCase();
-   const p=e.win_probability_exact;
-   if(!/^[0-9]{1,2}[A-Z]?$/.test(number)||seen.has(number)||!isNumber(p)||
-      !e.f4_probabilities||Math.abs(e.f4_probabilities.exact_p1*100-p)>0.000001)return null;
-   seen.add(number);
-   entries.push({number,p});
+  for(const row of race.entries){
+   const program=String(row.program_number??"").trim().toUpperCase();
+   const pct=row.win_probability_exact, p1=row.f4_probabilities?.exact_p1;
+   if(!/^[0-9]{1,2}[A-Z]?$/.test(program)||seen.has(program)||
+      !isNumber(pct)||!isNumber(p1*100)||Math.abs(pct/100-p1)>1e-8)return null;
+   seen.add(program);entries.push({program_number:program,pwin:pct/100});
   }
-  const mass=entries.reduce((n,e)=>n+e.p,0);
-  if(Math.abs(mass-100)>0.000001)return null;
-  entries.sort((a,b)=>b.p-a.p||parseInt(a.number,10)-parseInt(b.number,10)||a.number.localeCompare(b.number));
-  races.set(r.race_number,entries);
+  if(Math.abs(entries.reduce((n,e)=>n+e.pwin,0)-1)>1e-5)return null;
+  out.set(number,{race_number:number,entries});
  }
- if(races.size!==counts[card.track_name]||[...races.keys()].some(r=>r<1||r>counts[card.track_name]))return null;
- return races;
+ if(out.size!==counts[card.track_name])return null;
+ return out;
 }
-// beta=0.5 balances improvement in model hit chance against multiplicative ticket
-// complexity. Explicit interim coverage-efficiency heuristic, NOT estimated ROI.
-function legSelection(entries,beta){
- let cumulative=0,best=-1,bestK=0;
- for(let i=0;i<entries.length;i++){
-  cumulative+=entries[i].p/100;
-  const score=cumulative/Math.pow(i+1,beta);
-  if(score>best+1e-12){best=score;bestK=i+1}
- }
- const picks=entries.slice(0,bestK);
- return {programs:picks.map(x=>x.number),coverage:picks.reduce((sum,x)=>sum+x.p,0)/100,
-   count:picks.length};
-}
-function candidate(spec,races,beta){
- let combinations=1,hit=1;const legs=[];
- for(let n=spec.start_race;n<=spec.end_race;n++){
-  const field=races.get(n);if(!field)return null;
-  const selection=legSelection(field,beta);
-  combinations*=selection.count;hit*=selection.coverage;
-  if(!Number.isSafeInteger(combinations)||combinations>1e9)return null;
-  legs.push({race_number:n,programs:selection.programs});
- }
- const total=combinations*spec.unit_cents;
- if(!Number.isSafeInteger(total)||total>1e11)return null;
- return {legs,combinations,total_cents:total,hit_pct:hit*100,unit_cents:spec.unit_cents};
-}
-// Interim V2: start from the model's lean selection and admit additional runners
-// only when the incremental PWIN coverage outweighs the additional combinations
-// under a stronger cost-sensitivity exponent (0.60 vs the old balanced 0.50).
-// No fixed spending cap, singles count, sequence hit target, or combination quota.
-export const FOCUSED_COST_EXPONENT=0.60;
-function focusedLeg(entries,leanLeg,balancedLeg){
- const lower=leanLeg.count,upper=balancedLeg.count;
- if(lower<1||upper<lower||upper>entries.length)return null;
- let count=lower;
- let mass=entries.slice(0,count).reduce((sum,e)=>sum+e.p,0)/100;
- const additions=[];
- while(count<upper){
-  const next=entries[count];
-  const addedMass=next.p/100;
-  const before=mass/Math.pow(count,FOCUSED_COST_EXPONENT);
-  const after=(mass+addedMass)/Math.pow(count+1,FOCUSED_COST_EXPONENT);
-  // A marginal runner must improve the coverage-to-combination score.
-  // Exact ties favor the smaller, less expensive ticket.
-  if(after<=before+1e-12)break;
-  additions.push({program:next.number,runner_win_probability_pct:next.p,
-   leg_coverage_before_pct:mass*100,leg_coverage_after_pct:(mass+addedMass)*100});
-  mass+=addedMass;
-  count++;
- }
- return {count,programs:entries.slice(0,count).map(e=>e.number),coverage:mass,additions};
-}
-function focusedCandidate(spec,races,lean,balanced){
- let combinations=1,hit=1;
- const legs=[],marginals=[];
- for(let i=0,number=spec.start_race;number<=spec.end_race;i++,number++){
-  const entries=races.get(number);
-  if(!entries)return null;
-  const leg=focusedLeg(entries,
-   {count:lean.legs[i].programs.length},
-   {count:balanced.legs[i].programs.length});
-  if(!leg)return null;
-  legs.push({race_number:number,programs:leg.programs});
-  combinations*=leg.count;
-  hit*=leg.coverage;
-  if(!Number.isSafeInteger(combinations)||combinations>1e9)return null;
-  marginals.push({race_number:number,additions:leg.additions});
- }
- const total=combinations*spec.unit_cents;
- if(!Number.isSafeInteger(total)||total>1e11)return null;
- // Inspect each added horse at the final other-leg coverage level.
- for(let i=0;i<legs.length;i++){
-  const leg=legs[i],entries=races.get(leg.race_number);
-  const k=leg.programs.length;
-  const otherLegMass=legs.reduce((p,l,j)=>{
-   if(i===j)return p;
-   return p*l.programs.reduce((m,number)=>m+entriesFor(races,l.race_number,number),0)/100;
-  },1);
-  const otherLegCombinations=combinations/k;
-  for(const added of marginals[i].additions){
-   added.additional_combinations=otherLegCombinations;
-   added.additional_cost_cents=otherLegCombinations*spec.unit_cents;
-   added.additional_complete_hit_pct=added.runner_win_probability_pct*otherLegMass;
-  }
- }
- return {legs,combinations,total_cents:total,hit_pct:hit*100,
-  unit_cents:spec.unit_cents,marginal_checks:marginals};
-}
-function entriesFor(races,raceNumber,number){
- return races.get(raceNumber).find(e=>e.number===number)?.p??0;
-}
-function compare(a,b){return a.total_cents===b.total_cents&&a.combinations===b.combinations&&
- a.legs.every((l,i)=>l.programs.join("|")===b.legs[i].programs.join("|"))}
-function buildSequence(spec,races){
- const lean=candidate(spec,races,.65),balanced=candidate(spec,races,.5),
-       wide=candidate(spec,races,.35);
- if(!lean||!balanced||!wide)return null;
- const focused=focusedCandidate(spec,races,lean,balanced);
- if(!focused||focused.combinations>balanced.combinations||
-   focused.combinations<lean.combinations)return null;
- const label=c=>"$"+(c.total_cents/100).toFixed(2)+" / "+displayPct(c.hit_pct);
- const alternatives=[["lean",lean],["focused",focused],["former_balanced",balanced],["wide",wide]]
-  .filter(([name,c])=>name==="focused"||!compare(c,focused));
- const comparisons=alternatives.map(([name,c])=>name+": "+label(c)).join("; ");
- const savings=balanced.total_cents-focused.total_cents;
- const coverageSacrifice=Math.max(0,balanced.hit_pct-focused.hit_pct);
- const field=Array.from({length:spec.end_race-spec.start_race+1},(_,i)=>{
-  const race_number=spec.start_race+i;
-  return {race_number,programs:races.get(race_number).map(e=>e.number)};
- });
- const nonSingles=focused.legs.filter(l=>l.programs.length>1).length;
- const notes="Ticket comparison: "+comparisons+
-  ". Uses 0.60 cost-sensitive marginal PWIN coverage, between lean and former balanced."+
-  " Compared with former balanced: "+(savings/100).toFixed(2)+" USD less cost; "+
-  displayPct(coverageSacrifice)+" less model-implied hit chance."+
-  " Constructed using verified source inputs where available.";
- return {
-  name:spec.name,start_race:spec.start_race,end_race:spec.end_race,
-  // Status is still awaiting independently approved ticket classification.
-  // PWIN coverage and cost alone do not establish wagering profitability.
-  play_status:"CONDITIONAL",hit_rate_display:displayPct(focused.hit_pct),
-  recommendation:"Ticket construction. "+comparisons+".",
-  race_fields:field,
-  // Paid runner PWIN is only emitted by the existing Access-protected admin route.
-  review_probabilities:Object.fromEntries(Array.from({length:spec.end_race-spec.start_race+1},(_,i)=>{
-   const n=spec.start_race+i;
-   return [String(n),Object.fromEntries(races.get(n).map(e=>[e.number,e.p]))];
-  })),
-  tickets:[{role:"BEST_POSSIBLE",title:"Rail & Rye Ticket",
-   unit_cents:focused.unit_cents,combinations:focused.combinations,
-   total_cents:focused.total_cents,legs:focused.legs,
-   hit_rate_display:displayPct(focused.hit_pct),notes}],
+function makeSequenceV32(spec,races,stage){
+ const legs=Array.from({length:spec.end_race-spec.start_race+1},(_,i)=>
+  races.get(spec.start_race+i));
+ if(legs.some(x=>!x))return null;
+ const chosen=chooseV32(legs,spec.unit_cents);
+ const picks=chosen.picks.map((programs,i)=>({race_number:spec.start_race+i,programs}));
+ const fields=legs.map(l=>({race_number:l.race_number,programs:l.entries.map(e=>e.program_number)}));
+ const probs=Object.fromEntries(legs.map(l=>
+  [String(l.race_number),Object.fromEntries(l.entries.map(e=>[e.program_number,e.pwin*100]))]));
+ const ticket={role:"BEST_POSSIBLE",title:"Rail & Rye Ticket",
+  unit_cents:spec.unit_cents,combinations:chosen.combinations,total_cents:chosen.total_cents,
+  legs:picks,hit_rate_display:displayPct(chosen.hit_probability),
+  notes:"One ticket per sequence using the exact TRI-only cost/probability frontier."};
+ return {name:spec.name,start_race:spec.start_race,end_race:spec.end_race,
+  play_status:"CONDITIONAL",
+  recommendation:"One ticket per official sequence using TRI win probabilities.",
+  hit_rate_display:ticket.hit_rate_display,race_fields:fields,review_probabilities:probs,
+  tickets:[ticket],
   review_meta:{
-   method:"PWIN_FOCUSED_MARGINAL_0_60_V2",
-   classification_method:"AWAITING_APPROVED_CLASSIFICATION",
-   alternatives:alternatives.map(([type,c])=>({
-    type,hit_rate_display:displayPct(c.hit_pct),combinations:c.combinations,
-    unit_cents:c.unit_cents,total_cents:c.total_cents
-   })),
-   saved_combinations_vs_former_balanced:balanced.combinations-focused.combinations,
-   saved_cents_vs_former_balanced:savings,
-   hit_pct_point_change_vs_former_balanced:focused.hit_pct-balanced.hit_pct,
-   marginal_checks:focused.marginal_checks,
-   non_single_legs:nonSingles
-  }
- };
+   method:PICK_V32_ENGINE,
+   objective:"ARGMAX(log(H)-C/S)",
+   soft_cost_scale_dollars:PICK_V32_COST_SCALE_DOLLARS,
+   frontier_points:chosen.frontier_points,
+   stage,
+   // Internals retained for QA only; the UI never shows a payout projection.
+   required_break_even_dividend:chosen.break_even_average_winning_dividend,
+   marginal_additions:chosen.marginal_additions,
+   marginal_removals:chosen.marginal_removals,
+   profitability_validation:"NOT_PERFORMED",
+   publication_qualified:false
+  }};
+}
+function buildTrackV32(card,wrapped){
+ const current=checkedCurrentFields(card);
+ if(!current)return null;
+ const stage=card.projection_status==="scratch_final"?"POSTSCRATCH":"PRESCRATCH";
+ // Source authenticity/official scratch changes are separately verified by
+ // the private scoring and release gates. This result is NEVER customer-approved.
+ const sequences=PICK_MENU_1123.filter(x=>x.track===card.track_name)
+  .map(x=>makeSequenceV32(x,current,stage));
+ if(sequences.some(x=>!x))return null;
+ sequences.sort((a,b)=>a.start_race-b.start_race||
+  (a.end_race-a.start_race)-(b.end_race-b.start_race)||a.name.localeCompare(b.name));
+ return {card:{schema_version:1,product_type:"pick_tickets",
+  date:PICK_DAY,track:card.track_name,revision:1,status:stage==="POSTSCRATCH"?"scratch_updated":"initial_current",
+  review_only:true,source_type:"PRIVATE_R2_TRI_V32_REQUIRES_SEPARATE_RELEASE_VERIFICATION",
+  source_receipt:null,optimizer_basis:PICK_V32_ENGINE,sequences},
+  updated_at:wrapped?.uploaded_at||null,review_only:true};
+}
+
+export function buildV32PostScratchReviewed({before,after,manifest,preHash,postHash}){
+ const old=checkedCurrentFields(before),now=checkedCurrentFields(after);
+ if(!old||!now||before.projection_status!=="prescratch"||
+   after.projection_status!=="scratch_final"||
+   before.track_name!==after.track_name)return null;
+ const oldSeq={date:PICK_DAY,track:before.track_name,source_sha256:preHash,
+  legs:[...old.values()]};
+ const newSeq={date:PICK_DAY,track:after.track_name,source_sha256:postHash,
+  legs:[...now.values()]};
+ verifyV32ScratchTransition(oldSeq,newSeq,manifest);
+ return buildTrackV32(after,null);
 }
 // Current Projections data lives in this same private bucket. Read exact known
 // track/date objects without requiring any legacy products/PDF or D1 table.
@@ -251,21 +169,16 @@ export function buildPrescratchPickTicketReview(cards){
  for(const wrapped of cards||[]){
   const card=wrapped?.card||wrapped;
   if(card?.race_date!==PICK_DAY||!Object.hasOwn(counts,card?.track_name))continue;
-  const races=checkCard(card);
-  if(!races){rejected.push({track:card.track_name,reason:"Missing exact full-field current prescratch PWIN/F4 validation."});continue}
-  const menu=PICK_MENU_1123.filter(s=>s.track===card.track_name);
-  const sequences=menu.map(spec=>buildSequence(spec,races));
-  if(sequences.some(x=>x===null)){rejected.push({track:card.track_name,reason:"Candidate ticket arithmetic could not be verified."});continue}
-  sequences.sort((a,b)=>a.start_race-b.start_race||
-   (a.end_race-a.start_race)-(b.end_race-b.start_race)||a.name.localeCompare(b.name));
-  results.push({card:{
-   schema_version:1,product_type:"pick_tickets",date:PICK_DAY,track:card.track_name,
-   revision:1,status:"initial_current",review_only:true,
-   source_type:"PRIVATE_R2_PRESCRATCH_PROJECTIONS_NOT_SCORER_RECEIPT",
-   source_receipt:null,
-   optimizer_basis:"INTERIM_COVERAGE_EFFICIENCY_NOT_EV",
-   sequences
-  },updated_at:wrapped?.uploaded_at||null,review_only:true});
+  if(card.projection_status!=="prescratch"){
+   rejected.push({track:card.track_name,reason:"Fresh complete official postscratch field and matching manifest required."});
+   continue;
+  }
+  try{
+   const result=buildTrackV32(card,wrapped);
+   if(result)results.push(result);
+   else rejected.push({track:card.track_name,reason:"Incomplete or invalid TRI PWIN/F4 betting-interest field."});
+  }catch(e){rejected.push({track:card.track_name,reason:"V3.2 source gate: "+String(e.message||e).slice(0,115)})}
  }
- return {cards:results,rejected,source:"private_r2_projections",review_only:true};
+ return {cards:results,rejected,source:"private_r2_projections",review_only:true,
+  engine:PICK_V32_ENGINE};
 }
