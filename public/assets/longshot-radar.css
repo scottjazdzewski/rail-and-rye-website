@@ -196,3 +196,54 @@
  .rr-lr-page .rr-lr-case{padding-top:5px;padding-bottom:2px}
  .rr-lr-page .rr-lr-card-foot{padding-bottom:6px}
 }
+
+
+/* Longshot Radar v4 — published-card reader. The explanatory sentence is
+   permanently visible: no hidden Race Details action, no text truncation. */
+.rr-lr-page .rr-lr-card{border-color:#b5c3cc}
+.rr-lr-page .rr-lr-racebar{min-height:42px;gap:7px 12px;padding:9px 13px}
+.rr-lr-page .rr-lr-racebar h3{font:800 16px/1.2 Inter,Arial,system-ui,sans-serif;letter-spacing:.02em}
+.rr-lr-page .rr-lr-race-number,.rr-lr-page .rr-lr-post{font:800 12px/1.25 Inter,Arial,system-ui,sans-serif}
+.rr-lr-page .rr-lr-top{grid-template-columns:43px minmax(0,1fr) 315px;gap:11px;padding:11px 13px}
+.rr-lr-page .rr-lr-program,.rr-lr-page .rr-lr-program img{width:41px;height:41px;object-fit:contain}
+.rr-lr-page .rr-lr-identity strong{font:800 19px/1.23 Inter,Arial,system-ui,sans-serif;overflow-wrap:anywhere}
+.rr-lr-page .rr-lr-identity small{font:500 12px/1.45 Inter,Arial,system-ui,sans-serif}
+.rr-lr-page .rr-lr-markets{gap:5px}
+.rr-lr-page .rr-lr-market span{font:800 10px/1.2 Inter,Arial,system-ui,sans-serif;letter-spacing:.035em}
+.rr-lr-page .rr-lr-market strong{font:700 23px/1.12 Tinos,"Times New Roman",serif}
+.rr-lr-page .rr-lr-market.rr-lr-model strong{font-size:27px;color:#102d53}
+.rr-lr-page .rr-lr-inline-analysis{border-top:1px solid #dce4e9;padding:11px 13px 14px;background:#fff}
+.rr-lr-page .rr-lr-inline-analysis .rr-lr-case{margin:0;padding:0;border:0;font:500 15px/1.52 Inter,Arial,system-ui,sans-serif;color:#17354e;white-space:normal;overflow:visible;display:block}
+.rr-lr-page .rr-lr-evidence{margin-top:10px;padding-top:9px;border-top:1px solid #e0e6eb}
+.rr-lr-page .rr-lr-evidence strong{display:block;color:#637483;font:800 10px/1.35 Inter,Arial,system-ui,sans-serif;letter-spacing:.045em;text-transform:uppercase}
+.rr-lr-page .rr-lr-evidence p{margin-top:4px;color:#17354e;font:500 14px/1.5 Inter,Arial,system-ui,sans-serif;overflow-wrap:anywhere}
+.rr-lr-page .rr-lr-summary-meta{font-size:12px;line-height:1.5}
+.rr-lr-page .rr-lr-summary h2{font-size:17px}
+.rr-lr-page .rr-lr-stage{font-size:10px;line-height:1.35;text-align:center}
+.rr-lr-page .rr-dash-intro{font-size:13px;line-height:1.4}
+@media(max-width:800px){
+ .rr-lr-page .rr-lr-top{grid-template-columns:40px minmax(0,1fr) 255px;grid-template-areas:"program horse market";gap:9px;padding:10px 12px}
+ .rr-lr-page .rr-lr-market strong{font-size:21px}
+ .rr-lr-page .rr-lr-market.rr-lr-model strong{font-size:25px}
+}
+@media(max-width:650px){
+ .rr-lr-page .rr-lr-top{grid-template-columns:40px minmax(0,1fr);grid-template-areas:"program horse" "market market";gap:8px 10px;padding:11px 12px 8px}
+ .rr-lr-page .rr-lr-identity strong{font-size:18px}
+ .rr-lr-page .rr-lr-markets{margin-top:1px;padding:9px 7px;background:#f3f6f8;border:0;border-radius:5px;gap:5px}
+ .rr-lr-page .rr-lr-market span{font-size:10px}
+ .rr-lr-page .rr-lr-market strong{font-size:23px}
+ .rr-lr-page .rr-lr-market.rr-lr-model strong{font-size:27px}
+ .rr-lr-page .rr-lr-inline-analysis{padding:10px 12px 13px}
+ .rr-lr-page .rr-lr-inline-analysis .rr-lr-case{font-size:15px;line-height:1.5}
+ .rr-lr-page .rr-lr-racebar{padding:9px 12px}
+ .rr-lr-page .rr-lr-racebar h3{font-size:14px}
+ .rr-lr-page .rr-lr-race-number,.rr-lr-page .rr-lr-post{font-size:11px}
+}
+@media(max-width:360px){
+ .rr-lr-page .rr-lr-identity strong{font-size:17px}
+ .rr-lr-page .rr-lr-inline-analysis .rr-lr-case{font-size:14px;line-height:1.52}
+ .rr-lr-page .rr-lr-racebar h3{font-size:13px}
+ .rr-lr-page .rr-lr-program,.rr-lr-page .rr-lr-program img{width:38px;height:38px}
+ .rr-lr-page .rr-lr-market strong{font-size:21px}
+ .rr-lr-page .rr-lr-market.rr-lr-model strong{font-size:25px}
+}
