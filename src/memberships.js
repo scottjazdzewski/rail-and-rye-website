@@ -1,5 +1,6 @@
 import {BUNDLE_KEY} from './bundles.js';
 import {readMemberProjectionCards} from './projections.js';
+import {readCertifiedF4Exotics} from './f4-exotics.js';
 import {ensureReleaseSchedule,ensureRacePdfExpirySchema} from './publication-schedule.js';
 
 const API_HEADERS={"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store","X-Content-Type-Options":"nosniff"};
@@ -420,6 +421,23 @@ async function memberProjectionData(request,env){
   if(!env.CARDS_BUCKET)return error("The member dashboard is temporarily unavailable.",503);
   return json({active:true,cards:await readMemberProjectionCards(env,await memberLibrary(env))});
 }
+async function memberCertifiedF4(request,env,url){
+  if(env.PROJECTIONS_MEMBER_LAUNCH!=="on")return error("Not found.",404);
+  const email=await sessionEmail(request,env);
+  if(!email)return error("Sign in to access your membership.",401);
+  if(!env.CARDS_BUCKET)return error("Verified model storage is unavailable.",503);
+  const date=url.searchParams.get("date"),track=url.searchParams.get("track"),
+        race=Number(url.searchParams.get("race"));
+  if(!/^20\\d{2}-\\d{2}-\\d{2}$/.test(String(date||""))||
+     !track||!Number.isInteger(race)||race<1||race>20)
+   return error("Invalid race selection.",400);
+  const cards=await readMemberProjectionCards(env,await memberLibrary(env));
+  const chosen=cards.some(c=>c.race_date===date&&
+      (c.track===track||c.card?.track_name===track)&&
+      c.card?.races?.some(r=>r.race_number===race));
+  if(!chosen)return error("Current race not available for this member.",404);
+  return readCertifiedF4Exotics(env,url);
+}
 async function memberDetails(request,env){
   const email=await sessionEmail(request,env);
   if(!email)return error("Sign in to access your membership.",401);
@@ -508,6 +526,7 @@ export async function handleMembershipApi(request,env,url){
     if(p==="/api/membership/logout")return await logout(request,env);
     if(p==="/api/membership/me"&&request.method==="GET")return await memberDetails(request,env);
     if(p==="/api/membership/projections"&&request.method==="GET")return await memberProjectionData(request,env);
+    if(p==="/api/membership/projections-f4"&&request.method==="GET")return await memberCertifiedF4(request,env,url);
     if(p==="/api/membership/cancel")return await cancelAtPeriodEnd(request,env);
     if(p==="/api/membership/billing-portal")return await billingPortal(request,env);
     if(/^\/api\/membership\/view\/[0-9a-f-]{36}$/i.test(p))return await memberDownload(request,env,url,true);
