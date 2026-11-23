@@ -46,3 +46,9 @@ The website tests are:
 ## Future revisions
 
 Keep V3.2 mathematical implementation unchanged until a new approved version is explicitly supplied by the owner. Profitability validation and model development belong to separate workstreams. Do not silently retune S or change the live website back to the V2 Focused strategy.
+
+## Private coverage-sensitivity diagnostic (non-production)
+
+To investigate whether the frozen S=$15 is too cost-sensitive for five- and six-leg horizontal wagers, the Access-gated **Ticket Insights** drawer displays a comparison at S = $15, $20, $25, $30 and $40. All hypothetical candidates use the **same exact V3.2 dynamic-programming frontier** for the same full field and denomination. Metrics shown: combinations, complete-sequence modeled hit probability, total cost, and number of singles. The current $15 row is explicitly distinguished.
+
+This is **read-only**: `src/pick-tickets-v32-sensitivity.js` never changes the production winner, actual ticket selections, scoring, status or R2 writes. The comparison is only available in private Ticket Insights using protected TRI probabilities. It is not offered as a customer bet, not a profitable-value prediction, and does not modify the frozen mathematical authority. Any future change to S requires explicit approval and a versioned formula change after evaluating actual frontiers and historical profitability research.
