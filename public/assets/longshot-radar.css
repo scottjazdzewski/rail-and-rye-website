@@ -247,3 +247,233 @@
  .rr-lr-page .rr-lr-market strong{font-size:21px}
  .rr-lr-page .rr-lr-market.rr-lr-model strong{font-size:25px}
 }
+
+
+/* RAIL & RYE — SHARED DAILY RESEARCH DESIGN STANDARD V1
+ * Longshot Radar implementation; paired with Target List's independent V1
+ * stylesheet. Presentation ONLY: no race-model or source transformations. */
+.rr-lr-page{overflow-x:clip}
+.rr-lr-page .rr-member-header .heritage-shell{
+  max-width:1180px;min-height:0;gap:12px;padding:8px 12px;
+}
+.rr-lr-page .rr-member-brand{
+  display:inline-flex;align-items:center;gap:8px;flex:0 0 auto;
+  font:800 18px/1.15 Inter,Arial,system-ui,sans-serif;
+  letter-spacing:.08em;white-space:nowrap;
+}
+.rr-lr-page .rr-member-brand img{display:block;width:40px;height:40px;object-fit:contain}
+.rr-lr-page .rr-member-brand span{font:800 18px/1.15 Inter,Arial,system-ui,sans-serif;letter-spacing:.08em}
+.rr-lr-page .rr-member-nav{
+  display:flex;align-items:stretch;flex-wrap:nowrap;gap:6px;
+  width:auto;max-width:100%;min-width:0;margin:0;padding:0 0 2px;
+  overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;
+  overscroll-behavior-x:contain;scroll-snap-type:x proximity;
+  scrollbar-width:none;
+}
+.rr-lr-page .rr-member-nav::-webkit-scrollbar{display:none}
+.rr-lr-page .rr-member-nav a{
+  flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;
+  min-height:40px;padding:10px 12px;border-radius:6px;
+  font:800 12px/1.2 Inter,Arial,system-ui,sans-serif;
+  letter-spacing:0;white-space:nowrap;scroll-snap-align:start;
+  text-transform:uppercase;
+}
+.rr-lr-page .rr-member-nav a[aria-current="page"]{
+  border-color:#f1c15f;background:#173f66;color:#fff;
+  text-decoration:underline;text-decoration-color:#f1c15f;text-underline-offset:4px;
+}
+.rr-lr-page .rr-member-nav a:focus-visible{
+  outline:3px solid #c99831;outline-offset:-3px;
+}
+.rr-lr-page .rr-lr-main{
+  box-sizing:border-box;max-width:1140px;
+  padding:10px 11px 32px;margin-inline:auto;
+}
+.rr-lr-page .rr-dash-private-banner{
+  margin:0 0 7px;padding:5px 9px;
+  font:800 11px/1.3 Inter,Arial,system-ui,sans-serif;
+  letter-spacing:.012em;
+}
+.rr-lr-page .rr-dash-heading{
+  margin:0 0 9px;padding:0;gap:0;align-items:flex-start;
+}
+.rr-lr-page .rr-member-kicker{
+  font:800 11px/1.35 Inter,Arial,system-ui,sans-serif;
+  letter-spacing:.075em;
+}
+.rr-lr-page .rr-dash-heading .rr-member-title{
+  margin:2px 0 3px;
+  font:800 28px/1.12 Inter,Arial,system-ui,sans-serif;
+  letter-spacing:-.025em;
+}
+.rr-lr-page .rr-dash-heading .rr-dash-intro{
+  display:block;max-width:720px;margin:0;
+  color:#53697a;font:500 13px/1.4 Inter,Arial,system-ui,sans-serif;
+}
+.rr-lr-page .rr-lr-toolbar{
+  display:grid;grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);
+  gap:8px;width:100%;max-width:760px;margin:0;padding:8px;
+}
+.rr-lr-page .rr-lr-toolbar label{
+  display:grid;gap:4px;min-width:0;
+  font:800 12px/1.25 Inter,Arial,system-ui,sans-serif;
+}
+.rr-lr-page .rr-lr-toolbar select{
+  display:block;width:100%;min-width:0;min-height:42px;max-width:100%;
+  margin:0;padding:7px 8px;
+  font:700 15px/1.2 Inter,Arial,system-ui,sans-serif;
+}
+.rr-lr-page .rr-lr-overview{
+  margin:0 0 8px;padding:3px 2px;
+  border:0;border-radius:0;background:transparent;color:#102d53;
+}
+.rr-lr-page #rr-lr-count.rr-lr-summary-meta{
+  display:block;margin:0;
+  font:800 16px/1.3 Inter,Arial,system-ui,sans-serif;
+  color:#102d53;
+}
+.rr-lr-page .rr-lr-candidates{
+  display:grid;grid-template-columns:minmax(0,1fr);gap:8px;
+}
+.rr-lr-page .rr-lr-card{
+  min-width:0;overflow:hidden;padding:0;
+  border:1px solid #b7c3ca;border-radius:7px;
+  background:#fff;box-shadow:none;
+}
+.rr-lr-page .rr-lr-racebar{
+  display:block;min-height:0;margin:0;padding:9px 12px 10px;
+  background:#102d53;border-top:3px solid #c99831;color:#fff;
+}
+.rr-lr-page .rr-lr-racebar-main{
+  display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 12px;
+}
+.rr-lr-page .rr-lr-racebar h3{
+  margin:0;color:#fff;
+  font:800 17px/1.23 Inter,Arial,system-ui,sans-serif;
+  letter-spacing:.01em;overflow-wrap:anywhere;
+}
+.rr-lr-page .rr-lr-race-number,.rr-lr-page .rr-lr-post{
+  margin:0;padding:0;border:0;color:#f4f0e6;
+  font:700 13px/1.3 Inter,Arial,system-ui,sans-serif;
+  white-space:nowrap;font-variant-numeric:tabular-nums;
+}
+.rr-lr-page .rr-lr-post{margin-left:0}
+.rr-lr-page .rr-lr-race-facts{
+  margin:6px 0 0;color:#e9f0f7;
+  font:500 14px/1.35 Inter,Arial,system-ui,sans-serif;
+  overflow-wrap:anywhere;white-space:normal;
+}
+.rr-lr-page .rr-lr-top{
+  display:grid;grid-template-columns:36px minmax(0,1fr) minmax(120px,42%);
+  grid-template-areas:"program horse market";
+  align-items:center;gap:8px;min-width:0;margin:0;padding:10px 12px;
+  background:#fff;
+}
+.rr-lr-page .rr-lr-program{
+  grid-area:program;display:grid;place-items:center;
+  width:36px;height:36px;min-width:36px;
+}
+.rr-lr-page .rr-lr-program img{
+  display:block;width:36px;height:36px;object-fit:contain;
+}
+.rr-lr-page .rr-lr-identity{grid-area:horse;min-width:0;display:grid;gap:2px}
+.rr-lr-page .rr-lr-identity strong{
+  color:#102d53;font:800 17px/1.26 Inter,Arial,system-ui,sans-serif;
+  overflow-wrap:anywhere;white-space:normal;
+}
+.rr-lr-page .rr-lr-ml-inline{
+  display:block;color:#435d71;
+  font:700 14px/1.25 Inter,Arial,system-ui,sans-serif;
+}
+.rr-lr-page .rr-lr-identity small{
+  color:#5b7183;font:500 12px/1.35 Inter,Arial,system-ui,sans-serif;
+  overflow-wrap:anywhere;
+}
+.rr-lr-page .rr-lr-markets{
+  grid-area:market;display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  align-items:center;gap:4px;min-width:0;margin:0;padding:0;
+  background:transparent;border:0;text-align:center;
+}
+.rr-lr-page .rr-lr-market{
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:3px;min-width:0;
+  margin:0;padding:0;border:0;background:transparent;
+}
+.rr-lr-page .rr-lr-market span{
+  color:#64788b;white-space:nowrap;
+  font:800 11px/1.2 Inter,Arial,system-ui,sans-serif;
+  letter-spacing:0;
+}
+.rr-lr-page .rr-lr-market strong{
+  color:#102d53;white-space:nowrap;
+  font:700 22px/1.08 Tinos,"Times New Roman",serif;
+}
+.rr-lr-page .rr-lr-market.rr-lr-model strong{
+  color:#102d53;font:700 25px/1.06 Tinos,"Times New Roman",serif;
+}
+.rr-lr-page .rr-lr-inline-analysis{
+  margin:0;padding:11px 12px 13px;background:#fff;
+  border-top:1px solid #e0e6ea;
+}
+.rr-lr-page .rr-lr-inline-analysis .rr-lr-case{
+  display:block;margin:0;padding:0;border:0;color:#17354e;
+  font:500 17px/1.52 Inter,Arial,system-ui,sans-serif;
+  white-space:pre-line;overflow:visible;overflow-wrap:anywhere;
+  -webkit-line-clamp:unset;
+}
+.rr-lr-page .rr-lr-evidence{margin-top:9px;padding-top:8px;border-top:1px solid #e0e6ea}
+.rr-lr-page .rr-lr-evidence strong{
+  display:block;color:#526c7f;
+  font:800 12px/1.3 Inter,Arial,system-ui,sans-serif;
+  letter-spacing:.015em;text-transform:uppercase;
+}
+.rr-lr-page .rr-lr-evidence p{
+  margin:4px 0 0;color:#17354e;
+  font:500 17px/1.52 Inter,Arial,system-ui,sans-serif;
+  white-space:pre-line;overflow-wrap:anywhere;
+}
+.rr-lr-page .rr-lr-subtle{
+  margin:9px 2px 0;color:#526979;
+  font:500 12px/1.45 Inter,Arial,system-ui,sans-serif;
+}
+.rr-lr-page #rr-lr-loading{
+  margin:8px 0;color:#435d71;font:500 15px/1.5 Inter,Arial,system-ui,sans-serif;
+}
+.rr-lr-page .rr-member-footer{padding:9px 0}
+.rr-lr-page .rr-member-footer .heritage-shell{
+  padding-top:0;padding-bottom:0;gap:8px 15px;
+}
+.rr-lr-page .rr-member-footer .heritage-footmark{
+  font:800 15px/1.1 Inter,Arial,system-ui,sans-serif;
+  letter-spacing:.13em;
+}
+.rr-lr-page .rr-member-footer nav,.rr-lr-page .rr-member-footer small{
+  font:500 11px/1.5 Inter,Arial,system-ui,sans-serif;
+}
+@media(max-width:900px){
+  .rr-lr-page .rr-member-header .heritage-shell{
+    display:flex;flex-direction:column;align-items:stretch;
+    flex-wrap:nowrap;gap:6px;padding:8px 10px 7px;
+  }
+  .rr-lr-page .rr-member-brand{align-self:flex-start}
+  .rr-lr-page .rr-member-nav{width:100%}
+}
+@media(max-width:430px){
+  .rr-lr-page .rr-lr-main{padding:9px 10px 30px}
+  .rr-lr-page .rr-lr-top{gap:7px;padding:10px 9px}
+  .rr-lr-page .rr-lr-racebar{padding:9px 10px 10px}
+  .rr-lr-page .rr-lr-inline-analysis{padding:11px 12px 13px}
+}
+@media(max-width:359px){
+  .rr-lr-page .rr-lr-toolbar{gap:6px;padding:8px}
+  .rr-lr-page .rr-lr-toolbar select{padding:7px 6px}
+  .rr-lr-page .rr-lr-top{
+    grid-template-columns:34px minmax(0,1fr) minmax(120px,44%);
+    gap:6px;padding:10px 8px;
+  }
+  .rr-lr-page .rr-lr-program,.rr-lr-page .rr-lr-program img{
+    width:34px;height:34px;min-width:34px;
+  }
+  /* Preserve 17px horse names, 25px WIN, 22px FAIR, 17px analysis. */
+}

@@ -12,8 +12,8 @@
 <link rel="stylesheet" href="/assets/rail-rye-components.css?v=9">
 <link rel="stylesheet" href="/assets/membership.css?v=3">
 <link rel="stylesheet" href="/assets/projections-dashboard.css?v=22">
-<link rel="stylesheet" href="/assets/longshot-radar.css?v=5">
-<script defer src="/assets/longshot-radar.js?v=push-20261123-2"></script>
+<link rel="stylesheet" href="/assets/longshot-radar.css?v=shared-v1-20261123">
+<script defer src="/assets/longshot-radar.js?v=shared-v1-20261123"></script>
 </head>
 <body class="rr-member-page rr-dashboard-page rr-lr-page">
 <header class="rr-member-header">
@@ -29,13 +29,12 @@
  </div>
 </header>
 <main class="rr-member-main rr-dashboard-main rr-lr-main">
- <p class="rr-dash-private-banner">NOVEMBER 23, 2026 · PUBLISHED RADAR · PRIVATE REVIEW</p>
+ <p class="rr-dash-private-banner">PRIVATE EDITORIAL REVIEW · PUBLISHED CARD · CUSTOMER ACCESS OFF</p>
  <div class="rr-dash-heading">
-  <div><span class="rr-member-kicker">Racing Intelligence / Longshot Radar</span>
+  <div><span class="rr-member-kicker">Racing Intelligence</span>
    <h1 class="rr-member-title">Longshot Radar</h1>
-   <p class="rr-dash-intro">Daily price-horse research. Sort across tracks by post time or by track. Each published horse has its analysis directly below the odds.</p>
+   <p class="rr-dash-intro">Published value horses with original prices, model projections, and the full racing case.</p>
   </div>
-  
  </div>
  
 
@@ -48,19 +47,11 @@
  <section id="rr-lr-app" class="rr-lr-app" aria-label="Longshot Radar review" hidden>
   <div class="rr-dash-toolbar rr-lr-toolbar">
    <label>Race date<select id="rr-lr-date" aria-label="Choose Longshot Radar race date"></select></label>
-   <label>Sort candidates<select id="rr-lr-sort" aria-label="Sort Longshot Radar by post time or track"><option value="post-time">Post time</option><option value="track">Track</option></select></label>
+   <label>Sort by<select id="rr-lr-sort" aria-label="Sort Longshot Radar by post time or track"><option value="post-time">Post time</option><option value="track">Track</option></select></label>
   </div>
-  <div class="rr-lr-overview">
-   <div class="rr-lr-summary">
-    <div><span class="rr-lr-kicker">RAIL &amp; RYE / LONGSHOT RADAR</span><h2 id="rr-lr-date-title"></h2></div>
-    <span id="rr-lr-stage" class="rr-lr-stage"></span>
-   </div>
-   <div class="rr-lr-summary-meta">
-    <span id="rr-lr-count"></span>
-    <span id="rr-lr-updated"></span>
-   </div>
+  <div class="rr-lr-overview" aria-live="polite">
+   <p id="rr-lr-count" class="rr-lr-summary-meta"></p>
   </div>
-  <div class="rr-lr-list-head" aria-hidden="true"><span>QUALIFIED CANDIDATES</span><span>ML · TRI WIN · FAIR</span></div>
   <div id="rr-lr-candidates" class="rr-lr-candidates" aria-live="polite"></div>
   <p class="rr-lr-subtle">Morning-line odds are the original published prices, not the live tote. Displayed probabilities reproduce the published PDF; exact TRI receipt verification is separate.</p>
  </section>
