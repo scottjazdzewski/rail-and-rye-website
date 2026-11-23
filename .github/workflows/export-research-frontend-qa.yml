@@ -1,0 +1,43 @@
+name: Export public Daily Research frontend for offline visual QA
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/export-research-frontend-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  package-public-assets-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Archive approved public files (never private R2 source)
+        shell: bash
+        run: |
+          set -euo pipefail
+          zip -q -r research-frontend-public-only.zip \
+            public/admin/longshot-radar.html \
+            public/admin/target-list-preview.html \
+            public/assets/longshot-radar.js \
+            public/assets/longshot-radar.css \
+            public/assets/target-list-dashboard.js \
+            public/assets/target-list-dashboard.css \
+            public/assets/rail-rye-core.css \
+            public/assets/rail-rye-components.css \
+            public/assets/membership.css \
+            public/assets/projections-dashboard.css \
+            public/assets/approved/brand/rail-rye-ivory-logo.png \
+            public/assets/approved/saddlecloths
+          if unzip -Z1 research-frontend-public-only.zip | grep -E '(private|\.json$|\.pdf$|\.env$)'; then
+            echo "::error::Forbidden private/source file included in frontend QA bundle."
+            exit 1
+          fi
+          echo "PASS: public site UI/assets only, no paid horses, receipts, source JSON or PDF."
+      - uses: actions/upload-artifact@v4
+        with:
+          name: daily-research-public-frontend-only
+          path: research-frontend-public-only.zip
+          retention-days: 2
+          if-no-files-found: error
