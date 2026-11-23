@@ -9,8 +9,9 @@ const privateSource=await readPrivatePickProjections({CARDS_BUCKET:{
   return key.endsWith("finger-lakes.json")?{text:async()=>JSON.stringify(testCard("Finger Lakes")),customMetadata:{uploaded_at:"2026-11-23T05:00:00Z"}}:null;
  }
 }});
-assert.equal(privateFetches.length,5,"only the five known private date/track R2 keys are checked");
-assert.ok(privateFetches.every(x=>x.startsWith("projections/dashboard/2026-11-23/")));
+assert.equal(privateFetches.length,6,"five known Projections keys plus one sealed private review source are checked");
+assert.equal(privateFetches.filter(x=>x.startsWith("projections/dashboard/2026-11-23/")).length,5);
+assert.equal(privateFetches.filter(x=>x==="pick-tickets/interim/2026-11-23/revision-0001.json").length,1);
 assert.equal(privateSource.length,1);
 assert.equal(privateSource[0].card.track_name,"Finger Lakes");
 const counts={"Finger Lakes":8,"Mahoning Valley":10,"Mountaineer":8,"Parx Racing":9,"Zia Park":10};
