@@ -194,6 +194,16 @@ export async function handleAdminProjectionUpload(request,env){
  const product=await env.STORE_DB.prepare("SELECT id,title,category,race_date,track,pdf_key,status FROM products WHERE id=? AND category='Race Cards' AND status IN ('draft','published','archived') AND pdf_key IS NOT NULL AND pdf_key!='__rr_bundle__' AND NOT EXISTS(SELECT 1 FROM bundle_only_assets a WHERE a.product_id=products.id)").bind(body.product_id).first();
  if(!product)return fail("Choose an individual Race Cards publication with a PDF attached.",404);
  if(product.race_date&&product.race_date!==card.race_date)return fail("The JSON race date does not match the selected publication date.",409);
+ // Apply the same certified ordered-F4 gate to both single and batch uploads.
+ if(card.projection_status==="scratch_final"){
+  const key="projections/f4-ordered/"+card.race_date+"/"+trackSlug(card.track_name)+".json";
+  try{
+   const source=await env.CARDS_BUCKET.get(key);
+   if(!source)return fail("Matching scratch-final certified F4 distributions required.",409);
+   if(!verifyCertifiedScratchFinalTrack(card,await source.json()))
+    return fail("Scratch-final F4 certification disagrees with uploaded field.",409);
+  }catch(e){return fail("Unable to verify scratch-final F4 certification.",503)}
+ }
  // A single-publication projection upload can also change the exact field
  // used by Pick Tickets; audit it and update the shared date/track source.
  let pickAudit=null;
