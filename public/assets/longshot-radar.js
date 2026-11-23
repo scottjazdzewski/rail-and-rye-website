@@ -210,15 +210,5 @@ q("#rr-lr-date").addEventListener("change",event=>{
  state.date=event.target.value;renderCandidates();
 });
 q("#rr-lr-sort").addEventListener("change",event=>{state.sort=event.target.value;renderCandidates();});
-
-// Keep the selected module visible in a single swipeable navigation strip.
-const moduleNav=q(".rr-lr-page .rr-member-nav");
-const selectedTab=moduleNav?.querySelector('[aria-current="page"]');
-if(moduleNav&&selectedTab){
- requestAnimationFrame(()=>{
-  const navRect=moduleNav.getBoundingClientRect(),tabRect=selectedTab.getBoundingClientRect();
-  moduleNav.scrollLeft+=tabRect.left-navRect.left-(navRect.width-tabRect.width)/2;
- });
-}
 initialize();
 })();
