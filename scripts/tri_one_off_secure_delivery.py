@@ -12,6 +12,7 @@ Never print decrypted projections, unwrapped keys or private-key bytes.
 """
 import argparse
 import base64
+import brotli
 import hashlib
 import json
 import os
@@ -160,7 +161,10 @@ def publish(client, sealed_file):
         mgf=padding.MGF1(algorithm=hashes.SHA256()),
         algorithm=hashes.SHA256(), label=None))
     require(len(aes_key) == 32, "Invalid unwrapped AES key")
-    plaintext = AESGCM(aes_key).decrypt(nonce, ciphertext, AAD)
+    compressed = AESGCM(aes_key).decrypt(nonce, ciphertext, AAD)
+    require(sealed.get("compression") == "brotli", "Expected Brotli compressed encrypted transfer")
+    plaintext = brotli.decompress(compressed)
+    require(len(plaintext) <= 1024*1024, "Decompressed transfer unexpectedly exceeds 1 MB")
     cards = validate(plaintext)
 
     # Check every object *before* the first write. Never roll over a scratch-
