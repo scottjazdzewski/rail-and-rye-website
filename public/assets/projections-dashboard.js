@@ -299,6 +299,7 @@ function cardHeader(card){
  };
  const file=approvedTrackLogos[name];
  if(file){
+  wrapper.className+=" rr-dash-card-head--with-track-logo";
   const trackLogo=document.createElement("img");
   trackLogo.className="rr-dash-track-logo";trackLogo.src="/assets/approved/track-logos/"+file;
   trackLogo.alt=name+" track logo";trackLogo.loading="lazy";trackLogo.decoding="async";
