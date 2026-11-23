@@ -7,6 +7,9 @@ on:
       - 'public/assets/target-list-dashboard.*'
       - 'test-target-list-hub.mjs'
       - 'test-target-list-responsive.mjs'
+      - 'test-target-list-private-review.mjs'
+      - 'test-rr-race-titles.mjs'
+      - 'src/target-list.js'
       - '.github/workflows/verify-target-list-hub.yml'
   pull_request:
     paths:
