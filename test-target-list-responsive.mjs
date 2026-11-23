@@ -260,7 +260,7 @@ try{
  await preview.reload({waitUntil:"domcontentloaded"});
  await preview.locator(".rr-target-card").first().waitFor({timeout:10000});
  assert.equal(await preview.locator(".rr-target-card").count(),8,"Review route directly renders stored source-backed races.");
- assert.match(await preview.locator(".rr-target-private").first().innerText(),/NOT SCORER-CERTIFIED/);
+ assert.equal(await preview.locator(".rr-target-private").count(),0,"Internal review notice stays off the daily reader.");
  assert.equal(await preview.locator(".rr-review-artwork").count(),0);
  await preview.close();
  console.log("PASS: real browser Target List layouts at 320, 375, 390, 430, 768 and 1280px, no synthetic fallbacks and real-source private review rendering.");
