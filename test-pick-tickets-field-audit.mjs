@@ -240,9 +240,9 @@ assert.equal(extra.score_freshness_verified,false);
 const missing=structuredClone(more);
 missing.races[0].scratches.pop();
 await assert.rejects(()=>auditV33FieldUpload(missing,post),/cannot verify every race/);
-// The date-specific official wager menu is not optional. Other dates may
-// upload Projections without automatically manufacturing Pick Tickets from
-// the November 23 wager menu.
+// The November 24 track uses its separately verified 7-sequence wager menu.
+// It must NOT inherit the November 23 date or fabricate a customer release.
+ // Unknown future dates still require a separately sourced official wager menu.
 const nextDay=fullTrack();
 nextDay.race_date="2026-11-24";
 const nextResponse=await handleAdminProjectionBatchUpload(new Request(
@@ -252,6 +252,24 @@ const nextResponse=await handleAdminProjectionBatchUpload(new Request(
 assert.equal(nextResponse.status,200);
 const nextResult=await nextResponse.json();
 assert.equal(nextResult.uploaded[0].ticket_verification.status,
+ "AWAITING_CERTIFIED_CURRENT_SCORING");
+assert.equal(nextResult.uploaded[0].ticket_verification.sequences_checked,7);
+const newSource=JSON.parse(await (await env.CARDS_BUCKET.get(
+ "projections/dashboard/2026-11-24/finger-lakes.json")).text());
+const newAudit=JSON.parse(await (await env.CARDS_BUCKET.get(
+ pickUploadAuditKey(newSource))).text());
+assert.equal(newAudit.date,"2026-11-24");
+assert.equal(newAudit.review_card.date,"2026-11-24");
+assert.equal(newAudit.sequence_count,7);
+assert.equal(newAudit.production_release_approved,false);
+const unknown=fullTrack();unknown.race_date="2026-11-25";
+const unknownResponse=await handleAdminProjectionBatchUpload(new Request(
+ "https://railandryeracing.com/api/admin/projections/batch",{
+ method:"POST",headers:{"content-type":"application/json"},
+ body:JSON.stringify({cards:[unknown]})}),env);
+assert.equal(unknownResponse.status,200);
+const unknownResult=await unknownResponse.json();
+assert.equal(unknownResult.uploaded[0].ticket_verification.status,
  "NO_VERIFIED_OFFICIAL_PICK_MENU_FOR_DATE_TRACK");
-assert.equal(nextResult.uploaded[0].ticket_verification.sequences_checked,0);
+assert.equal(unknownResult.uploaded[0].ticket_verification.sequences_checked,0);
 console.log("PASS: every latest field upload reoptimizes full-field V3.3 tickets; source hashes, new scratches, prior-choice comparison and stale edition failsafes.");
