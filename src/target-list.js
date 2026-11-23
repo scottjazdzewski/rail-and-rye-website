@@ -76,9 +76,22 @@ export function validateTargetList(input){
    if(!object(scratch))throw Error("Scratch requires a horse and saddlecloth.");
    return {program_number:field(scratch.program_number,"Scratch number",4),horse_name:field(scratch.horse_name,"Scratched horse",120)};
   });
+  // Presentation-only source metadata; no title/grade inferred from rank,
+  // purse, class, or the attractiveness of the ATTACK horse.
+  const rawGrade=entry.stakes_grade??entry.grade;
+  const stakesGrade=rawGrade==null?"":String(rawGrade).trim();
+  if(stakesGrade&&!/^(?:(?:grade|gr\.?|g)\s*[- ]?\s*)?(?:[123]|III|II|I)$/i.test(stakesGrade))
+   throw Error("Stakes grade must be source supplied as Grade 1, 2 or 3.");
+  if(entry.is_stakes!=null&&typeof entry.is_stakes!=="boolean")
+   throw Error("Stakes classification must be a source-backed boolean.");
   return {rank,track,race_number,tier,post_time_et:field(entry.post_time_et,"Post time",40,false),
    surface:field(entry.surface,"Surface",50,false),distance:field(entry.distance,"Distance",80,false),
-   conditions:field(entry.conditions,"Conditions",200,false),analysis:field(entry.analysis,"The Rail & Rye Analysis",4000),
+   conditions:field(entry.conditions,"Conditions",200,false),
+   race_name:field(entry.race_name,"Race name",240,false),
+   stakes_name:field(entry.stakes_name,"Canonical stakes name",240,false),
+   stakes_grade:stakesGrade,sponsor_name:field(entry.sponsor_name,"Race sponsor",120,false),
+   is_stakes:entry.is_stakes===true,
+   analysis:field(entry.analysis,"The Rail & Rye Analysis",4000),
    favorite,attack,also_live,scratches:normalizedScratches};
  });
  targets.sort((a,b)=>a.rank-b.rank);
