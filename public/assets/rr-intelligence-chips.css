@@ -150,15 +150,15 @@
  text-align:center;
 }
 .rr-dash-track-mark-rail{
- position:absolute;inset:6px 8px;z-index:-1;border:1.4px solid #e5c37e;
+ position:absolute;inset:6px 8px;z-index:0;pointer-events:none;border:1.4px solid #e5c37e;
  border-radius:48% / 50%;opacity:.78;
 }
 .rr-dash-track-mark-letters{
- display:block;margin:0;font:850 21px/1 Inter,Arial,system-ui,sans-serif;
+ display:block;position:relative;z-index:1;margin:0;font:850 21px/1 Inter,Arial,system-ui,sans-serif;
  letter-spacing:-.045em;white-space:nowrap;
 }
 .rr-dash-track-mark-caption{
- margin-top:4px;font:750 6px/1 Inter,Arial,system-ui,sans-serif;
+ position:relative;z-index:1;margin-top:4px;font:750 6px/1 Inter,Arial,system-ui,sans-serif;
  letter-spacing:.11em;color:#e6cd9d;
 }
 @media(max-width:800px){
