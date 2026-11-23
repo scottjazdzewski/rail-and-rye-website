@@ -6,6 +6,12 @@ on:
       - 'test-homepage-lock.mjs'
       - 'test-projection-dashboard-mobile.mjs'
       - 'test-rr-exotic-bet-builder.mjs'
+      - 'test-rr-f4-exotics-api.mjs'
+      - 'src/f4-exotics.js'
+      - 'src/memberships.js'
+      - 'src/index.js'
+      - 'scripts/tri_f4_exotics.py'
+      - 'tests/test_tri_f4_exotics.py'
       - 'test-prescratch-projection-import.mjs'
       - 'src/projections.js'
       - 'scripts/tri_dashboard_sync.py'
@@ -42,6 +48,8 @@ jobs:
         run: node test-projection-dashboard-mobile.mjs
       - name: Real chip assets and source-gated exotic research Bet Builder
         run: node test-rr-exotic-bet-builder.mjs
+      - name: Source-verified private F4 exotic API protects complete runner field
+        run: node test-rr-f4-exotics-api.mjs
       - name: Prescratch TRI F4 model roundtrip and release-label guard
         run: node test-prescratch-projection-import.mjs
       - uses: actions/setup-python@v5
@@ -51,3 +59,4 @@ jobs:
         run: |
           python -m unittest discover -s tests -p 'test_tri_dashboard_sync.py' -v
           python -m unittest discover -s tests -p 'test_tri_f4_finish_order.py' -v
+          python -m unittest discover -s tests -p 'test_tri_f4_exotics.py' -v
