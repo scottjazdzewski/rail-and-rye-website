@@ -109,7 +109,7 @@ class El{
 const ids=["rr-target-date","rr-target-track","rr-target-search","rr-target-status","rr-target-app","rr-target-empty","rr-target-list","rr-target-dialog","rr-target-dialog-content","rr-target-dialog-title","rr-target-count","rr-target-context","rr-target-freshness","rr-target-dialog-close","rr-target-upload-form","rr-target-file","rr-target-upload-status"];
 const elements=new Map(ids.map(id=>[id,new El(id.includes("dialog")?"dialog":"div")]));
 const doc={getElementById:id=>elements.get(id),createElement:tag=>new El(tag)};
-const fixture={dates:["2026-11-23"],edition:base,uploaded_at:"2026-11-23T04:00:00Z"};
+const fixture={dates:["2026-11-23"],edition:good,uploaded_at:"2026-11-23T04:00:00Z"};
 const context={document:doc,fetch:async()=>({ok:true,json:async()=>fixture}),Date,Intl,RegExp,Number,String,Array,Set,console,encodeURIComponent};
 vm.runInNewContext(js,context,{filename:"target-list-dashboard.js"});
 await new Promise(resolve=>setTimeout(resolve,30));
