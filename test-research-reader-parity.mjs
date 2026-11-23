@@ -28,6 +28,15 @@ for(const [name,css] of [["Radar",radarCSS],["Target",targetCSS]]){
  assert.match(css,/22px/,name+" keeps 22px FAIR odds");
  assert.match(css,/17px\/1\.(?:52|53)/,name+" preserves legible full editorial analysis");
 }
+assert.match(radarHtml,/id="rr-lr-count"/,"Radar shows the selection count on the left");
+assert.match(radarHtml,/id="rr-lr-context"/,"Radar shows the active sort order on the right");
+assert.match(targetHtml,/id="rr-target-count"/,"Target shows the target count on the left");
+assert.match(targetHtml,/id="rr-target-context"/,"Target shows the active sort order on the right");
+assert.match(radarJS,/q\("#rr-lr-context"\)\.textContent=state\.sort/,"Radar updates its sort context");
+assert.match(targetJS,/set\("rr-target-context"/,"Target updates its sort context");
+assert.match(radarCSS,/justify-content:space-between;gap:8px/,"Radar uses split count + sort layout");
+assert.match(targetCSS,/\.rr-target-page \.rr-target-summary/,"Target has split count + sort layout");
+assert.match(targetCSS,/background:#fff;/,"Target analysis uses the same white reader surface");
 assert.doesNotMatch(targetHtml,/rr-target-freshness|RACING INTELLIGENCE \/ TARGET LIST/,
  "Target toolbar has only date and sort, no third timestamp or repeated product title");
 assert.doesNotMatch(targetJS,/headerColumns\(|stat\("ML"|rr-target-freshness/,
