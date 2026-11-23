@@ -42,6 +42,9 @@ function checkedCurrentFields(card){
  const out=new Map();
  for(const race of card.races){
   const number=race.race_number;
+  if(card.projection_status==="prescratch"&&
+     (race.scratch_count!==null&&(race.scratch_count!==undefined&&race.scratch_count!==0)||
+      (race.scratches?.length||0)>0))return null;
   if(!Number.isInteger(number)||number<1||number>counts[card.track_name]||
      out.has(number)||!Array.isArray(race.entries)||race.entries.length<2)return null;
   const seen=new Set(),entries=[];
