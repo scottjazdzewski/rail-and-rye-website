@@ -124,6 +124,45 @@ def main():
         raise RuntimeError("R2 credentials not configured")
     s3=boto3.client("s3",endpoint_url=f"https://{account}.r2.cloudflarestorage.com",
         region_name="auto",aws_access_key_id=access,aws_secret_access_key=secret)
+    # Presence-only discovery; never emit private score rows, object keys, or
+    # credentials. An existing R2 PWIN array is NOT a V4.1 source rerun.
+    kinds={"card_sidecars":0,"connection_evidence_jsonl":0,"person_ratings_jsonl":0,
+           "scoring_run_receipts":0,"source_zips":0}
+    matched=0
+    pages=0
+    for page in s3.get_paginator("list_objects_v2").paginate(
+        Bucket=BUCKET,PaginationConfig={"PageSize":1000,"MaxItems":15000}):
+        pages+=1
+        for obj in page.get("Contents",[]):
+            key=obj["Key"].lower()
+            if not any(part in key for part in ("2026-11-23","20261123","1123")):
+                continue
+            matched+=1
+            if "card_connection" in key or "sidecar" in key:kinds["card_sidecars"]+=1
+            if "connection" in key and key.endswith(".jsonl"):kinds["connection_evidence_jsonl"]+=1
+            if "person" in key and key.endswith(".jsonl"):kinds["person_ratings_jsonl"]+=1
+            if "receipt" in key and ("score" in key or "tri" in key or "f4" in key):
+                kinds["scoring_run_receipts"]+=1
+            if key.endswith(".zip") and ("source" in key or "tri" in key):
+                kinds["source_zips"]+=1
+    print("TRI_1123_PRIVATE_SCORING_INPUT_PRESENCE="+json.dumps({
+      "dated_objects":matched,"categories":kinds,"pages_scanned":pages},separators=(",",":")))
+    for track in TRACKS:
+        code=re.sub(r"[^a-z0-9]+","-",track.lower())
+        key=f"pick-tickets/scorer-audit/2026-11-23/{code}.json"
+        try:
+            doc=json.loads(s3.get_object(Bucket=BUCKET,Key=key)["Body"].read())
+            print("TRI_1123_STAGED_PROOF="+json.dumps({
+              "track":track,
+              "rider_state":doc.get("rider_scoring_status","UNSPECIFIED"),
+              "has_tri_receipt":bool(doc.get("tri_receipt_sha256")),
+              "has_f4_receipt":bool(doc.get("f4_receipt_sha256")),
+              "claimed_current_runner_count":doc.get("current_runners"),
+            },separators=(",",":")))
+        except s3.exceptions.NoSuchKey:
+            print("TRI_1123_STAGED_PROOF="+json.dumps({"track":track,"present":False}))
+        except Exception:
+            print("TRI_1123_STAGED_PROOF="+json.dumps({"track":track,"present":False}))
     sources=[]
     for track in TRACKS:
         slug=re.sub(r"[^a-z0-9]+","-",track.lower())
