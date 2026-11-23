@@ -22,6 +22,7 @@ const programValue=(v,label)=>{
  if(!/^[0-9]{1,2}[A-Z]?$/.test(p))throw Error(label+" needs an explicit saddle number (not ALL or a range).");
  return p;
 };
+const validPercent=(value,label)=>{const p=value==null?"":text(value,label,32,false);if(p&&!/^(?:100(?:\.0+)?|[0-9]{1,2}(?:\.[0-9]+)?)%$/.test(p))throw Error(label+" must be a certified percentage.");return p;};
 const unique=(values,label)=>{
  if(new Set(values).size!==values.length)throw Error(label+" contains duplicate entries.");
  return values;
@@ -46,7 +47,9 @@ function normalizeTicket(input,first,last,label){
  });
  // Audits source arithmetic. Never changes source selections, odds, probability or status.
  if(computed!==combinations||unit_cents*combinations!==total_cents)throw Error(label+" source combination/denomination/cost audit failed.");
- return {role,title,unit_cents,combinations,total_cents,legs,notes:input.notes==null?"":text(input.notes,label+" ticket notes",1200,false)};
+ return {role,title,unit_cents,combinations,total_cents,legs,
+  hit_rate_display:validPercent(input.hit_rate_display,label+" ticket hit rate"),
+  notes:input.notes==null?"":text(input.notes,label+" ticket notes",1200,false)};
 }
 function normalizeSequence(s,index){
  const label="Sequence "+(index+1);
@@ -60,11 +63,24 @@ function normalizeSequence(s,index){
  const tickets=s.tickets.map((t,i)=>normalizeTicket(t,first,last,label+" ticket "+(i+1)));
  unique(tickets.map(t=>t.role),label+" ticket tiers");
  if(play_status==="PASS"&&!tickets.some(t=>t.role==="BEST_POSSIBLE"))throw Error(label+" is PASS but lacks a source-supplied BEST_POSSIBLE ticket.");
- const hit_rate=s.hit_rate_display==null?"":text(s.hit_rate_display,label+" hit rate",32,false);
- if(hit_rate&&!/^(?:100(?:\.0+)?|[0-9]{1,2}(?:\.[0-9]+)?)%$/.test(hit_rate))throw Error(label+" hit rate must be a source-supplied percentage.");
+ const hit_rate=validPercent(s.hit_rate_display,label+" hit rate");
+ // Optional complete field enables custom ticket selection outside published tiers.
+ // Without verified race_fields, UI limits choices to submitted ticket runners.
+ let race_fields=[];
+ if(s.race_fields!==undefined){
+  if(!Array.isArray(s.race_fields)||s.race_fields.length!==last-first+1)throw Error(label+" race_fields must cover every sequence race.");
+  race_fields=s.race_fields.map((field,i)=>{
+   if(!obj(field)||field.race_number!==first+i||!Array.isArray(field.programs)||!field.programs.length||field.programs.length>30)throw Error(label+" race_fields must list real runner numbers in race order.");
+   return {race_number:field.race_number,programs:unique(field.programs.map((p,j)=>programValue(p,label+" eligible runner "+j)),label+" eligible field")};
+  });
+  for(const ticket of tickets)for(const leg of ticket.legs){
+   const eligible=race_fields.find(r=>r.race_number===leg.race_number);
+   if(leg.programs.some(p=>!eligible.programs.includes(p)))throw Error(label+" ticket contains a program not in the certified race_fields.");
+  }
+ }
  return {name,start_race:first,end_race:last,play_status,hit_rate_display:hit_rate,
   recommendation:s.recommendation==null?"":text(s.recommendation,label+" recommendation",1500,false),
-  tickets};
+  tickets,...(s.race_fields!==undefined?{race_fields}:{})};
 }
 export function normalizePickTickets(input){
  if(!obj(input)||input.schema_version!==1||input.product_type!=="pick_tickets")throw Error("Expected certified Pick Tickets schema version 1.");

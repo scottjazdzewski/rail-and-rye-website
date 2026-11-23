@@ -30,7 +30,16 @@ invalidChange(c=>{c.sequences[0].tickets[0].role="LEAN"},/BEST_POSSIBLE/);
 invalidChange(c=>{c.sequences[0].play_status="MAYBE"},/PLAY, CONDITIONAL or PASS/);
 invalidChange(c=>{c.source_receipt.sha256="not-a-hash"},/64 hex/);
 invalidChange(c=>{c.status="scratch_updated"},/verified scratch timestamp/);
-invalidChange(c=>{c.sequences[0].hit_rate_display="125%"},/source-supplied percentage/);
+invalidChange(c=>{c.sequences[0].hit_rate_display="125%"},/certified percentage/);
+invalidChange(c=>{c.sequences[0].tickets[0].hit_rate_display="112%"},/certified percentage/);
+invalidChange(c=>{c.sequences[0].race_fields=[{race_number:1,programs:["1","1A"]}]},/every sequence race/);
+invalidChange(c=>{c.sequences[0].race_fields=[{race_number:1,programs:["1"]},{race_number:2,programs:["3"]},{race_number:3,programs:["10"]}]},/not in the certified race_fields/);
+const withVerifiedFields=card();
+withVerifiedFields.sequences[0].race_fields=[{race_number:1,programs:["1","1A","2"]},{race_number:2,programs:["3","4"]},{race_number:3,programs:["10","11"]}];
+withVerifiedFields.sequences[0].tickets[0].hit_rate_display="28.6%";
+const verified=normalizePickTickets(withVerifiedFields);
+assert.equal(verified.sequences[0].tickets[0].hit_rate_display,"28.6%");
+assert.equal(verified.sequences[0].race_fields[0].programs.length,3);
 
 class FakeR2{
  constructor(){this.objects=new Map();}
@@ -91,10 +100,18 @@ assert.match(route,/verifyAdmin\(request,env\)/,"admin routes must verify signed
 assert.match(route,/if\(path==="\/api\/admin\/pick-tickets"\)/);
 assert.match(route,/trustedOrigin\(request\)/);
 assert.ok(route.includes('["/admin/pick-tickets-preview","/admin/pick-tickets-preview.html"]'),"Pick Tickets preview must remain on the existing protected admin router.");
-assert.match(page,/PRIVATE ADMIN REVIEW/);
+assert.match(page,/PRIVATE PREVIEW · CUSTOMER ACCESS OFF/);
 assert.doesNotMatch(page,/application\/pdf|\.pdf"/i);
 assert.match(css,/@media\(max-width:800px\)/);
 assert.match(css,/minmax\(0,1fr\)/);
 assert.match(js,/\/assets\/approved\/saddlecloths\//);
+assert.match(js,/rr-pt-builder/);
+assert.match(js,/matchingSourceTicket/);
+assert.match(js,/AWAITING MODEL/);
+assert.match(page,/rr-pt-brand-rail/);
+assert.match(page,/rr-pt-track-logo/);
+for(const slug of ["finger-lakes","mahoning-valley","mountaineer","parx-racing","zia-park"]){
+ assert.ok(fs.existsSync("./public/assets/approved/track-logos/"+slug+".webp"),"verified original artwork present for "+slug);
+}
 assert.doesNotMatch(js,/localStorage|sessionStorage|\/api\/products/);
 console.log("Pick Tickets schema, source fidelity, private R2, idempotence, revision safety, auth route and static UI checks PASS.");

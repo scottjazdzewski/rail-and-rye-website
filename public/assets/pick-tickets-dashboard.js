@@ -8,10 +8,12 @@
   status:$("#rr-pt-status"),app:$("#rr-pt-app"),date:$("#rr-pt-date"),track:$("#rr-pt-track"),
   source:$("#rr-pt-source"),types:$("#rr-pt-types"),sequences:$("#rr-pt-sequences"),
   updated:$("#rr-pt-updated"),current:$("#rr-pt-current"),mock:$("#rr-pt-mock"),
-  empty:$("#rr-pt-empty"),dialog:$("#rr-pt-dialog"),dialogTitle:$("#rr-pt-dialog-title"),
+  empty:$("#rr-pt-empty"),brandTrack:$("#rr-pt-brand-track"),brandLogo:$("#rr-pt-track-logo"),
+  dialog:$("#rr-pt-dialog"),dialogTitle:$("#rr-pt-dialog-title"),
   dialogBody:$("#rr-pt-detail"),upload:$("#rr-pt-upload"),file:$("#rr-pt-file")
  };
  let certified=[],demo=[],entries=[],activeSeq=null,activeTier=0,currentIsDemo=true;
+ let activeMode="rail",builderLegs=[],expandedRaceNumbers=new Set();
  const node=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=String(text);return n;};
  const money=cents=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(cents/100);
  const toDate=v=>{const d=new Date(v+"T12:00:00Z");return Number.isNaN(d.valueOf())?v:new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric",year:"numeric",timeZone:"UTC"}).format(d)};
@@ -22,6 +24,8 @@
  const statusText=s=>({PLAY:"PLAY",PASS:"PASS",CONDITIONAL:"CONDITIONAL"}[s]||s);
  const option=(select,key,label)=>{const o=node("option","",label);o.value=key;select.append(o)};
  const setMessage=(text,visible=true)=>{E.status.hidden=!visible;E.status.textContent=text;};
+ const TRACK_LOGOS={"Finger Lakes":"finger-lakes","Mahoning Valley":"mahoning-valley","Mountaineer":"mountaineer","Parx Racing":"parx-racing","Zia Park":"zia-park"};
+ const hitRate=t=>!currentIsDemo&&t?.hit_rate_display?t.hit_rate_display:"—";
  const escapeText=String;
  function programChip(p){
   const wrap=node("span","rr-pt-chip"),m=/^([0-9]{1,2})([A-Z]?)$/i.exec(p);
@@ -59,54 +63,171 @@
   });
   return buttons;
  }
- function stats(ticket){
+ function stats(ticket,{custom=false,sourceTicket=null}={}){
   const band=node("div","rr-pt-ticket-stats");
-  const items=[
-   ["COMBINATIONS",String(ticket.combinations)],
-   ["BASE WAGER",money(ticket.unit_cents)],
-   ["TOTAL COST",money(ticket.total_cents)]
+  const values=[
+   ["PROJECTED HIT",hitRate(ticket),true],
+   ["COMBINATIONS",String(ticket.combinations),false],
+   ["BASE WAGER",money(ticket.unit_cents),false],
+   ["TOTAL COST",money(ticket.total_cents),false]
   ];
-  items.forEach(([k,v],i)=>{
-   const item=node("div","rr-pt-stat"+(i===2?" rr-pt-total-stat":""));
-   item.append(node("span","",k),node("strong","",v));band.append(item);
+  values.forEach(([k,v,primary],i)=>{
+   const item=node("div","rr-pt-stat"+(primary?" rr-pt-hit-stat":"")+(i===3?" rr-pt-total-stat":""));
+   item.append(node("span","",k),node("strong","",v));
+   if(primary&&v==="—")item.append(node("small","rr-pt-pending",currentIsDemo?"MOCK DATA":"AWAITING MODEL"));
+   band.append(item);
   });
   return band;
+ }
+ const selectedTicket=()=>activeSeq?.tickets[activeTier]||activeSeq?.tickets[0]||null;
+ function resetBuilder(){
+  const ticket=selectedTicket();
+  builderLegs=ticket?ticket.legs.map(l=>({race_number:l.race_number,programs:[...l.programs]})):[];
+ }
+ function raceChoices(race){
+  const verified=activeSeq?.race_fields?.find(x=>x.race_number===race)?.programs;
+  const fromTiers=activeSeq?.tickets.flatMap(t=>t.legs.find(l=>l.race_number===race)?.programs||[])||[];
+  const values=verified?.length?verified:fromTiers;
+  return [...new Set(values)].sort((a,b)=>Number.parseInt(a,10)-Number.parseInt(b,10)||a.localeCompare(b));
+ }
+ function builderTotals(){
+  const unit=selectedTicket()?.unit_cents||0;
+  const combinations=builderLegs.reduce((n,l)=>n*l.programs.length,1);
+  if(!Number.isSafeInteger(combinations)||!Number.isSafeInteger(combinations*unit))return null;
+  return {combinations,unit_cents:unit,total_cents:unit*combinations,legs:builderLegs};
+ }
+ function matchingSourceTicket(){
+  const selected=builderLegs.map(l=>[...l.programs].sort().join("|")).join("/");
+  return activeSeq.tickets.find(t=>t.legs.map(l=>[...l.programs].sort().join("|")).join("/")===selected
+   &&t.unit_cents===selectedTicket().unit_cents)||null;
+ }
+ function builder(){
+  const area=node("div","rr-pt-builder");
+  const intro=node("div","rr-pt-builder-intro");
+  intro.append(node("strong","","Build Your Ticket"),node("p","",
+   "Start with Rail & Rye’s selections. Tap a selected horse to remove it, or add runners to any leg. The original recommendation stays unchanged."));
+  area.append(intro);
+  if(!activeSeq.race_fields?.length)area.append(node("p","rr-pt-builder-limits",
+   "Runner choices are limited to published ticket versions until a certified complete field is available."));
+  if(currentIsDemo)area.append(node("p","rr-pt-builder-limits",
+   "Mock runner fields are for testing interactions only—not real racing selections."));
+  const rows=node("div","rr-pt-builder-rows");
+  for(const leg of builderLegs){
+   const row=node("section","rr-pt-builder-row");
+   const name=node("span","rr-pt-row-race","RACE "+leg.race_number);
+   const body=node("div","rr-pt-builder-leg-body");
+   const picks=node("div","rr-pt-builder-chips");
+   const chosen=leg.programs.map(program=>{
+    const button=node("button","rr-pt-runner-button");
+    button.type="button";button.setAttribute("aria-pressed","true");
+    button.setAttribute("aria-label","Race "+leg.race_number+" horse "+program+" selected");
+    button.append(programChip(program));
+    button.addEventListener("click",()=>{leg.programs=leg.programs.filter(x=>x!==program);renderActive()});
+    return button;
+   });
+   if(!chosen.length)picks.append(node("span","rr-pt-unselected","No horses selected"));
+   else picks.append(...chosen);
+   body.append(picks);
+   const extra=raceChoices(leg.race_number).filter(p=>!leg.programs.includes(p));
+   if(extra.length){
+    const trigger=node("button","rr-pt-add-trigger",
+     (expandedRaceNumbers.has(leg.race_number)?"- Hide field":"+ Add runners")+" ("+extra.length+")");
+    trigger.type="button";trigger.setAttribute("aria-expanded",String(expandedRaceNumbers.has(leg.race_number)));
+    trigger.setAttribute("aria-label","Add runners for Race "+leg.race_number);
+    trigger.addEventListener("click",()=>{
+     if(expandedRaceNumbers.has(leg.race_number))expandedRaceNumbers.delete(leg.race_number);
+     else expandedRaceNumbers.add(leg.race_number);
+     renderActive();
+    });
+    body.append(trigger);
+    if(expandedRaceNumbers.has(leg.race_number)){
+     const field=node("div","rr-pt-field-grid");
+     field.setAttribute("aria-label","Other available runners for Race "+leg.race_number);
+     extra.forEach(program=>{
+      const button=node("button","rr-pt-runner-button");
+      button.type="button";button.setAttribute("aria-pressed","false");
+      button.setAttribute("aria-label","Race "+leg.race_number+" horse "+program+" not selected");
+      button.append(programChip(program));
+      button.addEventListener("click",()=>{leg.programs.push(program);renderActive()});
+      field.append(button);
+     });
+     body.append(field);
+    }
+   }
+   row.append(name,body);rows.append(row);
+  }
+  area.append(rows);
+  const computed=builderTotals();
+  if(!computed){area.append(node("p","rr-pt-builder-error","Too many combinations to display safely."));return area;}
+  const exact=matchingSourceTicket();
+  const comparison=node("div","rr-pt-comparison");
+  comparison.append(node("h3","","Ticket Comparison"));
+  const table=node("table","rr-pt-compare-table");
+  const thead=node("thead"),tr=node("tr");
+  for(const label of ["METRIC","RAIL & RYE","YOUR TICKET"])tr.append(node("th","",label));
+  thead.append(tr);table.append(thead);
+  const body=node("tbody"),original=selectedTicket();
+  const rowsData=[
+   ["PROJECTED HIT",hitRate(original),exact?hitRate(exact):"—"],
+   ["COMBINATIONS",String(original.combinations),String(computed.combinations)],
+   ["BASE WAGER",money(original.unit_cents),money(computed.unit_cents)],
+   ["TOTAL COST",money(original.total_cents),money(computed.total_cents)],
+   ["VALUE ESTIMATE","Not yet available","Not yet available"]
+  ];
+  rowsData.forEach(cells=>{
+   const line=node("tr");
+   line.append(node("th","",cells[0]),node("td","",cells[1]),node("td","",cells[2]));
+   body.append(line);
+  });
+  table.append(body);comparison.append(table);area.append(comparison);
+  if(!computed.combinations)area.append(node("p","rr-pt-builder-error","Choose at least one runner in every race."));
+  area.append(node("p","rr-pt-builder-disclaimer",exact
+   ?"This selection matches a supplied ticket. A model hit chance appears only if certified for that exact ticket."
+   :"Custom hit probabilities require the approved multi-race model; payout and value estimates require verified pool data. No unsupported estimates are shown."));
+  const reset=node("button","rr-pt-reset-button","Reset to Rail & Rye Selections");
+  reset.type="button";reset.addEventListener("click",()=>{resetBuilder();expandedRaceNumbers.clear();renderActive()});
+  area.append(reset);return area;
+ }
+ function modeControls(){
+  const modes=node("div","rr-pt-mode-tabs");
+  modes.setAttribute("role","group");modes.setAttribute("aria-label","Ticket mode");
+  [["rail","Rail & Rye Ticket"],["builder","Build My Ticket"]].forEach(([value,name])=>{
+   const b=node("button","rr-pt-mode-button",name);
+   b.type="button";b.setAttribute("aria-pressed",String(activeMode===value));
+   b.addEventListener("click",()=>{activeMode=value;if(value==="builder"&&!builderLegs.length)resetBuilder();renderActive()});
+   modes.append(b);
+  });
+  return modes;
  }
  function renderActive(){
   if(!activeSeq)return;
   E.current.replaceChildren();
-  const c=entries.find(x=>x.card.track===E.track.value&&x.card.date===E.date.value)?.card;
-  if(!c)return;
+  const card=entries.find(x=>x.card.track===E.track.value&&x.card.date===E.date.value)?.card;
+  if(!card)return;
   const box=node("section","rr-pt-ticket-screen");
-  const head=node("div","rr-pt-ticket-header");
-  const left=node("div","rr-pt-ticket-title");
-  left.append(node("span","rr-pt-kicker",currentIsDemo?"MOCK TICKET · DISPLAY ONLY":"CERTIFIED SOURCE TICKET"));
+  const head=node("div","rr-pt-ticket-header"),left=node("div","rr-pt-ticket-title");
+  left.append(node("span","rr-pt-kicker",currentIsDemo?"PRIVATE MOCK DISPLAY":"CERTIFIED SOURCE TICKET"));
   left.append(node("h2","",activeSeq.name+" · Races "+activeSeq.start_race+"–"+activeSeq.end_race));
-  const right=state(activeSeq.play_status);
-  head.append(left,right);box.append(head);
-
-  const chosen=activeSeq.tickets[activeTier]||activeSeq.tickets[0];
-  if(activeSeq.tickets.length>1){
-   box.append(tierPicker(activeSeq,activeTier,i=>{activeTier=i;renderActive()}));
-  }
-  const meta=node("div","rr-pt-wager-meta");
-  meta.append(node("span","rr-pt-wager-name",chosen.title));
-  const prob=activeSeq.hit_rate_display
-   ? "PROJECTED HIT "+activeSeq.hit_rate_display
-   : (currentIsDemo?"HIT RATE — NOT MODELED":"HIT RATE — NOT SUPPLIED");
-  meta.append(node("span","rr-pt-probability",prob));box.append(meta);
-  box.append(ticketRows(chosen),stats(chosen));
-  if(activeSeq.play_status==="PASS"){
-   box.append(node("p","rr-pt-pass-note",currentIsDemo
-    ?"DEMONSTRATION PASS · Best possible mock ticket shown for layout review only."
+  head.append(left,state(activeSeq.play_status));box.append(head,modeControls());
+  if(activeMode==="builder")box.append(builder());
+  else{
+   const chosen=selectedTicket();
+   if(activeSeq.tickets.length>1)box.append(tierPicker(activeSeq,activeTier,i=>{
+    activeTier=i;resetBuilder();renderActive();
+   }));
+   const meta=node("div","rr-pt-wager-meta");
+   meta.append(node("span","rr-pt-wager-name",chosen.title));
+   meta.append(node("span","rr-pt-probability",hitRate(chosen)==="—"?"HIT PROBABILITY · AWAITING MODEL":"HIT PROBABILITY · "+hitRate(chosen)));
+   box.append(meta,ticketRows(chosen),stats(chosen));
+   if(activeSeq.play_status==="PASS")box.append(node("p","rr-pt-pass-note",
+    currentIsDemo?"DEMONSTRATION PASS · Best possible mock ticket for layout review only."
     :"PASS — not recommended. Source-certified best possible ticket shown for completeness."));
+   const actions=node("div","rr-pt-ticket-actions");
+   const analysis=node("button","rr-pt-analysis-button","Ticket Insights");
+   analysis.type="button";analysis.addEventListener("click",openAnalysis);
+   actions.append(analysis);box.append(actions);
   }
-  const actions=node("div","rr-pt-ticket-actions");
-  const analysis=node("button","rr-pt-analysis-button","Full Ticket Analysis");
-  analysis.type="button";analysis.addEventListener("click",()=>openAnalysis());
-  actions.append(analysis);box.append(actions);E.current.append(box);
-  const header=E.current.querySelector(".rr-pt-ticket-header");
-  if(header)header.setAttribute("tabindex","-1");
+  E.current.append(box);
  }
  function openAnalysis(){
   if(!activeSeq)return;
@@ -118,13 +239,14 @@
   info.append(state(activeSeq.play_status),node("span","",c.track+" · "+toDate(c.date)));
   E.dialogBody.append(info);
   if(currentIsDemo)E.dialogBody.append(node("p","rr-pt-demo-note","DEMONSTRATION ONLY. These are mock selections, not TRI predictions or approved wagers."));
-  if(activeSeq.hit_rate_display)E.dialogBody.append(node("p","rr-pt-analysis-rate","Projected hit rate: "+activeSeq.hit_rate_display));
+  // A sequence-wide legacy percentage must never masquerade as a tier-specific hit rate.
   if(activeSeq.recommendation)E.dialogBody.append(node("p","rr-pt-analysis-reason",activeSeq.recommendation));
   const stage=node("div","rr-pt-analysis-stage");
   function show(i){
    stage.replaceChildren();
    stage.append(tierPicker(activeSeq,i,show));
    stage.append(node("h3","rr-pt-analysis-tier",activeSeq.tickets[i].title));
+   if(hitRate(activeSeq.tickets[i])!=="—")stage.append(node("p","rr-pt-analysis-rate","Certified ticket hit chance: "+hitRate(activeSeq.tickets[i])));
    stage.append(ticketRows(activeSeq.tickets[i]),stats(activeSeq.tickets[i]));
    if(activeSeq.tickets[i].notes)stage.append(node("p","rr-pt-analysis-notes",activeSeq.tickets[i].notes));
   }
@@ -166,10 +288,10 @@
    button.addEventListener("click",()=>selectSequence(s));
    E.sequences.append(button);
   });
-  activeSeq=selected;activeTier=0;renderActive();
+  activeSeq=selected;activeTier=0;activeMode="rail";expandedRaceNumbers.clear();resetBuilder();renderActive();
  }
  function selectSequence(s){
-  activeSeq=s;activeTier=0;
+  activeSeq=s;activeTier=0;activeMode="rail";expandedRaceNumbers.clear();resetBuilder();
   [...E.sequences.children].forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.sequenceKey===sequenceKey(s))));
   renderActive();
  }
@@ -185,6 +307,10 @@
   E.app.hidden=!entry;E.empty.hidden=!!entry;
   if(!entry)return;
   E.mock.hidden=!currentIsDemo;
+  if(E.brandTrack)E.brandTrack.textContent=entry.card.track;
+  if(E.brandLogo){const slug=TRACK_LOGOS[entry.card.track];E.brandLogo.hidden=!slug;
+   if(slug){E.brandLogo.src="/assets/approved/track-logos/"+slug+".webp";E.brandLogo.alt=entry.card.track+" logo";}}
+ 
   E.updated.textContent=(currentIsDemo?"MOCK PREVIEW · NEVER PUBLISHED":
     (entry.card.status==="scratch_updated"?"SCRATCH UPDATED":"INITIAL · CURRENT")+
     " · REVISION "+entry.card.revision)
