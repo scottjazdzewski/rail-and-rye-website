@@ -1,4 +1,5 @@
 import {handleAdminProjectionUpload,handleAdminProjectionBatchUpload,readAdminProjectionCards} from './projections.js';
+import {readCertifiedF4Exotics} from './f4-exotics.js';
 import {handleAdminLongshotRadar,handleAdminLongshotEditorialPreview} from './longshot-radar.js';
 import {handleAdminPickTickets} from './pick-tickets.js';
 import {handleAdminTargetList,readAdminTargetListReview} from './target-list.js';
@@ -159,6 +160,7 @@ async function handleAdminAPI(request,env,pathname,ctx) {
   if(pathname==="/api/admin/longshot-radar") return handleAdminLongshotRadar(request,env);
   if(pathname==="/api/admin/longshot-radar-editorial")return handleAdminLongshotEditorialPreview(request,env);
   if(pathname==="/api/admin/projections-preview"&&request.method==="GET") return readAdminProjectionCards(env);
+  if(pathname==="/api/admin/projections-f4"&&request.method==="GET")return readCertifiedF4Exotics(env,new URL(request.url));
   if(pathname==="/api/admin/projections/batch") return handleAdminProjectionBatchUpload(request,env);
   if(pathname==="/api/admin/projections") return handleAdminProjectionUpload(request,env);
   await ensureReleaseSchedule(env);
