@@ -7,11 +7,11 @@ import {validateTargetList,handleAdminTargetList} from "./src/target-list.js";
 globalThis.crypto??=webcrypto;
 const root="https://railandryeracing.com";
 const h="a".repeat(64);
-const horse=(number,name,pwin)=>({program_number:String(number),horse_name:name,morning_line:"5-1",win_probability:pwin,fair_odds:"4-1",trainer:"",jockey:""});
+const horse=(number,name,pwin)=>({program_number:String(number),horse_name:name,morning_line:"5-1",win_probability:pwin,win_probability_exact:pwin,fair_odds:"4-1",trainer:"",jockey:""});
 const base={schema_version:1,product_type:"target_list",race_date:"2026-11-23",revision:1,status:"initial",
  source:{receipt_id:"synthetic-unit-test-only",sha256:h},
  targets:[{rank:1,track:"Synthetic Test Track",race_number:5,tier:"PRIME",post_time_et:"3:10 PM ET",surface:"Dirt",distance:"6 furlongs",
-  favorite:horse("1","Favorite Runner",24),attack:horse("12","Attack Runner",35),
+  favorite:horse("1","Favorite Runner",12),attack:horse("12","Attack Runner",35),
   analysis:"This is synthetic, non-customer test commentary."}]};
 const copy=()=>structuredClone(base);
 const good=validateTargetList(base);
@@ -22,8 +22,11 @@ assert.equal(good.targets[0].favorite.horse_name,"Favorite Runner");
 function bad(mutator,message){
  const v=copy();mutator(v);assert.throws(()=>validateTargetList(v),message);
 }
-bad(v=>{v.targets[0].attack.win_probability=24;},/higher certified PWIN/);
+bad(v=>{v.targets[0].attack.win_probability=24;v.targets[0].attack.win_probability_exact=24;},/15\.000000 verified PWIN/);
 bad(v=>{v.targets[0].attack.win_probability=101;},/probability/);
+bad(v=>{delete v.targets[0].attack.win_probability_exact;},/unrounded full-field PWIN/);
+bad(v=>{v.targets[0].attack.win_probability_exact=34.8;},/displayed PWIN disagrees/);
+bad(v=>{v.targets[0].also_live=horse("7","Secondary Runner",20);},/ALSO LIVE must exceed/);
 bad(v=>{v.targets[0].favorite.fair_odds="";},/fair odds/);
 bad(v=>{v.source.sha256="unverified";},/64-character/);
 bad(v=>{v.status="final";},/initial or scratch_update/);
