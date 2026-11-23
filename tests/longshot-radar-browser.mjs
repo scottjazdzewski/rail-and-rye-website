@@ -184,6 +184,17 @@ try{
   if(errors.length||calls.length!==1||calls[0]!=="/api/admin/longshot-radar-editorial")
     throw Error("Unexpected JS errors or calls "+width+": "+JSON.stringify({errors,calls}));
   await page.screenshot({path:join("test-artifacts","longshot-push-only-"+width+".png"),fullPage:true});
+  if(width===390){
+   await page.evaluate(()=>{
+    window.RRRaceTitles=undefined;
+    document.querySelector("#rr-lr-sort").dispatchEvent(new Event("change",{bubbles:true}));
+   });
+   const text=await page.locator(".rr-lr-card").nth(1).locator(".rr-lr-race-facts").innerText();
+   if(!text.includes("First Lady Stakes")||text.includes("Venue Sponsor"))
+    throw Error("Radar's no-helper fallback must still show full sponsor-free stakes names");
+   if(await page.locator(".rr-lr-card").nth(1).locator(".rr-ed-grade-trophy").count())
+    throw Error("No unvalidated trophy when canonical grade helper cannot run");
+  }
   await page.close();
  }
  // Recovery test: real data route fails once, page shows error+retry rather than
