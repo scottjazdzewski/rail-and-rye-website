@@ -151,6 +151,9 @@ assert.ok(!ui.includes("Math.round")&&!ui.includes("pwin_exact*")); // no client
 assert.ok(css.includes("@media(max-width:800px)")&&css.includes("@media(max-width:360px)"));
 assert.ok(html.includes("/assets/projections-dashboard.css")); // shared visual baseline
 assert.ok(!html.includes("Race details")&&!html.includes('id="rr-lr-dialog"'));
+assert.ok(!html.includes("rr-lr-import")&&!html.includes("rr-lr-file")&&!html.includes("rr-lr-upload-form"),"No user-supplied JSON form");
+assert.ok(html.includes("id=\"rr-lr-retry\""),"A failed R2 load must permit retry");
+assert.ok(html.includes("longshot-radar.js?v=push-20261123-2"),"Bust the stale cached script that referenced removed form controls");
 assert.ok(!html.includes("longshot-hero.jpg")&&!html.includes("longshot-mark.png"));
 assert.ok(ui.includes('make("div","rr-lr-inline-analysis")'));
 assert.ok(!ui.includes('make("button","","Race details")'));
@@ -170,6 +173,8 @@ assert.ok(publicDesign.includes('name="robots" content="noindex,nofollow,noarchi
 assert.ok(!publicDesign.toLowerCase().includes("sample"),"Public page must not advertise fake samples");
 
 assert.ok(ui.includes('/api/admin/longshot-radar-editorial'),"Real PDF viewer must read the protected R2 endpoint");
+assert.ok(ui.includes("AbortController")&&ui.includes("retry?.addEventListener"),"Show a recoverable error rather than a permanent loading spinner");
+assert.ok(!ui.includes("rr-lr-upload-form")&&!ui.includes("visualSample"),"Only server-provided horse data may be displayed");
 assert.ok(!ui.includes('make("button","","Race details")'),"Horse explanation must display inline");
 checks++;
 
