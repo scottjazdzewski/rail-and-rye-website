@@ -159,7 +159,9 @@ for(const item of privateReviews){
  assert.equal(item.card.official_scratch_count,ledger.scratch_count);
  assert.equal(item.card.active_runner_count,original.analysis_runner_count-ledger.scratch_count);
  assert.equal(verifyV32OwnerScratchSnapshot(reviewInputs.find(x=>x.card.track_name===item.card.track).card).ok,true);
- assert.ok(item.card.sequences.every(x=>x.review_meta.soft_cost_scale_dollars===15));
+ assert.ok(item.card.sequences.every(x=>
+  x.review_meta.soft_cost_scale_dollars===30&&
+  x.review_meta.selected_leg_coverage.every(p=>p>=.5-1e-12)));
  assert.ok(item.card.sequences.every(x=>x.tickets.length===1));
 }
 const staleScratch=structuredClone(reviewInputs[0].card);
