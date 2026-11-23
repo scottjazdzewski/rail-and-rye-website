@@ -1,0 +1,37 @@
+name: Verify private Target List hub module
+on:
+  pull_request:
+    paths:
+      - 'src/target-list.js'
+      - 'src/index.js'
+      - 'public/admin/target-list-preview.html'
+      - 'public/assets/target-list-dashboard.*'
+      - 'test-target-list-hub.mjs'
+      - 'test-target-list-responsive.mjs'
+      - '.github/workflows/verify-target-list-hub.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  target-list:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Private edition, integrity, and UI regression
+        run: node test-target-list-hub.mjs
+      - name: Install Chromium browser for real viewport QA
+        run: |
+          npm install --no-save --no-package-lock playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Target List 320/375/390/430/tablet/desktop viewport regression
+        run: node test-target-list-responsive.mjs
+      - name: Keep review screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: target-list-private-viewport-review
+          path: target-list-viewport-screenshots/*.png
+          if-no-files-found: ignore

@@ -1,4 +1,5 @@
 import {handleAdminProjectionUpload,handleAdminProjectionBatchUpload,readAdminProjectionCards} from './projections.js';
+import {handleAdminTargetList} from './target-list.js';
 import { handleCommerce, sendQueuedEmails, checkoutReadiness, replacePdfAndNotifyBuyers, publicProductForShare } from './commerce.js';
 import {handleRacingWire,handlePreviewRacingWire,testPreviewRssFeeds,handleAdminRacingWire} from './racing-wire.js';
 import {handleAdminBundles,BUNDLE_KEY} from './bundles.js';
@@ -151,6 +152,7 @@ async function handleAdminAPI(request,env,pathname,ctx) {
   if(request.method!=="GET"&&!trustedOrigin(request)) return fail("Same-origin request required",403);
   // Projection uploads and previews use R2 directly. Keep them independent of
   // product schedule maintenance so JSON dashboards remain usable when D1 is busy.
+  if(pathname==="/api/admin/target-list") return handleAdminTargetList(request,env,new URL(request.url));
   if(pathname==="/api/admin/projections-preview"&&request.method==="GET") return readAdminProjectionCards(env);
   if(pathname==="/api/admin/projections/batch") return handleAdminProjectionBatchUpload(request,env);
   if(pathname==="/api/admin/projections") return handleAdminProjectionUpload(request,env);
@@ -302,7 +304,7 @@ export default {
         if(path==="/api/admin/racing-wire-editorial")return handleAdminRacingWire(request,env);
         if(path.startsWith("/api/admin/"))return handleAdminAPI(request,env,path,ctx);
         if(request.method!=="GET"&&request.method!=="HEAD")return fail("Method not allowed",405);
-        const asset=new URL(url);const projectionDesk=path==="/admin/projections"||path==="/admin/projections/"||path==="/admin/projections.html";const projectionPreview=path==="/admin/projections-preview"||path==="/admin/projections-preview/"||path==="/admin/projections-preview.html";asset.pathname=projectionDesk?"/admin/projections.html":projectionPreview?"/admin/projections-preview.html":(path==="/admin/membership-plans"||path==="/admin/membership-plans/"||path==="/admin/membership-plans.html")?"/admin/membership-plans.html":"/admin/index.html";
+        const asset=new URL(url);const projectionDesk=path==="/admin/projections"||path==="/admin/projections/"||path==="/admin/projections.html";const projectionPreview=path==="/admin/projections-preview"||path==="/admin/projections-preview/"||path==="/admin/projections-preview.html";asset.pathname=(path==="/admin/target-list-preview"||path==="/admin/target-list-preview/"||path==="/admin/target-list-preview.html")?"/admin/target-list-preview.html":projectionDesk?"/admin/projections.html":projectionPreview?"/admin/projections-preview.html":(path==="/admin/membership-plans"||path==="/admin/membership-plans/"||path==="/admin/membership-plans.html")?"/admin/membership-plans.html":"/admin/index.html";
         const result=await env.ASSETS.fetch(new Request(asset.toString(),{method:request.method}));
         const headers=new Headers(result.headers);
         headers.set("Cache-Control","no-store");headers.set("X-Frame-Options","DENY");headers.set("X-Content-Type-Options","nosniff");
