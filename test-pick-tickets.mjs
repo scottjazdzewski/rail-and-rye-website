@@ -135,7 +135,7 @@ assert.match(css,/minmax\(0,1fr\)/);
 assert.match(js,/\/assets\/approved\/saddlecloths\//);
 assert.match(js,/rr-pt-builder/);
 assert.match(js,/matchingSourceTicket/);
-assert.match(js,/AWAITING MODEL/);
+assert.match(js,/Not available/,"Unavailable probabilities are clearly marked without production-stage labels.");
 assert.match(page,/rr-pt-brand-rail/);
 assert.match(page,/rr-pt-track-logo/);
 assert.doesNotMatch(page,/Mock layout preview|VALUE ESTIMATE|PAYOUT|ROI/i);
