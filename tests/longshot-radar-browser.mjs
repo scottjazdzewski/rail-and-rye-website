@@ -11,6 +11,7 @@ const names=["Fixture One","Fixture Two","Fixture Three","Fixture Four","Fixture
 const horses=names.map((horse_name,i)=>({
  track:i%3===0?"Synthetic Downs":i%3===1?"Example Park":"Fictional Field",
  ...(i===0?{distance:"6½ furlongs",surface:"Dirt",conditions:"Synthetic test conditions for fillies and mares three years old and upward, with a long eligibility sentence that must wrap naturally onto extra lines without clipping or reducing the original horse or analysis text size."}:{}),
+ ...(i===1?{distance:"1 mile",surface:"Dirt",conditions:"FIRST LADY S. (G1) Presented by Venue Sponsor",stakes_grade:"G1",sponsor_name:"Venue Sponsor",is_stakes:true}:{}),
  race_number:i+1,post_time_et:(i+1)+":25 PM ET",program_number:String([11,1,20,2,3,4,5,6,7,8][i]),
  horse_name,original_morning_line:"10/1",pwin_display:19.5,
  fair_odds_display:"4/1",
@@ -50,6 +51,13 @@ try{
   page.on("request",req=>{if(new URL(req.url()).pathname.startsWith("/api/"))calls.push(new URL(req.url()).pathname);});
   await page.goto(base+"/admin/longshot-radar/",{waitUntil:"domcontentloaded"});
   await page.locator(".rr-lr-card").first().waitFor({timeout:15000});
+  const graded=page.locator(".rr-lr-card").nth(1);
+  const title=await graded.locator(".rr-lr-race-facts").innerText();
+  if(!title.includes("First Lady Stakes")||title.includes("Venue Sponsor")||title.includes("FIRST LADY S."))
+   throw Error("Radar must publish full sponsor-free stakes title at "+width+": "+title);
+  const trophy=graded.locator(".rr-ed-grade-trophy--g1");
+  if(await trophy.count()!==1||await trophy.getAttribute("aria-label")!=="Grade 1 stakes trophy")
+   throw Error("Verified G1 must show approved grade trophy at "+width);
   const count=await page.locator(".rr-lr-card").count();
   if(count!==10)throw Error("Expected 10 published source-shaped horse rows at "+width+", got "+count);
   if(!(await page.locator(".rr-dash-private-banner").innerText()).includes("PUBLISHED CARD"))
@@ -132,8 +140,8 @@ try{
     throw Error("Main left/right mobile padding must be 10–12px at "+width);
   if(visual.bodyWidth>width+1||visual.htmlWidth>width+1)
     throw Error("Shared V1 horizontal overflow outside swipe nav at "+width);
-  if(await page.locator(".rr-lr-card .rr-lr-race-facts").count()!==1)
-    throw Error("Only source-supplied race facts should appear, never invented filler at "+width);
+  if(await page.locator(".rr-lr-card .rr-lr-race-facts").count()!==2)
+    throw Error("Only the TWO source-supplied race descriptions should appear, never invented filler at "+width);
   const raceFacts=await page.locator(".rr-lr-card .rr-lr-race-facts").first().evaluate(el=>{
     const cs=getComputedStyle(el),r=el.getBoundingClientRect();
     return {text:el.textContent,font:parseFloat(cs.fontSize),
@@ -196,6 +204,17 @@ try{
   if(errors.length||calls.length!==1||calls[0]!=="/api/admin/longshot-radar-editorial")
     throw Error("Unexpected JS errors or calls "+width+": "+JSON.stringify({errors,calls}));
   await page.screenshot({path:join("test-artifacts","longshot-push-only-"+width+".png"),fullPage:true});
+  if(width===390){
+   await page.evaluate(()=>{
+    window.RRRaceTitles=undefined;
+    document.querySelector("#rr-lr-sort").dispatchEvent(new Event("change",{bubbles:true}));
+   });
+   const full=await page.locator(".rr-lr-card").nth(1).locator(".rr-lr-race-facts").innerText();
+   if(!full.includes("First Lady Stakes")||full.includes("Venue Sponsor"))
+    throw Error("Fallback must keep sponsor-free full stakes title without helper");
+   if(await page.locator(".rr-lr-card").nth(1).locator(".rr-ed-grade-trophy").count())
+    throw Error("Fallback without certified grade helper must not draw unverified trophy");
+  }
   await page.close();
  }
  // Recovery test: real data route fails once, page shows error+retry rather than
