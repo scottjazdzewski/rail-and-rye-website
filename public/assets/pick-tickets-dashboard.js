@@ -292,6 +292,46 @@
    stage.append(node("h3","rr-pt-analysis-tier",displayTicketName(activeSeq.tickets[i])));
    if(hitRate(activeSeq.tickets[i])!=="—")stage.append(node("p","rr-pt-analysis-rate","Projected hit chance: "+hitRate(activeSeq.tickets[i])));
    stage.append(ticketRows(activeSeq.tickets[i]),stats(activeSeq.tickets[i]));
+   // Current V3.3 ticket: show what each selected leg covers and the
+   // incremental opportunity cost of OPTIONAL runners only inside Insights.
+   const meta=activeSeq.review_meta;
+   if(meta?.method==="V3.3-TRI-ONLY-SINGLE-RECTANGLE-COVER50"&&
+      Array.isArray(meta.selected_leg_coverage)){
+    const section=node("section","rr-pt-coverage-breakdown");
+    section.append(node("h4","","Race coverage"));
+    const grid=node("div","rr-pt-coverage-grid");
+    for(let j=0;j<activeSeq.tickets[i].legs.length;j++){
+     const leg=activeSeq.tickets[i].legs[j],mass=meta.selected_leg_coverage[j];
+     const row=node("div","rr-pt-coverage-line");
+     row.append(node("span","", "Race "+leg.race_number));
+     row.append(node("strong","",(mass*100).toFixed(1)+"%"));
+     row.append(node("span","",leg.programs.length+" "+(leg.programs.length===1?"horse":"horses")));
+     grid.append(row);
+    }
+    section.append(grid);
+    const extras=(meta.marginal_opportunity_cost||[]).filter(x=>x.status==="ADDITIONAL_COVERAGE");
+    if(extras.length){
+     const details=node("details","rr-pt-coverage-marginals");
+     details.append(node("summary","", "Additional horse costs ("+extras.length+")"));
+     const table=node("table","rr-pt-sensitivity-table");
+     const thead=node("thead",""),head=node("tr","");
+     for(const title of ["Race","Horse","Added cost","Added hit"]){
+      const th=node("th","",title);th.scope="col";head.append(th);
+     }
+     thead.append(head);table.append(thead);
+     const body=node("tbody","");
+     for(const x of extras){
+      const row=node("tr","");
+      for(const value of ["Race "+x.race_number,"#"+x.program,money(x.additional_cost_cents),
+       (x.additional_sequence_hit_probability*100).toFixed(2)+" pp"]){
+       row.append(node("td","",value));
+      }
+      body.append(row);
+     }
+     table.append(body);details.append(table);section.append(details);
+    }
+    stage.append(section);
+   }
    const comparisons=activeSeq.review_meta?.cost_preference_comparison;
    if(Array.isArray(comparisons)&&comparisons.length){
     const box=node("section","rr-pt-sensitivity");

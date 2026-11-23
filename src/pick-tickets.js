@@ -1,7 +1,8 @@
 import {getPickTicketsIntake} from './pick-tickets-intake.js';
-import {buildPrescratchPickTicketReview,buildV32PostScratchReviewed,
- buildV32ScratchFieldPreview,readPrivatePickProjections} from './pick-tickets-auto.js';
-import {PICK_V32_ENGINE} from './pick-tickets-v32.js';
+import {buildPrescratchPickTicketReview,buildV33PostScratchReviewed,
+ buildV33ScratchFieldPreview,readPrivatePickProjections} from './pick-tickets-auto.js';
+import {PICK_V33_ENGINE,PICK_V33_COST_SCALE_DOLLARS,
+ PICK_V33_MIN_LEG_COVERAGE} from './pick-tickets-v33.js';
 import {readAdminProjectionCards} from './projections.js';
 import {getNov23ScratchLedger,sourceIsScratchCurrent,officialScratchSequenceCount} from './pick-tickets-scratch-1123.js';
 import {PICK_MENU_1123} from './pick-tickets-auto.js';
@@ -175,13 +176,13 @@ export async function handleAdminPickTickets(request,env){
  if(!env.CARDS_BUCKET)return respond({error:"Private R2 storage is not configured."},503);
  if(request.method==="GET"){
   const stored=await readCards(env);
-  // Old ticket editions are not a substitute for V3.2, even with a good
-  // TRI/F4 receipt: they were selected by another mathematical method.
+  // Old V3.2 tickets are not V3.3 trial tickets; source PWIN is unchanged,
+  // but the authorized S=30 and 50%-per-leg constraint are new math.
   const authorized=stored.filter(x=>
-   x.card.formula_version===PICK_V32_ENGINE&&sourceIsScratchCurrent(x.card));
+   x.card.formula_version===PICK_V33_ENGINE&&sourceIsScratchCurrent(x.card));
   const superseded=stored.filter(x=>!authorized.includes(x)).map(x=>({
    date:x.card.date,track:x.card.track,revision:x.card.revision,
-   reason:"Prior ticket formula or scratch snapshot; regenerated V3.2 required."
+   reason:"Prior ticket formula or scratch snapshot; regenerated V3.3 required."
   }));
   const sourceRejects=[],stageCards=[];
   let source=[];
@@ -211,7 +212,7 @@ export async function handleAdminPickTickets(request,env){
     const storedManifest=await env.CARDS_BUCKET.get(key);
     if(!storedManifest){sourceRejects.push({track,reason:"Matching confirmed source-hash scratch manifest not staged."});continue}
     const manifest=JSON.parse(await storedManifest.text());
-    const validated=buildV32PostScratchReviewed({
+    const validated=buildV33PostScratchReviewed({
      before:preCard,after:card,manifest,
      preHash:await sha256(JSON.stringify(preCard)),
      postHash:await sha256(JSON.stringify(card))
@@ -219,7 +220,7 @@ export async function handleAdminPickTickets(request,env){
     if(!validated){sourceRejects.push({track,reason:"Current-field V3.2 verification rejected."});continue}
     const ticketCard={...validated,updated_at:item.uploaded_at||null};
     stageCards.push(ticketCard);
-   }catch(e){sourceRejects.push({track,reason:"V3.2 scratch field gate: "+String(e.message||e).slice(0,125)})}
+   }catch(e){sourceRejects.push({track,reason:"V3.3 scratch field gate: "+String(e.message||e).slice(0,125)})}
   }
   // Separate private mathematical review from release-cleared editions.
   // Actual current-field PWIN may still be based on prescratch factors.
@@ -227,7 +228,7 @@ export async function handleAdminPickTickets(request,env){
   const covered=new Set(authorized.map(x=>x.card.date+"|"+x.card.track));
   const reviews=[];
   const stageCandidates=[...stageCards,
-   ...source.map(x=>buildV32ScratchFieldPreview(x)).filter(Boolean),
+   ...source.map(x=>buildV33ScratchFieldPreview(x)).filter(Boolean),
    ...pre.cards];
   for(const view of stageCandidates){
    const key=view.card.date+"|"+view.card.track;
@@ -238,7 +239,8 @@ export async function handleAdminPickTickets(request,env){
   scratch_update.dependent_sequences=officialScratchSequenceCount(PICK_MENU_1123);
   return respond({cards:[...authorized,...reviews],intake:getPickTicketsIntake(),
    scratch_update,stale_revisions:superseded,
-   engine:PICK_V32_ENGINE,soft_cost_scale_dollars:15,
+   engine:PICK_V33_ENGINE,soft_cost_scale_dollars:PICK_V33_COST_SCALE_DOLLARS,
+   minimum_leg_coverage:PICK_V33_MIN_LEG_COVERAGE,
    private_review_only:true,source_rejections:sourceRejects,
    prescratch_sequences_calculated:pre.cards.reduce((n,x)=>n+x.card.sequences.length,0),
    review_count:reviews.length,demo:false});
