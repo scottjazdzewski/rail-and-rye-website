@@ -169,6 +169,9 @@ def apply_certified_f4_order(cards, archive, iso_date, receipt_by_track):
             hold(race_key in prefixes, "Missing certified F4 finishing-order race")
             expected=expected_finish_positions(race["entries"],prefixes[race_key])
             assign_display_ranks(race["entries"],expected)
+            # Persist whole, immutable horse records in the display permutation;
+            # all score/badge/connection fields travel with the runner.
+            race["entries"].sort(key=lambda runner:runner["rank"])
             changed+=1
         hold(len(card["races"]) == receipt["race_count"],
              "F4 order does not cover every race")
