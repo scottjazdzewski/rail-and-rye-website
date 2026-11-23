@@ -65,7 +65,7 @@ function stat(label,value,kind){
  return el;
 }
 function horseRow(role,runner){
- const line=node("div","rr-target-horse-row");
+ const line=node("div","rr-target-horse-row"+(role==="ATTACK"?" rr-target-attack":""));
  const identity=node("div","rr-target-horse-identity");
  add(identity,saddle(runner.program_number),node("strong","rr-target-horse-name",runner.horse_name));
  const metrics=node("div","rr-target-horse-stats");
