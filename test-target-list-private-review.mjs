@@ -18,6 +18,11 @@ const save=(key,x,metadata)=>{
 };
 const key="racing-intelligence/target-list-review/2026-11-23/revision-0001.json";
 save(key,edition,{uploaded_at:"2026-11-23T05:00:00Z"});
+const projectionsKey="projections/dashboard/2026-11-23/synthetic-review-track.json";
+save(projectionsKey,{schema_version:1,race_date:"2026-11-23",track_name:"Synthetic Review Track",
+ races:[{race_number:4,distance:"6F",surface:"Dirt",conditions:"Allowance / Optional Claiming",
+  entries:[{program_number:"2",horse_name:"Sample Favorite"}]}]});
+
 const bucket={
  async list({prefix}){return {objects:[...store.keys()].filter(x=>x.startsWith(prefix)).map(key=>({key})),truncated:false};},
  async get(key){const o=store.get(key);return o?{customMetadata:o.metadata,text:async()=>o.json}:null;}
@@ -30,6 +35,8 @@ assert.equal(data.review_only,true);
 assert.equal(data.demo_example,false);
 assert.equal(data.edition.targets.length,1);
 assert.equal(data.edition.targets[0].attack.horse_name,"Sample Attack");
+assert.equal(data.edition.targets[0].conditions,"Allowance / Optional Claiming",
+ "Match stored TRI race class using track, race, program, and horse identity.");
 assert.equal(data.edition.production_receipt_verified,false);
 assert.deepEqual(data.dates,["2026-11-23"]);
 assert.equal(r.headers.get("X-Robots-Tag"),"noindex, nofollow, noarchive");
