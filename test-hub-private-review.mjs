@@ -12,7 +12,7 @@ const expected=[
 assert.match(wrangler,/"run_worker_first":\["\/admin\*"/,"All /admin review pages must run through worker before any static asset.");
 assert.match(router,/if\(path\.startsWith\("\/api\/admin\/"\)\|\|path==="/);
 assert.match(router,/const auth=await verifyAdmin\(request,env\); if\(!auth.ok\)return auth.response/,"Admin preview must fail closed");
-assert.match(router,/adminPages.get\(shortPath\)/,"Only the explicit protected preview routes may be served.");
+assert.match(router,/adminPages.get\(normalizedAdminPath\)/,"Only the explicit protected preview routes may be served.");
 for(const route of ["/admin/longshot-radar","/admin/target-list-preview","/admin/racing-intelligence-review"]){
  assert.ok(router.includes('["'+route+'",'),"Protected route missing "+route);
 }
