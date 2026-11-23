@@ -12,7 +12,7 @@ assert.match(css,/family=Tinos/,"Load the original racecard percentage font");
 assert.match(css,/\.rr-dash-win-percent\{font-family:"Tinos"/,"Match the approved Tinos Bold percentage font");
 assert.match(css,/\.rr-dash-rating-badge img/,"Scale badge artwork for responsive cards");
 assert.match(js,/F4 FINISH PROJECTIONS/,"Full Analysis must include F4 outcomes");
-assert.match(js,/scratches and five-factor badges are not yet certified/,"Prescratch limitations must remain visible");
+assert.match(js,/current until official scratches are processed/,"Initial-card scratch disclaimer must remain visible");
 assert.match(css,/\.rr-dash-metric-group\{grid-area:metrics;grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/,"Mobile ratings must occupy a single, compact five-column strip");
 assert.doesNotMatch(js,/Trainer not listed \| Jockey not listed/,"Do not repeat source-data warnings on customer runner rows");
 assert.match(css,/\.rr-dash-race-tile:last-child\{grid-column:1\/-1(?:;|\})/,"Distance must use a full-width mobile row");
