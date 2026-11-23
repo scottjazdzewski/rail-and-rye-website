@@ -1,4 +1,6 @@
 import {verifyCertifiedScratchFinalTrack} from "./f4-exotics.js";
+import {auditV33FieldUpload,pickUploadAuditKey,isPickV33Field}
+ from "./pick-tickets-field-audit.js";
 const JSON_HEADERS={"Content-Type":"application/json; charset=utf-8","Cache-Control":"private, no-store","X-Content-Type-Options":"nosniff"};
 const UUID_RE=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_BYTES=1024*1024;
@@ -192,10 +194,33 @@ export async function handleAdminProjectionUpload(request,env){
  const product=await env.STORE_DB.prepare("SELECT id,title,category,race_date,track,pdf_key,status FROM products WHERE id=? AND category='Race Cards' AND status IN ('draft','published','archived') AND pdf_key IS NOT NULL AND pdf_key!='__rr_bundle__' AND NOT EXISTS(SELECT 1 FROM bundle_only_assets a WHERE a.product_id=products.id)").bind(body.product_id).first();
  if(!product)return fail("Choose an individual Race Cards publication with a PDF attached.",404);
  if(product.race_date&&product.race_date!==card.race_date)return fail("The JSON race date does not match the selected publication date.",409);
+ // A single-publication projection upload can also change the exact field
+ // used by Pick Tickets; audit it and update the shared date/track source.
+ let pickAudit=null;
+ if(isPickV33Field(card)){
+  try{
+   const prior=await env.CARDS_BUCKET.get(dashboardKey(card));
+   const old=prior?normalizeCard(JSON.parse(await prior.text())):null;
+   if(old?.projection_status==="scratch_final"&&card.projection_status!=="scratch_final")
+    return fail("Older prescratch input cannot replace the latest scratch-final ticket source.",409);
+   pickAudit=await auditV33FieldUpload(card,old);
+  }catch(e){return fail("Pick Tickets source check blocked this upload: "+String(e.message||e).slice(0,140),409)}
+ }
  const uploadedAt=new Date().toISOString();
  try{
   await env.CARDS_BUCKET.put(projectionKey(product.id),JSON.stringify(card),{httpMetadata:{contentType:"application/json; charset=utf-8",cacheControl:"private, no-store"},customMetadata:{product_id:product.id,uploaded_at:uploadedAt}});
-  return json({ok:true,product_id:product.id,title:product.title,track_name:card.track_name,race_date:card.race_date,races:card.races.length,entries:card.races.reduce((sum,race)=>sum+race.entries.length,0),uploaded_at:uploadedAt});
+  if(pickAudit){
+   await env.CARDS_BUCKET.put(dashboardKey(card),JSON.stringify(card),{
+    httpMetadata:{contentType:"application/json; charset=utf-8",cacheControl:"private, no-store"},
+    customMetadata:{product_id:product.id,uploaded_at:uploadedAt}});
+   await env.CARDS_BUCKET.put(pickUploadAuditKey(card),JSON.stringify(pickAudit),{
+    httpMetadata:{contentType:"application/json; charset=utf-8",cacheControl:"private, no-store"},
+    customMetadata:{source_sha256:pickAudit.source_sha256,uploaded_at:uploadedAt}});
+  }
+  return json({ok:true,product_id:product.id,title:product.title,track_name:card.track_name,race_date:card.race_date,races:card.races.length,entries:card.races.reduce((sum,race)=>sum+race.entries.length,0),uploaded_at:uploadedAt,
+   ...(pickAudit?{pick_ticket_field_audit:{source_sha256:pickAudit.source_sha256,
+    changed_races:pickAudit.changed_races,changed_sequences:pickAudit.changed_sequence_count,
+    status:pickAudit.source_signature_status,engine:pickAudit.optimizer}}:{})});
  }catch(e){
   console.error("Projection upload failed",String(e).slice(0,120));
   return fail("Projection data could not be saved.",503);
@@ -239,19 +264,22 @@ export async function handleAdminProjectionBatchUpload(request,env){
    return fail("Could not verify matching F4 probabilities; projections were not changed.",503);
   }
  }
- // An earlier post-scratch release must never be silently downgraded by a
- // prescratch bulk re-upload. Preflight all tracks before any write.
+ // Before writing ANY track, recompute all V3.3 sequences using every
+ // active runner and current exact TRI/F4 probability. This is an upload-bound
+ // verification, not a publication receipt. Unverifiable fields fail CLOSED.
+ const ticketAudits=new Map();
  try{
   for(const card of cards){
    const prior=await env.CARDS_BUCKET.get(dashboardKey(card));
-   if(!prior)continue;
-   const current=JSON.parse(await prior.text());
-   if(current.projection_status==="scratch_final"&&card.projection_status!=="scratch_final")
+   const current=prior?normalizeCard(JSON.parse(await prior.text())):null;
+   if(current?.projection_status==="scratch_final"&&card.projection_status!=="scratch_final")
     return fail("Refusing to replace a scratch-final projection with an older initial card.",409);
+   const result=await auditV33FieldUpload(card,current);
+   if(result)ticketAudits.set(dashboardKey(card),result);
   }
  }catch(e){
-  console.error("Scratch revision preflight failed",String(e).slice(0,100));
-  return fail("Could not verify existing dashboard revision; no projections were saved.",503);
+  console.warn("V3.3 field upload audit held",String(e.message||e).slice(0,140));
+  return fail("Pick Tickets source verification blocked the field upload: "+String(e.message||e).slice(0,140),409);
  }
  const uploadedAt=new Date().toISOString();
  const results=await Promise.allSettled(cards.map(async card=>{
@@ -260,7 +288,20 @@ export async function handleAdminProjectionBatchUpload(request,env){
    httpMetadata:{contentType:"application/json; charset=utf-8",cacheControl:"private, no-store"},
    customMetadata:{...(product?.id?{product_id:product.id}:{}),uploaded_at:uploadedAt}
   });
-  return {product_id:product?.id||null,title:product?.title||card.track_name,track_name:card.track_name,race_date:card.race_date,races:card.races.length,entries:card.races.reduce((sum,race)=>sum+race.entries.length,0),uploaded_at:uploadedAt};
+  const audit=ticketAudits.get(dashboardKey(card));
+  if(audit){
+   await env.CARDS_BUCKET.put(pickUploadAuditKey(card),JSON.stringify(audit),{
+    httpMetadata:{contentType:"application/json; charset=utf-8",cacheControl:"private, no-store"},
+    customMetadata:{source_sha256:audit.source_sha256,uploaded_at:uploadedAt}});
+  }
+  return {product_id:product?.id||null,title:product?.title||card.track_name,
+   track_name:card.track_name,race_date:card.race_date,races:card.races.length,
+   entries:card.races.reduce((sum,race)=>sum+race.entries.length,0),uploaded_at:uploadedAt,
+   ...(audit?{ticket_verification:{status:audit.source_signature_status,
+    source_sha256:audit.source_sha256,
+    changed_races:audit.changed_races,
+    changed_sequences:audit.changed_sequence_count,
+    sequences_checked:audit.sequence_count}}:{})};
  }));
  const uploaded=results.filter(result=>result.status==="fulfilled").map(result=>result.value);
  const errors=results.map((result,index)=>result.status==="rejected"?{track_name:cards[index].track_name,message:"Projection data could not be saved."}:null).filter(Boolean);
