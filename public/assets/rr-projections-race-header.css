@@ -91,11 +91,11 @@
 .rrp-race-head__scratch-chip{
  position:relative;display:grid;place-items:center;
  width:34px;height:34px;margin:0;padding:0;border:0;
- border-radius:0;background:transparent;box-shadow:none;overflow:visible;
+ border-radius:6px;background:#fff;box-shadow:none;overflow:hidden;isolation:isolate;
 }
 .rrp-race-head__scratch-img{
  display:block;width:34px;height:34px;max-width:none;
- object-fit:contain;opacity:1;filter:none;mix-blend-mode:normal;
+ object-fit:contain;background:#fff;opacity:1;filter:none;mix-blend-mode:normal;
 }
 .rrp-race-head__scratch-suffix{
  position:absolute;right:-4px;bottom:-4px;display:grid;place-items:center;

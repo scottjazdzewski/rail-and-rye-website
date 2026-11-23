@@ -70,7 +70,8 @@
 .rr-target-scratches>strong{font:850 10px Inter,Arial,system-ui,sans-serif;letter-spacing:.04em}
 .rr-target-scratch{display:inline-flex;align-items:center;gap:5px}
 .rr-target-scratch .rr-target-saddle,.rr-target-scratch .rr-target-saddle img{height:22px;width:22px}
-.rr-target-scratch .rr-target-saddle{flex-basis:22px}
+.rr-target-scratch .rr-target-saddle{flex-basis:22px;overflow:hidden;border-radius:5px;background:#fff;isolation:isolate;opacity:1}
+.rr-target-scratch .rr-target-saddle img{background:#fff;opacity:1;filter:none;mix-blend-mode:normal}
 .rr-target-dialog{padding:0;width:min(730px,calc(100% - 24px));max-width:730px;max-height:min(90dvh,800px);border:1px solid #8092a4;border-radius:10px;background:#fff;color:#102d53;box-shadow:0 15px 50px #071d3266}
 .rr-target-dialog::backdrop{background:#071f37a8}
 .rr-target-dialog-inner{max-height:min(90dvh,800px);overflow-y:auto;overscroll-behavior:contain;padding:16px}
