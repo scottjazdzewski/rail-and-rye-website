@@ -42,6 +42,11 @@
     <span id="rr-target-freshness" class="rr-target-freshness" aria-live="polite"></span>
   </section>
   <p id="rr-target-status" class="rr-target-status" role="status" aria-live="polite">Loading private editions…</p>
+  <p id="rr-target-review-banner" class="rr-target-private" hidden>LAYOUT EXAMPLE ONLY · NOT CERTIFIED · NOT CUSTOMER-FACING</p>
+  <div class="rr-target-review-loader">
+    <label for="rr-target-local-file">Open a local review JSON to see its real race rows (never uploaded or stored)</label>
+    <input id="rr-target-local-file" type="file" accept=".json,application/json" aria-label="Open private local review JSON">
+  </div>
   <section id="rr-target-app" aria-label="Target List opportunities" hidden>
     <div class="rr-target-summary"><h2 id="rr-target-count">The day's targets</h2><span id="rr-target-context"></span></div>
     <div id="rr-target-list" class="rr-target-list"></div>
