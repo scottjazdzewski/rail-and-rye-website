@@ -120,6 +120,22 @@ function buildSequence(spec,races){
   })),non_single_legs:nonSingles}
  };
 }
+// Current Projections data lives in this same private bucket. Read exact known
+// track/date objects without requiring any legacy products/PDF or D1 table.
+// Every candidate still goes through the full-field gate in checkCard().
+export async function readPrivatePickProjections(env){
+ if(!env?.CARDS_BUCKET)return [];
+ const tracks=Object.keys(counts);
+ const found=await Promise.all(tracks.map(async track=>{
+  const slug=track.toLowerCase().replace(/[^a-z0-9]+/g,"-");
+  try{
+   const file=await env.CARDS_BUCKET.get("projections/dashboard/"+PICK_DAY+"/"+slug+".json");
+   if(!file)return null;
+   return {card:JSON.parse(await file.text()),uploaded_at:file.customMetadata?.uploaded_at||null};
+  }catch(e){console.warn("Unreadable source Projections card for private ticket preview",track);return null}
+ }));
+ return found.filter(Boolean);
+}
 export function buildPrescratchPickTicketReview(cards){
  const results=[],rejected=[];
  for(const wrapped of cards||[]){
