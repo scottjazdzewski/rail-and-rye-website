@@ -120,8 +120,8 @@ assert.doesNotMatch(js,/\breviewMode\b|PARTIAL FIELD|rr-dash-review-data/,
  "No stale partial-field runtime branches");
 assert.match(js,/api\("\/api\/admin\/projections-preview"\)/,
  "Private admin preview must always read the secure projection API");
-assert.match(adminHtml,/projections-dashboard\.js\?v=23/,
+assert.match(adminHtml,/projections-dashboard\.js\?v=24/,
  "Admin dashboard must load the latest hardened shared client");
-assert.match(memberHtml,/projections-dashboard\.js\?v=23/,
+assert.match(memberHtml,/projections-dashboard\.js\?v=24/,
  "Member dashboard must use the same client revision");
 console.log("PASS: no embedded premium data or partial review fallback; authenticated full-field preview only");
