@@ -99,3 +99,13 @@ The private module now uses a sticky Rail & Rye identity and original track mark
 Mock selections and extra runner choices are exclusively administrator-visible. The production upload blocks the mock fixture marker, and customer launch remains disabled.
 
 Before customer access: verify authenticated entitlements, match the shared Hub shell across all four products, acquire and calibrate the trusted custom-ticket probability API, and authorize payout/value sources separately.
+
+## 2026-11-23 — User authority update: no payouts or pool-size estimates in Pick Tickets
+
+Supersedes the earlier speculative "value estimate" idea. **Payout information is excluded entirely from the website's Pick Tickets module and customer comparison screens**: no expected payouts, estimated pools, projected ROI/EV, break-even payout hurdle, or profitability declarations. The absence of verifiable pool and combination-price evidence cannot be filled with morning-line prices, purse totals, or invented payout assumptions.
+
+The ticket screen retains only approved source selections, status, full-precision TRI-derived **certified ticket hit chance when available**, exact combination count, official denomination, and exact cost. The custom builder shows the same four values plus **Cost Change** compared with Rail & Rye's ticket. For arbitrary custom selections, hit probability stays unshown until the trusted model has provided a certified ticket-specific estimate. Marginal cost is arithmetic, not a payout or value forecast.
+
+The administrator preview now defaults **only to certified private R2 editions** and no longer exposes a mock source selector or mock-serving API endpoint; source/QA-only synthetic fixtures remain in automated tests and are rejected from private R2. If no certified real tickets are staged, the page communicates that fact instead of showing hypothetical selections.
+
+PLAY/CONDITIONAL/PASS remains a recommendation classification, **not a promise of positive expected return**. Without validated payout evidence, do not call a ticket profitable or imply an overlay. This change does not bypass TRI source gates or authorize commercial launch.
