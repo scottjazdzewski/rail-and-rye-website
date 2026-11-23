@@ -5,6 +5,7 @@ import fs from "node:fs";
 import path from "node:path";
 import {chromium} from "playwright";
 import {getPickTicketsPrivateDemo} from "./src/pick-tickets-demo.js";
+import {getPickTicketsIntake} from "./src/pick-tickets-intake.js";
 
 const fixture=getPickTicketsPrivateDemo();
 assert.equal(fixture.cards.length,5,"five QA track fixtures are present");
@@ -14,11 +15,12 @@ const synthetic={cards:fixture.cards.map(x=>({...x,card:{
 }})),demo:false};
 const mime={".html":"text/html; charset=utf-8",".css":"text/css; charset=utf-8",".js":"text/javascript; charset=utf-8",".png":"image/png",".webp":"image/webp"};
 const root=path.resolve("public");
+let sourceHoldMode=false;
 const server=http.createServer((request,response)=>{
  const url=new URL(request.url,"http://127.0.0.1");
  if(url.pathname==="/api/admin/pick-tickets"){
   response.writeHead(200,{"content-type":"application/json","cache-control":"private, no-store"});
-  response.end(JSON.stringify(synthetic));return;
+  response.end(JSON.stringify(sourceHoldMode?{cards:[],intake:getPickTicketsIntake(),demo:false}:synthetic));return;
  }
  const raw=url.pathname==="/admin/pick-tickets-preview/"?"admin/pick-tickets-preview.html":url.pathname.replace(/^\/+/,"");
  const full=path.resolve(root,raw);
@@ -121,6 +123,24 @@ try{
   assert.match(await page.locator("#rr-pt-track-logo").getAttribute("src"),/zia-park.webp$/);
   await page.close();
  }
+ // With no certified tickets the site must still show the actual five-track Nov 23 source intake.
+ sourceHoldMode=true;
+ const hold=await browser.newPage({viewport:{width:375,height:800}});
+ await hold.goto(addr,{waitUntil:"domcontentloaded"});
+ await hold.locator("#rr-pt-intake .rr-pt-intake-stats").waitFor();
+ assert.equal(await hold.locator(".rr-pt-ticket-screen").count(),0,"never fabricate a ticket on source HOLD");
+ assert.equal(await hold.locator("#rr-pt-track option").count(),5,"all five actual tracks remain selectable");
+ assert.equal(await hold.locator("#rr-pt-date").inputValue(),"2026-11-23");
+ assert.match(await hold.locator("#rr-pt-intake").innerText(),/TICKETS ON HOLD/);
+ assert.match(await hold.locator("#rr-pt-intake").innerText(),/RUNNERS IN ANALYSIS/);
+ assert.match(await hold.locator("#rr-pt-intake").innerText(),/CERTIFIED TICKETS\s*0/);
+ const holdWidth=await hold.evaluate(()=>({w:innerWidth,doc:document.documentElement.scrollWidth}));
+ assert.ok(holdWidth.doc<=holdWidth.w+1,"source HOLD view must not overflow mobile width");
+ await hold.screenshot({path:"test-artifacts/pick-tickets-source-hold-375.png",fullPage:true});
+ await hold.selectOption("#rr-pt-track","Zia Park");
+ assert.match(await hold.locator("#rr-pt-intake h3").innerText(),/Zia Park/);
+ assert.match(await hold.locator("#rr-pt-track-logo").getAttribute("src"),/zia-park.webp$/);
+ await hold.close();
  console.log("PASS: certified-data preview only, no payout/value metrics, precise cost change, track/range/tier switching and six responsive widths.");
 }finally{
  if(browser)await browser.close();
