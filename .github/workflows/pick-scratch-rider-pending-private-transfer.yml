@@ -1,0 +1,24 @@
+name: Private November 23 rider-pending scratch Pick ticket transfer
+on:
+  issue_comment:
+    types: [created]
+permissions:
+  contents: read
+jobs:
+  ingest:
+    if: github.event.issue.number == 202 && github.event.comment.user.login == 'scottjazdzewski' && startsWith(github.event.comment.body, 'RR_PICK_SCRATCH_INTERIM_V1')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned private R2 and sealed-box dependencies
+        run: pip install pynacl==1.5.0 boto3==1.40.36
+      - name: Verify changed-rider hold and publish only private interim race-day Picks
+        env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+        run: python scripts/pick_scratch_rider_pending_private_transfer.py ingest
