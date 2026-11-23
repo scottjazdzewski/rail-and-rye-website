@@ -220,7 +220,7 @@ try{
 
 
   assert.equal(compact.giantButtons,0,"Horse-row tap replaces repeated Race Details buttons at "+width);
-  assert.equal(compact.reviewNotices,1,"Only one review notice above the feed at "+width);
+  assert.equal(compact.reviewNotices,0,"No internal review-window notice belongs above the feed at "+width);
 
   // Verify chronological post-time order vs independent A–Z track grouping.
   const initialTimes=await page.locator(".rr-target-post").allTextContents();
