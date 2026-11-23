@@ -6,13 +6,13 @@
  const $=s=>document.querySelector(s);
  const E={
   status:$("#rr-pt-status"),app:$("#rr-pt-app"),date:$("#rr-pt-date"),track:$("#rr-pt-track"),
-  source:$("#rr-pt-source"),types:$("#rr-pt-types"),sequences:$("#rr-pt-sequences"),
-  updated:$("#rr-pt-updated"),current:$("#rr-pt-current"),mock:$("#rr-pt-mock"),
+  types:$("#rr-pt-types"),sequences:$("#rr-pt-sequences"),
+  updated:$("#rr-pt-updated"),current:$("#rr-pt-current"),
   empty:$("#rr-pt-empty"),intakePanel:$("#rr-pt-intake"),brandTrack:$("#rr-pt-brand-track"),brandLogo:$("#rr-pt-track-logo"),
   dialog:$("#rr-pt-dialog"),dialogTitle:$("#rr-pt-dialog-title"),
-  dialogBody:$("#rr-pt-detail"),upload:$("#rr-pt-upload"),file:$("#rr-pt-file")
+  dialogBody:$("#rr-pt-detail")
  };
- let certified=[],demo=[],entries=[],intake=null,scratchUpdate=null,activeSeq=null,activeTier=0,currentIsDemo=true;
+ let certified=[],entries=[],intake=null,scratchUpdate=null,activeSeq=null,activeTier=0;
  let activeMode="rail",builderLegs=[],expandedRaceNumbers=new Set();
  const node=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=String(text);return n;};
  const money=cents=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(cents/100);
@@ -25,7 +25,7 @@
  const option=(select,key,label)=>{const o=node("option","",label);o.value=key;select.append(o)};
  const setMessage=(text,visible=true)=>{E.status.hidden=!visible;E.status.textContent=text;};
  const TRACK_LOGOS={"Finger Lakes":"finger-lakes","Mahoning Valley":"mahoning-valley","Mountaineer":"mountaineer","Parx Racing":"parx-racing","Zia Park":"zia-park"};
- const hitRate=t=>!currentIsDemo&&t?.hit_rate_display?t.hit_rate_display:"—";
+ const hitRate=t=>t?.hit_rate_display?t.hit_rate_display:"—";
  function reviewHitRate(legs){
   if(!activeSeq?.review_probabilities||!Array.isArray(legs)||!legs.length)return "—";
   let hit=1;
@@ -91,7 +91,7 @@
   values.forEach(([k,v,primary],i)=>{
    const item=node("div","rr-pt-stat"+(primary?" rr-pt-hit-stat":"")+(i===3?" rr-pt-total-stat":""));
    item.append(node("span","",k),node("strong","",v));
-   if(primary&&v==="—")item.append(node("small","rr-pt-pending",currentIsDemo?"MOCK DATA":"AWAITING MODEL"));
+   if(primary&&v==="—")item.append(node("small","rr-pt-pending","Not available"));
    band.append(item);
   });
   return band;
@@ -126,8 +126,6 @@
   area.append(intro);
   if(!activeSeq.race_fields?.length)area.append(node("p","rr-pt-builder-limits",
    "Runner choices are limited to published ticket versions until a certified complete field is available."));
-  if(currentIsDemo)area.append(node("p","rr-pt-builder-limits",
-   "Mock runner fields are for testing interactions only—not real racing selections."));
   const rows=node("div","rr-pt-builder-rows");
   for(const leg of builderLegs){
    const row=node("section","rr-pt-builder-row");
@@ -199,7 +197,7 @@
   table.append(body);comparison.append(table);area.append(comparison);
   if(!computed.combinations)area.append(node("p","rr-pt-builder-error","Choose at least one runner in every race."));
   area.append(node("p","rr-pt-builder-disclaimer",activeSeq.review_probabilities
-   ?"PRESCRATCH MODEL REVIEW: custom hit chance is calculated from the same exact TRI PWIN values as this source-based ticket, assuming independent race outcomes. Verify scratches and final production receipts before use. No financial-return estimate."
+   ?"Projected hit chance uses TRI probabilities and assumes independent race outcomes. Confirm the active field and scratches before wagering; this is an estimate, not a guarantee."
    :exact
     ?"This selection matches a source ticket. Its hit probability is displayed only when provided with that exact ticket."
     :"A verified custom hit probability requires the approved TRI multi-race model. Combinations and total cost update immediately."));
@@ -225,11 +223,9 @@
   if(!card)return;
   const box=node("section","rr-pt-ticket-screen");
   const head=node("div","rr-pt-ticket-header"),left=node("div","rr-pt-ticket-title");
-  left.append(node("span","rr-pt-kicker",card.review_only?"PRESCRATCH · TRI MODEL REVIEW":currentIsDemo?"PRIVATE MOCK DISPLAY":"CERTIFIED SOURCE TICKET"));
+  left.append(node("span","rr-pt-kicker","RAIL & RYE PICK TICKETS"));
   left.append(node("h2","",activeSeq.name+" · Races "+activeSeq.start_race+"–"+activeSeq.end_race));
   head.append(left,state(activeSeq.play_status));
-  if(card.review_only)box.append(node("p","rr-pt-review-notice",
-   "PRESCRATCH · Actual TRI PWIN-based selections for private review. Final scoring receipts, late changes and scratches still require verification. No profitability claim."));
   box.append(head,modeControls());
   if(activeMode==="builder")box.append(builder());
   else{
@@ -241,8 +237,7 @@
    meta.append(node("span","rr-pt-wager-name",chosen.title));
    box.append(meta,ticketRows(chosen),stats(chosen));
    if(activeSeq.play_status==="PASS")box.append(node("p","rr-pt-pass-note",
-    currentIsDemo?"DEMONSTRATION PASS · Best possible mock ticket for layout review only."
-    :"PASS — not recommended. Source-certified best possible ticket shown for completeness."));
+    "PASS — not recommended. Best available ticket shown for reference."));
    const actions=node("div","rr-pt-ticket-actions");
    const analysis=node("button","rr-pt-analysis-button","Ticket Insights");
    analysis.type="button";analysis.addEventListener("click",openAnalysis);
@@ -259,7 +254,6 @@
   const info=node("div","rr-pt-dialog-info");
   info.append(state(activeSeq.play_status),node("span","",c.track+" · "+toDate(c.date)));
   E.dialogBody.append(info);
-  if(currentIsDemo)E.dialogBody.append(node("p","rr-pt-demo-note","DEMONSTRATION ONLY. These are mock selections, not TRI predictions or approved wagers."));
   // A sequence-wide legacy percentage must never masquerade as a tier-specific hit rate.
   if(activeSeq.recommendation)E.dialogBody.append(node("p","rr-pt-analysis-reason",activeSeq.recommendation));
   const stage=node("div","rr-pt-analysis-stage");
@@ -267,12 +261,11 @@
    stage.replaceChildren();
    stage.append(tierPicker(activeSeq,i,show));
    stage.append(node("h3","rr-pt-analysis-tier",activeSeq.tickets[i].title));
-   if(hitRate(activeSeq.tickets[i])!=="—")stage.append(node("p","rr-pt-analysis-rate",(c.review_only?"Prescratch model-implied hit chance: ":"Certified ticket hit chance: ")+hitRate(activeSeq.tickets[i])));
+   if(hitRate(activeSeq.tickets[i])!=="—")stage.append(node("p","rr-pt-analysis-rate","Projected hit chance: "+hitRate(activeSeq.tickets[i])));
    stage.append(ticketRows(activeSeq.tickets[i]),stats(activeSeq.tickets[i]));
    if(activeSeq.tickets[i].notes)stage.append(node("p","rr-pt-analysis-notes",activeSeq.tickets[i].notes));
   }
   show(activeTier);E.dialogBody.append(stage);
-  if(!currentIsDemo)E.dialogBody.append(node("p","rr-pt-receipt","Production receipt "+c.source_receipt.reference+" · Revision "+c.revision));
   E.dialog.showModal();
  }
  function availableSequences(){
@@ -330,62 +323,23 @@
   E.intakePanel.replaceChildren();
   const official=scratchUpdate?.date===E.date.value?
    scratchUpdate.tracks.find(x=>x.name===E.track.value):null;
-  if(official){
-   const impact=scratchUpdate.dependent_sequences?.find(x=>x.track===official.name);
-   const base=intake?.tracks?.find(x=>x.name===official.name);
-   const head=node("div","rr-pt-intake-header");
-   head.append(node("strong","","OFFICIAL NOVEMBER 23 SCRATCH UPDATE"),
-    node("span","","TRI/F4 TICKET REVISION IN REVIEW"));
-   E.intakePanel.append(head);
-   E.intakePanel.append(node("h3","",official.name+" · "+toDate(scratchUpdate.date)));
-   const rows=node("div","rr-pt-intake-stats");
-   [["SCRATCHED",official.scratch_count],["ACTIVE FIELD",(base?.analysis_runner_count||0)-official.scratch_count],
-    ["PICK SEQUENCES TO REBUILD",impact?.impacted??"—"]].forEach(([label,value])=>{
-    const stat=node("div","rr-pt-intake-stat");
-    stat.append(node("span","",label),node("strong","",value));rows.append(stat);
-   });
-   E.intakePanel.append(rows);
-   E.intakePanel.append(node("p","rr-pt-intake-desc",
-    "The official scratch list is loaded for this track. A frozen TRI V4.1 scratch-only rerun has passed, but changed-rider source evidence and the F4 V2 finishing-order rerun must be verified before updated Pick tickets can replace the earlier selections."));
-   const info=node("div","rr-pt-scratch-list");
-   for(const [race,programs] of Object.entries(official.scratches).sort((a,b)=>Number(a[0])-Number(b[0]))){
+  if(official?.scratch_count){
+   E.intakePanel.append(node("h3","","Official Scratches · "+E.track.value));
+   const scratches=node("div","rr-pt-scratch-list");
+   for(const [race,programs] of Object.entries(official.scratches||{}).sort((a,b)=>Number(a[0])-Number(b[0]))){
     const line=node("div","rr-pt-scratch-race");
     line.append(node("strong","","RACE "+race));
     const chips=node("div","rr-pt-scratch-chips");
-    programs.forEach(p=>{
+    for(const program of programs){
      const wrap=node("span","rr-pt-scratch-chip");
-     wrap.append(programChip(p));chips.append(wrap);
-    });
-    line.append(chips);info.append(line);
+     wrap.append(programChip(program));chips.append(wrap);
+    }
+    line.append(chips);scratches.append(line);
    }
-   E.intakePanel.append(info);
-   const changed=official.score_input_changes||[];
-   if(changed.length)E.intakePanel.append(node("p","rr-pt-intake-gate",
-    "Additional changes: "+changed.length+" jockey, apprentice or weight items reported. Inputs and rider ratings must be reconciled before an approved scoring revision."));
-   E.intakePanel.append(node("p","rr-pt-intake-gate",
-    "All official sequences on this card are affected. Old prescratch percentages and selections are not displayed as scratch-final. No tickets or values have been fabricated."));
-   return;
+   E.intakePanel.append(scratches);
   }
-  const track=intake?.tracks?.find(x=>x.name===E.track.value);
-  if(!track||intake.date!==E.date.value){
-   E.intakePanel.append(node("p","rr-pt-intake-warning","No source intake record for this track/date."));
-   return;
-  }
-  const header=node("div","rr-pt-intake-header");
-  header.append(node("strong","","PRESCRATCH · SOURCE RECEIVED"),node("span","","TICKETS ON HOLD"));
-  E.intakePanel.append(header);
-  E.intakePanel.append(node("h3","",track.name+" · "+toDate(intake.date)));
-  const stats=node("div","rr-pt-intake-stats");
-  [["RACES",track.race_count],["RUNNERS IN ANALYSIS",track.analysis_runner_count],["CERTIFIED TICKETS",0]].forEach(([label,value])=>{
-   const item=node("div","rr-pt-intake-stat");
-   item.append(node("span","",label),node("strong","",value));stats.append(item);
-  });
-  E.intakePanel.append(stats);
-  E.intakePanel.append(node("p","rr-pt-intake-desc",
-   "The actual November 23 Timeform source and a separate prescratch TRI analysis file have been located. The recorded win-probability distributions sum to approximately 100% by race. This is not production scoring certification."));
-  E.intakePanel.append(node("p","rr-pt-intake-gate","RELEASE GATE · "+intake.missing_gate));
-  E.intakePanel.append(node("p","rr-pt-intake-desc",
-   "No model-approved runner selections, ticket hit percentages, combination counts, or PLAY recommendations will be fabricated."));
+  if(E.track.value)E.intakePanel.append(node("p","rr-pt-intake-warning",
+   "No Pick Tickets are available for "+E.track.value+" on "+toDate(E.date.value)+"."));
  }
  function render(){
   const entry=entries.find(x=>x.card.date===E.date.value&&x.card.track===E.track.value);
@@ -394,10 +348,7 @@
   if(E.brandLogo){const slug=TRACK_LOGOS[E.track.value];E.brandLogo.hidden=!slug;
    if(slug){E.brandLogo.src="/assets/approved/track-logos/"+slug+".webp";E.brandLogo.alt=E.track.value+" logo";}}
   if(!entry){renderIntake();return;}
-  if(E.mock)E.mock.hidden=true;
-  E.updated.textContent=(entry.card.review_only?"PRESCRATCH MODEL REVIEW · NOT CERTIFIED":
-   entry.card.status==="scratch_updated"?"SCRATCH UPDATED":"INITIAL · CURRENT")+
-   " · REVISION "+entry.card.revision+" · "+entry.card.track+" · "+toDate(entry.card.date);
+  E.updated.textContent=entry.card.track+" · "+toDate(entry.card.date);
   renderTypes();
  }
  async function call(url,opts){
@@ -407,24 +358,17 @@
   return data;
  }
  async function load(){
-  setMessage("Loading certified private Pick Tickets…");
+  setMessage("Loading Pick Tickets…");
   try{
    const real=await call("/api/admin/pick-tickets");
    certified=(real.cards||[]).filter(entry=>entry?.card?.status!=="demo"&&!entry?.card?.is_demo);
-   intake=real.intake||null;scratchUpdate=real.scratch_update||null;demo=[];
-   E.source.replaceChildren();
-   option(E.source,"certified","Certified private editions");
-   E.source.value="certified";
-   useData();
-   const reviews=certified.filter(x=>x.review_only||x.card.review_only).length;
-   setMessage(certified.length?(reviews?"Private source ticket review; verify current official scratch status.":""):
-    scratchUpdate?"Official November 23 scratch lists loaded for all five tracks. Existing prescratch tickets are superseded; post-scratch TRI/F4 scoring proof is required before revised tickets appear.":
-    intake?"Source loaded. Current-field scored selections are required.":"No source-backed Pick Tickets are available.",reviews>0||!certified.length);
+   intake=real.intake||null;scratchUpdate=real.scratch_update||null;
+    useData();
+    setMessage(certified.length?"":"No Pick Tickets available for this date.",!certified.length);
   }catch(e){E.app.hidden=true;E.empty.hidden=true;setMessage(e.message)}
  }
  function useData(){
-  currentIsDemo=false;
-  entries=currentIsDemo?demo:certified;activeSeq=null;E.types.dataset.selected="3";
+  entries=certified;activeSeq=null;E.types.dataset.selected="3";
   const dates=[...new Set([...entries.map(x=>x.card.date),...(intake?[intake.date]:[])])].sort().reverse();
   const old=E.date.value;
   E.date.replaceChildren();dates.forEach(x=>option(E.date,x,toDate(x)));
@@ -433,17 +377,7 @@
  }
  E.date.addEventListener("change",updateTrack);
  E.track.addEventListener("change",()=>{activeSeq=null;E.types.dataset.selected="3";render()});
- E.source.addEventListener("change",useData);
  $("#rr-pt-close").addEventListener("click",()=>E.dialog.close());
  E.dialog.addEventListener("click",event=>{if(event.target===E.dialog)E.dialog.close()});
- E.upload.addEventListener("click",async()=>{
-  const file=E.file.files?.[0];if(!file){setMessage("Select a certified source JSON first.");return}
-  if(file.size>3*1024*1024){setMessage("The JSON exceeds 3MB.");return}
-  E.upload.disabled=true;setMessage("Checking original certified ticket data…");
-  try{
-   const res=await call("/api/admin/pick-tickets",{method:"POST",headers:{"Content-Type":"application/json"},body:await file.text()});
-   await load();setMessage("Private source checked: "+res.updated.length+" saved, "+res.unchanged+" unchanged. Not launched.");
-  }catch(e){setMessage("Upload rejected: "+e.message)}finally{E.upload.disabled=false}
- });
  load();
 })();
