@@ -149,7 +149,7 @@ function renderTargets(){
  const ordered=sortedTargets(edition);
  list.replaceChildren(...ordered.map(targetCard));
  set("rr-target-count",ordered.length+" "+(ordered.length===1?"target":"targets"));
- set("rr-target-context",displayDate(edition.race_date));
+ set("rr-target-context",sortSelect?.value==="track"?"Track order":"Post-time order");
  if(!ordered.length)list.append(node("p","rr-target-no-results","No qualifying Target List selections were published for this date."));
 }
 function setEdition(data,preferredDate){
@@ -163,7 +163,7 @@ function setEdition(data,preferredDate){
  app.hidden=!state.edition;empty.hidden=!!state.edition;
  if(!state.edition){status.textContent="No private Target List editions are available.";set("rr-target-freshness","");return;}
  status.textContent="";
- const summary="Rev "+state.edition.revision+(state.reviewOnly?" · Private editorial review":" · "+statusText(state.edition));
+ const summary="Rev "+state.edition.revision+(state.reviewOnly?"":" · "+statusText(state.edition));
  set("rr-target-freshness",summary+(state.uploadedAt?" · Updated "+new Date(state.uploadedAt).toLocaleString("en-US",{timeZone:"America/New_York",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}):""));
  renderTargets();
 }
