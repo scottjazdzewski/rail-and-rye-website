@@ -1,5 +1,18 @@
 name: Verify private Pick Tickets dashboard
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/pick-tickets.js'
+      - 'src/pick-tickets-auto.js'
+      - 'src/pick-tickets-scratch-1123.js'
+      - 'src/pick-tickets-intake.js'
+      - 'src/projections.js'
+      - 'src/index.js'
+      - 'public/assets/pick-tickets-dashboard.*'
+      - 'public/admin/pick-tickets-preview.html'
+      - 'test-pick-tickets*.mjs'
+      - '.github/workflows/verify-pick-tickets.yml'
   pull_request:
     paths:
       - 'src/pick-tickets.js'
