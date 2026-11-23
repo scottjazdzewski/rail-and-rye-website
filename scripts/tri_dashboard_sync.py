@@ -149,7 +149,7 @@ def build_cards(zip_bytes):
                     display = float(horse["win_probability_display_1dp"])
                     require(abs(pwin - display) <= .051, "Displayed win chance conflicts with frozen score")
                     fair = float(horse["fair_odds_to_1_exact"])
-                    require(0 <= fair <= 100000 and abs((100/pwin - 1) - fair) < .00001,
+                    require(pwin > 0 and 0 <= fair <= 100000 and abs((100/pwin - 1) - fair) < .00001,
                             "Fair odds conflict with exact PWIN")
                     placements = {k: prob(horse["f4_probabilities"][k], k) for k in F4}
                     require(abs(sum(placements[k] for k in F4[:6]) - 1) < 1e-7, "F4 outcomes do not total one")
@@ -301,19 +301,22 @@ def run_sync(source_file_id=None, dry_run=False):
         files = [item for item in files if item["id"] == source_file_id]
         require(files, "Specified source ZIP is not in the approved production folder")
     else:
-        files = [item for item in files if (dt.date(2000+int(item["name"][13:15]), int(item["name"][11:13]), int(item["name"][15:17])) if False else True)]
         # Filename uses MMDD only; exact year comes from the signed receipt.
         files.sort(key=lambda item: item.get("modifiedTime", ""), reverse=True)
     if not files:
         print("NO_APPROVED_SOURCE_PACKAGES")
         return
     completed = 0
+    processed_dates = set()
     for item in files[:10]:
         raw = get_source_zip(item["id"], headers)
         date, cards, _, counts = build_cards(raw)
         race_day = dt.date.fromisoformat(date)
         if not source_file_id and race_day not in (today, today + dt.timedelta(days=1)):
             continue
+        if date in processed_dates:
+            continue
+        processed_dates.add(date)
         wrote, same = sync_cards(cards, counts["sha256"], item["id"], BUCKET_DEFAULT,
                                  account, key, secret, preview=dry_run)
         completed += 1
