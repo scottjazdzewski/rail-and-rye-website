@@ -33,6 +33,11 @@
  }
  function removeSponsor(value,sponsor){
   let title=clean(value);
+  // Source-confirmed venue sponsorship: today's official listing uses
+  // "Hollywood Gaming Mahoning Distaff S." Rail & Rye editorial titles omit
+  // this sponsor while retaining the named Mahoning Distaff Stakes.
+  // Keep this deliberately narrow; never remove unfamiliar named-race words.
+  title=title.replace(/^Hollywood Gaming\s+(?=Mahoning\b)/i,"");
   // Remove only explicit sponsorship clauses or a verified sponsor field.
   // Unverified prefixes can be part of official named stakes; don't guess.
   title=title.replace(/\s*\(\s*(?:presented|sponsored|powered)\s+by\b[^)]*\)/gi," ");
