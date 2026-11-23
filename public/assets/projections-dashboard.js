@@ -378,7 +378,7 @@ function raceBanner(race){
  number.setAttribute("aria-label","Race "+race.race_number);
  number.append(approvedRaceSaddle(race.race_number));
  const presentation=editorialRacePresentation(race);
- if(presentation.title.length>32)wrapper.className+=" rr-dash-race-banner--extended-title";
+ if(presentation.title.length>28)wrapper.className+=" rr-dash-race-banner--extended-title";
  const purse=String(race.purse||"").trim();
  const title=makeNode("h3","rr-dash-race-condition");
  title.append(makeNode("span","rr-dash-stakes-name",presentation.title));
