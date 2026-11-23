@@ -98,3 +98,70 @@
 @media(min-width:801px){
  .rr-lr-dialog{width:min(640px,calc(100% - 32px));max-width:640px;border:1px solid #c99831;border-radius:13px;box-shadow:0 16px 65px rgba(12,37,59,.23)}
 }
+
+
+/* RACING HUB DAILY RESEARCH ROW LOCK: align Radar to Target List */
+.rr-lr-page{overflow-x:clip}
+.rr-lr-toolbar{grid-template-columns:repeat(2,minmax(0,1fr));max-width:760px}
+.rr-lr-overview{margin:9px 0 6px;padding:4px 2px;background:transparent;color:#102d53;border-radius:0}
+.rr-lr-kicker{color:#8c6a27;font-size:9px}
+.rr-lr-summary h2{margin-top:2px;font:800 16px/1.2 Inter,Arial,system-ui,sans-serif}
+.rr-lr-stage{min-height:26px;border-color:#c99831;color:#6f551b;background:#fff8e8;font-size:10px}
+.rr-lr-summary-meta{margin-top:4px;color:#637483}
+.rr-lr-list-head{display:none}
+.rr-lr-candidates{display:grid;grid-template-columns:minmax(0,1fr);gap:9px}
+.rr-lr-card{overflow:hidden;padding:0;border:1px solid #b7c3ca;border-radius:7px;background:#fff;box-shadow:none}
+.rr-lr-racebar{display:flex;align-items:center;flex-wrap:wrap;gap:7px 12px;min-height:39px;padding:8px 12px;border-top:3px solid #c99831;background:#102d53;color:#fff}
+.rr-lr-racebar h3{margin:0;font:850 14px/1.2 Inter,Arial,system-ui,sans-serif;letter-spacing:.035em;overflow-wrap:anywhere}
+.rr-lr-race-number,.rr-lr-post{color:#f4f0e6;font:750 11px/1.3 Inter,Arial,system-ui,sans-serif}
+.rr-lr-race-number{padding-left:11px;border-left:1px solid #b3c2d255}
+.rr-lr-post{margin-left:auto;font-variant-numeric:tabular-nums}
+.rr-lr-top{display:grid;grid-template-columns:35px minmax(0,1fr) 310px;grid-template-areas:"program horse market";align-items:center;gap:8px;min-width:0;margin:0;padding:10px 12px}
+.rr-lr-program{grid-area:program;width:34px;height:34px}
+.rr-lr-program img{width:34px;height:34px}
+.rr-lr-identity{grid-area:horse;min-width:0}
+.rr-lr-identity strong{color:#102d53;font:800 14px/1.22 Inter,Arial,system-ui,sans-serif}
+.rr-lr-identity small{font:500 10px/1.3 Inter,Arial,system-ui,sans-serif;color:#607283}
+.rr-lr-markets{grid-area:market;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;min-width:0;text-align:center}
+.rr-lr-market{gap:4px;padding:0;border:0}
+.rr-lr-market span{font:800 9px/1.1 Inter,Arial,system-ui,sans-serif;color:#6b7885}
+.rr-lr-market strong{font:700 16px/1.1 Tinos,"Times New Roman",serif}
+.rr-lr-market.rr-lr-model strong{font-size:21px}
+.rr-lr-case{margin:0;padding:7px 12px;border-top:1px solid #e0e6ea;color:#253f56;font:500 13px/1.45 Inter,Arial,system-ui,sans-serif;overflow-wrap:anywhere}
+.rr-lr-card-foot{display:flex;justify-content:flex-end;gap:5px;padding:0 12px 8px;border:0}
+.rr-lr-card-foot button{min-height:35px;border:1px solid #102d53;border-radius:5px;background:#102d53;color:#fff;padding:7px 12px;font:800 11px/1.2 Inter,Arial,system-ui,sans-serif}
+.rr-lr-card-foot button::after{display:none}
+.rr-lr-card-foot button:hover{background:#1d4a7d}
+@media(max-width:800px){
+ .rr-lr-top{grid-template-columns:34px minmax(0,1fr) 240px;grid-template-areas:"program horse market";gap:8px;padding:8px 11px}
+ .rr-lr-overview{margin:7px 0 5px;padding:3px 2px}
+ .rr-lr-racebar{padding:7px 10px}
+ .rr-lr-markets{border:0;padding:0}
+ .rr-lr-market{padding:0}
+}
+@media(max-width:620px){
+ .rr-lr-top{grid-template-columns:32px minmax(0,1fr);grid-template-areas:"program horse" "market market";gap:6px 8px;padding:8px 10px}
+ .rr-lr-identity strong{font-size:13px}
+ .rr-lr-markets{gap:3px;background:#f5f7f9;border-radius:4px;padding:6px}
+ .rr-lr-market span{font-size:9px}
+ .rr-lr-market strong{font-size:16px}
+ .rr-lr-market.rr-lr-model strong{font-size:20px}
+ .rr-lr-case{padding:7px 10px 3px;font-size:12px}
+ .rr-lr-card-foot{padding:0 10px 8px}
+ .rr-lr-racebar h3{font-size:13px}
+ .rr-lr-post{margin-left:0}
+}
+@media(max-width:430px){
+ .rr-lr-main{padding:9px 9px 28px}
+ .rr-lr-toolbar{grid-template-columns:repeat(2,minmax(0,1fr));padding:8px;gap:7px}
+ .rr-lr-racebar{gap:6px 9px}
+ .rr-lr-racebar h3{font-size:12px}
+ .rr-lr-top{padding:7px 9px}
+ .rr-lr-case{padding:7px 9px 3px}
+ .rr-lr-card-foot{padding:0 9px 8px}
+}
+@media(max-width:359px){
+ .rr-lr-toolbar{grid-template-columns:minmax(0,1fr)}
+ .rr-lr-identity strong{font-size:12px}
+ .rr-lr-race-number{padding-left:8px}
+}
