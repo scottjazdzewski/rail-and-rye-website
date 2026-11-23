@@ -25,7 +25,7 @@ jobs:
         run: pip install boto3==1.40.36 cryptography==46.0.3
       - name: Audit current exact TRI selections and seal full report
         env:
-          TRI_CLOUDFLARE_ACCOUNT_ID: \${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
-          TRI_R2_ACCESS_KEY_ID: \${{ secrets.TRI_R2_ACCESS_KEY_ID }}
-          TRI_R2_SECRET_ACCESS_KEY: \${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
         run: python scripts/pick_v33_audit_export.py
