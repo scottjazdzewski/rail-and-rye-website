@@ -308,3 +308,6 @@
 .rr-pt-intake-gate{margin:13px 0;padding:10px 12px;border-left:3px solid #c99831;background:#faf5e9;color:#5b4b2c;font:750 12px/1.45 Inter,Arial,system-ui,sans-serif}
 .rr-pt-intake-warning{color:#8d433e;font-size:12px}
 @media(max-width:340px){.rr-pt-intake-stats{gap:5px}.rr-pt-intake-stat{padding:8px 6px}.rr-pt-intake-stat span{font-size:9px}}
+
+.rr-pt-review-notice{margin:0;padding:9px 12px;border-bottom:1px solid #e0d0b0;background:#fff7e7;color:#5c4b29;font:750 11px/1.4 Inter,Arial,system-ui,sans-serif}
+.rr-pt-ticket-screen .rr-pt-review-notice+.rr-pt-ticket-header{border-top:0}
