@@ -4,6 +4,9 @@
  */
 const demonstrationDate="2026-11-23";
 const demoTracks=["Finger Lakes","Mahoning Valley","Mountaineer","Parx Racing","Zia Park"];
+// PRIVATE REVIEW ONLY: fictional per-race weights. These are NOT TRI odds or output.
+// Normalized to exactly 100 for each mock race; never accepted by certified uploader.
+const DEMO_WEIGHTS=[22,18,14,12,10,8,5,4,3,2,1,1];
 const defaultSets=[
  [["1","5"],["2","3"],["4","7"]],
  [["3","6"],["1","4"],["2","8"]],
@@ -29,7 +32,12 @@ function makeSequence(kind,start,choices,status,variant){
  }
  return {name:types[kind],start_race:start,end_race:start+raceCount-1,play_status:status,
   hit_rate_display:"",recommendation:"Mock selections for layout review only. No TRI projected hit rate or wagering recommendation is available.",tickets,
-  race_fields:Array.from({length:raceCount},(_,i)=>({race_number:start+i,programs:Array.from({length:12},(_,n)=>String(n+1))}))};
+  race_fields:Array.from({length:raceCount},(_,i)=>({
+   race_number:start+i,programs:Array.from({length:12},(_,n)=>String(n+1)),
+   demo_win_pct:Object.fromEntries(Array.from({length:12},(_,n)=>[
+    String(n+1),DEMO_WEIGHTS[(n+start+i+variant)%12]
+   ]))
+  }))};
 }
 export function getPickTicketsPrivateDemo(){
  const cards=demoTracks.map((track,i)=>{
