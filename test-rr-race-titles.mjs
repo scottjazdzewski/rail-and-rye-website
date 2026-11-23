@@ -64,7 +64,7 @@ assert.equal(cssVersion(admin),cssVersion(member),"Admin and member must load th
 for(const html of [admin,member]){
  assert.match(html,/rr-race-titles\.js\?v=3/,"Load shared race presentation helper before dashboard");
  assert.match(html,/projections-dashboard\.js\?v=\d+/,"Use verified stakes heading dashboard revision");
- assert.match(html,/rr-projections-race-header\.css\?v=3/,"Load the sole graded-trophy and race-header stylesheet");
+ assert.match(html,/rr-projections-race-header\.css\?v=4/,"Load the sole graded-trophy and race-header stylesheet");
 }
 assert.match(js,/editorialRacePresentation\(race\)/,
  "Race headings use a source-proven title and defensive fallback");
