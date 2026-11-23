@@ -275,10 +275,11 @@ export async function handleAdminPickTickets(request,env){
        matchStoredTicketToLatestSource(c,audited))authorized.push(entry);
     else staleRevisions.push({date:c.date,track:c.track,revision:c.revision,
      reason:"Saved ticket not approved for this exact current TRI field."});
-   }else if(c.formula_version===PICK_V33_ENGINE&&sourceIsScratchCurrent(c)){
+   }else if(c.formula_version===PICK_V33_ENGINE&&c.date<"2026-11-23"&&
+            sourceIsScratchCurrent(c)){
     authorized.push(entry);
    }else staleRevisions.push({date:c.date,track:c.track,revision:c.revision,
-    reason:"Earlier formula or scratch revision."});
+    reason:"No current-field audit and approved official sequence menu for this date and track."});
   }
   // Verified release editions outrank math reviews only when the source
   // identity and exact selections both match. Otherwise show newly built
