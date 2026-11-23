@@ -3,6 +3,7 @@ import {readFileSync} from "node:fs";
 
 const stylesheets=[
  "public/assets/projections-dashboard.css",
+ "public/assets/rr-projections-race-header.css",
  "public/assets/pick-tickets-dashboard.css",
  "public/assets/longshot-radar.css",
  "public/assets/target-list-dashboard.css"
@@ -77,4 +78,13 @@ for(const path of stylesheets){
  }
  console.log("PASS CSS authority: "+path+" ("+seen.size+" scoped selectors)");
 }
-console.log("PASS: four Racing Intelligence readers contain no stale upload CSS or same-scope selector-property overrides");
+const general=readFileSync("public/assets/projections-dashboard.css","utf8");
+const shared=readFileSync("public/assets/rr-intelligence-chips.css","utf8");
+for(const [filename,content] of [["projections-dashboard.css",general],["rr-intelligence-chips.css",shared]]){
+ const withoutComments=content.replace(/\/\*[\s\S]*?\*\//g,"");
+ assert.doesNotMatch(withoutComments,/\.rr-dash-race-banner\s*\{/,
+  filename+": legacy race-header CSS was not removed");
+ assert.doesNotMatch(withoutComments,/\.rr-dash-scratch-strip\s*\{/,
+  filename+": legacy scratch-bar CSS was not removed");
+}
+console.log("PASS: dedicated projection header owns all race metadata and scratch chip presentation");

@@ -3,6 +3,7 @@ import {readFileSync} from "node:fs";
 import vm from "node:vm";
 
 const css=readFileSync("public/assets/projections-dashboard.css","utf8");
+const headerCss=readFileSync("public/assets/rr-projections-race-header.css","utf8");
 const js=readFileSync("public/assets/projections-dashboard.js","utf8");
 assert.match(css,/\.rr-dash-race-tiles\{grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/,"Facts use the current three-column compact layout");
 assert.doesNotMatch(js,/INITIAL CARD · CURRENT|INITIAL · CURRENT|SCRATCH UPDATED · CURRENT|rr-dash-card-update-state|verified initial evaluation/,"Never reintroduce internal production-state labels.");
@@ -23,7 +24,7 @@ assert.match(css,/\.rr-dash-win\{align-self:start;justify-self:end;align-items:f
 assert.match(css,/\.rr-dash-horse-dialog\{position:fixed;inset:auto 0 0/,"Mobile details must open as a bottom drawer");
 assert.doesNotMatch(css,/grid-template-areas:"program horse" "market market"/,"Remove old tall mobile runner layout");
 assert.match(css,/\.rr-dash-horse-name\{\s*flex:0 1 auto;[^}]*overflow:visible;[^}]*white-space:normal/,"Mobile horse names must not be clipped");
-assert.match(css,/\.rr-dash-race-purse\[data-missing="true"\]/,"Missing purse must be flagged in private preview");
+assert.match(headerCss,/\.rrp-race-head__purse\[data-missing="true"\]/,"Missing purse must be flagged in private preview");
 
 class Element {
  constructor(tag="div"){this.tagName=tag.toUpperCase();this.children=[];this.attributes={};this.dataset={};this._value="";this._text="";this.hidden=false;this.style={};}
@@ -72,9 +73,15 @@ assert.ok(scratchChip&&scratchChip.src.endsWith("/3.png"),"Scratch uses official
 assert.ok(allClass(race,"rr-dash-scratch-item").some(item=>item.getAttribute("aria-label")?.includes("Scratched Runner")),"Keep scratched horse names accessible without crowding the PDF-style banner");
 const pdfBanner=matchClass(race,"rr-dash-race-banner");
 const bannerScratches=matchClass(pdfBanner,"rr-dash-scratch-strip");
-assert.ok(bannerScratches,"PDF scratch count and chips must appear INSIDE the race header");
+assert.ok(bannerScratches,"Scratch count and authentic chips must appear inside the race header");
+const titleRow=matchClass(pdfBanner,"rrp-race-head__title-row");
+const detailsRow=matchClass(pdfBanner,"rrp-race-head__details");
+assert.ok(titleRow&&detailsRow,"A separate race title and metadata row must be present.");
+assert.ok(pdfBanner.children.indexOf(titleRow)<pdfBanner.children.indexOf(detailsRow),"Title comes first.");
+assert.ok(pdfBanner.children.indexOf(detailsRow)<pdfBanner.children.indexOf(bannerScratches),"Centered scratches come after runners, purse and post time.");
+assert.match(detailsRow.textContent,/RUNNERS[\s\S]*PURSE[\s\S]*POST TIME/,"Three metadata fields stay together.");
 assert.equal(allClass(race,"rr-dash-scratch-strip").length,1,"No detached second scratch block beneath the race header");
-assert.match(bannerScratches.textContent,/SCRATCHES/,"Use a small label rather than a separate scratch-count card.");
+assert.match(bannerScratches.textContent,/3 SCRATCHES/,"Display the exact scratch count in the bottom row.");
 assert.doesNotMatch(bannerScratches.textContent,/Scratched Runner|High Number Scratch|Entry Scratch/,"Do not print horse names in the race header.");
 assert.equal(allClass(bannerScratches,"rr-dash-scratch-name").length,0,"No old scratch-name labels remain.");
 assert.equal(allClass(bannerScratches,"rr-dash-scratch-item").length,3,"List every verified scratched runner");
@@ -84,8 +91,11 @@ assert.ok(scratchedChips.some(el=>el.src.endsWith("/13.png")),"High-numbered scr
 assert.ok(scratchedChips.some(el=>el.src.endsWith("/1.png")),"Coupled entries use the approved base-number asset");
 assert.equal(allClass(bannerScratches,"rr-dash-scratch-suffix")[0].textContent,"A","Keep coupled-entry suffix visible");
 assert.ok(allClass(bannerScratches,"rr-dash-scratch-item").every(item=>item.title.includes("Scratch")),"All scratch names remain available as tooltips and accessible labels");
-assert.match(css,/\.rr-dash-scratch-strip\{display:inline-flex;[^}]*background:transparent\}/,"Render chips inline without a white scratch box.");
-assert.doesNotMatch(css,/PDF-matched scratches:/,"Remove obsolete scratch-card CSS cascade.");
+assert.match(headerCss,/\.rrp-race-head__scratch-bar\{[^}]*justify-content:center/,"Center the scratch block in the newly rebuilt header.");
+assert.match(headerCss,/\.rrp-race-head__details\{[^}]*grid-template-columns:/,"Metadata has its own complete row.");
+assert.match(headerCss,/\.rrp-race-head__scratch-chip\{[^}]*background:transparent/,"Scratch chip frames are transparent.");
+assert.doesNotMatch(css,/\.rr-dash-race-banner\s*\{/,"No old race banner CSS remains in the general dashboard stylesheet.");
+assert.doesNotMatch(css,/\.rr-dash-scratch-strip\s*\{/,"No legacy scratch-strip CSS remains.");
 
 const names=allClass(horses,"rr-dash-horse-name").map(el=>el.textContent);
 assert.deepEqual(names,["Barrister Proof","Doo Wop Don","Third Horizon"],"Lead must have greatest TRI PWIN, while the remaining horses retain scorer order");
@@ -296,7 +306,8 @@ console.log("PASS: true per-track chronology; authentic logos and race artwork; 
 // Canonical cross-module chips and Bet Builder live in the protected projection view.
 const chipStyles=readFileSync("public/assets/rr-intelligence-chips.css","utf8");
 for(const html of [adminHtml,memberHtml]){
- assert.match(html,/rr-intelligence-chips\.css\?v=3/,"Load the shared race/horse chip identity");
+ assert.match(html,/rr-intelligence-chips\.css\?v=4/,"Load cleaned shared race/horse chip identity");
+ assert.match(html,/rr-projections-race-header\.css\?v=1/,"Load the single new Projections header stylesheet");
  assert.match(html,/rr-exotic-bet-builder\.css\?v=3/,"Load the responsive exotic ticket builder skin");
  assert.match(html,/rr-exotic-bet-builder\.js\?v=4/,"Load the source-gated no-tote Bet Builder");
 }

@@ -52,7 +52,7 @@ for(const field of ["conditions","stakes_name"]){
   "No sponsor suffixes or abbreviated stakes names on the website");
 }
 const js=readFileSync("public/assets/projections-dashboard.js","utf8");
-const css=readFileSync("public/assets/projections-dashboard.css","utf8");
+const css=readFileSync("public/assets/rr-projections-race-header.css","utf8");
 const admin=readFileSync("public/admin/projections-preview.html","utf8");
 const member=readFileSync("public/membership/dashboard/index.html","utf8");
 const revision=html=>/projections-dashboard\.js\?v=(\d+)/.exec(html)?.[1];
@@ -64,7 +64,7 @@ assert.equal(cssVersion(admin),cssVersion(member),"Admin and member must load th
 for(const html of [admin,member]){
  assert.match(html,/rr-race-titles\.js\?v=3/,"Load shared race presentation helper before dashboard");
  assert.match(html,/projections-dashboard\.js\?v=\d+/,"Use verified stakes heading dashboard revision");
- assert.match(html,/projections-dashboard\.css\?v=\d+/,"Load the current graded-trophy stylesheet");
+ assert.match(html,/rr-projections-race-header\.css\?v=1/,"Load the sole graded-trophy and race-header stylesheet");
 }
 assert.match(js,/editorialRacePresentation\(race\)/,
  "Race headings use a source-proven title and defensive fallback");
@@ -79,19 +79,21 @@ assert.doesNotMatch(js,/rr-dash-track-mark-letters/,
 
 assert.match(js,/rr-dash-graded-trophy--g/,"Graded race header must retain grade-specific trophy");
 assert.match(js,/🏆/,"Use the graded stakes trophy symbol");
-assert.match(css,/rr-dash-graded-trophy--g1/);
-assert.match(css,/rr-dash-graded-trophy--g2/);
-assert.match(css,/rr-dash-graded-trophy--g3/);
-assert.match(css,/rr-dash-race-condition\{\s*text-transform:none/,"Do not uppercase normal editorial race titles");
+assert.match(css,/rrp-race-head__trophy--g1/);
+assert.match(css,/rrp-race-head__trophy--g2/);
+assert.match(css,/rrp-race-head__trophy--g3/);
+assert.match(css,/text-transform:none/,"Race names are never forced uppercase");
 const chipCss=readFileSync("public/assets/rr-intelligence-chips.css","utf8");
 assert.match(chipCss,/\.rr-dash-approved-track-logo\{/,
  "Actual venue logos receive consistent, uncropped presentation");
 assert.match(chipCss,/mix-blend-mode:multiply/,
- "Remove the hard white tile around original venue logos on ivory backgrounds");
-assert.match(chipCss,/\.rr-dash-race-copy\{display:contents\}/,
- "Long race titles and metadata occupy separate responsive rows");
-assert.match(chipCss,/text-wrap:balance/,
- "Race titles wrap in balanced phrases rather than an orphaned 'Stakes' line");
-assert.match(chipCss,/\.rr-dash-race-number\.rr-race-saddle-header\{[\s\S]*?background:#f4f0e6!important/,
- "Transparent chip artwork must have the same light backdrop as race navigation");
+ "Keep approved track-logo treatment, not an invented brand mark");
+assert.doesNotMatch(chipCss,/\.rr-dash-race-banner\s*\{/,
+ "Retire the competing shared-chip header rules");
+assert.match(css,/text-wrap:balance/,
+ "Full stakes titles wrap at natural word boundaries");
+assert.match(css,/\.rrp-race-head__number\{[\s\S]*?background:#f4f0e6/,
+ "Keep ivory beneath race-number artwork to prevent dark transparency bleed");
+assert.match(css,/\.rrp-race-head__scratch-bar\{[\s\S]*?justify-content:center/,
+ "Centered scratch row is part of the canonical layout");
 console.log("PASS: Mahoning Distaff sponsor removed, authentic venue logos restored, balanced full names and transparent saddlecloths fixed");
