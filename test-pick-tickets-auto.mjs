@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import {PICK_MENU_1123,buildPrescratchPickTicketReview,readPrivatePickProjections,
- buildV32PostScratchReviewed,buildV32ScratchFieldPreview,verifyV32OwnerScratchSnapshot}
+ buildV33PostScratchReviewed,buildV33ScratchFieldPreview,verifyV32OwnerScratchSnapshot}
  from "./src/pick-tickets-auto.js";
 import {getNov23ScratchLedger} from "./src/pick-tickets-scratch-1123.js";
 import {getPickTicketsIntake} from "./src/pick-tickets-intake.js";
-import {chooseV32,PICK_V32_ENGINE,PICK_V32_COST_SCALE_DOLLARS}
- from "./src/pick-tickets-v32.js";
+import {chooseV33,PICK_V33_ENGINE,PICK_V33_COST_SCALE_DOLLARS}
+ from "./src/pick-tickets-v33.js";
 
 assert.equal(PICK_MENU_1123.length,42,"42 official 11/23 sequence ranges");
 const calls=[];
@@ -32,22 +32,23 @@ const generated=buildPrescratchPickTicketReview(Object.keys(counts).map(t=>({car
 assert.equal(generated.cards.length,5);
 assert.deepEqual(generated.rejected,[]);
 assert.equal(generated.cards.reduce((n,x)=>n+x.card.sequences.length,0),42);
-assert.equal(generated.engine,PICK_V32_ENGINE);
+assert.equal(generated.engine,PICK_V33_ENGINE);
+assert.equal(generated.cards.length,5);
 let varied=new Set();
 for(const item of generated.cards){
- assert.equal(item.card.optimizer_basis,PICK_V32_ENGINE);
+ assert.equal(item.card.optimizer_basis,PICK_V33_ENGINE);
  assert.equal(item.card.source_receipt,null,"never forge a source receipt");
  assert.equal(item.card.review_only,true,"math output is never itself customer certified");
  for(const sequence of item.card.sequences){
-  assert.equal(sequence.tickets.length,1,"V3.2 is exactly one rectangular ticket");
-  assert.equal(sequence.review_meta.method,PICK_V32_ENGINE);
-  assert.equal(sequence.review_meta.soft_cost_scale_dollars,PICK_V32_COST_SCALE_DOLLARS);
-  const scenario=sequence.review_meta.cost_preference_comparison;
-  assert.deepEqual(scenario.map(r=>r.scale_dollars),[15,20,25,30,40]);
-  assert.equal(scenario[0].current_approved,true);
-  assert.equal(scenario[0].combinations,sequence.tickets[0].combinations);
-  assert.equal(scenario[0].total_cents,sequence.tickets[0].total_cents);
-  assert.ok(scenario.every((r,i)=>i===0||r.combinations>=scenario[i-1].combinations));
+  assert.equal(sequence.tickets.length,1,"V3.3 is exactly one rectangular ticket");
+  assert.equal(sequence.review_meta.method,PICK_V33_ENGINE);
+  assert.equal(sequence.review_meta.soft_cost_scale_dollars,PICK_V33_COST_SCALE_DOLLARS);
+  assert.equal(sequence.review_meta.minimum_leg_coverage,.5);
+  assert.deepEqual(sequence.review_meta.selected_leg_coverage.length,sequence.tickets[0].legs.length);
+  assert.ok(sequence.review_meta.selected_leg_coverage.every(x=>x+1e-12>=.5));
+  assert.ok(Array.isArray(sequence.review_meta.marginal_opportunity_cost));
+  assert.ok(sequence.review_meta.marginal_opportunity_cost.every(x=>
+   x.additional_combinations>=1 && x.additional_cost_cents>=sequence.tickets[0].unit_cents));
   assert.equal(sequence.play_status,"CONDITIONAL","no green status from probabilities alone");
   const t=sequence.tickets[0];
   assert.equal(t.combinations,t.legs.reduce((n,l)=>n*l.programs.length,1));
@@ -61,17 +62,21 @@ for(const item of generated.cards){
     pwin:sequence.review_probabilities[String(field.race_number)][program]/100
    }))
   }));
-  const expected=chooseV32(source,t.unit_cents,{includeMarginals:false});
+  const expected=chooseV33(source,t.unit_cents,{includeMarginals:false});
   assert.equal(t.combinations,expected.combinations);
   assert.equal(t.total_cents,expected.total_cents);
   assert.deepEqual(t.legs.map(l=>l.programs),expected.picks);
+  for(let i=0;i<expected.leg_coverage.length;i++){
+   assert.ok(expected.leg_coverage[i]+1e-12>=.5);
+   assert.ok(Math.abs(expected.leg_coverage[i]-sequence.review_meta.selected_leg_coverage[i])<1e-12);
+  }
   assert.ok(Math.abs(parseFloat(t.hit_rate_display)/100-expected.hit_probability)<=.0005001);
   assert.equal(sequence.review_meta.frontier_points,expected.frontier_points);
   assert.ok(sequence.review_meta.required_break_even_dividend>=0,"calculate internally, not as predicted payout");
   varied.add(t.combinations);
  }
 }
-assert.ok(varied.size>2,"V3.2 does not impose standard 8/16/32 combination sizes");
+assert.ok(varied.size>2,"V3.3 does not impose standard 8/16/32 combination sizes");
 const changed=buildPrescratchPickTicketReview([{card:sample("Finger Lakes",[70,15,7,5,3])}]);
 assert.ok(changed.cards[0].card.sequences.some(s=>s.tickets[0].legs.some(l=>l.programs.length===1)),"real singles can arise");
 for(const mutate of [
@@ -102,12 +107,12 @@ after.races[0].entries[3].f4_probabilities.exact_p1=.06;
 const manifest={date:"2026-11-23",track:"Finger Lakes",official_status:"CONFIRMED",
  sequence_status:"ACTIVE",prescratch_sha256:"p".repeat(64),postscratch_sha256:"s".repeat(64),
  scratches:{"1":["2"]},activations:{}};
-const post=buildV32PostScratchReviewed({before,after,manifest,preHash:"p".repeat(64),postHash:"s".repeat(64)});
-assert.equal(post.card.optimizer_basis,PICK_V32_ENGINE);
+const post=buildV33PostScratchReviewed({before,after,manifest,preHash:"p".repeat(64),postHash:"s".repeat(64)});
+assert.equal(post.card.optimizer_basis,PICK_V33_ENGINE);
 assert.ok(post.card.sequences.every(x=>x.tickets.length===1));
 assert.ok(post.card.sequences.every(x=>x.review_meta.stage==="POSTSCRATCH"));
 assert.equal(post.card.sequences[0].race_fields[0].programs.includes("2"),false);
-assert.throws(()=>buildV32PostScratchReviewed({before,after,manifest:{...manifest,official_status:"PENDING"},preHash:"p".repeat(64),postHash:"s".repeat(64)}),/SCRATCH_NOTICE_NOT_CONFIRMED/);
+assert.throws(()=>buildV33PostScratchReviewed({before,after,manifest:{...manifest,official_status:"PENDING"},preHash:"p".repeat(64),postHash:"s".repeat(64)}),/SCRATCH_NOTICE_NOT_CONFIRMED/);
 // A current scratch-adjusted source can be shown to administrators for mathematical
 // inspection without pretending that prescratch factor-basis scores are certified.
 const official=getNov23ScratchLedger();
@@ -137,14 +142,14 @@ const currentFixture=track=>{
 const reviewInputs=Object.keys(counts).map(track=>({
  card:currentFixture(track),uploaded_at:"2026-11-23T20:00:00Z"
 }));
-const privateReviews=reviewInputs.map(buildV32ScratchFieldPreview);
+const privateReviews=reviewInputs.map(buildV33ScratchFieldPreview);
 assert.equal(privateReviews.length,5);
 assert.ok(privateReviews.every(Boolean));
 assert.equal(privateReviews.reduce((n,item)=>n+item.card.sequences.length,0),42);
 for(const item of privateReviews){
  assert.equal(item.review_only,true);
  assert.equal(item.card.review_only,true);
- assert.equal(item.card.formula_version,PICK_V32_ENGINE);
+ assert.equal(item.card.formula_version,PICK_V33_ENGINE);
  assert.equal(item.card.source_receipt,null);
  assert.equal(item.card.score_verification_status,"CURRENT_FIELD_COMPLETE_SCORING_AND_MANIFEST_PENDING");
  assert.equal(item.card.model_factor_basis,"verified_prescratch");
@@ -161,19 +166,19 @@ const staleScratch=structuredClone(reviewInputs[0].card);
 const forbiddenProgram=official.tracks.find(t=>t.name==="Finger Lakes").scratches["1"][0];
 staleScratch.races[0].entries[0].program_number=forbiddenProgram;
 assert.match(verifyV32OwnerScratchSnapshot(staleScratch).reason,/SCRATCHED_PROGRAM_REMAINS_ACTIVE/);
-assert.equal(buildV32ScratchFieldPreview(staleScratch),null);
+assert.equal(buildV33ScratchFieldPreview(staleScratch),null);
 const missingRunner=structuredClone(reviewInputs[0].card);
 missingRunner.races[0].entries.pop();
 assert.equal(verifyV32OwnerScratchSnapshot(missingRunner).reason,"RACE_DAY_SCRATCH_RUNNER_TOTAL_MISMATCH");
-assert.equal(buildV32ScratchFieldPreview(missingRunner),null);
+assert.equal(buildV33ScratchFieldPreview(missingRunner),null);
 const incompleteReview=structuredClone(reviewInputs[0].card);
 incompleteReview.races[0].entries[0].win_probability_exact=99;
-assert.equal(buildV32ScratchFieldPreview(incompleteReview),null);
+assert.equal(buildV33ScratchFieldPreview(incompleteReview),null);
 const unknownFactor=structuredClone(reviewInputs[0].card);
 unknownFactor.factor_basis="unknown";
-assert.equal(buildV32ScratchFieldPreview(unknownFactor),null);
-assert.equal(buildV32ScratchFieldPreview(sample("Finger Lakes")),null,
+assert.equal(buildV33ScratchFieldPreview(unknownFactor),null);
+assert.equal(buildV33ScratchFieldPreview(sample("Finger Lakes")),null,
  "prescratch input is not misrepresented as current-field review");
 assert.equal(PICK_MENU_1123.find(x=>x.name==="Buckeye Pick 6").unit_cents,20);
 assert.equal(PICK_MENU_1123.find(x=>x.name==="Philly Big 5").unit_cents,50);
-console.log("PASS: exact V3.2 on all 42 official sequences, single ticket, same pre/post method, independent field/scratch gates.");
+console.log("PASS: exact V3.3 on all 42 official sequences, single ticket, same pre/post method, independent field/scratch gates.");
