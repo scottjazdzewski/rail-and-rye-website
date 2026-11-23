@@ -17,10 +17,17 @@ const synthetic={cards:fixture.cards.map(x=>({...x,card:{
 }})),demo:false};
  // Regression fixture for a scratch-day source receipt carrying old wording.
  for(const entry of synthetic.cards)for(const sequence of entry.card.sequences){
-  sequence.review_meta={cost_preference_comparison:[15,20,25,30,40].map((scale,i)=>({
-   scale_dollars:scale,current_approved:i===0,combinations:8*(i+1),
-   total_cents:400*(i+1),hit_rate_display:(20+i*3).toFixed(1)+"%",singles:3-i%3
-  }))};
+  sequence.review_meta={
+   method:"V3.3-TRI-ONLY-SINGLE-RECTANGLE-COVER50",
+   soft_cost_scale_dollars:30,minimum_leg_coverage:.5,
+   selected_leg_coverage:sequence.tickets[0].legs.map((_,i)=>.62+i*.04),
+   marginal_opportunity_cost:[{
+    race_number:sequence.tickets[0].legs[0].race_number,
+    program:sequence.tickets[0].legs[0].programs[0],
+    status:"ADDITIONAL_COVERAGE",additional_cost_cents:100,
+    additional_sequence_hit_probability:.004
+   }]
+  };
  }
  synthetic.cards[0].card.source_receipt.reference="CI-RIDER_CHANGES_PENDING";
  synthetic.cards[0].card.score_verification_status="CURRENT_FIELD_COMPLETE_SCORING_AND_MANIFEST_PENDING";
@@ -145,9 +152,14 @@ try{
   await page.locator(".rr-pt-analysis-button").click();
   assert.equal(await page.locator("#rr-pt-dialog").evaluate(n=>n.open),true,"full analysis opens");
   assert.equal(await page.locator("#rr-pt-dialog .rr-pt-race-row").count(),4);
-  assert.equal(await page.locator("#rr-pt-dialog .rr-pt-sensitivity-table tbody tr").count(),5);
-  assert.equal(await page.locator("#rr-pt-dialog .rr-pt-sensitivity-current").count(),1);
-  assert.equal(await page.locator("#rr-pt-dialog .rr-pt-sensitivity-table tbody tr").first().locator("td").first().innerText(),"$15");
+  assert.equal(await page.locator("#rr-pt-dialog .rr-pt-coverage-line").count(),4,
+   "every Pick 4 leg displays its exact modeled coverage");
+  assert.equal(await page.locator("#rr-pt-dialog .rr-pt-coverage-line strong").first().innerText(),"62.0%");
+  assert.equal(await page.locator("#rr-pt-dialog .rr-pt-coverage-marginals summary").count(),1,
+   "additional runner opportunity costs remain available in ticket insights");
+  await page.locator("#rr-pt-dialog .rr-pt-coverage-marginals summary").click();
+  assert.equal(await page.locator("#rr-pt-dialog .rr-pt-coverage-marginals tbody tr").count(),1);
+  assert.match(await page.locator("#rr-pt-dialog .rr-pt-coverage-marginals tbody tr").innerText(),/\$1\.00/);
   assert.doesNotMatch(await page.locator("#rr-pt-dialog").innerText(),/interim|prescratch model review/i,"Ticket Insights has no legacy internal labels");
   const drawerBounds=await page.locator("#rr-pt-dialog").evaluate(n=>({left:n.getBoundingClientRect().left,right:n.getBoundingClientRect().right,width:innerWidth}));
   assert.ok(drawerBounds.left>=-1&&drawerBounds.right<=drawerBounds.width+1,"dialog overflow at "+width);
