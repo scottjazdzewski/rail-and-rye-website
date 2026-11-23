@@ -65,7 +65,7 @@ let data=await response.json();
 assert.equal(data.uploaded[0].ticket_verification.sequences_checked,7);
 assert.equal(data.uploaded[0].ticket_verification.changed_races.length,8);
 const sourceKey="projections/dashboard/2026-11-23/finger-lakes.json";
-const saved=JSON.parse((await env.CARDS_BUCKET.get(sourceKey)).text());
+const saved=JSON.parse(await (await env.CARDS_BUCKET.get(sourceKey)).text());
 const auditKey=pickUploadAuditKey(saved);
 const preAudit=JSON.parse(await (await env.CARDS_BUCKET.get(auditKey)).text());
 assert.equal(preAudit.optimizer,PICK_V33_ENGINE);
