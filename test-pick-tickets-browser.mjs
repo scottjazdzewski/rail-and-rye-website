@@ -15,6 +15,13 @@ const synthetic={cards:fixture.cards.map(x=>({...x,card:{
  ...x.card,status:"initial_current",is_demo:false,revision:1,
  source_receipt:{reference:"CI-SYNTHETIC-NOT-A-RACING-SELECTION",sha256:"a".repeat(64)}
 }})),demo:false};
+ // Regression fixture for a scratch-day source receipt carrying old wording.
+ synthetic.cards[0].card.source_receipt.reference="CI-RIDER_CHANGES_PENDING";
+ synthetic.cards[0].card.sequences[0].tickets[0].title="Rail & Rye Interim Focused Ticket";
+ synthetic.cards[0].card.sequences[0].tickets[0].notes=
+  "Interim focused ticket: lean: $4.00 / 25.0%; former_balanced: $12.00 / 32.0%. No prediction of return; prescratch model review.";
+ synthetic.cards[0].card.sequences[0].recommendation=
+  "Focused interim construction. lean: $4.00 / 25.0%; focused: $6.00 / 28.0%.";
 const mime={".html":"text/html; charset=utf-8",".css":"text/css; charset=utf-8",".js":"text/javascript; charset=utf-8",".png":"image/png",".webp":"image/webp"};
 const root=path.resolve("public");
 let sourceHoldMode=false,scratchBuilderMode=false;
@@ -48,6 +55,10 @@ try{
   assert.equal(await page.locator(".rr-pt-sequence-tab").count(),3,"one Pick 3 tab per available sequence");
   assert.equal(await page.locator(".rr-pt-seq-range").allTextContents().then(x=>x.join("|")),"Races 1–3|Races 4–6|Races 7–9");
   assert.equal(await page.locator(".rr-pt-race-row").count(),3,"Pick 3 has three complete race legs");
+  assert.equal(await page.locator(".rr-pt-interim-model-label").count(),0,"scratch-day status banner is not customer-facing");
+  assert.equal(await page.locator(".rr-pt-wager-name").innerText(),"Rail & Rye Ticket","legacy interim title normalized for customers");
+  assert.doesNotMatch(await page.locator("#rr-pt-current").innerText(),/interim|changed-jockey scoring still pending/i);
+
   assert.equal(await page.locator(".rr-pt-chip img").count(),6,"actual approved saddlecloth PNGs used");
   assert.equal(await page.locator(".rr-pt-ticket-stats strong").count(),4,"model hit, combos, base and total slots shown");
   assert.equal(await page.locator(".rr-pt-wager-meta .rr-pt-probability").count(),0,"no duplicate hit probability near ticket title");
@@ -121,6 +132,7 @@ try{
   await page.locator(".rr-pt-analysis-button").click();
   assert.equal(await page.locator("#rr-pt-dialog").evaluate(n=>n.open),true,"full analysis opens");
   assert.equal(await page.locator("#rr-pt-dialog .rr-pt-race-row").count(),4);
+  assert.doesNotMatch(await page.locator("#rr-pt-dialog").innerText(),/interim|prescratch model review/i,"Ticket Insights has no legacy internal labels");
   const drawerBounds=await page.locator("#rr-pt-dialog").evaluate(n=>({left:n.getBoundingClientRect().left,right:n.getBoundingClientRect().right,width:innerWidth}));
   assert.ok(drawerBounds.left>=-1&&drawerBounds.right<=drawerBounds.width+1,"dialog overflow at "+width);
   await page.screenshot({path:"test-artifacts/pick-tickets-detail-"+width+".png"});

@@ -134,12 +134,12 @@ export function restoreInterimSelection(wrapped){
    if(legs.some(x=>!x.programs.length))continue;
    const combinations=legs.reduce((n,x)=>n*x.programs.length,1);
    tiers.push({...t,legs,combinations,total_cents:combinations*t.unit_cents,
-    hit_rate_display:"",notes:"Interim selections with withdrawn runners removed. Recalculated TRI/F4 projections pending."});
+    hit_rate_display:"",notes:"Selections reflect reported scratches. Hit probability is unavailable without a matching updated TRI score."});
   }
   if(!tiers.length)continue;
   seqs.push({...sequence,race_fields:fields,tickets:tiers,hit_rate_display:"",
    review_probabilities:null,play_status:"CONDITIONAL",
-   recommendation:"Interim runner selections; updated model probabilities and finishing order pending."});
+   recommendation:"Selections reflect reported scratches; current hit probability requires matching updated TRI scoring."});
  }
  return {...wrapped,review_only:true,card:{...card,sequences:seqs,
   source_type:"INTERIM_SCRATCH_FILTERED_FROM_PRESCRATCH_UNTIL_SOURCE_CERTIFIED_RERUN",
