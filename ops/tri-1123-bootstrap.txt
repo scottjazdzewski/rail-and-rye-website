@@ -1,3 +1,0 @@
-One-time private R2 encryption bootstrap for verified 2026-11-23 TRI prescratch projections. Contains NO credentials or racing results.
-
-R2 credentials corrected by site owner; retry one-time encrypted delivery bootstrap.
