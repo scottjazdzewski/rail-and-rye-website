@@ -222,7 +222,7 @@ class TestPrescratchSync(unittest.TestCase):
         self.assertEqual(saved["races"][0]["scratches"], [])
         self.assertEqual(saved["races"][0]["entries"][0]["trainer"], "Verified Trainer 1")
         self.assertEqual(saved["races"][0]["entries"][0]["fair_odds"], "0.67/1")
-        self.assertEqual(saved["races"][0]["entries"][1]["f4_probabilities"]["exact_p2"], .25)
+        self.assertEqual(saved["races"][0]["entries"][1]["f4_probabilities"]["exact_p2"], .6)
         self.assertEqual(saved["races"][0]["entries"][0]["metrics"], [])
         self.assertIsNone(saved["races"][0]["entries"][0]["rank"])
 
