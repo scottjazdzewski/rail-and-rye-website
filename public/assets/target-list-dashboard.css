@@ -133,3 +133,9 @@
  .rr-target-toolbar label:first-child,.rr-target-toolbar label:nth-child(2){flex-basis:100%}
 }
 @media(prefers-reduced-motion:reduce){.rr-target-page *{scroll-behavior:auto!important}}
+
+/* Small private-review-only file loader; this file never leaves the browser. */
+.rr-target-review-loader{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding:8px 12px;margin:0 0 8px;background:#fff;border:1px dashed #a6b5c3;border-radius:5px}
+.rr-target-review-loader label{color:#253f56;font:800 11px/1.4 Inter,Arial,system-ui,sans-serif}
+.rr-target-review-loader input[type=file]{width:min(100%,320px);min-width:0;font:600 11px Inter,Arial,system-ui,sans-serif}
+.rr-target-review-loader input[type=file]::file-selector-button{min-height:32px;background:#102d53;border:1px solid #102d53;border-radius:4px;color:#fff;font:800 11px Inter,Arial,system-ui,sans-serif;margin-right:9px;padding:6px 9px;cursor:pointer}
