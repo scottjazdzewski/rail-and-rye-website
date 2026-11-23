@@ -67,3 +67,18 @@ A service that cannot access the scorer's verified ZIP cannot perform this uploa
 The initial 2026-11-23 private R2 dashboard (45 races, 367 horses) was updated separately from an authenticated, encrypted source-backed badge patch. GitHub Actions receipt `45106762595` confirmed **1,835 badges / 445 green / 1,216 gray / 174 red, 5 track objects written and read back**. The original verified model PWIN and F4 entries remained unchanged. The front end displays the exact existing badge PNG assets and uses **Tinos Bold**, the approved racecard numeric face, for win percentages/fair odds. It labels the scored prescratch initial card as current until scratches; this does not assert scratch-final status.
 
 The scorer's external hosting/execution remains outside the website repo. For future dates it must provide BOTH current source packages and call the publisher. No Google Cloud account or Drive service account is necessary.
+
+## Required postscratch scoring-to-ticket handoff (not yet wired into TRI runtime)
+
+Uploading official scratches is **NOT** equivalent to recomputing TRI probabilities. The website carries only V3.3 ticket construction, not the locked external TRI V4.1/F4 V2 scoring runtime. This is a real remaining integration gap; never claim the score model automatically reruns because a Scratch JSON or screenshot was loaded.
+
+The trusted TRI runtime must process each date/track scratch upload in this order:
+
+1. Validate official scratches and all scratched program/horse identities, revised trainers/jockeys and complete surviving field. Keep exact parent prescratch model source identifiers.
+2. Re-run the *locked* TRI V4.1 scorer using surviving entrants and current inputs. Re-run the accompanying F4 V2 scorer/finishing distributions from the same new race field. **Do not simply remove runners and renormalize the old prescratch PWIN**; do not rebuild a ticket from prior selected horses.
+3. Produce new, verifiable TRI and F4 scoring output hashes **both different** from the parent score hashes when the inputs change. Include the parent source, official change hash, `projection_status=scratch_final` and `factor_basis=verified_scratch_final` in the resulting fully scored card. Attach authenticated model receipt evidence (not arbitrary hash strings).
+4. The scorer/publisher uploads the full current scored field to the existing authenticated private `/api/admin/projections/batch` endpoint or approved direct R2 delivery. The batch route verifies ordered F4 and calls `auditV33FieldUpload`, which recomputes **every official V3.3 sequence** for the complete track, including cost/combos, independent TRI leg coverage and full sequence hit. The source-bound audit is saved privately.
+5. **Only after 1–4** should private Pick Tickets be displayed for review. Customer release is a separate approval. On missing/unchanged/scorer-unverified new inputs, hold **all** affected sequences. Neither the previous ticket nor scratch-elimination-only tickets can substitute.
+
+The website now explicitly withholds postscratch tickets while the field still has `factor_basis=verified_prescratch`, even when the scratch list and mathematical V3.3 output reconcile perfectly. This is a **prevention guard**, not an automatic scorer. The external scorer must be wired by the TRI engineering/runtime owner.
+
