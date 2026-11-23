@@ -302,6 +302,30 @@
    stage.append(ticketRows(activeSeq.tickets[i]),stats(activeSeq.tickets[i]));
    const publicNotes=displayTicketNote(activeSeq.tickets[i].notes);
    if(publicNotes)stage.append(node("p","rr-pt-analysis-notes",publicNotes));
+   const comparisons=activeSeq.review_meta?.cost_preference_comparison;
+   if(Array.isArray(comparisons)&&comparisons.length){
+    const box=node("section","rr-pt-sensitivity");
+    box.append(node("h4","","Coverage comparison"));
+    const table=node("table","rr-pt-sensitivity-table");
+    const thead=node("thead",""),tr=node("tr","");
+    for(const heading of ["Scale","Combos","Hit","Cost","Singles"]){
+     const th=node("th","",heading);th.scope="col";tr.append(th);
+    }
+    thead.append(tr);table.append(thead);
+    const tbody=node("tbody","");
+    for(const item of comparisons){
+     const row=node("tr",item.current_approved?"rr-pt-sensitivity-current":"");
+     const values=["$"+Number(item.scale_dollars).toFixed(0),
+      String(item.combinations),String(item.hit_rate_display),
+      money(item.total_cents),String(item.singles)];
+     for(const value of values)row.append(node("td","",value));
+     tbody.append(row);
+    }
+    table.append(tbody);box.append(table);
+    box.append(node("p","rr-pt-sensitivity-caption",
+     "$15 is the locked ticket above. Other rows are comparison scenarios, not published selections."));
+    stage.append(box);
+   }
   }
   show(activeTier);E.dialogBody.append(stage);
   E.dialog.showModal();
