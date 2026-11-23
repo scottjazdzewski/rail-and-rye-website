@@ -3,7 +3,7 @@
 (()=>{
 "use strict";
 const get=id=>document.getElementById(id);
-const state={edition:null,dates:[],uploadedAt:null,lastFocus:null};
+const state={edition:null,dates:[],uploadedAt:null,lastFocus:null,demo:false};
 const dateSelect=get("rr-target-date"),sortSelect=get("rr-target-sort");
 const status=get("rr-target-status"),app=get("rr-target-app"),empty=get("rr-target-empty");
 const list=get("rr-target-list"),dialog=get("rr-target-dialog");
@@ -140,11 +140,12 @@ function renderTargets(){
  const ordered=sortedTargets(edition);
  list.replaceChildren(...ordered.map(targetCard));
  set("rr-target-count",ordered.length+" "+(ordered.length===1?"target":"targets"));
- set("rr-target-context",displayDate(edition.race_date)+" · "+statusText(edition));
+ set("rr-target-context",displayDate(edition.race_date)+" · "+(state.demo?"DESIGN SAMPLE · NOT PICKS":statusText(edition)));
  if(!ordered.length)list.append(node("p","rr-target-no-results","No qualifying Target List selections were published for this date."));
 }
 function setEdition(data,preferredDate){
- state.edition=data.edition||null;state.dates=data.dates||[];state.uploadedAt=data.uploaded_at||null;
+ state.edition=data.edition||null;state.dates=data.dates||[];state.uploadedAt=data.uploaded_at||null;state.demo=data.design_sample===true;
+ get("rr-target-demo-alert").hidden=!state.demo;get("rr-target-demo-button").textContent=state.demo?"Return to verified data":"Preview sample rows";
  const current=state.edition?.race_date||preferredDate||"";
  dateSelect.replaceChildren();
  for(const value of state.dates)option(dateSelect,value,displayDate(value));
@@ -154,7 +155,7 @@ function setEdition(data,preferredDate){
  if(!state.edition){status.textContent="No private Target List editions are available.";set("rr-target-freshness","");return;}
  status.textContent="";
  const summary=statusText(state.edition)+" · Revision "+state.edition.revision;
- set("rr-target-freshness",summary+(state.uploadedAt?" · Updated "+new Date(state.uploadedAt).toLocaleString("en-US",{timeZone:"America/New_York",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}):""));
+ set("rr-target-freshness",state.demo?"FICTIONAL EXAMPLES · for visual review only":summary+(state.uploadedAt?" · Updated "+new Date(state.uploadedAt).toLocaleString("en-US",{timeZone:"America/New_York",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}):""));
  renderTargets();
 }
 async function load(date){
@@ -169,6 +170,36 @@ async function load(date){
   app.hidden=true;empty.hidden=false;status.textContent=String(e.message||"Target List unavailable.");
  }
 }
+function visualSample(){
+ // Fictional admin-only layout examples; never submitted to R2 or customer publishing.
+ const runner=(number,name,ml,win,fair)=>({
+  program_number:String(number),horse_name:name,morning_line:ml,
+  win_probability:win,win_probability_exact:win,fair_odds:fair,
+  trainer:"Example Trainer",jockey:"Example Jockey"
+ });
+ const entry=(track,race,post,rank,farNumber)=>({
+  track,race_number:race,post_time_et:post,rank,tier:null,
+  surface:"Sample surface",distance:"Sample distance",
+  conditions:"Illustrative race conditions — not a real race",
+  favorite:runner("1","Example Favorite","2/1",21.2,"7/2"),
+  attack:runner(String(farNumber),"Sample ATTACK Runner With Long Name","8/1",38.5,"8/5"),
+  also_live:rank===2?runner("20","Example ALSO LIVE","6/1",37.1,"9/5"):null,
+  analysis:"DESIGN EXAMPLE ONLY. This text demonstrates how a verified favorite vulnerability and its source-backed ATTACK reasoning will wrap in the compact reader. Actual research has not been loaded.",
+  scratches:[]
+ });
+ return {schema_version:1,product_type:"target_list",race_date:"2026-11-23",revision:1,status:"initial",
+  targets:[
+   entry("EXAMPLE PARK",6,"4:30 PM ET",1,11),
+   entry("SAMPLE DOWNS",2,"1:45 PM ET",2,12),
+   entry("EXAMPLE PARK",8,"7:10 PM ET",3,20)
+  ]};
+}
+get("rr-target-demo-button").addEventListener("click",async()=>{
+ if(state.demo){await load();return;}
+ const sample=visualSample();
+ setEdition({design_sample:true,dates:[sample.race_date],edition:sample,uploaded_at:null},sample.race_date);
+});
+
 dateSelect.addEventListener("change",()=>load(dateSelect.value));
 sortSelect.addEventListener("change",renderTargets);
 get("rr-target-dialog-close").addEventListener("click",()=>dialog.close());
