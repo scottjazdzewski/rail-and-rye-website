@@ -132,10 +132,14 @@ function targetCard(entry){
  const head=node("div","rr-target-racebar");
  const titleRow=node("div","rr-target-racebar-main");
  add(titleRow,node("h3","",entry.track),node("span","rr-target-race-number","RACE "+entry.race_number));
- if(entry.post_time_et)titleRow.append(node("span","rr-target-post",entry.post_time_et));
- head.append(titleRow);
  const meta=raceMeta(entry);
- if(meta)head.append(node("p","rr-target-race-facts",meta));
+ // Keep ordinary distance/surface on the same line as track and post time.
+ // Extended class conditions use a full-width line rather than shrinking or clipping.
+ const extendedFacts=meta.length>27;
+ if(meta&&!extendedFacts)titleRow.append(node("span","rr-target-race-facts",meta));
+ if(entry.post_time_et)titleRow.append(node("span","rr-target-post",entry.post_time_et));
+ if(extendedFacts)titleRow.append(node("span","rr-target-race-facts rr-target-race-facts-long",meta));
+ head.append(titleRow);
  add(card,head);
  add(card,headerColumns(),horseRow("ML FAVORITE",entry.favorite,entry),horseRow("ATTACK",entry.attack,entry));
  if(entry.also_live)card.append(horseRow("ALSO LIVE",entry.also_live,entry));

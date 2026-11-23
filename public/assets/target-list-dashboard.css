@@ -692,3 +692,49 @@
   .rr-target-page .rr-target-toolbar label:first-child,
   .rr-target-page .rr-target-toolbar label:nth-child(2){flex:1 1 125px}
 }
+
+
+/* Target List: source distance/surface on the SAME navy header row when space permits.
+   Do not reduce typographic readability or truncate longer race conditions. */
+.rr-target-page .rr-target-racebar{
+  display:block;
+  min-height:0;
+  padding:8px 10px 9px;
+}
+.rr-target-page .rr-target-racebar .rr-target-racebar-main{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:baseline;
+  justify-content:flex-start;
+  gap:3px 9px;
+  width:100%;
+  min-width:0;
+}
+.rr-target-page .rr-target-racebar .rr-target-racebar-main h3,
+.rr-target-page .rr-target-racebar .rr-target-racebar-main .rr-target-race-number,
+.rr-target-page .rr-target-racebar .rr-target-racebar-main .rr-target-post{
+  white-space:nowrap;
+}
+.rr-target-page .rr-target-racebar .rr-target-racebar-main .rr-target-race-facts{
+  display:inline;
+  flex:0 0 auto;
+  width:auto;
+  max-width:100%;
+  margin:0;
+  padding:0;
+  white-space:nowrap;
+  font:600 13px/1.3 Inter,Arial,system-ui,sans-serif;
+  color:#e5edf7;
+}
+.rr-target-page .rr-target-racebar .rr-target-racebar-main .rr-target-race-facts-long{
+  flex:1 0 100%;
+  white-space:normal;
+  overflow-wrap:break-word;
+}
+.rr-target-page .rr-target-racebar .rr-target-post{
+  margin-left:auto;
+}
+@media(max-width:359px){
+  .rr-target-page .rr-target-racebar .rr-target-racebar-main{gap:3px 7px}
+  .rr-target-page .rr-target-racebar .rr-target-racebar-main .rr-target-race-facts{font-size:13px}
+}

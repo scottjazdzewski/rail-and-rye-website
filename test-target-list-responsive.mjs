@@ -140,6 +140,33 @@ try{
   });
   assert.ok(readable.factsInNavy&&!readable.factsOutside,"Entire race description should live in the navy race banner at "+width+": "+JSON.stringify(readable));
   assert.equal(readable.raceFacts,"7 furlongs · Dirt · Allowance / Optional Claiming");
+
+  const banner=await page.evaluate(()=>{
+   const head=document.querySelector(".rr-target-card .rr-target-racebar-main");
+   const facts=head.querySelector(".rr-target-race-facts");
+   const post=head.querySelector(".rr-target-post");
+   const track=head.querySelector("h3");
+   const originalTrack=track.textContent,originalFacts=facts.textContent;
+   // Local DOM-only short-race case, never a user-facing selection or saved fixture.
+   track.textContent="Parx Racing";facts.textContent="6½F · Dirt";
+   facts.classList.remove("rr-target-race-facts-long");
+   head.insertBefore(facts,post);
+   const top=el=>Math.round(el.getBoundingClientRect().top);
+   const result={track:top(track),race:top(head.querySelector(".rr-target-race-number")),
+    facts:top(facts),post:top(post),complete:facts.textContent};
+   track.textContent=originalTrack;facts.textContent=originalFacts;
+   facts.classList.add("rr-target-race-facts-long");
+   head.append(facts);
+   return result;
+  });
+  if(width>=375){
+   // Baseline alignment gives a few px of different top offsets for 17px vs 13px text.
+   assert.ok(Math.abs(banner.track-banner.race)<=6,"Track and race share a row at "+width+": "+JSON.stringify(banner));
+   assert.ok(Math.abs(banner.facts-banner.track)<=6,"Short distance/surface shares that row at "+width+": "+JSON.stringify(banner));
+   assert.ok(Math.abs(banner.post-banner.track)<=6,"Source post time shares that row at "+width+": "+JSON.stringify(banner));
+  }
+  assert.equal(banner.complete,"6½F · Dirt");
+
   assert.ok(readable.header>=16,"Track name must be easy to read at "+width+": "+JSON.stringify(readable));
   assert.ok(readable.distance>=13,"Distance/surface/class must be readable at "+width+": "+JSON.stringify(readable));
   assert.ok(readable.name>=16,"Horse name must be readable at "+width+": "+JSON.stringify(readable));
