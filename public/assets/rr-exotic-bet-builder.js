@@ -130,13 +130,40 @@
   }
   return Math.abs(mass-1)<=1e-8?map:null;
  }
+ // A 100% hit probability is only possible if the ticket covers every
+ // distinct exacta/trifecta finish in the verified current field. This is NOT
+ // the probability of turning a profit; tote payouts vary by combination.
+ function formatChance(chance,fullFieldCoverage){
+  if(chance===null)return "Not available";
+  if(chance>0&&chance<0.00005)return "<0.01%";
+  // Never round 99.995% up to an unearned "100.00%" claim.
+  if(!fullFieldCoverage&&chance>=0.99995)return ">99.99%";
+  return (chance*100).toFixed(2)+"%";
+ }
  function calculate(entries){
   const combos=combinations(),cost=Number((combos.length*state.base).toFixed(2));
   const probabilities=verifiedDistribution(entries,state.type);
-  const complete=probabilities!==null&&combos.every(x=>probabilities.has(x.join("|")));
-  const chance=complete?combos.reduce((sum,x)=>sum+probabilities.get(x.join("|")),0):null;
-  const fair=chance!==null&&chance>0?Math.ceil((cost/chance)*100-1e-9)/100:null;
-  return {combos,cost,chance,fair,probabilities:complete?probabilities:null};
+  const complete=probabilities!==null&&combos.length>0&&
+   combos.every(x=>probabilities.has(x.join("|")));
+  const rawChance=complete?combos.reduce((sum,x)=>sum+probabilities.get(x.join("|")),0):null;
+  const chance=rawChance===null?null:Math.min(1,Math.max(0,rawChance));
+  const allOutcomesCovered=complete&&combos.length===probabilities.size;
+  const threshold=chance!==null&&chance>0?cost/chance:null;
+  const fair=threshold!==null&&Number.isFinite(threshold)?
+   Math.ceil(threshold*100-1e-9)/100:null;
+  const lead=positionLists()[0];
+  const firstPlaceKey=complete&&lead.length===1&&
+   combos.every(combo=>combo[0]===lead[0])&&
+   combos.length===(state.type==="exacta"?entries.length-1:(entries.length-1)*(entries.length-2));
+  const leadHorse=firstPlaceKey?entries.find(e=>String(e.program_number)===lead[0]):null;
+  // For a complete first-place key the combined chance MUST equal that
+  // runner's exact TRI win probability. Never show a source-drifted figure.
+  const keyPwin=leadHorse?Number(leadHorse.win_probability_exact)/100:null;
+  if(firstPlaceKey&&(!Number.isFinite(keyPwin)||Math.abs(chance-keyPwin)>1e-8))
+   return {combos,cost,chance:null,fair:null,probabilities:null,
+    allOutcomesCovered:false,firstPlaceKey:false,leadHorse:null};
+  return {combos,cost,chance,fair,probabilities:complete?probabilities:null,
+   allOutcomesCovered,firstPlaceKey,leadHorse};
  }
  function button(text,selected,fn,cls){
   const b=el("button",cls||"rr-bet-option",text);
@@ -204,14 +231,25 @@
   const stat=(label,value)=>{const d=el("div","rr-bet-stat");d.append(el("span","",label),el("strong","",value));return d;};
   stats.append(stat("Combinations",result.combos.length.toLocaleString("en-US")));
   stats.append(stat("Ticket cost",CASH(result.cost)));
-  stats.append(stat("Projected hit chance",result.chance===null?"Not available":(result.chance*100).toFixed(2)+"%"));
-  stats.append(stat("Minimum break-even gross payout*",result.fair===null?"Not available":CASH(result.fair)));
+  stats.append(stat("Projected hit chance",formatChance(result.chance,result.allOutcomesCovered)));
+  stats.append(stat("Required gross payout to break even*",result.fair===null?"Not available":CASH(result.fair)));
   body.append(stats);
   const info=el("p","rr-bet-disclaimer",result.probabilities?
     "F4 hit chance uses the verified ordered finish model. *For boxes/wheels, the minimum gross payout assumes every covered winning combination pays the SAME amount; actual payouts vary. Compare the payout for your selected denomination against the live tote yourself. Higher than break-even is needed for positive model value.":
     state.loading?"Checking the private certified F4 finishing probabilities for this race…":
     "Ticket cost is calculated. The current field has no matching verified F4 ordered data: no hit chance or break-even payout can be shown.");
   body.append(info);
+  if(result.probabilities&&result.allOutcomesCovered){
+   body.append(el("p","rr-bet-coverage-note",
+    "ALL FINISHING COMBINATIONS COVERED: This ticket has 100% modeled outcome coverage in the present field, but NOT a guaranteed profit. You still spend "+CASH(result.cost)+
+    " and the actual gross payout for the winning combination may be lower than your total stake."));
+  }else if(result.probabilities&&result.firstPlaceKey){
+   body.append(el("p","rr-bet-coverage-note",
+    "FIRST-PLACE KEY: You covered every other runner in the remaining finishing "+
+    (state.type==="exacta"?"position. ":"positions. ")+
+    "This ticket hits ONLY if #"+result.leadHorse.program_number+" "+result.leadHorse.horse_name+
+    " finishes first. Its projected "+formatChance(result.chance,false)+" hit chance is that horse's exact TRI win probability."));
+  }
   const details=el("details","rr-bet-combos");
   details.append(el("summary","","Show "+result.combos.length+" covered combinations"));
   const list=el("ol","");
@@ -273,5 +311,6 @@
  window.RRBetBuilder=Object.freeze({open,
    // Narrow testing hooks. Pure calculation never uses live market data.
    _calculate:()=>calculate(usableEntries(state.race)),
+   _formatChance:formatChance,
    _state:state});
 })();
