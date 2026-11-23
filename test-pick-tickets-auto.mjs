@@ -6,7 +6,7 @@ const privateFetches=[];
 const privateSource=await readPrivatePickProjections({CARDS_BUCKET:{
  async get(key){
   privateFetches.push(key);
-  return key.endsWith("finger-lakes.json")?{text:async()=>JSON.stringify(testCard("Finger Lakes")),customMetadata:{uploaded_at:"2026-11-23T05:00:00Z"}}:null;
+  return key.endsWith("finger-lakes.json")?{text:async()=>JSON.stringify({track_name:"Finger Lakes"}),customMetadata:{uploaded_at:"2026-11-23T05:00:00Z"}}:null;
  }
 }});
 assert.equal(privateFetches.length,6,"five known Projections keys plus one sealed private review source are checked");
