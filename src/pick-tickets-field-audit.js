@@ -4,15 +4,15 @@
  * This is a PRIVATE review artifact. It NEVER constitutes a score receipt,
  * customer release, or automatic approval of jockey/source changes.
  */
-import {PICK_MENU_1123,buildV33ScratchFieldPreview,
+import {pickMenuForDate,buildV33ScratchFieldPreview,
  buildPrescratchPickTicketReview} from "./pick-tickets-auto.js";
 import {PICK_V33_ENGINE} from "./pick-tickets-v33.js";
 
 export const PICK_UPLOAD_AUDIT_PREFIX="pick-tickets/field-audits/";
 const slug=s=>String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
 export const pickUploadAuditKey=card=>PICK_UPLOAD_AUDIT_PREFIX+card.race_date+"/"+slug(card.track_name)+".json";
-export const isPickV33Field=card=>!!card&&card.race_date==="2026-11-23"&&
- PICK_MENU_1123.some(s=>s.track===card.track_name);
+export const isPickV33Field=card=>!!card&&
+ pickMenuForDate(card.race_date).some(s=>s.track===card.track_name);
 export async function projectionFieldFingerprint(card){
  const source=JSON.stringify(card);
  const hash=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(source));
@@ -86,7 +86,7 @@ export async function auditV33FieldUpload(card,previousCard=null){
  const sourceSha=await projectionFieldFingerprint(card);
  const priorSha=previousCard?await projectionFieldFingerprint(previousCard):null;
  const review=previewFor(card),oldReview=previousCard?(()=>{try{return previewFor(previousCard)}catch{return null}})():null;
- const expected=PICK_MENU_1123.filter(s=>s.track===card.track_name).length;
+ const expected=pickMenuForDate(card.race_date).filter(s=>s.track===card.track_name).length;
  if(review.sequences.length!==expected)throw Error("V3.3 did not cover all official sequences on this upload.");
  const sequences=auditSequences(review,oldReview);
  const changed=changedRaces(previousCard,card);
