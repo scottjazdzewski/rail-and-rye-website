@@ -258,10 +258,13 @@ async function readOriginalRaceFacts(env,raceDate){
      continue;
     }
     const facts={};
-    for(const [key,max] of [["distance",60],["surface",50],["conditions",240]]){
+    for(const [key,max] of [["distance",60],["surface",50],["conditions",240],["stakes_name",240],["race_name",240],["sponsor_name",120],["stakes_grade",30]]){
      if(typeof race[key]==="string"&&race[key].trim()&&race[key].length<=max)
       facts[key]=race[key].trim();
     }
+    // Grade and named stakes identity may only come from the same
+    // source-verified track/race/horse join, never from public guesses.
+    if(race.is_stakes===true)facts.is_stakes=true;
     if(!Object.keys(facts).length)continue;
     const horses=new Set();
     for(const entry of race.entries){
