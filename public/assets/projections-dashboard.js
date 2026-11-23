@@ -4,7 +4,6 @@ const q=(selector,root=document)=>root.querySelector(selector);
 const status=q("#rr-dash-status"),app=q("#rr-dash-app"),login=q("#rr-dash-login"),empty=q("#rr-dash-empty");
 const previewMode=document.body.dataset.rrPreview==="true";
 let cards=[],activeCard=null,activeRace=null;
-const DASH_METRIC_BADGES={"SPEED":"speed","FORM":"form","CLASS":"class","PACE FIT":"pace","SURFACE/DISTANCE":"surface"};
 const CARD_METRICS=[
  ["SPEED",["speed","speed figure","speed rating"]],
  ["FORM",["form","recent form"]],
@@ -118,9 +117,13 @@ function makeMetricGroup(entry){
  const group=makeNode("div","rr-dash-metric-group");group.setAttribute("role","group");group.setAttribute("aria-label","Runner ratings");
  for(const [label,aliases] of CARD_METRICS){
   const value=metricValue(entry,aliases),state=metricState(value),cell=makeNode("div","rr-dash-metric-value");
-  cell.dataset.label=label;
-  if(state){cell.dataset.state=state;cell.title=label+": "+state;cell.setAttribute("aria-label",label+": "+state);cell.append(iconNode(DASH_METRIC_BADGES[label],"rr-dash-metric-indicator",state));}
-  else{cell.textContent=value;cell.setAttribute("aria-label",label+": "+value);}
+  cell.dataset.label=label;cell.dataset.shortLabel=label==="SURFACE/DISTANCE"?"SURF/DIST":label==="PACE FIT"?"PACE":label;
+  if(state){
+   cell.dataset.state=state;cell.title=label+": "+state;cell.setAttribute("aria-label",label+": "+state);
+   const bars=makeNode("span","rr-dash-metric-bars");bars.setAttribute("aria-hidden","true");
+   for(let n=0;n<3;n++)bars.append(makeNode("i","rr-dash-metric-bar"));
+   cell.append(bars);
+  }else{cell.textContent=value;cell.setAttribute("aria-label",label+": "+value);}
   group.append(cell);
  }
  return group;
@@ -217,8 +220,8 @@ function renderCard(){
   horseHeading.append(makeNode("span","rr-dash-horse-name",entry.horse_name));
   horseHeading.append(makeNode("span","rr-dash-horse-ml","M/L "+(entry.morning_line||"—")));
   horseButton.append(horseHeading);
-  const connections=[entry.trainer||"Trainer not listed",entry.jockey||"Jockey not listed"].join(" | ");
-  horseButton.append(makeNode("span","rr-dash-horse-connections",connections));
+  const connections=[entry.trainer||"",entry.jockey||""].filter(Boolean).join(" | ");
+  if(connections)horseButton.append(makeNode("span","rr-dash-horse-connections",connections));
   horseButton.addEventListener("click",()=>showHorse(entry));horseCell.append(horseButton);
   const metricGroup=makeMetricGroup(entry);metricGroup.setAttribute("role","cell");
   const odds=fairOdds(entry)||"—",win=makeNode("div","rr-dash-win");win.setAttribute("role","cell");
