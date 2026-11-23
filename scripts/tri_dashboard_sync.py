@@ -195,97 +195,73 @@ def build_cards(zip_bytes):
                                       "runners": runner_total, "sha256": digest(zip_bytes)}
 
 
-def sync_cards(cards, source_hash, source_id, bucket, account_id, key_id, secret, preview=False):
+def target_key(card):
+    """Match the website's trackSlug key convention exactly."""
+    normalized = unicodedata.normalize("NFD", card["track_name"])
+    normalized = "".join(ch for ch in normalized if not unicodedata.combining(ch))
+    slug = re.sub(r"[^a-z0-9]+", "-", normalized.lower()).strip("-")[:80] or "track"
+    return f"projections/dashboard/{card['race_date']}/{slug}.json"
+
+
+def create_client(account_id, access_key_id, secret_access_key):
     import boto3
-    from botocore.exceptions import ClientError
-    session = boto3.session.Session()
-    r2 = session.client("s3", region_name="auto",
-                        endpoint_url=f"https://{account_id}.r2.cloudflarestorage.com",
-                        aws_access_key_id=key_id, aws_secret_access_key=secret)
+    require(bool(account_id and access_key_id and secret_access_key),
+            "Cloudflare R2 credentials are not configured in the TRI scoring environment")
+    require(re.fullmatch(r"[0-9a-fA-F]{32}", account_id) is not None,
+            "Cloudflare account ID must be 32 hexadecimal characters")
+    return boto3.session.Session().client(
+        "s3", region_name="auto",
+        endpoint_url=f"https://{account_id}.r2.cloudflarestorage.com",
+        aws_access_key_id=access_key_id, aws_secret_access_key=secret_access_key)
+
+
+def is_not_found(error):
+    response = getattr(error, "response", None)
+    code = response.get("Error", {}).get("Code") if isinstance(response, dict) else None
+    return code in ("NoSuchKey", "404", "NotFound")
+
+
+def sync_cards(cards, source_hash, bucket=BUCKET_DEFAULT, dry_run=False, client=None):
+    """Preflight all targets before writes; never downgrade a scratch-updated card."""
+    if client is None:
+        client = create_client(
+            os.getenv("TRI_CLOUDFLARE_ACCOUNT_ID", "").strip(),
+            os.getenv("TRI_R2_ACCESS_KEY_ID", "").strip(),
+            os.getenv("TRI_R2_SECRET_ACCESS_KEY", "").strip())
+    require(bucket == BUCKET_DEFAULT, "TRI cannot publish to an unexpected R2 bucket")
     actions = []
-    # Preflight every target before the first write. NEVER restore prescratch
-    # over a scratch-updated or manually finalized dashboard.
+    seen = set()
     for card in cards:
-        slug = re.sub(r"[^a-z0-9]+", "-", card["track_name"].lower()).strip("-")
-        target = f"projections/dashboard/{card['race_date']}/{slug}.json"
+        target = target_key(card)
+        require(target not in seen, "Two TRI tracks would overwrite the same R2 key")
+        seen.add(target)
         prior = None
         metadata = {}
         try:
-            existing = r2.get_object(Bucket=bucket, Key=target)
-            metadata = existing.get("Metadata", {})
+            current = client.get_object(Bucket=bucket, Key=target)
+            metadata = current.get("Metadata") or {}
+            blob = current["Body"].read(MAX_IMPORT_SIZE + 1)
+            require(len(blob) <= MAX_IMPORT_SIZE, "Existing R2 projection exceeds the 1 MB limit")
+            prior = json.loads(blob)
+        except Exception as exc:
+            if not is_not_found(exc):
+                raise
+        if prior is not None:
+            require(isinstance(prior, dict) and prior.get("projection_status") == "prescratch",
+                    "Refusing to overwrite an existing scratch-updated/final card: " + target)
             if metadata.get("source_sha256") == source_hash:
                 actions.append((target, card, "same"))
                 continue
-            prior = json.loads(existing["Body"].read(MAX_IMPORT_SIZE + 1))
-        except ClientError as exc:
-            if exc.response["Error"].get("Code") not in ("NoSuchKey", "404", "NotFound"):
-                raise
-        require(prior is None or prior.get("projection_status") == "prescratch",
-                "Refusing to replace existing scratch-updated/final dashboard: " + target)
         actions.append((target, card, "write"))
-    needed = [row for row in actions if row[2] == "write"]
-    if preview:
-        return len(needed), len(actions) - len(needed)
-    for target, card, action in needed:
-        r2.put_object(Bucket=bucket, Key=target, Body=compact_json(card),
-                      ContentType="application/json; charset=utf-8",
-                      CacheControl="private, no-store",
-                      Metadata={"source_sha256": source_hash,
-                                "source_file_id": source_id, "stage": "prescratch"})
-    return len(needed), len(actions) - len(needed)
-
-
-def run_sync(source_file_id=None, dry_run=False):
-    from google.oauth2 import service_account
-    sa = os.getenv("TRI_GOOGLE_SERVICE_ACCOUNT_JSON", "").strip()
-    account = os.getenv("TRI_CLOUDFLARE_ACCOUNT_ID", "").strip()
-    key = os.getenv("TRI_R2_ACCESS_KEY_ID", "").strip()
-    secret = os.getenv("TRI_R2_SECRET_ACCESS_KEY", "").strip()
-    folder = os.getenv("TRI_DRIVE_FOLDER_ID", FOLDER_DEFAULT).strip()
-    require(sa and account and key and secret, "One-time Google Drive and R2 credentials are not configured")
-    require(re.fullmatch(r"[A-Za-z0-9_-]{10,128}", folder) is not None, "Invalid configured Drive folder")
-    credentials = service_account.Credentials.from_service_account_info(
-        json.loads(sa), scopes=["https://www.googleapis.com/auth/drive.readonly"])
-    available, headers = list_source_files(credentials, folder)
-    today = dt.datetime.now(ZoneInfo("America/New_York")).date()
-    files = []
-    for item in available:
-        match = ZIP_NAME_RE.fullmatch(str(item.get("name", "")))
-        if not match:
-            continue
-        if item.get("mimeType") != "application/zip" and item.get("mimeType") != "application/x-zip-compressed":
-            continue
-        if int(item.get("size", "0")) > MAX_ZIP_SIZE:
-            continue
-        files.append(item)
-    if source_file_id:
-        files = [item for item in files if item["id"] == source_file_id]
-        require(files, "Specified source ZIP is not in the approved production folder")
-    else:
-        # Filename uses MMDD only; exact year comes from the signed receipt.
-        files.sort(key=lambda item: item.get("modifiedTime", ""), reverse=True)
-    if not files:
-        print("NO_APPROVED_SOURCE_PACKAGES")
-        return
-    completed = 0
-    processed_dates = set()
-    for item in files[:10]:
-        raw = get_source_zip(item["id"], headers)
-        date, cards, _, counts = build_cards(raw)
-        race_day = dt.date.fromisoformat(date)
-        if not source_file_id and race_day not in (today, today + dt.timedelta(days=1)):
-            continue
-        if date in processed_dates:
-            continue
-        processed_dates.add(date)
-        wrote, same = sync_cards(cards, counts["sha256"], item["id"], BUCKET_DEFAULT,
-                                 account, key, secret, preview=dry_run)
-        completed += 1
-        print(f"TRI_SYNC date={date} tracks={counts['tracks']} races={counts['races']} "
-              f"runners={counts['runners']} written={wrote} unchanged={same} "
-              f"mode={'DRY_RUN' if dry_run else 'PRIVATE_R2'}")
-    if not completed:
-        print("NO_CURRENT_PRESCRATCH_PACKAGE")
+    pending = [(target, card) for target, card, action in actions if action == "write"]
+    if dry_run:
+        return len(pending), len(actions) - len(pending)
+    for target, card in pending:
+        client.put_object(Bucket=bucket, Key=target, Body=compact_json(card),
+                          ContentType="application/json; charset=utf-8",
+                          CacheControl="private, no-store",
+                          Metadata={"source_sha256": source_hash, "stage": "prescratch"})
+    return len(pending), len(actions) - len(pending)
 
 
 def main():
