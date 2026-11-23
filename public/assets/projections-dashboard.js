@@ -361,7 +361,7 @@ function scratchList(race){
  const strip=makeNode("div","rr-dash-scratch-strip"),
   list=makeNode("ul","rr-dash-scratch-list");
  strip.setAttribute("aria-label",count+" scratch"+(count===1?"":"es"));
- strip.append(makeNode("span","rr-dash-scratch-label","SCRATCHES"));
+ strip.append(makeNode("strong","rr-dash-race-scratch-count",count+" SCRATCH"+(count===1?"":"ES")));
  for(const scratch of scratches){
   const program=String(scratch.program_number??"").trim(),
    horse=String(scratch.horse_name||"").trim(),
