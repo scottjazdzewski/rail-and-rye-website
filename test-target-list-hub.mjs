@@ -93,9 +93,16 @@ assert.doesNotMatch(html,/rr-target-local-file/,"No manual review-file step for 
 assert.doesNotMatch(html,/rr-target-upload-form|rr-target-file|Private source upload|Certified source JSON file/,"Daily Target List never presents a manual JSON upload.");
 assert.doesNotMatch(js,/rr-target-upload-form|rr-target-file|\.text\(\)\}/,"Reader never contains orphaned upload form behavior.");
 assert.doesNotMatch(css,/rr-target-publisher/,"No obsolete upload form CSS.");
-assert.match(html,/target-list-dashboard\.css\?v=20261123-legible-v5/,"Ensure the readable style loads on phones.");
+assert.match(html,/target-list-dashboard\.css\?v=20261123-shared-v6/,"Ensure the readable style loads on phones.");
 assert.match(css,/font:500 15px\/1\.55 Inter/,"Published editorial gets readable 15px typography.");
 assert.match(css,/Target List v5 — legibility-first mobile race reading/,"Phone layout uses larger, no-zoom typography.");
+assert.match(css,/Shared Daily Research Reader V1 — Target List implementation/,"Target List consumes shared cross-product mobile standard.");
+assert.match(css,/scroll-snap-type:x proximity/,"Navigation stays in one swipeable mobile row instead of wrapping.");
+assert.match(css,/font:500 17px\/1\.52 Inter/,"Full race analysis uses the same 17px research reader scale as Radar.");
+assert.match(html,/target-list-dashboard\.css\?v=20261123-shared-v6/,"Shared v6 stylesheet must defeat stale browser cache.");
+assert.match(html,/aria-current="page"/,"Active module navigation remains identifiable.");
+assert.doesNotMatch(html,/Post Time · Earliest First|Sort targets/,"Controls use concise shared labels.");
+assert.match(js,/Post-time order/,"Summary uses the current display order, not a redundant date.");
 assert.match(css,/font-size:18px;/,"On-phone editorial body grows to 18px.");
 assert.match(css,/font-size:25px/,"On-phone win percentage remains prominent.");
 assert.match(js,/head\.append\(node\("p","rr-target-race-facts",meta\)\)/,"Full sourced distance, surface and race conditions belong inside the navy racebar.");

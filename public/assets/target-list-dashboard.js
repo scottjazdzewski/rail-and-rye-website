@@ -19,7 +19,7 @@ const add=(parent,...children)=>{parent.append(...children);return parent;};
 const displayDate=value=>{
  if(!/^\d{4}-\d{2}-\d{2}$/.test(value||""))return value||"";
  const [year,month,day]=value.split("-").map(Number);
- return new Intl.DateTimeFormat("en-US",{weekday:"short",month:"short",day:"numeric",year:"numeric"}).format(new Date(year,month-1,day,12));
+ return new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric",year:"numeric"}).format(new Date(year,month-1,day,12));
 };
 const option=(select,value,label)=>{const el=node("option","",label);el.value=value;select.append(el);};
 const statusText=edition=>state.reviewOnly?"EDITORIAL REVIEW":edition.status==="initial"?"INITIAL · CURRENT":"SCRATCH UPDATE · CURRENT";
@@ -149,7 +149,7 @@ function renderTargets(){
  const ordered=sortedTargets(edition);
  list.replaceChildren(...ordered.map(targetCard));
  set("rr-target-count",ordered.length+" "+(ordered.length===1?"target":"targets"));
- set("rr-target-context",displayDate(edition.race_date));
+ set("rr-target-context",sortSelect?.value==="track"?"Track order":"Post-time order");
  if(!ordered.length)list.append(node("p","rr-target-no-results","No qualifying Target List selections were published for this date."));
 }
 function setEdition(data,preferredDate){
@@ -163,7 +163,7 @@ function setEdition(data,preferredDate){
  app.hidden=!state.edition;empty.hidden=!!state.edition;
  if(!state.edition){status.textContent="No private Target List editions are available.";set("rr-target-freshness","");return;}
  status.textContent="";
- const summary="Rev "+state.edition.revision+(state.reviewOnly?" · Private editorial review":" · "+statusText(state.edition));
+ const summary="Rev "+state.edition.revision+(state.reviewOnly?"":" · "+statusText(state.edition));
  set("rr-target-freshness",summary+(state.uploadedAt?" · Updated "+new Date(state.uploadedAt).toLocaleString("en-US",{timeZone:"America/New_York",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}):""));
  renderTargets();
 }
