@@ -188,6 +188,45 @@ const post=fullTrack("scratch_final");
 const baseline=await auditV33FieldUpload(post);
 assert.equal(baseline.sequence_count,7);
 assert.equal(baseline.new_scratch_count,0);
+assert.equal(baseline.source_signature_status,"AWAITING_CERTIFIED_CURRENT_SCORING");
+assert.equal(baseline.scratch_scoring_ready,false);
+assert.equal(baseline.requires_external_tri_rescoring,true);
+assert.equal(baseline.score_freshness_verified,false);
+// Even a complete 100%-normalized post-scratch field CANNOT represent a TRI
+// rerun when its underlying factor basis is still verified_prescratch.
+await env.CARDS_BUCKET.put(sourceKey,JSON.stringify(post),{customMetadata:{}});
+const scratchReview=await handleAdminPickTickets(new Request(
+ "https://railandryeracing.com/api/admin/pick-tickets"),env);
+const scratchView=await scratchReview.json();
+assert.equal(scratchView.cards.length,0,"unrescored scratches MUST NOT display newly calculated picks");
+assert.equal(scratchView.latest_field_versions[0].review_status,
+ "AWAITING_CERTIFIED_CURRENT_SCORING");
+assert.ok(scratchView.source_rejections.some(x=>
+ x.reason.includes("Scratch-adjusted runner lists are not a TRI rerun")));
+// The mathematical optimizer still recomputes all 7 official sequences
+// internally; it cannot self-certify its input PWIN and F4 as fresh TRI.
+assert.equal(scratchView.latest_field_versions[0].sequence_count,7);
+// A genuine certified current scorer must provide post-scratch provenance,
+// a fresh TRI hash, a fresh F4 hash, parent, and official changes hashes.
+const certified=structuredClone(post);
+certified.factor_basis="verified_scratch_final";
+const certifiedAudit=await auditV33FieldUpload(certified);
+assert.equal(certifiedAudit.scratch_scoring_ready,true);
+assert.equal(certifiedAudit.score_freshness_verified,true);
+assert.equal(certifiedAudit.sequence_count,7);
+const partlyUpdated=structuredClone(certified);
+partlyUpdated.races[0].entries=raceEntries(
+ partlyUpdated.races[0].entries.map(x=>x.program_number),60);
+partlyUpdated.model_receipts.tri_sha256="e".repeat(64); // F4 unchanged!
+const partlyAudit=await auditV33FieldUpload(partlyUpdated,certified);
+assert.equal(partlyAudit.input_changes_require_rescoring,true,
+ "TRI-alone or F4-alone receipt changes are not a full score rerun");
+assert.equal(partlyAudit.scratch_scoring_ready,false);
+const fullyUpdated=structuredClone(partlyUpdated);
+fullyUpdated.model_receipts.f4_sha256="f".repeat(64);
+const fullyAudit=await auditV33FieldUpload(fullyUpdated,certified);
+assert.equal(fullyAudit.input_changes_require_rescoring,false);
+assert.equal(fullyAudit.scratch_scoring_ready,true);
 const more=structuredClone(post);
 const scratchRace=more.races[0];
 const newly=scratchRace.entries.pop().program_number;
