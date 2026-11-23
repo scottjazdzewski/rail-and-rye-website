@@ -73,37 +73,35 @@ try{
   await page.screenshot({path:join("test-artifacts","longshot-inline-"+width+".png"),fullPage:true});
   await page.close();
  }
- // Publicly accessible DESIGN-ONLY website page must NOT request admin/purchased data.
+ // The former public design URL must hand off to the Access-protected real
+ // Radar screen; NO fictional paid runners or data-bearing scripts in public HTML.
  for(const width of [320,375,390,430,768,1280]){
   const page=await browser.newPage({viewport:{width,height:850},deviceScaleFactor:1});
-  const apiRequests=[],jsErrors=[];
-  page.on("request",req=>{if(new URL(req.url()).pathname.startsWith("/api/"))apiRequests.push(req.url());});
-  page.on("pageerror",err=>jsErrors.push(err.message));
-  const response=await page.goto("http://127.0.0.1:"+port+"/longshot-radar-preview/",{waitUntil:"domcontentloaded"});
-  if(response.status()!==200)throw Error("Design URL unavailable at "+width);
+  const jsErrors=[];page.on("pageerror",err=>jsErrors.push(err.message));
+  const publicURL="http://127.0.0.1:"+port+"/longshot-radar-preview/";
+  const raw=await page.request.get(publicURL);
+  if(raw.status()!==200)throw Error("Public handoff unavailable at "+width);
+  const markup=await raw.text();
+  if(!markup.includes('http-equiv="refresh" content="0;url=/admin/longshot-radar/"')||
+     !markup.includes('href="/admin/longshot-radar/"')||
+     markup.includes('rr-lr-candidates')||markup.includes("Illustration Runner One"))
+    throw Error("Public handoff does not protect the original paid-data surface at "+width);
+  await page.goto(publicURL,{waitUntil:"domcontentloaded"});
+  await page.waitForURL(url=>url.pathname==="/admin/longshot-radar/",{timeout:12000});
   await page.locator(".rr-lr-card").first().waitFor({timeout:15000});
-  if(apiRequests.length)throw Error("Design preview contacted private API at "+width+": "+apiRequests.join(","));
-  if(jsErrors.length)throw Error("Design preview JS failed at "+width+": "+jsErrors.join(","));
-  if(await page.locator(".rr-lr-card").count()!==3)throw Error("Missing design-only sample rows at "+width);
-  if(!((await page.locator("#rr-lr-demo-alert").innerText()).includes("FICTIONAL")))throw Error("No prominent fictional warning at "+width);
-  if(!(await page.locator(".rr-lr-card").first().innerText()).includes("Illustration Runner One"))throw Error("Design post time ordering failed at "+width);
-  for(const chip of [1,11,20]){
-   const el=page.locator('.rr-lr-card img[src="/assets/approved/saddlecloths/'+chip+'.png"]');
-   if(await el.count()!==1||!(await el.first().evaluate(i=>i.complete&&i.naturalWidth>0)))throw Error("Real saddlecloth #"+chip+" missing at "+width);
-  }
-  if(await page.locator(".rr-review-artwork").count())throw Error("Removed artwork still appears at "+width);
-  if((await page.locator("body").innerText()).toLowerCase().includes("sample"))throw Error("Unwanted sample wording still visible at "+width);
-  await page.locator("#rr-lr-sort").selectOption("track");
-  if(!(await page.locator(".rr-lr-card").first().innerText()).includes("Example Horse Eleven"))throw Error("Design track ordering failed at "+width);
-  const size=await page.evaluate(()=>({viewport:document.documentElement.clientWidth,body:document.body.scrollWidth,page:document.documentElement.scrollWidth}));
-  if(size.body>width+1||size.page>width+1)throw Error("Design preview horizontal overflow at "+width+": "+JSON.stringify(size));
-  if(await page.getByRole("button",{name:/Race details/i}).count())throw Error("Design still has a Race details button at "+width);
-  if(await page.locator("#rr-lr-dialog").count())throw Error("Public design retained a hidden drawer at "+width);
-  if(await page.locator(".rr-lr-inline-analysis .rr-lr-case").count()!==3)throw Error("All 3 illustrative analyses must be visible inline at "+width);
-  await page.screenshot({path:join("test-artifacts","longshot-public-design-"+width+".png"),fullPage:true});
+  if(jsErrors.length)throw Error("Redirected Radar JS error at "+width+": "+jsErrors.join(","));
+  if(await page.locator(".rr-lr-card").count()!==2)throw Error("Protected Radar did not load fixture rows at "+width);
+  if(await page.getByRole("button",{name:/Race details/i}).count())throw Error("Hidden details button appeared at "+width);
+  const analysis=await page.locator(".rr-lr-inline-analysis .rr-lr-case").first().innerText();
+  if(!analysis.trim())throw Error("Inline Radar explanation not visible at "+width);
+  const dims=await page.evaluate(()=>({viewport:document.documentElement.clientWidth,
+    body:document.body.scrollWidth,html:document.documentElement.scrollWidth}));
+  if(dims.body>width+1||dims.html>width+1)throw Error("Redirected Radar horizontal overflow at "+width+": "+JSON.stringify(dims));
+  await page.screenshot({path:join("test-artifacts","longshot-protected-handoff-"+width+".png"),fullPage:true});
   await page.close();
  }
- console.log("PASS: public design-only preview at 320/375/390/430/768/1280 with real saddlecloth art, interactive sorts, readable inline analysis, and ZERO admin API requests.");
+ console.log("PASS: former public design URL redirects to protected source-backed Radar, with no public selections and full inline analysis.");
+
  console.log("PASS: mobile 320/375/390/430, tablet 768 and desktop 1280, date-based daily cards, cross-track post-time/track order, full visible analysis, no details buttons, no overflow.");
 }finally{
  if(browser)await browser.close();await new Promise(resolve=>server.close(resolve));
