@@ -224,10 +224,18 @@ function iconNode(name,className,state){
  node.append(image);return node;
 }
 function makeTile(label,value){
- const tile=makeNode("div","rr-dash-race-tile"),copy=document.createElement("div");
- tile.setAttribute("aria-label",label+": "+(value||"Not listed"));
- copy.append(makeNode("span","",label),makeNode("strong","",value||"Not listed"));
- tile.append(copy);return tile;
+ const tile=makeNode("div","rr-dash-race-tile"),raw=String(value||"").trim();
+ const key=raw.toLowerCase().replace(/[^a-z]+/g," ").trim();
+ const art=label==="Pace"?({weak:"fact_pace_weak",moderate:"fact_pace_moderate",strong:"fact_pace_strong"}[key]||""):
+  label==="Surface"?({dirt:"fact_surface_dirt",turf:"fact_surface_turf",synthetic:"fact_surface_synthetic","all weather":"fact_surface_synthetic"}[key]||""):
+  label==="Distance"?"fact_distance":"";
+ const shown=(label==="Pace"||label==="Surface")&&raw
+  ?raw.toLowerCase().replace(/\b[a-z]/g,letter=>letter.toUpperCase()):raw||"—";
+ tile.setAttribute("role","group");
+ tile.setAttribute("aria-label",label+": "+(shown==="—"?"Not listed":shown));
+ tile.append(art?iconNode(art,"rr-dash-tile-mark"):makeNode("span","rr-dash-tile-mark rr-dash-tile-mark--empty"));
+ tile.append(makeNode("span","rr-dash-tile-label",label),makeNode("strong","rr-dash-tile-value",shown));
+ return tile;
 }
 function makeMetricGroup(entry){
  const group=makeNode("div","rr-dash-metric-group");group.setAttribute("role","group");group.setAttribute("aria-label","Runner ratings");
@@ -286,11 +294,9 @@ function showHorse(entry){
  const race=activeCard?.card?.races?.find(item=>item.race_number===activeRace);
  if(race){
   const section=makeNode("section","rr-dash-sheet-section");section.append(makeNode("h3","","RACE CONTEXT"));
-  const facts=makeNode("div","rr-dash-sheet-facts");
-  for(const [label,value] of [["SURFACE",race.surface],["DISTANCE",race.distance],["PACE",race.pace]]){
-   if(!value)continue;
-   const item=makeNode("div","rr-dash-sheet-fact");item.append(makeNode("span","",label),makeNode("strong","",value));facts.append(item);
-  }
+  const facts=makeNode("div","rr-dash-race-tiles rr-dash-sheet-facts");
+  facts.setAttribute("role","group");facts.setAttribute("aria-label","Race facts");
+  facts.append(makeTile("Pace",race.pace),makeTile("Surface",race.surface),makeTile("Distance",race.distance));
   section.append(facts);mobile.append(section);
  }
  if(entry.f4_probabilities){
@@ -428,13 +434,10 @@ function renderCard(){
  const panel=q("#rr-dash-race");panel.replaceChildren(cardHeader(activeCard),raceBanner(race));
 
  const tiles=makeNode("div","rr-dash-race-tiles");
- if(activeCard.card.projection_status!=="prescratch"||race.pace)tiles.append(makeTile("Pace",race.pace));
- if(race.surface)tiles.append(makeTile("Surface",race.surface));
- if(race.distance)tiles.append(makeTile("Distance",race.distance));
- if(tiles.children.length)panel.append(tiles);
- if(activeCard.card.projection_status==="scratch_final"&&activeCard.card.factor_basis==="verified_prescratch")
-  panel.append(makeNode("p","rr-dash-factor-origin-note","Win and finish projections account for scratches; five-factor ratings have not been recalculated."));
- if(race.summary)panel.append(makeNode("p","rr-dash-race-summary",race.summary));
+ tiles.setAttribute("role","group");tiles.setAttribute("aria-label","Race facts");
+ tiles.append(makeTile("Pace",race.pace),makeTile("Surface",race.surface),makeTile("Distance",race.distance));
+ panel.append(tiles);
+ 
  const table=makeNode("div","rr-dash-table");table.setAttribute("role","table");table.setAttribute("aria-label","Race "+race.race_number+" projections");
  const header=makeNode("div","rr-dash-table-heading");header.setAttribute("role","row");
  for(const label of ["#","HORSE"]){const cell=makeNode("span","",label);cell.setAttribute("role","columnheader");header.append(cell);}

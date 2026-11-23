@@ -70,13 +70,6 @@ opacity:.9;
 
 
 
-.rr-dash-race-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:14px 0}
-.rr-dash-race-tile{display:flex;align-items:center;gap:12px;min-height:74px;padding:10px 14px;border:2px solid #d6a63c;border-radius:11px;background:#fffdf7}
-.rr-dash-tile-mark{display:grid;place-items:center;flex:0 0 52px;width:52px;height:46px;border-right:1px solid #c99831;border-radius:0;background:none;color:#ad7920}
-.rr-dash-tile-mark img{display:block;width:auto;height:auto;max-width:48px;max-height:44px;object-fit:contain}
-.rr-dash-race-tile>div>span{display:block;color:#566b7b;font:800 10px/1.2 Inter,system-ui,sans-serif;letter-spacing:.13em;text-transform:uppercase}
-.rr-dash-race-tile strong{display:block;min-width:0;margin-top:4px;color:#123567;font:700 17px/1.15 "Tinos","Times New Roman",serif;text-transform:uppercase;white-space:normal;overflow-wrap:normal;word-break:normal}
-.rr-dash-race-summary{margin:12px 0;padding:12px 15px;border-left:3px solid #c99831;background:#f8f2e5;color:#304e68;font:14px/1.5 Inter,system-ui,sans-serif}
 .rr-dash-table{overflow:hidden;border:2px solid #c99831;border-radius:12px;background:#fff}
 .rr-dash-table-heading,.rr-dash-runner-row{display:grid;grid-template-columns:54px minmax(170px,1.6fr) minmax(410px,4fr) minmax(136px,1.2fr);align-items:stretch}
 .rr-dash-table-heading{min-height:48px;background:#0d3470;color:#fffaf0}
@@ -194,26 +187,8 @@ border-bottom:0;
 
 
 
- .rr-dash-race-tiles{
-border:1px solid #e7dfce;
-border-top:0;
-background:#fffcf6;
-}
- .rr-dash-race-tile{
-border:0;
-border-radius:0;
-background:none;
-}
  
- .rr-dash-tile-mark{flex:0 0 29px;width:29px;height:36px;border-right:0}
- .rr-dash-tile-mark img{max-width:27px;max-height:33px}
- .rr-dash-race-tile>div{min-width:0}
  
- .rr-dash-race-tile strong{
-overflow-wrap:normal;
-word-break:normal;
-}
- .rr-dash-race-summary{margin:9px 0;padding:9px 11px;font-size:12px}
  .rr-dash-table{overflow:visible;border:0;border-radius:0;background:transparent}
  .rr-dash-table-heading{display:none}
  .rr-dash-runner-list{
@@ -357,11 +332,9 @@ overflow-wrap:anywhere;
  .rr-dash-sheet-section{margin-top:17px;padding:0 1px}
  .rr-dash-sheet-section h3{margin:0 0 9px;color:#708194;font:800 10px/1.3 Inter,system-ui,sans-serif;letter-spacing:.13em}
  .rr-dash-sheet-connections{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
- .rr-dash-sheet-connection,.rr-dash-sheet-fact{display:grid;gap:4px;padding:12px;border:1px solid #e2dfda;border-radius:9px;background:#fff}
- .rr-dash-sheet-connection span,.rr-dash-sheet-fact span{color:#7a8897;font:800 9px/1.2 Inter,system-ui,sans-serif;letter-spacing:.05em}
- .rr-dash-sheet-connection strong,.rr-dash-sheet-fact strong{color:#15395d;font:700 13px/1.3 Inter,system-ui,sans-serif;overflow-wrap:anywhere}
- .rr-dash-sheet-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
- .rr-dash-sheet-fact{padding:9px}
+ .rr-dash-sheet-connection{display:grid;gap:4px;padding:12px;border:1px solid #e2dfda;border-radius:9px;background:#fff}
+ .rr-dash-sheet-connection span{color:#7a8897;font:800 9px/1.2 Inter,system-ui,sans-serif;letter-spacing:.05em}
+ .rr-dash-sheet-connection strong{color:#15395d;font:700 13px/1.3 Inter,system-ui,sans-serif;overflow-wrap:anywhere}
  .rr-dash-sheet-factor-list{overflow:hidden;border:1px solid #e4dfd6;border-radius:10px;background:#fff}
  .rr-dash-sheet-factor{display:flex;justify-content:space-between;align-items:center;gap:10px;min-height:43px;padding:9px 12px;border-bottom:1px solid #eeeae3}
  .rr-dash-sheet-factor:last-child{border-bottom:0}
@@ -389,7 +362,6 @@ overflow-wrap:anywhere;
  .rr-dash-track-title{font-size:22px}
 
 
- .rr-dash-race-tile strong{font-size:13px}
  .rr-dash-runner-row{grid-template-columns:34px minmax(0,1fr) 67px;gap:7px;padding:10px 9px 8px}
  .rr-dash-program-chip-wrap,.rr-dash-program img{width:33px;height:33px}
  .rr-dash-horse-name{font-size:17px}
@@ -462,11 +434,7 @@ letter-spacing:.02em;
 
  
  
- .rr-dash-race-tiles{grid-template-columns:repeat(3,minmax(0,1fr));gap:0;margin:0 0 9px;padding:5px 7px 6px;border-radius:0 0 10px 10px}
- .rr-dash-race-tile{min-height:38px;gap:2px;padding:4px 6px;border-right:1px solid #e8e1d6}
- .rr-dash-race-tile:last-child{grid-column:auto;min-height:38px;border-top:0;border-right:0}
  
- .rr-dash-race-tile strong{margin-top:3px;font:700 11px/1.17 Inter,Arial,system-ui,sans-serif;text-transform:none}
  
  
  
@@ -525,8 +493,6 @@ align-self:center;
  
  
  
- .rr-dash-race-tiles{padding-left:4px;padding-right:4px}
- .rr-dash-race-tile{padding:4px}
 }
 
 /* Rail & Rye Intelligence Hub — readable, app-first type and spacing v2.
@@ -559,8 +525,6 @@ align-self:center;
 
 
 
- .rr-dash-race-tile>div>span{font-size:10px;letter-spacing:0;color:#60758a}
- .rr-dash-race-tile strong{font-size:12px;line-height:1.2}
  
  .rr-dash-mobile-list-heading{margin:0 2px 7px}
  .rr-dash-mobile-list-heading h2{font-size:11px;letter-spacing:.065em}
@@ -695,4 +659,3 @@ width:13px;
 }
 
 /* Certified scratch revisions: legible source freshness without decorative badges. */
-.rr-dash-factor-origin-note{margin:5px 0 8px;color:#637483;font:600 11px/1.4 Inter,Arial,system-ui,sans-serif}
