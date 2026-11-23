@@ -1,0 +1,26 @@
+name: QA — Verified F4 Bet Builder (private R2, read-only)
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ops/audit-f4-bet-builder-1123.trigger'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+      TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+      TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install R2 read-only client
+        run: python -m pip install --quiet --disable-pip-version-check boto3
+      - name: Verify every signed F4 race and its ticket-payout invariants
+        run: python scripts/audit_1123_private_f4_bet_builder.py
