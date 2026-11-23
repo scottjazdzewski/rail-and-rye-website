@@ -96,7 +96,7 @@ const memberSort=readFileSync("public/membership/dashboard/index.html","utf8");
 for(const html of [adminSort,memberSort]){
  assert.doesNotMatch(html,/rr-dash-sort|Sort by|value="finish"|value="program"/,
    "There must be no customer-facing sorting controls");
- assert.match(html,/projections-dashboard\.js\?v=24/,"Use current locked-order client");
+ assert.match(html,/projections-dashboard\.js\?v=25/,"Use current locked-order client");
 }
 assert.doesNotMatch(js,/rr-dash-sort/,"Client must not let users reorder horses");
 console.log("PASS: compact runner rows, verified dash factor states, preserved race data, no redundant PDF action");
@@ -113,8 +113,49 @@ assert.doesNotMatch(js,/\breviewMode\b|PARTIAL FIELD|rr-dash-review-data/,
  "No stale partial-field runtime branches");
 assert.match(js,/api\("\/api\/admin\/projections-preview"\)/,
  "Private admin preview must always read the secure projection API");
-assert.match(adminHtml,/projections-dashboard\.js\?v=24/,
+assert.match(adminHtml,/projections-dashboard\.js\?v=25/,
  "Admin dashboard must load the latest hardened shared client");
-assert.match(memberHtml,/projections-dashboard\.js\?v=24/,
+assert.match(memberHtml,/projections-dashboard\.js\?v=25/,
  "Member dashboard must use the same client revision");
 console.log("PASS: no embedded premium data or partial review fallback; authenticated full-field preview only");
+
+
+// Screenshot-driven readability pass: remove redundant preview hero and make
+// data the first visible content, while preserving protected auth controls.
+for(const html of [adminHtml,memberHtml]){
+ assert.doesNotMatch(html,/rr-dash-heading|rr-dash-intro|rr-dash-library-link/,
+  "No oversized explanatory hero or return-to-uploader button on Projections");
+ assert.match(html,/<h1 class="rr-dash-visually-hidden">Rail &amp; Rye Projections<\/h1>/,
+  "Keep an accessible page title without visible ornamental title space");
+ assert.match(html,/class="rr-dash-search-field"/,
+  "The mobile horse search occupies one consistent full-width row");
+ assert.match(html,/projections-dashboard\.css\?v=23/,
+  "Current improved typography style must be loaded");
+ assert.match(html,/projections-dashboard\.js\?v=25/,
+  "Current compact-label asset must be loaded");
+}
+assert.doesNotMatch(adminHtml,/rr-dash-private-banner|Private admin preview · member dashboard remains off|Return to projection uploader/,
+ "Remove all prominent launch/admin warning copy from the private preview");
+assert.doesNotMatch(js,/previewMode\?"Private admin preview"/,
+ "Do not put redundant admin labels in the filter toolbar");
+assert.match(css,/\.rr-dash-visually-hidden\{/,
+ "Accessible title must remain off-screen");
+assert.match(css,/\.rr-dash-toolbar \.rr-dash-race-time-field\{display:none\}/,
+ "On phones, race number tabs replace the redundant post-time select");
+assert.match(css,/\.rr-dash-toolbar \.rr-dash-search-field\{grid-column:1\/-1\}/,
+ "Horse search spans both mobile columns");
+assert.match(css,/\.rr-dash-horse-name\{font:750 17px\/1\.2/,
+ "Runner names must be readable at 17px on ordinary phones");
+assert.match(css,/\.rr-dash-horse-connections\{margin-top:4px;font:550 12px\/1\.28/,
+ "Verified trainer/jockey must remain clear at 12px");
+assert.match(css,/\.rr-dash-win-percent\{font-size:25px/,
+ "Keep 25px bold percentage numbers");
+assert.match(css,/\.rr-dash-win-fair\{font-size:13px/,
+ "Increase supporting fair odds to 13px");
+assert.match(css,/\.rr-dash-metric-value::before\{font:800 10px\/1\.15/,
+ "Make five factor labels readable at 10px");
+assert.match(css,/\.rr-dash-full-analysis\{min-height:28px;padding:2px 3px;font:750 12px/,
+ "Analysis affordance must read at 12px");
+assert.match(css,/@media\(max-width:360px\)/,
+ "Narrow screens must reduce only secondary sizes to prevent name clipping");
+console.log("PASS: minimal admin preview, full-width mobile search, 17px runner names, readable factors/odds and preserved compact layout");
