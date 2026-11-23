@@ -6,6 +6,7 @@ on:
       - 'src/pick-tickets.js'
       - 'src/pick-tickets-auto.js'
       - 'src/pick-tickets-v32.js'
+      - 'src/pick-tickets-v32-sensitivity.js'
       - 'src/pick-tickets-scratch-1123.js'
       - 'src/pick-tickets-intake.js'
       - 'src/projections.js'
@@ -19,6 +20,7 @@ on:
       - 'src/pick-tickets.js'
       - 'src/pick-tickets-auto.js'
       - 'src/pick-tickets-v32.js'
+      - 'src/pick-tickets-v32-sensitivity.js'
       - 'src/pick-tickets-scratch-1123.js'
       - 'src/pick-tickets-intake.js'
       - 'src/projections.js'
@@ -43,6 +45,7 @@ jobs:
           node --check src/pick-tickets.js
           node --check src/pick-tickets-auto.js
           node --check src/pick-tickets-v32.js
+          node --check src/pick-tickets-v32-sensitivity.js
           node --check src/pick-tickets-scratch-1123.js
           node --check src/index.js
           node --check public/assets/pick-tickets-dashboard.js
@@ -50,6 +53,8 @@ jobs:
         run: node test-pick-tickets.mjs
       - name: Frozen V3.2 Python mathematical parity and scratch guards
         run: node test-pick-tickets-v32.mjs
+      - name: Private V3.2 cost-sensitivity frontier parity
+        run: node test-pick-tickets-v32-sensitivity.mjs
       - name: Current-date source-built tickets, exact PWIN and official wager menu
         run: node test-pick-tickets-auto.mjs
       - name: Install Playwright and headless Chromium
