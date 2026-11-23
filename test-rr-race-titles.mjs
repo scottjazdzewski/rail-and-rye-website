@@ -72,8 +72,8 @@ assert.match(js,/approvedRaceSaddle\(race\.race_number\)/,
  "Race heading must show actual saddlecloth number art rather than a fake badge");
 assert.match(js,/approvedRaceSaddle\(raceNumber\)/,
  "Race navigation uses the same race saddlecloth source");
-assert.match(js,/officialTrackArt=\{/,"Reuse original approved venue logos");
-assert.match(js,/rr-dash-approved-track-logo/,"Restore readable actual logo imagery");
+assert.match(js,/originalTrackLogos=\{/,"Preserve the actual five venue logos");
+assert.match(js,/rrp-track-head__logo/,"Display real venue logos in compact plaques");
 assert.doesNotMatch(js,/rr-dash-track-mark-letters/,
  "Remove invented FL/PRX/MNR monogram substitutes from the live dashboard");
 
@@ -84,10 +84,10 @@ assert.match(css,/rrp-race-head__trophy--g2/);
 assert.match(css,/rrp-race-head__trophy--g3/);
 assert.match(css,/text-transform:none/,"Race names are never forced uppercase");
 const chipCss=readFileSync("public/assets/rr-intelligence-chips.css","utf8");
-assert.match(chipCss,/\.rr-dash-approved-track-logo\{/,
- "Actual venue logos receive consistent, uncropped presentation");
-assert.match(chipCss,/mix-blend-mode:multiply/,
- "Keep approved track-logo treatment, not an invented brand mark");
+const trackCss=readFileSync("public/assets/rr-projections-track-identity.css","utf8");
+assert.match(trackCss,/\.rrp-track-head__logo\{/,"Authentic logo art has one uniform plaque system");
+assert.match(trackCss,/filter:none;mix-blend-mode:normal/,"No old high-contrast white-tile blending");
+assert.doesNotMatch(chipCss,/\.rr-dash-approved-track-logo/,"Do not stack old logo CSS beneath new CSS");
 assert.doesNotMatch(chipCss,/\.rr-dash-race-banner\s*\{/,
  "Retire the competing shared-chip header rules");
 assert.match(css,/text-wrap:balance/,

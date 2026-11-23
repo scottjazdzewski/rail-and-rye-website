@@ -4,6 +4,7 @@ import {readFileSync} from "node:fs";
 const stylesheets=[
  "public/assets/projections-dashboard.css",
  "public/assets/rr-projections-race-header.css",
+ "public/assets/rr-projections-track-identity.css",
  "public/assets/pick-tickets-dashboard.css",
  "public/assets/longshot-radar.css",
  "public/assets/target-list-dashboard.css"
