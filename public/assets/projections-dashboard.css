@@ -770,3 +770,44 @@ width:13px;
 
 /* Certified scratch revisions: legible source freshness without decorative badges. */
 .rr-dash-factor-origin-note{margin:5px 0 8px;color:#637483;font:600 11px/1.4 Inter,Arial,system-ui,sans-serif}
+
+/* PDF-matched scratches: official saddlecloths in the race banner below the
+   scratch count, rather than a separate card underneath the race banner. */
+.rr-dash-race-meta{
+ display:grid;
+ grid-template-columns:minmax(76px,max-content) minmax(0,1fr);
+ align-items:start;
+ gap:5px 14px;
+ margin-top:8px;
+ min-width:0;
+}
+.rr-dash-race-runners{grid-column:1;grid-row:1;align-self:center}
+.rr-dash-race-purse{grid-column:1/-1;grid-row:2}
+.rr-dash-scratch-strip{
+ grid-column:2;grid-row:1/span 2;
+ display:flex;flex-direction:column;align-items:flex-start;gap:5px;
+ min-width:0;margin:0;padding:0 0 0 13px;
+ border:0;border-left:1px solid #c99831;border-radius:0;background:transparent;
+}
+.rr-dash-scratch-list{display:flex;align-items:center;flex-wrap:wrap;gap:5px 12px;min-width:0;margin:0;padding:0;list-style:none}
+.rr-dash-scratch-item{display:inline-flex;align-items:center;gap:5px;min-width:0;max-width:100%;color:#294763;font:650 11px/1.3 Inter,Arial,system-ui,sans-serif}
+.rr-dash-scratch-chip-wrap{width:28px;height:28px;flex:0 0 28px}
+.rr-dash-scratch-chip{display:block;width:28px;height:28px;object-fit:contain}
+.rr-dash-scratch-name{max-width:none;overflow:visible;text-overflow:clip;white-space:normal;overflow-wrap:anywhere}
+.rr-dash-scratch-fallback{min-width:28px;height:28px}
+.rr-dash-scratch-missing{color:#6b7783;font:650 11px/1.3 Inter,Arial,system-ui,sans-serif}
+@media(max-width:800px){
+ .rr-dash-race-meta{grid-template-columns:minmax(0,1fr);gap:5px;margin-top:6px}
+ .rr-dash-race-runners{grid-column:1;grid-row:auto}
+ .rr-dash-scratch-strip{
+  grid-column:1;grid-row:auto;gap:4px;margin:0;padding:6px 0 2px;
+  border:0;border-top:1px solid rgba(255,255,255,.25);
+  border-radius:0;background:transparent;
+ }
+ .rr-dash-race-purse{grid-column:1;grid-row:auto}
+ .rr-dash-scratch-item{font-size:10px;color:#f0f1f4}
+ .rr-dash-scratch-chip-wrap,.rr-dash-scratch-chip{width:26px;height:26px}
+ .rr-dash-scratch-chip-wrap{flex-basis:26px}
+ .rr-dash-scratch-missing{color:#f0f1f4}
+ .rr-dash-race-scratch-count{color:#f1f3f7}
+}
