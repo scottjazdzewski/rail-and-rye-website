@@ -33,10 +33,12 @@
       <p>Source-backed favorite vulnerabilities and ATTACK alternatives, presented without PDFs.</p></div>
     <a class="rr-target-back" href="/admin/">Publisher's Desk</a>
   </div>
-  <section class="rr-target-toolbar" aria-label="Edition controls">
-    <label>Race date<select id="rr-target-date" aria-label="Choose Target List race date"></select></label>
-    <label>Track<select id="rr-target-track" aria-label="Filter Target List by track"><option value="">All tracks</option></select></label>
-    <label>Find a horse<input id="rr-target-search" type="search" placeholder="Horse or track" autocomplete="off" aria-label="Search Target List"></label>
+  <section class="rr-target-toolbar" aria-label="Daily edition and display order">
+    <label>Race date<select id="rr-target-date" aria-label="Choose Target List date"></select></label>
+    <label>Sort targets<select id="rr-target-sort" aria-label="Sort Target List">
+      <option value="post-time" selected>Post Time · Earliest First</option>
+      <option value="track">Track · A to Z</option>
+    </select></label>
     <span id="rr-target-freshness" class="rr-target-freshness" aria-live="polite"></span>
   </section>
   <p id="rr-target-status" class="rr-target-status" role="status" aria-live="polite">Loading private editions…</p>
