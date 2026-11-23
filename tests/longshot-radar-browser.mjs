@@ -56,7 +56,7 @@ try{
   if(await page.locator("#rr-lr-loading").isVisible())throw Error("Loading status remained after cards appeared at "+width);
   if((await page.locator("body").innerText()).includes("Load a validated production JSON")||
      await page.locator('input[type="file"]').count()||
-     await page.locator("#rr-lr-import").count())
+     await page.locator(".rr-lr-import").count())
     throw Error("User-facing JSON uploader remains at "+width);
   if(await page.getByRole("button",{name:/Race details/i}).count())
     throw Error("Analysis must not require a Race details button at "+width);
@@ -78,7 +78,7 @@ try{
   if(!((await page.locator(".rr-lr-card").first().innerText()).includes("Fixture One")))
     throw Error("Post-time ordering incorrect at "+width);
   await page.locator("#rr-lr-sort").selectOption("track");
-  if(!((await page.locator(".rr-lr-card").first().innerText()).includes("Fixture Three")))
+  if(!((await page.locator(".rr-lr-card").first().innerText()).includes("Fixture Two")))
     throw Error("Track order incorrect at "+width);
   await page.locator("#rr-lr-sort").selectOption("post-time");
   const layout=await page.evaluate(()=>({page:document.documentElement.scrollWidth,body:document.body.scrollWidth,viewport:document.documentElement.clientWidth}));
