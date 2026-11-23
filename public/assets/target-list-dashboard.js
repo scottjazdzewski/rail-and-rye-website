@@ -82,21 +82,13 @@ function horseRow(role,runner,entry){
  const info=node("span","rr-target-runner-info");
  add(info,node("span","rr-target-horse-role",role),identity);
  const metrics=node("span","rr-target-horse-stats");
- add(metrics,stat("ML",tote(runner.morning_line),"ml"),
-  stat("WIN",String(runner.win_probability)+"%","win"),
-  stat("FAIR",tote(runner.fair_odds),"fair"));
+ add(metrics,stat("WIN %",String(runner.win_probability)+"%","win"),
+   stat("FAIR ODDS",tote(runner.fair_odds),"fair"));
  add(line,info,metrics);
  if(runner.trainer||runner.jockey){
   line.append(node("span","rr-target-horse-connections",[runner.trainer,runner.jockey].filter(Boolean).join(" | ")));
  }
  return line;
-}
-function headerColumns(){
- const head=node("div","rr-target-column-head");
- const metrics=node("div","rr-target-column-metrics");
- add(metrics,node("span","","ML"),node("span","","WIN %"),node("span","","FAIR ODDS"));
- add(head,node("span","","RUNNER / SELECTION"),metrics);
- return head;
 }
 // Shared production title authority with Projections and Longshot Radar.
 // This changes presentation only — never the underlying Target List model.
@@ -145,7 +137,7 @@ function openAnalysis(entry,trigger){
  content.replaceChildren();
  const context=node("p","rr-target-drawer-meta",[entry.post_time_et,raceMeta(entry)].filter(Boolean).join(" · "));
  appendGradeTrophy(context,sourceRaceTitle(entry)?.grade);
- add(content,context,headerColumns(),horseRow("ML FAVORITE",entry.favorite),horseRow("ATTACK",entry.attack));
+ add(content,context,horseRow("ML FAVORITE",entry.favorite),horseRow("ATTACK",entry.attack));
  if(entry.also_live)content.append(horseRow("ALSO LIVE",entry.also_live));
  const analysis=node("section","rr-target-drawer-analysis");
  add(analysis,node("h3","","THE RAIL & RYE ANALYSIS"),node("p","",entry.analysis));
@@ -178,7 +170,7 @@ function targetCard(entry){
    head.append(facts);
   }
  add(card,head);
- add(card,headerColumns(),horseRow("ML FAVORITE",entry.favorite,entry),horseRow("ATTACK",entry.attack,entry));
+ add(card,horseRow("ML FAVORITE",entry.favorite,entry),horseRow("ATTACK",entry.attack,entry));
  if(entry.also_live)card.append(horseRow("ALSO LIVE",entry.also_live,entry));
  card.append(node("p","rr-target-analysis-text",entry.analysis));
  const scratches=scratchList(entry);
@@ -191,7 +183,7 @@ function renderTargets(){
  list.replaceChildren(...ordered.map(targetCard));
  set("rr-target-count",ordered.length+" "+(ordered.length===1?"target":"targets"));
  set("rr-target-context",sortSelect?.value==="track"?"Track order":"Post-time order");
- if(!ordered.length)list.append(node("p","rr-target-no-results","No qualifying Target List selections were published for this date."));
+ if(!ordered.length)list.append(node("p","rr-target-no-results","No targets for this date."));
 }
 function setEdition(data,preferredDate){
  state.edition=data.edition||null;state.dates=data.dates||[];state.uploadedAt=data.uploaded_at||null;state.reviewOnly=Boolean(data.review_only);
@@ -202,9 +194,8 @@ function setEdition(data,preferredDate){
  if(current&&!state.dates.includes(current))option(dateSelect,current,displayDate(current));
  if(current)dateSelect.value=current;
  app.hidden=!state.edition;empty.hidden=!!state.edition;
- if(!state.edition){status.textContent="No Target List selections are available.";set("rr-target-freshness","");return;}
+ if(!state.edition){status.textContent="No Target List selections are available.";return;}
  status.textContent="";
- set("rr-target-freshness",state.uploadedAt?"Updated "+new Date(state.uploadedAt).toLocaleString("en-US",{timeZone:"America/New_York",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}):"");
  renderTargets();
 }
 async function load(date){

@@ -71,6 +71,7 @@ function renderDates(){
  const dates=state.editions.map(item=>[item.race_date,dateLabel(item.race_date)]);
  state.date=options(q("#rr-lr-date"),dates,state.date);
 }
+const tote=value=>String(value??"").replace(/^(\d+)\s*\/\s*(\d+)$/,"$1-$2");
 function market(label,value,cls){
  const item=make("div","rr-lr-market "+(cls||""));
  item.append(make("span","",label),make("strong","",value));
@@ -123,14 +124,14 @@ function makeCard(item){
   racebar.append(line);
  }
  const top=make("div","rr-lr-top"),identity=make("div","rr-lr-identity");
- identity.append(make("strong","",item.horse_name),make("span","rr-lr-ml-inline","ML "+item.original_morning_line));
+ identity.append(make("strong","",item.horse_name),make("span","rr-lr-ml-inline","ML "+tote(item.original_morning_line)));
  if(item.trainer||item.jockey){
   identity.append(make("small","",[item.trainer,item.jockey].filter(Boolean).join(" | ")));
  }
  const markets=make("div","rr-lr-markets");
  markets.append(
   market("WIN %",String(item.pwin_display)+"%","rr-lr-model"),
-  market("FAIR ODDS",item.fair_odds_display,"rr-lr-fair")
+  market("FAIR ODDS",tote(item.fair_odds_display),"rr-lr-fair")
  );
  top.append(programChip(item.program_number),identity,markets);
  const analysis=make("div","rr-lr-inline-analysis");
@@ -156,7 +157,7 @@ function renderCandidates(){
  candidates=orderByDay(candidates,state.sort);
  q("#rr-lr-count").textContent=candidates.length+" "+(candidates.length===1?"selection":"selections")+" · "+(state.sort==="post-time"?"Post-time order":"Track order");
  if(!candidates.length){
-  target.replaceChildren(make("div","rr-lr-list-empty","No selections in this approved edition. Longshot Radar does not force a daily pick."));
+  target.replaceChildren(make("div","rr-lr-list-empty","No selections for this date."));
  }else target.replaceChildren(...candidates.map(makeCard));
 }
 function refreshView(){
@@ -185,7 +186,7 @@ async function loadPublishedCard(){
 }
 async function initialize(){
  status.hidden=false;
- status.textContent="Loading the November 23 published Radar…";
+ status.textContent="Loading Longshot Radar…";
  if(retry)retry.hidden=true;
  app.hidden=true;
  empty.hidden=true;
