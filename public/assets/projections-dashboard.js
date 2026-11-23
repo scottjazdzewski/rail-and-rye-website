@@ -3,7 +3,7 @@
 const q=(selector,root=document)=>root.querySelector(selector);
 const status=q("#rr-dash-status"),app=q("#rr-dash-app"),login=q("#rr-dash-login"),empty=q("#rr-dash-empty");
 const previewMode=document.body.dataset.rrPreview==="true";
-let cards=[],activeCard=null,activeRace=null;
+let cards=[],activeCard=null,activeRace=null,viewMode="track",timeline=[];
 const CARD_METRICS=[
  ["SPEED",["speed","speed figure","speed rating"],"speed"],
  ["FORM",["form","recent form"],"form"],
@@ -65,15 +65,70 @@ function renderRaceTimeSelect(card){
  }
  if(activeRace!=null)select.value=String(activeRace);
 }
+function timeLabel(race){return race.post_time_et||race.post_time||race.postTime||"TIME TBA";}
+function raceTimeline(){
+ const date=q("#rr-dash-date").value;
+ return cards.filter(card=>card.race_date===date).flatMap(card=>
+  (card.card?.races||[]).map(race=>({card,race,at:postTimeMinutes(timeLabel(race))})))
+ .sort((a,b)=>a.at-b.at||
+  (a.card.track||a.card.card.track_name).localeCompare(b.card.track||b.card.card.track_name)||
+  a.race.race_number-b.race.race_number);
+}
 function renderRaceNav(card){
  const nav=q("#rr-dash-races");nav.replaceChildren();
- const races=[...card.card.races].sort((a,b)=>a.race_number-b.race_number);
+ if(viewMode!=="track"||!card)return;
+ const races=racesByPostTime(card);
+ if(!races.some(race=>race.race_number===activeRace))activeRace=races[0]?.race_number||null;
  for(const race of races){
-  const button=document.createElement("button");button.type="button";button.className="rr-dash-race-button";button.setAttribute("aria-label","Race "+race.race_number);button.setAttribute("aria-current",String(race.race_number===activeRace));
-  const label=document.createElement("span");label.textContent="RACE";const number=document.createElement("strong");number.textContent=race.race_number;button.append(label,number);
+  const button=document.createElement("button");button.type="button";button.className="rr-dash-race-button";
+  button.setAttribute("aria-label","Race "+race.race_number+" · "+timeLabel(race)+" · post-time order");
+  button.setAttribute("aria-current",String(race.race_number===activeRace));
+  const label=document.createElement("span");label.textContent="RACE";
+  const number=document.createElement("strong");number.textContent=race.race_number;
+  button.append(label,number);
   button.addEventListener("click",()=>{activeRace=race.race_number;renderCard();});nav.append(button);
  }
- if(!races.some(race=>race.race_number===activeRace))activeRace=races[0]?.race_number||null;
+}
+function renderTimeline(){
+ const container=q("#rr-dash-global-timeline"),select=q("#rr-dash-all-races");
+ if(!container||!select)return;
+ const all=viewMode==="all";
+ container.hidden=!all;
+ q("#rr-dash-races").hidden=all;
+ if(!all)return;
+ timeline=raceTimeline();
+ select.replaceChildren();
+ for(let i=0;i<timeline.length;i++){
+  const item=timeline[i],track=item.card.track||item.card.card.track_name;
+  option(select,String(i),timeLabel(item.race)+" · "+track+" · Race "+item.race.race_number);
+ }
+ let index=timeline.findIndex(item=>item.card===activeCard&&item.race.race_number===activeRace);
+ if(index<0&&timeline.length){index=0;activeCard=timeline[0].card;activeRace=timeline[0].race.race_number;}
+ if(index>=0)select.value=String(index);
+ setText(q("#rr-dash-timeline-count"),timeline.length?((index+1)+" of "+timeline.length+" races · "+new Set(timeline.map(x=>x.card.track||x.card.card.track_name)).size+" tracks"):"No races found");
+ q("#rr-dash-previous-race").disabled=index<=0;
+ q("#rr-dash-next-race").disabled=index>=timeline.length-1;
+}
+function selectTimeline(index){
+ if(!Number.isInteger(index)||index<0||index>=timeline.length)return;
+ activeCard=timeline[index].card;activeRace=timeline[index].race.race_number;
+ q("#rr-dash-track").value=activeCard.track||activeCard.card.track_name;
+ renderCard();
+}
+function changeViewMode(next){
+ viewMode=next==="all"?"all":"track";
+ const all=viewMode==="all";
+ app.dataset.mode=viewMode;
+ q("#rr-dash-mode-track").setAttribute("aria-pressed",String(!all));
+ q("#rr-dash-mode-all").setAttribute("aria-pressed",String(all));
+ if(!all){
+  const track=activeCard?.track||activeCard?.card?.track_name;
+  if(track)q("#rr-dash-track").value=track;
+  activeCard=selectedCard();
+  if(!activeCard?.card?.races?.some(r=>r.race_number===activeRace))
+   activeRace=racesByPostTime(activeCard)[0]?.race_number||null;
+ }
+ renderCard();
 }
 function normalizeLabel(value){return String(value||"").toLowerCase().replace(/[^a-z0-9]/g,"");}
 function metricValue(entry,aliases){
@@ -99,7 +154,31 @@ function factBadge(kind,value){
  if(kind==="distance")return "fact_distance";
  return "";
 }
-function fairOdds(entry){return entry.fair_odds||metricValue(entry,["fair odds"]);}
+// Tote-style US fractional odds are DISPLAY ONLY. The frozen TRI model net
+// price and unrounded PWIN remain unchanged for all calculations / thresholds.
+const SHORT_TOTE_PRICES=[
+ [0.05,"1-20"],[0.1,"1-10"],[0.2,"1-5"],[0.25,"1-4"],[0.3,"3-10"],
+ [0.4,"2-5"],[0.5,"1-2"],[0.6,"3-5"],[0.7,"7-10"],[0.8,"4-5"],
+ [0.9,"9-10"],[1,"1-1"],[1.2,"6-5"],[1.4,"7-5"],[1.5,"3-2"],
+ [1.6,"8-5"],[1.8,"9-5"],[2,"2-1"],[2.5,"5-2"],[3,"3-1"],
+ [3.5,"7-2"],[4,"4-1"],[4.5,"9-2"]
+];
+function fairOdds(entry){
+ let p=Number(entry.win_probability_exact);
+ if(!(Number.isFinite(p)&&p>0&&p<=100))p=Number(entry.win_probability);
+ let net=(Number.isFinite(p)&&p>0&&p<=100)?100/p-1:NaN;
+ if(!Number.isFinite(net)||net<0){
+  const raw=String(entry.fair_odds||"").trim(),match=raw.match(/^(\d+(?:\.\d+)?)\s*[-/]\s*(\d+(?:\.\d+)?)$/);
+  if(!match||Number(match[2])<=0)return "—";
+  net=Number(match[1])/Number(match[2]);
+ }
+ if(net<5){
+  return SHORT_TOTE_PRICES.reduce((best,candidate)=>
+   Math.abs(candidate[0]-net)<Math.abs(best[0]-net)?candidate:best
+  )[1];
+ }
+ return Math.max(5,Math.round(net))+"-1";
+}
 function makeNode(tag,className,text){const node=document.createElement(tag);if(className)node.className=className;if(text!==undefined)node.textContent=String(text);return node;}
 function iconNode(name,className,state){
  if(!name)return null;
@@ -247,8 +326,9 @@ function raceBanner(race){
  wrapper.append(number,copy,time);return wrapper;
 }
 function renderCard(){
- activeCard=selectedCard();if(!activeCard)return;
- renderRaceNav(activeCard);renderRaceTimeSelect(activeCard);
+ if(viewMode==="track")activeCard=selectedCard();
+ if(!activeCard)return;
+ renderRaceNav(activeCard);renderRaceTimeSelect(activeCard);renderTimeline();
  const race=activeCard.card.races.find(item=>item.race_number===activeRace);if(!race)return;
  const panel=q("#rr-dash-race");panel.replaceChildren(cardHeader(activeCard),raceBanner(race));
  const scratches=scratchList(race);if(scratches)panel.append(scratches);
@@ -307,23 +387,33 @@ function renderCard(){
   win.setAttribute("aria-label",(entry.win_probability==null?"No win probability":String(entry.win_probability)+"% win probability")+"; fair odds "+odds);
   win.append(makeNode("strong","rr-dash-win-percent",entry.win_probability==null?"—":String(entry.win_probability)+"%"));
   win.append(makeNode("small","rr-dash-win-fair","FAIR "+odds));
-  const footer=makeNode("div","rr-dash-row-analysis"),analysis=makeNode("button","rr-dash-full-analysis","Analysis");
-  analysis.type="button";analysis.setAttribute("aria-label","Full analysis for "+entry.horse_name);
-  analysis.addEventListener("click",()=>showHorse(entry));footer.append(analysis);
   row.addEventListener("click",event=>{if(event?.target?.closest?.("button"))return;showHorse(entry);});
-  row.append(program,horseCell,metricGroup,win,footer);list.append(row);
+  row.append(program,horseCell,metricGroup,win);list.append(row);
  }
  if(!entries.length)list.append(makeNode("div","rr-dash-no-data","No runners match that search."));
  table.append(list);
  const heading=makeNode("div","rr-dash-mobile-list-heading");
- heading.append(makeNode("h2","","WIN PROJECTIONS"),makeNode("span","","Tap a runner for analysis"));
+ heading.append(makeNode("h2","","WIN PROJECTIONS"));
  q("#rr-dash-horses").replaceChildren(heading,table);
  // Digital-first dashboard: no redundant PDF actions or downloads in the race view.
  setText(q("#rr-dash-update"),activeCard.uploaded_at?"Projection updated "+new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}).format(new Date(activeCard.uploaded_at))+" ET":"");
  for(const button of q("#rr-dash-races").querySelectorAll("button"))button.setAttribute("aria-current",String(Number(button.getAttribute("aria-label").replace("Race ",""))===activeRace));
 }
 function onFiltersChanged(){
- const oldTrack=q("#rr-dash-track").value;renderTracks(oldTrack);activeCard=selectedCard();activeRace=racesByPostTime(activeCard)[0]?.race_number||null;if(activeCard)renderCard();
+ const oldTrack=q("#rr-dash-track").value;
+ renderTracks(oldTrack);
+ if(viewMode==="all"){
+  timeline=raceTimeline();
+  const selected=timeline.find(item=>item.card===activeCard&&item.race.race_number===activeRace);
+  if(!selected){
+   activeCard=timeline[0]?.card||null;
+   activeRace=timeline[0]?.race?.race_number||null;
+  }
+ }else{
+  activeCard=selectedCard();
+  activeRace=racesByPostTime(activeCard)[0]?.race_number||null;
+ }
+ if(activeCard)renderCard();
 }
 async function init(){
  try{
@@ -332,10 +422,17 @@ async function init(){
   status.hidden=true;
   if(!cards.length){empty.hidden=false;return;}
   app.hidden=false;renderDates();renderTracks();
+  app.dataset.mode=viewMode;
   activeCard=selectedCard();activeRace=racesByPostTime(activeCard)[0]?.race_number||null;renderCard();
-  q("#rr-dash-date").addEventListener("change",onFiltersChanged);q("#rr-dash-track").addEventListener("change",onFiltersChanged);
+  q("#rr-dash-date").addEventListener("change",onFiltersChanged);
+  q("#rr-dash-track").addEventListener("change",()=>{if(viewMode==="track")onFiltersChanged();});
   q("#rr-dash-race-time").addEventListener("change",()=>{activeRace=Number(q("#rr-dash-race-time").value);renderCard();});
   q("#rr-dash-search").addEventListener("input",renderCard);
+  q("#rr-dash-mode-track").addEventListener("click",()=>changeViewMode("track"));
+  q("#rr-dash-mode-all").addEventListener("click",()=>changeViewMode("all"));
+  q("#rr-dash-all-races").addEventListener("change",()=>selectTimeline(Number(q("#rr-dash-all-races").value)));
+  q("#rr-dash-previous-race").addEventListener("click",()=>selectTimeline(Number(q("#rr-dash-all-races").value)-1));
+  q("#rr-dash-next-race").addEventListener("click",()=>selectTimeline(Number(q("#rr-dash-all-races").value)+1));
  }catch(error){
   status.hidden=true;
   if(error.status===401){login.hidden=false;return;}

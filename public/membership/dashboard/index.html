@@ -11,8 +11,8 @@
 <link rel="stylesheet" href="/assets/rail-rye-core.css?v=12">
 <link rel="stylesheet" href="/assets/rail-rye-components.css?v=9">
 <link rel="stylesheet" href="/assets/membership.css?v=3">
-<link rel="stylesheet" href="/assets/projections-dashboard.css?v=23">
-<script defer src="/assets/projections-dashboard.js?v=25"></script>
+<link rel="stylesheet" href="/assets/projections-dashboard.css?v=24">
+<script defer src="/assets/projections-dashboard.js?v=26"></script>
 </head>
 <body class="rr-member-page rr-dashboard-page">
 <header class="rr-member-header">
@@ -38,15 +38,28 @@
   <a class="rr-member-button" href="/membership/account/">Open member library</a>
  </section>
  <section id="rr-dash-app" class="rr-dash-app" hidden aria-label="Race projections">
+  <div class="rr-dash-mode-switch" role="group" aria-label="Race navigation mode">
+   <button type="button" id="rr-dash-mode-track" class="rr-dash-mode-button" aria-pressed="true">By Track</button>
+   <button type="button" id="rr-dash-mode-all" class="rr-dash-mode-button" aria-pressed="false">All Tracks · Post Time</button>
+  </div>
   <div class="rr-dash-toolbar">
-   <label>Date<select id="rr-dash-date" aria-label="Choose race date"></select></label>
-   <label>Track<select id="rr-dash-track" aria-label="Choose track"></select></label>
+   <label class="rr-dash-date-field">Date<select id="rr-dash-date" aria-label="Choose race date"></select></label>
+   <label class="rr-dash-track-field">Track<select id="rr-dash-track" aria-label="Choose track"></select></label>
    <label class="rr-dash-race-time-field">Race by post time<select id="rr-dash-race-time" aria-label="Choose race by post time"></select></label>
    <label class="rr-dash-search-field">Find a horse<input id="rr-dash-search" type="search" placeholder="Name or program #" autocomplete="off"></label>
    
    <span id="rr-dash-update" class="rr-dash-updated"></span>
   </div>
   <div class="rr-dash-race-layout">
+   <div id="rr-dash-global-timeline" class="rr-dash-global-timeline" hidden>
+    <label for="rr-dash-all-races">All races · chronological post times (ET)</label>
+    <div class="rr-dash-timeline-controls">
+     <button type="button" id="rr-dash-previous-race" aria-label="Previous race in post-time order">‹</button>
+     <select id="rr-dash-all-races" aria-label="Choose race from all tracks in post-time order"></select>
+     <button type="button" id="rr-dash-next-race" aria-label="Next race in post-time order">›</button>
+    </div>
+    <span id="rr-dash-timeline-count" class="rr-dash-timeline-count"></span>
+   </div>
    <nav id="rr-dash-races" class="rr-dash-races" aria-label="Choose race"></nav>
    <section class="rr-dash-race-panel" aria-live="polite">
     <div id="rr-dash-race"></div>
