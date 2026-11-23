@@ -232,7 +232,7 @@ function raceBanner(race){
  const meta=makeNode("div","rr-dash-race-meta"),runnerCount=(race.entries||[]).length;
  meta.append(makeNode("p","rr-dash-race-runners",reviewMode?runnerCount+" VERIFIED PROJECTION"+(runnerCount===1?"":"S")+" · PARTIAL FIELD":runnerCount+" RUNNERS"));
  if(purse)meta.append(makeNode("p","rr-dash-race-purse","PURSE "+purse));
- else if(previewMode){const missing=makeNode("p","rr-dash-race-purse","PURSE MISSING FROM EXPORT");missing.dataset.missing="true";meta.append(missing);}
+ else if(previewMode&&!reviewMode){const missing=makeNode("p","rr-dash-race-purse","PURSE MISSING FROM EXPORT");missing.dataset.missing="true";meta.append(missing);}
  const scratchCount=race.scratch_count==null?(race.scratches?.length||null):race.scratch_count;
  if(scratchCount!=null)meta.append(makeNode("p","rr-dash-race-scratch-count",scratchCount+" SCRATCH"+(scratchCount===1?"":"ES")));
  copy.append(meta);
