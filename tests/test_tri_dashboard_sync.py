@@ -224,7 +224,7 @@ class TestPrescratchSync(unittest.TestCase):
         self.assertEqual(saved["races"][0]["entries"][0]["fair_odds"], "0.67/1")
         self.assertEqual(saved["races"][0]["entries"][1]["f4_probabilities"]["exact_p2"], .6)
         self.assertEqual(saved["races"][0]["entries"][0]["metrics"], [])
-        self.assertIsNone(saved["races"][0]["entries"][0]["rank"])
+        self.assertEqual(saved["races"][0]["entries"][0]["rank"], 1)
 
     def test_modified_receipt_is_blocked(self):
         with self.assertRaisesRegex(Hold, "checksum mismatch"):
