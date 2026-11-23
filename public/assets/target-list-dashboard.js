@@ -131,8 +131,10 @@ function targetCard(entry){
  const card=node("article","rr-target-card");
  const head=node("div","rr-target-racebar");
  const titleRow=node("div","rr-target-racebar-main");
- add(titleRow,node("h3","",entry.track),node("span","rr-target-race-number","RACE "+entry.race_number));
- if(entry.post_time_et)titleRow.append(node("span","rr-target-post",entry.post_time_et));
+ const identifiers=node("div","rr-target-race-identifiers");
+ identifiers.append(node("span","rr-target-race-number","RACE "+entry.race_number));
+ if(entry.post_time_et)identifiers.append(node("span","rr-target-post",entry.post_time_et));
+ add(titleRow,node("h3","",entry.track),identifiers);
  head.append(titleRow);
  // Match Longshot Radar: one strong headline, full source conditions immediately
  // below it in the SAME navy banner; no shrinking, clipping, or invented values.
