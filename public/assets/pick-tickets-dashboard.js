@@ -239,7 +239,6 @@
    }));
    const meta=node("div","rr-pt-wager-meta");
    meta.append(node("span","rr-pt-wager-name",chosen.title));
-   meta.append(node("span","rr-pt-probability",hitRate(chosen)==="—"?"HIT PROBABILITY · AWAITING MODEL":"HIT PROBABILITY · "+hitRate(chosen)));
    box.append(meta,ticketRows(chosen),stats(chosen));
    if(activeSeq.play_status==="PASS")box.append(node("p","rr-pt-pass-note",
     currentIsDemo?"DEMONSTRATION PASS · Best possible mock ticket for layout review only."
