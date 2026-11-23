@@ -26,7 +26,7 @@ function dateLabel(value){
 function compactDateLabel(value){
  if(!/^\d{4}-\d{2}-\d{2}$/.test(String(value||"")))return String(value||"");
  const [year,month,day]=value.split("-").map(Number);
- return new Intl.DateTimeFormat("en-US",{weekday:"short",month:"short",day:"numeric",year:"numeric"}).format(new Date(year,month-1,day,12));
+ return new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric",year:"numeric"}).format(new Date(year,month-1,day,12));
 }
 function option(select,value,label){const item=document.createElement("option");item.value=value;item.textContent=label;select.append(item);}
 function datesAvailable(){return [...new Set(cards.map(card=>card.race_date))].sort((a,b)=>b.localeCompare(a));}
@@ -319,7 +319,7 @@ function renderCard(){
  heading.append(makeNode("h2","","WIN PROJECTIONS"),makeNode("span","","Tap a runner for analysis"));
  q("#rr-dash-horses").replaceChildren(heading,table);
  // Digital-first dashboard: no redundant PDF actions or downloads in the race view.
- setText(q("#rr-dash-update"),activeCard.uploaded_at?"Projection updated "+new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}).format(new Date(activeCard.uploaded_at))+" ET":previewMode?"Private admin preview":"");
+ setText(q("#rr-dash-update"),activeCard.uploaded_at?"Projection updated "+new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}).format(new Date(activeCard.uploaded_at))+" ET":"");
  for(const button of q("#rr-dash-races").querySelectorAll("button"))button.setAttribute("aria-current",String(Number(button.getAttribute("aria-label").replace("Race ",""))===activeRace));
 }
 function onFiltersChanged(){
