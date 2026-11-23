@@ -44,6 +44,6 @@ for(const module of ["longshot-radar.js","target-list-dashboard.js"]){
  else assert.match(source,/demoData|reviewOnly|review_only/,"Preserve Target List's existing private example/review workflow.");
  assert.doesNotMatch(source,/\/api\/checkout|stripe/,"No new disconnected commerce flow.");
 }
-assert.match(read("public/assets/racing-intelligence-module-art.css"),/rr-review-artwork/);
+assert.ok(!radarPage.includes("racing-intelligence-module-art.css"),"Radar must not depend on retired decorative CSS.");
 assert.equal(config.vars.PROJECTIONS_MEMBER_LAUNCH,"off","Do not enable customer launch");
 console.log("PASS: private Hub route, fail-closed admin gate, approved shared header/4 hub product heroes/Radar inline reasoning/all 20 real saddlecloth assets and Target List without decorative top art, no PDF dependency, no paid data exposure.");
