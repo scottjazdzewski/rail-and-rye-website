@@ -27,9 +27,18 @@ This is ONE application shell with four product views, NOT four independent site
 - Product-specific statuses are NOT interchangeable. Pick Tickets uses **green PLAY / gray CONDITIONAL / red PASS**; Projections factor dashes use **green favorable / gray neutral / red concern**. Longshot Radar and Target List should use the same palette only for explicitly defined meanings, not invent a universal score.
 - Icons sparingly, consistent stroke weight, clear labels, sufficient tap targets and contrast. Focus on readable data.
 
+## Canonical chip system + single-race exotic builder
+The single source of truth for **horse saddle chips**, branded **race chips**, official track header artwork, and the exacta/trifecta **Bet Builder** component is [RAIL_RYE_CHIP_SYSTEM_AND_BET_BUILDER.md](RAIL_RYE_CHIP_SYSTEM_AND_BET_BUILDER.md).
+
+- Horse selections everywhere use `/assets/approved/saddlecloths/{1..20}.png` and preserve legitimate coupled-entry suffixes; no recreated chip colors.
+- Race navigation and race-header plaques use branded navy/gold saddle-chip silhouettes, not a specific horse's saddlecloth.
+- Both Rail & Rye horseshoe and approved track logo remain visible where the corresponding track asset exists.
+- The Bet Builder is part of Projections, not a separate product or purchase. Its model-only exacta/trifecta UI never displays made-up probability/payoff values. Exact F4 joint probabilities require a verified server-side production receipt and private, entitlement-checked delivery.
+- The user consults any actual tote prices independently; Rail & Rye does not connect to tote services or accept wagers.
+
 ## Mobile-first layout rules
 - Build for narrow phone first (320, 375, 390, 430px), then 768px/tablet, then desktop. Responsive layouts must avoid horizontal page overflow (only the race-tab strip may scroll horizontally).
-- Compact Projections runner rows targeted **150–175px** on a normal phone: first line actual saddlecloth, horse/ML, probability/fair odds; trainer | jockey directly beneath horse; the five-factor dashed strip beneath; tiny Analysis cue at bottom. Long names wrap; never truncate critical horse name or model %.
+- Compact Projections runner rows target **about 114–135px** for ordinary names on a normal phone: first line actual saddlecloth, horse/ML, probability/fair odds; trainer | jockey directly beneath horse; the five-factor dashed strip beneath; tap anywhere to open details, with NO repeated Analysis buttons. Long names wrap; never truncate critical horse name or model %.
 - Tap a runner/card to open a consistent bottom drawer/detail panel on mobile. Never require a PDF or separate download to learn the data; same drawer style and dismiss behavior across modules.
 - Race navigation: **By Track** displays the selected track's race tabs in actual post-time order (NOT numerical race order); **All Tracks · Post Time** offers a single chronological selectable timeline across every accessible track/race on that date, with previous/next controls. Always use published source ET times; place missing times last and never invent them.
 - Keep the exact approved Rail & Rye horseshoe header graphic visible next to the track name. Size with object-fit:contain; do not replace/crop/recolor it. If actual source-certified track-specific artwork is integrated later, it must come from approved production assets rather than a synthetic substitute.
