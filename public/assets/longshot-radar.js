@@ -155,7 +155,8 @@ function renderCandidates(){
 
  let candidates=[...edition.candidates];
  candidates=orderByDay(candidates,state.sort);
- q("#rr-lr-count").textContent=candidates.length+" "+(candidates.length===1?"selection":"selections")+" · "+(state.sort==="post-time"?"Post-time order":"Track order");
+ q("#rr-lr-count").textContent=candidates.length+" "+(candidates.length===1?"selection":"selections");
+  q("#rr-lr-context").textContent=state.sort==="post-time"?"Post-time order":"Track order";
  if(!candidates.length){
   target.replaceChildren(make("div","rr-lr-list-empty","No selections for this date."));
  }else target.replaceChildren(...candidates.map(makeCard));

@@ -528,7 +528,7 @@ padding:12px 11px 14px;
    Scope strictly to Target List; no public member shell changes. */
 .rr-target-page .rr-target-main{
   max-width:1140px;
-  padding:10px 11px 34px;
+  padding:10px 11px 32px;
 }
 .rr-target-page .rr-target-titlebar{
   align-items:flex-start;
@@ -540,7 +540,7 @@ padding:12px 11px 14px;
 }
 .rr-target-page .rr-target-titlebar h1{
   margin:2px 0 3px;
-  font:850 28px/1.12 Inter,Arial,system-ui,sans-serif;
+  font:800 28px/1.12 Inter,Arial,system-ui,sans-serif;
   letter-spacing:-.025em;
 }
 .rr-target-page .rr-target-titlebar p{
@@ -573,7 +573,7 @@ padding:12px 11px 14px;
 }
 
 .rr-target-page .rr-target-summary{
-  margin:7px 0 8px;
+  margin:0 0 8px;
   gap:8px;
 }
 .rr-target-page .rr-target-summary h2{
@@ -621,7 +621,8 @@ gap:3px;
   margin:0;
   padding:11px 12px 13px;
   font:500 17px/1.52 Inter,Arial,system-ui,sans-serif;
-  color:#243d54;
+  color:#17354e;
+  background:#fff;
   white-space:pre-line;
   overflow:visible;
   -webkit-line-clamp:unset;
