@@ -236,7 +236,7 @@ assert.equal(passedRace?.date,"2026-11-22","Bet Builder retains current racing d
 console.log("PASS: stable branded race chip selection, approved horse/track art and current-race Bet Builder entry");
 
 for(const html of [adminHtml,memberHtml]){
- assert.match(html,/rr-exotic-bet-builder\.js\?v=2/,
+ assert.match(html,/rr-exotic-bet-builder\.js\?v=3/,
   "Customers must load the actual source-backed F4 odds client, not cached v1");
  assert.match(html,/projections-dashboard\.js\?v=28/,
   "Both admin and member dashboard views receive same race-aware F4 routing");
