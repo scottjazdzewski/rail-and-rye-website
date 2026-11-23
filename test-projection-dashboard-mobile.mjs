@@ -217,11 +217,10 @@ assert.equal(trophy.getAttribute("aria-label"),"Grade 1 stakes trophy");
 const realRaceHeaderChip=matchClass(displayedRace,"rr-race-saddle-image");
 assert.ok(realRaceHeaderChip&&realRaceHeaderChip.src.endsWith("/4.png"),
  "Race 4 header MUST show real #4 saddlecloth artwork");
-const racingMark=matchClass(displayedRace,"rr-dash-track-mark");
-assert.ok(racingMark,"Current track must show a branded emblem instead of an advertising tile");
-assert.match(racingMark.textContent,/RACECOURSE/);
-assert.equal(allClass(displayedRace,"rr-dash-track-logo").length,0,
- "Remove white-backed sponsored track logo tiles");
+assert.equal(allClass(displayedRace,"rr-dash-track-mark-letters").length,0,
+ "No synthetic FL/MNR track initials should replace actual artwork");
+assert.equal(allClass(displayedRace,"rr-dash-approved-track-logo").length,0,
+ "Unknown track logo assets must not be invented or borrowed from another venue");
 assert.equal(allClass(displayedRace,"rr-race-chip__label").length,0,
  "Remove old stacked RACE caption competing with two-digit numbers");
 // Reproduce the user's real First Lady S. screenshot, both with and WITHOUT
@@ -235,12 +234,34 @@ context.RRRaceTitles=undefined;
 laterRace.events.click();
 assert.match(els.get("rr-dash-race").textContent,/First Lady Stakes/,
  "If the external title file fails to load, Projections itself still expands S. to Stakes");
+fixture.cards[0].card.races[1].conditions="Hollywood Gaming Mahoning Distaff S.";
+laterRace.events.click();
+assert.match(els.get("rr-dash-race").textContent,/Mahoning Distaff Stakes/,
+ "Even without title helper, the verified Mahoning sponsorship is stripped");
+assert.doesNotMatch(els.get("rr-dash-race").textContent,/Hollywood Gaming/);
+fixture.cards[0].card.races[1].conditions="Cheryl S. White Memorial S.";
+laterRace.events.click();
+assert.match(els.get("rr-dash-race").textContent,/Cheryl S. White Memorial Stakes/,
+ "Internal initials must be retained and terminal S. expanded");
+assert.ok(matchClass(els.get("rr-dash-race"),"rr-dash-race-banner--extended-title"),
+ "Very long full names get the balanced-title layout");
 context.RRRaceTitles={describe:()=>({title:"First Lady Stakes",grade:null})};
 
 const originalRace=els.get("rr-dash-races").children.find(x=>x.dataset.raceNumber==="6");
 assert.ok(originalRace?.events?.click,"Original current race must remain available");
 originalRace.events.click();
-console.log("PASS: true per-track and all-track race chronology; original header art; no repeated Analysis CTA; conventional tote fair odds");
+const realCard=fixture.cards[0],oldTrack=realCard.track,oldName=realCard.card.track_name;
+realCard.track="Finger Lakes";realCard.card.track_name="Finger Lakes";
+originalRace.events.click();
+const sourceTrackLogo=matchClass(els.get("rr-dash-race"),"rr-dash-approved-track-logo");
+assert.ok(sourceTrackLogo,"Real venue-specific logo is restored on approved tracks");
+assert.equal(sourceTrackLogo.src,"/assets/approved/track-logos/finger-lakes.webp");
+assert.equal(sourceTrackLogo.alt,"Finger Lakes track logo");
+assert.equal(allClass(els.get("rr-dash-race"),"rr-dash-track-mark-letters").length,0,
+ "Synthesized track branding is absent");
+realCard.track=oldTrack;realCard.card.track_name=oldName;
+originalRace.events.click();
+console.log("PASS: true per-track chronology; authentic logos and race artwork; conventional tote fair odds");
 
 
 // Canonical cross-module chips and Bet Builder live in the protected projection view.
