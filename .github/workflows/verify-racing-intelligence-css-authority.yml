@@ -8,6 +8,17 @@ on:
       - 'public/assets/longshot-radar.css'
       - 'public/assets/target-list-dashboard.css'
       - 'test-racing-intelligence-css-authority.mjs'
+      - 'test-racing-intelligence-customer-copy.mjs'
+      - 'public/assets/projections-dashboard.js'
+      - 'public/assets/pick-tickets-dashboard.js'
+      - 'public/assets/longshot-radar.js'
+      - 'public/assets/target-list-dashboard.js'
+      - 'public/admin/projections-preview.html'
+      - 'public/admin/pick-tickets-preview.html'
+      - 'public/admin/longshot-radar.html'
+      - 'public/admin/target-list-preview.html'
+      - 'public/membership/dashboard/index.html'
+      - 'docs/RACING_INTELLIGENCE_HUB_DESIGN_SYSTEM.md'
       - '.github/workflows/verify-racing-intelligence-css-authority.yml'
   pull_request:
     paths:
@@ -16,6 +27,17 @@ on:
       - 'public/assets/longshot-radar.css'
       - 'public/assets/target-list-dashboard.css'
       - 'test-racing-intelligence-css-authority.mjs'
+      - 'test-racing-intelligence-customer-copy.mjs'
+      - 'public/assets/projections-dashboard.js'
+      - 'public/assets/pick-tickets-dashboard.js'
+      - 'public/assets/longshot-radar.js'
+      - 'public/assets/target-list-dashboard.js'
+      - 'public/admin/projections-preview.html'
+      - 'public/admin/pick-tickets-preview.html'
+      - 'public/admin/longshot-radar.html'
+      - 'public/admin/target-list-preview.html'
+      - 'public/membership/dashboard/index.html'
+      - 'docs/RACING_INTELLIGENCE_HUB_DESIGN_SYSTEM.md'
       - '.github/workflows/verify-racing-intelligence-css-authority.yml'
   workflow_dispatch:
 permissions:
@@ -30,3 +52,5 @@ jobs:
           node-version: '22'
       - name: Enforce one declaration authority per selector and media scope
         run: node test-racing-intelligence-css-authority.mjs
+      - name: Enforce production-wide customer copy and uploader lock
+        run: node test-racing-intelligence-customer-copy.mjs

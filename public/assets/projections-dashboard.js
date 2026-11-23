@@ -330,9 +330,6 @@ function cardHeader(card){
   track=makeNode("h2","rr-dash-track-title",name),
   date=makeNode("p","rr-dash-card-date",dateLabel(card.race_date));
  info.append(track,date);
- const stage=card.card?.projection_status;
- if(stage==="scratch_final")info.append(makeNode("p","rr-dash-card-update-state","SCRATCH UPDATED · CURRENT"));
- else if(stage==="prescratch")info.append(makeNode("p","rr-dash-card-update-state","INITIAL · CURRENT"));
  wrapper.append(logo,info);
  // Restore the real approved racetrack imagery. Render the whole image on an
  // ivory surface with no faux monogram or small framed sponsor advertisement.
@@ -430,7 +427,7 @@ function renderCard(){
  if(race.distance)tiles.append(makeTile("Distance",race.distance));
  if(tiles.children.length)panel.append(tiles);
  if(activeCard.card.projection_status==="scratch_final"&&activeCard.card.factor_basis==="verified_prescratch")
-  panel.append(makeNode("p","rr-dash-factor-origin-note","TRI/F4 revised for scratches · five-factor indicators retain the verified initial evaluation."));
+  panel.append(makeNode("p","rr-dash-factor-origin-note","Win and finish projections account for scratches; five-factor ratings have not been recalculated."));
  if(race.summary)panel.append(makeNode("p","rr-dash-race-summary",race.summary));
  const table=makeNode("div","rr-dash-table");table.setAttribute("role","table");table.setAttribute("aria-label","Race "+race.race_number+" projections");
  const header=makeNode("div","rr-dash-table-heading");header.setAttribute("role","row");

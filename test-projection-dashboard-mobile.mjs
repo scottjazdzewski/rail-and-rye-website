@@ -5,7 +5,7 @@ import vm from "node:vm";
 const css=readFileSync("public/assets/projections-dashboard.css","utf8");
 const js=readFileSync("public/assets/projections-dashboard.js","utf8");
 assert.match(css,/\.rr-dash-race-tiles\{grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/,"Facts use the current three-column compact layout");
-assert.doesNotMatch(js,/INITIAL CARD · CURRENT|Initial projections remain current/,"Do not show stage labels.");
+assert.doesNotMatch(js,/INITIAL CARD · CURRENT|INITIAL · CURRENT|SCRATCH UPDATED · CURRENT|rr-dash-card-update-state|verified initial evaluation/,"Never reintroduce internal production-state labels.");
 assert.doesNotMatch(js,/badges are not yet certified/,"Verified initial badges must not be called uncertified");
 assert.match(js,/rr-dash-metric-bars/,"Five source-backed factor states must render as compact colored dashes");
 assert.doesNotMatch(js,/iconNode\(art,"rr-dash-rating-badge"/,"No large factor PNGs in the compact runner rows");

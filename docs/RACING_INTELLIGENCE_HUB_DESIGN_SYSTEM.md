@@ -69,12 +69,20 @@ The single source of truth for **horse saddle chips**, authentic saddlecloth-bac
 - Do not crowd dark backgrounds or dark overlays onto editorial hero art. Keep users out of needless scrolling before the first meaningful data.
 
 ## Data and fidelity contract
-- Current initial/prescratch model result is the authoritative card until official scratches are processed; label **INITIAL · CURRENT**, not "unofficial" or "uncertified". A later correctly receipt-verified scratch run supersedes it. Never call an initial card "scratch final".
+- The last source-verified race projections remain the authoritative results until superseded by a properly verified scratch revision. Preserve all production status and revision evidence in private source metadata, **never render internal edition-stage labels** on any customer-facing page.
 - The TRI engine and approved five-factor evaluator are frozen authority. Do not re-score, infer indicators, round/rebase individual PWIN or F4, invent handicapping ratings, horse IDs, race titles, purses, status, or times.
 - Pick Tickets display verified sequence legs, denominations, ALL numbers on each authorized ticket, and a best-possible ticket even on PASS, if production has supplied it. Never change the separately frozen product rules in the website renderer.
 - Longshot Radar and Target List likewise consume their respective certified production outputs and preserve native methodologies. No placeholder customer-facing data, synthetic results or silent fallback.
-- Exact product timestamps, dates, track/race, publication states and revision/scratch freshness visible in a common utility pattern.
+- Display race date, track, race, post time and a neutral last-updated timestamp when trustworthy. Internal publication states, edition labels, revision numbers, scoring-review notes and scratch-processing terminology are production metadata only; never show them as customer-facing status banners.
 - Private product content resides behind server-enforced auth/entitlement checks in Cloudflare Worker and private R2; **never** store actual paid data in public HTML, GitHub sources, JS bundles or open JSON endpoints. Never implement access control only by hiding tabs client-side.
+
+
+### Permanent customer-copy lock — applies to all four products and future publications
+- Projections, Pick Tickets, Longshot Radar, and Target List must never render `INITIAL`, `PRESCRATCH`, `PRE-SCRATCH`, `INITIAL · CURRENT`, `SCRATCH UPDATED · CURRENT`, `MODEL REVIEW`, `TEST WINDOW`, `PRIVATE PREVIEW`, `CERTIFIED SOURCE TICKET`, or similar production/review-stage labels. This includes headers, race cards, tooltips, dialogs, fallback/loading/empty states and revisions.
+- Do not add customer-side JSON/file upload controls, test data toggles, production-source gates or revision receipts to those four pages. The user publishes through the existing backend and Publication Desk workflow, not by manually uploading JSON to product pages.
+- Preserve underlying `projection_status`, `status`, `revision`, `factor_basis`, scratch arrays, provenance, receipt checks, R2 storage, and security gating exactly as source metadata. The presentation cleanup **must not** imply that stale selections are updated, alter TRI/F4 probabilities, or bypass a source verification gate.
+- Display official scratches as genuine racing information and allow clear, user-relevant uncertainty disclosures when appropriate, without revealing internal production terminology. A plain race-date or neutral `Updated` timestamp is acceptable.
+- Before each production push, run `node test-racing-intelligence-customer-copy.mjs`; the CI gate covers all four HTML pages and renderers. New product windows must follow this shared lock. Changes to the lock require an explicit design-policy decision.
 
 ## Commerce and Publication Desk integration
 - Reuse the existing Rail & Rye sign-in, Stripe commerce, membership/bundle/product entitlements and recovery flow. Do not create four payment systems or duplicate customer accounts.
