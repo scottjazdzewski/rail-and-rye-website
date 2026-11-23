@@ -70,6 +70,19 @@ assert.equal(listing.headers.get("Cache-Control"),"private, no-store");
 const wrongBatch=[card(),({...card(),date:"2026-11-24",revision:3,sequences:[{...card().sequences[0],tickets:[]} ]})];
 result=await post({cards:wrongBatch});assert.equal(result.response.status,400);
 assert.equal(env.CARDS_BUCKET.objects.size,3,"a bad batch writes nothing");
+// Mock fixture is available ONLY through protected admin route and cannot enter paid R2 storage.
+const demoResponse=await handleAdminPickTickets(new Request("https://railandryeracing.com/api/admin/pick-tickets?demo=1"),env);
+const mock=await demoResponse.json();
+assert.equal(mock.demo,true);
+assert.equal(mock.cards.length,5);
+assert.equal(mock.cards[0].card.sequences.filter(s=>s.end_race-s.start_race+1===3).length,3);
+assert.equal(mock.cards[0].card.sequences[2].play_status,"PASS");
+assert.equal(mock.cards[0].card.sequences[2].tickets[0].role,"BEST_POSSIBLE");
+assert.equal(mock.cards[0].card.sequences[0].hit_rate_display,"","mock projections may never be fabricated");
+result=await post({cards:mock.cards.map(x=>x.card)});
+assert.equal(result.response.status,400,"synthetic dashboard data cannot be saved as source-certified tickets");
+assert.match(result.body.error,/Mock layout selections cannot be uploaded/);
+assert.equal(env.CARDS_BUCKET.objects.size,3,"mock previews never alter paid R2 storage");
 const route=fs.readFileSync("./src/index.js","utf8");
 const page=fs.readFileSync("./public/admin/pick-tickets-preview.html","utf8");
 const css=fs.readFileSync("./public/assets/pick-tickets-dashboard.css","utf8");
@@ -78,7 +91,7 @@ assert.match(route,/verifyAdmin\(request,env\)/,"admin routes must verify signed
 assert.match(route,/if\(path==="\/api\/admin\/pick-tickets"\)/);
 assert.match(route,/trustedOrigin\(request\)/);
 assert.match(route,/pickTicketsPreview\?"\/admin\/pick-tickets-preview.html"/);
-assert.match(page,/Private administrator review/);
+assert.match(page,/PRIVATE ADMIN REVIEW/);
 assert.doesNotMatch(page,/application\/pdf|\.pdf"/i);
 assert.match(css,/@media\(max-width:800px\)/);
 assert.match(css,/minmax\(0,1fr\)/);
