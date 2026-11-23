@@ -93,7 +93,7 @@ assert.doesNotMatch(html,/rr-target-local-file/,"No manual review-file step for 
 assert.doesNotMatch(html,/rr-target-upload-form|rr-target-file|Private source upload|Certified source JSON file/,"Daily Target List never presents a manual JSON upload.");
 assert.doesNotMatch(js,/rr-target-upload-form|rr-target-file|\.text\(\)\}/,"Reader never contains orphaned upload form behavior.");
 assert.doesNotMatch(css,/rr-target-publisher/,"No obsolete upload form CSS.");
-assert.match(html,/target-list-dashboard\.css\?v=20261123-legible-v5/,"Ensure the readable style loads on phones.");
+assert.match(html,/target-list-dashboard\.css\?v=20261123-shared-v6/,"Ensure the readable style loads on phones.");
 assert.match(css,/font:500 15px\/1\.55 Inter/,"Published editorial gets readable 15px typography.");
 assert.match(css,/Target List v5 — legibility-first mobile race reading/,"Phone layout uses larger, no-zoom typography.");
 assert.match(css,/Shared Daily Research Reader V1 — Target List implementation/,"Target List consumes shared cross-product mobile standard.");
