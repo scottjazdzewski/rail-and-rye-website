@@ -5,13 +5,13 @@
 <meta name="robots" content="noindex,nofollow,noarchive">
 <meta name="referrer" content="no-referrer">
 <meta name="theme-color" content="#102d53">
-<title>Private Pick Tickets Review | Rail &amp; Rye</title>
+<title>Pick Tickets | Rail &amp; Rye</title>
 <link rel="icon" href="/favicon.png" type="image/png">
 <link rel="stylesheet" href="/assets/rail-rye-core.css?v=13">
 <link rel="stylesheet" href="/assets/rail-rye-components.css?v=11">
 <link rel="stylesheet" href="/assets/membership.css?v=17">
 <link rel="stylesheet" href="/assets/pick-tickets-dashboard.css?v=14">
-<script defer src="/assets/pick-tickets-dashboard.js?v=14"></script>
+<script defer src="/assets/pick-tickets-dashboard.js?v=ui-clean-20261123"></script>
 </head>
 <body class="rr-member-page rr-pt-page">
 <header class="rr-member-header">
@@ -19,7 +19,8 @@
   <a class="rr-member-brand" href="/admin/">
    <img src="/assets/approved/brand/rail-rye-ivory-logo.png" alt="" width="60" height="60"><span>RAIL &amp; RYE</span>
   </a>
-  <nav class="rr-member-nav" aria-label="Publisher navigation">
+  <nav class="rr-member-nav" aria-label="Racing Intelligence navigation">
+   <a href="/admin/racing-intelligence-review/">Hub</a>
    <a href="/admin/projections-preview/">Projections</a>
    <a href="/admin/pick-tickets-preview/" aria-current="page">Pick Tickets</a>
    <a href="/admin/">Publisher’s Desk</a>
@@ -38,7 +39,7 @@
    <span id="rr-pt-brand-track" class="rr-pt-brand-track">Select track</span>
   </div>
  </div>
- <div class="rr-pt-admin-line"><a class="rr-pt-back" href="/admin/">‹ Publisher’s Desk</a><span>PRIVATE PREVIEW · CUSTOMER ACCESS OFF</span></div>
+ <div class="rr-pt-admin-line"><a class="rr-pt-back" href="/admin/">‹ Publisher’s Desk</a></div>
  <div class="rr-pt-heading">
   <div>
    <span class="rr-pt-kicker">RAIL &amp; RYE RACING INTELLIGENCE</span>
@@ -50,8 +51,8 @@
   <label>Date <select id="rr-pt-date" aria-label="Choose racing date"></select></label>
   <label>Track <select id="rr-pt-track" aria-label="Choose racetrack"></select></label>
  </section>
- <p id="rr-pt-status" class="rr-pt-message" role="status" aria-live="polite">Loading protected Pick Tickets…</p>
- <section id="rr-pt-app" hidden aria-label="Pick Tickets private dashboard">
+ <p id="rr-pt-status" class="rr-pt-message" role="status" aria-live="polite">Loading Pick Tickets…</p>
+ <section id="rr-pt-app" hidden aria-label="Pick Tickets dashboard">
   <p id="rr-pt-updated" class="rr-pt-updated" role="status" aria-live="polite"></p>
   <div class="rr-pt-product-nav">
    <div class="rr-pt-section-label">SELECT WAGER TYPE</div>
@@ -64,21 +65,10 @@
   <div id="rr-pt-current" class="rr-pt-current" aria-live="polite"></div>
  </section>
  <section id="rr-pt-empty" class="rr-pt-empty" hidden>
-  <strong>No verified Pick Tickets available yet.</strong>
-  <p>Real source records are shown below. Ticket selections require current-field TRI/PWIN certification and the exact official wager menu.</p>
-  <div id="rr-pt-intake" aria-label="Real November 23 track intake and certification status"></div>
+ <strong>No Pick Tickets available for this track.</strong>
+ <p>Choose a different track or date to view available tickets.</p>
+ <div id="rr-pt-intake" aria-label="Race information"></div>
  </section>
- <details class="rr-pt-admin-tools">
-  <summary>Publisher tools · Private review settings</summary>
-  <div class="rr-pt-admin-body">
-   <select id="rr-pt-source" aria-label="Certified review source" hidden><option value="certified">Certified private editions</option></select>
-   <section class="rr-pt-upload" aria-label="Administrator source file">
-    <label for="rr-pt-file">Certified ticket JSON (private R2 staging)<input type="file" id="rr-pt-file" accept=".json,application/json"></label>
-    <button type="button" id="rr-pt-upload">Load verified production file</button>
-    <small>Verified current-card TRI source files only. No fictional picks.</small>
-   </section>
-  </div>
- </details>
 </main>
 <dialog id="rr-pt-dialog" class="rr-pt-dialog" aria-labelledby="rr-pt-dialog-title">
  <div class="rr-pt-dialog-head">
@@ -88,7 +78,7 @@
  <div id="rr-pt-detail"></div>
 </dialog>
 <footer class="rr-member-footer">
- <div class="heritage-shell"><span class="heritage-footmark">RAIL &amp; RYE</span><nav aria-label="Footer"><a href="/admin/">Publisher’s Desk</a> · <a href="/admin/projections-preview/">Projections</a></nav><small>Private Racing Intelligence review · Not a customer release</small></div>
+ <div class="heritage-shell"><span class="heritage-footmark">RAIL &amp; RYE</span><nav aria-label="Footer"><a href="/admin/">Publisher’s Desk</a> · <a href="/admin/projections-preview/">Projections</a></nav></div>
 </footer>
 </body>
 </html>
