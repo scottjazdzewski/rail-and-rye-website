@@ -218,21 +218,38 @@ export async function readAdminTargetListReview(env,url){
     edition.race_date!==chosen.date||edition.revision!==chosen.revision||
     !Array.isArray(edition.targets)||edition.targets.length>100)
   return fail("Stored private review is not safe for preview.",503);
- // Reuse the same exact value/role validation without asserting certified receipts.
+ // A reviewer can inspect the original published values without pretending they
+ // are certified unrounded TRI figures. Certified uploads use validateTargetList().
  try{
-  const temporary={
-   schema_version:1,product_type:"target_list",race_date:edition.race_date,
-   revision:edition.revision,status:edition.status,
-   source:{receipt_id:"editorial-review-only",sha256:edition.source?.editorial_sha256},
-   targets:edition.targets.map(t=>({...t,
-    conditions:t.conditions||"",
-    favorite:{...t.favorite},
-    attack:{...t.attack},
-    also_live:t.also_live||null,
-    scratches:t.scratches||[]}))
-  };
-  validateTargetList(temporary);
- }catch(e){return fail("Private review fields failed validation.",503);}
+  if(!object(edition.source)||!/^[a-f0-9]{64}$/.test(edition.source.editorial_sha256||'')||
+     !/^[a-f0-9]{64}$/.test(edition.source.timeforms_zip_sha256||'')||
+     edition.source.tri_full_field_receipt_id!=null||edition.source.tri_unrounded_scoring_receipt_sha256!=null)
+   throw Error('Missing review-only source custody.');
+  if(edition.status!=='initial'&&edition.status!=='scratch_update')throw Error('Invalid review status.');
+  if(edition.revision===1&&edition.status!=='initial'||edition.revision>1&&edition.status!=='scratch_update')throw Error('Invalid review revision.');
+  const ids=new Set(),ranks=new Set();
+  for(const item of edition.targets){
+   if(!object(item)||!Number.isInteger(item.rank)||item.rank<1||ranks.has(item.rank))throw Error('Invalid rank.');
+   ranks.add(item.rank);const track=field(item.track,'Track',100);
+   if(!Number.isInteger(item.race_number)||item.race_number<1||item.race_number>99)throw Error('Invalid race.');
+   const id=track.toLowerCase()+'|'+item.race_number;
+   if(ids.has(id))throw Error('Duplicate race.');ids.add(id);
+   field(item.analysis,'Editorial analysis',4000);
+   field(item.post_time_et,'Post time',40,false);
+   for(const role of ['favorite','attack']){
+    const horse=item[role];if(!object(horse))throw Error('Missing source horse.');
+    if(!/^\d{1,2}[A-Za-z]?$/.test(field(horse.program_number,'Saddlecloth',4)))throw Error('Invalid saddlecloth.');
+    field(horse.horse_name,'Horse',120);field(horse.morning_line,'Morning line',24);field(horse.fair_odds,'Fair odds',32);
+    if(typeof horse.win_probability!=='number'||!Number.isFinite(horse.win_probability)||horse.win_probability<0||horse.win_probability>100)
+     throw Error('Invalid displayed PWIN.');
+    if(horse.win_probability_exact!=null||horse.unrounded_verified_pwin!=null)throw Error('Uncertified review cannot claim verified exact scores.');
+   }
+   if(item.attack.program_number===item.favorite.program_number||item.attack.win_probability<=item.favorite.win_probability)
+    throw Error('Invalid ATTACK candidate.');
+   if(item.also_live!=null)throw Error('Unverified secondary runner.');
+   if(item.scratches!=null&&(!Array.isArray(item.scratches)||edition.status==='initial'&&item.scratches.length))throw Error('Invalid scratch status.');
+  }
+ }catch(e){return fail('Private review fields failed validation.',503);}
  return response({dates,edition,review_only:true,demo_example:false,
   uploaded_at:obj.customMetadata?.uploaded_at||null});
 }
