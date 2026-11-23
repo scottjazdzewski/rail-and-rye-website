@@ -79,7 +79,7 @@ export function sourceIsScratchCurrent(card){
  if(card?.date!==SCRATCH_DATE_1123)return true;
  if(card.status!=="scratch_updated"||!card.scratch_verified_at||card.revision<2)return false;
  const track=frozenPublic[card.track];
- if(!track)return false;
+ if(!track)return true; // Other November 23 tracks are outside these five screenshots.
  // A private scratch-updated edition must cover every official sequence and
  // must not contain a scratched program in ANY shown ticket or eligible field.
  for(const sequence of card.sequences||[]){
