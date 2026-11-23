@@ -155,7 +155,11 @@ def publish(client, sealed_file):
     private = serialization.load_pem_private_key(private_object["Body"].read(), password=None)
     wrapped = base64.b64decode(sealed["wrapped_key_b64"], validate=True)
     nonce = base64.b64decode(sealed["nonce_b64"], validate=True)
-    ciphertext = base64.b64decode(sealed["ciphertext_b64"], validate=True)
+    chunks = sealed.get("ciphertext_b64_chunks")
+    require(isinstance(chunks, list) and len(chunks) <= 100
+            and all(isinstance(chunk, str) and len(chunk) <= 1500 for chunk in chunks),
+            "Encrypted transport chunks missing or oversized")
+    ciphertext = base64.b64decode("".join(chunks), validate=True)
     require(len(nonce) == 12 and len(ciphertext) < 1_000_000, "Invalid sealed payload size")
     aes_key = private.decrypt(wrapped, padding.OAEP(
         mgf=padding.MGF1(algorithm=hashes.SHA256()),
