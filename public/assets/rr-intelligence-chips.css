@@ -66,3 +66,24 @@
 @media(prefers-reduced-motion:reduce){
  .rr-race-chip--tab{transition:none}
 }
+
+/* Real track-specific artwork appears alongside the persistent R&R horseshoe. */
+.rr-dash-card-head--with-track-logo{
+ display:grid;grid-template-columns:50px minmax(0,1fr) minmax(55px,84px);
+ align-items:center;gap:12px;
+}
+.rr-dash-track-logo{
+ display:block;justify-self:end;align-self:center;width:100%;
+ max-width:84px;max-height:66px;object-fit:contain;object-position:center right;
+}
+@media(max-width:800px){
+ .rr-dash-card-head--with-track-logo{
+  grid-template-columns:44px minmax(0,1fr) minmax(40px,67px);gap:8px;
+ }
+ .rr-dash-track-logo{max-width:67px;max-height:53px}
+}
+@media(max-width:360px){
+ .rr-dash-card-head--with-track-logo{grid-template-columns:38px minmax(0,1fr) 48px;gap:6px}
+ .rr-dash-track-logo{max-width:48px;max-height:45px}
+ .rr-dash-card-head--with-track-logo .rr-dash-track-title{font-size:17px}
+}
