@@ -17,14 +17,14 @@ const synthetic={cards:fixture.cards.map(x=>({...x,card:{
 }})),demo:false};
 const mime={".html":"text/html; charset=utf-8",".css":"text/css; charset=utf-8",".js":"text/javascript; charset=utf-8",".png":"image/png",".webp":"image/webp"};
 const root=path.resolve("public");
-let sourceHoldMode=false;
+let sourceHoldMode=false,scratchBuilderMode=false;
 const server=http.createServer((request,response)=>{
  const url=new URL(request.url,"http://127.0.0.1");
  if(url.pathname==="/api/admin/pick-tickets"){
   response.writeHead(200,{"content-type":"application/json","cache-control":"private, no-store"});
   response.end(JSON.stringify(sourceHoldMode?{cards:[],intake:getPickTicketsIntake(),
     scratch_update:{...getNov23ScratchLedger(),dependent_sequences:officialScratchSequenceCount(PICK_MENU_1123)},
-    demo:false}:synthetic));return;
+    demo:false}:scratchBuilderMode?{...synthetic,scratch_update:getNov23ScratchLedger()}:synthetic));return;
  }
  const raw=url.pathname==="/admin/pick-tickets-preview/"?"admin/pick-tickets-preview.html":url.pathname.replace(/^\/+/,"");
  const full=path.resolve(root,raw);
@@ -134,24 +134,37 @@ try{
   assert.match(await page.locator("#rr-pt-track-logo").getAttribute("src"),/zia-park.webp$/);
   await page.close();
  }
- // With no certified tickets the site must still show the actual five-track Nov 23 source intake.
+
+ // The owner wants scratches ONLY inside the ticket builder, as gray disabled chips.
+ scratchBuilderMode=true;
+ const builderPage=await browser.newPage({viewport:{width:375,height:800}});
+ await builderPage.goto(addr,{waitUntil:"domcontentloaded"});
+ await builderPage.locator(".rr-pt-ticket-screen").waitFor();
+ await builderPage.selectOption("#rr-pt-track","Finger Lakes");
+ await builderPage.locator(".rr-pt-mode-button").filter({hasText:"Build My Ticket"}).click();
+ await builderPage.locator(".rr-pt-builder").waitFor();
+ await builderPage.locator(".rr-pt-add-trigger").first().click();
+ assert.ok(await builderPage.locator(".rr-pt-builder .rr-pt-scratched").count()>=1,
+  "officially scratched horse remains visibly present in the ticket builder");
+ assert.equal(await builderPage.locator(".rr-pt-builder .rr-pt-scratched:disabled").count(),
+  await builderPage.locator(".rr-pt-builder .rr-pt-scratched").count(),
+  "withdrawn horse selection is disabled");
+ assert.equal(await builderPage.locator("#rr-pt-intake .rr-pt-scratch-list").count(),0,
+  "no standalone scratches panel");
+ await builderPage.close();
+
+ // If the private model source is absent, the page does not fabricate tickets
+ // or display a standalone scratches table.
  sourceHoldMode=true;
  const hold=await browser.newPage({viewport:{width:375,height:800}});
  await hold.goto(addr,{waitUntil:"domcontentloaded"});
- await hold.locator("#rr-pt-intake .rr-pt-scratch-chip img").first().waitFor();
- assert.equal(await hold.locator(".rr-pt-ticket-screen").count(),0,"never present stale prescratch picks as scratch-updated");
- assert.equal(await hold.locator("#rr-pt-intake .rr-pt-scratch-chip img").count(),5,"Finger Lakes official five scratched chips shown");
- assert.equal(await hold.locator("#rr-pt-track option").count(),5,"all five actual tracks remain selectable");
- assert.equal(await hold.locator("#rr-pt-date").inputValue(),"2026-11-23");
- assert.match(await hold.locator("#rr-pt-intake").innerText(),/Official Scratches/);
-  const holdWidth=await hold.evaluate(()=>({w:innerWidth,doc:document.documentElement.scrollWidth}));
- assert.ok(holdWidth.doc<=holdWidth.w+1,"source HOLD view must not overflow mobile width");
- await hold.screenshot({path:"test-artifacts/pick-tickets-source-hold-375.png",fullPage:true});
+ await hold.locator("#rr-pt-intake .rr-pt-intake-warning").waitFor();
+ assert.equal(await hold.locator(".rr-pt-ticket-screen").count(),0);
+ assert.equal(await hold.locator(".rr-pt-scratch-list").count(),0);
+ assert.equal(await hold.locator("#rr-pt-track option").count(),5);
+ assert.match(await hold.locator("#rr-pt-intake").innerText(),/Suggested tickets.*updated/);
  await hold.selectOption("#rr-pt-track","Zia Park");
- assert.match(await hold.locator("#rr-pt-intake h3").innerText(),/Zia Park/);
- assert.match(await hold.locator("#rr-pt-track-logo").getAttribute("src"),/zia-park.webp$/);
- assert.equal(await hold.locator("#rr-pt-intake .rr-pt-scratch-chip img").count(),6,"Zia Park original six scratched chips shown");
- assert.match(await hold.locator("#rr-pt-intake").innerText(),/No Pick Tickets are available/);
+ assert.equal(await hold.locator(".rr-pt-scratch-list").count(),0);
  await hold.close();
  console.log("PASS: certified-data preview only, no payout/value metrics, precise cost change, track/range/tier switching and six responsive widths.");
 }finally{
