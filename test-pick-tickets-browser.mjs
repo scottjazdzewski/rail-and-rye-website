@@ -17,6 +17,7 @@ const synthetic={cards:fixture.cards.map(x=>({...x,card:{
 }})),demo:false};
  // Regression fixture for a scratch-day source receipt carrying old wording.
  synthetic.cards[0].card.source_receipt.reference="CI-RIDER_CHANGES_PENDING";
+ synthetic.cards[0].card.score_verification_status="CURRENT_FIELD_COMPLETE_SCORING_AND_MANIFEST_PENDING";
  synthetic.cards[0].card.sequences[0].tickets[0].title="Rail & Rye Interim Focused Ticket";
  synthetic.cards[0].card.sequences[0].tickets[0].notes=
   "Interim focused ticket: lean: $4.00 / 25.0%; former_balanced: $12.00 / 32.0%. No prediction of return; prescratch model review.";
@@ -56,6 +57,8 @@ try{
   assert.equal(await page.locator(".rr-pt-seq-range").allTextContents().then(x=>x.join("|")),"Races 1–3|Races 4–6|Races 7–9");
   assert.equal(await page.locator(".rr-pt-race-row").count(),3,"Pick 3 has three complete race legs");
   assert.equal(await page.locator(".rr-pt-interim-model-label").count(),0,"scratch-day status banner is not customer-facing");
+  assert.equal(await page.locator(".rr-pt-source-check").count(),0,"internal source verification notice stays off the user interface");
+  assert.doesNotMatch(await page.locator("#rr-pt-current").innerText(),/SOURCE CHECK.*Customer access remains disabled/i);
   assert.equal(await page.locator(".rr-pt-wager-name").innerText(),"Rail & Rye Ticket","legacy interim title normalized for customers");
   assert.doesNotMatch(await page.locator("#rr-pt-current").innerText(),/interim|changed-jockey scoring still pending/i);
 
