@@ -308,3 +308,13 @@
 
 .rr-pt-review-notice{margin:0;padding:9px 12px;border-bottom:1px solid #e0d0b0;background:#fff7e7;color:#5c4b29;font:750 11px/1.4 Inter,Arial,system-ui,sans-serif}
 .rr-pt-ticket-screen .rr-pt-review-notice+.rr-pt-ticket-header{border-top:0}
+
+/* Dated official source changes, not an approximation of scored winners. */
+.rr-pt-scratch-list{display:grid;gap:4px;padding:4px 0 9px}
+.rr-pt-scratch-race{display:flex;align-items:center;gap:12px;min-height:46px;padding:6px 11px;border-bottom:1px solid #dde2e3;background:#fafbf9}
+.rr-pt-scratch-race:nth-child(even){background:#f0f2f0}
+.rr-pt-scratch-race>strong{flex:none;min-width:66px;color:#203e5b;font:850 12px/1.3 Inter,Arial,system-ui,sans-serif}
+.rr-pt-scratch-chips{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+.rr-pt-scratch-chip{display:inline-flex;align-items:center;min-width:37px;min-height:37px}
+.rr-pt-scratch-chip .rr-pt-chip{width:34px;height:34px}
+@media(max-width:420px){.rr-pt-scratch-race{gap:8px;padding:6px 7px}.rr-pt-scratch-race>strong{min-width:55px}.rr-pt-scratch-chips{gap:4px}}
