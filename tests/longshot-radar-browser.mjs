@@ -60,8 +60,8 @@ try{
    throw Error("Verified G1 must show approved grade trophy at "+width);
   const count=await page.locator(".rr-lr-card").count();
   if(count!==10)throw Error("Expected 10 published source-shaped horse rows at "+width+", got "+count);
-  if(!(await page.locator(".rr-dash-private-banner").innerText()).includes("PUBLISHED CARD"))
-   throw Error("Single publication notice must retain published-card status at "+width);
+  if(await page.locator(".rr-dash-private-banner").count())
+   throw Error("No internal publication or review status banner may appear at "+width);
   if(await page.locator("#rr-lr-stage,#rr-lr-date-title,#rr-lr-updated").count())
    throw Error("Redundant title/date/status blocks remained at "+width);
   if(await page.locator("#rr-lr-loading").isVisible())throw Error("Loading status remained after cards appeared at "+width);
