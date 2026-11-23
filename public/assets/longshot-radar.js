@@ -2,7 +2,7 @@
 (()=>{
 "use strict";
 const q=selector=>document.querySelector(selector);
-const state={editions:[],date:"",track:"",query:"",sort:"time"};
+const state={editions:[],date:"",sort:"post-time"};
 const status=q("#rr-lr-loading"),app=q("#rr-lr-app"),empty=q("#rr-lr-empty"),dialog=q("#rr-lr-dialog");
 const make=(tag,cls,content)=>{
  const element=document.createElement(tag);if(cls)element.className=cls;
@@ -71,11 +71,6 @@ function renderDates(){
  const dates=state.editions.map(item=>[item.race_date,dateLabel(item.race_date)]);
  state.date=options(q("#rr-lr-date"),dates,state.date);
 }
-function renderTracks(){
- const edition=currentEdition();
- const tracks=[...new Set((edition?.candidates||[]).map(item=>item.track))].sort((a,b)=>a.localeCompare(b));
- state.track=options(q("#rr-lr-track"),[["","All tracks"],...tracks.map(track=>[track,track])],state.track);
-}
 function market(label,value,cls){
  const item=make("div","rr-lr-market "+(cls||""));
  item.append(make("span","",label),make("strong","",value));
@@ -106,25 +101,28 @@ function showDetail(item){
  if(!dialog.open)dialog.showModal();
 }
 function makeCard(item){
- const card=make("article","rr-lr-card"),top=make("div","rr-lr-top"),identity=make("div","rr-lr-identity");
+ const card=make("article","rr-lr-card"),racebar=make("div","rr-lr-racebar");
+ racebar.append(make("h3","",item.track),make("span","rr-lr-race-number","RACE "+item.race_number));
+ if(item.post_time_et)racebar.append(make("span","rr-lr-post",item.post_time_et));
+ const top=make("div","rr-lr-top"),identity=make("div","rr-lr-identity");
  identity.append(make("strong","",item.horse_name));
- const parts=[item.track,"Race "+item.race_number];
- if(item.post_time_et)parts.push("Post "+item.post_time_et);
- identity.append(make("small","",parts.join(" · ")));
+ if(item.trainer||item.jockey){
+  identity.append(make("small","",[item.trainer,item.jockey].filter(Boolean).join(" | ")));
+ }
  const markets=make("div","rr-lr-markets");
  markets.append(
-  market("ORIGINAL M/L",item.original_morning_line),
-  market("TRI WIN",String(item.pwin_display)+"%","rr-lr-model"),
+  market("ML ODDS",item.original_morning_line),
+  market("WIN %",String(item.pwin_display)+"%","rr-lr-model"),
   market("FAIR ODDS",item.fair_odds_display)
  );
  top.append(programChip(item.program_number),identity,markets);
  const foot=make("div","rr-lr-card-foot");
- foot.append(make("span","","Source-backed selection · Research only"));
- const detail=make("button","","Full analysis");detail.type="button";
- detail.setAttribute("aria-label","Full Longshot Radar analysis for "+item.horse_name);
+ foot.append(make("span","","Original Timeform ML · Model price"));
+ const detail=make("button","","Race details");detail.type="button";
+ detail.setAttribute("aria-label","Read Longshot Radar analysis for "+item.horse_name+" at "+item.track+" race "+item.race_number);
  detail.addEventListener("click",()=>showDetail(item));
  foot.append(detail);
- card.append(top,make("p","rr-lr-case",item.betting_case),foot);
+ card.append(racebar,top,make("p","rr-lr-case",item.betting_case),foot);
  return card;
 }
 function renderCandidates(){
@@ -133,17 +131,15 @@ function renderCandidates(){
  q("#rr-lr-date-title").textContent=dateLabel(edition.race_date);
  q("#rr-lr-stage").textContent=edition.status==="prescratch"?"INITIAL · CURRENT":"SCRATCH-UPDATED";
  q("#rr-lr-updated").textContent="Production "+timeLabel(edition.generated_at)+" · revision "+edition.revision;
- let candidates=edition.candidates.filter(item=>(!state.track||item.track===state.track)&&(
-  !state.query||[item.horse_name,item.track,"race "+item.race_number,item.program_number].some(value=>String(value).toLocaleLowerCase("en-US").includes(state.query))
- ));
+ let candidates=[...edition.candidates];
  candidates=orderByDay(candidates,state.sort);
- q("#rr-lr-count").textContent=candidates.length+" shown · "+edition.candidates.length+" approved "+(edition.candidates.length===1?"horse":"horses")+" · "+(state.sort==="time"?"Post-time order":"Track order");
+ q("#rr-lr-count").textContent=candidates.length+" shown · "+edition.candidates.length+" approved "+(edition.candidates.length===1?"horse":"horses")+" · "+(state.sort==="post-time"?"Post-time order":"Track order");
  if(!candidates.length){
   target.replaceChildren(make("div","rr-lr-list-empty",edition.candidates.length?"No candidates match these filters.":"No selections in this approved edition. Longshot Radar does not force a daily pick."));
  }else target.replaceChildren(...candidates.map(makeCard));
 }
 function refreshView(){
- renderDates();renderTracks();renderCandidates();
+ renderDates();renderCandidates();
  empty.hidden=true;app.hidden=false;
 }
 async function load(){
@@ -159,10 +155,8 @@ async function initialize(){
  catch(e){status.textContent=e.message||"Private review failed to load.";status.hidden=false;app.hidden=true;}
 }
 q("#rr-lr-date").addEventListener("change",event=>{
- state.date=event.target.value;state.track="";state.query="";q("#rr-lr-search").value="";renderTracks();renderCandidates();
+ state.date=event.target.value;renderCandidates();
 });
-q("#rr-lr-track").addEventListener("change",event=>{state.track=event.target.value;renderCandidates();});
-q("#rr-lr-search").addEventListener("input",event=>{state.query=event.target.value.trim().toLocaleLowerCase("en-US");renderCandidates();});
 q("#rr-lr-sort").addEventListener("change",event=>{state.sort=event.target.value;renderCandidates();});
 q("#rr-lr-close").addEventListener("click",()=>dialog.close());
 q("#rr-lr-upload-form").addEventListener("submit",async event=>{
@@ -177,7 +171,7 @@ q("#rr-lr-upload-form").addEventListener("submit",async event=>{
   const result=await response.json();
   if(!response.ok)throw Error(result.error||"Unable to save Radar review.");
   feedback.textContent="Private review saved for "+result.race_date+" · revision "+result.revision+". No customer publication occurred.";
-  state.date=result.race_date;state.track="";state.query="";q("#rr-lr-search").value="";
+  state.date=result.race_date;
   await load();
  }catch(e){feedback.textContent=e.message||"Unable to read the file.";}
  finally{button.disabled=false;}
