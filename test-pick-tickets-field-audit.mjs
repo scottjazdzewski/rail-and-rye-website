@@ -173,7 +173,7 @@ const blocked=await handleAdminProjectionBatchUpload(new Request(
  method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({cards:[invalid]})}),env);
 assert.notEqual(blocked.status,200,"incomplete source must not displace current tickets");
 assert.equal(await projectionFieldFingerprint(JSON.parse(await (await env.CARDS_BUCKET.get(sourceKey)).text())),
- currentAudit.source_sha256,"bad upload leaves published source unchanged");
+ refreshedAudit.source_sha256,"bad upload leaves published source unchanged");
 
 // A subsequent official scratched runner changes the source and must be
 // represented by a new field and new model scores; baseline alone is not enough.
