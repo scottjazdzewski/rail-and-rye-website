@@ -19,6 +19,12 @@ const fixture={cards:[{
   ],scratches:[]
  }]}
 }]};
+fixture.cards[0].card.races.push({
+ ...fixture.cards[0].card.races[0],race_number:5,
+ scratches:[{program_number:"6",horse_name:"Scratch Six"},
+ {program_number:"7",horse_name:"Scratch Seven"},
+ {program_number:"9",horse_name:"Scratch Nine"}],scratch_count:3
+});
 const root=resolve("public");
 const types={".html":"text/html;charset=utf-8",".js":"text/javascript;charset=utf-8",
  ".css":"text/css;charset=utf-8",".png":"image/png",".jpg":"image/jpeg",
@@ -51,6 +57,8 @@ try{
   await page.goto(url,{waitUntil:"domcontentloaded"});
   const triplet=page.locator("#rr-dash-race .rr-dash-race-tiles");
   await triplet.waitFor({state:"visible",timeout:15000});
+  const headerNoScratches=await page.locator("#rr-dash-race .rrp-race-head").evaluate(el=>el.getBoundingClientRect().height);
+  assert.match(await page.locator("#rr-dash-race .rrp-race-head__scratch-bar").innerText(),/NO SCRATCHES LISTED/);
   const result=await page.evaluate(()=>{
    const tiles=[...document.querySelectorAll("#rr-dash-race .rr-dash-race-tile")];
    const viewport=document.documentElement.clientWidth;
@@ -72,7 +80,8 @@ try{
       center:(rect.left+rect.right)/2,loaded:!!img?.naturalWidth,
       valueFits:!!value&&value.scrollWidth<=value.clientWidth+1};
     }),
-    extraneousNote:!!document.querySelector(".rr-dash-factor-origin-note,.rr-dash-race-summary")
+    extraneousNote:!!document.querySelector(".rr-dash-factor-origin-note,.rr-dash-race-summary"),
+     tripletHeight:triplet.getBoundingClientRect().height
    };
   });
   assert.deepEqual(errors,[],"No JavaScript errors at "+width);
@@ -81,6 +90,7 @@ try{
   assert.equal(result.stripGrid,3,"Three centered columns at "+width);
   assert.ok(result.documentWidth<=result.viewport+1,"No horizontal overflow at "+width);
   assert.equal(result.extraneousNote,false,"No old model or calculation explanation");
+  assert.ok(result.tripletHeight<=92,"Compact centered facts at "+width+": "+result.tripletHeight);
   const expected=["fact_pace_moderate.png","fact_surface_dirt.png","fact_distance.png"];
   for(let i=0;i<3;i++){
    const tile=result.tiles[i];
@@ -94,6 +104,16 @@ try{
    if(i)assert.ok(Math.abs(tile.rect.width-result.tiles[0].rect.width)<=1.1,"All tiles equal width at "+width);
   }
   await triplet.screenshot({path:"test-artifacts/race-facts-mobile-"+width+".png"});
+  await page.locator('#rr-dash-races .rr-dash-race-button[data-race-number="5"]').click();
+  await page.locator("#rr-dash-race .rrp-race-head__scratch-count").getByText("3 SCRATCHES").waitFor();
+  const headerWithScratches=await page.locator("#rr-dash-race .rrp-race-head").evaluate(el=>el.getBoundingClientRect().height);
+  assert.ok(Math.abs(headerNoScratches-headerWithScratches)<=1.1,
+   "Scratch/no-scratch headers must be equal at "+width+": "+headerNoScratches+" vs "+headerWithScratches);
+  assert.equal(await page.locator(".rrp-race-head__scratch-chip img").count(),3,
+   "All genuine scratched saddlecloths remain visible");
+  const laneHeight=await page.locator(".rrp-race-head__scratch-bar").evaluate(el=>el.getBoundingClientRect().height);
+  assert.ok(laneHeight<=40.1,"Scratch lane stays compact at "+width);
+  await page.locator(".rrp-race-head__scratch-bar").screenshot({path:"test-artifacts/race-scratches-mobile-"+width+".png"});
   await page.close();
   console.log("PASS centered Pace/Surface/Distance art at "+width+"px");
  }
