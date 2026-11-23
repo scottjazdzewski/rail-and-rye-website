@@ -91,7 +91,7 @@ try{
       ml:styles(".rr-lr-ml-inline"),win:styles(".rr-lr-model strong"),
       fair:styles(".rr-lr-fair strong"),numericLabel:styles(".rr-lr-market span"),
       markets:styles(".rr-lr-markets"),analysis:styles(".rr-lr-inline-analysis .rr-lr-case"),
-      marketBoxes:[...el(".rr-lr-markets").children].map(x=>x.getBoundingClientRect().top),
+      marketBoxes:[...el(".rr-lr-markets").children].map(x=>{const v=x.getBoundingClientRect();return {x:v.x,y:v.y,w:v.width,h:v.height};}),
       gaps:parseFloat(getComputedStyle(el(".rr-lr-candidates")).gap),
       main:styles(".rr-lr-main"),
       bodyWidth:document.body.scrollWidth,htmlWidth:document.documentElement.scrollWidth
@@ -121,9 +121,13 @@ try{
     throw Error("Full 17px source analysis hidden/truncated at "+width+": "+JSON.stringify(visual.analysis));
   if(!approx(visual.gaps,8)||!approx(visual.card.radius,7))
     throw Error("8px row spacing and 7px card corners required at "+width);
-  if(visual.marketBoxes.some(y=>Math.abs(y-visual.marketBoxes[0])>.5)||
+  const [winBox,fairBox]=visual.marketBoxes;
+  const marketsShareRow=winBox&&fairBox&&winBox.x+winBox.w<=fairBox.x+1&&
+    Math.min(winBox.y+winBox.h,fairBox.y+fairBox.h)-Math.max(winBox.y,fairBox.y)>5;
+  if(!marketsShareRow||
     visual.markets.bg!=="rgba(0, 0, 0, 0)"&&visual.markets.bg!=="rgb(255, 255, 255)")
-    throw Error("WIN + FAIR must stay right-aligned, side-by-side, without gray box at "+width);
+    throw Error("WIN + FAIR must stay right-aligned on the same row without a gray box at "+width+": "+
+      JSON.stringify({boxes:visual.marketBoxes,bg:visual.markets.bg}));
   if(width<=430&&(visual.main.padding<9.9||visual.main.padding>12.1))
     throw Error("Main left/right mobile padding must be 10–12px at "+width);
   if(visual.bodyWidth>width+1||visual.htmlWidth>width+1)
