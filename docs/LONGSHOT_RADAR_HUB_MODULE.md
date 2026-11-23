@@ -36,6 +36,12 @@ Each candidate requires:
 - `source_causal_evidence` and `counterargument_checked`: verifiable production-authored details used in the analysis drawer.
 - Optional `post_time_et`, `trainer`, `jockey`, only if verified by production.
 
+## Additional exact TRI cross-check on private uploads
+
+The Radar admin POST now reads the existing private `projections/dashboard/YYYY-MM-DD/*.json` projection cards for that race date. It refuses an upload unless the complete TRI card is available and every source race sums to 100% exact PWIN with matching F4 first-place probabilities. For every proposed candidate, server-side checks require the **same original track, race number, saddlecloth/program number, horse identity, unrounded exact TRI PWIN, displayed win percentage and original Timeform morning line**. No matching private projection card means **HOLD**, including an approved empty day. A scratch-updated Radar cannot be matched to a prescratch-only projection. This is provenance cross-checking, **not scoring** and does not verify independent handicapping rationale or actual source receipts.
+
+Do not upload a review JSON created by transcribing rounded values from an existing Radar PDF; it cannot pass as a signed exact-PWIN source. See the canonical TRI direct-to-R2 publisher in `scripts/tri_dashboard_sync.py`.
+
 ## Frozen Longshot Radar selection gates
 
 The current controlling November 20 evidence-first authority (in the permanent Longshot Radar Google Drive production folder) requires **all four**:
