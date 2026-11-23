@@ -23,10 +23,15 @@ function runner(input,label){
  const morning_line=field(input.morning_line,label+" morning line",24);
  if(typeof input.win_probability!=="number"||!Number.isFinite(input.win_probability)||input.win_probability<0||input.win_probability>100)
   throw Error(label+" win probability must be an exact supplied number from 0 through 100.");
+ const win_probability_exact=input.win_probability_exact;
+ if(typeof win_probability_exact!=="number"||!Number.isFinite(win_probability_exact)||win_probability_exact<0||win_probability_exact>100)
+  throw Error(label+" requires verified, unrounded full-field PWIN percent.");
+ if(Math.round((win_probability_exact+Number.EPSILON)*10)/10!==input.win_probability)
+  throw Error(label+" displayed PWIN disagrees with the verified unrounded value.");
  const fair_odds=field(input.fair_odds,label+" fair odds",32);
  const trainer=field(input.trainer,label+" trainer",100,false);
  const jockey=field(input.jockey,label+" jockey",100,false);
- return {program_number,horse_name,morning_line,win_probability:input.win_probability,fair_odds,trainer,jockey};
+ return {program_number,horse_name,morning_line,win_probability:input.win_probability,win_probability_exact,fair_odds,trainer,jockey};
 }
 export function validateTargetList(input){
  if(!object(input))throw Error("Target List must be a structured JSON object.");
@@ -57,9 +62,11 @@ export function validateTargetList(input){
   if(tier&&tier!=="PRIME"&&tier!=="STRONG")throw Error("Target tier must be PRIME or STRONG only when supplied by production.");
   const favorite=runner(entry.favorite,"Favorite");
   const attack=runner(entry.attack,"ATTACK");
-  if(attack.win_probability<=favorite.win_probability)throw Error("ATTACK must have higher certified PWIN than the favorite.");
+  if(attack.win_probability_exact-favorite.win_probability_exact<15)throw Error("ATTACK must exceed the favorite by at least 15.000000 verified PWIN percentage points.");
   if(attack.program_number===favorite.program_number)throw Error("Favorite and ATTACK must be different horses.");
   const also_live=entry.also_live==null?null:runner(entry.also_live,"ALSO LIVE");
+  if(also_live&&also_live.win_probability_exact-favorite.win_probability_exact<15)
+   throw Error("ALSO LIVE must exceed the favorite by at least 15.000000 verified PWIN percentage points.");
   const programs=[favorite.program_number,attack.program_number,also_live?.program_number].filter(Boolean);
   if(new Set(programs).size!==programs.length)throw Error("Horse roles must refer to distinct program numbers.");
   const scratches=entry.scratches==null?[]:entry.scratches;
