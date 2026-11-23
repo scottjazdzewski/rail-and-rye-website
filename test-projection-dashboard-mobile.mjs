@@ -8,7 +8,9 @@ assert.match(css,/\.rr-dash-race-tiles\{grid-template-columns:repeat\(2,minmax\(
 assert.match(css,/\.rr-dash-metric-group\{grid-area:metrics;grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/,"Mobile ratings must occupy a single, compact five-column strip");
 assert.doesNotMatch(js,/Trainer not listed \| Jockey not listed/,"Do not repeat source-data warnings on customer runner rows");
 assert.match(css,/\.rr-dash-race-tile:last-child\{grid-column:1\/-1(?:;|\})/,"Distance must use a full-width mobile row");
-assert.match(css,/grid-template-areas:"program horse market" "metrics metrics metrics"/,"Phone market must sit beside horse heading");
+assert.match(css,/grid-template-areas:"program horse market" "metrics metrics metrics" "analysis analysis analysis"/,"Phone layout must include the dedicated analysis footer");
+assert.match(css,/\.rr-dash-win\{grid-area:market;[^}]*align-items:center/,"Mobile win and fair odds must be horizontally centered");
+assert.match(css,/\.rr-dash-horse-dialog\{position:fixed;inset:auto 0 0/,"Mobile details must open as a bottom drawer");
 assert.doesNotMatch(css,/grid-template-areas:"program horse" "market market"/,"Remove old tall mobile runner layout");
 assert.match(css,/\.rr-dash-horse-name\{flex:0 1 auto;[^}]*overflow:visible;[^}]*white-space:normal/,"Mobile horse names must not be clipped");
 assert.match(css,/\.rr-dash-race-purse\[data-missing="true"\]/,"Missing purse must be flagged in private preview");
@@ -24,9 +26,9 @@ class Element {
  setAttribute(name,value){this.attributes[name]=String(value);}
  getAttribute(name){return this.attributes[name]??null;}
  removeAttribute(name){delete this.attributes[name];}
- addEventListener(){}
+ addEventListener(name,callback){this.events??={};this.events[name]=callback;}
  querySelectorAll(selector){const items=[];const visit=element=>{for(const child of element.children){if(selector==="button"&&child.tagName==="BUTTON")items.push(child);visit(child);}};visit(this);return items;}
- showModal(){}
+ showModal(){this.opened=true;}
  close(){}
 }
 const ids=["rr-dash-status","rr-dash-app","rr-dash-login","rr-dash-empty","rr-dash-date","rr-dash-track","rr-dash-race-time","rr-dash-races","rr-dash-race","rr-dash-horses","rr-dash-search","rr-dash-sort","rr-dash-open-pdf","rr-dash-download-pdf","rr-dash-update","rr-dash-horse-dialog","rr-dash-horse-title","rr-dash-horse-detail","rr-dash-horse-close"];
@@ -57,4 +59,17 @@ assert.equal(allClass(horses,"rr-dash-win-percent")[0].textContent,"27.5%");
 assert.equal(allClass(horses,"rr-dash-win-fair")[0].textContent,"FAIR 5/2");
 assert.ok(allClass(horses,"rr-dash-metric-value").length===10,"All five factors must remain visible on every horse");
 assert.ok(!/RANK/i.test(horses.textContent),"No visible ranking");
+const disclosure=allClass(horses,"rr-dash-full-analysis")[0];
+assert.ok(disclosure&&disclosure.events?.click,"Full Analysis must be actionable");
+assert.match(horses.textContent,/Trainer: Brad Cox  \|  Jockey: Jose Ortiz/,"Connections belong beneath Full Analysis on the phone");
+disclosure.events.click();
+assert.equal(els.get("rr-dash-horse-dialog").opened,true,"Full Analysis must open a dialog");
+const sheet=matchClass(els.get("rr-dash-horse-detail"),"rr-dash-mobile-analysis");
+assert.ok(sheet,"Full Analysis must populate the mobile sheet");
+assert.match(sheet.textContent,/RACE CONTEXT/);
+assert.match(sheet.textContent,/FIVE-FACTOR READOUT/);
+assert.match(sheet.textContent,/Brad Cox/);
+assert.match(sheet.textContent,/Jose Ortiz/);
+assert.match(sheet.textContent,/27.5%/);
+assert.match(sheet.textContent,/FAIR 5\/2/);
 console.log("PASS: dashboard data -> race purse, scratches/chips, ML, connections, fair odds and compact phone rules");
