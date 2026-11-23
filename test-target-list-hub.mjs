@@ -212,6 +212,18 @@ const drawerFacts=tree(elements.get("rr-target-dialog-content"),el=>el.className
 assert.ok(drawerFacts?.textContent.includes("First Lady Stakes"),"Analysis drawer retains full canonical race name");
 assert.ok(tree(drawerFacts,el=>el.className==="rr-ed-grade-trophy rr-ed-grade-trophy--g1"),
  "Grade 1 trophy stays in drawer details as well");
+// If the independent formatter is temporarily blocked, preserve the full
+// stakes name but suppress any trophy not revalidated by that formatter.
+context.RRRaceTitles=undefined;
+elements.get("rr-target-sort").events.change();
+const fallbackCard=elements.get("rr-target-list").children.find(item=>
+ tree(item,el=>el.tagName==="H3")?.textContent==="Synthetic Test Track");
+const fallbackFacts=tree(fallbackCard,el=>el.className==="rr-target-race-facts");
+assert.ok(fallbackFacts?.textContent.includes("First Lady Stakes"),
+ "The source race title must remain fully written without external helper");
+assert.ok(!tree(fallbackFacts,el=>String(el.className||"").includes("rr-ed-grade-trophy")),
+ "No trophy should appear if canonical source grade validation is unavailable");
+
 assert.ok(tree(card,el=>el.className==="rr-target-ml-inline"&&el.textContent==="ML 5-1"),"Mobile shows the unchanged source morning line alongside the horse.");
 assert.ok(tree(card,el=>el.className==="rr-target-stat-value"&&el.textContent==="4-1"),"US tote-style fair-odds formatting is display-only.");
 
