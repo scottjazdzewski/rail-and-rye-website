@@ -81,6 +81,10 @@ The single source of truth for **horse saddle chips**, authentic saddlecloth-bac
 - The entire horse row is tappable to open the same verified detail drawer. Remove repetitive "Analysis" button/link text on every runner. Maintain a keyboard-accessible named horse-details button.
 - Compact row height follows content (~114–135px for ordinary rows on phone), expanding naturally for long names or connections. Five factor dashes remain source-authentic, with enough type contrast to read labels.
 - Track header/date, race title/purse/time/runner count and pace/surface/distance should be tight.
+- **Mobile-first race facts (design candidate pending visual sign-off):** Projections and its member view now use one shared `public/assets/rr-race-facts.css` for three equal-width, *center-aligned* Pace / Surface / Distance tiles. The genuine approved `fact_pace_*`, `fact_surface_*`, and `fact_distance.png` badges are centered above their uppercase labels and title-case values; missing facts show an em dash without fabricating a rating.
+- **Mobile viewport authority:** Badge sizes must be tested at 320, 360, 375, 390 and 430px, with no overlap, clipped text, broken image, or horizontal scroll. The CI runner `test-projection-race-facts-browser.mjs` creates five screenshot artifacts and tests badge width/centering. This is the mobile design for user review; desktop typography/spacing is intentionally postponed until mobile is approved.
+- **No system narration in readers:** Hide private source stage information, five-factor recalculation notices, workflow instructions, upload notes, and lengthy model-explainer text. Preserve approved race analysis and decision-critical wagering labels and cautions, plus every projection, scratch and receipt validation. No silently changed scores or inferred probabilities.
+
 - Pick Tickets, Longshot Radar and Target List should use **equivalently compact panels**, not force a projection-specific row template or extra graphs.
 - Do not crowd dark backgrounds or dark overlays onto editorial hero art. Keep users out of needless scrolling before the first meaningful data.
 
