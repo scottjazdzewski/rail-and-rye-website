@@ -15,7 +15,7 @@
   return node;
  };
  const state={race:null,track:"",date:"",type:"exacta",mode:"wheel",
-              base:1,positions:[new Set(),new Set(),new Set()],box:new Set()};
+              base:1,positions:[new Set(),new Set(),new Set()],box:new Set(),loading:false,modelError:"",requestId:0};
  let dialog=null;
  function horseChip(program){
   const value=String(program||"").toUpperCase();
@@ -80,36 +80,62 @@
   state.positions=[new Set(),new Set(),new Set()];
   state.box.clear();render();
  }
+ // The published frozen F4 conditional law is mathematically identical
+ // to the signed full ordered-prefix CSV. The Worker validates the source
+ // receipt, exact active field and P1/P2/P3 marginals before serving it.
  function verifiedDistribution(entries,kind){
   const dist=state.race?.f4_ordered_probabilities;
-  if(!dist||dist.schema_version!==1||dist.model_id!==F4_MODEL||
-     dist.status!=="verified"||!(/^[a-f0-9]{64}$/i.test(String(dist.receipt_sha256||""))))return null;
-  const values=dist[kind];
-  if(!Array.isArray(values))return null;
-  const expectedPrograms=entries.map(e=>String(e.program_number));
-  const available=new Set(expectedPrograms);
-  const n=kind==="exacta"?2:3;
-  const expectedLength=expectedPrograms.length===2&&n===3?0:
-   expectedPrograms.length*(expectedPrograms.length-1)*(n===3?expectedPrograms.length-2:1);
-  if(values.length!==expectedLength)return null;
-  const map=new Map();let sum=0;
-  for(const item of values){
-   const parts=item?.programs,p=item?.probability;
-   if(!Array.isArray(parts)||parts.length!==n||parts.some(x=>typeof x!=="string"||!available.has(x))||
-      new Set(parts).size!==n||typeof p!=="number"||!Number.isFinite(p)||p<0||p>1)return null;
-   const key=parts.join("|");
-   if(map.has(key))return null;
-   map.set(key,p);sum+=p;
+  if(!dist||dist.schema_version!==2||dist.model_id!==F4_MODEL||
+    dist.status!=="verified"||dist.scratch_state!=="PRESCRATCH"||
+    dist.date!==state.date||dist.track!==state.track||
+    dist.race_number!==state.race?.race_number||
+    !(/^[a-f0-9]{64}$/i.test(String(dist.receipt_sha256||"")))||
+    !(/^[a-f0-9]{64}$/i.test(String(dist.prefix_sha256||""))))return null;
+  const programs=dist.programs;
+  if(!Array.isArray(programs)||programs.length!==entries.length||
+    !Array.isArray(dist.pwin)||!Array.isArray(dist.p2_weights)||
+    !Array.isArray(dist.p3_weights)||dist.pwin.length!==programs.length||
+    dist.p2_weights.length!==programs.length||dist.p3_weights.length!==programs.length||
+    new Set(programs).size!==programs.length)return null;
+  const field=new Map(entries.map(e=>[String(e.program_number),e]));
+  if(field.size!==programs.length||programs.some(p=>!field.has(p)))return null;
+  const p1=new Map(),p2=new Map(),p3=new Map();
+  for(let i=0;i<programs.length;i++){
+   const program=programs[i],a=dist.pwin[i],b=dist.p2_weights[i],c=dist.p3_weights[i];
+   const horse=field.get(program);
+   if(!Number.isFinite(a)||a<=0||a>=1||
+      !Number.isFinite(b)||b<=0||!Number.isFinite(c)||c<=0||
+      !Number.isFinite(horse?.win_probability_exact)||
+      Math.abs(a-horse.win_probability_exact/100)>1e-8)return null;
+   p1.set(program,a);p2.set(program,b);p3.set(program,c);
   }
-  if(Math.abs(sum-1)>0.000001)return null;
-  return map;
+  if(Math.abs([...p1.values()].reduce((a,b)=>a+b,0)-1)>1e-8)return null;
+  const sum2=[...p2.values()].reduce((a,b)=>a+b,0),sum3=[...p3.values()].reduce((a,b)=>a+b,0);
+  const map=new Map();let mass=0;
+  for(const first of programs){
+   const denom2=sum2-p2.get(first);
+   if(denom2<=0)return null;
+   for(const second of programs){
+    if(second===first)continue;
+    const prob2=p1.get(first)*p2.get(second)/denom2;
+    if(kind==="exacta"){map.set(first+"|"+second,prob2);mass+=prob2;continue;}
+    const denom3=sum3-p3.get(first)-p3.get(second);
+    if(denom3<=0)return null;
+    for(const third of programs){
+     if(third===first||third===second)continue;
+     const prob3=prob2*p3.get(third)/denom3;
+     map.set(first+"|"+second+"|"+third,prob3);mass+=prob3;
+    }
+   }
+  }
+  return Math.abs(mass-1)<=1e-8?map:null;
  }
  function calculate(entries){
   const combos=combinations(),cost=Number((combos.length*state.base).toFixed(2));
   const probabilities=verifiedDistribution(entries,state.type);
   const complete=probabilities!==null&&combos.every(x=>probabilities.has(x.join("|")));
   const chance=complete?combos.reduce((sum,x)=>sum+probabilities.get(x.join("|")),0):null;
-  const fair=chance!==null&&chance>0?cost/chance:null;
+  const fair=chance!==null&&chance>0?Math.ceil((cost/chance)*100-1e-9)/100:null;
   return {combos,cost,chance,fair,probabilities:complete?probabilities:null};
  }
  function button(text,selected,fn,cls){
@@ -178,12 +204,13 @@
   const stat=(label,value)=>{const d=el("div","rr-bet-stat");d.append(el("span","",label),el("strong","",value));return d;};
   stats.append(stat("Combinations",result.combos.length.toLocaleString("en-US")));
   stats.append(stat("Ticket cost",CASH(result.cost)));
-  stats.append(stat("F4 hit chance",result.chance===null?"Not available":(result.chance*100).toFixed(2)+"%"));
-  stats.append(stat("Equal-payout break-even",result.fair===null?"Not available":CASH(result.fair)));
+  stats.append(stat("Projected hit chance",result.chance===null?"Not available":(result.chance*100).toFixed(2)+"%"));
+  stats.append(stat("Minimum break-even gross payout*",result.fair===null?"Not available":CASH(result.fair)));
   body.append(stats);
   const info=el("p","rr-bet-disclaimer",result.probabilities?
-    "Hit probabilities come from certified F4 ordered combinations. Break-even assumes the same gross payout for every covered winning combination; actual tote returns differ.":
-    "Ticket cost is calculated. Certified F4 ordered-combination probabilities have not been published for this race, so no hit chance or fair payout is claimed.");
+    "F4 hit chance uses the verified ordered finish model. *For boxes/wheels, the minimum gross payout assumes every covered winning combination pays the SAME amount; actual payouts vary. Compare the payout for your selected denomination against the live tote yourself. Higher than break-even is needed for positive model value.":
+    state.loading?"Checking the private certified F4 finishing probabilities for this race…":
+    "Ticket cost is calculated. The current field has no matching verified F4 ordered data: no hit chance or break-even payout can be shown.");
   body.append(info);
   const details=el("details","rr-bet-combos");
   details.append(el("summary","","Show "+result.combos.length+" covered combinations"));
@@ -196,8 +223,8 @@
    if(result.probabilities){
     const probability=result.probabilities.get(combo.join("|"));
     line.append(el("span","rr-bet-combo-prob",
-      (probability*100).toFixed(3)+"% · fair "+
-      (probability>0?CASH(state.base/probability):"—")));
+      (probability*100).toFixed(3)+"% · break-even gross "+
+      (probability>0?CASH(Math.ceil((state.base/probability)*100-1e-9)/100):"—")));
    }
    list.append(line);
   }
@@ -206,12 +233,34 @@
   details.append(list);body.append(details);
   dialog.replaceChildren(body);
  }
+ async function loadCertifiedF4(options,sequence){
+  if(typeof fetch!=="function"){
+   state.loading=false;render();return;
+  }
+  try{
+   const url=(options.preview?"/api/admin/projections-f4":"/api/membership/projections-f4")+"?"+
+    new URLSearchParams({date:state.date,track:state.track,race:String(state.race.race_number)});
+   const response=await fetch(url,{credentials:"same-origin",cache:"no-store"});
+   if(!response.ok)throw Error("The certified ordered model for this race is unavailable.");
+   const data=await response.json();
+   if(sequence!==state.requestId||!state.race)return;
+   if(!data?.f4||data.f4.model_id!==F4_MODEL||data.f4.status!=="verified")
+    throw Error("The model receipt does not match the current race.");
+   state.race.f4_ordered_probabilities=data.f4;
+   state.loading=false;render();
+  }catch(error){
+   if(sequence!==state.requestId)return;
+   state.loading=false;state.modelError=String(error?.message||"Model unavailable");render();
+  }
+ }
  function open(options){
   const race=options?.race;
   if(!race||!Array.isArray(race.entries)||race.entries.length<2)return;
   state.race=race;state.track=String(options.track||"");state.date=String(options.date||"");
-  state.type="exacta";state.mode="wheel";state.base=1;
+  state.type="exacta";state.mode="wheel";state.base=1;state.loading=true;state.modelError="";
   state.positions=[new Set(),new Set(),new Set()];state.box=new Set();
+  delete state.race.f4_ordered_probabilities;
+  const request=++state.requestId;
   if(!dialog){
    dialog=el("dialog","rr-bet-dialog");
    dialog.setAttribute("aria-label","Rail & Rye exotic Bet Builder");
@@ -219,6 +268,7 @@
    dialog.addEventListener("click",event=>{if(event.target===dialog)dialog.close();});
   }
   render();if(!dialog.open)dialog.showModal();
+  loadCertifiedF4(options,request);
  }
  window.RRBetBuilder=Object.freeze({open,
    // Narrow testing hooks. Pure calculation never uses live market data.
