@@ -64,7 +64,6 @@
 .rr-pt-tier[aria-pressed="true"]{border-color:var(--navy);background:var(--navy);color:#fff}
 .rr-pt-wager-meta{display:flex;align-items:baseline;justify-content:space-between;gap:7px 15px;flex-wrap:wrap;padding:12px 15px 10px}
 .rr-pt-wager-name{color:#183e64;font-size:14px;font-weight:850;overflow-wrap:anywhere}
-.rr-pt-probability{color:#6a7f91;font-size:10px;font-weight:850;letter-spacing:.05em}
 .rr-pt-race-rows{min-width:0;padding:0 12px 7px}
 .rr-pt-race-row{
  display:grid;grid-template-columns:92px minmax(0,1fr);align-items:center;gap:10px;
@@ -185,10 +184,9 @@
 .rr-pt-mode-button:not([aria-pressed="true"]):hover{background:#f0f0ed}
 .rr-pt-wager-meta{padding:9px 13px}
 .rr-pt-ticket-stats{grid-template-columns:repeat(4,minmax(0,1fr));padding:10px 11px}
-.rr-pt-stat{gap:3px}
-.rr-pt-stat strong{font-size:20px}
-.rr-pt-hit-stat strong{color:#0c3861;font-size:23px}
-.rr-pt-stat span{font-size:8px;letter-spacing:.035em}
+.rr-pt-stat{gap:5px}
+.rr-pt-stat strong{font-size:22px}
+.rr-pt-stat span{font-size:10px;letter-spacing:.02em;line-height:1.2}
 .rr-pt-pending{font-size:8px;font-weight:700;color:#87939b;line-height:1.1}
 .rr-pt-total-stat{padding-left:8px}
 .rr-pt-builder-intro{padding:13px 14px 7px}
@@ -239,9 +237,8 @@
  .rr-pt-track-mark img{max-width:95px;height:42px}
  .rr-pt-brand-track{display:none}
  .rr-pt-ticket-stats{gap:4px;padding:9px 7px}
- .rr-pt-stat strong{font-size:18px}
- .rr-pt-hit-stat strong{font-size:21px}
- .rr-pt-stat span{font-size:7.5px}
+ .rr-pt-stat strong{font-size:20px}
+ .rr-pt-stat span{font-size:10px}
  .rr-pt-builder-row{grid-template-columns:61px minmax(0,1fr);gap:4px}
  .rr-pt-builder-chips{gap:2px}
  .rr-pt-runner-button{min-width:41px;min-height:41px}
@@ -249,8 +246,8 @@
 @media(max-width:340px){
  .rr-pt-brand-wordmark small{display:none}
  .rr-pt-track-mark img{max-width:83px}
- .rr-pt-stat span{font-size:7px}
- .rr-pt-stat strong{font-size:17px}
+ .rr-pt-stat span{font-size:9px}
+ .rr-pt-stat strong{font-size:19px}
  .rr-pt-mode-button{padding:7px 5px;font-size:11px}
 }
 
