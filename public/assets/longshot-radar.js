@@ -4,7 +4,7 @@
 const q=selector=>document.querySelector(selector);
 const designOnly=document.body?.dataset?.rrDesignOnly==="true"; // Public visual shell: NO admin API and NO paid data.
 const state={editions:[],date:"",sort:"post-time",demo:false};
-const status=q("#rr-lr-loading"),app=q("#rr-lr-app"),empty=q("#rr-lr-empty"),dialog=q("#rr-lr-dialog");
+const status=q("#rr-lr-loading"),app=q("#rr-lr-app"),empty=q("#rr-lr-empty");
 const make=(tag,cls,content)=>{
  const element=document.createElement(tag);if(cls)element.className=cls;
  if(content!==undefined&&content!==null)element.textContent=String(content);
@@ -127,8 +127,8 @@ function refreshView(){
 }
 async function load(){
  state.demo=false;
- q("#rr-lr-demo-alert").hidden=true;
- q("#rr-lr-demo-button").textContent="Preview layout";
+ if(q("#rr-lr-demo-alert"))q("#rr-lr-demo-alert").hidden=true;
+ if(q("#rr-lr-demo-button"))q("#rr-lr-demo-button").textContent="Preview layout";
  const editorialResponse=await fetch("/api/admin/longshot-radar-editorial",{credentials:"same-origin",cache:"no-store"});
  if(editorialResponse.ok){
   const editorial=await editorialResponse.json();
@@ -193,7 +193,7 @@ q("#rr-lr-date").addEventListener("change",event=>{
  state.date=event.target.value;renderCandidates();
 });
 q("#rr-lr-sort").addEventListener("change",event=>{state.sort=event.target.value;renderCandidates();});
-q("#rr-lr-close")?.addEventListener("click",()=>dialog.close());
+
 q("#rr-lr-upload-form")?.addEventListener("submit",async event=>{
  event.preventDefault();
  const feedback=q("#rr-lr-upload-status"),file=q("#rr-lr-file").files?.[0],button=event.currentTarget.querySelector("button");
