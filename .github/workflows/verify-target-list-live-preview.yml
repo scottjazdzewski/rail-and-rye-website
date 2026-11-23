@@ -22,6 +22,12 @@ jobs:
             url="https://railandryeracing.com/assets/target-list-dashboard.js?rr_review_check=${GITHUB_SHA}-${attempt}-$(date +%s)"
             code=$(curl -L -sS --connect-timeout 10 --max-time 20 -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' -w '%{http_code}' -o /tmp/target-list-live.js "$url" || true)
             echo "Production asset probe attempt $attempt: HTTP $code"
+            if [ "$attempt" -eq 1 ]; then
+              for marker in '/api/admin/target-list-review' 'const tote=value' 'rr-target-runner-info' 'rr-target-analyze'; do
+                if grep -Fq "$marker" /tmp/target-list-live.js; then echo "Live JS marker $marker = yes"; else echo "Live JS marker $marker = no"; fi
+              done
+              echo "Live JS first line: $(head -n 1 /tmp/target-list-live.js | cut -c 1-120)"
+            fi
             if [ "$code" = '200' ] && grep -Fq '/api/admin/target-list-review' /tmp/target-list-live.js &&
                grep -Fq 'const tote=value' /tmp/target-list-live.js &&
                grep -Fq 'rr-target-runner-info' /tmp/target-list-live.js &&
