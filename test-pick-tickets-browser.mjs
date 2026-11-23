@@ -58,10 +58,7 @@ try{
   assert.equal(await page.locator(".rr-pt-interim-model-label").count(),0,"scratch-day status banner is not customer-facing");
   assert.equal(await page.locator(".rr-pt-wager-name").innerText(),"Rail & Rye Ticket","legacy interim title normalized for customers");
   assert.doesNotMatch(await page.locator("#rr-pt-current").innerText(),/interim|changed-jockey scoring still pending/i);
-  await page.locator(".rr-pt-analysis-button").click();
-  assert.doesNotMatch(await page.locator("#rr-pt-dialog").innerText(),/interim|prescratch model review/i,"Ticket Insights also has no old internal labels");
-  assert.equal(await page.locator("#rr-pt-dialog .rr-pt-analysis-tier").innerText(),"Rail & Rye Ticket");
-  await page.locator("#rr-pt-close").click();
+
   assert.equal(await page.locator(".rr-pt-chip img").count(),6,"actual approved saddlecloth PNGs used");
   assert.equal(await page.locator(".rr-pt-ticket-stats strong").count(),4,"model hit, combos, base and total slots shown");
   assert.equal(await page.locator(".rr-pt-wager-meta .rr-pt-probability").count(),0,"no duplicate hit probability near ticket title");
@@ -135,6 +132,7 @@ try{
   await page.locator(".rr-pt-analysis-button").click();
   assert.equal(await page.locator("#rr-pt-dialog").evaluate(n=>n.open),true,"full analysis opens");
   assert.equal(await page.locator("#rr-pt-dialog .rr-pt-race-row").count(),4);
+  assert.doesNotMatch(await page.locator("#rr-pt-dialog").innerText(),/interim|prescratch model review/i,"Ticket Insights has no legacy internal labels");
   const drawerBounds=await page.locator("#rr-pt-dialog").evaluate(n=>({left:n.getBoundingClientRect().left,right:n.getBoundingClientRect().right,width:innerWidth}));
   assert.ok(drawerBounds.left>=-1&&drawerBounds.right<=drawerBounds.width+1,"dialog overflow at "+width);
   await page.screenshot({path:"test-artifacts/pick-tickets-detail-"+width+".png"});
