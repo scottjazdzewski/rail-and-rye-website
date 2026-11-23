@@ -1,5 +1,13 @@
 name: Verify private Target List hub module
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'public/admin/target-list-preview.html'
+      - 'public/assets/target-list-dashboard.*'
+      - 'test-target-list-hub.mjs'
+      - 'test-target-list-responsive.mjs'
+      - '.github/workflows/verify-target-list-hub.yml'
   pull_request:
     paths:
       - 'src/target-list.js'

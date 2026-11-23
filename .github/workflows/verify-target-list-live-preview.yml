@@ -35,7 +35,8 @@ jobs:
                grep -Fq 'rr-target-racebar-main' /tmp/target-list-live.js &&
                grep -Fq 'rr-target-race-identifiers' /tmp/target-list-live.js &&
                grep -Fq 'Post-time order' /tmp/target-list-live.js &&
-               grep -Fq 'appendGradeTrophy(facts,sourceRaceTitle(entry)?.grade)' /tmp/target-list-live.js &&
+               grep -Fq 'appendGradeTrophy(facts,title.grade)' /tmp/target-list-live.js &&
+               grep -Fq 'rr-ed-stakes-title' /tmp/target-list-live.js &&
                ! grep -Fq 'rr-target-race-facts-long' /tmp/target-list-live.js &&
                ! grep -Eq 'DEMO_EXAMPLE|Sample Favorite|Example Downs|rr-target-local-file|rr-target-analyze|rr-target-upload-form|rr-target-file' /tmp/target-list-live.js; then
               echo 'LIVE_PREVIEW_DEPLOYED: Actual private R2 daily reader is live, with no synthetic horses or local-file loader.'
@@ -53,16 +54,17 @@ jobs:
           grep -Fq 'Target List v3' /tmp/target-list-live.css
           grep -Fq -- '-webkit-line-clamp:unset' /tmp/target-list-live.css
           grep -Fq 'Shared Daily Research Reader V1' /tmp/target-list-live.css
-          grep -Fq 'RAIL & RYE DAILY RESEARCH V9' /tmp/target-list-live.css
-          grep -Fq 'Target List: right-justified RACE / POST group' /tmp/target-list-live.css
-          grep -Fq 'The navy bar includes a 2nd line' /tmp/target-list-live.css
+          grep -Fq 'canonical Longshot Radar race header' /tmp/target-list-live.css
+          grep -Fq 'grid-template-columns:minmax(0,1fr) max-content' /tmp/target-list-live.css
+          grep -Fq 'rr-target-race-identifiers' /tmp/target-list-live.css
+          ! grep -Fq 'RAIL & RYE DAILY RESEARCH V9' /tmp/target-list-live.css
           ! grep -Fq 'Target List: source distance/surface on the SAME navy header row' /tmp/target-list-live.css
           grep -Fq 'scroll-snap-type:x proximity' /tmp/target-list-live.css
           grep -Fq 'font:500 17px/1.52 Inter' /tmp/target-list-live.css
           grep -Fq 'font:700 25px/1.06 Tinos' /tmp/target-list-live.css
           grep -Fq 'Readable editorial:' /tmp/target-list-live.css
           ! grep -Fq 'rr-target-publisher' /tmp/target-list-live.css
-          echo 'LIVE_TARGET_HEADER_V11: Right-aligned identifiers retained; sponsor-free canonical stakes title and verified trophy on navy facts row.'
+          echo 'LIVE_TARGET_HEADER_RADAR_PARITY_V11: Sourced stakes text and grade, with Radar grid and right-aligned identifiers in production.'
           protected=$(curl -sS --connect-timeout 10 --max-time 20 -o /dev/null -w '%{http_code}' 'https://railandryeracing.com/api/admin/target-list-review' || true)
           echo "Unauthenticated private data endpoint: HTTP $protected"
           case "$protected" in
