@@ -69,13 +69,17 @@ try{
   const numberSizes=await page.locator(".rr-pt-ticket-stats .rr-pt-stat strong").evaluateAll(items=>items.map(x=>getComputedStyle(x).fontSize));
   assert.equal(new Set(numberSizes).size,1,"all four numeric metrics use exactly the same font size at "+width);
   assert.equal(await page.locator(".rr-pt-ticket-stats strong").first().innerText(),"—","mock predictions are never fabricated");
-  assert.equal(await page.locator(".rr-pt-brand-rail").count(),1,"sticky Rail & Rye and track identity exists");
+  assert.equal(await page.locator(".rr-pt-brand-rail").count(),0,"No duplicate Pick Tickets masthead.");
+   assert.equal(await page.locator(".rr-intel-header__nav a").count(),5,"Five unified product links.");
   const logo=await page.locator("#rr-pt-track-logo").evaluate(n=>({src:n.getAttribute("src"),loaded:n.complete&&n.naturalWidth>0}));
   assert.equal(logo.loaded,true,"original track graphic must load");
-  const sticky=await page.locator(".rr-pt-brand-rail").evaluate(n=>getComputedStyle(n).position);
-  assert.equal(sticky,"sticky");
-  const legacyHeight=await page.locator(".rr-member-header").evaluate(n=>n.getBoundingClientRect().height);
-  assert.ok(legacyHeight<75,"legacy navigation must be compact at "+width);
+  const headerHeight=await page.locator(".rr-intel-header").evaluate(n=>n.getBoundingClientRect().height);
+   assert.ok(headerHeight>=64&&headerHeight<=100,"Unified masthead stays compact at "+width);
+   if(width<=1080){
+    await page.locator(".rr-intel-header__mobile summary").click();
+    assert.equal(await page.locator(".rr-intel-header__mobile-links a:visible").count(),5,"Mobile dropdown contains five destinations.");
+    await page.locator(".rr-intel-header__mobile summary").click();
+   }
   const size=await page.evaluate(()=>({inner:innerWidth,doc:document.documentElement.scrollWidth,body:document.body.scrollWidth}));
   assert.ok(size.doc<=size.inner+1&&size.body<=size.inner+1,"page horizontal overflow at "+width+": "+JSON.stringify(size));
   await page.screenshot({path:"test-artifacts/pick-tickets-"+width+".png",fullPage:true});

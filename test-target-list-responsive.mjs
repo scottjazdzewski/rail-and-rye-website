@@ -81,9 +81,10 @@ try{
   assert.ok(reading.lineHeight/reading.font>=1.47,"Editorial lines must be readable at "+width+": "+JSON.stringify(reading));
   assert.match(reading.actual,/The paragraph deliberately continues/,"Never replace original analysis with a clipped preview.");
   assert.equal(await page.locator("#rr-target-upload-form").count(),0,"JSON upload should never appear on Target List.");
+  if(width<=1080)await page.locator(".rr-intel-header__mobile summary").click();
 
   const shell=await page.evaluate(()=>{
-   const nav=document.querySelector(".rr-target-page .rr-member-nav");
+   const nav=document.querySelector(innerWidth<=1080?".rr-intel-header__mobile-links":".rr-intel-header__nav");
    const tabs=[...nav.querySelectorAll("a")];
    const active=nav.querySelector('[aria-current="page"]');
    const title=document.querySelector(".rr-target-titlebar h1");
@@ -108,14 +109,15 @@ try{
    };
   });
   if(width<=760){
-    assert.equal(shell.navWrap,"nowrap","Five modules belong in one swipeable navigation row at "+width);
-    assert.ok(shell.navHeight<=47,"No second line of navigation at "+width+": "+JSON.stringify(shell));
+    assert.equal(shell.tabHeights.length,5,"All five module links must be accessible.");
+    assert.ok(shell.navHeight>=190,"Mobile menu has all five readable links: "+JSON.stringify(shell));
     assert.ok(shell.tabHeights.every(v=>v>=40),"Readable navigation tabs keep 40px tap targets at "+width+": "+JSON.stringify(shell));
     assert.ok(shell.activeVisible,"Active Target List tab should be in the swipeable viewport at "+width+": "+JSON.stringify(shell));
     assert.ok(shell.titleSize>=27,"Headings use common 28px mobile scale at "+width);
     assert.ok(shell.introVisible&&shell.introSize>=13,"Short module description remains readable at "+width);
     assert.ok(shell.selectSize>=15&&shell.selectHeight>=42,"Date and sort controls share readable type at "+width);
   }
+  if(width<=1080)await page.locator(".rr-intel-header__mobile summary").click();
   assert.equal(shell.controlsCount,2,"Only Date and Sort needed for the daily reader.");
   assert.equal(shell.sortContext,"Post-time order","Summary should show sort state instead of repeating date.");
 
