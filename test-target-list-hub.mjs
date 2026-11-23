@@ -128,7 +128,7 @@ const action=tree(card,el=>el.className==="rr-target-analyze");
 assert.ok(action,"Render actionable Full Analysis button.");
 action.events.click();
 assert.equal(elements.get("rr-target-dialog").open,true);
-assert.match(elements.get("rr-target-dialog-title").textContent,/Synthetic Test Track/);
+assert.match(elements.get("rr-target-dialog-title").textContent,/Zulu Test Track/,"Chronological first race should open first.");
 const detail=elements.get("rr-target-dialog-content");
 assert.ok(tree(detail,el=>el.textContent==="This is synthetic, non-customer test commentary."),"Drawer preserves full certified source narrative.");
 // These sort controls only affect presentation; original rank and values remain unchanged.
