@@ -102,7 +102,8 @@ assert.match(headerCss,/\.rrp-race-head__scratch-bar\{[^}]*justify-content:cente
 assert.match(headerCss,/height:48px;min-height:48px/,"Fixed scratch lane keeps race-card height stable.");
 assert.match(js,/NO SCRATCHES LISTED/,"Empty scratch row uses neutral fact wording.");
 assert.match(factsCss,/data-fact="pace"/,"Pace watch gets independent optical scale.");
-assert.match(factsCss,/brightness\(\.68\)/,"Strong pace uses darker green.");
+assert.doesNotMatch(factsCss,/brightness\(|hue-rotate\(/,"Never darken an entire watch image; use the selective green asset.");
+assert.match(js,/fact_pace_strong.*_forest\.svg/,"Strong pace uses selectively tinted artwork.");
 assert.match(factsCss,/min-height:79px/,"Mobile fact triplet is shorter.");
 assert.match(headerCss,/\.rrp-race-head__details\{[^}]*grid-template-columns:/,"Metadata has its own complete row.");
 assert.match(headerCss,/\.rrp-race-head__scratch-chip\{[^}]*background:#fff/,"Original scratch saddlecloths have opaque backing and no dark bleed-through.");

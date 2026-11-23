@@ -220,7 +220,7 @@ function makeNode(tag,className,text){const node=document.createElement(tag);if(
 function iconNode(name,className,state){
  if(!name)return null;
  const node=makeNode("span",className);node.setAttribute("aria-hidden","true");
- const image=document.createElement("img");image.src="/assets/approved/factor-badges/"+name+(state?"_"+state:"")+".png";image.alt="";image.loading="lazy";image.decoding="async";
+ const image=document.createElement("img");image.src="/assets/approved/factor-badges/"+name+(state?"_"+state:"")+(name==="fact_pace_strong"? "_forest.svg":".png");image.alt="";image.loading="lazy";image.decoding="async";
  node.append(image);return node;
 }
 function makeTile(label,value){

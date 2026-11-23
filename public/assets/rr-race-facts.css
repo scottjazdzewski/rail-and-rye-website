@@ -15,7 +15,6 @@
  .rr-dash-tile-mark{flex-basis:36px;height:36px;width:43px}
  .rr-dash-tile-mark img{max-width:43px;max-height:38px}
  .rr-dash-race-tile[data-fact="pace"] .rr-dash-tile-mark img{max-width:37px;max-height:35px}
- .rr-dash-race-tile[data-fact="pace"][data-value="strong"] .rr-dash-tile-mark img{filter:brightness(.68) saturate(.85) hue-rotate(12deg)}
  .rr-dash-tile-label{font-size:10px;letter-spacing:.04em}
  .rr-dash-tile-value{font-size:15px;line-height:1.16}
  .rr-dash-sheet-facts .rr-dash-race-tile{min-height:79px}

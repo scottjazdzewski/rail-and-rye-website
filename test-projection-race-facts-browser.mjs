@@ -115,7 +115,11 @@ try{
   const surface=await page.locator('.rr-dash-race-tile[data-fact="surface"] img').evaluate(el=>({
    maxWidth:parseFloat(getComputedStyle(el).maxWidth)
   }));
-  assert.ok(watch.filter.includes("brightness(0.68)"),"Strong watch uses deeper green at "+width);
+  assert.equal(watch.filter,"none","No destructive whole-image filter on Strong pace watch at "+width);
+  assert.ok((await page.locator('.rr-dash-race-tile[data-fact="pace"][data-value="strong"] img').getAttribute("src")).endsWith("fact_pace_strong_forest.svg"),
+   "Use the selective green asset, preserving neutral face and hands");
+  const img=await page.locator('.rr-dash-race-tile[data-fact="pace"][data-value="strong"] img').evaluate(el=>({width:el.naturalWidth,height:el.naturalHeight}));
+  assert.ok(img.width===145&&img.height===135,"Original stopwatch has correct dimensions and loaded image at "+width);
   assert.ok(watch.maxWidth<surface.maxWidth,"Stopwatch optically smaller than track badge at "+width);
   assert.equal(await page.locator(".rrp-race-head__scratch-chip img").count(),3,
    "All genuine scratched saddlecloths remain visible");
