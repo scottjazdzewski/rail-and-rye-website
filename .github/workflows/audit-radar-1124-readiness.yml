@@ -1,0 +1,30 @@
+name: Audit Nov24 Radar scorer readiness (private, read only)
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/radar_1124_readiness.py'
+      - 'docs/LONGSHOT_RADAR_2026-11-24_SOURCE_INTAKE_HOLD.md'
+      - '.github/workflows/audit-radar-1124-readiness.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit-prescratch:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify source audit syntax
+        run: python -m py_compile scripts/radar_1124_readiness.py
+      - name: Check existing private R2 TRI/F4 scored fields and Radar edition
+        run: |
+          python -m pip install --disable-pip-version-check boto3==1.40.36
+          python scripts/radar_1124_readiness.py
+        env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
