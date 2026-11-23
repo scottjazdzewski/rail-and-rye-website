@@ -1,1 +1,0 @@
-Trigger ephemeral private R2 encryption key for the exact verified November 23 five-factor badge patch. No scored data or secrets in this file.
