@@ -10,6 +10,7 @@ import json
 import os
 import re
 import sys
+import zlib
 from datetime import datetime, timezone
 from pathlib import Path
 from nacl.public import PrivateKey, SealedBox
@@ -86,7 +87,7 @@ def upload():
     encoded=body[len(PREFIX)+1:].strip()
     if not re.fullmatch(r"[A-Za-z0-9+/=]+",encoded) or len(encoded)>MAX_BYTES*2:
         raise ValueError("Invalid sealed intake encoding.")
-    plain=SealedBox(key_from_private_secret()).decrypt(base64.b64decode(encoded,validate=True))
+    plain=zlib.decompress(SealedBox(key_from_private_secret()).decrypt(base64.b64decode(encoded,validate=True)))
     if not plain or len(plain)>MAX_BYTES:
         raise ValueError("Decrypted intake exceeds limit.")
     card=validate(json.loads(plain))
