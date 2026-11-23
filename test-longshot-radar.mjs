@@ -123,6 +123,7 @@ const originalRaceFacts={
  schema_version:1,race_date:"2026-11-23",track_name:"Synthetic Course",
  races:[{race_number:4,distance:"6½ furlongs",surface:"Dirt",
   conditions:"Original source allowance conditions for this race, without truncation.",
+  stakes_name:"First Lady S.",stakes_grade:"G1",sponsor_name:"Example Sponsor",is_stakes:true,
   entries:[
    {program_number:"1",horse_name:"Source Fixture 1"},
    {program_number:"2",horse_name:"Different race horse"}
@@ -142,6 +143,12 @@ assert.ok(!Object.hasOwn(editorialBody.edition.candidates[0],"pwin_exact"),"Do n
 assert.equal(editorialBody.edition.candidates[0].distance,"6½ furlongs");
 assert.equal(editorialBody.edition.candidates[0].surface,"Dirt");
 assert.equal(editorialBody.edition.candidates[0].conditions,originalRaceFacts.races[0].conditions);
+assert.equal(editorialBody.edition.candidates[0].stakes_name,"First Lady S.");
+assert.equal(editorialBody.edition.candidates[0].stakes_grade,"G1");
+assert.equal(editorialBody.edition.candidates[0].sponsor_name,"Example Sponsor");
+assert.equal(editorialBody.edition.candidates[0].is_stakes,true);
+assert.ok(!Object.hasOwn(editorialBody.edition.candidates[1],"stakes_grade"),
+ "Never invent graded stakes for a horse absent from exact source match");
 assert.ok(!Object.hasOwn(editorialBody.edition.candidates[1],"conditions"),"No race conditions for a PDF runner absent from frozen TRI source");
 assert.equal(editorialBody.edition.candidates[0].horse_name,"Source Fixture 1");
 assert.equal(editorialBody.edition.candidates[0].pwin_display,17.6,"Presentation join must not alter model/display value");
@@ -188,7 +195,7 @@ assert.ok(html.includes("/assets/projections-dashboard.css")); // shared visual 
 assert.ok(!html.includes("Race details")&&!html.includes('id="rr-lr-dialog"'));
 assert.ok(!html.includes("rr-lr-import")&&!html.includes("rr-lr-file")&&!html.includes("rr-lr-upload-form"),"No user-supplied JSON form");
 assert.ok(html.includes("id=\"rr-lr-retry\""),"A failed R2 load must permit retry");
-assert.ok(html.includes("longshot-radar.js?v=shared-v1-20261123"),"Render updated Shared Research V1 client without a stale cache");
+assert.ok(html.includes("longshot-radar.js?v=shared-v2-stakes-20261123"),"Render updated Shared Research V1 client without a stale cache");
 assert.ok(!html.includes("longshot-hero.jpg")&&!html.includes("longshot-mark.png"));
 assert.ok(ui.includes('make("div","rr-lr-inline-analysis")'));
 assert.ok(!ui.includes('make("button","","Race details")'));
@@ -211,11 +218,11 @@ assert.ok(ui.includes('/api/admin/longshot-radar-editorial'),"Real PDF viewer mu
 assert.ok(ui.includes("AbortController")&&ui.includes("retry?.addEventListener"),"Show a recoverable error rather than a permanent loading spinner");
 
 assert.ok(html.includes("longshot-radar.css?v=shared-v1-20261123"),"Load uncached shared V1 Radar stylesheet");
-assert.ok(html.includes("longshot-radar.js?v=shared-v1-20261123"),"Load matching uncached V1 reader");
+assert.ok(html.includes("longshot-radar.js?v=shared-v2-stakes-20261123"),"Load matching uncached V1 reader");
 assert.ok(!html.includes('id="rr-lr-stage"')&&!html.includes('id="rr-lr-date-title"')&&!html.includes('id="rr-lr-updated"'),"No duplicate date/status/product summaries");
 assert.ok(ui.includes('make("span","rr-lr-ml-inline","ML "+item.original_morning_line)'),"Morning line must sit by horse identity, not a third stat cell");
 assert.ok(!ui.includes('market("ML ODDS"'),"WIN and FAIR are the only two right-side metrics");
-assert.ok(ui.includes('const facts=[item.distance,item.surface,item.conditions]'),"Display only source-supplied race description when available");
+assert.ok(ui.includes('const facts=[item.distance,item.surface]'),"Display only source-supplied race description when available");
 assert.ok(ui.includes('make("p","rr-lr-race-facts",facts.join(" · "))'),"Source race facts must appear in the navy header");
 assert.ok(ui.includes('moduleNav.scrollLeft+='),"Active tab stays in view in one swipeable navigation row");
 assert.ok(css.includes("SHARED DAILY RESEARCH DESIGN STANDARD V1"),"Radar follows shared Target List research reader design authority");
@@ -227,4 +234,12 @@ assert.ok(!ui.includes("rr-lr-upload-form")&&!ui.includes("visualSample"),"Only 
 assert.ok(!ui.includes('make("button","","Race details")'),"Horse explanation must display inline");
 checks++;
 
+assert.ok(html.includes("rr-race-titles.js?v=2")&&html.includes("rr-stakes-inline.css?v=1"),
+ "Radar loads the same canonical stakes title utility and trophy styles as Projections");
+assert.ok(ui.includes("sourceRaceTitle(item)")&&ui.includes("appendGradeTrophy(line,title.grade)"),
+ "Radar renders full sponsor-free names and graded trophy only with certified grade");
+assert.ok(ui.includes("rr-ed-stakes-title")&&ui.includes("rr-ed-grade-trophy"),
+ "Radar puts full event names and verified trophies within the navy race header");
+assert.doesNotMatch(ui,/\[item\.distance,item\.surface,item\.conditions\]/,
+ "Never display raw abbreviated sponsored conditions instead of canonical title");
 console.log("PASS: "+checks+" Longshot Radar private-review, noncertified published-PDF handoff, inline editorial and security/layout checks.");
