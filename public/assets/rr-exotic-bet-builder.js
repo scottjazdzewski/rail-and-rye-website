@@ -240,10 +240,7 @@
   summary.setAttribute("aria-label","Your exotic ticket probability and payout");
   const summaryHeading=el("div","rr-bet-summary-heading");
   summaryHeading.append(el("strong","","YOUR TICKET"));
-  const modelStatus=state.loading?"CHECKING F4":result.modelAvailable?"VERIFIED F4":"F4 UNAVAILABLE";
-  const modelTag=el("span","rr-bet-model-status",modelStatus);
-  modelTag.dataset.state=state.loading?"loading":result.modelAvailable?"verified":"unavailable";
-  summaryHeading.append(modelTag);summary.append(summaryHeading);
+   summary.append(summaryHeading);
   const primary=el("div","rr-bet-summary-primary");
   const mainStat=(label,value,cssClass)=>{
    const box=el("div","rr-bet-main-stat "+cssClass);
@@ -259,20 +256,11 @@
   secondary.append(el("span","",result.combos.length.toLocaleString("en-US")+" combinations"));
   secondary.append(el("strong","","Ticket cost "+CASH(result.cost)));
   summary.append(secondary);
-  let explanation="";
-  if(state.loading)explanation="Loading the certified F4 ordered-finishing probabilities.";
-  else if(!result.modelAvailable)explanation="Verified F4 data unavailable. No modeled hit chance or payout is claimed.";
-  else if(!result.combos.length)explanation="Choose horses in every finishing position to calculate your ticket.";
-  else if(result.allOutcomesCovered)
-   explanation="All finishing outcomes covered (100%). This does NOT guarantee a profit; tote payouts can be below your cost.";
-  else if(result.firstPlaceKey)
-   explanation="Full key: #"+result.leadHorse.program_number+" must WIN. Hit chance equals that horse's exact TRI win probability.";
-  else if(result.combos.length>1)
-   explanation="For this multi-combination ticket, break-even assumes the same gross payout for every covered winner.";
-  else explanation="Required gross payout for this single combination at the chosen wager amount.";
-  if(result.probabilities&&result.combos.length>1&&!explanation.includes("same gross payout"))
-   explanation+=" Break-even assumes equal gross payouts across covered combinations; actual tote payouts vary.";
-  summary.append(el("p","rr-bet-summary-note",explanation));
+  // Ticket calculations and receipt checks remain unchanged. Customer-facing
+   // status stays in the numbers rather than explaining internal model steps.
+   if(!result.modelAvailable&&!state.loading)
+    summary.setAttribute("aria-label","Your exotic ticket; no hit probability available");
+   
   body.append(summary);
   if(state.mode==="box")body.append(group("BOX HORSES · any finishing order",entries,0,state.box));
   else{
@@ -299,14 +287,6 @@
   if(result.combos.length>40)list.append(el("li","rr-bet-list-truncated",
    "Showing 40 of "+result.combos.length+" combinations."));
   details.append(list);body.append(details);
-  const help=el("details","rr-bet-help");
-  help.append(el("summary","","How to read the payout threshold"));
-  help.append(el("p","",
-   "The hit chance is the sum of the verified F4 probabilities for your covered exact finishing orders. "+
-   "The break-even figure is a GROSS payout, not net winnings: total ticket cost divided by ticket hit probability, rounded UP to cents. "+
-   "For boxes, keys and wheels it assumes every winning combination pays that SAME gross amount. Actual exotic tote payoffs vary by combination. "+
-   "Rail & Rye has no live tote connection and never places a bet; compare the tote yourself."));
-  body.append(help);
   const previousScroll=dialog.scrollTop;
   const focusChoice=document.activeElement?.dataset?.betChoiceKey;
   dialog.replaceChildren(body);

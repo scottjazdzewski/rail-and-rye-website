@@ -137,11 +137,8 @@
  function builder(){
   const area=node("div","rr-pt-builder");
   const intro=node("div","rr-pt-builder-intro");
-  intro.append(node("strong","","Build Your Ticket"),node("p","",
-   "Start with Rail & Rye’s selections. Tap a selected horse to remove it, or add runners to any leg. The original recommendation stays unchanged."));
+  intro.append(node("strong","","Build Your Ticket"));
   area.append(intro);
-  if(!activeSeq.race_fields?.length)area.append(node("p","rr-pt-builder-limits",
-   "Runner choices are limited to published ticket versions until a certified complete field is available."));
   const rows=node("div","rr-pt-builder-rows");
   for(const leg of builderLegs){
    const row=node("section","rr-pt-builder-row");
@@ -214,11 +211,6 @@
   });
   table.append(body);comparison.append(table);area.append(comparison);
   if(!computed.combinations)area.append(node("p","rr-pt-builder-error","Choose at least one runner in every race."));
-  area.append(node("p","rr-pt-builder-disclaimer",activeSeq.review_probabilities
-   ?"Projected hit chance uses TRI probabilities and assumes independent race outcomes. Confirm the active field and scratches before wagering; this is an estimate, not a guarantee."
-   :exact
-    ?"This selection matches a source ticket. Its hit probability is displayed only when provided with that exact ticket."
-    :"A verified custom hit probability requires the approved TRI multi-race model. Combinations and total cost update immediately."));
   const reset=node("button","rr-pt-reset-button","Reset to Rail & Rye Selections");
   reset.type="button";reset.addEventListener("click",()=>{resetBuilder();expandedRaceNumbers.clear();renderActive()});
   area.append(reset);return area;
@@ -300,8 +292,6 @@
    stage.append(node("h3","rr-pt-analysis-tier",displayTicketName(activeSeq.tickets[i])));
    if(hitRate(activeSeq.tickets[i])!=="—")stage.append(node("p","rr-pt-analysis-rate","Projected hit chance: "+hitRate(activeSeq.tickets[i])));
    stage.append(ticketRows(activeSeq.tickets[i]),stats(activeSeq.tickets[i]));
-   const publicNotes=displayTicketNote(activeSeq.tickets[i].notes);
-   if(publicNotes)stage.append(node("p","rr-pt-analysis-notes",publicNotes));
   }
   show(activeTier);E.dialogBody.append(stage);
   E.dialog.showModal();
