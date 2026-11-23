@@ -41,10 +41,9 @@ class Element {
  showModal(){this.opened=true;}
  close(){}
 }
-const ids=["rr-dash-status","rr-dash-app","rr-dash-login","rr-dash-empty","rr-dash-date","rr-dash-track","rr-dash-race-time","rr-dash-races","rr-dash-race","rr-dash-horses","rr-dash-search","rr-dash-sort","rr-dash-open-pdf","rr-dash-download-pdf","rr-dash-update","rr-dash-horse-dialog","rr-dash-horse-title","rr-dash-horse-detail","rr-dash-horse-close"];
+const ids=["rr-dash-status","rr-dash-app","rr-dash-login","rr-dash-empty","rr-dash-date","rr-dash-track","rr-dash-race-time","rr-dash-races","rr-dash-race","rr-dash-horses","rr-dash-search","rr-dash-open-pdf","rr-dash-download-pdf","rr-dash-update","rr-dash-horse-dialog","rr-dash-horse-title","rr-dash-horse-detail","rr-dash-horse-close"];
 const els=new Map(ids.map(id=>[id,new Element(id.includes("date")||id.includes("track")||id.includes("race-time")||id.includes("sort")?"select":"div")]));
-els.get("rr-dash-sort").value="finish";
-const fixture={cards:[{race_date:"2026-11-22",track:"Del Mar",product_id:null,card:{track_name:"Del Mar",races:[{race_number:6,post_time_et:"6:00 PM",conditions:"Claiming $8,000",purse:"$20,000",pace:"Moderate",surface:"Dirt",distance:"5 1/2 furlongs",scratch_count:1,scratches:[{program_number:"3",horse_name:"Scratched Runner"}],entries:[{program_number:"5",horse_name:"Barrister Proof",rank:1,morning_line:"12-1",win_probability:27.5,fair_odds:"5/2",trainer:"Brad Cox",jockey:"Jose Ortiz",metrics:[{label:"Speed",value:"green"},{label:"Form",value:"gray"},{label:"Class",value:"red"},{label:"Pace Fit",value:"green"},{label:"Surface / Distance",value:"gray"}]},{program_number:"12",horse_name:"Doo Wop Don",rank:2,morning_line:"5-2",win_probability:16.6,fair_odds:"5/1",trainer:"",jockey:"",metrics:[]}]}]}}]};
+const fixture={cards:[{race_date:"2026-11-22",track:"Del Mar",product_id:null,card:{track_name:"Del Mar",races:[{race_number:6,post_time_et:"6:00 PM",conditions:"Claiming $8,000",purse:"$20,000",pace:"Moderate",surface:"Dirt",distance:"5 1/2 furlongs",scratch_count:1,scratches:[{program_number:"3",horse_name:"Scratched Runner"}],entries:[{program_number:"5",horse_name:"Doo Wop Don",morning_line:"5-2",win_probability:16.6,fair_odds:"5/1",trainer:"",jockey:"",metrics:[]},{program_number:"2",horse_name:"Third Horizon",morning_line:"9-2",win_probability:20.0,fair_odds:"4/1",trainer:"",jockey:"",metrics:[]},{program_number:"12",horse_name:"Barrister Proof",morning_line:"12-1",win_probability:27.5,fair_odds:"5/2",trainer:"Brad Cox",jockey:"Jose Ortiz",metrics:[{label:"Speed",value:"green"},{label:"Form",value:"gray"},{label:"Class",value:"red"},{label:"Pace Fit",value:"green"},{label:"Surface / Distance",value:"gray"}]}]}]}}]};
 const document={body:{dataset:{rrPreview:"true"}},querySelector(selector){return els.get(selector.slice(1))??null;},createElement(tag){return new Element(tag);}};
 const context={document,fetch:async()=>({ok:true,json:async()=>fixture}),Intl,Date,Number,String,Array,Error,console,encodeURIComponent};
 vm.runInNewContext(js,context,{filename:"projections-dashboard.js"});
@@ -60,14 +59,14 @@ const scratchChip=matchClass(race,"rr-dash-scratch-chip");
 assert.ok(scratchChip&&scratchChip.src.endsWith("/3.png"),"Scratch uses official #3 saddlecloth chip");
 assert.match(race.textContent,/Scratched Runner/,"Show scratched horse name");
 const names=allClass(horses,"rr-dash-horse-name").map(el=>el.textContent);
-assert.deepEqual(names,["Barrister Proof","Doo Wop Don"]);
+assert.deepEqual(names,["Barrister Proof","Doo Wop Don","Third Horizon"],"Lead must have greatest TRI PWIN, while the remaining horses retain scorer order");
 assert.equal(allClass(horses,"rr-dash-horse-ml")[0].textContent,"M/L 12-1");
 assert.equal(allClass(horses,"rr-dash-horse-connections")[0].textContent,"Brad Cox | Jose Ortiz");
 assert.equal(allClass(horses,"rr-dash-horse-connections").length,1,"Missing trainer and jockey must not create filler text");
-assert.equal(allClass(horses,"rr-dash-metric-group").length,3,"Two runner groups plus desktop-only table heading must remain");
+assert.equal(allClass(horses,"rr-dash-metric-group").length,4,"Three runner groups plus desktop table heading must remain");
 assert.equal(allClass(horses,"rr-dash-win-percent")[0].textContent,"27.5%");
 assert.equal(allClass(horses,"rr-dash-win-fair")[0].textContent,"FAIR 5/2");
-assert.ok(allClass(horses,"rr-dash-metric-value").length===10,"All five factors must remain visible on every horse");
+assert.ok(allClass(horses,"rr-dash-metric-value").length===15,"All five factors must remain visible on every horse");
 const approvedDashes=allClass(horses,"rr-dash-metric-bars");
 assert.equal(approvedDashes.length,5,"Each certified factor state renders as dashes");
 assert.ok(approvedDashes.every(el=>el.children.length===3),"Each state uses three flat dashes");
@@ -89,6 +88,17 @@ assert.match(sheet.textContent,/Brad Cox/);
 assert.match(sheet.textContent,/Jose Ortiz/);
 assert.match(sheet.textContent,/27.5%/);
 assert.match(sheet.textContent,/FAIR 5\/2/);
+const lockedOrder=allClass(horses,"rr-dash-horse-name").map(el=>el.textContent);
+assert.deepEqual(lockedOrder,["Barrister Proof","Doo Wop Don","Third Horizon"],
+ "Lead TRI win probability first; preserve original projected finish order of all remaining runners");
+const adminSort=readFileSync("public/admin/projections-preview.html","utf8");
+const memberSort=readFileSync("public/membership/dashboard/index.html","utf8");
+for(const html of [adminSort,memberSort]){
+ assert.doesNotMatch(html,/rr-dash-sort|Sort by|value="finish"|value="program"/,
+   "There must be no customer-facing sorting controls");
+ assert.match(html,/projections-dashboard\.js\?v=24/,"Use current locked-order client");
+}
+assert.doesNotMatch(js,/rr-dash-sort/,"Client must not let users reorder horses");
 console.log("PASS: compact runner rows, verified dash factor states, preserved race data, no redundant PDF action");
 
 // No partial historic preview data is allowed in the public website assets.
@@ -103,8 +113,8 @@ assert.doesNotMatch(js,/\breviewMode\b|PARTIAL FIELD|rr-dash-review-data/,
  "No stale partial-field runtime branches");
 assert.match(js,/api\("\/api\/admin\/projections-preview"\)/,
  "Private admin preview must always read the secure projection API");
-assert.match(adminHtml,/projections-dashboard\.js\?v=23/,
+assert.match(adminHtml,/projections-dashboard\.js\?v=24/,
  "Admin dashboard must load the latest hardened shared client");
-assert.match(memberHtml,/projections-dashboard\.js\?v=23/,
+assert.match(memberHtml,/projections-dashboard\.js\?v=24/,
  "Member dashboard must use the same client revision");
 console.log("PASS: no embedded premium data or partial review fallback; authenticated full-field preview only");

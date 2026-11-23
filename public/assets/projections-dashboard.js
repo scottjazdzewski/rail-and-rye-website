@@ -271,8 +271,18 @@ function renderCard(){
  let entries=[...race.entries].map((entry,index)=>({entry,index}));
  const query=String(q("#rr-dash-search")?.value||"").trim().toLowerCase();
  if(query)entries=entries.filter(({entry})=>String(entry.horse_name||"").toLowerCase().includes(query)||String(entry.program_number||"").toLowerCase().includes(query));
- if(q("#rr-dash-sort")?.value==="win")entries.sort((a,b)=>(Number(b.entry.win_probability)||0)-(Number(a.entry.win_probability)||0)||a.index-b.index);
- else entries.sort((a,b)=>(a.entry.rank??999)-(b.entry.rank??999)||a.index-b.index);
+ // Rail & Rye's locked projection ordering:
+ // 1. The strongest exact TRI win-probability candidate leads.
+ // 2. Every other runner follows the source-certified projected finish order.
+ //    When no explicit rank was transmitted, preserve the scorer's entry order.
+ const exactChance=item=>Number(item.entry.win_probability_exact??item.entry.win_probability);
+ const lead=entries.reduce((best,item)=>!best||exactChance(item)>exactChance(best)?item:best,null);
+ const sourceRanked=entries.length>1&&entries.every(item=>Number.isInteger(item.entry.rank)&&item.entry.rank>0);
+ entries.sort((a,b)=>{
+  if(a===lead)return -1;
+  if(b===lead)return 1;
+  return sourceRanked?(a.entry.rank-b.entry.rank||a.index-b.index):a.index-b.index;
+ });
  for(const {entry} of entries){
   const row=makeNode("div","rr-dash-runner-row");row.setAttribute("role","row");
   const program=makeNode("div","rr-dash-program");program.setAttribute("role","cell");
@@ -325,7 +335,7 @@ async function init(){
   activeCard=selectedCard();activeRace=racesByPostTime(activeCard)[0]?.race_number||null;renderCard();
   q("#rr-dash-date").addEventListener("change",onFiltersChanged);q("#rr-dash-track").addEventListener("change",onFiltersChanged);
   q("#rr-dash-race-time").addEventListener("change",()=>{activeRace=Number(q("#rr-dash-race-time").value);renderCard();});
-  q("#rr-dash-search").addEventListener("input",renderCard);q("#rr-dash-sort").addEventListener("change",renderCard);
+  q("#rr-dash-search").addEventListener("input",renderCard);
  }catch(error){
   status.hidden=true;
   if(error.status===401){login.hidden=false;return;}
