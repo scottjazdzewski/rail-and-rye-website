@@ -250,17 +250,19 @@ context.RRRaceTitles={describe:()=>({title:"First Lady Stakes",grade:null})};
 const originalRace=els.get("rr-dash-races").children.find(x=>x.dataset.raceNumber==="6");
 assert.ok(originalRace?.events?.click,"Original current race must remain available");
 originalRace.events.click();
-const realCard=fixture.cards[0],oldTrack=realCard.track,oldName=realCard.card.track_name;
-realCard.track="Finger Lakes";realCard.card.track_name="Finger Lakes";
-originalRace.events.click();
+// Use an actually available Zia Park card: the dashboard normalizes API
+// cards on load, so mutating the original Del Mar fixture after init would
+// not test the real track selector.
+els.get("rr-dash-track").value="Zia Park";
+els.get("rr-dash-track").events.change();
 const sourceTrackLogo=matchClass(els.get("rr-dash-race"),"rr-dash-approved-track-logo");
 assert.ok(sourceTrackLogo,"Real venue-specific logo is restored on approved tracks");
-assert.equal(sourceTrackLogo.src,"/assets/approved/track-logos/finger-lakes.webp");
-assert.equal(sourceTrackLogo.alt,"Finger Lakes track logo");
+assert.equal(sourceTrackLogo.src,"/assets/approved/track-logos/zia-park.webp");
+assert.equal(sourceTrackLogo.alt,"Zia Park track logo");
 assert.equal(allClass(els.get("rr-dash-race"),"rr-dash-track-mark-letters").length,0,
  "Synthesized track branding is absent");
-realCard.track=oldTrack;realCard.card.track_name=oldName;
-originalRace.events.click();
+els.get("rr-dash-track").value="Del Mar";
+els.get("rr-dash-track").events.change();
 console.log("PASS: true per-track chronology; authentic logos and race artwork; conventional tote fair odds");
 
 
