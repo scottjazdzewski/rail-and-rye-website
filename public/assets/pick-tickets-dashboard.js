@@ -13,7 +13,7 @@
   dialogBody:$("#rr-pt-detail"),upload:$("#rr-pt-upload"),file:$("#rr-pt-file")
  };
  let certified=[],demo=[],entries=[],activeSeq=null,activeTier=0,currentIsDemo=true;
- let activeMode="rail",builderLegs=[];
+ let activeMode="rail",builderLegs=[],expandedRaceNumbers=new Set();
  const node=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=String(text);return n;};
  const money=cents=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(cents/100);
  const toDate=v=>{const d=new Date(v+"T12:00:00Z");return Number.isNaN(d.valueOf())?v:new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric",year:"numeric",timeZone:"UTC"}).format(d)};
@@ -105,32 +105,56 @@
   const area=node("div","rr-pt-builder");
   const intro=node("div","rr-pt-builder-intro");
   intro.append(node("strong","","Build Your Ticket"),node("p","",
-   "Start with Rail & Rye’s selections. Tap any saddlecloth to include or remove a horse. Your original ticket is never changed."));
+   "Start with Rail & Rye’s selections. Tap a selected horse to remove it, or add runners to any leg. The original recommendation stays unchanged."));
   area.append(intro);
   if(!activeSeq.race_fields?.length)area.append(node("p","rr-pt-builder-limits",
-   "Only runners appearing on the published ticket versions are available. A verified complete field is needed to add other runners."));
+   "Runner choices are limited to published ticket versions until a certified complete field is available."));
   if(currentIsDemo)area.append(node("p","rr-pt-builder-limits",
-   "Mock race fields are for testing interactions only—these horses are not actual selections."));
+   "Mock runner fields are for testing interactions only—not real racing selections."));
   const rows=node("div","rr-pt-builder-rows");
   for(const leg of builderLegs){
-   const row=node("div","rr-pt-builder-row");
-   row.append(node("span","rr-pt-row-race","RACE "+leg.race_number));
+   const row=node("section","rr-pt-builder-row");
+   const name=node("span","rr-pt-row-race","RACE "+leg.race_number);
+   const body=node("div","rr-pt-builder-leg-body");
    const picks=node("div","rr-pt-builder-chips");
-   raceChoices(leg.race_number).forEach(program=>{
+   const chosen=leg.programs.map(program=>{
     const button=node("button","rr-pt-runner-button");
-    button.type="button";
-    const selected=leg.programs.includes(program);
-    button.setAttribute("aria-pressed",String(selected));
-    button.setAttribute("aria-label","Race "+leg.race_number+" horse "+program+(selected?" selected":" not selected"));
+    button.type="button";button.setAttribute("aria-pressed","true");
+    button.setAttribute("aria-label","Race "+leg.race_number+" horse "+program+" selected");
     button.append(programChip(program));
-    button.addEventListener("click",()=>{
-     if(leg.programs.includes(program))leg.programs=leg.programs.filter(x=>x!==program);
-     else leg.programs.push(program);
+    button.addEventListener("click",()=>{leg.programs=leg.programs.filter(x=>x!==program);renderActive()});
+    return button;
+   });
+   if(!chosen.length)picks.append(node("span","rr-pt-unselected","No horses selected"));
+   else picks.append(...chosen);
+   body.append(picks);
+   const extra=raceChoices(leg.race_number).filter(p=>!leg.programs.includes(p));
+   if(extra.length){
+    const trigger=node("button","rr-pt-add-trigger",
+     (expandedRaceNumbers.has(leg.race_number)?"− Hide field":"＋ Add runners")+" ("+extra.length+")");
+    trigger.type="button";trigger.setAttribute("aria-expanded",String(expandedRaceNumbers.has(leg.race_number)));
+    trigger.setAttribute("aria-label","Add runners for Race "+leg.race_number);
+    trigger.addEventListener("click",()=>{
+     if(expandedRaceNumbers.has(leg.race_number))expandedRaceNumbers.delete(leg.race_number);
+     else expandedRaceNumbers.add(leg.race_number);
      renderActive();
     });
-    picks.append(button);
-   });
-   row.append(picks);rows.append(row);
+    body.append(trigger);
+    if(expandedRaceNumbers.has(leg.race_number)){
+     const field=node("div","rr-pt-field-grid");
+     field.setAttribute("aria-label","Other available runners for Race "+leg.race_number);
+     extra.forEach(program=>{
+      const button=node("button","rr-pt-runner-button");
+      button.type="button";button.setAttribute("aria-pressed","false");
+      button.setAttribute("aria-label","Race "+leg.race_number+" horse "+program+" not selected");
+      button.append(programChip(program));
+      button.addEventListener("click",()=>{leg.programs.push(program);renderActive()});
+      field.append(button);
+     });
+     body.append(field);
+    }
+   }
+   row.append(name,body);rows.append(row);
   }
   area.append(rows);
   const computed=builderTotals();
@@ -140,31 +164,29 @@
   comparison.append(node("h3","","Ticket Comparison"));
   const table=node("table","rr-pt-compare-table");
   const thead=node("thead"),tr=node("tr");
-  for(const name of ["METRIC","RAIL & RYE","YOUR TICKET"])tr.append(node("th","",name));
+  for(const label of ["METRIC","RAIL & RYE","YOUR TICKET"])tr.append(node("th","",label));
   thead.append(tr);table.append(thead);
-  const body=node("tbody");
-  const original=selectedTicket();
-  const comparisons=[
+  const body=node("tbody"),original=selectedTicket();
+  const rowsData=[
    ["PROJECTED HIT",hitRate(original),exact?hitRate(exact):"—"],
    ["COMBINATIONS",String(original.combinations),String(computed.combinations)],
    ["BASE WAGER",money(original.unit_cents),money(computed.unit_cents)],
    ["TOTAL COST",money(original.total_cents),money(computed.total_cents)],
    ["VALUE ESTIMATE","Not yet available","Not yet available"]
   ];
-  for(const cells of comparisons){
+  rowsData.forEach(cells=>{
    const line=node("tr");
    line.append(node("th","",cells[0]),node("td","",cells[1]),node("td","",cells[2]));
    body.append(line);
-  }
+  });
   table.append(body);comparison.append(table);area.append(comparison);
-  if(!computed.combinations)area.append(node("p","rr-pt-builder-error","Choose at least one runner in every race to complete a ticket."));
-  const notice=node("p","rr-pt-builder-disclaimer",exact
-   ?"This selection matches a supplied ticket. Its model hit chance will appear only when independently certified."
-   :"A custom hit probability requires the approved multi-race model. It cannot be inferred from combinations or win percentages alone. Payout/value estimates also require validated pool data.");
-  area.append(notice);
-  const action=node("button","rr-pt-reset-button","Reset to Rail & Rye Selections");
-  action.type="button";action.addEventListener("click",()=>{resetBuilder();renderActive()});
-  area.append(action);return area;
+  if(!computed.combinations)area.append(node("p","rr-pt-builder-error","Choose at least one runner in every race."));
+  area.append(node("p","rr-pt-builder-disclaimer",exact
+   ?"This selection matches a supplied ticket. A model hit chance appears only if certified for that exact ticket."
+   :"Custom hit probabilities require the approved multi-race model; payout and value estimates require verified pool data. No unsupported estimates are shown."));
+  const reset=node("button","rr-pt-reset-button","Reset to Rail & Rye Selections");
+  reset.type="button";reset.addEventListener("click",()=>{resetBuilder();expandedRaceNumbers.clear();renderActive()});
+  area.append(reset);return area;
  }
  function modeControls(){
   const modes=node("div","rr-pt-mode-tabs");
@@ -265,10 +287,10 @@
    button.addEventListener("click",()=>selectSequence(s));
    E.sequences.append(button);
   });
-  activeSeq=selected;activeTier=0;activeMode="rail";resetBuilder();renderActive();
+  activeSeq=selected;activeTier=0;activeMode="rail";expandedRaceNumbers.clear();resetBuilder();renderActive();
  }
  function selectSequence(s){
-  activeSeq=s;activeTier=0;activeMode="rail";resetBuilder();
+  activeSeq=s;activeTier=0;activeMode="rail";expandedRaceNumbers.clear();resetBuilder();
   [...E.sequences.children].forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.sequenceKey===sequenceKey(s))));
   renderActive();
  }
