@@ -226,6 +226,62 @@ export async function handleAdminLongshotRadar(request,env){
 // this read NEVER accepts a rounded PDF percentage as the unrounded TRI PWIN.
 // Protected by the existing Cloudflare Access admin JWT in src/index.js.
 // R2 contents are encrypted before handoff and are not committed as plaintext.
+// The PDF publication does not contain full race headers. Enrich ONLY the
+// on-demand, Access-protected response using existing Timeform-derived TRI
+// projection cards in the same private R2 bucket. This is an exact race/horse
+// identity join, not an amendment to the published edition or a model rescore.
+// Unknown, conflicting, or missing source metadata is omitted, never guessed.
+async function readOriginalRaceFacts(env,raceDate){
+ const prefix="projections/dashboard/"+raceDate+"/";
+ const races=new Map(),ambiguous=new Set();
+ try{
+  const listing=await env.CARDS_BUCKET.list({prefix,limit:1000});
+  if(listing.truncated)return races;
+  for(const object of listing.objects||[]){
+   if(!object.key.startsWith(prefix)||!object.key.endsWith(".json"))continue;
+   const file=await env.CARDS_BUCKET.get(object.key);
+   if(!file)continue;
+   let source;
+   try{source=JSON.parse(await file.text());}catch{continue;}
+   if(source?.schema_version!==1||source.race_date!==raceDate||
+      !Array.isArray(source.races)||typeof source.track_name!=="string")continue;
+   const track=sourceTrackName(source.track_name);
+   if(!track)continue;
+   for(const race of source.races){
+    const number=Number(race?.race_number);
+    if(!Number.isInteger(number)||number<1||number>30||!Array.isArray(race.entries))continue;
+    const identity=track+"|"+number;
+    if(ambiguous.has(identity))continue;
+    if(races.has(identity)){
+     races.delete(identity);
+     ambiguous.add(identity);
+     continue;
+    }
+    const facts={};
+    for(const [key,max] of [["distance",60],["surface",50],["conditions",240]]){
+     if(typeof race[key]==="string"&&race[key].trim()&&race[key].length<=max)
+      facts[key]=race[key].trim();
+    }
+    if(!Object.keys(facts).length)continue;
+    const horses=new Set();
+    for(const entry of race.entries){
+     if(!entry||typeof entry!=="object")continue;
+     const program=String(entry.program_number||"").trim().toUpperCase();
+     const name=sourceHorseName(entry.horse_name);
+     if(program&&name)horses.add(program+"|"+name);
+    }
+    if(horses.size)races.set(identity,{facts,horses});
+   }
+  }
+ }catch(e){
+  // Optional descriptive metadata must never stop an already verified real
+  // publication from loading. Avoid logging private source details.
+  console.warn("Radar race facts unavailable",String(e?.name||"source error").slice(0,50));
+  return new Map();
+ }
+ return races;
+}
+
 const EDITORIAL_REVIEW_KEY="racing-intelligence/longshot-radar-pdf-review/2026-11-23/revision-0001.json";
 export async function handleAdminLongshotEditorialPreview(request,env){
  if(request.method!=="GET")return error("Method not allowed",405);
@@ -242,6 +298,7 @@ export async function handleAdminLongshotEditorialPreview(request,env){
      !HASH.test(edition?.source?.timeform_zip_sha256)||
      !Array.isArray(edition.candidates)||edition.candidates.length>100)
     return error("Stored Radar editorial review is invalid.",503);
+  const raceFacts=await readOriginalRaceFacts(env,edition.race_date);
   const rows=[],seen=new Set();
   for(const value of edition.candidates){
     if(!object(value))return error("Stored Radar horse is malformed.",503);
@@ -259,12 +316,17 @@ export async function handleAdminLongshotEditorialPreview(request,env){
     const display=Number(value.pwin_display);
     if(!Number.isFinite(display)||display<0||display>100)
       return error("Stored Radar displayed percentage is invalid.",503);
+    // Attach race description only if the frozen private source identifies
+    // this exact published horse by track + race + program + horse name.
+    const matched=raceFacts.get(sourceTrackName(track)+"|"+race);
+    const sourceIdentity=program.trim().toUpperCase()+"|"+sourceHorseName(horse);
     rows.push({
       track,race_number:race,program_number:program,horse_name:horse,
       post_time_et:requiredText(value.post_time_et,"Published post time",50),
       original_morning_line:ml.raw,pwin_display:display,
       fair_odds_display:requiredText(value.fair_odds_display,"Published fair odds",20),
-      betting_case:requiredText(value.betting_case,"Published one-sentence analysis",360)
+      betting_case:requiredText(value.betting_case,"Published one-sentence analysis",360),
+      ...(matched?.horses.has(sourceIdentity)?matched.facts:{})
     });
   }
   return json({

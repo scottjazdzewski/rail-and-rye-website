@@ -54,6 +54,12 @@ As approved for both Longshot Radar and Target List, the primary screen is a **d
 - A 12-second client timeout and explicit error/retry state replace an indefinite blank page. If Cloudflare Access sends a login HTML redirect instead of JSON, the page reports that authentication is needed. Browser tests exercise the same 10-horse API response structure and deliberate 503 recovery on six screen widths.
 - The private editorial transfer already wrote the real 10-source-horse R2 object with readback confirmation and 10/10 identity and displayed win-percentage matches to frozen TRI projections. For subsequent dates, the assistant must arrange a new verified, encrypted, server-side production source handoff; **never instruct the customer to choose or upload JSON**. Exact unrounded TRI release certification and customer entitlement launch remain independent gates.
 
+## Race descriptions in the existing Radar-size header
+
+The mobile Radar layout is the size reference. **Do not shrink the 17px full analysis, 17px horse name, 25px WIN or 22px FAIR figures** to make room for race conditions. Display available `distance · surface · conditions` on a naturally wrapping **14px second line inside the navy/gold race header**; retain the 17px track name and 13px race number/post time.
+
+The November 23 PDF itself did not include those full descriptions. On the existing **Access-protected** PDF review GET, join each published candidate by **race date + normalized track + race number + exact program number + normalized horse name** to its original Timeform-derived private TRI projection card under `projections/dashboard/YYYY-MM-DD/*.json`. Copy only source fields `distance`, `surface`, `conditions` into the read response, never into the immutable published PDF record. Missing, conflicting or nonmatching data are omitted. No inference, source rewriting, probability/odds calculation, user upload or public racing data. The already-existing Radar renderer renders the line automatically when source metadata is present.
+
 ## November 23 authentic published-card private reader
 
 - Owner publication: LONGSHOT_RADAR_11_23_26.pdf (10 horses, 2 pages). PDF SHA256: 99fc4df3807b2713afc2043ebacf2360b93943ad0ecfdc25bce9378fa67edb1d. Source Timeform ZIP SHA256: 5d4f1bdeefc07ef85445a0168cea064867c10a3342dbefbded510e96a97e89e1.
