@@ -90,6 +90,12 @@ assert.match(html,/target-list-dashboard\.css/);
 assert.doesNotMatch(html,/<iframe|Download PDF|\.pdf/i,"No PDF dependency or PDF viewer.");
 assert.doesNotMatch(html,/rr-review-artwork|rr-review-mark|rr-review-hero|target-hero\.jpg|target-mark\.png/,"Remove the top page-and-horse publication artwork.");
 assert.doesNotMatch(html,/rr-target-local-file/,"No manual review-file step for the daily reader.");
+assert.doesNotMatch(html,/rr-target-upload-form|rr-target-file|Private source upload|Certified source JSON file/,"Daily Target List never presents a manual JSON upload.");
+assert.doesNotMatch(js,/rr-target-upload-form|rr-target-file|\.text\(\)\}/,"Reader never contains orphaned upload form behavior.");
+assert.doesNotMatch(css,/rr-target-publisher/,"No obsolete upload form CSS.");
+assert.match(html,/target-list-dashboard\.css\?v=20261123-readable-v4/,"Ensure the readable style loads on phones.");
+assert.match(css,/font:500 15px\/1\.55 Inter/,"Published editorial gets readable 15px typography.");
+
 assert.doesNotMatch(js,/DEMO_EXAMPLE|demoHorse|Sample Favorite|Example Downs|SYNTHETIC LAYOUT EXAMPLE/,"Never display invented data when the private R2 edition is unavailable.");
 assert.doesNotMatch(js,/innerHTML|localStorage/,"Never inject untrusted narrative as HTML or persist paid results.");
 assert.match(js,/textContent/);
@@ -100,7 +106,7 @@ assert.match(css,/@media\(max-width:359px\)/);
 assert.match(css,/\.rr-target-list\{display:grid;grid-template-columns:minmax\(0,1fr\)/,"Target List reads as one compact vertical column.");
 assert.match(css,/Tinos/,"Only authoritative statistics use the card font.");
 assert.doesNotMatch(html,/id="rr-target-review-banner"/,"One concise review notice is enough.");
-assert.match(html,/target-list-dashboard\.css\?v=20261123-compact-v3/,"Phone must load the latest compact styles, not a cached rendering.");
+assert.match(html,/target-list-dashboard\.js\?v=20261123-readable-v4/,"Phone must load the newest upload-free reader.");
 assert.match(css,/Target List v3 — dense mobile-first horse-racing reader/);
 assert.match(css,/-webkit-line-clamp:unset/,"Full editorial must never be cut off at two lines.");
 assert.match(js,/function horseRow\(role,runner,entry\)/,"Horse rows themselves open the detail drawer.");
@@ -120,7 +126,7 @@ class El{
  showModal(){this.open=true;}
  focus(){this.focused=true;}
 }
-const ids=["rr-target-date","rr-target-sort","rr-target-status","rr-target-app","rr-target-empty","rr-target-list","rr-target-dialog","rr-target-dialog-content","rr-target-dialog-title","rr-target-count","rr-target-context","rr-target-freshness","rr-target-dialog-close","rr-target-upload-form","rr-target-file","rr-target-upload-status"];
+const ids=["rr-target-date","rr-target-sort","rr-target-status","rr-target-app","rr-target-empty","rr-target-list","rr-target-dialog","rr-target-dialog-content","rr-target-dialog-title","rr-target-count","rr-target-context","rr-target-freshness","rr-target-dialog-close"];
 const elements=new Map(ids.map(id=>[id,new El(id.includes("dialog")?"dialog":"div")]));
 const doc={getElementById:id=>elements.get(id),createElement:tag=>new El(tag)};
 const alpha=structuredClone(good.targets[0]);alpha.rank=3;alpha.track="Alpha Test Track";alpha.race_number=7;alpha.post_time_et="8:40 PM ET";

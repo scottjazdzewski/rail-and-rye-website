@@ -188,21 +188,5 @@ dateSelect.addEventListener("change",()=>load(dateSelect.value));
 sortSelect.addEventListener("change",renderTargets);
 get("rr-target-dialog-close").addEventListener("click",()=>dialog.close());
 dialog.addEventListener("close",()=>state.lastFocus?.focus());
-get("rr-target-upload-form").addEventListener("submit",async event=>{
- event.preventDefault();
- const file=get("rr-target-file").files?.[0];if(!file)return;
- const output=get("rr-target-upload-status");
- output.textContent="Validating private source…";
- try{
-  if(file.size>512*1024)throw Error("File exceeds 512 KB private upload limit.");
-  const res=await fetch("/api/admin/target-list",{method:"POST",credentials:"same-origin",
-   headers:{"Content-Type":"application/json"},body:await file.text()});
-  const result=await res.json().catch(()=>({}));
-  if(!res.ok)throw Error(result.error||"Upload rejected.");
-  output.textContent=(result.unchanged?"Same version already saved.":"Saved for private review.")+
-   " "+result.race_date+" · Revision "+result.revision;
-  await load(result.race_date);
- }catch(e){output.textContent=String(e.message||"Upload failed.");}
-});
 load();
 })();
