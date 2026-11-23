@@ -1,4 +1,4 @@
-// Source-driven Nov 23 interim Pick Ticket constructor, private admin preview only.
+// Source-driven date-scoped Pick Ticket constructor, private admin preview only.
 // NEVER import or embed paid TRI data here. Read current full-field PWIN from private
 // R2 Projections on request; reject missing/mismatched exact model distributions.
 // No tote, payout, pool-size, ROI, or profitability estimates are made.
@@ -28,6 +28,11 @@ export const PICK_MENU_1123=Object.freeze([
 ]);
 
 const counts={"Finger Lakes":8,"Mahoning Valley":10,"Mountaineer":8,"Parx Racing":9,"Zia Park":10};
+import {PICK_DAY_1124,PICK_TRACK_COUNTS_1124,PICK_MENU_1124} from "./pick-tickets-menu-1124.js";
+export const pickMenuForDate=date=>date===PICK_DAY?PICK_MENU_1123:
+ date===PICK_DAY_1124?PICK_MENU_1124:[];
+const pickCountsForDate=date=>date===PICK_DAY?counts:
+ date===PICK_DAY_1124?PICK_TRACK_COUNTS_1124:null;
 import {verifyV32ScratchTransition} from "./pick-tickets-v32.js";
 import {chooseV33,PICK_V33_ENGINE,PICK_V33_COST_SCALE_DOLLARS,
  PICK_V33_MIN_LEG_COVERAGE} from "./pick-tickets-v33.js";
@@ -40,16 +45,17 @@ const displayPct=n=>(n*100).toFixed(1)+"%";
 
 /** Current betting interests only. Never infer a missing horse, field, jockey, or PWIN. */
 function checkedCurrentFields(card){
- if(!card||card.race_date!==PICK_DAY||!Object.hasOwn(counts,card.track_name)||
+ const limits=pickCountsForDate(card?.race_date);
+ if(!card||!limits||!Object.hasOwn(limits,card.track_name)||
     !["prescratch","scratch_final"].includes(card.projection_status)||
-    !Array.isArray(card.races)||card.races.length!==counts[card.track_name])return null;
+    !Array.isArray(card.races)||card.races.length!==limits[card.track_name])return null;
  const out=new Map();
  for(const race of card.races){
   const number=race.race_number;
   if(card.projection_status==="prescratch"&&
      (race.scratch_count!==null&&(race.scratch_count!==undefined&&race.scratch_count!==0)||
       (race.scratches?.length||0)>0))return null;
-  if(!Number.isInteger(number)||number<1||number>counts[card.track_name]||
+  if(!Number.isInteger(number)||number<1||number>limits[card.track_name]||
      out.has(number)||!Array.isArray(race.entries)||race.entries.length<2)return null;
   const seen=new Set(),entries=[];
   for(const row of race.entries){
@@ -62,7 +68,7 @@ function checkedCurrentFields(card){
   if(Math.abs(entries.reduce((n,e)=>n+e.pwin,0)-1)>1e-5)return null;
   out.set(number,{race_number:number,entries});
  }
- if(out.size!==counts[card.track_name])return null;
+ if(out.size!==limits[card.track_name])return null;
  return out;
 }
 function makeSequenceV33(spec,races,stage){
@@ -111,13 +117,13 @@ function buildTrackV33(card,wrapped){
  const stage=card.projection_status==="scratch_final"?"POSTSCRATCH":"PRESCRATCH";
  // Source authenticity/official scratch changes are separately verified by
  // the private scoring and release gates. This result is NEVER customer-approved.
- const sequences=PICK_MENU_1123.filter(x=>x.track===card.track_name)
+ const sequences=pickMenuForDate(card.race_date).filter(x=>x.track===card.track_name)
   .map(x=>makeSequenceV33(x,current,stage));
  if(sequences.some(x=>!x))return null;
  sequences.sort((a,b)=>a.start_race-b.start_race||
   (a.end_race-a.start_race)-(b.end_race-b.start_race)||a.name.localeCompare(b.name));
  return {card:{schema_version:1,product_type:"pick_tickets",
-  date:PICK_DAY,track:card.track_name,revision:1,status:stage==="POSTSCRATCH"?"scratch_updated":"initial_current",
+  date:card.race_date,track:card.track_name,revision:1,status:stage==="POSTSCRATCH"?"scratch_updated":"initial_current",
   review_only:true,formula_version:PICK_V33_ENGINE,
   source_type:"PRIVATE_R2_TRI_V33_REQUIRES_SEPARATE_RELEASE_VERIFICATION",
   source_receipt:null,optimizer_basis:PICK_V33_ENGINE,sequences},
@@ -263,11 +269,28 @@ export async function readPrivatePickProjections(env){
  }catch(e){console.warn("Sealed private interim PWIN intake unreadable; skipping",String(e).slice(0,110));}
  return direct;
 }
+// November 24 is independently source-gated. The Timeform archive only
+// confirms race/wager menus, NOT a TRI/F4 scored runner distribution.
+// Never fall back to the previous day's projections or estimate PWIN.
+export async function readPrivatePickProjections1124(env){
+ if(!env?.CARDS_BUCKET)return [];
+ const found=await Promise.all(Object.keys(PICK_TRACK_COUNTS_1124).map(async track=>{
+  const slug=track.toLowerCase().replace(/[^a-z0-9]+/g,"-");
+  try{
+   const file=await env.CARDS_BUCKET.get("projections/dashboard/"+PICK_DAY_1124+"/"+slug+".json");
+   if(!file)return null;
+   const card=JSON.parse(await file.text());
+   if(card?.race_date!==PICK_DAY_1124||card?.track_name!==track)return null;
+   return {card,uploaded_at:file.customMetadata?.uploaded_at||null};
+  }catch(e){console.warn("Unreadable November 24 private TRI source for Pick Tickets",track);return null}
+ }));
+ return found.filter(Boolean);
+}
 export function buildPrescratchPickTicketReview(cards){
  const results=[],rejected=[];
  for(const wrapped of cards||[]){
   const card=wrapped?.card||wrapped;
-  if(card?.race_date!==PICK_DAY||!Object.hasOwn(counts,card?.track_name))continue;
+  if(!pickCountsForDate(card?.race_date)?.[card?.track_name])continue;
   if(card.projection_status!=="prescratch"){
    rejected.push({track:card.track_name,reason:"Fresh complete official postscratch field and matching manifest required."});
    continue;
