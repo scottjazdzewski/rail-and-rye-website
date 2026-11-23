@@ -275,7 +275,7 @@ export async function handleAdminPickTickets(request,env){
        matchStoredTicketToLatestSource(c,audited))authorized.push(entry);
     else staleRevisions.push({date:c.date,track:c.track,revision:c.revision,
      reason:"Saved ticket not approved for this exact current TRI field."});
-   }else if(c.formula_version===PICK_V33_ENGINE&&c.date<"2026-11-23"&&
+   }else if(c.formula_version===PICK_V33_ENGINE&&c.date<="2026-11-23"&&
             sourceIsScratchCurrent(c)){
     authorized.push(entry);
    }else staleRevisions.push({date:c.date,track:c.track,revision:c.revision,
