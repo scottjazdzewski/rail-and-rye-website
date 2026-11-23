@@ -45,12 +45,13 @@ const ids=["rr-dash-status","rr-dash-app","rr-dash-login","rr-dash-empty","rr-da
 const els=new Map(ids.map(id=>[id,new Element(id.includes("date")||id==="rr-dash-track"||id.includes("race-time")||id==="rr-dash-all-races"||id.includes("sort")?"select":"div")]));
 const fixture={cards:[{race_date:"2026-11-22",track:"Del Mar",product_id:null,card:{track_name:"Del Mar",races:[{race_number:6,post_time_et:"6:00 PM",conditions:"Claiming $8,000",purse:"$20,000",pace:"Moderate",surface:"Dirt",distance:"5 1/2 furlongs",scratch_count:1,scratches:[{program_number:"3",horse_name:"Scratched Runner"}],entries:[{program_number:"5",horse_name:"Doo Wop Don",morning_line:"5-2",win_probability:16.6,fair_odds:"5/1",trainer:"",jockey:"",metrics:[]},{program_number:"2",horse_name:"Third Horizon",morning_line:"9-2",win_probability:20.0,fair_odds:"4/1",trainer:"",jockey:"",metrics:[]},{program_number:"12",horse_name:"Barrister Proof",morning_line:"12-1",win_probability:27.5,fair_odds:"5/2",trainer:"Brad Cox",jockey:"Jose Ortiz",metrics:[{label:"Speed",value:"green"},{label:"Form",value:"gray"},{label:"Class",value:"red"},{label:"Pace Fit",value:"green"},{label:"Surface / Distance",value:"gray"}]}]}]}}]};
 // Deliberately out-of-number post order: Del Mar Race 6 is before Race 4.
-fixture.cards[0].card.races.push({race_number:4,post_time_et:"8:05 PM ET",conditions:"Maiden",purse:"$21,000",pace:"Weak",surface:"Dirt",distance:"6 F",entries:[{program_number:"1",horse_name:"Later Del Mar Runner",win_probability:29,win_probability_exact:29,morning_line:"3-1",fair_odds:"2.45/1",metrics:[]}]});
+fixture.cards[0].card.races.push({race_number:4,post_time_et:"8:05 PM ET",conditions:"Belmont S. (G1) Presented by NYRA Bets",purse:"$21,000",pace:"Weak",surface:"Dirt",distance:"6 F",entries:[{program_number:"1",horse_name:"Later Del Mar Runner",win_probability:29,win_probability_exact:29,morning_line:"3-1",fair_odds:"2.45/1",metrics:[]}]});
 fixture.cards.push({race_date:"2026-11-22",track:"Zia Park",product_id:null,card:{track_name:"Zia Park",races:[{race_number:2,post_time_et:"4:30 PM ET",conditions:"Allowance",purse:"$17,000",pace:"Moderate",surface:"Dirt",distance:"6 F",entries:[{program_number:"3",horse_name:"Earlier Zia Runner",win_probability:39.7,win_probability_exact:39.7,morning_line:"3-1",fair_odds:"1.52/1",metrics:[]}]}]}});
 const document={body:{dataset:{rrPreview:"true"}},querySelector(selector){return els.get(selector.slice(1))??null;},createElement(tag){return new Element(tag);}};
 const context={document,fetch:async()=>({ok:true,json:async()=>fixture}),Intl,Date,Number,String,Array,Error,console,encodeURIComponent};
 const instrumented=js.replace(/\ninit\(\);\s*\}\)\(\);\s*$/,"\nglobalThis.__testToteOdds=fairOdds;\ninit();\n})();");
 assert.notEqual(instrumented,js,"The approved fair-odds display helper must be testable");
+vm.runInNewContext(readFileSync("public/assets/rr-race-titles.js","utf8"),context,{filename:"rr-race-titles.js"});
 vm.runInNewContext(instrumented,context,{filename:"projections-dashboard.js"});
 await new Promise(resolve=>setTimeout(resolve,0));
 
@@ -101,7 +102,7 @@ const memberSort=readFileSync("public/membership/dashboard/index.html","utf8");
 for(const html of [adminSort,memberSort]){
  assert.doesNotMatch(html,/rr-dash-sort|Sort by|value="finish"|value="program"/,
    "There must be no customer-facing sorting controls");
- assert.match(html,/projections-dashboard\.js\?v=28/,"Use current locked-order client");
+ assert.match(html,/projections-dashboard\.js\?v=29/,"Use current locked-order client");
 }
 assert.doesNotMatch(js,/rr-dash-sort/,"Client must not let users reorder horses");
 console.log("PASS: compact runner rows, verified dash factor states, preserved race data, no redundant PDF action");
@@ -118,9 +119,9 @@ assert.doesNotMatch(js,/\breviewMode\b|PARTIAL FIELD|rr-dash-review-data/,
  "No stale partial-field runtime branches");
 assert.match(js,/api\("\/api\/admin\/projections-preview"\)/,
  "Private admin preview must always read the secure projection API");
-assert.match(adminHtml,/projections-dashboard\.js\?v=28/,
+assert.match(adminHtml,/projections-dashboard\.js\?v=29/,
  "Admin dashboard must load the latest hardened shared client");
-assert.match(memberHtml,/projections-dashboard\.js\?v=28/,
+assert.match(memberHtml,/projections-dashboard\.js\?v=29/,
  "Member dashboard must use the same client revision");
 console.log("PASS: no embedded premium data or partial review fallback; authenticated full-field preview only");
 
@@ -134,9 +135,9 @@ for(const html of [adminHtml,memberHtml]){
   "Keep an accessible page title without visible ornamental title space");
  assert.match(html,/class="rr-dash-search-field"/,
   "The mobile horse search occupies one consistent full-width row");
- assert.match(html,/projections-dashboard\.css\?v=24/,
+ assert.match(html,/projections-dashboard\.css\?v=25/,
   "Current improved typography style must be loaded");
- assert.match(html,/projections-dashboard\.js\?v=28/,
+ assert.match(html,/projections-dashboard\.js\?v=29/,
   "Current compact-label asset must be loaded");
 }
 assert.doesNotMatch(adminHtml,/rr-dash-private-banner|Private admin preview · member dashboard remains off|Return to projection uploader/,
@@ -199,6 +200,20 @@ assert.equal(els.get("rr-dash-mode-all").attributes["aria-pressed"],"true");
 els.get("rr-dash-mode-track").events.click();
 assert.equal(els.get("rr-dash-app").dataset.mode,"track");
 assert.equal(els.get("rr-dash-global-timeline").hidden,true);
+// Real DOM integration: display FULL stakes name, no sponsorship, trophy G1.
+els.get("rr-dash-track").value="Del Mar";
+els.get("rr-dash-track").events.change();
+const laterRace=els.get("rr-dash-races").children.find(x=>x.dataset.raceNumber==="4");
+assert.ok(laterRace?.events?.click,"The graded stakes race tab should exist");
+laterRace.events.click();
+const displayedRace=els.get("rr-dash-race");
+assert.match(displayedRace.textContent,/Belmont Stakes/,"Stakes name must be fully written out");
+assert.doesNotMatch(displayedRace.textContent,/Presented by|NYRA Bets|Belmont S\\./i,
+ "Sponsor and race-name abbreviation must not appear in header");
+const trophy=matchClass(displayedRace,"rr-dash-graded-trophy");
+assert.ok(trophy,"A source-verified G1 stakes race must display a trophy");
+assert.match(trophy.className,/--g1/,"Grade 1 trophy must use gold distinction");
+assert.equal(trophy.getAttribute("aria-label"),"Grade 1 stakes trophy");
 console.log("PASS: true per-track and all-track race chronology; original header art; no repeated Analysis CTA; conventional tote fair odds");
 
 
@@ -238,7 +253,7 @@ console.log("PASS: stable branded race chip selection, approved horse/track art 
 for(const html of [adminHtml,memberHtml]){
  assert.match(html,/rr-exotic-bet-builder\.js\?v=4/,
   "Customers must load the actual source-backed F4 odds client, not cached v1");
- assert.match(html,/projections-dashboard\.js\?v=28/,
+ assert.match(html,/projections-dashboard\.js\?v=29/,
   "Both admin and member dashboard views receive same race-aware F4 routing");
 }
 console.log("PASS: private live-F4 percentages and gross break-even payout UI cache-busted");
