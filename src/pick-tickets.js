@@ -1,6 +1,6 @@
 import {getPickTicketsIntake} from './pick-tickets-intake.js';
 import {buildPrescratchPickTicketReview,buildV32PostScratchReviewed,
- readPrivatePickProjections} from './pick-tickets-auto.js';
+ buildV32ScratchFieldPreview,readPrivatePickProjections} from './pick-tickets-auto.js';
 import {PICK_V32_ENGINE} from './pick-tickets-v32.js';
 import {readAdminProjectionCards} from './projections.js';
 import {getNov23ScratchLedger,sourceIsScratchCurrent,officialScratchSequenceCount} from './pick-tickets-scratch-1123.js';
@@ -189,7 +189,7 @@ export async function handleAdminPickTickets(request,env){
    sourceRejects.push({reason:"Private Projections source unavailable."});
   }
   // Only the original full pre-scratch probabilities can construct a pre card.
-  const pre=buildPrescratchPickTicketReview(source);
+  const pre=buildPrescratchPickTicketReview(source.filter(x=>(x.card||x)?.projection_status==="prescratch"));
   sourceRejects.push(...pre.rejected);
   // Scratch-final inputs are genuinely different fields. Never renormalize
   // prescratch PWIN or trim/replace a scratched runner to mimic a rerun.
@@ -221,13 +221,25 @@ export async function handleAdminPickTickets(request,env){
     stageCards.push(ticketCard);
    }catch(e){sourceRejects.push({track,reason:"V3.2 scratch field gate: "+String(e.message||e).slice(0,125)})}
   }
+  // Separate private mathematical review from release-cleared editions.
+  // Actual current-field PWIN may still be based on prescratch factors.
+  // This preview is NEVER placed into authorized and is NEVER written to R2.
   const covered=new Set(authorized.map(x=>x.card.date+"|"+x.card.track));
-  const reviews=stageCards.filter(x=>!covered.has(x.card.date+"|"+x.card.track));
+  const reviews=[];
+  const stageCandidates=[...stageCards,
+   ...source.map(x=>buildV32ScratchFieldPreview(x)).filter(Boolean),
+   ...pre.cards];
+  for(const view of stageCandidates){
+   const key=view.card.date+"|"+view.card.track;
+   if(covered.has(key))continue;
+   covered.add(key);reviews.push(view);
+  }
   const scratch_update=getNov23ScratchLedger();
   scratch_update.dependent_sequences=officialScratchSequenceCount(PICK_MENU_1123);
   return respond({cards:[...authorized,...reviews],intake:getPickTicketsIntake(),
    scratch_update,stale_revisions:superseded,
-   engine:PICK_V32_ENGINE,source_rejections:sourceRejects,
+   engine:PICK_V32_ENGINE,soft_cost_scale_dollars:15,
+   private_review_only:true,source_rejections:sourceRejects,
    prescratch_sequences_calculated:pre.cards.reduce((n,x)=>n+x.card.sequences.length,0),
    review_count:reviews.length,demo:false});
  }

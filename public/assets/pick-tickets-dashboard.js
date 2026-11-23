@@ -261,7 +261,12 @@
   left.append(node("span","rr-pt-kicker","RAIL & RYE PICK TICKETS"));
   left.append(node("h2","",activeSeq.name+" · Races "+activeSeq.start_race+"–"+activeSeq.end_race));
   head.append(left,state(activeSeq.play_status));
-  box.append(head,modeControls());
+  box.append(head);
+  if(card.score_verification_status==="CURRENT_FIELD_COMPLETE_SCORING_AND_MANIFEST_PENDING"){
+   box.append(node("p","rr-pt-source-check",
+    "SOURCE CHECK · Scratch-adjusted field loaded. Customer access remains disabled pending final scoring and source approval."));
+  }
+  box.append(modeControls());
   if(activeMode==="builder")box.append(builder());
   else{
    const chosen=selectedTicket();

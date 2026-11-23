@@ -120,6 +120,52 @@ const demoResponse=await handleAdminPickTickets(new Request("https://railandryer
 const protectedListing=await demoResponse.json();
 assert.equal(protectedListing.demo,false,"demo URL parameter cannot select fictional cards");
 assert.equal(protectedListing.cards.length,1,"GET always returns real R2 records only");
+
+const previewOwner=getNov23ScratchLedger().tracks.find(t=>t.name==="Finger Lakes");
+const previewSource={
+ race_date:"2026-11-23",track_name:"Finger Lakes",
+ projection_status:"scratch_final",factor_basis:"verified_prescratch",
+ races:Array.from({length:8},(_,i)=>{
+  const race=i+1,size=i<7?7:6;
+  const scratched=previewOwner.scratches[String(race)]||[];
+  const allowed=Array.from({length:25},(_,j)=>String(j+1))
+   .filter(p=>!scratched.includes(p)).slice(0,size);
+  return {race_number:race,scratch_count:scratched.length,scratches:scratched,
+   entries:allowed.map(program=>({
+    program_number:program,win_probability_exact:100/size,
+    f4_probabilities:{exact_p1:1/size}
+   }))};
+ })
+};
+const liveEnv={CARDS_BUCKET:new FakeR2()};
+liveEnv.CARDS_BUCKET.objects.set("projections/dashboard/2026-11-23/finger-lakes.json",
+ {text:JSON.stringify(previewSource),customMetadata:{uploaded_at:"2026-11-23T19:56:00Z"}});
+const sourcePreview=await handleAdminPickTickets(
+ new Request("https://railandryeracing.com/api/admin/pick-tickets"),liveEnv);
+const sourcePayload=await sourcePreview.json();
+assert.equal(sourcePayload.engine,PICK_V32_ENGINE);
+assert.equal(sourcePayload.soft_cost_scale_dollars,15);
+assert.equal(sourcePayload.private_review_only,true);
+assert.equal(sourcePayload.review_count,1);
+assert.equal(sourcePayload.cards.length,1);
+assert.equal(sourcePayload.cards[0].card.formula_version,PICK_V32_ENGINE);
+assert.equal(sourcePayload.cards[0].card.score_verification_status,
+ "CURRENT_FIELD_COMPLETE_SCORING_AND_MANIFEST_PENDING");
+assert.equal(sourcePayload.cards[0].card.review_only,true);
+assert.equal(sourcePayload.cards[0].card.source_receipt,null);
+assert.equal(sourcePayload.cards[0].card.official_scratch_count,5);
+assert.equal(sourcePayload.cards[0].card.active_runner_count,55);
+assert.equal(sourcePayload.cards[0].card.official_scratch_source_sha256,previewOwner.source_sha256);
+assert.ok(sourcePayload.cards[0].card.sequences.every(x=>
+ x.review_meta.soft_cost_scale_dollars===15&&x.tickets.length===1));
+assert.equal(liveEnv.CARDS_BUCKET.objects.size,1,"review never writes certified tickets to R2");
+const badSource=structuredClone(previewSource);
+badSource.races[0].entries[0].win_probability_exact=25;
+liveEnv.CARDS_BUCKET.objects.set("projections/dashboard/2026-11-23/finger-lakes.json",
+ {text:JSON.stringify(badSource),customMetadata:{}});
+const excluded=await handleAdminPickTickets(
+ new Request("https://railandryeracing.com/api/admin/pick-tickets"),liveEnv);
+assert.equal((await excluded.json()).review_count,0,"invalid current-field PWIN is excluded");
 const mock=getPickTicketsPrivateDemo();
 assert.equal(mock.cards.length,5);
 result=await post({cards:mock.cards.map(x=>x.card)});

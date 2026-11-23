@@ -30,6 +30,8 @@ export const PICK_MENU_1123=Object.freeze([
 const counts={"Finger Lakes":8,"Mahoning Valley":10,"Mountaineer":8,"Parx Racing":9,"Zia Park":10};
 import {chooseV32,verifyV32ScratchTransition,PICK_V32_ENGINE,
  PICK_V32_COST_SCALE_DOLLARS} from "./pick-tickets-v32.js";
+import {getNov23ScratchLedger} from "./pick-tickets-scratch-1123.js";
+import {getPickTicketsIntake} from "./pick-tickets-intake.js";
 
 const isNumber=n=>typeof n==="number"&&Number.isFinite(n)&&n>=0&&n<=100;
 const displayPct=n=>(n*100).toFixed(1)+"%";
@@ -65,7 +67,10 @@ function makeSequenceV32(spec,races,stage){
  const legs=Array.from({length:spec.end_race-spec.start_race+1},(_,i)=>
   races.get(spec.start_race+i));
  if(legs.some(x=>!x))return null;
- const chosen=chooseV32(legs,spec.unit_cents);
+ // V3.2 production authority fixes the cost preference at 15 USD for every stage.
+ const chosen=chooseV32(legs,spec.unit_cents,{costScaleDollars:PICK_V32_COST_SCALE_DOLLARS});
+ if(chosen.engine!==PICK_V32_ENGINE||chosen.soft_cost_scale_dollars!==15)
+  throw Error("V3.2 cost scale or engine mismatch: fail closed.");
  const picks=chosen.picks.map((programs,i)=>({race_number:spec.start_race+i,programs}));
  const fields=legs.map(l=>({race_number:l.race_number,programs:l.entries.map(e=>e.program_number)}));
  const probs=Object.fromEntries(legs.map(l=>
@@ -109,6 +114,65 @@ function buildTrackV32(card,wrapped){
   review_only:true,source_type:"PRIVATE_R2_TRI_V32_REQUIRES_SEPARATE_RELEASE_VERIFICATION",
   source_receipt:null,optimizer_basis:PICK_V32_ENGINE,sequences},
   updated_at:wrapped?.uploaded_at||null,review_only:true};
+}
+
+/**
+ * The user already supplied five official Equibase November 23 scratch
+ * reports. Always reconcile the source field to THAT existing ledger rather
+ * than requesting an upload, assuming a replacement, or simply trusting PWIN
+ * normalization. Do not promote this public-fact reconciliation to a scorer
+ * certification receipt.
+ */
+export function verifyV32OwnerScratchSnapshot(card){
+ if(!card||card.race_date!==PICK_DAY||card.projection_status!=="scratch_final")
+  return {ok:false,reason:"NOT_CURRENT_SCRATCH_FIELD"};
+ const ledger=getNov23ScratchLedger();
+ const track=ledger.tracks.find(t=>t.name===card.track_name);
+ const original=getPickTicketsIntake().tracks.find(t=>t.name===card.track_name);
+ if(!track||!original)return {ok:false,reason:"OFFICIAL_SCRATCH_SOURCE_NOT_FOUND"};
+ if(!Array.isArray(card.races)||card.races.length!==original.race_count)
+  return {ok:false,reason:"INCOMPLETE_TRACK_RACE_FIELD"};
+ const removed=track.scratch_count, expected=original.analysis_runner_count-removed;
+ const activeCount=card.races.reduce((n,r)=>n+(Array.isArray(r.entries)?r.entries.length:0),0);
+ if(activeCount!==expected)
+  return {ok:false,reason:"RACE_DAY_SCRATCH_RUNNER_TOTAL_MISMATCH",
+   expected_active:expected,actual_active:activeCount};
+ for(const race of card.races){
+  if(!Number.isInteger(race.race_number)||!Array.isArray(race.entries))
+   return {ok:false,reason:"INVALID_RACE_ROW"};
+  const scratched=new Set(track.scratches[String(race.race_number)]||[]);
+  if(race.entries.some(e=>scratched.has(String(e.program_number??"").trim().toUpperCase())))
+   return {ok:false,reason:"SCRATCHED_PROGRAM_REMAINS_ACTIVE_R"+race.race_number};
+ }
+ return {ok:true,source_snapshot_sha256:track.source_sha256,
+  original_runner_count:original.analysis_runner_count,scratched_count:removed,
+  active_runner_count:activeCount,source_snapshot_et:track.snapshot_et};
+}
+
+/**
+ * Private, administrator-only V3.2 mathematical preview from the actual
+ * scratch-adjusted field. No approval, release receipt, new scores or true
+ * postscratch factor recalculation is implied by a normalized PWIN sum.
+ * Customer publication continues to require buildV32PostScratchReviewed().
+ */
+export function buildV32ScratchFieldPreview(wrapped){
+ const card=wrapped?.card||wrapped;
+ if(!card||card.projection_status!=="scratch_final"||
+    !["verified_prescratch","verified_scratch_final"].includes(card.factor_basis))
+  return null;
+ const official=verifyV32OwnerScratchSnapshot(card);
+ if(!official.ok)return null;
+ const view=buildTrackV32(card,wrapped);
+ if(!view)return null;
+ return {...view,review_only:true,card:{
+   ...view.card,review_only:true,formula_version:PICK_V32_ENGINE,
+   source_type:"PRIVATE_R2_V32_CURRENT_FIELD_MATH_PREVIEW_NOT_PUBLISHED",
+   score_verification_status:"CURRENT_FIELD_COMPLETE_SCORING_AND_MANIFEST_PENDING",
+   model_factor_basis:card.factor_basis,
+   official_scratch_source_sha256:official.source_snapshot_sha256,
+   official_scratch_count:official.scratched_count,
+   active_runner_count:official.active_runner_count
+ }};
 }
 
 export function buildV32PostScratchReviewed({before,after,manifest,preHash,postHash}){

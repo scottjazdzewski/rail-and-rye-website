@@ -355,3 +355,6 @@ gap:4px;
 }
 
 /* Transparent source status for current scratches with unresolved rider ratings. */
+
+/* V3.2 mathematical preview is admin-only until separate scorer/source approval. */
+.rr-pt-source-check{margin:0;padding:9px 13px;background:#f7f3e8;border-bottom:1px solid #ddcaa5;color:#5a5038;font:750 11px/1.45 Inter,Arial,system-ui,sans-serif}
