@@ -1,47 +1,56 @@
-# TRI → Rail & Rye dashboard: automatic private sync
+# Rail & Rye — direct TRI → R2 dashboard delivery
 
-## Outcome
+**Current design:** Frozen TRI V4.1 + F4 V2 produces a fully receipt-verified, prescratch ZIP. A single publisher uploads the resulting dashboard cards directly to the existing private Cloudflare R2 bucket. The website reads those R2 objects.
 
-The approved scorer output ZIP in the existing **TBS CARD PRODUCTION LOCK — CURRENT** Drive folder is the authoritative input. GitHub Actions checks that folder automatically every two hours, validates the frozen TRI V4.1 and F4 V2 source/receipt hashes, converts the scored ZIP to the dashboard schema and writes only to the private Cloudflare R2 bucket `rail-and-rye-private-cards`.
+```text
+TRI scoring run → verified source ZIP → private Cloudflare R2 → Rail & Rye admin dashboard
+```
 
-No one needs to download and re-upload JSON when a validated scorer ZIP appears in the Drive production folder. The job does not produce or publish customer PDFs, change the site membership-launch flag, promote a card to post-scratch, or colorize uncertified five-factor ratings.
+**Removed:** Google Cloud project, Google Drive API service account, Google Drive folder polling, Google Drive-to-R2 transfer, recurring manual JSON file conversions, and the unused two-hour GitHub Actions polling job. Keep Google Drive only for the existing production archive if desired.
 
-**Status:** Code installed; automatic syncing will remain intentionally disabled until the one-time permissions below are configured. A passing GitHub build is NOT proof that a particular scoring date was uploaded into R2.
+## What is running, what is pending
 
-## One-time connection
+- The direct publisher exists at `scripts/tri_dashboard_sync.py` and is regression-tested with synthetic TRI evidence and a simulated private R2 client.
+- The Cloudflare Worker and dashboard already read from `rail-and-rye-private-cards`; the Worker does not need new endpoints or deployment configuration.
+- **The actual TRI scorer does not run in this GitHub website repo.** The CLI must be invoked automatically by the trusted runtime that currently produces each verified scored package. Until that integration is executed, the website will **not** receive new model data automatically.
+- The user has already saved their R2 credentials in GitHub Actions repository secrets, but those secrets **are not automatically available** to the separate TRI scoring environment. Never request them in chat or commit them to the public repository.
+- For November 23, the verified 5-track/45-race/367-runner source ZIP already exists. Publishing it requires running the direct publisher in a trusted environment with scoped R2 credentials; no extra Google project is needed.
 
-1. Create a Google Cloud service account with **Drive API enabled** for its project. Generate a JSON service-account key *privately*. Share the private Drive production folder with its `client_email` as **Viewer**. Never make that folder public. The current production folder ID is `1yR79Mp8BndMd1KQfGEsbUOKvq-BJ2Vzd`.
-2. In Cloudflare, create an R2 API token scoped only to object read/write for **rail-and-rye-private-cards**. Note the Cloudflare account ID and R2 key ID and secret key. Do not give the token global account permissions.
-3. In GitHub `scottjazdzewski/rail-and-rye-website` → Settings → Secrets and variables → Actions → Repository secrets, configure:
-   - `TRI_GOOGLE_SERVICE_ACCOUNT_JSON`: complete Google service-account JSON (private key included).
-   - `TRI_CLOUDFLARE_ACCOUNT_ID`: Cloudflare account ID.
-   - `TRI_R2_ACCESS_KEY_ID`: scoped R2 API key ID.
-   - `TRI_R2_SECRET_ACCESS_KEY`: scoped R2 API secret key.
-   Optional Actions repository variable `TRI_DRIVE_FOLDER_ID` can override the pinned private production folder ID.
-4. From GitHub → Actions → **Sync verified TRI prescratch projections to private R2**, choose **Run workflow**. Optionally enter exact source Drive ZIP ID to target a particular signed-off package, such as `1tdF_-eVLVRR4P7olyMWIG02-0c5E0OZx` for November 23. For normal recurring runs, leave this blank.
-5. Verify the job reports `TRI_SYNC date=... tracks=... races=... runners=... written=... mode=PRIVATE_R2`. Check the Access-protected `/admin/projections-preview/` date and track menus. The November 23 expected totals are **5 tracks, 45 races, 367 runners**.
-6. Once configured, automatic checks run every 2 hours. The job skips unchanged source hashes, and refuses to overwrite any newer finalized/scratch-updated card.
+## One production post-score step
 
-## Guardrails and scope
+After the scorer generates the same validated package that contains the `RESOLUTION_RECEIPT.json`, `*_VERIFIED_TRI_F4_SOURCE.json`, per-track TRI/F4 model receipts, role audit and verified connection sidecar:
 
-- Future daily production ZIP contract: `RAIL_RYE_YYYYMMDD_TRI_DASHBOARD_VERIFIED_PRESCRATCH.zip`, with a `RESOLUTION_RECEIPT.json` marked `TRI_V4_F4_V2_PRESCRATCH_ALL_TRACKS_PASS` and the same verified per-track TRI/F4/sidecar evidence structure. The existing November 23 `RAIL_RYE_1123_TRI_V4_F4_V2_ROLE_RATING_REPAIR_ALL_FIVE_PASS.zip` also remains compatible. This packaging convention does **not** change frozen scorer math. Never rename failing packages to mimic an approved ZIP.
-- The source file must contain `RESOLUTION_RECEIPT.json`, all matching `*_VERIFIED_TRI_F4_SOURCE.json` files, each track's original TRI/F4 receipts, role-audit SHA, and verified current trainer/jockey sidecar. Model math is never regenerated or changed.
-- The normalized JSON must pass full-field 100%-PWIN, F4 outcome normalization, exact PWIN=F4 winner, source hash, date, field-count and role-coverage checks.
-- Scratch status stays unknown (`scratch_count:null`), with visible **PRESCRATCH** labeling. Official scratches can be applied later by the scoring production pipeline.
-- The Worker app already reads these private R2 objects via `/api/admin/projections-preview`. No new public data-serving endpoint is introduced.
-- This process intentionally does not alter the `PROJECTIONS_MEMBER_LAUNCH=off` setting.
-- All private data stays in Google Drive, in the ephemeral runner during sync, and in Cloudflare R2. The public GitHub repository holds code and synthetic tests only.
-- The scheduled workflow executes at most every two hours and may be delayed by GitHub scheduling. For immediate delivery after a scored run, the scoring workflow can invoke its authenticated `workflow_dispatch` or use the run-workflow action; the secured source ZIP must already be in Drive.
+```bash
+# Validate all receipts and produce a local preview; requires no credentials:
+python scripts/tri_dashboard_sync.py --zip "/path/to/VERIFIED_TRI_SOURCE.zip"
 
-### Troubleshooting
+# Send it directly into the same private R2 bucket as the website's dashboard:
+python scripts/tri_dashboard_sync.py --zip "/path/to/VERIFIED_TRI_SOURCE.zip" --publish
+```
 
-- `TRI_AUTO_SYNC_DISABLED`: missing one-time GitHub secrets. Nothing is published.
-- `TRI_SYNC_HOLD`: validation failure, missing/failing receipt, role coverage mismatch, unsupported package, or conflict with an existing finalized card. No new publish is accepted.
-- `NO_APPROVED_SOURCE_PACKAGES`: the authenticated service account cannot see any matching ZIP in the configured folder.
-- `NO_CURRENT_PRESCRATCH_PACKAGE`: the latest model ZIP is outside the current/tomorrow date window. Run a manually specified source ID only for deliberate historical review.
-- `unchanged=N`: all N R2 objects already match the current ZIP hash. This is expected on repeat checks.
+The second command should be invoked **once, automatically, by the model runner**, only after its frozen scoring and receipt gates pass. It is idempotent by scored source SHA-256. For a no-write R2 permission/preflight test add `--dry-run` to `--publish`.
 
-## Developer QA (no private credentials)
+Run `python -m unittest discover -s tests -p 'test_tri_dashboard_sync.py' -v` for the synthetic QA.
 
-Run `python -m unittest discover -s tests -p 'test_tri_dashboard_sync.py' -v`.
-Offline verification of a local real package is `python scripts/tri_dashboard_sync.py --verify-zip /path/to/private.zip` (do **not** add that ZIP to the Git repo). 
+## Environment variables used ONLY by the publishing process
+
+- `TRI_CLOUDFLARE_ACCOUNT_ID` — Cloudflare account ID.
+- `TRI_R2_ACCESS_KEY_ID` — a token restricted to **Object Read & Write** on `rail-and-rye-private-cards`.
+- `TRI_R2_SECRET_ACCESS_KEY` — matching secret access key.
+
+Use an encrypted environment/secret manager where the **scorer runs**. Do not paste private values into GitHub source files or chat. If the scorer is moved into an authenticated GitHub Actions runner, it can use the three existing repository secrets without another provider. Otherwise configure the R2 credentials in the trusted scorer runtime. This is the only remaining integration dependency.
+
+Requires `boto3` in the publishing runtime (`pip install boto3`). No `google-auth`, Google Cloud project, `requests`, or Drive folder credentials required.
+
+## Fail-closed safety
+
+- Reject any failed or missing frozen TRI V4.1/F4 V2 receipt, resolution status, 79-feature-gated model run, trainer/jockey role evidence, source identity, exact 100% field PWIN, or F4 finishing distribution.
+- Keep `PRESCRATCH` status. Do **not** assert zero scratches or invent five-factor color badges; official scratches are handled in the separate later scoring pass.
+- Only private bucket path `projections/dashboard/YYYY-MM-DD/track-slug.json`; no public race-data assets committed to GitHub.
+- Preflight all target R2 objects before writing; never replace scratch-updated or finalized cards with an older prescratch source. Repeated SHA-256 packages do not re-write R2.
+- Model delivery is **not** certification of a customer PDF or public member access. Existing member-launch flag stays off until separately authorized.
+- Always verify the actual R2 operation and protected admin preview before saying the data is live.
+
+## Notes on operational simplicity
+
+A service that cannot access the scorer's verified ZIP cannot perform this upload just because a GitHub secret was created. Adding another file transfer/polling service does not solve that. The integration point must be the process that actually **has the scored ZIP**. Keep the current production archive where convenient, but avoid introducing extra credential providers for a copy.
