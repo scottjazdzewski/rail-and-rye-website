@@ -82,6 +82,7 @@ try{
   assert.deepEqual(grouped,["Synthetic Downs","Synthetic Downs","Synthetic Downs","Synthetic Downs","Synthetic Park","Synthetic Park","Synthetic Park","Synthetic Park"],"Track ordering must group A–Z at "+width);
   await page.locator("#rr-target-sort").selectOption("post-time");
   assert.deepEqual(await page.locator(".rr-target-post").allTextContents(),initialTimes,"Chronological order must be independently restored at "+width);
+  await page.screenshot({path:"target-list-viewport-screenshots/card-"+width+".png",fullPage:false});
   await page.getByRole("button",{name:/view .* details for/i}).first().click();
   await page.locator("#rr-target-dialog[open]").waitFor();
   const detail=await page.locator("#rr-target-dialog").evaluate(el=>({
@@ -90,7 +91,7 @@ try{
    max:document.documentElement.clientWidth
   }));
   assert.ok(detail.right<=detail.max+1,"Bottom drawer must not overflow at "+width);
-  await page.screenshot({path:"target-list-viewport-screenshots/target-"+width+".png",fullPage:false});
+  await page.screenshot({path:"target-list-viewport-screenshots/detail-"+width+".png",fullPage:false});
   await page.keyboard.press("Escape");
   assert.equal(await page.locator("#rr-target-dialog").evaluate(el=>el.open),false,"Escape closes drawer at "+width);
   await page.close();
