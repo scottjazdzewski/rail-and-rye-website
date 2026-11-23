@@ -47,11 +47,30 @@
   const state=el("span","rr-pt-state",statusLabel(sequence.play_status));state.dataset.status=sequence.play_status;
   meta.append(state,el("span","",card.track+" · "+fmtDate(card.date)),el("span","",publicationLabel(card.status)));
   elements.detail.append(meta);
-  if(sequence.hit_rate_display)elements.detail.append(el("p","rr-pt-hit","Model hit rate: "+sequence.hit_rate_display));
+  if(sequence.hit_rate_display)elements.detail.append(el("p","rr-pt-hit","Projected hit rate · "+sequence.hit_rate_display));
+  else elements.detail.append(el("p","rr-pt-hit-pending","Projected hit rate not yet published"));
   if(sequence.recommendation)elements.detail.append(el("p","rr-pt-reason",sequence.recommendation));
+  const options=el("div","rr-pt-dialog-options");
   const grid=el("div","rr-pt-ticket-grid");
-  sequence.tickets.forEach(t=>grid.append(ticketBox(t)));
-  elements.detail.append(grid);
+  const buttons=[];
+  let active=Math.max(0,sequence.tickets.findIndex(t=>t.role==="LEAN"));
+  function showDetailTicket(index){
+   active=index;
+   buttons.forEach((button,i)=>button.setAttribute("aria-pressed",String(i===index)));
+   grid.replaceChildren(ticketBox(sequence.tickets[index]));
+  }
+  if(sequence.tickets.length>1){
+   options.append(el("span","rr-pt-mini-label","TICKET VERSION"));
+   const tabs=el("div","rr-pt-tier-tabs");tabs.setAttribute("role","group");tabs.setAttribute("aria-label","Choose approved ticket version");
+   sequence.tickets.forEach((ticket,i)=>{
+    const button=el("button","rr-pt-tier",label(ticket.role));button.type="button";
+    button.setAttribute("aria-pressed",String(i===active));
+    button.addEventListener("click",()=>showDetailTicket(i));
+    buttons.push(button);tabs.append(button);
+   });
+   options.append(tabs);elements.detail.append(options);
+  }
+  elements.detail.append(grid);showDetailTicket(active);
   const receipt=el("p","rr-pt-receipt","Production receipt: "+card.source_receipt.reference+" · Revision "+card.revision);
   elements.detail.append(receipt);
   if(typeof elements.dialog.showModal==="function")elements.dialog.showModal();
