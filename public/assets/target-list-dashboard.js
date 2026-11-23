@@ -148,7 +148,7 @@ function setEdition(data,preferredDate){
  const reviewBanner=get("rr-target-review-banner");
  if(reviewBanner){
   reviewBanner.hidden=!state.reviewOnly;
-  if(state.reviewOnly)reviewBanner.textContent=data.demo_example?"SYNTHETIC LAYOUT EXAMPLE · NOT REAL RACE PICKS · PRIVATE REVIEW":"PRIVATE EDITORIAL REVIEW · NOT SCORER-CERTIFIED · NOT CUSTOMER-FACING";
+  if(state.reviewOnly)reviewBanner.textContent="PRIVATE EDITORIAL REVIEW · NOT SCORER-CERTIFIED · NOT CUSTOMER-FACING";
  }
  const current=state.edition?.race_date||preferredDate||"";
  dateSelect.replaceChildren();
@@ -176,46 +176,12 @@ async function load(date){
   const res=await fetch("/api/admin/target-list"+suffix,{credentials:"same-origin",cache:"no-store"});
   const data=await res.json().catch(()=>({}));
   if(!res.ok)throw Error(data.error||"Unable to retrieve the private edition.");
-  setEdition(!date&&!data.edition?DEMO_EXAMPLE:data,date);
+  setEdition(data,date);
  }catch(e){
   app.hidden=true;empty.hidden=false;status.textContent=String(e.message||"Target List unavailable.");
  }
 }
-// Synthetic data belongs only to this protected admin UI and has no production significance.
-const demoHorse=(program_number,horse_name,win_probability,morning_line,fair_odds)=>({program_number,horse_name,win_probability,morning_line,fair_odds,trainer:"",jockey:""});
-const DEMO_EXAMPLE={review_only:true,demo_example:true,dates:["2026-11-23"],edition:{
- schema_version:1,product_type:"target_list",race_date:"2026-11-23",revision:1,status:"initial",targets:[
- {rank:1,track:"Example Downs",race_number:3,post_time_et:"1:35 PM ET",distance:"6F",surface:"Dirt",conditions:"",
-  favorite:demoHorse("2","Sample Favorite",12.4,"2/1","7/1"),attack:demoHorse("5","Sample Alternative",31.2,"6/1","5/2"),
-  analysis:"EXAMPLE ONLY: This sample explains the spacing of the on-site analysis panel. It is not a real horse, score, selection, or recommendation.",scratches:[]},
- {rank:2,track:"Example Park",race_number:5,post_time_et:"2:20 PM ET",distance:"1M",surface:"Turf",conditions:"",
-  favorite:demoHorse("4","Sample Front Runner",16.1,"5/2","5/1"),attack:demoHorse("12","Sample Closer",36.9,"8/1","9/5"),
-  analysis:"EXAMPLE ONLY: Every target is a compact, self-contained race panel, not a PDF page. The horse-specific analysis appears without opening another window.",scratches:[]},
- {rank:3,track:"Example Downs",race_number:8,post_time_et:"4:10 PM ET",distance:"7F",surface:"Dirt",conditions:"",
-  favorite:demoHorse("7","Sample Morning Line",9.5,"3/1","9/1"),attack:demoHorse("11","Sample Challenger",30.7,"10/1","5/2"),
-  analysis:"EXAMPLE ONLY: Change Sort by to see the same selections grouped by track or ordered across all tracks by post time.",scratches:[]}
- ]}};
 dateSelect.addEventListener("change",()=>load(dateSelect.value));
-get("rr-target-local-file").addEventListener("change",async event=>{
- const el=event?.target||get("rr-target-local-file");
- const file=el.files?.[0];if(!file)return;
- try{
-  if(file.size>512*1024)throw Error("The local review file exceeds 512 KB.");
-  const raw=JSON.parse(await file.text());
-  if(raw.schema_version!==1||raw.product_type!=="target_list"||raw.review_only!==true||
-     raw.customer_publish_approved!==false||raw.production_receipt_verified!==false||
-     !/^\d{4}-\d{2}-\d{2}$/.test(raw.race_date)||!Array.isArray(raw.targets)||raw.targets.length>100)
-    throw Error("Choose a private, noncertified Target List staging review JSON.");
-  for(const item of raw.targets){
-   if(!item||typeof item.track!=="string"||!Number.isInteger(item.race_number)||typeof item.analysis!=="string"||
-      !item.favorite||!item.attack||typeof item.favorite.horse_name!=="string"||typeof item.attack.horse_name!=="string"||
-      !Number.isFinite(item.favorite.win_probability)||!Number.isFinite(item.attack.win_probability))
-    throw Error("This review is missing required source-backed fields.");
-  }
-  setEdition({review_only:true,dates:[raw.race_date],edition:raw},raw.race_date);
-  status.textContent="Local review loaded in this browser only. The website did not upload or store this file.";
- }catch(error){status.textContent=String(error.message||"Could not open local review.");}
-});
 sortSelect.addEventListener("change",renderTargets);
 get("rr-target-dialog-close").addEventListener("click",()=>dialog.close());
 dialog.addEventListener("close",()=>state.lastFocus?.focus());
