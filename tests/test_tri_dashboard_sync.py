@@ -8,7 +8,7 @@ import unittest
 import zipfile
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
-from tri_dashboard_sync import build_cards, Hold, sync_cards, target_key
+from tri_dashboard_sync import build_cards, attach_verified_badges, Hold, sync_cards, target_key
 
 
 def dump(value):
@@ -77,6 +77,46 @@ def make_zip(*, wrong_hash=False, wrong_mass=False, unresolved=False):
     return stream.getvalue()
 
 
+def make_badge_source_zip(*, bad_color=False, wrong_pwin=False):
+    date="2026-11-23"
+    factors=[("Speed","speed"),("Form","form"),("Class","class"),
+             ("Pace Fit","pace"),("Surface / Distance","surface")]
+    entries=[]
+    ledger=[]
+    for program, horse, pwin in [(1,"Runner One",60),(2,"Runner Two",40)]:
+        states={"speed":"green","form":"gray","class":"red","pace":"green","surface":"gray"}
+        if bad_color and program==1:
+            states["speed"]="red"
+        entries.append({"program":program,"horse":horse,"pwin":pwin,
+                        "pwin_exact":pwin/100,"states":states})
+        for label, field in factors:
+            color="green" if field in ("speed","pace") else "red" if field=="class" else "gray"
+            ledger.append({"Race":1,"Program":str(program),"Horse":horse,
+                           "Factor":label,"color":color})
+    if wrong_pwin:
+        entries[0]["pwin_exact"]=.5
+    path1="data/PRX/badge_audit_ledger.json"
+    path2="data/PRX/PRX_RACE_ONLY_INPUT.json"
+    receipt_path="output/FINAL_QA_RECEIPT.json"
+    files={
+        path1: dump(ledger),
+        path2: dump({"track_code":"PRX","track_name":"Parx Racing",
+                     "badge_evaluator_version":"TBS_FACTOR_BADGE_EVALUATOR_V1_2_6_FIT_CLASS_FORM_GUARDS",
+                     "no_pick_tickets":True,"races":[{"race_no":1,"pace":"moderate",
+                      "official_purse_usd":20000,"scratches":[],"rows":entries}]}),
+        receipt_path: dump({"date":date,"production":"PRESCRATCH_RACECARDS_ONLY",
+            "source_races":1,"source_runners":2,
+            "root_self_test":"PASS_CANONICAL_PRODUCTION_SEAL_AND_ALL_STATIC_SADDLE_CHIPS"})
+    }
+    files["SHA256_MANIFEST.json"]=dump({
+        name:hashlib.sha256(value).hexdigest() for name,value in files.items()})
+    stream=io.BytesIO()
+    with zipfile.ZipFile(stream,"w",zipfile.ZIP_DEFLATED) as result:
+        for name,value in files.items():
+            result.writestr(name,value)
+    return stream.getvalue()
+
+
 class TestPrescratchSync(unittest.TestCase):
     def test_keys_match_website_r2_storage(self):
         self.assertEqual(target_key({"track_name": "Parx Racing", "race_date": "2026-11-23"}),
@@ -118,6 +158,27 @@ class TestPrescratchSync(unittest.TestCase):
         with self.assertRaisesRegex(Hold, "scratch-updated"):
             sync_cards(cards, result["sha256"], client=client)
         self.assertEqual(client.writes, 1, "A newer post-scratch card must remain untouched")
+
+
+    def test_original_badges_are_reused_without_rescoring(self):
+        _,cards,_,_=build_cards(make_zip())
+        certified=attach_verified_badges(cards,make_badge_source_zip())
+        self.assertEqual(certified,10)
+        self.assertEqual(cards[0]["races"][0]["pace"],"Moderate")
+        self.assertEqual(cards[0]["races"][0]["entries"][0]["win_probability_exact"],60)
+        self.assertEqual(cards[0]["races"][0]["entries"][0]["f4_probabilities"]["exact_p1"],.6)
+        self.assertEqual([m["value"] for m in cards[0]["races"][0]["entries"][0]["metrics"]],
+                         ["green","gray","red","green","gray"])
+
+    def test_mismatched_audit_color_is_never_published(self):
+        _,cards,_,_=build_cards(make_zip())
+        with self.assertRaisesRegex(Hold,"Factor badge does not match"):
+            attach_verified_badges(cards,make_badge_source_zip(bad_color=True))
+
+    def test_badge_evaluator_on_different_win_score_is_rejected(self):
+        _,cards,_,_=build_cards(make_zip())
+        with self.assertRaisesRegex(Hold,"different TRI PWIN"):
+            attach_verified_badges(cards,make_badge_source_zip(wrong_pwin=True))
 
     def test_verified_source_becomes_only_prescratch_private_import(self):
         date, cards, payload, totals = build_cards(make_zip())
