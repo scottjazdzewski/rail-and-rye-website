@@ -127,6 +127,22 @@ assert.equal(app._formatChance(.99999,false),">99.99%",
 assert.equal(app._formatChance(1,true),"100.00%");
 assert.equal(app._formatChance(.000001,false),"<0.01%",
  "Extremely small positive chance cannot display as exact zero");
+// The same certified probabilities must remain available on a SCRATCH_FINAL
+// race when the current card and source receipts match.
+const lineage={tri_sha256:"a".repeat(64),f4_sha256:receipt,prescratch_parent_sha256:"b".repeat(64),official_changes_sha256:"c".repeat(64)};
+const originalDistribution=race.f4_ordered_probabilities;
+app.open({race,track:"Finger Lakes",date:"2026-11-23",
+ projection_status:"scratch_final",model_receipts:lineage});
+race.f4_ordered_probabilities={...originalDistribution,scratch_state:"SCRATCH_FINAL",dashboard_receipts:lineage};
+state.mode="key";state.type="exacta";state.positions=[new Set(["4"]),new Set(["2","6"]),new Set()];
+result=app._calculate();
+assert.ok(result.chance>0,"Signed scratch-final F4 restores Bet Builder projected hit chance");
+assert.ok(result.fair>0,"Signed scratch-final F4 restores break-even gross payout");
+race.f4_ordered_probabilities.dashboard_receipts={...lineage,f4_sha256:"9".repeat(64)};
+assert.equal(app._calculate().chance,null,"Incorrect scratch-final receipt cannot display numerical projections");
+race.f4_ordered_probabilities=originalDistribution;
+app.open({race,track:"Finger Lakes",date:"2026-11-23",projection_status:"prescratch"});
+race.f4_ordered_probabilities=originalDistribution;
 race.f4_ordered_probabilities.receipt_sha256="";
 assert.equal(app._calculate().chance,null,"Missing receipt must fail closed");
 race.f4_ordered_probabilities.receipt_sha256=receipt;

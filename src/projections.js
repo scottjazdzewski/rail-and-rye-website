@@ -1,3 +1,4 @@
+import {verifyCertifiedScratchFinalTrack} from "./f4-exotics.js";
 const JSON_HEADERS={"Content-Type":"application/json; charset=utf-8","Cache-Control":"private, no-store","X-Content-Type-Options":"nosniff"};
 const UUID_RE=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_BYTES=1024*1024;
@@ -231,7 +232,6 @@ export async function handleAdminProjectionBatchUpload(request,env){
   try{
    const source=await env.CARDS_BUCKET.get(key);
    if(!source)return fail("Publish matching certified scratch-final F4 joint probabilities before projections.",409);
-   const {verifyCertifiedScratchFinalTrack}=await import("./f4-exotics.js");
    if(!verifyCertifiedScratchFinalTrack(card,await source.json()))
     return fail("Matching scratch-final F4 probabilities failed verification; projections were not changed.",409);
   }catch(e){

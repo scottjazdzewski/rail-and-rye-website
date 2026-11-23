@@ -1,8 +1,7 @@
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 
-const code=readFileSync(new URL("./src/projections.js",import.meta.url),"utf8");
-const {handleAdminProjectionBatchUpload,readAdminProjectionCards}=await import("data:text/javascript;charset=utf8,"+encodeURIComponent(code));
+const {handleAdminProjectionBatchUpload,readAdminProjectionCards}=await import("./src/projections.js");
 
 const f4a={exact_p1:.65,exact_p2:.20,exact_p3:.10,exact_p4:.03,exact_p5:.02,p6_plus:0,top2:.85,top3:.95,top4:.98};
 const f4b={exact_p1:.35,exact_p2:.20,exact_p3:.15,exact_p4:.10,exact_p5:.10,p6_plus:.10,top2:.55,top3:.70,top4:.80};
@@ -21,7 +20,7 @@ const stored=new Map();
 const env={CARDS_BUCKET:{
  async put(key,value,config){stored.set(key,{value,customMetadata:config.customMetadata});},
  async list(){return {objects:[...stored.keys()].map(key=>({key}))};},
- async get(key){const file=stored.get(key);return file?{customMetadata:file.customMetadata,text:async()=>file.value}:null;}
+ async get(key){const file=stored.get(key);return file?{customMetadata:file.customMetadata,text:async()=>file.value,json:async()=>JSON.parse(file.value)}:null;}
 }};
 const upload=async data=>handleAdminProjectionBatchUpload(new Request("https://example.invalid/api/admin/projections/batch",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cards:[data]})}),env);
 let response=await upload(card);
@@ -54,13 +53,45 @@ await rejects(x=>{x.races[0].entries[1].win_probability=33;x.races[0].entries[1]
 console.log("PASS: authenticated batch endpoint schema preserves prescratch TRI + F4, keeps scratch status unknown and rejects invalid scores");
 
 
+// Realistic four-runner signed joint distribution, distinct from the original
+// two-runner prescratch smoke fixture. Scratch release must fail before F4 is
+// published, and must not downgrade the already published version.
 const hashes={tri_sha256:"a".repeat(64),f4_sha256:"b".repeat(64),prescratch_parent_sha256:"c".repeat(64),official_changes_sha256:"d".repeat(64)};
+const programs=["1","2","4","7"],pwin=[.4,.3,.2,.1],w2=[1,2,3,4],w3=[1.5,2.5,3.5,4.5];
+const positions=programs.map(()=>Array(4).fill(0));
+const total2=w2.reduce((a,b)=>a+b,0),total3=w3.reduce((a,b)=>a+b,0);
+for(let i=0;i<4;i++)for(let j=0;j<4;j++){
+ if(i===j)continue;
+ const p2=pwin[i]*w2[j]/(total2-w2[i]);
+ positions[i][0]+=p2;positions[j][1]+=p2;
+ for(let k=0;k<4;k++){
+  if(k===i||k===j)continue;
+  const p3=p2*w3[k]/(total3-w3[i]-w3[j]);
+  positions[k][2]+=p3;
+  for(let l=0;l<4;l++)if(l!==i&&l!==j&&l!==k)positions[l][3]+=p3;
+ }
+}
 const finalized=structuredClone(card);
 finalized.projection_status="scratch_final";
 finalized.factor_basis="verified_prescratch";
 finalized.model_receipts=hashes;
 finalized.races[0].scratch_count=1;
 finalized.races[0].scratches=[{program_number:"3",horse_name:"Synthetic Scratch"}];
+finalized.races[0].entries=programs.map((program,i)=>{
+ const v=positions[i],p=pwin[i],f4={exact_p1:p,exact_p2:v[1],exact_p3:v[2],exact_p4:v[3],exact_p5:0,p6_plus:0,
+  top2:p+v[1],top3:p+v[1]+v[2],top4:1};
+ return {...horse(program,"Synthetic "+program,Number((p*100).toFixed(1)),p*100,f4),
+  fair_odds_net_to_1_exact:1/p-1,fair_odds:(1/p-1).toFixed(2)+"/1"};
+});
+response=await upload(finalized);
+assert.equal(response.status,409,"Never publish scratch-final cards before matching F4 exotic probabilities are available");
+assert.equal(stored.size,1,"Rejected release must not write an inconsistent dashboard");
+const model={schema_version:2,model_id:"TRI_F4_ORDERING_MODEL_V2_RANK_OFFSET",
+ date:"2026-11-23",track_name:card.track_name,scratch_state:"SCRATCH_FINAL",
+ f4_receipt_sha256:hashes.f4_sha256,prefix_file_sha256:"e".repeat(64),
+ dashboard_receipts:hashes,races:[{race_number:1,programs,pwin,p2_weights:w2,p3_weights:w3}]};
+const modelKey="projections/f4-ordered/2026-11-23/synthetic-test-track.json";
+stored.set(modelKey,{value:JSON.stringify(model),customMetadata:{}});
 response=await upload(finalized);
 assert.equal(response.status,200,await response.clone().text());
 const finalRead=await readAdminProjectionCards(env);
@@ -82,4 +113,8 @@ await finalRejects(x=>{delete x.model_receipts;},/receipt hashes/i);
 await finalRejects(x=>{x.races[0].scratch_count=0;},/full official scratch list/i);
 await finalRejects(x=>{x.races[0].scratches[0].program_number="1";},/scratched horse cannot remain/i);
 await finalRejects(x=>{x.races[0].entries[0].win_probability_exact=70;},/F4 first-place probability/i);
-console.log("PASS: receipt-traced scratch-final models, complete scratches, PWIN/F4 integrity and no prescratch downgrades");
+const badModel=structuredClone(model);badModel.dashboard_receipts.f4_sha256="f".repeat(64);
+stored.set(modelKey,{value:JSON.stringify(badModel),customMetadata:{}});
+response=await upload(finalized);
+assert.equal(response.status,409,"Reject future scratch updates if their F4 receipt no longer matches");
+console.log("PASS: scratch-final cards publish only with identical, source-verified F4 joint probabilities for all races");

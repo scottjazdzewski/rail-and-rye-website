@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import {readCertifiedF4Exotics} from "./src/f4-exotics.js";
+import {readCertifiedF4Exotics,verifyCertifiedScratchFinalTrack} from "./src/f4-exotics.js";
 const source="a".repeat(64),badge="b".repeat(64),receipt="c".repeat(64),prefix="d".repeat(64);
 const programs=["4","1","2","3"],pwin=[.4,.3,.2,.1],w2=[1,2,3,4],w3=[.5,1,1.5,2];
 const sums2=w2.reduce((a,b)=>a+b,0),sums3=w3.reduce((a,b)=>a+b,0);
@@ -58,3 +58,29 @@ for(const [context,status] of bads){
 const invalid=await readCertifiedF4Exotics(env(),new URL("https://railandryeracing.com/api/admin/projections-f4?date=2026-11-23&track=Finger%20Lakes&race=26"));
 assert.equal(invalid.status,400);
 console.log("PASS: authenticated-source F4 odds endpoint checks original source, badges, live field, P1/P2/P3 and holds on scratches");
+
+const lineage={tri_sha256:"a".repeat(64),f4_sha256:receipt,prescratch_parent_sha256:"b".repeat(64),official_changes_sha256:"d".repeat(64)};
+const scratchRace={...race,scratch_count:1,scratches:[{program_number:"7",horse_name:"Synthetic scratch"}]};
+const scratchCard={...card,projection_status:"scratch_final",model_receipts:lineage,races:[scratchRace]};
+const scratchF4={...blob,scratch_state:"SCRATCH_FINAL",dashboard_receipts:lineage};
+delete scratchF4.source_sha256;
+delete scratchF4.badge_sha256;
+const valid=await readCertifiedF4Exotics(env(scratchCard,scratchF4),url);
+assert.equal(valid.status,200,"Verified scratch-final F4 joint distribution is deliverable");
+const certified=(await valid.json()).f4;
+assert.equal(certified.scratch_state,"SCRATCH_FINAL");
+assert.equal(certified.dashboard_receipts.f4_sha256,receipt);
+assert.equal(verifyCertifiedScratchFinalTrack(scratchCard,scratchF4),true);
+assert.equal(verifyCertifiedScratchFinalTrack(scratchCard,{...scratchF4,model_id:"incorrect"}),false);
+const errors=[
+ [env(scratchCard,blob),409],
+ [env(scratchCard,{...scratchF4,dashboard_receipts:{...lineage,official_changes_sha256:"e".repeat(64)}}),409],
+ [env(scratchCard,{...scratchF4,prefix_file_sha256:"invalid"}),409],
+ [env({...scratchCard,races:[{...scratchRace,scratches:[{program_number:"4"}]}]},scratchF4),409],
+ [env({...scratchCard,races:[{...scratchRace,entries:scratchRace.entries.slice(1)}]},scratchF4),409]
+];
+for(const [context,status] of errors){
+ const reply=await readCertifiedF4Exotics(context,url);
+ assert.equal(reply.status,status,"Never use stale or mismatched F4 after a scratch revision");
+}
+console.log("PASS: scratch-final source, receipt linkage, active field and F4 marginals are verified before returning ticket odds");
