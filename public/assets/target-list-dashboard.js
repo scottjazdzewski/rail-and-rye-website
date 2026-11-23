@@ -99,8 +99,32 @@ function headerColumns(){
  add(head,node("span","","RUNNER / SELECTION"),metrics);
  return head;
 }
+// Shared production title authority with Projections and Longshot Radar.
+// This changes presentation only — never the underlying Target List model.
+function sourceRaceTitle(entry){
+ const raw=entry.stakes_name||entry.race_name||entry.conditions;
+ if(typeof raw!=="string"||!raw.trim())return null;
+ const official=globalThis.RRRaceTitles?.describe?.(entry);
+ if(official?.title)return official;
+ // Defensive display fallback: do not infer grade if canonical utility
+ // is unavailable; still expand a terminal stakes suffix for readability.
+ const allCaps=/[A-Z]/.test(raw)&&!/[a-z]/.test(raw);
+ let fallback=raw.replace(/\s*(?:presented|sponsored|powered)\s+by\b.*$/i,"")
+  .replace(/\b(?:S|Stk|Stks)\.?$/i,"Stakes").trim();
+ if(allCaps)fallback=fallback.toLowerCase().replace(/\b[a-z]/g,x=>x.toUpperCase());
+ return {title:fallback,grade:null};
+}
+function appendGradeTrophy(parent,grade){
+ if(!Number.isInteger(grade)||grade<1||grade>3)return;
+ const badge=node("span","rr-ed-grade-trophy rr-ed-grade-trophy--g"+grade);
+ badge.setAttribute("aria-label","Grade "+grade+" stakes trophy");
+ badge.title="Grade "+grade+" Stakes";
+ add(badge,node("span","rr-ed-grade-trophy-icon","🏆"),node("strong","rr-ed-grade-trophy-label","G"+grade));
+ parent.append(badge);
+}
 function raceMeta(entry){
- return [entry.distance,entry.surface,entry.conditions].filter(Boolean).join(" · ");
+ const title=sourceRaceTitle(entry);
+ return [entry.distance,entry.surface,title?.title].filter(Boolean).join(" · ");
 }
 function scratchList(entry){
  if(!entry.scratches?.length)return null;
@@ -118,6 +142,7 @@ function openAnalysis(entry,trigger){
  dialogTitle.textContent=entry.track+" · Race "+entry.race_number;
  content.replaceChildren();
  const context=node("p","rr-target-drawer-meta",[entry.post_time_et,raceMeta(entry)].filter(Boolean).join(" · "));
+ appendGradeTrophy(context,sourceRaceTitle(entry)?.grade);
  add(content,context,headerColumns(),horseRow("ML FAVORITE",entry.favorite),horseRow("ATTACK",entry.attack));
  if(entry.also_live)content.append(horseRow("ALSO LIVE",entry.also_live));
  const analysis=node("section","rr-target-drawer-analysis");
@@ -137,7 +162,11 @@ function targetCard(entry){
  // Match Longshot Radar: one strong headline, full source conditions immediately
  // below it in the SAME navy banner; no shrinking, clipping, or invented values.
  const meta=raceMeta(entry);
- if(meta)head.append(node("p","rr-target-race-facts",meta));
+ if(meta){
+  const facts=node("p","rr-target-race-facts",meta);
+  appendGradeTrophy(facts,sourceRaceTitle(entry)?.grade);
+  head.append(facts);
+ }
  add(card,head);
  add(card,headerColumns(),horseRow("ML FAVORITE",entry.favorite,entry),horseRow("ATTACK",entry.attack,entry));
  if(entry.also_live)card.append(horseRow("ALSO LIVE",entry.also_live,entry));
