@@ -96,6 +96,7 @@ function editorialRacePresentation(race){
  // its absence must NEVER expose "First Lady S." to customers again.
  const raw=String(race.stakes_name||race.race_name||race.conditions||"Race projections").trim();
  let title=raw
+  .replace(/^Hollywood Gaming\s+(?=Mahoning\b)/i,"")
   .replace(/\s*\(\s*(?:presented|sponsored|powered)\s+by\b[^)]*\)/gi,"")
   .replace(/\s*(?:presented|sponsored|powered)\s+by\b.*$/i,"")
   .replace(/\s*\(\s*(?:G(?:rade)?\.?|Gr\.?)\s*[-:]?\s*(?:III|II|I|[123])\s*\)\s*$/i,"").trim();
