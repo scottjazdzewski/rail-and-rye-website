@@ -88,7 +88,6 @@ try{
    const tabs=[...nav.querySelectorAll("a")];
    const active=nav.querySelector('[aria-current="page"]');
    const title=document.querySelector(".rr-target-titlebar h1");
-   const intro=document.querySelector(".rr-target-titlebar p");
    const bar=document.querySelector(".rr-target-toolbar");
    const select=bar.querySelector("select");
    const summary=document.querySelector("#rr-target-context");
@@ -100,8 +99,9 @@ try{
      tabHeights:tabs.map(el=>el.getBoundingClientRect().height),
      activeVisible:activeBox.left>=navBox.left-2&&activeBox.right<=navBox.right+2,
      titleSize:parseFloat(getComputedStyle(title).fontSize),
-     introSize:parseFloat(getComputedStyle(intro).fontSize),
-     introVisible:getComputedStyle(intro).display!=="none",
+     noIntro:!document.querySelector(".rr-target-titlebar p"),
+     noTimestamp:!document.querySelector("#rr-target-freshness"),
+     twoColumnToolbar:getComputedStyle(bar).gridTemplateColumns.split(" ").length===2,
      selectSize:parseFloat(getComputedStyle(select).fontSize),
      selectHeight:select.getBoundingClientRect().height,
      sortContext:summary.textContent,
@@ -114,7 +114,8 @@ try{
     assert.ok(shell.tabHeights.every(v=>v>=40),"Readable navigation tabs keep 40px tap targets at "+width+": "+JSON.stringify(shell));
     assert.ok(shell.activeVisible,"Active Target List tab should be in the swipeable viewport at "+width+": "+JSON.stringify(shell));
     assert.ok(shell.titleSize>=27,"Headings use common 28px mobile scale at "+width);
-    assert.ok(shell.introVisible&&shell.introSize>=13,"Short module description remains readable at "+width);
+    assert.ok(shell.noIntro&&shell.noTimestamp,"No redundant intro or revision label.");
+    if(width>=360)assert.ok(shell.twoColumnToolbar,"Toolbar uses same two-column layout as Radar at "+width);
     assert.ok(shell.selectSize>=15&&shell.selectHeight>=42,"Date and sort controls share readable type at "+width);
   }
   if(width<=1080)await page.locator(".rr-intel-header__mobile summary").click();
