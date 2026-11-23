@@ -2,7 +2,7 @@
 (()=>{
 "use strict";
 const q=selector=>document.querySelector(selector);
-const state={editions:[],date:"",track:"",query:"",sort:"editorial"};
+const state={editions:[],date:"",track:"",query:"",sort:"time"};
 const status=q("#rr-lr-loading"),app=q("#rr-lr-app"),empty=q("#rr-lr-empty"),dialog=q("#rr-lr-dialog");
 const make=(tag,cls,content)=>{
  const element=document.createElement(tag);if(cls)element.className=cls;
@@ -20,6 +20,32 @@ const timeLabel=value=>{
  if(!Number.isFinite(parsed))return "";
  return new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",month:"short",day:"numeric",hour:"numeric",minute:"2-digit",timeZoneName:"short"}).format(new Date(parsed));
 };
+// Both Radar and Target List use source-declared Eastern post times. Unknown
+// or unparsable times remain at the end, in their original editorial order.
+function postMinutes(value){
+ const raw=String(value||"").trim();
+ const twelve=raw.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)(?:\s*(?:ET|EDT|EST))?$/i);
+ if(twelve){
+  const h=Number(twelve[1]),m=Number(twelve[2]);
+  if(h<1||h>12||m>59)return Infinity;
+  return (h%12+(twelve[3].toUpperCase()==="PM"?12:0))*60+m;
+ }
+ const twentyfour=raw.match(/^([01]?\d|2[0-3]):([0-5]\d)(?:\s*(?:ET|EDT|EST))?$/i);
+ if(twentyfour)return Number(twentyfour[1])*60+Number(twentyfour[2]);
+ return Infinity;
+}
+function orderByDay(items,mode){
+ const ordered=[...items];
+ if(mode==="track")return ordered.sort((a,b)=>
+  a.track.localeCompare(b.track,"en-US")||a.race_number-b.race_number||
+  postMinutes(a.post_time_et)-postMinutes(b.post_time_et));
+ return ordered.sort((a,b)=>{
+  const first=postMinutes(a.post_time_et),second=postMinutes(b.post_time_et);
+  // Avoid Infinity minus Infinity yielding NaN and breaking stable source order.
+  if(first!==second)return first<second?-1:1;
+  return 0;
+ });
+}
 function programChip(value){
  const chip=make("span","rr-lr-program"),program=String(value||""),match=program.match(/^(\d{1,2})([A-Za-z]?)$/),number=match?Number(match[1]):NaN;
  if(Number.isInteger(number)&&number>=1&&number<=20){
@@ -83,7 +109,7 @@ function makeCard(item){
  const card=make("article","rr-lr-card"),top=make("div","rr-lr-top"),identity=make("div","rr-lr-identity");
  identity.append(make("strong","",item.horse_name));
  const parts=[item.track,"Race "+item.race_number];
- if(item.post_time_et)parts.push(item.post_time_et);
+ if(item.post_time_et)parts.push("Post "+item.post_time_et);
  identity.append(make("small","",parts.join(" · ")));
  const markets=make("div","rr-lr-markets");
  markets.append(
@@ -110,8 +136,8 @@ function renderCandidates(){
  let candidates=edition.candidates.filter(item=>(!state.track||item.track===state.track)&&(
   !state.query||[item.horse_name,item.track,"race "+item.race_number,item.program_number].some(value=>String(value).toLocaleLowerCase("en-US").includes(state.query))
  ));
- if(state.sort==="race")candidates=[...candidates].sort((a,b)=>a.track.localeCompare(b.track)||a.race_number-b.race_number);
- q("#rr-lr-count").textContent=candidates.length+" shown · "+edition.candidates.length+" qualified"+(edition.candidates.length===1?" horse":" horses")+" in today's approved output";
+ candidates=orderByDay(candidates,state.sort);
+ q("#rr-lr-count").textContent=candidates.length+" shown · "+edition.candidates.length+" approved "+(edition.candidates.length===1?"horse":"horses")+" · "+(state.sort==="time"?"Post-time order":"Track order");
  if(!candidates.length){
   target.replaceChildren(make("div","rr-lr-list-empty",edition.candidates.length?"No candidates match these filters.":"No selections in this approved edition. Longshot Radar does not force a daily pick."));
  }else target.replaceChildren(...candidates.map(makeCard));
