@@ -28,15 +28,17 @@ This is ONE application shell with four product views, NOT four independent site
 - Icons sparingly, consistent stroke weight, clear labels, sufficient tap targets and contrast. Focus on readable data.
 
 ## Canonical chip system + single-race exotic builder
-The single source of truth for **horse saddle chips**, branded **race chips**, official track header artwork, and the exacta/trifecta **Bet Builder** component is [RAIL_RYE_CHIP_SYSTEM_AND_BET_BUILDER.md](RAIL_RYE_CHIP_SYSTEM_AND_BET_BUILDER.md).
+The single source of truth for **horse saddle chips**, authentic saddlecloth-backed **race chips**, compact editorial track marks, and the exacta/trifecta **Bet Builder** component is [RAIL_RYE_CHIP_SYSTEM_AND_BET_BUILDER.md](RAIL_RYE_CHIP_SYSTEM_AND_BET_BUILDER.md).
 
 - Horse selections everywhere use `/assets/approved/saddlecloths/{1..20}.png` and preserve legitimate coupled-entry suffixes; no recreated chip colors.
-- Race navigation and race-header plaques use branded navy/gold saddle-chip silhouettes, not a specific horse's saddlecloth.
-- Both Rail & Rye horseshoe and approved track logo remain visible where the corresponding track asset exists.
+- Race navigation tabs and the header race-number marker use the **exact approved saddlecloth image corresponding to the race number** (#1–20), preserving color/number art. Only the selected tab adds an outside gold ring; remove the stacked RACE caption and thick fake CSS chip borders.
+- Keep the approved Rail & Rye horseshoe and track name/date visible, and replace tiny sponsor-backed track-logo tiles with a clean track-specific Rail & Rye editorial racing mark (venue initials, rail oval, RACECOURSE). Do not invent official venue logos.
 - The Bet Builder is part of Projections, not a separate product or purchase. Its model-only exacta/trifecta UI never displays made-up probability/payoff values. Exact F4 joint probabilities require a verified server-side production receipt and private, entitlement-checked delivery.
 - The user consults any actual tote prices independently; Rail & Rye does not connect to tote services or accept wagers.
 
 ## Stakes naming and graded trophy display — locked
+- **Regression safeguard for real Nov 23 Mahoning Valley Race 5:** source title `FIRST LADY S.` must display **First Lady Stakes** even if the standalone title utility fails to load. Any abbreviated terminal `S.` for a verified stakes race is never a finished customer-facing name.
+
 
 - Always display the **full canonical stakes race name**. Example: **Belmont S. → Belmont Stakes**, **Frizette Stks. → Frizette Stakes**, and **Carter H. → Carter Handicap** when the source confirms it is a stakes race. Never leave bare abbreviation `S.` as the stakes suffix.
 - Remove separate sponsor language such as `Presented by …`, `Sponsored by …`, `Powered by …`, and named sponsor prefixes/suffixes where a separately supplied sponsor field makes removal unambiguous. Do **not** guess or delete words that may be part of an actual named race.
