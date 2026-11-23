@@ -207,7 +207,7 @@ const chipStyles=readFileSync("public/assets/rr-intelligence-chips.css","utf8");
 for(const html of [adminHtml,memberHtml]){
  assert.match(html,/rr-intelligence-chips\.css\?v=1/,"Load the shared race/horse chip identity");
  assert.match(html,/rr-exotic-bet-builder\.css\?v=1/,"Load the responsive exotic ticket builder skin");
- assert.match(html,/rr-exotic-bet-builder\.js\?v=1/,"Load the source-gated no-tote Bet Builder");
+ assert.match(html,/rr-exotic-bet-builder\.js\?v=2/,"Load the source-gated no-tote Bet Builder");
 }
 assert.match(js,/rr-dash-race-button rr-race-chip rr-race-chip--tab/,
  "Every race navigation tab uses the branded saddle-chip form");
