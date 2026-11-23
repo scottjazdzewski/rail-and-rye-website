@@ -78,7 +78,7 @@ assert.match(result.body.error,/scratch-updated/);
 const listing=await handleAdminPickTickets(new Request("https://railandryeracing.com/api/admin/pick-tickets"),env);
 const data=await listing.json();
 assert.equal(data.cards.length,1);
-assert.equal(data.intake.date,"2026-11-23");
+assert.equal(data.intake.date,"2026-11-24");
 assert.equal(data.scratch_update.date,"2026-11-23");
 assert.equal(data.scratch_update.tracks.reduce((n,t)=>n+t.scratch_count,0),50);
 assert.equal(data.scratch_update.tracks.reduce((n,t)=>n+t.affected_races.length,0),35);
@@ -101,11 +101,14 @@ assert.equal(sourceIsScratchCurrent(revision),true,"a properly timestamped revis
 revision.sequences[0].race_fields=[{race_number:3,programs:["2"]}];
 assert.equal(sourceIsScratchCurrent(revision),false,"scratch-final eligible fields cannot include withdrawn runner");
 assert.equal(officialScratchSequenceCount(PICK_MENU_1123).every(t=>t.impacted>0),true);
-assert.equal(data.intake.tracks.length,5);
-assert.equal(data.intake.tracks.reduce((n,t)=>n+t.race_count,0),45);
-assert.equal(data.intake.tracks.reduce((n,t)=>n+t.analysis_runner_count,0),367);
-assert.equal(data.intake.status,"PRESCRATCH_SOURCE_RECEIVED__TICKETS_HOLD");
-assert.match(data.intake.missing_gate,/scoring receipt/);
+assert.equal(data.intake.tracks.length,6);
+assert.equal(data.intake.tracks.reduce((n,t)=>n+t.race_count,0),51);
+assert.equal(data.intake.analysis_rows,null,"No November 24 scorer result may be invented");
+assert.equal(data.intake.official_horizontal_sequence_count,50);
+assert.equal(data.intake.status,"SOURCE_CARDS_RECEIVED__TRI_F4_SCORES_REQUIRED");
+assert.match(data.intake.missing_gate,/Fresh exact TRI\/F4/);
+assert.equal(getPickTicketsIntake().analysis_rows,367,
+ "Historical November 23 source audit must remain available");
 assert.equal(Object.keys(getPickTicketsIntake()).some(k=>/selections|pwin|win_probability|tickets/i.test(k)),false,"intake must not leak paid runner selections or probabilities");
 assert.equal(data.cards[0].card.revision,2);
 assert.equal(data.cards[0].card.status,"scratch_updated");
