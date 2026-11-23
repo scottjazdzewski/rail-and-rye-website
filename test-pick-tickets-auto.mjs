@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
-import {PICK_MENU_1123,buildPrescratchPickTicketReview,readPrivatePickProjections,buildV32PostScratchReviewed}
+import {PICK_MENU_1123,buildPrescratchPickTicketReview,readPrivatePickProjections,
+ buildV32PostScratchReviewed,buildV32ScratchFieldPreview}
  from "./src/pick-tickets-auto.js";
 import {chooseV32,PICK_V32_ENGINE,PICK_V32_COST_SCALE_DOLLARS}
  from "./src/pick-tickets-v32.js";
@@ -99,6 +100,36 @@ assert.ok(post.card.sequences.every(x=>x.tickets.length===1));
 assert.ok(post.card.sequences.every(x=>x.review_meta.stage==="POSTSCRATCH"));
 assert.equal(post.card.sequences[0].race_fields[0].programs.includes("2"),false);
 assert.throws(()=>buildV32PostScratchReviewed({before,after,manifest:{...manifest,official_status:"PENDING"},preHash:"p".repeat(64),postHash:"s".repeat(64)}),/SCRATCH_NOTICE_NOT_CONFIRMED/);
+// A current scratch-adjusted source can be shown to administrators for mathematical
+// inspection without pretending that prescratch factor-basis scores are certified.
+const reviewInputs=Object.keys(counts).map(track=>{
+ const c=sample(track);
+ c.projection_status="scratch_final";
+ c.factor_basis="verified_prescratch";
+ return {card:c,uploaded_at:"2026-11-23T20:00:00Z"};
+});
+const privateReviews=reviewInputs.map(buildV32ScratchFieldPreview);
+assert.equal(privateReviews.length,5);
+assert.ok(privateReviews.every(Boolean));
+assert.equal(privateReviews.reduce((n,item)=>n+item.card.sequences.length,0),42);
+for(const item of privateReviews){
+ assert.equal(item.review_only,true);
+ assert.equal(item.card.review_only,true);
+ assert.equal(item.card.formula_version,PICK_V32_ENGINE);
+ assert.equal(item.card.source_receipt,null);
+ assert.equal(item.card.score_verification_status,"CURRENT_FIELD_COMPLETE_SCORING_AND_MANIFEST_PENDING");
+ assert.equal(item.card.model_factor_basis,"verified_prescratch");
+ assert.ok(item.card.sequences.every(x=>x.review_meta.soft_cost_scale_dollars===15));
+ assert.ok(item.card.sequences.every(x=>x.tickets.length===1));
+}
+const incompleteReview=structuredClone(reviewInputs[0].card);
+incompleteReview.races[0].entries[0].win_probability_exact=99;
+assert.equal(buildV32ScratchFieldPreview(incompleteReview),null);
+const unknownFactor=structuredClone(reviewInputs[0].card);
+unknownFactor.factor_basis="unknown";
+assert.equal(buildV32ScratchFieldPreview(unknownFactor),null);
+assert.equal(buildV32ScratchFieldPreview(sample("Finger Lakes")),null,
+ "prescratch input is not misrepresented as current-field review");
 assert.equal(PICK_MENU_1123.find(x=>x.name==="Buckeye Pick 6").unit_cents,20);
 assert.equal(PICK_MENU_1123.find(x=>x.name==="Philly Big 5").unit_cents,50);
 console.log("PASS: exact V3.2 on all 42 official sequences, single ticket, same pre/post method, independent field/scratch gates.");
