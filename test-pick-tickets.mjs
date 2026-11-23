@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import {normalizePickTickets,handleAdminPickTickets} from "./src/pick-tickets.js";
+import {getNov23ScratchLedger,sourceIsScratchCurrent,officialScratchSequenceCount} from "./src/pick-tickets-scratch-1123.js";
+import {PICK_MENU_1123} from "./src/pick-tickets-auto.js";
 import {getPickTicketsIntake} from "./src/pick-tickets-intake.js";
 import {getPickTicketsPrivateDemo} from "./src/pick-tickets-demo.js";
 
@@ -76,6 +78,25 @@ const listing=await handleAdminPickTickets(new Request("https://railandryeracing
 const data=await listing.json();
 assert.equal(data.cards.length,1);
 assert.equal(data.intake.date,"2026-11-23");
+assert.equal(data.scratch_update.date,"2026-11-23");
+assert.equal(data.scratch_update.tracks.reduce((n,t)=>n+t.scratch_count,0),50);
+assert.equal(data.scratch_update.tracks.reduce((n,t)=>n+t.affected_races.length,0),35);
+assert.equal(data.scratch_update.dependent_sequences.reduce((n,t)=>n+t.impacted,0),42);
+assert.equal(data.scratch_update.dependent_sequences.length,5);
+assert.equal(data.scratch_update.tracks.find(t=>t.name==="Mountaineer").scratch_count,21);
+assert.equal(data.scratch_update.tracks.find(t=>t.name==="Parx Racing").scratches["9"].length,4);
+assert.equal(data.scratch_update.tracks.find(t=>t.name==="Finger Lakes").score_input_changes.some(x=>x.type==="jockey"&&x.race===7),true);
+const stale={date:"2026-11-23",track:"Finger Lakes",revision:1,status:"initial_current"};
+assert.equal(sourceIsScratchCurrent(stale),false,"old prescratch cards must not be shown after real scratch changes");
+const revision={...stale,status:"scratch_updated",revision:2,scratch_verified_at:"2026-11-23T17:30:00Z",sequences:[
+ {name:"Pick 3",start_race:1,end_race:3,tickets:[{legs:[{race_number:1,programs:["2"]},{race_number:2,programs:["1"]},{race_number:3,programs:["1"]}]}],race_fields:[]}
+]};
+assert.equal(sourceIsScratchCurrent(revision),false,"a scratch-final revision can never select withdrawn #2 from Race 1");
+revision.sequences[0].tickets[0].legs[0].programs=["1"];
+assert.equal(sourceIsScratchCurrent(revision),true,"a properly timestamped revision without scratched entries is allowed");
+revision.sequences[0].race_fields=[{race_number:3,programs:["2"]}];
+assert.equal(sourceIsScratchCurrent(revision),false,"scratch-final eligible fields cannot include withdrawn runner");
+assert.equal(officialScratchSequenceCount(PICK_MENU_1123).every(t=>t.impacted>0),true);
 assert.equal(data.intake.tracks.length,5);
 assert.equal(data.intake.tracks.reduce((n,t)=>n+t.race_count,0),45);
 assert.equal(data.intake.tracks.reduce((n,t)=>n+t.analysis_runner_count,0),367);

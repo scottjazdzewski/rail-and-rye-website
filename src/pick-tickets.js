@@ -1,6 +1,8 @@
 import {getPickTicketsIntake} from './pick-tickets-intake.js';
 import {buildPrescratchPickTicketReview,readPrivatePickProjections} from './pick-tickets-auto.js';
 import {readAdminProjectionCards} from './projections.js';
+import {getNov23ScratchLedger,sourceIsScratchCurrent,officialScratchSequenceCount} from './pick-tickets-scratch-1123.js';
+import {PICK_MENU_1123} from './pick-tickets-auto.js';
 /* Pick Tickets: admin-only dashboard staging. No scoring, public data, or customer-launch route. */
 const PREFIX="pick-tickets/dashboard/";
 const ARCHIVE="pick-tickets/revisions/";
@@ -139,7 +141,15 @@ async function readCards(env){
 export async function handleAdminPickTickets(request,env){
  if(!env.CARDS_BUCKET)return respond({error:"Private R2 storage is not configured."},503);
  if(request.method==="GET"){
-  const certified=await readCards(env);
+  const savedAll=await readCards(env);
+  // On official scratch day, do not show stale initial R2 editions as current.
+  // Scratch revisions are accepted only with a revision/date proof AND no
+  // officially withdrawn runner in a ticket or eligible field.
+  const certified=savedAll.filter(x=>sourceIsScratchCurrent(x.card));
+  const stale_revisions=savedAll.filter(x=>!sourceIsScratchCurrent(x.card)).map(x=>({
+   date:x.card.date,track:x.card.track,revision:x.card.revision,
+   reason:"Superseded by the owner-provided official 2026-11-23 scratch ledger."
+  }));
   let prescratch={cards:[],rejected:[]};
   try{
    // Prefer the five current date-keyed R2 projections; no legacy D1/PDF lookup.
@@ -156,8 +166,14 @@ export async function handleAdminPickTickets(request,env){
    }
   }catch(e){console.warn("Private provisional Pick Tickets projection intake unavailable",String(e).slice(0,160));}
   const saved=new Set(certified.map(x=>x.card.date+"|"+x.card.track));
-  const review=prescratch.cards.filter(x=>!saved.has(x.card.date+"|"+x.card.track));
+  // All 42 official Nov 23 Pick sequences are touched by the reported
+  // scratches/rider input changes; none may reuse a prescratch hit estimate.
+  const review=prescratch.cards.filter(x=>x.card.date!=="2026-11-23"&&
+   !saved.has(x.card.date+"|"+x.card.track));
+  const scratch_update=getNov23ScratchLedger();
+  scratch_update.dependent_sequences=officialScratchSequenceCount(PICK_MENU_1123);
   return respond({cards:[...certified,...review],intake:getPickTicketsIntake(),
+   scratch_update,stale_revisions,
    review_count:review.length,review_rejected:prescratch.rejected,demo:false});
  }
  if(request.method!=="POST")return respond({error:"Method not allowed."},405);
