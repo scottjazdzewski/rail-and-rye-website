@@ -135,7 +135,7 @@ function renderCandidates(){
  candidates=orderByDay(candidates,state.sort);
  q("#rr-lr-count").textContent=candidates.length+" shown · "+edition.candidates.length+" approved "+(edition.candidates.length===1?"horse":"horses")+" · "+(state.sort==="post-time"?"Post-time order":"Track order");
  if(!candidates.length){
-  target.replaceChildren(make("div","rr-lr-list-empty",edition.candidates.length?"No candidates match these filters.":"No selections in this approved edition. Longshot Radar does not force a daily pick."));
+  target.replaceChildren(make("div","rr-lr-list-empty","No selections in this approved edition. Longshot Radar does not force a daily pick."));
  }else target.replaceChildren(...candidates.map(makeCard));
 }
 function refreshView(){
