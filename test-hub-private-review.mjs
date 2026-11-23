@@ -40,7 +40,7 @@ for(const module of ["longshot-radar.js","target-list-dashboard.js"]){
  const source=read("public/assets/"+module);
  assert.match(source,/assets\/approved\/saddlecloths\/"/);
  assert.doesNotMatch(source,/localStorage|sessionStorage|innerHTML/,"No stored paid content or raw HTML insertion.");
- if(module==="longshot-radar.js"){assert.match(source,/loadPublishedCard/,"Radar must load private published data directly.");assert.doesNotMatch(source,/visualSample|rr-lr-upload-form/,"Radar must not require manual JSON upload or fictional source.");}
+ if(module==="longshot-radar.js"){assert.match(source,/loadAvailableEditions/,"Radar must load private published data directly.");assert.doesNotMatch(source,/visualSample|rr-lr-upload-form/,"Radar must not require manual JSON upload or fictional source.");}
  else assert.match(source,/demoData|reviewOnly|review_only/,"Preserve Target List's existing private example/review workflow.");
  assert.doesNotMatch(source,/\/api\/checkout|stripe/,"No new disconnected commerce flow.");
 }
