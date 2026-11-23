@@ -181,7 +181,7 @@ async function loadPublishedCard(){
  const edition=result?.edition;
  if(result?.review_only!==true||result?.customer_publish_approved!==false||edition?.status!=="published_pdf_reference"||
     !Array.isArray(edition.candidates)||edition.candidates.length!==10)
-  throw Error("The November 23 Radar feed is incomplete. Nothing was substituted or fabricated.");
+  throw Error("Longshot Radar is unavailable. Please try again.");
  return edition;
 }
 async function initialize(){
