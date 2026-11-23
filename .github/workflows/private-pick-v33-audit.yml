@@ -1,0 +1,31 @@
+name: Private November 23 V3.3 Ticket Audit (encrypted)
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/pick_v33_audit_export.py'
+      - 'scripts/pick_v33_encrypted_audit.mjs'
+      - '.github/workflows/private-pick-v33-audit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit-private-r2:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install read-only R2 client and one-time report encryption
+        run: pip install boto3==1.40.36 cryptography==46.0.3
+      - name: Audit current exact TRI selections and seal full report
+        env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: \${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: \${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: \${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+        run: python scripts/pick_v33_audit_export.py
