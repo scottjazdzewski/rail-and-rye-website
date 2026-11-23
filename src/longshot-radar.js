@@ -1,0 +1,139 @@
+/* Longshot Radar — private review only. No public data route or model scoring.
+ * All requests must pass verifyAdmin in src/index.js before arriving here.
+ */
+const PREFIX="intelligence/longshot-radar/review/";
+const HEADERS={"Content-Type":"application/json; charset=utf-8","Cache-Control":"private, no-store","X-Content-Type-Options":"nosniff","X-Robots-Tag":"noindex, nofollow, noarchive"};
+const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:HEADERS});
+const error=(message,status=400)=>json({error:message},status);
+const own=(obj,key)=>Object.prototype.hasOwnProperty.call(obj,key);
+const object=value=>!!value&&typeof value==="object"&&!Array.isArray(value);
+const HASH=/^[0-9a-f]{64}$/i;
+function requiredText(value,label,max=500){
+  if(typeof value!=="string"||!value.trim()||value.length>max)throw Error(label+" is required ("+max+" characters maximum).");
+  return value.trim();
+}
+function date(value){
+  if(typeof value!=="string"||!/^\d{4}-\d{2}-\d{2}$/.test(value)||new Date(value+"T00:00:00Z").toISOString().slice(0,10)!==value)throw Error("A valid race_date in YYYY-MM-DD format is required.");
+  return value;
+}
+function iso(value,label){
+  if(typeof value!=="string"||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/.test(value)||!Number.isFinite(Date.parse(value)))throw Error(label+" must be a UTC ISO timestamp.");
+  return value;
+}
+function sha(value,label){
+  if(typeof value!=="string"||!HASH.test(value))throw Error(label+" must be a SHA-256 checksum.");
+  return value.toLowerCase();
+}
+function originalMl(value){
+  const raw=requiredText(value,"Original Timeform morning line",20);
+  const match=raw.match(/^(\d+)(?:\/|-)(\d+)$/);
+  if(!match||Number(match[2])===0)throw Error("Original Timeform morning line must be a numeric fraction.");
+  const net=Number(match[1])/Number(match[2]);
+  if(!Number.isFinite(net)||net<6)throw Error("Longshot candidates require original Timeform morning line of at least 6/1.");
+  return {raw,net};
+}
+function candidate(row,index){
+  const id="Candidate "+(index+1);
+  if(!object(row))throw Error(id+" must be an object.");
+  const track=requiredText(row.track,id+" track",100);
+  const number=Number(row.race_number);
+  if(!Number.isInteger(number)||number<1||number>30)throw Error(id+" needs a valid race_number.");
+  const program=requiredText(row.program_number,id+" program_number",8);
+  if(!/^\d{1,2}[A-Za-z]?$/.test(program)||Number(program.match(/^\d+/)[0])<1||Number(program.match(/^\d+/)[0])>20)throw Error(id+" has an invalid program number.");
+  const horse=requiredText(row.horse_name,id+" horse_name",100);
+  const ml=originalMl(row.original_morning_line);
+  if(typeof row.pwin_exact!=="number"||!Number.isFinite(row.pwin_exact)||row.pwin_exact<=0||row.pwin_exact>=1)throw Error(id+" requires an exact TRI probability between 0 and 1 (not a displayed percent).");
+  const p=row.pwin_exact;
+  if(p+1e-12<1/7)throw Error(id+" does not meet exact TRI model fair odds of 6/1 or shorter.");
+  if(p*(1+ml.net)-1+1e-12<0.50)throw Error(id+" does not meet the 50% provisional Timeform morning-line price advantage.");
+  const display=Number(row.pwin_display);
+  if(!Number.isFinite(display)||display<0||display>100||Math.abs(display-100*p)>0.051)throw Error(id+" displayed PWIN must agree with signed exact PWIN (one decimal place).");
+  const fair=requiredText(row.fair_odds_display,id+" source fair odds",20);
+  const fairMatch=fair.match(/^(\d+)\/(\d+)$/);
+  if(!fairMatch||Number(fairMatch[2])===0||Number(fairMatch[1])<1)throw Error(id+" fair odds must use source-supplied American fractional odds.");
+  const fairNet=Number(fairMatch[1])/Number(fairMatch[2]);
+  if(fairNet>=5&&Number(fairMatch[2])!==1)throw Error(id+" must use whole-number /1 American fair odds at 5/1 or longer.");
+  const thesis=requiredText(row.betting_case,id+" one-sentence race-specific betting case",360);
+  const evidence=requiredText(row.source_causal_evidence,id+" authenticated source-causal evidence",1000);
+  const counterargument=requiredText(row.counterargument_checked,id+" checked counterargument",600);
+  if(!/[.!?]$/.test(thesis))throw Error(id+" betting case must end with sentence punctuation.");
+  const result={track,race_number:number,program_number:program.toUpperCase(),horse_name:horse,
+    original_morning_line:ml.raw,pwin_exact:p,pwin_display:display,fair_odds_display:fair,
+    betting_case:thesis,source_causal_evidence:evidence,counterargument_checked:counterargument};
+  if(own(row,"post_time_et"))result.post_time_et=requiredText(row.post_time_et,id+" post time",50);
+  if(own(row,"jockey"))result.jockey=requiredText(row.jockey,id+" jockey",100);
+  if(own(row,"trainer"))result.trainer=requiredText(row.trainer,id+" trainer",100);
+  return result;
+}
+export function validateLongshotEdition(input){
+  if(!object(input)||input.schema_version!==1||input.product_type!=="longshot_radar")throw Error("Expected longshot_radar schema version 1.");
+  const race_date=date(input.race_date);
+  const revision=Number(input.revision);
+  if(!Number.isSafeInteger(revision)||revision<1)throw Error("A positive integer revision is required.");
+  if(!["prescratch","scratch_updated"].includes(input.status))throw Error("status must be prescratch or scratch_updated.");
+  const generated_at=iso(input.generated_at,"generated_at");
+  if(!object(input.receipts)||input.receipts.release_status!=="PASS")throw Error("Release receipt must report PASS; this does not replace source verification.");
+  const receipts={release_status:"PASS",
+    model_sha256:sha(input.receipts.model_sha256,"Model receipt"),
+    source_sha256:sha(input.receipts.source_sha256,"Source receipt"),
+    editorial_qa_sha256:sha(input.receipts.editorial_qa_sha256,"Editorial QA receipt")};
+  if(!Array.isArray(input.candidates)||input.candidates.length>500)throw Error("candidates must be an array of 0 to 500 qualified horses.");
+  const candidates=input.candidates.map(candidate),seen=new Set();
+  for(const c of candidates){
+    const key=c.track.toLocaleLowerCase("en-US")+"|"+c.race_number+"|"+c.program_number;
+    if(seen.has(key))throw Error("Duplicate Longshot Radar runner in one daily edition: "+key);
+    seen.add(key);
+  }
+  return {schema_version:1,product_type:"longshot_radar",race_date,revision,status:input.status,
+    generated_at,receipts,candidates};
+}
+async function readAll(env){
+  const result=await env.CARDS_BUCKET.list({prefix:PREFIX,limit:1000});
+  if(result.truncated)throw Error("Longshot review listing exceeded the safe page size.");
+  const cards=[];
+  for(const item of result.objects||[]){
+    if(!/^intelligence\/longshot-radar\/review\/\d{4}-\d{2}-\d{2}\.json$/.test(item.key))continue;
+    const stored=await env.CARDS_BUCKET.get(item.key);
+    if(!stored)continue;
+    try{
+      const edition=validateLongshotEdition(JSON.parse(await stored.text()));
+      cards.push(edition);
+    }catch(e){console.warn("Rejected invalid Radar review object",item.key,String(e).slice(0,110));}
+  }
+  return cards.sort((a,b)=>b.race_date.localeCompare(a.race_date));
+}
+export async function handleAdminLongshotRadar(request,env){
+  if(!env.CARDS_BUCKET)return error("Private Radar storage is not configured.",503);
+  if(request.method==="GET"){
+    try{return json({review_only:true,editions:await readAll(env)});}
+    catch(e){console.error("Radar private read failed",String(e).slice(0,130));return error("Unable to read Radar review data.",503);}
+  }
+  if(request.method!=="POST")return error("Method not allowed",405);
+  const contentType=request.headers.get("content-type")||"";
+  if(!contentType.toLowerCase().startsWith("application/json"))return error("JSON content type required.",415);
+  const sizeLimit=512*1024;
+  if(Number(request.headers.get("content-length")||0)>sizeLimit)return error("Radar review payload is too large.",413);
+  const raw=await request.text();
+  if(new TextEncoder().encode(raw).byteLength>sizeLimit)return error("Radar review payload is too large.",413);
+  let edition;
+  try{edition=validateLongshotEdition(JSON.parse(raw));}
+  catch(e){return error(e.message||"Invalid Radar review payload.");}
+  const key=PREFIX+edition.race_date+".json";
+  try{
+    const previous=await env.CARDS_BUCKET.get(key);
+    if(previous){
+      const old=validateLongshotEdition(JSON.parse(await previous.text()));
+      if(edition.revision<=old.revision)return error("New revision must be greater than the stored review.",409);
+      if(edition.generated_at<=old.generated_at)return error("New revision must carry a newer production timestamp.",409);
+      if(old.status==="scratch_updated"&&edition.status==="prescratch")return error("Cannot replace scratch-updated results with prescratch data.",409);
+    }
+    await env.CARDS_BUCKET.put(key,JSON.stringify(edition),{
+      httpMetadata:{contentType:"application/json; charset=utf-8",cacheControl:"private, no-store"},
+      customMetadata:{revision:String(edition.revision),review_only:"true"}
+    });
+    return json({ok:true,review_only:true,race_date:edition.race_date,revision:edition.revision,candidates:edition.candidates.length});
+  }catch(e){
+    console.error("Radar private write failed",String(e).slice(0,130));
+    return error("Radar review upload could not be saved.",503);
+  }
+}
