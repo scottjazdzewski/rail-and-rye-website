@@ -157,16 +157,20 @@ assert.ok(!ui.includes('make("button","","Race details")'));
 
 checks++;
 const publicDesign=readFileSync("public/longshot-radar-preview/index.html","utf8");
-assert.ok(publicDesign.includes('data-rr-design-only="true"')&&publicDesign.includes("FICTIONAL FIGURES")&&publicDesign.includes("NOT ACTUAL PICKS"));
+assert.ok(publicDesign.includes('http-equiv="refresh" content="0;url=/admin/longshot-radar/"'));
+assert.ok(publicDesign.includes('href="/admin/longshot-radar/"'),"Provide a tap fallback to the real protected reader");
+assert.ok(!publicDesign.includes("data-rr-design-only")&&!publicDesign.includes("rr-lr-candidates"),"No fake data in public route");
+assert.ok(!publicDesign.includes("<script"),"Public landing cannot call paid API");
+assert.ok(!publicDesign.includes("Race details"),"Do not revive hidden details");
 assert.ok(!publicDesign.includes("/assets/approved/publications/longshot-hero.jpg"));
 assert.ok(!publicDesign.includes("/assets/approved/publications/longshot-mark.png"));
 assert.ok(publicDesign.includes("/assets/approved/brand/rail-rye-ivory-logo.png"));
 assert.ok(!publicDesign.includes('id="rr-lr-upload-form"')&&!publicDesign.includes('api/admin/'));
 assert.ok(publicDesign.includes('name="robots" content="noindex,nofollow,noarchive"'));
-assert.ok(!publicDesign.toLowerCase().includes("sample"),"No sample wording on public preview");
-assert.ok(publicDesign.includes('id="rr-lr-demo-alert"'),"Retain one truthful fictional-data disclosure");
-assert.ok(ui.includes('const designOnly=document.body?.dataset?.rrDesignOnly==="true"'));
-assert.ok(ui.includes('if(designOnly){')&&ui.includes('const demo=visualSample();'));
+assert.ok(!publicDesign.toLowerCase().includes("sample"),"Public page must not advertise fake samples");
+
+assert.ok(ui.includes('/api/admin/longshot-radar-editorial'),"Real PDF viewer must read the protected R2 endpoint");
+assert.ok(!ui.includes('make("button","","Race details")'),"Horse explanation must display inline");
 checks++;
 
 console.log("PASS: "+checks+" Longshot Radar private-review, noncertified published-PDF handoff, inline editorial and security/layout checks.");
