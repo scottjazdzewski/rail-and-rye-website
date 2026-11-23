@@ -228,7 +228,11 @@ def main():
         "expected_sequences":total["expected_sequences"],
         "math_error_count":len(total["math_discrepancies"]),
         "source_row_total":total["source_runner_total"],
-        "stored_authorized":total["stored_authorized"]
+        "stored_authorized":total["stored_authorized"],
+        "upload_field_gate_pass":total.get("upload_field_gate_pass",0),
+        "upload_field_gate_failed":total.get("upload_field_gate_failed",[]),
+        "source_scratches":[{"track":row["track"],"count":row.get("declared_scratch_count",0)}
+          for row in report["source_rows"]]
     },separators=(",",":")))
     if independent_errors:
         raise RuntimeError("Independent Python optimizer disagrees with private ticket math; see encrypted audit.")
