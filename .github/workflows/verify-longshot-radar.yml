@@ -13,8 +13,19 @@ on:
       - "tests/longshot-radar-browser.mjs"
       - ".github/workflows/verify-longshot-radar.yml"
   push:
-    branches:
-      - "feature/racing-hub-longshot-radar-private-review"
+    branches: [main]
+    paths:
+      - "src/longshot-radar.js"
+      - "src/index.js"
+      - "public/admin/longshot-radar.html"
+      - "public/longshot-radar-preview/**"
+      - "public/assets/longshot-radar.*"
+      - "public/assets/rr-race-titles.js"
+      - "public/assets/rr-stakes-inline.css"
+      - "test-longshot-radar.mjs"
+      - "test-rr-race-titles.mjs"
+      - "tests/longshot-radar-browser.mjs"
+      - ".github/workflows/verify-longshot-radar.yml"
   workflow_dispatch:
 jobs:
   validate:
