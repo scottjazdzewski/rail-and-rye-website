@@ -1,7 +1,18 @@
 import assert from "node:assert/strict";
-import {PICK_MENU_1123,buildPrescratchPickTicketReview} from "./src/pick-tickets-auto.js";
+import {PICK_MENU_1123,buildPrescratchPickTicketReview,readPrivatePickProjections} from "./src/pick-tickets-auto.js";
 
 assert.equal(PICK_MENU_1123.length,42,"42 documented win-only products across 5 tracks");
+const privateFetches=[];
+const privateSource=await readPrivatePickProjections({CARDS_BUCKET:{
+ async get(key){
+  privateFetches.push(key);
+  return key.endsWith("finger-lakes.json")?{text:async()=>JSON.stringify(testCard("Finger Lakes")),customMetadata:{uploaded_at:"2026-11-23T05:00:00Z"}}:null;
+ }
+}});
+assert.equal(privateFetches.length,5,"only the five known private date/track R2 keys are checked");
+assert.ok(privateFetches.every(x=>x.startsWith("projections/dashboard/2026-11-23/")));
+assert.equal(privateSource.length,1);
+assert.equal(privateSource[0].card.track_name,"Finger Lakes");
 const counts={"Finger Lakes":8,"Mahoning Valley":10,"Mountaineer":8,"Parx Racing":9,"Zia Park":10};
 const testCard=(track,probs=[38,27,18,12,5])=>({
   schema_version:1,race_date:"2026-11-23",track_name:track,projection_status:"prescratch",
