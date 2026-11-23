@@ -160,10 +160,10 @@
   // runner's exact TRI win probability. Never show a source-drifted figure.
   const keyPwin=leadHorse?Number(leadHorse.win_probability_exact)/100:null;
   if(firstPlaceKey&&(!Number.isFinite(keyPwin)||Math.abs(chance-keyPwin)>1e-8))
-   return {combos,cost,chance:null,fair:null,probabilities:null,
+   return {combos,cost,chance:null,fair:null,probabilities:null,modelAvailable:false,
     allOutcomesCovered:false,firstPlaceKey:false,leadHorse:null};
   return {combos,cost,chance,fair,probabilities:complete?probabilities:null,
-   allOutcomesCovered,firstPlaceKey,leadHorse};
+   modelAvailable:probabilities!==null,allOutcomesCovered,firstPlaceKey,leadHorse};
  }
  function button(text,selected,fn,cls){
   const b=el("button",cls||"rr-bet-option",text);
@@ -235,9 +235,11 @@
   stats.append(stat("Required gross payout to break even*",result.fair===null?"Not available":CASH(result.fair)));
   body.append(stats);
   const info=el("p","rr-bet-disclaimer",result.probabilities?
-    "F4 hit chance uses the verified ordered finish model. *For boxes/wheels, the minimum gross payout assumes every covered winning combination pays the SAME amount; actual payouts vary. Compare the payout for your selected denomination against the live tote yourself. Higher than break-even is needed for positive model value.":
+    "F4 hit chance uses the verified ordered finish model. *For boxes/wheels, the required gross payout assumes every covered winning combination pays the SAME amount; actual payouts vary. Compare the payout for your selected denomination against the live tote yourself. Higher than break-even is needed for positive model value.":
+    result.modelAvailable&&!result.combos.length?
+    "The verified F4 ordered model is ready. Select at least one horse in each finishing position to calculate hit chance and required gross payout.":
     state.loading?"Checking the private certified F4 finishing probabilities for this race…":
-    "Ticket cost is calculated. The current field has no matching verified F4 ordered data: no hit chance or break-even payout can be shown.");
+    "Ticket cost is calculated. The current selection has no matching verified F4 ordered result: no hit chance or break-even payout can be shown.");
   body.append(info);
   if(result.probabilities&&result.allOutcomesCovered){
    body.append(el("p","rr-bet-coverage-note",
