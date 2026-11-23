@@ -59,7 +59,11 @@ jobs:
           grep -Fq 'rr-target-race-identifiers' /tmp/target-list-live.css
           ! grep -Fq 'RAIL & RYE DAILY RESEARCH V9' /tmp/target-list-live.css
           ! grep -Fq 'Target List: source distance/surface on the SAME navy header row' /tmp/target-list-live.css
-          grep -Fq 'scroll-snap-type:x proximity' /tmp/target-list-live.css
+          ! grep -Fq '.rr-target-page .rr-member-nav' /tmp/target-list-live.css
+          headerurl="https://railandryeracing.com/assets/rr-hub-header.css?rr_header_check=${GITHUB_SHA}-$(date +%s)"
+          curl -fsSL --connect-timeout 10 --max-time 20 "$headerurl" -o /tmp/rr-hub-header-live.css
+          grep -Fq '.rr-intel-header__mobile-links' /tmp/rr-hub-header-live.css
+          grep -Fq '.rr-intel-header__pill' /tmp/rr-hub-header-live.css
           grep -Fq 'font:500 17px/1.52 Inter' /tmp/target-list-live.css
           grep -Fq 'font:700 25px/1.06 Tinos' /tmp/target-list-live.css
           grep -Fq 'Readable editorial:' /tmp/target-list-live.css
