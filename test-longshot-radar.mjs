@@ -195,7 +195,7 @@ assert.ok(!html.includes("/assets/projections-dashboard.css"),"Radar must never 
 assert.ok(!html.includes("Race details")&&!html.includes('id="rr-lr-dialog"'));
 assert.ok(!html.includes("rr-lr-import")&&!html.includes("rr-lr-file")&&!html.includes("rr-lr-upload-form"),"No user-supplied JSON form");
 assert.ok(html.includes("id=\"rr-lr-retry\""),"A failed R2 load must permit retry");
-assert.ok(html.includes("longshot-radar.js?v=reader-parity-20261123"),"Render updated Shared Research V1 client without a stale cache");
+assert.ok(html.includes("longshot-radar.js?v=reader-parity-v2-20261123"),"Render updated Shared Research V1 client without a stale cache");
 assert.ok(!html.includes("longshot-hero.jpg")&&!html.includes("longshot-mark.png"));
 assert.ok(ui.includes('make("div","rr-lr-inline-analysis")'));
 assert.ok(!ui.includes('make("button","","Race details")'));
@@ -217,8 +217,8 @@ assert.ok(!publicDesign.toLowerCase().includes("sample"),"Public page must not a
 assert.ok(ui.includes('/api/admin/longshot-radar-editorial'),"Real PDF viewer must read the protected R2 endpoint");
 assert.ok(ui.includes("AbortController")&&ui.includes("retry?.addEventListener"),"Show a recoverable error rather than a permanent loading spinner");
 
-assert.ok(html.includes("longshot-radar.css?v=reader-parity-20261123"),"Load uncached shared V1 Radar stylesheet");
-assert.ok(html.includes("longshot-radar.js?v=reader-parity-20261123"),"Load matching uncached V1 reader");
+assert.ok(html.includes("longshot-radar.css?v=reader-parity-v2-20261123"),"Load uncached shared V1 Radar stylesheet");
+assert.ok(html.includes("longshot-radar.js?v=reader-parity-v2-20261123"),"Load matching uncached V1 reader");
 assert.ok(!html.includes('id="rr-lr-stage"')&&!html.includes('id="rr-lr-date-title"')&&!html.includes('id="rr-lr-updated"'),"No duplicate date/status/product summaries");
 assert.ok(ui.includes('make("span","rr-lr-ml-inline","ML "+tote(item.original_morning_line))'),"Morning line must sit by horse identity, not a third stat cell");
 assert.ok(!ui.includes('market("ML ODDS"'),"WIN and FAIR are the only two right-side metrics");
