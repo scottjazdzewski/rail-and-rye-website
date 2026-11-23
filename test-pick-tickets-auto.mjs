@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import {PICK_MENU_1123,buildPrescratchPickTicketReview,readPrivatePickProjections,
- buildV32PostScratchReviewed,buildV32ScratchFieldPreview}
+ buildV32PostScratchReviewed,buildV32ScratchFieldPreview,verifyV32OwnerScratchSnapshot}
  from "./src/pick-tickets-auto.js";
+import {getNov23ScratchLedger} from "./src/pick-tickets-scratch-1123.js";
+import {getPickTicketsIntake} from "./src/pick-tickets-intake.js";
 import {chooseV32,PICK_V32_ENGINE,PICK_V32_COST_SCALE_DOLLARS}
  from "./src/pick-tickets-v32.js";
 
@@ -102,12 +104,33 @@ assert.equal(post.card.sequences[0].race_fields[0].programs.includes("2"),false)
 assert.throws(()=>buildV32PostScratchReviewed({before,after,manifest:{...manifest,official_status:"PENDING"},preHash:"p".repeat(64),postHash:"s".repeat(64)}),/SCRATCH_NOTICE_NOT_CONFIRMED/);
 // A current scratch-adjusted source can be shown to administrators for mathematical
 // inspection without pretending that prescratch factor-basis scores are certified.
-const reviewInputs=Object.keys(counts).map(track=>{
+const official=getNov23ScratchLedger();
+const intake=getPickTicketsIntake();
+const currentFixture=track=>{
+ const owner=official.tracks.find(x=>x.name===track);
+ const original=intake.tracks.find(x=>x.name===track);
+ const expected=original.analysis_runner_count-owner.scratch_count;
+ const count=original.race_count,base=Math.floor(expected/count),extra=expected%count;
  const c=sample(track);
  c.projection_status="scratch_final";
  c.factor_basis="verified_prescratch";
- return {card:c,uploaded_at:"2026-11-23T20:00:00Z"};
-});
+ c.races=Array.from({length:count},(_,i)=>{
+  const race=i+1,selected=base+(i<extra?1:0);
+  const withdrawn=new Set(owner.scratches[String(race)]||[]);
+  const programs=Array.from({length:30},(_,j)=>String(j+1))
+   .filter(p=>!withdrawn.has(p)).slice(0,selected);
+  const pct=100/selected;
+  return {race_number:race,scratch_count:(owner.scratches[String(race)]||[]).length,
+   scratches:owner.scratches[String(race)]||[],
+   entries:programs.map(p=>({
+    program_number:p,win_probability_exact:pct,f4_probabilities:{exact_p1:pct/100}
+   }))};
+ });
+ return c;
+};
+const reviewInputs=Object.keys(counts).map(track=>({
+ card:currentFixture(track),uploaded_at:"2026-11-23T20:00:00Z"
+}));
 const privateReviews=reviewInputs.map(buildV32ScratchFieldPreview);
 assert.equal(privateReviews.length,5);
 assert.ok(privateReviews.every(Boolean));
@@ -119,9 +142,24 @@ for(const item of privateReviews){
  assert.equal(item.card.source_receipt,null);
  assert.equal(item.card.score_verification_status,"CURRENT_FIELD_COMPLETE_SCORING_AND_MANIFEST_PENDING");
  assert.equal(item.card.model_factor_basis,"verified_prescratch");
+ const ledger=official.tracks.find(x=>x.name===item.card.track);
+ const original=intake.tracks.find(x=>x.name===item.card.track);
+ assert.equal(item.card.official_scratch_source_sha256,ledger.source_sha256);
+ assert.equal(item.card.official_scratch_count,ledger.scratch_count);
+ assert.equal(item.card.active_runner_count,original.analysis_runner_count-ledger.scratch_count);
+ assert.equal(verifyV32OwnerScratchSnapshot(reviewInputs.find(x=>x.card.track_name===item.card.track).card).ok,true);
  assert.ok(item.card.sequences.every(x=>x.review_meta.soft_cost_scale_dollars===15));
  assert.ok(item.card.sequences.every(x=>x.tickets.length===1));
 }
+const staleScratch=structuredClone(reviewInputs[0].card);
+const forbiddenProgram=official.tracks.find(t=>t.name==="Finger Lakes").scratches["1"][0];
+staleScratch.races[0].entries[0].program_number=forbiddenProgram;
+assert.match(verifyV32OwnerScratchSnapshot(staleScratch).reason,/SCRATCHED_PROGRAM_REMAINS_ACTIVE/);
+assert.equal(buildV32ScratchFieldPreview(staleScratch),null);
+const missingRunner=structuredClone(reviewInputs[0].card);
+missingRunner.races[0].entries.pop();
+assert.equal(verifyV32OwnerScratchSnapshot(missingRunner).reason,"RACE_DAY_SCRATCH_RUNNER_TOTAL_MISMATCH");
+assert.equal(buildV32ScratchFieldPreview(missingRunner),null);
 const incompleteReview=structuredClone(reviewInputs[0].card);
 incompleteReview.races[0].entries[0].win_probability_exact=99;
 assert.equal(buildV32ScratchFieldPreview(incompleteReview),null);
