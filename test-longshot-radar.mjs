@@ -188,7 +188,7 @@ assert.ok(html.includes("/assets/projections-dashboard.css")); // shared visual 
 assert.ok(!html.includes("Race details")&&!html.includes('id="rr-lr-dialog"'));
 assert.ok(!html.includes("rr-lr-import")&&!html.includes("rr-lr-file")&&!html.includes("rr-lr-upload-form"),"No user-supplied JSON form");
 assert.ok(html.includes("id=\"rr-lr-retry\""),"A failed R2 load must permit retry");
-assert.ok(html.includes("longshot-radar.js?v=shared-v1-20261123"),"Render updated Shared Research V1 client without a stale cache");
+assert.ok(html.includes("longshot-radar.js?v=right-meta-20261123"),"Render updated Shared Research V1 client without a stale cache");
 assert.ok(!html.includes("longshot-hero.jpg")&&!html.includes("longshot-mark.png"));
 assert.ok(ui.includes('make("div","rr-lr-inline-analysis")'));
 assert.ok(!ui.includes('make("button","","Race details")'));
@@ -210,13 +210,15 @@ assert.ok(!publicDesign.toLowerCase().includes("sample"),"Public page must not a
 assert.ok(ui.includes('/api/admin/longshot-radar-editorial'),"Real PDF viewer must read the protected R2 endpoint");
 assert.ok(ui.includes("AbortController")&&ui.includes("retry?.addEventListener"),"Show a recoverable error rather than a permanent loading spinner");
 
-assert.ok(html.includes("longshot-radar.css?v=shared-v1-20261123"),"Load uncached shared V1 Radar stylesheet");
-assert.ok(html.includes("longshot-radar.js?v=shared-v1-20261123"),"Load matching uncached V1 reader");
+assert.ok(html.includes("longshot-radar.css?v=right-meta-20261123"),"Load uncached shared V1 Radar stylesheet");
+assert.ok(html.includes("longshot-radar.js?v=right-meta-20261123"),"Load matching uncached V1 reader");
 assert.ok(!html.includes('id="rr-lr-stage"')&&!html.includes('id="rr-lr-date-title"')&&!html.includes('id="rr-lr-updated"'),"No duplicate date/status/product summaries");
 assert.ok(ui.includes('make("span","rr-lr-ml-inline","ML "+item.original_morning_line)'),"Morning line must sit by horse identity, not a third stat cell");
 assert.ok(!ui.includes('market("ML ODDS"'),"WIN and FAIR are the only two right-side metrics");
 assert.ok(ui.includes('const facts=[item.distance,item.surface,item.conditions]'),"Display only source-supplied race description when available");
 assert.ok(ui.includes('make("p","rr-lr-race-facts",facts.join(" · "))'),"Source race facts must appear in the navy header");
+assert.ok(ui.includes('const raceMeta=make("div","rr-lr-race-meta")'),"Race number and post time must stay grouped and right-justified");
+assert.ok(css.includes("grid-template-columns:minmax(0,1fr) max-content"),"Left track / right metadata layout is required");
 assert.ok(ui.includes('moduleNav.scrollLeft+='),"Active tab stays in view in one swipeable navigation row");
 assert.ok(css.includes("SHARED DAILY RESEARCH DESIGN STANDARD V1"),"Radar follows shared Target List research reader design authority");
 assert.ok(css.includes("font:500 17px/1.52 Inter"),"Original analysis displays at readable 17px/1.52");
