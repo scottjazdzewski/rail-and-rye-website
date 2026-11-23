@@ -106,6 +106,11 @@ function buildSequence(spec,races){
   recommendation:"Prescratch model-coverage recommendation. "+comparisons+
    ". No payout, pool-size, or profitability estimate.",
   race_fields:field,
+  // Only emitted by this Access-protected admin endpoint; never committed as paid data.
+  review_probabilities:Object.fromEntries(Array.from({length:spec.end_race-spec.start_race+1},(_,i)=>{
+   const n=spec.start_race+i;
+   return [String(n),Object.fromEntries(races.get(n).map(e=>[e.number,e.p]))];
+  })),
   tickets:[{role:"BEST_POSSIBLE",title:"Rail & Rye Model-Coverage Ticket",
    unit_cents:balanced.unit_cents,combinations:balanced.combinations,
    total_cents:balanced.total_cents,legs:balanced.legs,
