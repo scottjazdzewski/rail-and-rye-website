@@ -22,8 +22,9 @@ jobs:
           for attempt in 1 2 3 4; do
             code=$(curl -L -sS --connect-timeout 10 --max-time 20 -w '%{http_code}' -o /tmp/target-list-live.js "$url" || true)
             echo "Production asset probe attempt $attempt: HTTP $code"
-            if [ "$code" = '200' ] && grep -Fq '/api/admin/target-list-review' /tmp/target-list-live.js; then
-              echo 'LIVE_PREVIEW_DEPLOYED: The live site serves the new private R2 review reader.'
+            if [ "$code" = '200' ] && grep -Fq '/api/admin/target-list-review' /tmp/target-list-live.js &&
+               ! grep -Eq 'DEMO_EXAMPLE|Sample Favorite|Example Downs|rr-target-local-file' /tmp/target-list-live.js; then
+              echo 'LIVE_PREVIEW_DEPLOYED: Actual private R2 daily reader is live, with no synthetic horses or local-file loader.'
               break
             fi
             if [ "$attempt" -eq 4 ]; then
