@@ -81,43 +81,125 @@ function candidate(spec,races,beta){
  if(!Number.isSafeInteger(total)||total>1e11)return null;
  return {legs,combinations,total_cents:total,hit_pct:hit*100,unit_cents:spec.unit_cents};
 }
+// Interim V2: start from the model's lean selection and admit additional runners
+// only when the incremental PWIN coverage outweighs the additional combinations
+// under a stronger cost-sensitivity exponent (0.60 vs the old balanced 0.50).
+// No fixed spending cap, singles count, sequence hit target, or combination quota.
+export const FOCUSED_COST_EXPONENT=0.60;
+function focusedLeg(entries,leanLeg,balancedLeg){
+ const lower=leanLeg.count,upper=balancedLeg.count;
+ if(lower<1||upper<lower||upper>entries.length)return null;
+ let count=lower;
+ let mass=entries.slice(0,count).reduce((sum,e)=>sum+e.p,0)/100;
+ const additions=[];
+ while(count<upper){
+  const next=entries[count];
+  const addedMass=next.p/100;
+  const before=mass/Math.pow(count,FOCUSED_COST_EXPONENT);
+  const after=(mass+addedMass)/Math.pow(count+1,FOCUSED_COST_EXPONENT);
+  // A marginal runner must improve the coverage-to-combination score.
+  // Exact ties favor the smaller, less expensive ticket.
+  if(after<=before+1e-12)break;
+  additions.push({program:next.number,runner_win_probability_pct:next.p,
+   leg_coverage_before_pct:mass*100,leg_coverage_after_pct:(mass+addedMass)*100});
+  mass+=addedMass;
+  count++;
+ }
+ return {count,programs:entries.slice(0,count).map(e=>e.number),coverage:mass,additions};
+}
+function focusedCandidate(spec,races,lean,balanced){
+ let combinations=1,hit=1;
+ const legs=[],marginals=[];
+ for(let i=0,number=spec.start_race;number<=spec.end_race;i++,number++){
+  const entries=races.get(number);
+  if(!entries)return null;
+  const leg=focusedLeg(entries,
+   {count:lean.legs[i].programs.length},
+   {count:balanced.legs[i].programs.length});
+  if(!leg)return null;
+  legs.push({race_number:number,programs:leg.programs});
+  combinations*=leg.count;
+  hit*=leg.coverage;
+  if(!Number.isSafeInteger(combinations)||combinations>1e9)return null;
+  marginals.push({race_number:number,additions:leg.additions});
+ }
+ const total=combinations*spec.unit_cents;
+ if(!Number.isSafeInteger(total)||total>1e11)return null;
+ // Inspect each added horse at the final other-leg coverage level.
+ for(let i=0;i<legs.length;i++){
+  const leg=legs[i],entries=races.get(leg.race_number);
+  const k=leg.programs.length;
+  const otherLegMass=legs.reduce((p,l,j)=>{
+   if(i===j)return p;
+   return p*l.programs.reduce((m,number)=>m+entriesFor(races,l.race_number,number),0)/100;
+  },1);
+  const otherLegCombinations=combinations/k;
+  for(const added of marginals[i].additions){
+   added.additional_combinations=otherLegCombinations;
+   added.additional_cost_cents=otherLegCombinations*spec.unit_cents;
+   added.additional_complete_hit_pct=added.runner_win_probability_pct*otherLegMass;
+  }
+ }
+ return {legs,combinations,total_cents:total,hit_pct:hit*100,
+  unit_cents:spec.unit_cents,marginal_checks:marginals};
+}
+function entriesFor(races,raceNumber,number){
+ return races.get(raceNumber).find(e=>e.number===number)?.p??0;
+}
 function compare(a,b){return a.total_cents===b.total_cents&&a.combinations===b.combinations&&
  a.legs.every((l,i)=>l.programs.join("|")===b.legs[i].programs.join("|"))}
 function buildSequence(spec,races){
- const narrow=candidate(spec,races,.65),balanced=candidate(spec,races,.5),
-       wider=candidate(spec,races,.35);
- if(!narrow||!balanced||!wider)return null;
+ const lean=candidate(spec,races,.65),balanced=candidate(spec,races,.5),
+       wide=candidate(spec,races,.35);
+ if(!lean||!balanced||!wide)return null;
+ const focused=focusedCandidate(spec,races,lean,balanced);
+ if(!focused||focused.combinations>balanced.combinations||
+   focused.combinations<lean.combinations)return null;
  const label=c=>"$"+(c.total_cents/100).toFixed(2)+" / "+displayPct(c.hit_pct);
- const alternatives=[["narrower",narrow],["balanced",balanced],["wider",wider]]
-   .filter(([n,c])=>n==="balanced"||!compare(c,balanced));
- const comparisons=alternatives.map(([n,c])=>n+": "+label(c)).join("; ");
+ const alternatives=[["lean",lean],["focused",focused],["former_balanced",balanced],["wide",wide]]
+  .filter(([name,c])=>name==="focused"||!compare(c,focused));
+ const comparisons=alternatives.map(([name,c])=>name+": "+label(c)).join("; ");
+ const savings=balanced.total_cents-focused.total_cents;
+ const coverageSacrifice=Math.max(0,balanced.hit_pct-focused.hit_pct);
  const field=Array.from({length:spec.end_race-spec.start_race+1},(_,i)=>{
   const race_number=spec.start_race+i;
   return {race_number,programs:races.get(race_number).map(e=>e.number)};
  });
- const nonSingles=balanced.legs.filter(l=>l.programs.length>1).length;
- const notes="Interim model-coverage construction. "+comparisons+
-  ". Selections maximize the ratio of cumulative leg PWIN to the square root of leg coverage count."+
-  " Model hit probability assumes independent race outcomes; not a projected return.";
+ const nonSingles=focused.legs.filter(l=>l.programs.length>1).length;
+ const notes="Interim focused ticket: "+comparisons+
+  ". Uses 0.60 cost-sensitive marginal PWIN coverage, between lean and former balanced."+
+  " Compared with former balanced: "+(savings/100).toFixed(2)+" USD less cost; "+
+  displayPct(coverageSacrifice)+" less model-implied hit chance."+
+  " No prediction of return; prescratch model review.";
  return {
   name:spec.name,start_race:spec.start_race,end_race:spec.end_race,
-  // With no combination payout evidence, do not claim a profitable PLAY.
-  play_status:"CONDITIONAL",hit_rate_display:displayPct(balanced.hit_pct),
-  recommendation:"Prescratch model-coverage recommendation. "+comparisons+".",
+  // Status is still awaiting independently approved ticket classification.
+  // PWIN coverage and cost alone do not establish wagering profitability.
+  play_status:"CONDITIONAL",hit_rate_display:displayPct(focused.hit_pct),
+  recommendation:"Focused interim construction. "+comparisons+".",
   race_fields:field,
-  // Only emitted by this Access-protected admin endpoint; never committed as paid data.
+  // Paid runner PWIN is only emitted by the existing Access-protected admin route.
   review_probabilities:Object.fromEntries(Array.from({length:spec.end_race-spec.start_race+1},(_,i)=>{
    const n=spec.start_race+i;
    return [String(n),Object.fromEntries(races.get(n).map(e=>[e.number,e.p]))];
   })),
-  tickets:[{role:"BEST_POSSIBLE",title:"Rail & Rye Model-Coverage Ticket",
-   unit_cents:balanced.unit_cents,combinations:balanced.combinations,
-   total_cents:balanced.total_cents,legs:balanced.legs,
-   hit_rate_display:displayPct(balanced.hit_pct),notes}],
-  review_meta:{method:"PWIN_COVERAGE_PER_SQRT_COMBOS_V1",alternatives:alternatives.map(([type,c])=>({
-   type,hit_rate_display:displayPct(c.hit_pct),combinations:c.combinations,
-   unit_cents:c.unit_cents,total_cents:c.total_cents
-  })),non_single_legs:nonSingles}
+  tickets:[{role:"BEST_POSSIBLE",title:"Rail & Rye Focused Ticket",
+   unit_cents:focused.unit_cents,combinations:focused.combinations,
+   total_cents:focused.total_cents,legs:focused.legs,
+   hit_rate_display:displayPct(focused.hit_pct),notes}],
+  review_meta:{
+   method:"PWIN_FOCUSED_MARGINAL_0_60_V2",
+   classification_method:"AWAITING_APPROVED_CLASSIFICATION",
+   alternatives:alternatives.map(([type,c])=>({
+    type,hit_rate_display:displayPct(c.hit_pct),combinations:c.combinations,
+    unit_cents:c.unit_cents,total_cents:c.total_cents
+   })),
+   saved_combinations_vs_former_balanced:balanced.combinations-focused.combinations,
+   saved_cents_vs_former_balanced:savings,
+   hit_pct_point_change_vs_former_balanced:focused.hit_pct-balanced.hit_pct,
+   marginal_checks:focused.marginal_checks,
+   non_single_legs:nonSingles
+  }
  };
 }
 // Current Projections data lives in this same private bucket. Read exact known
