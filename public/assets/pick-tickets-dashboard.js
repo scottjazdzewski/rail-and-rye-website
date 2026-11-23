@@ -159,7 +159,8 @@
   E.sequences.replaceChildren();
   seq.forEach(s=>{
    const button=node("button","rr-pt-sequence-tab");
-   button.type="button";button.setAttribute("aria-pressed",String(s===selected));
+   button.type="button";button.dataset.sequenceKey=sequenceKey(s);
+   button.setAttribute("aria-pressed",String(s===selected));
    button.setAttribute("aria-label",s.name+" Races "+s.start_race+"–"+s.end_race+" "+statusText(s.play_status));
    button.append(node("span","rr-pt-seq-range","Races "+s.start_race+"–"+s.end_race),state(s.play_status));
    button.addEventListener("click",()=>selectSequence(s));
@@ -169,7 +170,7 @@
  }
  function selectSequence(s){
   activeSeq=s;activeTier=0;
-  [...E.sequences.children].forEach((b,i)=>b.setAttribute("aria-pressed",String(b.getAttribute("aria-label")?.includes("Races "+s.start_race+"–"+s.end_race))));
+  [...E.sequences.children].forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.sequenceKey===sequenceKey(s))));
   renderActive();
  }
  function updateTrack(){
