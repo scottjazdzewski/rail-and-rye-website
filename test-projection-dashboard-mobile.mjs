@@ -214,6 +214,9 @@ const trophy=matchClass(displayedRace,"rr-dash-graded-trophy");
 assert.ok(trophy,"A source-verified G1 stakes race must display a trophy");
 assert.match(trophy.className,/--g1/,"Grade 1 trophy must use gold distinction");
 assert.equal(trophy.getAttribute("aria-label"),"Grade 1 stakes trophy");
+const originalRace=els.get("rr-dash-races").children.find(x=>x.dataset.raceNumber==="6");
+assert.ok(originalRace?.events?.click,"Original current race must remain available");
+originalRace.events.click();
 console.log("PASS: true per-track and all-track race chronology; original header art; no repeated Analysis CTA; conventional tote fair odds");
 
 
