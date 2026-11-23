@@ -147,18 +147,17 @@ assert.equal(sourcePayload.engine,PICK_V33_ENGINE);
 assert.equal(sourcePayload.soft_cost_scale_dollars,30);
 assert.equal(sourcePayload.minimum_leg_coverage,.5);
 assert.equal(sourcePayload.private_review_only,true);
-assert.equal(sourcePayload.review_count,1);
-assert.equal(sourcePayload.cards.length,1);
-assert.equal(sourcePayload.cards[0].card.formula_version,PICK_V33_ENGINE);
-assert.equal(sourcePayload.cards[0].card.score_verification_status,
- "CURRENT_FIELD_COMPLETE_SCORING_AND_MANIFEST_PENDING");
-assert.equal(sourcePayload.cards[0].card.review_only,true);
-assert.equal(sourcePayload.cards[0].card.source_receipt,null);
-assert.equal(sourcePayload.cards[0].card.official_scratch_count,5);
-assert.equal(sourcePayload.cards[0].card.active_runner_count,55);
-assert.equal(sourcePayload.cards[0].card.official_scratch_source_sha256,previewOwner.source_sha256);
-assert.ok(sourcePayload.cards[0].card.sequences.every(x=>
- x.review_meta.soft_cost_scale_dollars===30&&x.review_meta.minimum_leg_coverage===.5&&x.tickets.length===1));
+assert.equal(sourcePayload.review_count,0,
+ "scratch-adjusted field with verified PRESCRATCH scores must not appear as verified tickets");
+assert.equal(sourcePayload.cards.length,0,
+ "no old or new picks may display before TRI/F4 postscratch rerun");
+assert.equal(sourcePayload.latest_field_versions.length,1);
+assert.equal(sourcePayload.latest_field_versions[0].sequence_count,7,
+ "all 7 sequences are independently optimized internally for QA");
+assert.equal(sourcePayload.latest_field_versions[0].review_status,
+ "AWAITING_CERTIFIED_CURRENT_SCORING");
+assert.ok(sourcePayload.source_rejections.some(x=>
+ x.reason.includes("Fresh certified postscratch TRI/F4 scores")));
 assert.equal(liveEnv.CARDS_BUCKET.objects.size,1,"review never writes certified tickets to R2");
 const badSource=structuredClone(previewSource);
 badSource.races[0].entries[0].win_probability_exact=25;
