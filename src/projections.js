@@ -239,7 +239,9 @@ export async function handleAdminProjectionUpload(request,env){
   return json({ok:true,product_id:product.id,title:product.title,track_name:card.track_name,race_date:card.race_date,races:card.races.length,entries:card.races.reduce((sum,race)=>sum+race.entries.length,0),uploaded_at:uploadedAt,
    ...(pickAudit?{pick_ticket_field_audit:{source_sha256:pickAudit.source_sha256,
     changed_races:pickAudit.changed_races,changed_sequences:pickAudit.changed_sequence_count,
-    status:pickAudit.source_signature_status,engine:pickAudit.optimizer}}:{})});
+    status:pickAudit.source_signature_status,engine:pickAudit.optimizer}}:
+    {pick_ticket_field_audit:{status:"NO_VERIFIED_OFFICIAL_PICK_MENU_FOR_DATE_TRACK",
+     sequences_checked:0}})});
  }catch(e){
   console.error("Projection upload failed",String(e).slice(0,120));
   return fail("Projection data could not be saved.",503);
@@ -320,7 +322,9 @@ export async function handleAdminProjectionBatchUpload(request,env){
     source_sha256:audit.source_sha256,
     changed_races:audit.changed_races,
     changed_sequences:audit.changed_sequence_count,
-    sequences_checked:audit.sequence_count}}:{})};
+    sequences_checked:audit.sequence_count}}:
+    {ticket_verification:{status:"NO_VERIFIED_OFFICIAL_PICK_MENU_FOR_DATE_TRACK",
+     sequences_checked:0}})};
  }));
  const uploaded=results.filter(result=>result.status==="fulfilled").map(result=>result.value);
  const errors=results.map((result,index)=>result.status==="rejected"?{track_name:cards[index].track_name,message:"Projection data could not be saved."}:null).filter(Boolean);
