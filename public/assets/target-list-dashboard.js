@@ -1,9 +1,10 @@
-/* Native Target List renderer. Data always comes from the authenticated admin API. */
+/* Rail & Rye native Target List daily reader.
+   Source-supplied data only; track/time controls change presentation, never selection. */
 (()=>{
 "use strict";
 const get=id=>document.getElementById(id);
-const state={edition:null,dates:[],uploadedAt:null,selectedDate:null,lastFocus:null};
-const dateSelect=get("rr-target-date"),trackSelect=get("rr-target-track"),search=get("rr-target-search");
+const state={edition:null,dates:[],uploadedAt:null,lastFocus:null};
+const dateSelect=get("rr-target-date"),sortSelect=get("rr-target-sort");
 const status=get("rr-target-status"),app=get("rr-target-app"),empty=get("rr-target-empty");
 const list=get("rr-target-list"),dialog=get("rr-target-dialog");
 const content=get("rr-target-dialog-content"),dialogTitle=get("rr-target-dialog-title");
@@ -13,18 +14,38 @@ const node=(tag,cls,text)=>{
  if(text!==undefined)el.textContent=String(text);
  return el;
 };
-const set=(id,value)=>{const item=get(id);if(item)item.textContent=value??"";};
+const set=(id,value)=>{const el=get(id);if(el)el.textContent=value??"";};
 const add=(parent,...children)=>{parent.append(...children);return parent;};
 const displayDate=value=>{
  if(!/^\d{4}-\d{2}-\d{2}$/.test(value||""))return value||"";
  const [year,month,day]=value.split("-").map(Number);
  return new Intl.DateTimeFormat("en-US",{weekday:"short",month:"short",day:"numeric",year:"numeric"}).format(new Date(year,month-1,day,12));
 };
-function option(select,value,label){
- const el=node("option","",label);el.value=value;select.append(el);
+const option=(select,value,label)=>{const el=node("option","",label);el.value=value;select.append(el);};
+const statusText=edition=>edition.status==="initial"?"INITIAL · CURRENT":"SCRATCH UPDATE · CURRENT";
+// A missing/invalid post time sorts after sourced times, never guessed from track or race number.
+function postMinutes(value){
+ const match=/\b(\d{1,2}):(\d{2})\s*(AM|PM)\b/i.exec(String(value||""));
+ if(!match)return Number.POSITIVE_INFINITY;
+ const hour=Number(match[1]),minute=Number(match[2]);
+ if(hour<1||hour>12||minute>59)return Number.POSITIVE_INFINITY;
+ return (hour%12+(match[3].toUpperCase()==="PM"?12:0))*60+minute;
 }
-function statusText(edition){
- return edition.status==="initial"?"INITIAL · CURRENT":"SCRATCH UPDATE · CURRENT";
+const collator=new Intl.Collator("en",{sensitivity:"base",numeric:true});
+function sortedTargets(edition){
+ const result=[...edition.targets];
+ const choice=sortSelect?.value==="track"?"track":"post-time";
+ const compareTime=(a,b)=>{
+  const t=postMinutes(a.post_time_et)-postMinutes(b.post_time_et);
+  // Infinity-Infinity is NaN; source-rank only provides a stable fallback.
+  return Number.isNaN(t)?0:t;
+ };
+ result.sort((a,b)=>{
+  const track=collator.compare(a.track,b.track),time=compareTime(a,b);
+  if(choice==="track")return track||time||a.race_number-b.race_number||a.rank-b.rank;
+  return time||track||a.race_number-b.race_number||a.rank-b.rank;
+ });
+ return result;
 }
 function saddle(program){
  const wrapper=node("span","rr-target-saddle");
@@ -32,101 +53,95 @@ function saddle(program){
  const number=match?Number(match[1]):0;
  if(number>=1&&number<=20){
   const img=node("img");img.src="/assets/approved/saddlecloths/"+number+".png";
-  img.width=36;img.height=36;img.alt="Saddlecloth "+program;
+  img.width=30;img.height=30;img.alt="Saddlecloth "+program;
   wrapper.append(img);
   if(match[2])wrapper.append(node("span","rr-target-suffix",match[2]));
  }else wrapper.append(node("span","rr-target-saddle-text",program));
  return wrapper;
 }
-function runnerBlock(role,runner){
- const panel=node("div","rr-target-runner");
- const nameLine=node("div","rr-target-runner-name");
- add(nameLine,saddle(runner.program_number),node("strong","",runner.horse_name));
- const market=node("div","rr-target-markets");
- const win=node("div","rr-target-win");
- add(win,node("strong","rr-target-percent",String(runner.win_probability)+"%"),node("span","rr-target-market-caption","WIN"));
- const fair=node("div","rr-target-fair");
- add(fair,node("strong","",runner.fair_odds),node("span","rr-target-market-caption","FAIR"));
- add(market,win,fair);
- add(panel,node("span","rr-target-role",role),nameLine,node("span","rr-target-ml","M/L "+runner.morning_line),market);
- if(runner.trainer||runner.jockey)panel.append(node("p","rr-target-connections",[runner.trainer,runner.jockey].filter(Boolean).join(" | ")));
- return panel;
-}
-function row(label,value){
- const el=node("div","rr-target-fact");
- add(el,node("span","",label),node("strong","",value));
+function stat(label,value,kind){
+ const el=node("div","rr-target-stat rr-target-stat-"+kind);
+ add(el,node("span","rr-target-stat-label",label),node("strong","rr-target-stat-value",value));
  return el;
+}
+function horseRow(role,runner){
+ const line=node("div","rr-target-horse-row");
+ const identity=node("div","rr-target-horse-identity");
+ add(identity,saddle(runner.program_number),node("strong","rr-target-horse-name",runner.horse_name));
+ const metrics=node("div","rr-target-horse-stats");
+ add(metrics,stat("ML ODDS",runner.morning_line,"ml"),
+  stat("WIN %",String(runner.win_probability)+"%","win"),
+  stat("FAIR ODDS",runner.fair_odds,"fair"));
+ add(line,node("span","rr-target-horse-role",role),identity,metrics);
+ if(runner.trainer||runner.jockey){
+  const names=node("p","rr-target-horse-connections",[runner.trainer,runner.jockey].filter(Boolean).join(" | "));
+  line.append(names);
+ }
+ return line;
+}
+function headerColumns(){
+ const head=node("div","rr-target-column-head");
+ const metrics=node("div","rr-target-column-metrics");
+ add(metrics,node("span","","ML ODDS"),node("span","","WIN %"),node("span","","FAIR ODDS"));
+ add(head,node("span","",""),node("span","","HORSE"),metrics);
+ return head;
+}
+function raceMeta(entry){
+ return [entry.distance,entry.surface,entry.conditions].filter(Boolean).join(" · ");
+}
+function scratchList(entry){
+ if(!entry.scratches?.length)return null;
+ const container=node("div","rr-target-scratches");
+ container.append(node("strong","","OFFICIAL SCRATCHES"));
+ for(const scratch of entry.scratches){
+  const item=node("span","rr-target-scratch");
+  add(item,saddle(scratch.program_number),node("span","",scratch.horse_name));
+  container.append(item);
+ }
+ return container;
 }
 function openAnalysis(entry,trigger){
  state.lastFocus=trigger;
- dialogTitle.textContent=entry.track+" · Race "+entry.race_number+" · Target "+entry.rank;
+ dialogTitle.textContent=entry.track+" · Race "+entry.race_number;
  content.replaceChildren();
- const info=node("div","rr-target-drawer-context");
- info.append(node("p","rr-target-drawer-meta",
-  [entry.post_time_et,entry.surface,entry.distance,entry.conditions].filter(Boolean).join(" · ")));
- if(entry.tier)info.append(node("span","rr-target-tier rr-target-tier-"+entry.tier.toLowerCase(),entry.tier));
- content.append(info);
- const roles=node("div","rr-target-compare");
- roles.append(runnerBlock("VULNERABLE FAVORITE",entry.favorite),runnerBlock("ATTACK",entry.attack));
- content.append(roles);
- if(entry.also_live){
-  const section=node("section","rr-target-also");
-  add(section,node("h3","","ALSO LIVE"),runnerBlock("ADDITIONAL ALTERNATIVE",entry.also_live));
-  content.append(section);
- }
+ const context=node("p","rr-target-drawer-meta",[entry.post_time_et,raceMeta(entry)].filter(Boolean).join(" · "));
+ add(content,context,headerColumns(),horseRow("ML FAVORITE",entry.favorite),horseRow("ATTACK",entry.attack));
+ if(entry.also_live)content.append(horseRow("ALSO LIVE",entry.also_live));
  const analysis=node("section","rr-target-drawer-analysis");
  add(analysis,node("h3","","THE RAIL & RYE ANALYSIS"),node("p","",entry.analysis));
  content.append(analysis);
- if(entry.scratches.length){
-  const sec=node("section","rr-target-scratches");
-  sec.append(node("h3","","OFFICIAL SCRATCHES"));
-  for(const scratch of entry.scratches){
-   const el=node("div","rr-target-scratch");
-   add(el,saddle(scratch.program_number),node("span","",scratch.horse_name));
-   sec.append(el);
-  }
-  content.append(sec);
- }
+ const scratches=scratchList(entry);
+ if(scratches)content.append(scratches);
  if(typeof dialog.showModal==="function")dialog.showModal();
 }
 function targetCard(entry){
  const card=node("article","rr-target-card");
- const head=node("div","rr-target-card-top");
- const left=node("div","rr-target-card-label");
- add(left,node("span","rr-target-rank","TARGET "+String(entry.rank).padStart(2,"0")),
-  node("h3","",entry.track+" · Race "+entry.race_number));
- const right=node("div","rr-target-card-meta");
- if(entry.tier)right.append(node("span","rr-target-tier rr-target-tier-"+entry.tier.toLowerCase(),entry.tier));
- if(entry.post_time_et)right.append(node("span","rr-target-post",entry.post_time_et));
- add(head,left,right);
- const details=node("p","rr-target-race-facts",
-  [entry.surface,entry.distance,entry.conditions].filter(Boolean).join(" · "));
- const compare=node("div","rr-target-compare");
- compare.append(runnerBlock("VULNERABLE FAVORITE",entry.favorite),runnerBlock("ATTACK",entry.attack));
+ const head=node("div","rr-target-racebar");
+ add(head,node("h3","",entry.track),node("span","rr-target-race-number","RACE "+entry.race_number));
+ if(entry.post_time_et)head.append(node("span","rr-target-post",entry.post_time_et));
+ add(card,head);
+ const meta=raceMeta(entry);
+ if(meta)card.append(node("p","rr-target-race-facts",meta));
+ add(card,headerColumns(),horseRow("ML FAVORITE",entry.favorite),horseRow("ATTACK",entry.attack));
+ if(entry.also_live)card.append(horseRow("ALSO LIVE",entry.also_live));
+ card.append(node("p","rr-target-analysis-text",entry.analysis));
+ const scratches=scratchList(entry);
+ if(scratches)card.append(scratches);
  const bottom=node("div","rr-target-card-bottom");
- const cue=node("p","rr-target-analysis-teaser",entry.analysis);
- const button=node("button","rr-target-analyze","Full Analysis");
+ const button=node("button","rr-target-analyze","Race Details");
  button.type="button";
- button.setAttribute("aria-label","Read full analysis for "+entry.track+" race "+entry.race_number);
+ button.setAttribute("aria-label","Read race details for "+entry.track+" race "+entry.race_number);
  button.addEventListener("click",()=>openAnalysis(entry,button));
- add(bottom,cue,button);
- add(card,head,details,compare,bottom);
+ bottom.append(button);card.append(bottom);
  return card;
 }
-function applyFilters(){
- const edition=state.edition;
- if(!edition)return;
- const track=trackSelect.value;
- const query=search.value.trim().toLowerCase();
- const filtered=edition.targets.filter(entry=>{
-  if(track&&entry.track!==track)return false;
-  const text=[entry.track,entry.race_number,entry.favorite.horse_name,entry.attack.horse_name,entry.also_live?.horse_name||""].join(" ").toLowerCase();
-  return !query||text.includes(query);
- });
- list.replaceChildren(...filtered.map(targetCard));
- set("rr-target-count",filtered.length+" "+(filtered.length===1?"target":"targets"));
+function renderTargets(){
+ const edition=state.edition;if(!edition)return;
+ const ordered=sortedTargets(edition);
+ list.replaceChildren(...ordered.map(targetCard));
+ set("rr-target-count",ordered.length+" "+(ordered.length===1?"target":"targets"));
  set("rr-target-context",displayDate(edition.race_date)+" · "+statusText(edition));
- if(!filtered.length)list.append(node("p","rr-target-no-results","No qualifying targets match these filters."));
+ if(!ordered.length)list.append(node("p","rr-target-no-results","No qualifying Target List selections were published for this date."));
 }
 function setEdition(data,preferredDate){
  state.edition=data.edition||null;state.dates=data.dates||[];state.uploadedAt=data.uploaded_at||null;
@@ -135,16 +150,12 @@ function setEdition(data,preferredDate){
  for(const value of state.dates)option(dateSelect,value,displayDate(value));
  if(current&&!state.dates.includes(current))option(dateSelect,current,displayDate(current));
  if(current)dateSelect.value=current;
- const previous=trackSelect.value;const tracks=[...new Set((state.edition?.targets||[]).map(entry=>entry.track))].sort();
- trackSelect.replaceChildren();option(trackSelect,"","All tracks");
- for(const track of tracks)option(trackSelect,track,track);
- if(tracks.includes(previous))trackSelect.value=previous;
  app.hidden=!state.edition;empty.hidden=!!state.edition;
  if(!state.edition){status.textContent="No private Target List editions are available.";set("rr-target-freshness","");return;}
  status.textContent="";
  const summary=statusText(state.edition)+" · Revision "+state.edition.revision;
- set("rr-target-freshness",summary+(state.uploadedAt?" · Loaded "+new Date(state.uploadedAt).toLocaleString("en-US",{timeZone:"America/New_York",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}):""));
- applyFilters();
+ set("rr-target-freshness",summary+(state.uploadedAt?" · Updated "+new Date(state.uploadedAt).toLocaleString("en-US",{timeZone:"America/New_York",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}):""));
+ renderTargets();
 }
 async function load(date){
  status.textContent="Loading private Target List…";
@@ -159,14 +170,12 @@ async function load(date){
  }
 }
 dateSelect.addEventListener("change",()=>load(dateSelect.value));
-trackSelect.addEventListener("change",applyFilters);
-search.addEventListener("input",applyFilters);
+sortSelect.addEventListener("change",renderTargets);
 get("rr-target-dialog-close").addEventListener("click",()=>dialog.close());
 dialog.addEventListener("close",()=>state.lastFocus?.focus());
 get("rr-target-upload-form").addEventListener("submit",async event=>{
  event.preventDefault();
- const file=get("rr-target-file").files?.[0];
- if(!file)return;
+ const file=get("rr-target-file").files?.[0];if(!file)return;
  const output=get("rr-target-upload-status");
  output.textContent="Validating private source…";
  try{
