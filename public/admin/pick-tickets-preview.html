@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#102d53">
+<title>Private Pick Tickets Review | Rail &amp; Rye</title>
+<link rel="icon" href="/favicon.png" type="image/png">
+<link rel="stylesheet" href="/assets/rail-rye-core.css?v=13">
+<link rel="stylesheet" href="/assets/rail-rye-components.css?v=11">
+<link rel="stylesheet" href="/assets/membership.css?v=17">
+<link rel="stylesheet" href="/assets/pick-tickets-dashboard.css?v=1">
+<script defer src="/assets/pick-tickets-dashboard.js?v=1"></script>
+</head>
+<body class="rr-member-page rr-pt-page">
+<header class="rr-member-header">
+ <div class="heritage-shell">
+  <a class="rr-member-brand" href="/admin/"><img src="/assets/approved/brand/rail-rye-ivory-logo.png" alt="" width="60" height="60"><span>RAIL &amp; RYE</span></a>
+  <nav class="rr-member-nav" aria-label="Private publisher navigation">
+   <a href="/admin/projections-preview/">Projections review</a>
+   <a href="/admin/">Publisher’s Desk</a>
+  </nav>
+ </div>
+</header>
+<main class="rr-pt-main">
+ <a class="rr-pt-back" href="/admin/">‹ Publisher’s Desk</a>
+ <p class="rr-pt-banner">Private administrator review · Customer access disabled · Not published</p>
+ <div class="rr-pt-heading">
+  <div>
+   <span class="rr-pt-mini-label">RAIL &amp; RYE / RACING INTELLIGENCE / PICK TICKETS</span>
+   <h1>Pick Tickets</h1>
+   <p>Horizontal multi-race ticket intelligence, direct from the certified production export. All selections and ticket costs are source-audited; no PDF downloads.</p>
+  </div>
+ </div>
+ <section class="rr-pt-toolbar" aria-label="Pick Tickets filters">
+  <label>Date
+   <select id="rr-pt-date" aria-label="Choose racing date"></select>
+  </label>
+  <label>Track
+   <select id="rr-pt-track" aria-label="Choose racetrack"></select>
+  </label>
+  <label>Sequence status
+   <select id="rr-pt-filter" aria-label="Filter sequence recommendation">
+    <option value="ALL">All sequences</option>
+    <option value="PLAY">PLAY</option>
+    <option value="CONDITIONAL">CONDITIONAL</option>
+    <option value="PASS">PASS</option>
+   </select>
+  </label>
+ </section>
+ <p id="rr-pt-updated" class="rr-pt-updated" role="status" aria-live="polite"></p>
+ <p id="rr-pt-status" class="rr-pt-status" role="status" aria-live="polite">Loading private editions…</p>
+ <section id="rr-pt-app" hidden aria-label="Private Pick Tickets sequence review">
+  <div id="rr-pt-list" class="rr-pt-list"></div>
+ </section>
+ <section id="rr-pt-empty" class="rr-pt-empty" hidden>
+  <strong>No certified Pick Tickets have been loaded.</strong>
+  <p>This is an empty private preview. Use the original verified production source and receipt; no demonstration picks or manufactured results will appear.</p>
+ </section>
+ <section class="rr-pt-import" aria-label="Private source upload">
+  <label for="rr-pt-file">Certified Pick Tickets JSON export (1–25 tracks, maximum 3MB)
+   <input id="rr-pt-file" type="file" accept=".json,application/json">
+  </label>
+  <button id="rr-pt-upload" type="button">Load private review</button>
+  <small>R2 remains private. Upload must contain certified sequences, revision, source receipt, full runner numbers and audited wager costs. This control does not publish to customers.</small>
+ </section>
+</main>
+<dialog id="rr-pt-dialog" class="rr-pt-dialog" aria-labelledby="rr-pt-dialog-title">
+ <div class="rr-pt-dialog-head"><h2 id="rr-pt-dialog-title">Sequence analysis</h2><button id="rr-pt-close" type="button" class="rr-pt-close" aria-label="Close full sequence analysis">Close</button></div>
+ <div id="rr-pt-detail"></div>
+</dialog>
+<footer class="rr-member-footer">
+ <div class="heritage-shell"><span class="heritage-footmark">RAIL & RYE</span><nav aria-label="Footer"><a href="/admin/">Publisher’s Desk</a> · <a href="/admin/projections-preview/">Projections</a></nav><small>Private review · No customer launch</small></div>
+</footer>
+</body>
+</html>
