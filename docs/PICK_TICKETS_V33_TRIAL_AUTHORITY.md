@@ -26,3 +26,16 @@ The new test-pick-tickets-v33.mjs compares its exact DP result with exhaustive e
 Existing tests for the official 42-sequence menu, current field integrity, authentic official scratch ledger, Cloudflare Access and six browser widths must continue to pass.
 
 Historical V3.2 remains preserved with its own tests. A V3.2 ticket must not pass the V3.3 formula-version gate.
+
+## Mandatory validation after EVERY field upload
+
+This is an engineering gate, not explanatory language for the customer dashboard:
+
+1. Receive the complete prescratch or postscratch field, preserve the exact horse-to-program mapping, all current TRI PWIN and F4 distributions, and the associated TRI/F4 scoring receipts. Never reuse a previously selected ticket or fill missing probabilities with estimates.
+2. Validate date, track, complete race fields, exact PWIN sum and F4 agreement, all eligible interests, confirmed scratches and stage. Compute the SHA-256 of the normalized uploaded source.
+3. Re-run the unchanged V3.3 exact optimizer for **every official sequence** at that date and track, including those whose visible picks appear unchanged. Check the 50% per-leg floor, selections, combination product, official wager denomination, ticket cost and full-sequence hit probability.
+4. Compare each sequence to the preceding field revision, recording changed horses/races, selections, hit probability and cost. The new source SHA-256 must accompany the review. Old stored editions never outrank the latest field.
+5. **HOLD ALL TICKETS FROM A CHANGED FIELD WITHOUT UPDATED TRI/F4 SCORING RECEIPTS.** A mathematical recalculation using stale scores cannot validate choices. A renamed or replaced betting interest, jockey/field/conditions change or probabilities changing with unchanged receipts constitutes a hold. No previous ticket can be served as a fallback. After fresh scoring evidence arrives, recalculate and reevaluate the current field. These are internal controls, not customer-facing warning banners.
+6. Release to customers requires separate source certification and approval. Review-only mathematical outputs must remain within protected private R2 and Access; do not publish paid JSON in GitHub.
+
+**Date/menu limitation:** The frozen 42-sequence November 23, 2026 menu and its official minimum denominations are currently the only supported production configuration. Any other date or track without a separately confirmed official wager menu returns `NO_VERIFIED_OFFICIAL_PICK_MENU_FOR_DATE_TRACK` for the Pick Tickets audit. Projections can still be uploaded, but Pick Tickets must not silently inherit the prior date's wager menu or show supposedly verified selections. Future official sequence menus and their denominations need their own dated, authenticated configuration before that day's Pick Tickets can be produced and released.
