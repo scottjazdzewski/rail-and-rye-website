@@ -428,7 +428,7 @@ async function memberCertifiedF4(request,env,url){
   if(!env.CARDS_BUCKET)return error("Verified model storage is unavailable.",503);
   const date=url.searchParams.get("date"),track=url.searchParams.get("track"),
         race=Number(url.searchParams.get("race"));
-  if(!/^20\\d{2}-\\d{2}-\\d{2}$/.test(String(date||""))||
+  if(!/^20\d{2}-\d{2}-\d{2}$/.test(String(date||""))||
      !track||!Number.isInteger(race)||race<1||race>20)
    return error("Invalid race selection.",400);
   const cards=await readMemberProjectionCards(env,await memberLibrary(env));
