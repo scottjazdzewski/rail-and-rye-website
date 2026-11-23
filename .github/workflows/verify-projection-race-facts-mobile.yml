@@ -9,6 +9,8 @@ on:
       - 'public/admin/projections-preview.html'
       - 'public/membership/dashboard/index.html'
       - 'test-projection-race-facts-browser.mjs'
+      - 'test-projection-dashboard-mobile.mjs'
+      - 'public/assets/approved/factor-badges/fact_pace_strong_forest.svg'
       - '.github/workflows/verify-projection-race-facts-mobile.yml'
   pull_request:
     paths:
@@ -18,6 +20,8 @@ on:
       - 'public/admin/projections-preview.html'
       - 'public/membership/dashboard/index.html'
       - 'test-projection-race-facts-browser.mjs'
+      - 'test-projection-dashboard-mobile.mjs'
+      - 'public/assets/approved/factor-badges/fact_pace_strong_forest.svg'
       - '.github/workflows/verify-projection-race-facts-mobile.yml'
   workflow_dispatch:
 permissions:
@@ -43,5 +47,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: rail-rye-mobile-race-facts
-          path: test-artifacts/race-facts-mobile-*.png
+          path: |
+            test-artifacts/race-facts-mobile-*.png
+            test-artifacts/race-scratches-mobile-*.png
           if-no-files-found: ignore
