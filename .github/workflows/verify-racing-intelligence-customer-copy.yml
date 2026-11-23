@@ -1,0 +1,44 @@
+name: Lock Racing Intelligence customer-facing copy
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'public/admin/projections-preview.html'
+      - 'public/admin/pick-tickets-preview.html'
+      - 'public/admin/longshot-radar.html'
+      - 'public/admin/target-list-preview.html'
+      - 'public/membership/dashboard/index.html'
+      - 'public/assets/projections-dashboard.js'
+      - 'public/assets/pick-tickets-dashboard.js'
+      - 'public/assets/longshot-radar.js'
+      - 'public/assets/target-list-dashboard.js'
+      - 'docs/RACING_INTELLIGENCE_HUB_DESIGN_SYSTEM.md'
+      - 'test-racing-intelligence-customer-copy.mjs'
+      - '.github/workflows/verify-racing-intelligence-customer-copy.yml'
+  pull_request:
+    paths:
+      - 'public/admin/projections-preview.html'
+      - 'public/admin/pick-tickets-preview.html'
+      - 'public/admin/longshot-radar.html'
+      - 'public/admin/target-list-preview.html'
+      - 'public/membership/dashboard/index.html'
+      - 'public/assets/projections-dashboard.js'
+      - 'public/assets/pick-tickets-dashboard.js'
+      - 'public/assets/longshot-radar.js'
+      - 'public/assets/target-list-dashboard.js'
+      - 'docs/RACING_INTELLIGENCE_HUB_DESIGN_SYSTEM.md'
+      - 'test-racing-intelligence-customer-copy.mjs'
+      - '.github/workflows/verify-racing-intelligence-customer-copy.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  customer-copy-lock:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Block edition-stage labels, review banners and JSON file uploads
+        run: node test-racing-intelligence-customer-copy.mjs
