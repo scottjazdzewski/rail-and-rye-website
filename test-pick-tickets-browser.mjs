@@ -59,7 +59,7 @@ try{
   assert.equal(await page.locator(".rr-pt-state[data-status=PASS]").count(),1);
   assert.equal(await page.locator(".rr-pt-state[data-status=CONDITIONAL]").count(),1);
   assert.equal(await page.locator(".rr-pt-state[data-status=PLAY]").count(),1);
-  assert.ok(await page.locator(".rr-pt-chip img").count()>10,"approved saddlecloth image assets required");
+  assert.equal(await page.locator(".rr-pt-chip img").count(),0,"overview intentionally hides detailed runner selections");
   assert.equal(await page.locator(".rr-pt-glance").count(),3,"compact overview shows every sequence");
   assert.equal(await page.locator(".rr-pt-sequence .rr-pt-leg").count(),0,"full race legs only appear after a click");
   const multi=page.locator(".rr-pt-sequence").nth(1);
@@ -70,6 +70,7 @@ try{
   assert.equal(await page.locator("#rr-pt-dialog .rr-pt-tier").count(),2,"every approved ticket version remains accessible");
   const drawerRows=page.locator("#rr-pt-dialog .rr-pt-leg");
   assert.equal(await drawerRows.count(),4,"all source race legs are visible as rows");
+  assert.ok(await page.locator("#rr-pt-dialog .rr-pt-chip img").count()>=4,"official saddlecloth assets render inside click-through detail");
   const rowGrid=await drawerRows.first().evaluate(node=>getComputedStyle(node).gridTemplateColumns.split(" ").length);
   assert.equal(rowGrid,2,"each detail race row aligns number label and official saddlecloths");
   const backgrounds=await drawerRows.evaluateAll(nodes=>nodes.map(n=>getComputedStyle(n).backgroundColor));
