@@ -160,9 +160,10 @@ try{
    return result;
   });
   if(width>=375){
-   assert.equal(banner.track,banner.race,"Track and race stay on the same header line at "+width+": "+JSON.stringify(banner));
-   assert.equal(banner.facts,banner.track,"Short distance/surface stays on that same line at "+width+": "+JSON.stringify(banner));
-   assert.equal(banner.post,banner.track,"Sourced post time stays on that same line at "+width+": "+JSON.stringify(banner));
+   // Baseline alignment gives a few px of different top offsets for 17px vs 13px text.
+   assert.ok(Math.abs(banner.track-banner.race)<=6,"Track and race share a row at "+width+": "+JSON.stringify(banner));
+   assert.ok(Math.abs(banner.facts-banner.track)<=6,"Short distance/surface shares that row at "+width+": "+JSON.stringify(banner));
+   assert.ok(Math.abs(banner.post-banner.track)<=6,"Source post time shares that row at "+width+": "+JSON.stringify(banner));
   }
   assert.equal(banner.complete,"6½F · Dirt");
 
