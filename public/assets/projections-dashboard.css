@@ -437,3 +437,66 @@
  .rr-dash-metric-value::before{font-size:9px}
  .rr-dash-metric-bar{width:11px}
 }
+
+/* Unified Projections race navigation: explicit by-track vs chronological
+   all-track timeline, with a single 44px minimum touch target. */
+.rr-dash-mode-switch{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:0 0 8px;padding:4px;border:1px solid #d5c39e;border-radius:10px;background:#eae7dc}
+.rr-dash-mode-button{min-width:0;min-height:43px;padding:8px 10px;border:1px solid transparent;border-radius:8px;background:transparent;color:#35516d;cursor:pointer;font:750 13px/1.18 Inter,Arial,system-ui,sans-serif;letter-spacing:.01em}
+.rr-dash-mode-button[aria-pressed="true"]{border-color:#a17b38;background:#fffdf6;color:#102e54;box-shadow:0 1px 3px rgba(16,46,84,.08)}
+.rr-dash-mode-button:focus-visible,.rr-dash-global-timeline button:focus-visible,.rr-dash-runner-row:focus-within{outline:3px solid #b48a39;outline-offset:2px}
+.rr-dash-app[data-mode="all"] .rr-dash-track-field,.rr-dash-app[data-mode="all"] .rr-dash-race-time-field{display:none}
+.rr-dash-races[hidden],.rr-dash-global-timeline[hidden]{display:none!important}
+.rr-dash-global-timeline{display:grid;gap:6px;padding:9px 11px;border:1px solid #c99831;border-radius:10px;background:#fffdf6}
+.rr-dash-global-timeline>label{color:#2c4765;font:750 11px/1.2 Inter,Arial,system-ui,sans-serif;letter-spacing:.035em}
+.rr-dash-timeline-controls{display:grid;grid-template-columns:42px minmax(0,1fr) 42px;gap:7px;align-items:stretch}
+.rr-dash-timeline-controls button{min-width:42px;min-height:44px;border:1px solid #b6a079;border-radius:7px;background:#fff;color:#15365b;cursor:pointer;font:800 26px/1 Inter,Arial,system-ui,sans-serif}
+.rr-dash-timeline-controls button:disabled{opacity:.3;cursor:default}
+.rr-dash-timeline-controls select{width:100%;min-width:0;min-height:44px;padding:8px 9px;border:1px solid #b6a079;border-radius:7px;background:#fff;color:#15365b;font:700 14px/1.25 Inter,Arial,system-ui,sans-serif}
+.rr-dash-timeline-count{font:650 11px/1.2 Inter,Arial,system-ui,sans-serif;color:#607389}
+.rr-dash-app[data-mode="all"] .rr-dash-toolbar .rr-dash-date-field{grid-column:1/-1}
+/* Preserve the authentic Rail & Rye horseshoe track-header artwork.
+   Only size changes: never crop, recolor, replace or stretch this logo. */
+.rr-dash-card-logo{object-fit:contain;object-position:center}
+/* No redundant "Analysis" footers: entire runner card is tappable. */
+.rr-dash-row-analysis{display:none!important}
+.rr-dash-runner-row{cursor:pointer}
+.rr-dash-runner-row:focus-within{border-color:#b48a39}
+@media(max-width:800px){
+ .rr-dash-mode-switch{gap:4px;margin-bottom:7px;padding:3px}
+ .rr-dash-mode-button{min-height:43px;font-size:13px;letter-spacing:0}
+ .rr-dash-app[data-mode="all"] .rr-dash-toolbar .rr-dash-date-field{grid-column:1/-1}
+ .rr-dash-global-timeline{gap:7px;margin:0 0 3px;padding:9px 10px}
+ .rr-dash-global-timeline>label{font-size:11px}
+ .rr-dash-timeline-controls select{font-size:14px}
+ .rr-dash-card-head{grid-template-columns:45px minmax(0,1fr);gap:10px;padding:5px 1px 9px}
+ .rr-dash-card-logo{width:45px;height:45px;object-fit:contain}
+ .rr-dash-track-title{font-size:21px;line-height:1.12}
+ .rr-dash-card-date{font-size:11px}
+ .rr-dash-runner-list{gap:7px}
+ .rr-dash-runner-row{grid-template-columns:39px minmax(0,1fr) 99px;grid-template-areas:"program horse market" "metrics metrics metrics";column-gap:9px;row-gap:4px;align-content:center;min-height:114px;padding:10px 11px 10px}
+ .rr-dash-horse-name{font-size:18px;line-height:1.18;overflow-wrap:anywhere}
+ .rr-dash-horse-ml{font-size:12px;line-height:1.15}
+ .rr-dash-horse-connections{font-size:13px;line-height:1.22;margin-top:4px;color:#334e68}
+ .rr-dash-win-percent{font-size:26px;line-height:1}
+ .rr-dash-win-fair{font-size:13px;line-height:1.12;color:#455e77}
+ .rr-dash-metric-group{margin-top:4px;padding:8px 0 1px}
+ .rr-dash-metric-value,.rr-dash-metric-value[data-state]{min-height:29px;gap:5px}
+ .rr-dash-metric-value::before{font-size:11px;line-height:1.08;letter-spacing:-.015em;color:#4c647b}
+ .rr-dash-metric-bar{height:5px}
+ .rr-dash-runner-row .rr-dash-horse-open{min-height:0}
+ .rr-dash-mobile-list-heading span{display:none}
+}
+@media(max-width:370px){
+ .rr-dash-mode-button{font-size:12px}
+ .rr-dash-global-timeline{padding:8px}
+ .rr-dash-timeline-controls{grid-template-columns:38px minmax(0,1fr) 38px;gap:5px}
+ .rr-dash-timeline-controls button{min-width:38px}
+ .rr-dash-timeline-controls select{font-size:12px;padding:8px 5px}
+ .rr-dash-runner-row{grid-template-columns:34px minmax(0,1fr) 88px;gap:5px 7px;padding:10px 8px 9px;min-height:114px}
+ .rr-dash-horse-name{font-size:16px}
+ .rr-dash-horse-connections{font-size:12px}
+ .rr-dash-win-percent{font-size:23px}
+ .rr-dash-win-fair{font-size:12px}
+ .rr-dash-metric-value::before{font-size:9px;letter-spacing:0}
+ .rr-dash-metric-bar{width:11px}
+}
