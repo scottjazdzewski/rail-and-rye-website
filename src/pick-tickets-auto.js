@@ -202,6 +202,7 @@ export function buildV33ScratchFieldPreview(wrapped){
    model_factor_basis:card.factor_basis,
    official_scratch_source_sha256:official.source_snapshot_sha256,
    official_scratch_count:official.scratched_count,
+   additional_scratch_count:official.additional_scratch_count,
    active_runner_count:official.active_runner_count
  }};
 }
