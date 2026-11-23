@@ -1,0 +1,31 @@
+/* RAIL & RYE — LOCKED CANONICAL STAKES LANGUAGE V1
+   Shared by protected Longshot Radar and Target List. A display-only layer.
+   Grade and titles are supplied by source data via rr-race-titles.js. */
+.rr-ed-stakes-title{font-weight:750;color:#fff;overflow-wrap:anywhere}
+.rr-ed-grade-trophy{
+ display:inline-flex;vertical-align:middle;align-items:center;justify-content:center;
+ gap:4px;white-space:nowrap;min-height:24px;padding:3px 7px;
+ margin-left:8px;border:1px solid #c99831;border-radius:6px;
+ background:#f6df93;color:#50370b;
+ font:800 11px/1.2 Inter,Arial,system-ui,sans-serif;
+ letter-spacing:.015em;
+}
+.rr-ed-grade-trophy--g1{background:#f8dc84;border-color:#c79b35;color:#523509}
+.rr-ed-grade-trophy--g2{background:#e8edf1;border-color:#a8b6c4;color:#334c63}
+.rr-ed-grade-trophy--g3{background:#ebcbae;border-color:#be8b5d;color:#5b391d}
+.rr-ed-grade-trophy-icon{font-size:14px;line-height:1}
+.rr-ed-grade-trophy-label{font:800 11px/1 Inter,Arial,system-ui,sans-serif}
+.rr-lr-race-facts .rr-ed-stakes-title,
+.rr-target-race-facts .rr-ed-stakes-title,
+.rr-target-drawer-meta .rr-ed-stakes-title{
+ font-weight:750;letter-spacing:0;overflow-wrap:anywhere
+}
+.rr-lr-race-facts .rr-ed-grade-trophy,
+.rr-target-race-facts .rr-ed-grade-trophy{
+ margin-top:2px;margin-bottom:2px
+}
+.rr-target-drawer-meta .rr-ed-grade-trophy{vertical-align:baseline}
+@media(max-width:430px){
+ .rr-ed-grade-trophy{min-height:23px;padding:3px 6px;margin-left:6px}
+ .rr-lr-race-facts,.rr-target-race-facts{overflow-wrap:anywhere;white-space:normal}
+}
