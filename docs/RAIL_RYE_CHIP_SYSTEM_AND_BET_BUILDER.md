@@ -4,21 +4,23 @@
 ## Chip hierarchy (mandatory across all four Hub modules)
 
 ### Horse saddle chips = source horse identities
-- Reuse the **actual approved saddlecloth art** from `/assets/approved/saddlecloths/{1..20}.png`, preserving its native number/color, aspect ratio and dark edge. Never draw a colored imitation or reuse a horse chip to represent a race number.
+- Reuse the **actual approved saddlecloth art** from `/assets/approved/saddlecloths/{1..20}.png`, preserving its native number/color, aspect ratio and dark edge. Never draw a colored imitation; a race tab explicitly uses that race number's actual approved saddlecloth artwork.
 - Render horse chip before the name in Projections, Pick Tickets, Longshot Radar and Target List. Use `.rr-horse-chip` and `.rr-horse-chip__suffix`; for 1A, use #1 approved artwork plus a clear **A** suffix. For program numbers outside the available approved art, use a clearly identified navy fallback number—not an invented cloth/color.
 - Use the same source program identity in selections, ticket combinations, saved ticket summaries and full-field cards. Do not silently remove leading zeroes or coupled-entry suffixes.
 
-### Race chips = Rail & Rye branded navigation
-- Use `.rr-race-chip rr-race-chip--tab` with gold edge/inset ring, navy face, ivory number and subtly rounded saddle-chip shape. The active chip uses the **gold face / navy number** treatment with an outer focus ring.
-- Race chips are NEVER keyed to horse saddlecloth colors. They identify **Race 1–N**, not horses #1–N.
-- The prominent small race-number plaque in the race header uses `.rr-race-chip rr-race-chip--header` with a tiny `RACE` label. No generic blue squares or extra decorative images.
-- Tabs remain in **post-time order**, retaining race number as the accessible label; the active race is identified with `aria-current="true"`.
-- Minimum 44x44px phone touch area, 18–21px numerals, no font/number clipping, high navy/gold contrast. Art and typography should look consistent across Hub products.
+### Race chips = the SAME actual saddlecloth artwork used for horse numbers
+- Owner-approved correction: race tabs and the race-number badge in the header use the **actual corresponding approved numbered saddlecloth** at `/assets/approved/saddlecloths/<race-number>.png`, not branded navy/gold CSS replicas. Race 1 uses the #1 saddlecloth graphic, Race 10 uses the #10 saddlecloth graphic, etc.
+- The **active race** has a subtle outside gold focus ring **without recoloring** the approved saddlecloth chip. Do not add a second numeric label or a stacked `RACE` caption inside the graphic; its number is already part of the artwork. Accessible labels remain `Race N · <post time>` on tabs and `Race N` in the race header.
+- Remove or override obsolete `.rr-race-chip`/legacy `.rr-dash-race-number` CSS that creates thick gold/gray double borders, extra shadow plaques or squashes two-digit labels. Use `.rr-race-saddle-tab`, `.rr-race-saddle-header` and `.rr-race-saddle-image` for the current implementation.
+- This is **racing-themed navigation**, not horse identity. Its function remains selecting that race; the tab and header number simply share the same visual saddlecloth source that customers already know from horse rows.
+- The race navigation order remains true post-time order and a valid 44px+ phone touch target. If a program-number image is not part of the approved art (outside #1–20), use a clearly identified accessible fallback, not fabricated colors.
+- Bet Builder selections still always show the same approved saddlecloth program numbers and native coupled suffixes.
 
 ### Track identity in headers
-- Keep the persistent approved Rail & Rye horseshoe at `/assets/brand/rail_rye_logo_header.png`.
-- Show existing approved track art where available at `/assets/approved/track-logos/<slug>.webp` (Finger Lakes, Mountaineer, Mahoning Valley, Parx Racing and Zia Park). Use `object-fit:contain`; never crop, stretch or replace with fabricated track logos.
-- Always keep the track name, date, race number and verified post time legible on phones.
+- Preserve the persistent Rail & Rye horseshoe at `/assets/brand/rail_rye_logo_header.png` next to the track name and race date.
+- The previous approved image files for track sponsorship/advertising remain archived, but **never render tiny low-resolution sponsor logos** (e.g. a white Hollywood Gaming tile) as track identification in the Projections header.
+- Replace those tiles with a compact, premium **track-specific Rail & Rye racing mark** consisting of a double-rail oval, a venue-specific abbreviation (FL, MNR, MV, PRX, ZIA, or safe fallback), and a `RACECOURSE` caption. It is Rail & Rye editorial branding, **not** an official venue logo. Use `.rr-dash-track-mark` and keep type readable, the racing identity intact, and header spacing compact.
+- Show the track full name prominently alongside the mark; do not drop track names or display sponsor marks in their place.
 
 ## Bet Builder identity and location
 
