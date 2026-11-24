@@ -318,7 +318,7 @@ console.log("PASS: true per-track chronology; text-only track identity and authe
 // Canonical cross-module chips and Bet Builder live in the protected projection view.
 const chipStyles=readFileSync("public/assets/rr-intelligence-chips.css","utf8");
 for(const html of [adminHtml,memberHtml]){
- assert.match(html,/rr-intelligence-chips\.css\?v=5/,"Load cleaned shared race/horse chip identity");
+ assert.match(html,/rr-intelligence-chips\.css\?v=6/,"Load cleaned shared race/horse chip identity");
  assert.match(html,/rr-projections-race-header\.css\?v=4/,"Load the single new Projections header stylesheet");
   assert.match(html,/rr-race-facts\.css\?v=4/,"Load the shared centered race-facts stylesheet.");
  assert.match(html,/rr-exotic-bet-builder\.css\?v=3/,"Load the responsive exotic ticket builder skin");
