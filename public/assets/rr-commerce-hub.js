@@ -20,7 +20,8 @@ function choices(cat,d){return products.filter(p=>p.kind==="single"?p.category==
 function render(){
  const d=date.value,all=products.filter(p=>fullBundle(p,d)),bundle=all.slice().sort((a,b)=>a.price_cents-b.price_cents)[0];let count=0,owned=0;
  for(const card of qa(".rr-hub-product")){
-  const cat=card.dataset.productCategory,available=choices(cat,d),items=itemsForDate(d).filter(p=>p.category===cat),published=items.length>0,unlockedItems=items.filter(ownsItem),anyUnlocked=unlockedItems.length>0,allUnlocked=published&&unlockedItems.length===items.length,state=card.querySelector(".rr-hub-state"),amount=card.querySelector(".rr-hub-price"),button=card.querySelector("button"),choice=card.querySelector(".rr-hub-choice"),select=choice.querySelector("select"),old=select.value;
+  const cat=card.dataset.productCategory,available=choices(cat,d),items=itemsForDate(d).filter(p=>p.category===cat),published=items.length>0,unlockedItems=items.filter(ownsItem),anyUnlocked=unlockedItems.length>0,allUnlocked=published&&unlockedItems.length===items.length,state=card.querySelector(".rr-hub-state"),amount=card.querySelector(".rr-hub-price"),button=card.querySelector("button"),choice=card.querySelector(".rr-hub-choice"),select=choice.querySelector("select"),old=select.value,raceDate=card.querySelector(".rr-hub-race-day time");
+  if(raceDate){if(validDate(d)){raceDate.dateTime=d;raceDate.textContent=formatDate(d)}else{raceDate.removeAttribute("datetime");raceDate.textContent="Unavailable"}}
   if(published)count++;if(allUnlocked)owned++;
   select.replaceChildren();
   if(anyUnlocked){const option=document.createElement("option");option.value="owned";option.textContent="Open purchased editions";select.append(option)}
@@ -58,12 +59,17 @@ async function load(path){const r=await fetch(path,{cache:"no-store",credentials
  const dates=new Set([today()]);for(const p of products){if(p.kind==="single"&&visibleCats.includes(p.category)&&validDate(p.race_date))dates.add(p.race_date);for(const i of bundleItems(p))if(visibleCats.includes(i.category)&&validDate(i.race_date))dates.add(i.race_date)}for(const i of days)if(visibleCats.includes(i.category)&&validDate(i.race_date))dates.add(i.race_date);
  const match=location.hash.match(/^#edition-([a-f0-9-]{36})$/i)?.[1],deep=products.find(p=>p.id===match),requested=deep?.race_date||query.get("date");
  date.replaceChildren();for(const d of [...dates].filter(validDate).sort().reverse()){const option=document.createElement("option");option.value=d;option.textContent=formatDate(d);date.append(option)}
- date.value=dates.has(requested)?requested:today();if(!date.value)date.selectedIndex=0;date.disabled=false;
+ const editionDates=[...new Set(products.flatMap(p=>p.kind==="bundle"?bundleItems(p).map(i=>i.race_date):[p.race_date]).filter(validDate))].sort();
+ const todayDate=today(),nextDate=editionDates.find(d=>d>todayDate),priorDates=editionDates.filter(d=>d<todayDate);
+ const defaultRaceDate=editionDates.includes(todayDate)?todayDate:nextDate||priorDates[priorDates.length-1]||todayDate;
+ const requestedAvailable=dates.has(requested);
+ date.value=requestedAvailable?requested:defaultRaceDate;if(!date.value)date.selectedIndex=0;date.disabled=false;
  date.onchange=()=>{const p=new URLSearchParams(location.search);p.set("date",date.value);history.replaceState(null,"",location.pathname+"?"+p);render()};
  render();
  if(query.has("cancelled"))note("Checkout was cancelled. No payment was made.");
  else if(!catalogKnown||!accessKnown)note("Availability or access could not be verified. Refresh to try again.");
  else if(!live||!checkoutReady)note("Purchases are temporarily unavailable. Existing customers can still open their tabs.");
+ else if(!requestedAvailable&&defaultRaceDate!==todayDate){const direction=defaultRaceDate>todayDate?"next":"most recent";note(`No editions are published for ${formatDate(todayDate)}. Showing the ${direction} published race date: ${formatDate(defaultRaceDate)}.`)}
  const focusCat=deep?.category||query.get("category");if(cats.includes(focusCat)){const card=qa(".rr-hub-product").find(c=>c.dataset.productCategory===focusCat);if(card&&match){card.scrollIntoView({block:"nearest"});card.querySelector("button").focus({preventScroll:true})}}
 })();
 })();

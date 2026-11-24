@@ -120,3 +120,7 @@ body.heritage-home.heritage-store-page.rr-commerce-hub .heritage-store-layout{di
 .rr-commerce-hub .rr-hub-overview .rr-hub-recovery a:hover,.rr-commerce-hub .rr-hub-overview .rr-hub-recovery a:focus-visible{text-decoration:underline;color:#fff7e9}
 .rr-commerce-hub .rr-hub-overview .rr-hub-recovery a:focus-visible{outline:2px solid #e8bd72;outline-offset:2px;border-radius:4px}
 @media(max-width:1000px){.rr-commerce-hub .rr-hub-overview .rr-hub-recovery a{min-height:44px}}
+
+.rr-commerce-hub .rr-hub-race-day{display:flex;align-items:baseline;flex-wrap:wrap;gap:6px;margin:0;color:#f5ead7;font:600 12px/1.35 var(--heritage-sans)}
+.rr-commerce-hub .rr-hub-race-day-label{color:#e8bd72;font:700 10px/1.3 var(--heritage-sans);letter-spacing:.1em;text-transform:uppercase}
+.rr-commerce-hub .rr-hub-race-day time{font-weight:700}
