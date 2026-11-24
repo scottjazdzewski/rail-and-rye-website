@@ -1,0 +1,86 @@
+{
+  "date": "2026-11-25",
+  "release_at": "2026-11-25T08:00:00Z",
+  "source_sha256": "8a1538f5ced6efb2ced53013c1fc4bc01052a209c840091b45af6245460a0b13",
+  "role_audit_rows": 1252,
+  "verified_unassigned": [
+    {
+      "race": 4,
+      "program": "3",
+      "horse": "Maximus Meridius",
+      "page": 9
+    },
+    {
+      "race": 7,
+      "program": "2",
+      "horse": "Beyond Belief",
+      "page": 19
+    },
+    {
+      "race": 7,
+      "program": "9",
+      "horse": "Boutwell Time",
+      "page": 22
+    },
+    {
+      "race": 8,
+      "program": "1",
+      "horse": "Eternal City",
+      "page": 23
+    }
+  ],
+  "pdf_sha256": "6233fe948b19de83dc7ad2dd722ef384e6624ee83e7d6b98057bd6b65b467432",
+  "official_check_date": "2026-11-24",
+  "official_entry_urls": [
+    "https://tvg.equibase.com/static/entry/PRX112526USA4-EQB.html",
+    "https://tvg.equibase.com/static/entry/PRX112526USA7-EQB.html",
+    "https://tvg.equibase.com/static/entry/PRX112526USA8-EQB.html"
+  ],
+  "track_receipts": [
+    [
+      "Finger Lakes",
+      "6a822d6510c861eab5c49d161824f4c1eeaec8174267ac0d2acceb794705c7d2",
+      "7d6cff2e02ee0f8cce5b6b2104585b306870ca4e441cb6efd979324f1e84f4a6"
+    ],
+    [
+      "Parx Racing",
+      "cac5462a2b621385db9904fc95afb207d654702b018100d2861c3c02b71f6617",
+      "6c50c64983b51c94df9c33e03ad62e83c8948d56693cd259eecfb0d2da9c2a4e"
+    ],
+    [
+      "Delta Downs",
+      "f21a8653944cf90693dfb146432ce1b992155ea90a762624853f3978ebaa4f23",
+      "4eb933fd37b453f2dcdb98af792fe826618cbefa98251225a05c830c8ab014a6"
+    ],
+    [
+      "Mahoning Valley",
+      "efd076429ad43d5c8790cce87dab20be34a9c1f0f514f80a410cff2ae334fa2f",
+      "0039143bbd05cef98d46a2accfc86bc7c4f4a0e9cce966b35c2d70c26a7e4cbe"
+    ],
+    [
+      "Mountaineer",
+      "255de81059c111507369e5ae43ec3a0651cbae0e122ba7667e62bb7cd467f4c1",
+      "aef1968faf4cabcfe363deda828a815f022727068ac16a26f90e0d9c6fe6964d"
+    ],
+    [
+      "Tampa Bay Downs",
+      "84c47471aa88e67c2b0c7e3d255cd6e6a36e1bcae60e346c2f6a9c52e3ad3aec",
+      "d695a53a0d8c9f44c3a3bbcd13996363603de752d06d7d96ec73f1320e3dc2b7"
+    ],
+    [
+      "Churchill Downs",
+      "a1e53df2b2115e5f0c8cad220d494b8d58232b61ea0cceb21c5c5cf3ad23f85a",
+      "d04ece623c7bdc21ddfa641c38a958302834b36cd0dfc43479648d85834c10f2"
+    ],
+    [
+      "Charles Town",
+      "32eacd239c59c7f0c38a66667af9f67f17341d28d907269b1b179f33380352b9",
+      "424fc80c46bf6e0cafe2edf8a3fe6db0fefc0c3eb770f6d5bb6352305d12f856"
+    ],
+    [
+      "Penn National",
+      "c10d910019e5fe47f62608b4a31c4e0048ed82e1bb76139bfcee57dc498103da",
+      "eed9e5bb42a916771bb96e6fa1f0284da6388848a3da3f0ee83039a193426a02"
+    ]
+  ]
+}

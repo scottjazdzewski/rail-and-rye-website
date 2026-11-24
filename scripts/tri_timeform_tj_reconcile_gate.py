@@ -4,7 +4,7 @@
 This tool checks original PDF geometry and the scoring sidecars. It does NOT
 modify the frozen model, invent identities/ratings or convert provider scales.
 Confirmed missing rating => V4 model-mean neutral disposition; confirmed 0
-is preserved. Missing jockey/trainer identity => hold affected race only.
+is preserved. Unverified identity => hold affected race only. Independently verified unassigned jockey => neutral.
 """
 from __future__ import annotations
 
@@ -122,6 +122,46 @@ def detect_rating(spans, horse, role):
     return rating, "SOURCE_PRINTED_RATING"
 
 
+def verified_unassigned_jockey(horse, row, spans, digest, day, track_code, race_no, page):
+    """An explicit operator-captured official entry observation is required.
+    A missing PDF label alone is NEVER enough. Proof is scoped to the original
+    source hash, page and exact starter; an assigned rider cannot use this path.
+    """
+    proof = row.get("jockey_unassigned_proof")
+    if not isinstance(proof, dict):
+        return False
+    name = str(horse.get("name", "")).strip()
+    num = str(horse.get("number", "")).strip().upper()
+    person, state = printed_person(spans, name, "jockey")
+    if person is not None or state not in ("JOCKEY_NAME_ABSENT_FROM_ORIGINAL_PDF", "JOCKEY_IDENTITY_BLANK_ON_ORIGINAL_PDF"):
+        return False
+    anchors = [sp for sp in spans if 20 <= sp["bbox"][0] <= 190 and sp["text"].strip() == name]
+    if len(anchors) != 1:
+        return False
+    y = anchors[0]["bbox"][1]
+    labels = [sp for sp in spans if 407 <= sp["bbox"][0] <= 440 and sp["text"].strip().startswith("Jockey") and abs(sp["bbox"][1] - (y + 20)) <= 12]
+    if len(labels) > 1 or any(sp["text"].strip() != "Jockey" for sp in labels):
+        return False
+    # A genuine printed jockey row with a number is not an unassigned input.
+    if labels and detect_rating(spans, name, "jockey") != (None, "SOURCE_VERIFIED_RATING_BLANK"):
+        return False
+    if any(str(x or "").strip() not in ("", "Not assigned") for x in (horse.get("jockey"),row.get("jockey_person"))):
+        return False
+    expected_url = "https://tvg.equibase.com/static/entry/" + track_code + date.fromisoformat(day).strftime("%m%d%y") + "USA" + str(race_no) + "-EQB.html"
+    return (proof.get("date") == day and proof.get("track_code") == track_code and proof.get("race") == race_no
+            and proof.get("program") == num and proof.get("horse") == name
+            and proof.get("source_pdf_sha256") == digest and proof.get("pdf_page") == page + 1
+            and proof.get("official_entry_url") == expected_url
+            and proof.get("official_jockey") is None and "official_jockey" in proof
+            and proof.get("status") == "VERIFIED_UNASSIGNED"
+            and isinstance(proof.get("checked_at"), str) and bool(proof["checked_at"].strip())
+            and isinstance(proof.get("observation"), str) and bool(proof["observation"].strip())
+            and row.get("jockey_rating") is None
+            and row.get("jockey_resolution_disposition") == NEUTRAL
+            and row.get("jockey_rating_model_state") == NEUTRAL
+            and digest in str(row.get("jockey_resolution_evidence", "")))
+
+
 def reconcile(roster_path, source_dir, sidecars_dir, race_date):
     races = json.loads(Path(roster_path).read_text(encoding="utf-8"))
     if not isinstance(races, list) or not races:
@@ -186,7 +226,10 @@ def reconcile(roster_path, source_dir, sidecars_dir, race_date):
                 side_person = str(source_row.get(role + "_person") or "").strip()
                 value, source_state = detect_rating(spans, hname, role)
                 source_person, person_state = printed_person(spans, hname, role)
-                if person_state != "SOURCE_PERSON_VERIFIED_GEOMETRICALLY":
+                if role == "jockey" and verified_unassigned_jockey(horse, source_row, spans, digest, race_date, track_code, race_no, pidx):
+                    value = None
+                    problem = ""
+                elif person_state != "SOURCE_PERSON_VERIFIED_GEOMETRICALLY":
                     problem = person_state
                 elif source_state not in ("SOURCE_VERIFIED_RATING_BLANK", "SOURCE_PRINTED_RATING"):
                     problem = source_state

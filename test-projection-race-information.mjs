@@ -54,8 +54,11 @@ const scratched={...zia,projection_status:"scratch_final",races:zia.races.map(r=
 assert.equal(enrichRaceInformation(scratched).races[9].stakes_name,"Zia Park Derby",
  "Officially named race must survive a scratch change.");
 const differentCard={...zia,track_name:"Another Park"};
-assert.equal(enrichRaceInformation(differentCard),differentCard,
- "Do not invent an event for an unmatched date/track.");
+const unrelated=enrichRaceInformation(differentCard);
+assert.equal(unrelated.track_name,differentCard.track_name);
+assert.deepEqual(unrelated.races.map(r=>[r.race_number,r.purse,r.stakes_name,r.is_stakes]),differentCard.races.map(r=>[r.race_number,r.purse,r.stakes_name,r.is_stakes]),
+ "Do not invent an event or purse for an unmatched date/track; source-derived class formatting is allowed.");
+assert.ok(differentCard.races.every(r=>r.stakes_name===undefined),"No mutation of unmatched source.");
 const publisher=readFileSync("src/projections.js","utf8");
 assert.equal((publisher.match(/requireProductionStakesNames\(enrichRaceInformation\(card\)\)/g)||[]).length,2,
  "Both single and batch production upload paths must reject generic stakes names.");

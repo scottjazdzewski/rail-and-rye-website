@@ -6,7 +6,7 @@ from unittest.mock import patch
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-from tri_timeform_tj_reconcile_gate import detect_rating, printed_person, same_person
+from tri_timeform_tj_reconcile_gate import detect_rating, printed_person, same_person, verified_unassigned_jockey
 
 
 def sp(text, x, y):
@@ -51,6 +51,24 @@ class TjReconciliationGateTests(unittest.TestCase):
         s=self.base(include_jockey=False)
         self.assertEqual(printed_person(s,'Actual Horse','jockey')[1],'JOCKEY_NAME_ABSENT_FROM_ORIGINAL_PDF')
         self.assertEqual(detect_rating(s,'Actual Horse','jockey')[1],'ROLE_LABEL_MISSING_OR_AMBIGUOUS')
+
+    def test_official_unassigned_requires_exact_source_and_blank_rating(self):
+        spans=self.base(include_jockey=False)
+        spans=[x for x in spans if x['bbox'][1]!=120]
+        digest="a"*64
+        horse={"name":"Actual Horse","number":"3","jockey":""}
+        proof={"date":"2026-11-25","track_code":"PRX","race":4,"program":"3","horse":"Actual Horse",
+               "source_pdf_sha256":digest,"pdf_page":9,"official_entry_url":"https://tvg.equibase.com/static/entry/PRX112526USA4-EQB.html",
+               "official_jockey":None,"status":"VERIFIED_UNASSIGNED","checked_at":"2026-11-24T23:00:00Z","observation":"Exact entry row jockey cell blank"}
+        row={"jockey_person":"","jockey_rating":None,"jockey_resolution_disposition":"VERIFIED_UNRATED",
+             "jockey_rating_model_state":"VERIFIED_UNRATED","jockey_resolution_evidence":digest,"jockey_unassigned_proof":proof}
+        check=lambda h,r,s=spans:verified_unassigned_jockey(h,r,s,digest,"2026-11-25","PRX",4,8)
+        self.assertTrue(check(horse,row))
+        self.assertFalse(check(horse,{**row,"jockey_unassigned_proof":None}))
+        self.assertFalse(check(horse,{**row,"jockey_unassigned_proof":{**proof,"program":"4"}}))
+        self.assertFalse(check(horse,{**row,"jockey_unassigned_proof":{**proof,"official_jockey":"A. Torres"}}))
+        self.assertFalse(check(horse,{**row,"jockey_rating":0}))
+        self.assertFalse(check(horse,row,self.base()))
 
     def test_duplicated_ratings_are_ambiguous(self):
         s=self.base()+[sp('58',481,103)]
