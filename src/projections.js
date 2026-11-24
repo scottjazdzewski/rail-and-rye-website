@@ -1,3 +1,4 @@
+import {publishGPTProductCatalogEntry} from "./gpt-product-catalog.js";
 import {enrichRaceInformation,requireProductionPurses,requireProductionStakesNames} from "./projection-race-information.js";
 import {verifyCertifiedScratchFinalTrack} from "./f4-exotics.js";
 import {auditV33FieldUpload,pickUploadAuditKey,isPickV33Field}
@@ -245,7 +246,11 @@ export async function handleAdminProjectionUpload(request,env){
   if(pickAudit)await env.CARDS_BUCKET.put(pickUploadAuditKey(card),JSON.stringify(pickAudit),{
    httpMetadata:{contentType:"application/json; charset=utf-8",cacheControl:"private, no-store"},
    customMetadata:{source_sha256:pickAudit.source_sha256,uploaded_at:uploadedAt}});
-  return json({ok:true,published:directGPT,product_id:product?.id||null,title:product?.title||card.track_name,track_name:card.track_name,race_date:card.race_date,races:card.races.length,entries:card.races.reduce((sum,race)=>sum+race.entries.length,0),uploaded_at:uploadedAt,
+  let catalogEntry;
+  try{catalogEntry=await publishGPTProductCatalogEntry(env,{category:"Race Cards",race_date:card.race_date,track:card.track_name,title:product?.title||card.track_name+" — "+card.race_date+" Race Card"});}
+  catch(e){console.error("Race Card catalog write failed",String(e).slice(0,120));return fail("Projection data was saved, but the live catalog listing could not be created.",503);}
+  if(!catalogEntry?.published)return fail("Projection data was saved, but the live catalog listing could not be created.",503);
+  return json({ok:true,published:true,product_id:catalogEntry.id,title:catalogEntry.title,track_name:card.track_name,race_date:card.race_date,races:card.races.length,entries:card.races.reduce((sum,race)=>sum+race.entries.length,0),uploaded_at:uploadedAt,
    ...(pickAudit?{pick_ticket_field_audit:{source_sha256:pickAudit.source_sha256,
     changed_races:pickAudit.changed_races,changed_sequences:pickAudit.changed_sequence_count,
     status:pickAudit.source_signature_status,engine:pickAudit.optimizer}}:
@@ -343,7 +348,17 @@ export async function handleAdminProjectionBatchUpload(request,env){
   console.error("Projection batch upload partially failed",errors.map(item=>item.track_name).join(", "));
   return json({ok:false,uploaded,errors,error:"Some dashboards did not save. Re-upload the same JSON to finish; saved tracks will be safely replaced."},503);
  }
- return json({ok:true,published:true,uploaded,tracks:uploaded.length,races:uploaded.reduce((sum,item)=>sum+item.races,0),entries:uploaded.reduce((sum,item)=>sum+item.entries,0),linked_pdfs:uploaded.filter(item=>item.product_id).length,uploaded_at:uploadedAt});
+ let catalogProducts=[];
+ if(env.STORE_DB){
+  try{
+   catalogProducts=await Promise.all(cards.map(card=>publishGPTProductCatalogEntry(env,{category:"Race Cards",race_date:card.race_date,track:card.track_name,title:card.track_name+" — "+card.race_date+" Race Card"})));
+   if(catalogProducts.some(item=>!item?.published))throw Error("One or more catalog rows were not created.");
+  }catch(e){
+   console.error("Race Card batch catalog write failed",String(e).slice(0,120));
+   return json({ok:false,published:false,uploaded,error:"Projection data was saved, but one or more live catalog listings could not be created."},503);
+  }
+ }
+ return json({ok:true,...(env.STORE_DB?{published:true,catalog_products:catalogProducts.map(item=>({id:item.id,title:item.title}))}:{}),uploaded,tracks:uploaded.length,races:uploaded.reduce((sum,item)=>sum+item.races,0),entries:uploaded.reduce((sum,item)=>sum+item.entries,0),linked_pdfs:uploaded.filter(item=>item.product_id).length,uploaded_at:uploadedAt});
 }
 async function readProjectionCards(env,products,onlyCurrent=false){
  if(!env.CARDS_BUCKET)return [];
@@ -365,24 +380,6 @@ async function readProjectionCards(env,products,onlyCurrent=false){
  for(const item of legacy.filter(Boolean))merged.set(cardIdentity(item),item);
  for(const item of feed)merged.set(cardIdentity(item),item);
  return [...merged.values()].sort((a,b)=>String(b.race_date||"").localeCompare(String(a.race_date||""))||String(a.track||"").localeCompare(String(b.track||"")));
-}
-export async function readGPTPublishedProjectionCards(env){
- if(!env.CARDS_BUCKET)return [];
- const listed=await env.CARDS_BUCKET.list({prefix:DASHBOARD_PREFIX,limit:1000});
- const rows=await Promise.all((listed.objects||[]).map(async object=>{
-  try{
-   const file=await env.CARDS_BUCKET.get(object.key);
-   if(!file||(file.customMetadata?.customer_publish_approved!=="true"&&!file.customMetadata?.uploaded_at))return null;
-   const card=enrichRaceInformation(normalizeCard(JSON.parse(await file.text())));
-   if(!currentProjection(card))return null;
-   return {race_date:card.race_date,track:card.track_name,card,
-    uploaded_at:file.customMetadata?.uploaded_at||null};
-  }catch(error){
-   console.warn("Skipping invalid GPT-published Race Card",object.key,String(error).slice(0,100));
-   return null;
-  }
- }));
- return rows.filter(Boolean).sort((a,b)=>String(b.race_date).localeCompare(String(a.race_date))||String(a.track).localeCompare(String(b.track)));
 }
 export async function readMemberProjectionCards(env,library){
  return readProjectionCards(env,library,true);

@@ -1,3 +1,4 @@
+import {publishGPTProductCatalogEntry} from "./gpt-product-catalog.js";
 import {enrichRaceInformation} from "./projection-race-information.js";
 /* Longshot Radar review records stay private and are never served directly.
  * Admin publication makes a validated copy for the buyer tab; the buyer route
@@ -289,7 +290,9 @@ export async function handleAdminLongshotRadar(request,env){
       customMetadata:{revision:String(edition.revision),review_only:"true"}
     });
     const publication=await publishLongshotRadarTab(env,edition.race_date);
-    return json({ok:true,published:true,race_date:edition.race_date,revision:edition.revision,
+    const listing=env.STORE_DB?await publishGPTProductCatalogEntry(env,{category:"Longshot Radar",race_date:edition.race_date,track:"",title:"Longshot Radar — "+edition.race_date}):null;
+    if(env.STORE_DB&&!listing?.published)throw Error("The Radar catalog listing was not created.");
+    return json({ok:true,published:!!listing?.published,race_date:edition.race_date,product_id:listing?.id||null,revision:edition.revision,
       candidates:edition.candidates.length,tri_cross_check:matchReceipt,customer_publication:publication});
   }catch(e){
     console.error("Radar GPT publication failed",String(e).slice(0,130));

@@ -1,3 +1,4 @@
+import {publishGPTProductCatalogEntry} from "./gpt-product-catalog.js";
 import {enrichRaceInformation} from "./projection-race-information.js";
 /* Receipt-validated Target List editions are stored privately in R2.
    Buyer access is gated through product publication and category/date entitlement
@@ -167,8 +168,12 @@ export async function handleAdminTargetList(request,env,url){
  const sourceJson=JSON.stringify(edition),checksum=await sha256(sourceJson);
  if(latest&&edition.revision<=latest.revision){
   const prior=await env.CARDS_BUCKET.get(objectKey);
-  if(prior&&(prior.customMetadata?.sha256===checksum||await sha256(await prior.text())===checksum))
-   return response({ok:true,published:true,unchanged:true,race_date:edition.race_date,revision:edition.revision});
+  if(prior&&(prior.customMetadata?.sha256===checksum||await sha256(await prior.text())===checksum)){
+   let listing=null;
+   try{if(env.STORE_DB)listing=await publishGPTProductCatalogEntry(env,{category:"Target List",race_date:edition.race_date,track:"",title:"Target List — "+edition.race_date});}
+   catch(error){return fail("Target List was saved, but the live catalog listing could not be created.",503);}
+   return response({ok:true,published:env.STORE_DB?!!listing?.published:true,product_id:listing?.id||null,unchanged:true,race_date:edition.race_date,revision:edition.revision});
+  }
   return fail("A different or newer revision already exists; never overwrite finalized analysis.",409);
  }
  if(!latest&&edition.revision!==1||latest&&edition.revision!==latest.revision+1)
@@ -178,7 +183,10 @@ export async function handleAdminTargetList(request,env,url){
   httpMetadata:{contentType:"application/json; charset=utf-8",cacheControl:"private, no-store"},
   customMetadata:{sha256:checksum,source_sha256:edition.source.sha256,receipt_id:edition.source.receipt_id,uploaded_at}
  });
- return response({ok:true,published:true,race_date:edition.race_date,revision:edition.revision,targets:edition.targets.length,sha256:checksum},201);
+ let listing=null;
+ try{if(env.STORE_DB)listing=await publishGPTProductCatalogEntry(env,{category:"Target List",race_date:edition.race_date,track:"",title:"Target List — "+edition.race_date});}
+ catch(error){return fail("Target List was saved, but the live catalog listing could not be created.",503);}
+ return response({ok:true,published:env.STORE_DB?!!listing?.published:true,product_id:listing?.id||null,race_date:edition.race_date,revision:edition.revision,targets:edition.targets.length,sha256:checksum},201);
 }
 async function readEdition(env,selected,dates){
  const object=await env.CARDS_BUCKET.get(selected.key);

@@ -1,3 +1,4 @@
+import {publishGPTProductCatalogEntry} from "./gpt-product-catalog.js";
 import {pickPostTimes} from "./pick-tickets-post-times.js";
 import {buildV34TrialCard,PICK_V34_ENGINE,PICK_V34_TRIAL_SCALES,usesV34,hasV34ReceiptPair} from './pick-tickets-v34.js';
 import {getPickTicketsIntake,getPickTicketsIntake1124} from './pick-tickets-intake.js';
@@ -465,6 +466,10 @@ export async function handleAdminPickTickets(request,env){
    });
    const written=await env.CARDS_BUCKET.get(customerKey);
    if(!written||await sha256(await written.text())!==customerHash)throw Error("R2 read-back checksum did not match.");
+   if(env.STORE_DB){
+    const listing=await publishGPTProductCatalogEntry(env,{category:"Pick Tickets",race_date:customerCard.date,track:customerCard.track,title:customerCard.track+" — "+customerCard.date+" Pick Tickets"});
+    if(!listing?.published)throw Error("Store catalog listing was not created.");
+   }
    published.push({date:customerCard.date,track:customerCard.track,revision:customerCard.revision});
   }catch(error){
    console.error("Pick Tickets customer publication failed",customerKey,String(error).slice(0,120));

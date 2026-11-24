@@ -1,7 +1,7 @@
 import {BUNDLE_KEY} from './bundles.js';
-import {ensureReleaseSchedule,ensureRacePdfExpirySchema,racePdfExpired,pdfExpiryFromRaceDate} from './publication-schedule.js';
+import {ensureReleaseSchedule,ensureRacePdfExpirySchema,racePdfExpired} from './publication-schedule.js';
 import {processMembershipStripeEvent} from './memberships.js';
-import {hasProductTabData,discoverGPTPublishedProducts} from './product-tab-content.js';
+import {hasProductTabData,readyProductTabProductIds} from './product-tab-content.js';
 /* Rail & Rye fail-closed checkout. Default sandbox. Live activation is separate,
    requires verified Stripe keys and an explicit control flag; no public R2 URLs.
    Stripe secrets are Cloudflare Worker SECRETS, never source files. */
@@ -474,94 +474,35 @@ async function recover(request,env,ctx){
   return neutral();
 }
 
-const GPT_PRODUCT_CATEGORIES=new Set(["Race Cards","Pick Tickets","Longshot Radar","Target List"]);
-function directProductSlug(title,id){
-  return (String(title||"").toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"")
-    .replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,70)||"publication")+"-"+id.slice(0,8);
-}
-async function directProductId(category,raceDate,track){
-  const digest=new Uint8Array(await crypto.subtle.digest("SHA-256",enc.encode(
-    "rr-gpt-product-v1|"+category+"|"+raceDate+"|"+String(track||"").trim().toLowerCase())));
-  const parts=Array.from(digest.slice(0,16),value=>value.toString(16).padStart(2,"0"));
-  parts[6]=(parseInt(parts[6],16)&15|80).toString(16).padStart(2,"0");
-  parts[8]=(parseInt(parts[8],16)&63|128).toString(16).padStart(2,"0");
-  const hex=parts.join("");
-  return hex.slice(0,8)+"-"+hex.slice(8,12)+"-"+hex.slice(12,16)+"-"+hex.slice(16,20)+"-"+hex.slice(20);
-}
-async function syncGPTPublishedCatalog(env){
-  let entries=[];
-  try{entries=await discoverGPTPublishedProducts(env);}
-  catch(error){console.warn("GPT publication catalog discovery deferred",String(error).slice(0,130));return;}
-  const configuredPrice=Number(env.RR_GPT_PRODUCT_PRICE_CENTS);
-  // Matches the existing publication price default; an explicit runtime value
-  // can override it. Existing product prices and titles are always preserved.
-  const defaultPrice=Number.isSafeInteger(configuredPrice)&&configuredPrice>=0&&configuredPrice<=500000?configuredPrice:999;
-  for(const entry of entries||[]){
-    const category=String(entry?.category||""),raceDate=String(entry?.race_date||"");
-    const track=String(entry?.track||"").trim(),expiry=pdfExpiryFromRaceDate(raceDate);
-    if(!GPT_PRODUCT_CATEGORIES.has(category)||!expiry||racePdfExpired(expiry))continue;
-    const candidate={...entry,track,pdf_expires_at:expiry};
-    try{
-      if(!await hasProductTabData(env,category,raceDate,[candidate]))continue;
-      let existing=await env.STORE_DB.prepare(`SELECT id,status,pdf_key FROM products
-        WHERE category=? AND race_date=? AND LOWER(COALESCE(TRIM(track),''))=?
-        AND (pdf_key IS NULL OR pdf_key<>?)
-        AND NOT EXISTS(SELECT 1 FROM bundle_only_assets a WHERE a.product_id=products.id)
-        AND status<>'archived'
-        ORDER BY CASE WHEN status='published' THEN 0 ELSE 1 END,created_at DESC LIMIT 1`)
-        .bind(category,raceDate,track.toLowerCase(),BUNDLE_KEY).first();
-      if(existing?.status==="published")continue;
-      if(existing&&existing.pdf_key!==null&&existing.pdf_key!=="")existing=null;
-      if(existing){
-        const schedule=await env.STORE_DB.prepare("SELECT release_at FROM product_release_schedule WHERE product_id=?").bind(existing.id).first();
-        if(schedule?.release_at){
-          const releaseAt=Date.parse(String(schedule.release_at).replace(" ","T")+"Z");
-          if(!Number.isFinite(releaseAt)||releaseAt>Date.now())continue;
-        }
-        await env.STORE_DB.prepare("UPDATE products SET status='published',pdf_expires_at=? WHERE id=? AND status<>'archived'")
-          .bind(expiry,existing.id).run();
-        continue;
-      }
-      const id=await directProductId(category,raceDate,track),title=String(entry.title||category+" — "+raceDate).slice(0,140);
-      const description=String(entry.description||"Digital access to the published "+category+" edition dated "+raceDate+".").slice(0,4000);
-      await env.STORE_DB.prepare(`INSERT OR IGNORE INTO products
-        (id,title,slug,category,race_date,track,description,price_cents,pdf_key,image_url,status,pdf_expires_at)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`)
-        .bind(id,title,directProductSlug(title,id),category,raceDate,track,description,defaultPrice,null,null,"published",expiry).run();
-    }catch(error){
-      console.warn("GPT publication catalog sync held",category,raceDate,track,String(error).slice(0,120));
-    }
-  }
-}
-
 export async function listProducts(env){
   if(!env.STORE_DB)return error('Catalog temporarily unavailable',503);
   await ensureReleaseSchedule(env);
   await ensureRacePdfExpirySchema(env);
-  await syncGPTPublishedCatalog(env);
   const records=await env.STORE_DB.prepare(`SELECT id,title,slug,category,race_date,track,description,price_cents,image_url,pdf_key,pdf_expires_at
     FROM products WHERE status='published' AND category <> 'Stable Notes'
     AND NOT EXISTS(SELECT 1 FROM product_release_schedule s WHERE s.product_id=products.id AND s.release_at>CURRENT_TIMESTAMP)
     AND NOT EXISTS(SELECT 1 FROM bundle_only_assets a WHERE a.product_id=products.id)
     ORDER BY race_date DESC,created_at DESC LIMIT 150`).all();
+  const recordsList=records.results||[];
+  const readyProductIds=await readyProductTabProductIds(env,recordsList.filter(p=>p.pdf_key!==BUNDLE_KEY));
   const products=[];
-  for(const p of records.results||[]){
+  for(const p of recordsList){
     const {pdf_key,...publicFields}=p;
     if(pdf_key!==BUNDLE_KEY){
       if(racePdfExpired(p.pdf_expires_at))continue;
-      if(!await hasProductTabData(env,p.category,p.race_date,[p]))continue;
+      if(!readyProductIds.has(p.id))continue;
       products.push({...publicFields,kind:'single',delivery_mode:'tab',categories:[p.category]});continue;
     }
-    // Fail closed: every published bundle must contain 2–12 available tab editions.
+    // Fail closed: every published bundle must contain 2–24 available tab editions.
     const children=await env.STORE_DB.prepare(`SELECT c.id,c.title,c.category,c.race_date,c.track,c.pdf_expires_at,c.status,c.pdf_key,a.product_id AS asset_id,
       CASE WHEN c.pdf_expires_at IS NULL OR datetime(c.pdf_expires_at)<=CURRENT_TIMESTAMP THEN 1 ELSE 0 END AS expired,
       CASE WHEN s.release_at>CURRENT_TIMESTAMP THEN 1 ELSE 0 END AS pending_release FROM bundle_items bi
       LEFT JOIN products c ON c.id=bi.product_id LEFT JOIN bundle_only_assets a ON a.product_id=c.id
       LEFT JOIN product_release_schedule s ON s.product_id=c.id WHERE bi.bundle_id=? ORDER BY bi.position`).bind(p.id).all();
     const items=children.results||[];
-    if(items.length<2||items.length>12||items.some(c=>c.pdf_key===BUNDLE_KEY||c.expired||c.pending_release||c.category==='Stable Notes'||!(c.status==='published'||c.status==='draft')))continue;
-    const tabReady=await Promise.all(items.map(item=>hasProductTabData(env,item.category,item.race_date,[item])));
-    if(tabReady.some(ready=>!ready))continue;
+    if(items.length<2||items.length>24||items.some(c=>c.pdf_key===BUNDLE_KEY||c.expired||c.pending_release||c.category==='Stable Notes'||!(c.status==='published'||c.status==='draft')))continue;
+    const tabReady=await readyProductTabProductIds(env,items);
+    if(items.some(item=>!tabReady.has(item.id)))continue;
     // A bundle unlocks each included category/date in the customer tabs.
     const categories=[...new Set([p.category,...items.map(x=>x.category)].filter(Boolean))];
     products.push({...publicFields,kind:'bundle',delivery_mode:'tab',categories,bundle_count:items.length,included_titles:items.map(x=>x.title),
@@ -588,9 +529,9 @@ export async function publicProductForShare(env,id){
     LEFT JOIN products c ON c.id=bi.product_id LEFT JOIN bundle_only_assets a ON a.product_id=c.id
     LEFT JOIN product_release_schedule s ON s.product_id=c.id WHERE bi.bundle_id=? ORDER BY bi.position`).bind(id).all();
   const items=children.results||[];
-  if(items.length<2||items.length>12||items.some(c=>c.pdf_key===BUNDLE_KEY||c.expired||c.pending_release||c.category==='Stable Notes'||!(c.status==='published'||c.status==='draft')))return null;
-  const tabReady=await Promise.all(items.map(item=>hasProductTabData(env,item.category,item.race_date,[item])));
-  if(tabReady.some(ready=>!ready))return null;
+  if(items.length<2||items.length>24||items.some(c=>c.pdf_key===BUNDLE_KEY||c.expired||c.pending_release||c.category==='Stable Notes'||!(c.status==='published'||c.status==='draft')))return null;
+  const tabReady=await readyProductTabProductIds(env,items);
+  if(items.some(item=>!tabReady.has(item.id)))return null;
   return {...publicFields,kind:'bundle',delivery_mode:'tab',bundle_count:items.length,
     categories:[...new Set([publicFields.category,...items.map(x=>x.category)].filter(Boolean))],
     included_titles:items.map(x=>x.title),
@@ -625,10 +566,10 @@ async function checkout(request,env){
       LEFT JOIN product_release_schedule s ON s.product_id=c.id
       WHERE bi.bundle_id=? ORDER BY bi.position`).bind(p.id).all();
     children.push(...(result.results||[]));
-    if(children.length<2||children.length>12||children.some(x=>x.pdf_key===BUNDLE_KEY||x.expired||x.pending_release||!(x.status==='published'||x.status==='draft')))
+    if(children.length<2||children.length>24||children.some(x=>x.pdf_key===BUNDLE_KEY||x.expired||x.pending_release||!(x.status==='published'||x.status==='draft')))
       return error('Bundle contents are currently unavailable',409);
-    const ready=await Promise.all(children.map(item=>hasProductTabData(env,item.category,item.race_date,[item])));
-    if(ready.some(value=>!value))return error('A tab in this bundle has not been published yet.',409);
+    const ready=await readyProductTabProductIds(env,children);
+    if(children.some(item=>!ready.has(item.id)))return error('A tab in this bundle has not been published yet.',409);
   }else if(racePdfExpired(p.pdf_expires_at)){
     return error('This racing-date access period has ended.',410);
   }

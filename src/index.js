@@ -6,6 +6,7 @@ import {handleAdminTargetList,readAdminTargetListReview} from './target-list.js'
 import { handleCommerce, sendQueuedEmails, checkoutReadiness, replacePdfAndNotifyBuyers, publicProductForShare } from './commerce.js';
 import {handleRacingWire,handleAdminRacingWire,refreshRacingWire} from './racing-wire.js';
 import {handleAdminBundles,BUNDLE_KEY} from './bundles.js';
+import {handleAdminGPTProductCatalog} from './gpt-product-catalog.js';
 import {handleAdminBundleAssets} from './bundle-assets.js';
 import {handleAdminJournal,handlePublicJournal,publicJournalCover,publishScheduledJournalArticles} from './journal.js';
 import {handleSitemap,serveJournalDocument,serveProductDocument} from './seo.js';
@@ -309,6 +310,9 @@ export default {
       if(path==="/sitemap.xml")return handleSitemap(env,request.method);
       if(path.startsWith("/api/admin/")||path==="/admin"||path.startsWith("/admin/")) {
         const auth=await verifyAdmin(request,env); if(!auth.ok)return auth.response;
+        if(path==="/api/admin/gpt-product-catalog"){
+          return handleAdminGPTProductCatalog(request,env,(bundleRequest,bundlePath)=>handleAdminBundles(bundleRequest,env,bundlePath));
+        }
         if(path==="/api/admin/pick-tickets"){
           if(request.method==="POST"&&!trustedOrigin(request))return fail("Same-origin request required",403);
           return handleAdminPickTickets(request,env);

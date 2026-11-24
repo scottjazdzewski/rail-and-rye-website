@@ -41,9 +41,9 @@ async function payload(request) {
   if(status==='published'&&price_cents<50)throw Error('Bundles must cost at least $0.50 to publish');
   if(!validReleaseAt(release_at))throw Error('Invalid scheduled release timestamp');
   if(release_at&&status!=='published')throw Error('Scheduled bundles must have published status');
-  if(!Array.isArray(product_ids)||product_ids.length<2||product_ids.length>12||
+  if(!Array.isArray(product_ids)||product_ids.length<2||product_ids.length>24||
     product_ids.some(x=>typeof x!=='string'||!UUID.test(x))||
-    new Set(product_ids).size!==product_ids.length)throw Error('Select 2–12 different racing tabs');
+    new Set(product_ids).size!==product_ids.length)throw Error('Select 2–24 different racing tabs');
   return {id,title,description,category,race_date,price_cents,status,product_ids,release_at};
 }
 function releaseWindowValid(utc){
