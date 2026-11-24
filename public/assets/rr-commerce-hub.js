@@ -3,8 +3,11 @@ const cats=["Race Cards","Pick Tickets","Longshot Radar","Target List"],q=s=>doc
 const dollar=n=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(n/100);
 const formatDate=d=>new Intl.DateTimeFormat("en-US",{timeZone:"UTC",dateStyle:"long"}).format(new Date(d+"T12:00:00Z"));
 const validDate=d=>typeof d==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(d)&&Number.isFinite(Date.parse(d+"T12:00:00Z"));
-const today=()=>new Intl.DateTimeFormat("en-CA",{timeZone:"America/New_York",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
 const easternClock=new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",hourCycle:"h23",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit"});
+const today=()=>{
+ const p=Object.fromEntries(easternClock.formatToParts(new Date()).map(part=>[part.type,part.value]));
+ return new Date(Date.UTC(Number(p.year),Number(p.month)-1,Number(p.day)-(Number(p.hour)<3?1:0))).toISOString().slice(0,10);
+};
 const nextRollover=()=>{
  const now=new Date(),parts=Object.fromEntries(easternClock.formatToParts(now).map(p=>[p.type,p.value]));
  const toInstant=(year,month,day)=>{
@@ -49,7 +52,7 @@ function render(){
   const selected=available.find(p=>p.id===select.value),openOwned=select.value==="owned"||!!selected&&ownsSKU(selected);
   amount.textContent=selected&&!openOwned?(selected.price_cents===0?"FREE":dollar(selected.price_cents)):"";
   state.dataset.state=!catalogKnown?"loading":!published?"unavailable":allUnlocked?"owned":"published";
-  state.textContent=!catalogKnown?"Availability unavailable":!published?"Not yet published":allUnlocked?"Access granted":anyUnlocked?unlockedItems.length+" of "+items.length+" editions unlocked":"Published";
+  state.textContent=!catalogKnown?"Availability unavailable":!published?(cat==="Race Cards"?"No cards available":"No editions available"):allUnlocked?"Access granted":anyUnlocked?unlockedItems.length+" of "+items.length+" editions unlocked":"Published";
   button.disabled=true;button.onclick=null;
   if(!catalogKnown||!accessKnown){button.textContent="Check access";button.disabled=false;button.onclick=()=>location.reload()}
   else if(!published){button.textContent="Unavailable"}
@@ -77,8 +80,7 @@ async function load(path){const r=await fetch(path,{cache:"no-store",credentials
  const match=location.hash.match(/^#edition-([a-f0-9-]{36})$/i)?.[1],deep=products.find(p=>p.id===match),requested=deep?.race_date||query.get("date");
  date.replaceChildren();for(const d of [...dates].filter(validDate).sort().reverse()){const option=document.createElement("option");option.value=d;option.textContent=formatDate(d);date.append(option)}
  const editionDates=[...new Set(products.flatMap(p=>p.kind==="bundle"?bundleItems(p).map(i=>i.race_date):[p.race_date]).filter(validDate))].sort();
- const todayDate=today(),nextDate=editionDates.find(d=>d>todayDate),priorDates=editionDates.filter(d=>d<todayDate);
- const defaultRaceDate=editionDates.includes(todayDate)?todayDate:nextDate||priorDates[priorDates.length-1]||todayDate;
+ const todayDate=today(),defaultRaceDate=todayDate;
  const requestedAvailable=dates.has(requested);
  date.value=requestedAvailable?requested:defaultRaceDate;if(!date.value)date.selectedIndex=0;date.disabled=false;
  date.onchange=()=>{const p=new URLSearchParams(location.search);p.set("date",date.value);history.replaceState(null,"",location.pathname+"?"+p);render()};
@@ -86,7 +88,7 @@ async function load(path){const r=await fetch(path,{cache:"no-store",credentials
  if(query.has("cancelled"))note("Checkout was cancelled. No payment was made.");
  else if(!catalogKnown||!accessKnown)note("Availability or access could not be verified. Refresh to try again.");
  else if(!live||!checkoutReady)note("Purchases are temporarily unavailable. Existing customers can still open their tabs.");
- else if(!requestedAvailable&&defaultRaceDate!==todayDate){const direction=defaultRaceDate>todayDate?"next":"most recent";note(`No editions are published for ${formatDate(todayDate)}. Showing the ${direction} published race date: ${formatDate(defaultRaceDate)}.`)}
+ else if(!editionDates.includes(todayDate))note("No racing cards are available for "+formatDate(todayDate)+" yet. Please check back after today's editions are published.")
  const focusCat=deep?.category||query.get("category");if(cats.includes(focusCat)){const card=qa(".rr-hub-product").find(c=>c.dataset.productCategory===focusCat);if(card&&match){card.scrollIntoView({block:"nearest"});card.querySelector("button").focus({preventScroll:true})}}
 })();
 })();

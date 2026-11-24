@@ -36,8 +36,30 @@ export async function ensureRacePdfExpirySchema(env){
         }
       }
       await db.prepare('CREATE INDEX IF NOT EXISTS idx_products_pdf_expires_at ON products(pdf_expires_at)').run();
-      // Fill current and legacy products from the racing date, so uploads made
-      // before this policy change expire without a manual time entry.
+      await db.prepare("CREATE TABLE IF NOT EXISTS publication_policy_migrations (migration_id TEXT PRIMARY KEY,applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)").run();
+      const cutoffMigration=await db.prepare("SELECT migration_id FROM publication_policy_migrations WHERE migration_id=?").bind("racing-edition-3am-cutoff-v1").first();
+      if(!cutoffMigration){
+        // Move dated racing editions to the 3:00 AM Eastern next-day cutoff.
+        const easternParts=Object.fromEntries(new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date()).map(part=>[part.type,part.value]));
+        const etToday=new Date(Date.UTC(Number(easternParts.year),Number(easternParts.month)-1,Number(easternParts.day)));
+        const oldestRaceDate=new Date(etToday.getTime()-2*86400000).toISOString().slice(0,10);
+        const latestRaceDate=new Date(etToday.getTime()+366*86400000).toISOString().slice(0,10);
+        for(let offset=0;;){
+          const rows=await db.prepare("SELECT id,race_date,pdf_expires_at FROM products WHERE category IN ('Race Cards','Pick Tickets','Longshot Radar','Target List') AND race_date>=? AND race_date<=? AND date(race_date)=race_date ORDER BY id LIMIT 50 OFFSET ?")
+            .bind(oldestRaceDate,latestRaceDate,offset).all();
+          const page=rows.results||[];
+          if(!page.length)break;
+          const updates=page.map(row=>{
+            const expiry=pdfExpiryFromRaceDate(row.race_date);
+            return expiry&&expiry!==row.pdf_expires_at?db.prepare("UPDATE products SET pdf_expires_at=? WHERE id=?").bind(expiry,row.id):null;
+          }).filter(Boolean);
+          if(updates.length)await db.batch(updates);
+          offset+=page.length;
+          if(page.length<50)break;
+        }
+        await db.prepare("INSERT OR IGNORE INTO publication_policy_migrations (migration_id) VALUES (?)").bind("racing-edition-3am-cutoff-v1").run();
+      }
+      // Preserve automatic expiry for any legacy dated rows that have no cutoff yet.
       for(;;){
         const rows=await db.prepare("SELECT id,race_date FROM products WHERE pdf_expires_at IS NULL AND race_date IS NOT NULL AND date(race_date)=race_date LIMIT 50").all();
         const batch=(rows.results||[]).map(row=>{
@@ -68,15 +90,15 @@ export async function ensureRacePdfExpirySchema(env){
   }
   await pending;
 }
-// Expire at 12:00 AM ET two calendar days after the racing date.
+// Dated racing products remain accessible through 3:00 AM Eastern the following morning.
 export function pdfExpiryFromRaceDate(value){
   const match=String(value||'').match(/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/);
   if(!match)return null;
   const year=Number(match[1]),month=Number(match[2]),day=Number(match[3]);
   const original=new Date(Date.UTC(year,month-1,day));
   if(original.getUTCFullYear()!==year||original.getUTCMonth()!==month-1||original.getUTCDate()!==day)return null;
-  const expiryDate=new Date(Date.UTC(year,month-1,day+2));
-  const target=Date.UTC(expiryDate.getUTCFullYear(),expiryDate.getUTCMonth(),expiryDate.getUTCDate(),0,0,0);
+  const expiryDate=new Date(Date.UTC(year,month-1,day+1));
+  const target=Date.UTC(expiryDate.getUTCFullYear(),expiryDate.getUTCMonth(),expiryDate.getUTCDate(),3,0,0);
   let guess=target+5*60*60*1000;
   const formatter=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',hourCycle:'h23',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'});
   for(let i=0;i<3;i++){
