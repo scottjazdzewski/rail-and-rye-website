@@ -106,7 +106,7 @@ assert.doesNotMatch(html,/rr-target-local-file/,"No manual review-file step for 
 assert.doesNotMatch(html,/rr-target-upload-form|rr-target-file|Private source upload|Certified source JSON file/,"Daily Target List never presents a manual JSON upload.");
 assert.doesNotMatch(js,/rr-target-upload-form|rr-target-file|\.text\(\)\}/,"Reader never contains orphaned upload form behavior.");
 assert.doesNotMatch(css,/rr-target-publisher/,"No obsolete upload form CSS.");
-assert.match(html,/target-list-dashboard\.css\?v=20261123-parity-v16/,"Ensure the readable style loads on phones.");
+assert.match(html,/target-list-dashboard\.css\?v=20261123-parity-v17/,"Ensure the readable style loads on phones.");
 assert.match(css,/font:500 17px\/1\.52 Inter/,"Published editorial uses current readable 17px typography.");
 assert.match(readFileSync("public/assets/rr-research-race-banner.css","utf8"),/font:800 17px\/1\.23 Inter/,"Shared banner preserves the original readable track typography.");
 assert.match(css,/Shared Daily Research Reader V1 — Target List implementation/,"Target List consumes shared cross-product mobile standard.");
@@ -116,7 +116,7 @@ assert.doesNotMatch(js,/rr-research-racebar__facts-long/,"Race facts always occu
 assert.match(html,/rr-hub-header\.css\?v=1/,"Target List loads the one shared masthead.");
 assert.doesNotMatch(css,/rr-member-nav|rr-member-header/,"Legacy Target List header overrides are removed.");
 assert.match(css,/font:500 17px\/1\.52 Inter/,"Full race analysis uses the same 17px research reader scale as Radar.");
-assert.match(html,/target-list-dashboard\.css\?v=20261123-parity-v16/,"Shared v6 stylesheet must defeat stale browser cache.");
+assert.match(html,/target-list-dashboard\.css\?v=20261123-parity-v17/,"Shared v6 stylesheet must defeat stale browser cache.");
 assert.match(html,/aria-current="page"/,"Active module navigation remains identifiable.");
 assert.doesNotMatch(html,/Post Time · Earliest First|Sort targets/,"Controls use concise shared labels.");
 assert.match(js,/Post-time order/,"Summary uses the current display order, not a redundant date.");
