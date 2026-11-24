@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import {readFileSync} from "node:fs";
+import {readFileSync,existsSync} from "node:fs";
 import {validateLongshotEdition,handleAdminLongshotRadar,handleAdminLongshotEditorialPreview} from "./src/longshot-radar.js";
 
 const H="a".repeat(64),S="b".repeat(64),E="c".repeat(64);
@@ -260,7 +260,11 @@ assert.ok(!/\btimeform(?:us)?\b/i.test(ui+html),"Customer-facing Radar assets ca
 assert.ok(!ui.includes('make("button","","Race details")'));
 
 checks++;
-const publicDesign=readFileSync("public/longshot-radar-preview/index.html","utf8");
+// The retired public preview was intentionally removed. If a redirect ever
+// returns, it must point only at the protected reader without old banners.
+const retiredPreview="public/longshot-radar-preview/index.html";
+if(existsSync(retiredPreview)){
+ const publicDesign=readFileSync(retiredPreview,"utf8");
 assert.ok(publicDesign.includes('http-equiv="refresh" content="0;url=/admin/longshot-radar/"'));
 assert.ok(publicDesign.includes('href="/admin/longshot-radar/"'),"Provide a tap fallback to the real protected reader");
 assert.ok(!publicDesign.includes("data-rr-design-only")&&!publicDesign.includes("rr-lr-candidates"),"No fake data in public route");
@@ -272,6 +276,8 @@ assert.ok(publicDesign.includes("/assets/approved/brand/rail-rye-ivory-logo.png"
 assert.ok(!publicDesign.includes('id="rr-lr-upload-form"')&&!publicDesign.includes('api/admin/'));
 assert.ok(publicDesign.includes('name="robots" content="noindex,nofollow,noarchive"'));
 assert.ok(!publicDesign.toLowerCase().includes("sample"),"Public page must not advertise fake samples");
+
+}
 
 assert.ok(ui.includes('/api/admin/longshot-radar-editorial'),"Real PDF viewer must read the protected R2 endpoint");
 assert.ok(ui.includes('fetchPrivateRadarJSON("/api/admin/longshot-radar"'),"Reader must also retrieve future exact TRI-verified Radar editions from private R2");
