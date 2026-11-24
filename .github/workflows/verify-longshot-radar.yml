@@ -9,6 +9,9 @@ on:
       - "public/assets/longshot-radar.*"
       - "public/assets/rr-race-titles.js"
       - "public/assets/rr-stakes-inline.css"
+      - "public/assets/rr-research-race-banner.*"
+      - "public/assets/target-list-dashboard.*"
+      - "test-shared-research-race-banner.mjs"
       - "test-longshot-radar.mjs"
       - "test-radar-customer-copy.mjs"
       - "tests/longshot-radar-browser.mjs"
@@ -23,6 +26,9 @@ on:
       - "public/assets/longshot-radar.*"
       - "public/assets/rr-race-titles.js"
       - "public/assets/rr-stakes-inline.css"
+      - "public/assets/rr-research-race-banner.*"
+      - "public/assets/target-list-dashboard.*"
+      - "test-shared-research-race-banner.mjs"
       - "test-longshot-radar.mjs"
       - "test-radar-customer-copy.mjs"
       - "test-rr-race-titles.mjs"
@@ -44,6 +50,9 @@ jobs:
           node --check src/longshot-radar.js
           node --check src/index.js
           node --check public/assets/longshot-radar.js
+          node --check public/assets/rr-research-race-banner.js
+          node --check public/assets/target-list-dashboard.js
+          node test-shared-research-race-banner.mjs
           node test-longshot-radar.mjs
           node test-radar-customer-copy.mjs
           node test-rr-race-titles.mjs
