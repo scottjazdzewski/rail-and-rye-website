@@ -10,6 +10,7 @@ on:
       - "public/assets/rr-race-titles.js"
       - "public/assets/rr-stakes-inline.css"
       - "test-longshot-radar.mjs"
+      - "test-radar-customer-copy.mjs"
       - "tests/longshot-radar-browser.mjs"
       - ".github/workflows/verify-longshot-radar.yml"
   push:
@@ -23,6 +24,7 @@ on:
       - "public/assets/rr-race-titles.js"
       - "public/assets/rr-stakes-inline.css"
       - "test-longshot-radar.mjs"
+      - "test-radar-customer-copy.mjs"
       - "test-rr-race-titles.mjs"
       - "tests/longshot-radar-browser.mjs"
       - ".github/workflows/verify-longshot-radar.yml"
@@ -43,6 +45,7 @@ jobs:
           node --check src/index.js
           node --check public/assets/longshot-radar.js
           node test-longshot-radar.mjs
+          node test-radar-customer-copy.mjs
           node test-rr-race-titles.mjs
       - name: Install browser for responsive QA
         run: |
