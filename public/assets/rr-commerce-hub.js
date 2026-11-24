@@ -11,7 +11,8 @@ const bundleItems=p=>p.kind==="bundle"&&Array.isArray(p.included_products)?p.inc
 const covered=(p,cat,d)=>bundleItems(p).some(i=>i.category===cat&&i.race_date===d);
 const fullBundle=(p,d)=>p.kind==="bundle"&&bundleItems(p).length>0&&bundleItems(p).every(i=>i.race_date===d)&&cats.every(c=>covered(p,c,d));
 const owns=(cat,d)=>accessKnown&&days.some(x=>x.category===cat&&x.race_date===d&&x.unlocked);
-const open=(cat,d)=>location.assign("/my-products/?category="+encodeURIComponent(cat)+"&date="+encodeURIComponent(d));
+const readerSlugs={"Race Cards":"race-cards","Pick Tickets":"pick-tickets","Longshot Radar":"longshot-radar","Target List":"target-list"};
+const open=(cat,d)=>location.assign("/intelligence/"+readerSlugs[cat]+"/?date="+encodeURIComponent(d));
 const checkout=async(p,button)=>{if(!p||!checkoutReady||!live)return;button.disabled=true;button.textContent="Opening checkout…";try{const r=await fetch("/api/checkout",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({product_id:p.id})}),x=await r.json();if(!r.ok||typeof x.url!=="string"||!x.url.startsWith("https://checkout.stripe.com/"))throw Error(x.error||"Checkout unavailable.");location.assign(x.url)}catch(e){note(e.message||"Checkout unavailable.");render()}};
 function choices(cat,d){return products.filter(p=>p.kind==="single"&&p.category===cat&&p.race_date===d)}
 function render(){

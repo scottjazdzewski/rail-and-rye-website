@@ -139,6 +139,7 @@ function setEdition(data,preferredDate){
 async function load(date){
  status.textContent="Loading Target List…";
  try{
+  if(globalThis.RRCustomerReader){const edition=await RRCustomerReader.edition("Target List");setEdition({edition,dates:[edition.race_date]},edition.race_date);return;}
   const suffix=date?"?date="+encodeURIComponent(date):"";
   const reviewRes=await fetch("/api/admin/target-list-review"+suffix,{credentials:"same-origin",cache:"no-store"});
   const review=await reviewRes.json().catch(()=>({}));

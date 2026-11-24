@@ -1,0 +1,33 @@
+import assert from "node:assert/strict";
+import {readFileSync} from "node:fs";
+import {CUSTOMER_READERS,customerReaderPath,serveCustomerReader} from "./src/customer-readers.js";
+const date="2026-11-24";
+const env={ASSETS:{fetch:async request=>new Response(readFileSync("public"+new URL(request.url).pathname,"utf8"),{headers:{"Content-Type":"text/html"}})}};
+for(const [slug,item] of Object.entries(CUSTOMER_READERS)){
+ const path=customerReaderPath(item.category,date);
+ assert.equal(path,"/intelligence/"+slug+"/?date="+date);
+ const url=new URL(path,"https://example.test");
+ const response=await serveCustomerReader(new Request(url),env,url);
+ assert.equal(response.status,200,slug+" must render existing dashboard");
+ assert.match(response.headers.get("Cache-Control"),/no-store/);
+ const html=await response.text();
+ assert.match(html,/data-rr-customer="true"/);
+ assert.doesNotMatch(html,/href="\/admin\//);
+ assert.match(html,/href="\/store\/\?date=2026-11-24"/);
+ assert.match(html,/aria-current="page"/);
+ const helper=html.indexOf("rr-customer-reader.js?v=1");
+ assert.ok(helper>=0&&helper<html.search(/(?:projections-dashboard|pick-tickets-dashboard|longshot-radar|target-list-dashboard)\.js/),slug+" helper precedes reader");
+}
+assert.equal(customerReaderPath("Unknown",date),null);
+assert.equal(customerReaderPath("Race Cards","invalid"),null);
+const js=readFileSync("public/assets/rr-commerce-hub.js","utf8");
+assert.match(js,/\/intelligence\//);
+assert.doesNotMatch(js,/\/my-products\/\?category=/);
+const helper=readFileSync("public/assets/rr-customer-reader.js","utf8");
+assert.match(helper,/\/api\/product-tabs\/edition\?/);
+assert.doesNotMatch(helper,/\/api\/admin\//);
+const gate=readFileSync("src/product-tabs.js","utf8");
+assert.match(gate,/const gated=await edition\(request,env,gateURL\)/);
+assert.match(gate,/if\(!gated.ok\)return gated/);
+for(const path of ["rr-commerce-hub.js","rr-customer-reader.js","projections-dashboard.js","pick-tickets-dashboard.js","longshot-radar.js","target-list-dashboard.js","rr-exotic-bet-builder.js"]) new Function(readFileSync("public/assets/"+path,"utf8"));
+console.log("PASS: four direct product readers, no admin links, entitlement-only data endpoints, legacy selection removed.");

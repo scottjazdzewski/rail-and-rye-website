@@ -115,6 +115,7 @@ async function fetchPrivateRadarJSON(url,signal){
  return response.json();
 }
 async function loadAvailableEditions(){
+ if(globalThis.RRCustomerReader){const data=await RRCustomerReader.edition("Longshot Radar");return [data];}
  const controller=new AbortController();
  const timeout=setTimeout(()=>controller.abort(),12000);
  let responses;

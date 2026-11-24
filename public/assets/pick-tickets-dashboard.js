@@ -448,8 +448,9 @@
   try{
    const mode=new URLSearchParams(window.location.search).get("trial");
    const requestedTrial=mode==="v34";
-   const real=await call("/api/admin/pick-tickets"+(mode==="v33"?"?trial=v33":requestedTrial?"?trial=v34":""));
-   if(requestedTrial&&real.trial!=="V3.4")throw Error("Requested ticket edition is not available.");
+   const customer=globalThis.RRCustomerReader;
+   const real=customer?{cards:(await customer.edition("Pick Tickets")).cards.map(card=>({card,scratches_by_race:card.scratches_by_race,post_times_by_race:card.post_times_by_race,stakes_by_race:card.stakes_by_race}))}:await call("/api/admin/pick-tickets"+(mode==="v33"?"?trial=v33":requestedTrial?"?trial=v34":""));
+   if(!customer&&requestedTrial&&real.trial!=="V3.4")throw Error("Requested ticket edition is not available.");
    certified=(real.cards||[]).filter(entry=>entry?.card?.status!=="demo"&&!entry?.card?.is_demo);
    intake=real.intake||null;scratchUpdate=real.scratch_update||null;
     useData();

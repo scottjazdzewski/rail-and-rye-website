@@ -311,7 +311,7 @@
    state.loading=false;render();return;
   }
   try{
-   const url=(options.preview?"/api/admin/projections-f4":"/api/membership/projections-f4")+"?"+
+   const url=(options.customer?"/api/product-tabs/projections-f4":options.preview?"/api/admin/projections-f4":"/api/membership/projections-f4")+"?"+
     new URLSearchParams({date:state.date,track:state.track,race:String(state.race.race_number)});
    const response=await fetch(url,{credentials:"same-origin",cache:"no-store"});
    if(!response.ok)throw Error("The certified ordered model for this race is unavailable.");

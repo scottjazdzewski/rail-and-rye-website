@@ -13,6 +13,7 @@ import {ensureReleaseSchedule,validReleaseAt,pdfExpiryFromRaceDate} from './publ
 import {purgeExpiredRacePdfs} from './race-pdf-expiry.js';
 import {handleMembershipApi,handleAdminMembershipPlans,reconcileMemberships} from './memberships.js';
 import {handleProductTabs} from './product-tabs.js';
+import {serveCustomerReader,customerReaderPath} from './customer-readers.js';
 import {hasProductTabData} from './product-tab-content.js';
 import {handleRaceCardAlerts,syncRaceCardAnnouncement,sendRaceCardAlerts} from './race-card-alerts.js';
 /* Rail & Rye admin MVP. Dependencies: Cloudflare Workers, R2, D1, Cloudflare Access.
@@ -348,16 +349,14 @@ export default {
         headers.set("Content-Security-Policy","default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'");
         return new Response(result.body,{status:result.status,headers});
       }
+      if(path.startsWith("/intelligence/"))return serveCustomerReader(request,env,url);
       const productTabsPage=path==="/my-products"||path==="/my-products/"||path==="/my-products/index.html";
       if(productTabsPage){
         if(request.method!=="GET"&&request.method!=="HEAD")return fail("Method not allowed",405);
-        const asset=new URL(url);asset.pathname="/my-products/index.html";asset.search="";
-        const result=await env.ASSETS.fetch(new Request(asset.toString(),{method:request.method}));
-        const headers=new Headers(result.headers);headers.set("Cache-Control","no-store");headers.set("X-Robots-Tag","noindex, nofollow, noarchive");
-        headers.set("X-Content-Type-Options","nosniff");headers.set("Referrer-Policy","same-origin");
-        headers.set("Content-Security-Policy","default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'");
-        return new Response(request.method==="HEAD"?null:result.body,{status:result.status,headers});
+        const direct=customerReaderPath(url.searchParams.get("category"),url.searchParams.get("date"));
+        return Response.redirect(new URL(direct||"/store/",url),302);
       }
+
       const memberDashboardPage=path==="/membership/dashboard"||path==="/membership/dashboard/"||path==="/membership/dashboard/index.html";
       if(memberDashboardPage){
         if(env.PROJECTIONS_MEMBER_LAUNCH!=="on")return new Response("Not found.",{status:404,headers:{...textHeaders,"X-Robots-Tag":"noindex, nofollow, noarchive"}});

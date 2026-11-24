@@ -1,4 +1,5 @@
 import {BUNDLE_KEY} from './bundles.js';
+import {readCertifiedF4Exotics} from './f4-exotics.js';
 import {listProducts,verifyStoreAccessCode} from './commerce.js';
 import {hasActiveMembershipSession} from './memberships.js';
 import {PRODUCT_TAB_CATEGORIES,readProductTabEdition} from './product-tab-content.js';
@@ -139,12 +140,23 @@ async function edition(request,env,url){
  if(!content)return error('The published tab content is temporarily unavailable.',503);
  return json(content);
 }
+// Reuse exactly the customer edition entitlement gate for the race-card builder.
+async function customerF4(request,env,url){
+ const gateURL=new URL(url);gateURL.searchParams.set("category","Race Cards");
+ const gated=await edition(request,env,gateURL);
+ if(!gated.ok)return gated;
+ const data=await gated.json(),track=url.searchParams.get("track"),race=Number(url.searchParams.get("race"));
+ const card=data.cards?.find(item=>(item.track===track||item.card?.track_name===track)&&item.card?.races?.some(r=>r.race_number===race));
+ if(!card)return error("That race is not in your published Race Cards edition.",404);
+ return readCertifiedF4Exotics(env,url);
+}
 export async function handleProductTabs(request,env,url){
  if(!env.STORE_DB)return error('Product access is temporarily unavailable.',503);
  try{
   if(url.pathname==='/api/product-tabs/activate')return await activate(request,env);
   if(url.pathname==='/api/product-tabs/library'&&request.method==='GET')return await library(request,env);
   if(url.pathname==='/api/product-tabs/edition'&&request.method==='GET')return await edition(request,env,url);
+  if(url.pathname==='/api/product-tabs/projections-f4'&&request.method==='GET')return await customerF4(request,env,url);
   return error('Not found',404);
  }catch(error){
   console.error('Product tab request failed',String(error).slice(0,140));

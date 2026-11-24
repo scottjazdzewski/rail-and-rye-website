@@ -17,19 +17,19 @@ for(const [path,category,chip] of expected){
  const page=read(path);
  assert.ok(page.includes('data-product-category="'+category+'"'));
  assert.ok(page.includes('/assets/approved/saddlecloths/'+chip+'.png'),'Preserve approved saddlecloth');
- assert.ok(page.includes('rr-commerce-hub.js?v=3'),'One shared purchase implementation');
+ assert.ok(page.includes('rr-commerce-hub.js?v=4'),'One shared purchase implementation');
  assert.ok(page.includes('rr-commerce-hub.css?v=3'));
  assert.ok(page.includes('rr-racecards-purchase-rail'));
  assert.ok(page.includes('id="rr-hub-date"'));
  assert.ok(!/script src="\/assets\/(?:race-cards-page-v1|publication-detail-v1)\.js/.test(page),'No old PDF purchase renderer');
  assert.ok(!/<a[^>]*href="\/race-cards\/"[^>]*>Race Cards<\/a>/.test(page),'No redundant nav pill');
 }
-assert.ok(catalog.includes('rr-commerce-hub.js?v=3'));
+assert.ok(catalog.includes('rr-commerce-hub.js?v=4'));
 assert.ok(catalog.includes('rr-commerce-hub.css?v=3'));
 assert.ok(pageJs.includes('"/api/products"'));
 assert.ok(pageJs.includes('"/api/product-tabs/library"'));
 assert.ok(pageJs.includes('"/api/checkout"'));
-assert.ok(pageJs.includes('"/my-products/?category="'));
+assert.ok(pageJs.includes('"/intelligence/"+readerSlugs[cat]'));
 assert.ok(hubCss.includes('linear-gradient(145deg,#0b2637f5,#061d2df5)'));
 assert.ok(!read('public/publications/longshot-radar/index.html').includes('morning-line odds'));
 assert.ok(journal.includes("if(returnLink){returnLink.href='/journal/';"),

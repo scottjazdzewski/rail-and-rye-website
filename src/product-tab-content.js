@@ -7,16 +7,18 @@ export const PRODUCT_TAB_CATEGORIES=['Race Cards','Pick Tickets','Longshot Radar
 const text=(value,max=500)=>typeof value==='string'?value.slice(0,max):'';
 const num=value=>value==null||value===''?null:(Number.isFinite(Number(value))?Number(value):null);
 function publicProjection(card){
- return {race_date:card.race_date,track_name:card.track_name,
+ return {race_date:card.race_date,track_name:card.track_name,projection_status:card.projection_status,
+  ...(card.model_receipts?{model_receipts:Object.fromEntries(["tri_sha256","f4_sha256","prescratch_parent_sha256","official_changes_sha256"].filter(k=>/^[a-f0-9]{64}$/i.test(String(card.model_receipts[k]||""))).map(k=>[k,card.model_receipts[k]]))}:{}),
   races:(card.races||[]).map(race=>({
    race_number:race.race_number,post_time_et:race.post_time_et,distance:race.distance,
-   surface:race.surface,conditions:race.conditions,race_name:race.race_name,
+   surface:race.surface,pace:race.pace,conditions:race.conditions,race_name:race.race_name,
    stakes_name:race.stakes_name,stakes_grade:race.stakes_grade,is_stakes:race.is_stakes===true,
    purse:race.purse,scratch_count:race.scratch_count,
    scratches:(race.scratches||[]).map(item=>({program_number:text(item.program_number,8),horse_name:text(item.horse_name,100)})),
    entries:(race.entries||[]).map(entry=>({
     program_number:text(entry.program_number,8),horse_name:text(entry.horse_name,100),
-    win_probability:num(entry.win_probability),morning_line:text(entry.morning_line,30),
+    rank:num(entry.rank),win_probability:num(entry.win_probability),win_probability_exact:num(entry.win_probability_exact),
+    ...(entry.f4_probabilities?{f4_probabilities:Object.fromEntries(["exact_p1","exact_p2","exact_p3","exact_p4","exact_p5","p6_plus","top2","top3","top4"].map(k=>[k,num(entry.f4_probabilities[k])]))}:{}),morning_line:text(entry.morning_line,30),
     fair_odds:text(entry.fair_odds,30),trainer:text(entry.trainer,100),jockey:text(entry.jockey,100),
     metrics:Array.isArray(entry.metrics)?entry.metrics.map(m=>({label:text(m.label,40),value:m.value})):[],
     notes:text(entry.notes,1200)
@@ -30,10 +32,13 @@ function publicPick(item){
  if(!card||card.date==null||!Array.isArray(card.sequences))return null;
  return {date:card.date,track:card.track,
   ...(card.scratches_by_race?{scratches_by_race:card.scratches_by_race}:{}),
+  ...(card.post_times_by_race?{post_times_by_race:card.post_times_by_race}:{}),
+  ...(card.stakes_by_race?{stakes_by_race:card.stakes_by_race}:{}),
   sequences:card.sequences.map(sequence=>({
    name:sequence.name,start_race:sequence.start_race,end_race:sequence.end_race,
    play_status:sequence.play_status,hit_rate_display:sequence.hit_rate_display,
    recommendation:text(sequence.recommendation,1500),
+   ...(Array.isArray(sequence.race_fields)?{race_fields:sequence.race_fields.map(f=>({race_number:f.race_number,programs:f.programs}))}:{}),
    tickets:(sequence.tickets||[]).map(ticket=>({
     role:ticket.role,title:ticket.title,unit_cents:ticket.unit_cents,
     combinations:ticket.combinations,total_cents:ticket.total_cents,

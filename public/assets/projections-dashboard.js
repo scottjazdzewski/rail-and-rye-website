@@ -484,7 +484,7 @@ function renderCard(){
  builder.setAttribute("aria-label","Open Bet Builder for "+(activeCard.track||activeCard.card.track_name)+" Race "+race.race_number);
  builder.addEventListener("click",()=>{
   if(globalThis.RRBetBuilder?.open)globalThis.RRBetBuilder.open({
-   race,track:activeCard.track||activeCard.card.track_name,date:activeCard.race_date,preview:previewMode,
+   race,track:activeCard.track||activeCard.card.track_name,date:activeCard.race_date,preview:previewMode,customer:!!globalThis.RRCustomerReader,
    projection_status:activeCard.card.projection_status,model_receipts:activeCard.card.model_receipts
   });
  });
@@ -512,7 +512,8 @@ function onFiltersChanged(){
 }
 async function init(){
  try{
-  if(previewMode){const data=await api("/api/admin/projections-preview");cards=data.cards||[];}
+  if(globalThis.RRCustomerReader){const data=await RRCustomerReader.edition("Race Cards");cards=data.cards||[];}
+  else if(previewMode){const data=await api("/api/admin/projections-preview");cards=data.cards||[];}
   else {const data=await api("/api/membership/projections");cards=data.cards||[];}
   status.hidden=true;
   if(!cards.length){empty.hidden=false;return;}

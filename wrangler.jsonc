@@ -7,6 +7,8 @@
     "binding": "ASSETS",
     "run_worker_first": [
       "/admin*",
+      "/intelligence/*",
+      "/my-products*",
       "/membership/dashboard*",
       "/preview/*",
       "/api/*",
