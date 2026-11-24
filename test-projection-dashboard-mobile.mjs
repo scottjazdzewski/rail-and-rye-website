@@ -186,7 +186,7 @@ for(const html of [adminHtml,memberHtml]){
  assert.match(html,/<h1 class="rr-dash-visually-hidden">Rail &amp; Rye Projections<\/h1>/,
   "Keep an accessible page title without visible ornamental title space");
  assert.doesNotMatch(html,/rr-dash-search-field|rr-dash-search|Find a horse/,"No horse finder appears on either page");
- assert.match(html,/rr-projections-track-identity\.css\?v=3/,"Load the separate clean track identity stylesheet");
+ assert.match(html,/rr-projections-track-identity\.css\?v=4/,"Load the separate clean track identity stylesheet");
  assert.match(html,/projections-dashboard\.css\?v=(?:2[7-9]|[3-9]\d)/,
   "Current improved typography style must be loaded");
  assert.match(html,/projections-dashboard\.js\?v=\d+/,
@@ -306,15 +306,13 @@ originalRace.events.click();
 // not test the real track selector.
 els.get("rr-dash-track").value="Zia Park";
 els.get("rr-dash-track").events.change();
-const sourceTrackLogo=matchClass(els.get("rr-dash-track-identity"),"rrp-track-head__logo");
-assert.ok(sourceTrackLogo,"Real venue-specific logo is restored on approved tracks");
-assert.equal(sourceTrackLogo.src,"/assets/approved/track-logos/zia-park.webp");
-assert.equal(sourceTrackLogo.alt,"Zia Park official racetrack logo");
-assert.equal(allClass(els.get("rr-dash-race"),"rr-dash-track-mark-letters").length,0,
- "Synthesized track branding is absent");
+assert.equal(allClass(els.get("rr-dash-track-identity"),"rrp-track-head__logo").length,0,
+ "No track logo is displayed even when original artwork is available.");
+assert.match(els.get("rr-dash-track-identity").textContent,/ZIA PARK/i,
+ "Complete racetrack name is still displayed.");
 els.get("rr-dash-track").value="Del Mar";
 els.get("rr-dash-track").events.change();
-console.log("PASS: true per-track chronology; authentic logos and race artwork; conventional tote fair odds");
+console.log("PASS: true per-track chronology; text-only track identity and authentic saddlecloth artwork; conventional tote fair odds");
 
 
 // Canonical cross-module chips and Bet Builder live in the protected projection view.
@@ -330,8 +328,8 @@ assert.match(js,/rr-dash-race-button rr-race-saddle-tab/,
  "Every race navigation tab uses the branded saddle-chip form");
 assert.match(js,/rr-dash-race-number rr-race-saddle-header/,
  "Race number plaque uses same standardized chip grammar");
-assert.match(js,/originalTrackLogos=\{/,"Retain approved venue-specific track logo sources");
-assert.match(js,/rrp-track-head__logo/,"Render approved source logos in the new compact plaque");
+assert.doesNotMatch(js,/originalTrackLogos|rrp-track-head__logo|approved\/track-logos\//,
+ "Projections must never render mobile track-logo badges.");
 assert.doesNotMatch(js,/rr-dash-track-mark-letters/,"Remove interim venue initials from live headers");
 assert.doesNotMatch(js,/logo\.src="\/assets\/brand\/rail_rye_logo_header\.png"/,
  "Global site header already supplies the persistent R&R horseshoe");
@@ -374,15 +372,10 @@ for(const html of [adminHtml,memberHtml]){
 }
 console.log("PASS: private live-F4 percentages and gross break-even payout UI cache-busted");
 
-assert.match(trackCss,/filter:none;mix-blend-mode:normal/,"Track logos have no artificial blend or contrast filters");
-assert.doesNotMatch(trackCss,/mix-blend-mode:multiply|filter:contrast\(1\.13\)/,"Remove the ugly original contrast treatment");
-
-assert.match(trackCss,/background:transparent;/,"The track identity lives inside the unified navigation deck, not another white card");
-assert.match(commandCss,/background:#fffcf5/,"The single command deck provides the continuous light editorial background");
-assert.match(trackCss,/\.rrp-track-head__venue-mark\{/,"Use an unframed mark embedded in the whole masthead");
-assert.match(trackCss,/box-shadow:none;overflow:visible/,"No advertising-style plaque or boxed logo shadow");
-assert.doesNotMatch(trackCss,/__plaque|\.rrp-track-head__venue-mark\{[^}]*border:1px/,"Do not revive the old independent logo tile");
-assert.match(js,/rrp-track-head__venue-mark/,"The new masthead markup must use the integrated mark");
+assert.doesNotMatch(trackCss,/rrp-track-head__venue-mark|rrp-track-head__logo|rrp-track-head--no-logo/,
+ "Remove retired venue-mark CSS instead of hiding it.");
+assert.match(trackCss,/grid-template-columns:minmax\(0,1fr\)/,
+ "Full track name/date uses the whole command area.");
 
 for(const html of [adminHtml,memberHtml]){
  assert.match(html,/class="rrp-command"/,"Mode, venue and race tabs share one navigation surface");
@@ -393,7 +386,7 @@ for(const html of [adminHtml,memberHtml]){
 }
 assert.match(commandCss,/\.rrp-command__controls\{/,"Mode and date/track controls truly consolidated");
 assert.doesNotMatch(css,/\.rr-dash-mode-switch\s*\{|\.rr-dash-toolbar\s*\{/,"Obsolete layout CSS completely removed");
-assert.match(trackCss,/grid-template-columns:minmax\(0,1fr\) 64px/,"Venue mark compact on phones");
+assert.doesNotMatch(trackCss,/grid-template-columns:minmax\(0,1fr\) 64px/,"Do not reserve a column for removed track art.");
 assert.doesNotMatch(js,/panel\.replaceChildren\(cardHeader\(/,"No additional track masthead under race tabs");
 assert.match(js,/context\.replaceChildren\(cardHeader\(activeCard\)\)/,"Update track identity inside shared command deck");
 assert.match(factsCss,/min-height:59px/,"The Pace/Surface/Distance band is much shorter");
