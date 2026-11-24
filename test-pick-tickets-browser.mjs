@@ -106,7 +106,8 @@ try{
   assert.equal(await page.locator("#rr-pt-track-logo,.rr-pt-track-mark").count(),0,
  "Track badge no longer reserves space in the mobile header.");
   const headerHeight=await page.locator(".rr-intel-header").evaluate(n=>n.getBoundingClientRect().height);
-   assert.ok(headerHeight>=64&&headerHeight<=100,"Unified masthead stays compact at "+width);
+   const sitewideHeight=await page.evaluate(()=>parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--rr-header-height")));
+   assert.ok(headerHeight>=64&&headerHeight<=sitewideHeight+1,"Unified masthead matches the public-site header height at "+width);
    if(width<=1080){
     await page.locator(".rr-intel-header__mobile summary").click();
     assert.equal(await page.locator(".rr-intel-header__mobile-links a:visible").count(),5,"Mobile dropdown contains five destinations.");

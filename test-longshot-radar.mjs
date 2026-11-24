@@ -307,7 +307,7 @@ assert.ok(css.includes("font:500 17px/1.52 Inter"),"Full analysis remains 17px")
 assert.ok(css.includes("grid-template-columns:repeat(2,minmax(0,1fr))"),"WIN/FAIR remain aligned");
 assert.ok(!/\\.rr-lr-racebar|\\.rr-lr-race-facts|\\.rr-lr-race-number|\\.rr-lr-post/.test(css),
  "Remove obsolete Radar-specific race-header stylesheet rules");
-assert.ok(html.includes("rr-hub-header.css?v=1")&&html.includes("rr-intel-header__mobile-links"),"Keep the shared masthead");
+assert.ok(html.includes("rr-hub-header.css?v=2")&&html.includes("heritage-header rr-intel-header")&&html.includes("rr-intel-header__mobile-links"),"Keep the shared masthead");
 assert.ok(!ui.includes("rr-lr-upload-form")&&!ui.includes("visualSample"),"Only private production data");
 assert.ok(!ui.includes("rr-lr-evidence")&&!ui.includes('make("button","","Race details")'),"One short on-card betting sentence");
 assert.ok(!/\\btimeform(?:us)?\\b/i.test(ui+html),"No proprietary source label in the UI");

@@ -113,7 +113,7 @@ assert.match(css,/Shared Daily Research Reader V1 — Target List implementation
 assert.match(html,/rr-research-race-banner\.css\?v=locked-v1-20261124/,"Target List loads the sole race-header stylesheet.");
 assert.doesNotMatch(css,/RAIL & RYE DAILY RESEARCH V9|right-justified RACE \/ POST group/,"Remove redundant header patches.");
 assert.doesNotMatch(js,/rr-research-racebar__facts-long/,"Race facts always occupy their own readable row.");
-assert.match(html,/rr-hub-header\.css\?v=1/,"Target List loads the one shared masthead.");
+assert.match(html,/rr-hub-header\.css\?v=2/,"Target List loads the one shared masthead.");
 assert.doesNotMatch(css,/rr-member-nav|rr-member-header/,"Legacy Target List header overrides are removed.");
 assert.match(css,/font:500 17px\/1\.52 Inter/,"Full race analysis uses the same 17px research reader scale as Radar.");
 assert.match(html,/target-list-dashboard\.css\?v=20261123-parity-v17/,"Shared v6 stylesheet must defeat stale browser cache.");

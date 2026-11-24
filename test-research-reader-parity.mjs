@@ -9,7 +9,7 @@ const radarJS=readFileSync("public/assets/longshot-radar.js","utf8");
 const targetJS=readFileSync("public/assets/target-list-dashboard.js","utf8");
 
 for(const [name,html] of [["Radar",radarHtml],["Target",targetHtml]]){
- assert.match(html,/<header class="rr-intel-header">/,name+" uses the shared masthead");
+ assert.match(html,/<header class="heritage-header rr-intel-header">/,name+" uses the shared masthead");
  assert.match(html,/>Racing Intelligence</i,name+" uses the shared kicker");
  assert.match(html,/>Race date\s*<select/i,name+" uses the same date label");
  assert.match(html,/>Sort by\s*<select/i,name+" uses the same sort label");
