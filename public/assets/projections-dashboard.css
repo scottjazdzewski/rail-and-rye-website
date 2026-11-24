@@ -97,10 +97,7 @@ font:800 10px/1.2 Inter,system-ui,sans-serif;
 text-transform:uppercase;
 }
 .rr-dash-no-data{padding:20px;color:#657888;font:14px/1.5 Inter,system-ui,sans-serif;text-align:center}
-.rr-dash-row-analysis,.rr-dash-mobile-analysis,.rr-dash-mobile-list-heading{display:none}
-
-.rr-dash-pdf-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;padding-top:14px;border-top:1px solid #d3b675}
-.rr-dash-pdf-actions a[aria-disabled="true"]{opacity:.55;pointer-events:none}
+.rr-dash-mobile-analysis,.rr-dash-mobile-list-heading{display:none}
 .rr-dash-empty{padding:24px;border:1px solid #c99831;border-radius:12px;background:#fffdf6}
 .rr-dash-empty h2{margin:0 0 8px;color:#123567;font:26px/1.2 "Tinos","Times New Roman",serif}
 .rr-dash-empty p{margin:0 0 16px;color:#526b7b;font:15px/1.55 Inter,system-ui,sans-serif}
@@ -258,27 +255,6 @@ font:800 10px/1.25 Inter,system-ui,sans-serif;
 font:500 10px/1.25 Inter,system-ui,sans-serif;
 text-align:right;
 }
- .rr-dash-row-analysis{
-padding-top:9px;
-}
- .rr-dash-full-analysis{
-border:0;
-background:transparent;
-color:#183f6c;
-cursor:pointer;
-}
- .rr-dash-full-analysis::after{
-content:"›";
-display:inline-block;
-color:#b58b3f;
-vertical-align:-1px;
-}
- .rr-dash-full-analysis:focus-visible{outline:2px solid #b58b3f;outline-offset:2px}
- .rr-dash-analysis-connections{
-color:#6c7988;
-font:600 10px/1.35 Inter,system-ui,sans-serif;
-overflow-wrap:anywhere;
-}
  .rr-dash-horse-dialog{position:fixed;inset:auto 0 0;display:block;width:100%;max-width:none;max-height:88dvh;margin:0;padding:0;border:0;border-radius:19px 19px 0 0;background:#f7f4ee;overflow-y:auto;overscroll-behavior:contain;box-shadow:0 -16px 55px rgba(4,22,40,.25)}
  .rr-dash-horse-dialog:not([open]){display:none}
  .rr-dash-horse-dialog::before{content:"";display:block;width:42px;height:5px;margin:10px auto 0;border-radius:3px;background:#c8ccd0}
@@ -370,7 +346,6 @@ overflow-wrap:anywhere;
 .rr-dash-metric-value[data-state="red"] .rr-dash-metric-bar{background:#b54842}
 .rr-dash-metric-value[data-state="gray"] .rr-dash-metric-bar{background:#88929d}
 .rr-dash-metric-value[data-state]::after{content:none}
-.rr-dash-row-analysis{min-width:0}
 @media(max-width:800px){
 
  .rr-dash-race-button{
@@ -425,25 +400,6 @@ border-top:1px solid #ece8df;
  .rr-dash-metric-value,.rr-dash-metric-value[data-state]{
 border-right:1px solid #eee9e1;
 }
- 
- 
- 
- .rr-dash-row-analysis{
-grid-area:analysis;
-display:flex;
-flex-direction:row;
-justify-content:flex-end;
-align-items:center;
-gap:0;
-padding:0;
-border-top:0;
-}
- .rr-dash-full-analysis{
-align-self:center;
-}
- 
- .rr-dash-analysis-connections{display:none}
- .rr-dash-pdf-actions{display:none}
 }
 @media(max-width:370px){
  
@@ -514,9 +470,6 @@ font:800 10px/1.15 Inter,Arial,system-ui,sans-serif;
  .rr-dash-metric-bar{
 width:13px;
 }
- .rr-dash-row-analysis{min-height:26px;margin-top:1px}
- .rr-dash-full-analysis{min-height:28px;padding:2px 3px;font:750 12px/1.1 Inter,Arial,system-ui,sans-serif;letter-spacing:0}
- .rr-dash-full-analysis::after{font-size:18px;margin-left:4px}
 }
 @media(max-width:360px){
  .rr-dashboard-main{padding:9px 9px 24px}
@@ -547,7 +500,6 @@ width:13px;
 
 
 /* No redundant "Analysis" footers: entire runner card is tappable. */
-.rr-dash-row-analysis{display:none!important}
 .rr-dash-runner-row{cursor:pointer}
 .rr-dash-runner-row:focus-within{border-color:#b48a39}
 @media(max-width:800px){

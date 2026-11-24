@@ -26,15 +26,6 @@ gap:7px 16px;
 font-size:11px;
 font-weight:600;
 }
-.rr-lr-list-head{
-justify-content:space-between;
-gap:10px;
-padding:5px 4px 9px;
-color:#657887;
-font-size:10px;
-font-weight:800;
-letter-spacing:.1em;
-}
 
 .rr-lr-card{
 min-width:0;
@@ -122,7 +113,6 @@ gap:3px;
 }
 @media(max-width:360px){
  .rr-lr-main{padding-left:9px;padding-right:9px}
- .rr-lr-list-head{font-size:9px}
  .rr-lr-identity strong{font-size:16px}
 }
 
@@ -132,7 +122,6 @@ gap:3px;
 .rr-lr-overview{margin:9px 0 6px;padding:4px 2px;background:transparent;color:#102d53;border-radius:0}
 .rr-lr-summary h2{margin-top:2px;font:800 16px/1.2 Inter,Arial,system-ui,sans-serif}
 .rr-lr-summary-meta{margin-top:4px;color:#637483}
-.rr-lr-list-head{display:none}
 .rr-lr-candidates{display:grid;grid-template-columns:minmax(0,1fr);gap:9px}
 .rr-lr-card{overflow:hidden;padding:0;border:1px solid #b7c3ca;border-radius:7px;background:#fff;box-shadow:none}
 .rr-lr-top{display:grid;grid-template-columns:35px minmax(0,1fr) 310px;grid-template-areas:"program horse market";align-items:center;gap:8px;min-width:0;margin:0;padding:10px 12px}
