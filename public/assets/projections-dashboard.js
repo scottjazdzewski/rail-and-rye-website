@@ -110,6 +110,7 @@ function editorialRacePresentation(race){
  const originalLetters=title.replace(/[^A-Za-z]/g,"");
  const originallyAllCaps=originalLetters.length>2&&originalLetters===originalLetters.toUpperCase();
  title=title.replace(/\b(?:Stks?|Stk|S)\.?$/i,"Stakes");
+ if(/^Stakes?$/i.test(title.trim()))title="Race "+race.race_number;
  if(originallyAllCaps)
   title=title.toLowerCase().replace(/\b[a-z]/g,letter=>letter.toUpperCase());
  const match=raw.match(/\(\s*(?:G(?:rade)?\.?|Gr\.?)\s*[-:]?\s*(III|II|I|[123])\s*\)/i);
