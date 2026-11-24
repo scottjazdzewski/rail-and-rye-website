@@ -1,0 +1,42 @@
+name: Verify website racecard production lock
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'public/assets/**'
+      - 'public/admin/projections-preview.html'
+      - 'public/membership/dashboard/index.html'
+      - 'src/projection*.js'
+      - 'scripts/tri_*.py'
+      - 'test-projection-race-information.mjs'
+      - 'test-website-racecard-production-lock.mjs'
+      - 'tests/test_tri_*.py'
+      - '.github/workflows/verify-website-racecard-production-lock.yml'
+  pull_request:
+    paths:
+      - 'public/assets/**'
+      - 'public/admin/projections-preview.html'
+      - 'public/membership/dashboard/index.html'
+      - 'src/projection*.js'
+      - 'scripts/tri_*.py'
+      - 'test-projection-race-information.mjs'
+      - 'test-website-racecard-production-lock.mjs'
+      - 'tests/test_tri_*.py'
+      - '.github/workflows/verify-website-racecard-production-lock.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  production-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: node test-website-racecard-production-lock.mjs
+      - run: node test-projection-race-information.mjs
+      - run: python -m unittest discover -s tests -p 'test_tri_*.py' -v

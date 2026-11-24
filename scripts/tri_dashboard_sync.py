@@ -381,6 +381,28 @@ def sync_cards(cards, source_hash, bucket=BUCKET_DEFAULT, dry_run=False, client=
     return len(pending), len(actions) - len(pending)
 
 
+def verify_private_readback(cards, exotic, source_hash, client):
+    """Verify exact stored objects and receipt metadata, not merely put success."""
+    for card in cards:
+        key = target_key(card)
+        item = client.get_object(Bucket=BUCKET_DEFAULT, Key=key)
+        require(json.loads(item["Body"].read()) == card, "Dashboard readback mismatch: " + key)
+        meta = item.get("Metadata") or {}
+        require(meta.get("source_sha256") == source_hash and
+                meta.get("badge_sha256") == card.get("badge_source_sha256", ""),
+                "Dashboard readback receipt mismatch: " + key)
+    for track in exotic:
+        slug = re.sub(r"[^a-z0-9]+", "-", track["track_name"].lower()).strip("-")
+        key = f"projections/f4-ordered/{track['date']}/{slug}.json"
+        item = client.get_object(Bucket=BUCKET_DEFAULT, Key=key)
+        require(json.loads(item["Body"].read()) == track, "F4 readback mismatch: " + key)
+        meta = item.get("Metadata") or {}
+        require(meta.get("source_sha256") == track["source_sha256"] and
+                meta.get("badge_sha256") == track["badge_sha256"] and
+                meta.get("f4_receipt_sha256") == track["f4_receipt_sha256"],
+                "F4 readback receipt mismatch: " + key)
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Validate frozen TRI/F4 model evidence and optionally send it directly to private Cloudflare R2")
@@ -423,8 +445,15 @@ def main():
                 os.getenv("TRI_R2_SECRET_ACCESS_KEY","").strip())
             # Publish only fully source-verified coefficients. Both layers
             # cross-check the same exact model and badge hashes at read time.
+            # Preflight BOTH stores before either is written. This does not make
+            # multi-object R2 writes atomic; failures still require reconciliation.
+            sync_f4_exotic_payloads(exotic,client,dry_run=True)
+            sync_cards(cards, counts["sha256"], dry_run=True,client=client)
             exotic_written, exotic_same=sync_f4_exotic_payloads(exotic,client,dry_run=args.dry_run)
             updated, unchanged = sync_cards(cards, counts["sha256"], dry_run=args.dry_run,client=client)
+            if not args.dry_run:
+                verify_private_readback(cards, exotic, counts["sha256"], client)
+                print(f"TRI_R2_READBACK date={date} tracks={len(cards)} races={counts['races']} runners={counts['runners']} status=PASS")
             print(f"TRI_R2 date={date} written={updated} unchanged={unchanged} "
                   f"exotic_written={exotic_written} exotic_unchanged={exotic_same} "
                   f"status={'DRY_RUN' if args.dry_run else 'PRIVATE_R2_PUBLISHED'}")

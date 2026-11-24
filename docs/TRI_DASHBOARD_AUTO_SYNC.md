@@ -82,3 +82,7 @@ The trusted TRI runtime must process each date/track scratch upload in this orde
 
 The website now explicitly withholds postscratch tickets while the field still has `factor_basis=verified_prescratch`, even when the scratch list and mathematical V3.3 output reconcile perfectly. This is a **prevention guard**, not an automatic scorer. The external scorer must be wired by the TRI engineering/runtime owner.
 
+
+## Daily production authority
+
+Follow [Website Race Card Production Lock V1](WEBSITE_RACECARD_PRODUCTION_LOCK_V1.md). The CLI now preflights both dashboard and ordered F4 stores before either write and checks exact private object and receipt metadata readback. This is not an atomic multi-object transaction or a protected dashboard display check. External runtime integration and live qualification remain required.
