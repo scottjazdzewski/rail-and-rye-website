@@ -173,7 +173,6 @@ async function handleAdminAPI(request,env,pathname,ctx) {
     }
     if(request.method==="POST") {
       let data; try{data=readProduct(await parseJSON(request));}catch(e){return fail(e.message);}
-      if(data.status==="published") return fail("Upload a PDF before publishing");
       const id=crypto.randomUUID(),slug=slugFor(data.title,id);
       await env.STORE_DB.prepare(`INSERT INTO products (id,title,slug,category,race_date,track,description,price_cents,pdf_key,image_url,status,pdf_expires_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`)
         .bind(id,data.title,slug,data.category,data.race_date,data.track,data.description,data.price_cents,null,null,data.status,data.pdf_expires_at).run();
