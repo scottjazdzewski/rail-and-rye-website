@@ -192,6 +192,16 @@ async function readEdition(env,selected,dates){
 }
 
 
+export async function readTargetListEdition(env,raceDate){
+ if(!env.CARDS_BUCKET||!dateValid(raceDate))return null;
+ const revisions=await findRevisions(env,raceDate),latest=revisions[0];
+ if(!latest)return null;
+ const object=await env.CARDS_BUCKET.get(latest.key);if(!object)return null;
+ const edition=validateTargetList(JSON.parse(await object.text()));
+ if(edition.race_date!==raceDate||edition.revision!==latest.revision)return null;
+ const facts=await targetOriginalRaceFacts(env,raceDate);
+ return {...edition,targets:edition.targets.map(entry=>enrichTargetRace(entry,facts))};
+}
 
 const targetTrackKey=value=>String(value||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"")
  .toLocaleLowerCase("en-US").replace(/[^a-z0-9]+/g," ").trim();
