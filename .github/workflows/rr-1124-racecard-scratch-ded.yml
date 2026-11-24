@@ -1,0 +1,29 @@
+name: Publish verified Nov24 Delta Downs scratch delta
+on:
+  issue_comment:
+    types: [created]
+permissions:
+  contents: read
+jobs:
+  publish:
+    concurrency:
+      group: rr-1124-racecard-scratch-ded
+      cancel-in-progress: false
+    if: github.event_name == 'issue_comment' && github.event.issue.number == 183 && github.event.comment.user.login == 'scottjazdzewski' && startsWith(github.event.comment.body, 'RR_RACECARD_SCRATCH_1124_DED_V1')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: pip install pynacl==1.5.0 boto3==1.40.36
+      - name: Publish already-scored scratch outputs to private R2
+        env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+        run: python scripts/rr_1124_racecard_scratch_ded.py
