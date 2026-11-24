@@ -288,7 +288,7 @@ assert.ok(!ui.includes("edition.candidates.length!==10"),"No fixed horse quota i
 assert.ok(ui.includes("AbortController")&&ui.includes("retry?.addEventListener"),"Show a recoverable error rather than a permanent loading spinner");
 
 assert.ok(html.includes("longshot-radar.js?v=shared-banner-v1-20261124"),"Load version-locked Radar client");
-assert.ok(html.includes("rr-research-race-banner.js?v=locked-v2-20261124"),"Load canonical banner renderer");
+assert.ok(html.includes("rr-research-race-banner.js?v=locked-v3-20261124"),"Load canonical banner renderer");
 assert.ok(html.includes("rr-research-race-banner.css?v=locked-v1-20261124"),"Load canonical banner CSS");
 assert.ok(!html.includes('id="rr-lr-stage"')&&!html.includes('id="rr-lr-date-title"')&&!html.includes('id="rr-lr-updated"'),"No duplicate page statuses");
 assert.ok(ui.includes('make("span","rr-lr-ml-inline","ML "+tote(item.original_morning_line))'),"Morning line belongs with horse identity");
