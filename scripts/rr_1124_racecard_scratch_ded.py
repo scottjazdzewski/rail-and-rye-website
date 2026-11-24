@@ -68,6 +68,11 @@ def main():
   card=json.loads(enriched.stdout)
   delta={r["n"]:r for r in t["races"]};require(set(delta)==set(scr),"Missing affected race")
   mm={r["race_number"]:r for r in model["races"]};pr={n:dict(es) for n,es in t["pre"]};require(set(pr)==set(range(1,nr+1)),"Incomplete replayed parent")
+  mismatch=[]
+  for r in card["races"]:
+   i=r["race_number"];orig={str(e["program_number"]):e for e in r["entries"]}
+   if set(orig)!=set(pr[i]) or not all(abs(orig[p]["win_probability_exact"]/100-pr[i][p])<=1e-10 for p in orig if p in pr[i]):mismatch.append(i)
+  require(not mismatch,"Replayed parent differs in races "+",".join(str(i) for i in mismatch))
   for r in card["races"]:
    i=r["race_number"]; orig={str(e["program_number"]):e for e in r["entries"]};prior=pr[i];new={e[0]:e[4] for e in delta[i]["rows"]} if i in delta else prior
    require(set(orig)==set(prior) and all(abs(orig[p]["win_probability_exact"]/100-prior[p])<=1e-10 for p in orig),"Replayed parent differs from race cards")
