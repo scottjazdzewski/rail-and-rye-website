@@ -58,12 +58,33 @@
   const chip=node("span","rr-pt-state",statusText(s));
   chip.dataset.status=s;return chip;
  }
+ function sourceStakesFor(raceNumber){
+  const item=entries.find(row=>row.card.date===E.date.value&&row.card.track===E.track.value);
+  const facts=item?.stakes_by_race?.[String(raceNumber)];
+  if(!facts)return null;
+  const named=globalThis.RRRaceTitles?.describe?.(facts);
+  return named?.stakes&&!named.missingStakesName?named:null;
+ }
+ function stakesLine(raceNumber){
+  const event=sourceStakesFor(raceNumber);
+  if(!event)return null;
+  const line=node("div","rr-pt-stakes-line");
+  line.append(node("strong","rr-pt-stakes-name",event.title));
+  if(event.grade){
+   const trophy=node("span","rr-ed-grade-trophy rr-ed-grade-trophy--g"+event.grade,"🏆 G"+event.grade);
+   trophy.setAttribute("aria-label","Grade "+event.grade+" stakes trophy");
+   line.append(trophy);
+  }
+  return line;
+ }
  function ticketRows(ticket){
   const rows=node("div","rr-pt-race-rows");
   for(const leg of ticket.legs){
    const row=node("div","rr-pt-race-row"),name=node("span","rr-pt-row-race","RACE "+leg.race_number),chips=node("div","rr-pt-row-chips");
    for(const p of leg.programs)chips.append(programChip(p));
-   row.append(name,chips);rows.append(row);
+   row.append(name,chips);
+   const named=stakesLine(leg.race_number);if(named)row.append(named);
+   rows.append(row);
   }
   return rows;
  }
@@ -183,7 +204,9 @@
      body.append(field);
     }
    }
-   row.append(name,body);rows.append(row);
+   row.append(name,body);
+   const named=stakesLine(leg.race_number);if(named)row.append(named);
+   rows.append(row);
   }
   area.append(rows);
   const computed=builderTotals();
