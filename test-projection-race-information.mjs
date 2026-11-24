@@ -67,3 +67,11 @@ for(const path of ["src/longshot-radar.js","src/target-list.js"]){
 const pick=readFileSync("src/pick-tickets.js","utf8");
 assert.match(pick,/stakes_by_race/,"Pick ticket publication carries official named stakes metadata.");
 console.log("race information checks passed");
+
+// Every maiden in the official November 24 entry indexes, not just the reported race.
+for(const [track,n,nums,label] of [["Delta Downs",8,[2,3],"Maiden Claiming"],["Finger Lakes",8,[4,5],"Maiden Special Weight"],["Mahoning Valley",8,[1,5],"Maiden Special Weight"],["Mountaineer",8,[3,5],"Maiden Special Weight"],["Parx Racing",9,[9],"Maiden Claiming"],["Zia Park",10,[1,2,3],"Maiden Special Weight"]]){
+ const original={race_date:"2026-11-24",track_name:track,races:Array.from({length:n},(_,i)=>({race_number:i+1,conditions:nums.includes(i+1)?"Maiden":"Claiming",entries:[],purse:""}))};
+ const repaired=enrichRaceInformation(original);
+ for(const num of nums)assert.equal(repaired.races[num-1].display_race_class,label,track+" Race "+num);
+ assert.ok(original.races.every(r=>!r.display_race_class),"Never mutate scored source");
+}

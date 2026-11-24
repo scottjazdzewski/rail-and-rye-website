@@ -115,11 +115,14 @@
   return "";
  }
  function maidenPresentation(race){
-  const values=[race?.display_race_class,race?.race_class,race?.race_type,race?.class_name,race?.conditions,race?.race_name]
+  // Server-resolved official metadata takes precedence over a lossy source label.
+  const verified=maidenClass(race?.display_race_class);
+  if(verified&&verified!=="unverified")return {title:verified,grade:null,stakes:false,missingStakesName:false,maiden:true,unverifiedClass:false};
+  const values=[race?.race_class,race?.race_type,race?.class_name,race?.conditions,race?.race_name]
    .map(maidenClass).filter(Boolean);
   const known=[...new Set(values.filter(v=>v!=="unverified"))];
   if(known.length===1)return {title:known[0],grade:null,stakes:false,missingStakesName:false,maiden:true,unverifiedClass:false};
-  if(values.length)return {title:"Race class unverified",grade:null,stakes:false,missingStakesName:false,maiden:true,unverifiedClass:true};
+  if(values.length)return {title:Number.isInteger(Number(race?.race_number))&&Number(race.race_number)>0?"Race "+race.race_number:"Race",grade:null,stakes:false,missingStakesName:false,maiden:true,unverifiedClass:true};
   return null;
  }
  function describe(race){

@@ -167,6 +167,17 @@ const entries1124 = {
   }
 };
 
+// Official Equibase Nov 24 entry indexes (URLs in race information lock).
+// Exact date, track and race number, with complete card and purse cross-check.
+// This is descriptive metadata only, independent of purse as a class predictor.
+const officialMaiden1124={
+ "delta-downs":{2:"Maiden Claiming",3:"Maiden Claiming"},
+ "finger-lakes":{4:"Maiden Special Weight",5:"Maiden Special Weight"},
+ "mahoning-valley":{1:"Maiden Special Weight",5:"Maiden Special Weight"},
+ "mountaineer":{3:"Maiden Special Weight",5:"Maiden Special Weight"},
+ "parx-racing":{9:"Maiden Claiming"},
+ "zia-park":{1:"Maiden Special Weight",2:"Maiden Special Weight",3:"Maiden Special Weight"}
+};
 export function validPurse(value){
  const s=String(value??"").trim();
  return /^\$(?:[1-9]\d{0,2}(?:,\d{3})+|[1-9]\d*)(?:\.00)?$/.test(s);
@@ -209,6 +220,10 @@ export function enrichRaceInformation(card){
   if(!validPurse(race.purse)&&!String(race.purse??"").trim()&&
      card.projection_status==="prescratch"&&race.entries.length===source.n[i])
    result={...result,purse:"$"+source.p[i].toLocaleString("en-US")};
+  const officialClass=officialMaiden1124[slug]?.[race.race_number];
+  const expectedPurse="$"+source.p[i].toLocaleString("en-US");
+  if(officialClass&&(!String(result.purse||"").trim()||result.purse===expectedPurse))
+   result={...result,display_race_class:officialClass};
   const named=source.stakes?.[String(race.race_number)];
   const current=[race.stakes_name,race.race_name]
    .map(value=>String(value??"").trim()).filter(Boolean);

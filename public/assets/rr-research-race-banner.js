@@ -18,6 +18,7 @@ function describe(entry){
  const candidates=[entry?.stakes_name,entry?.race_name,entry?.conditions,entry?.display_race_class].map(text).filter(Boolean);
  if(!candidates.length)return null;
  const official=root.RRRaceTitles?.describe?.(entry);
+ if(official?.unverifiedClass)return null;
  if(official?.title&&!official.missingStakesName)return official;
  // If the named-race contract is unavailable, use only source text that is
  // not a generic stakes classification. Never turn "STAKES" into a race name.
@@ -40,7 +41,7 @@ function appendGradeTrophy(parent,grade){
  parent.append(badge);
 }
 function conditionsFact(entry,title){
- if(title?.maiden)return ""; // The full, verified class is the title; never repeat a generic Maiden label.
+ if(title?.maiden||root.RRRaceTitles?.maidenPresentation?.(entry)?.unverifiedClass)return ""; // The full, verified class is the title; never repeat a generic Maiden label.
  let value=text(entry?.conditions);
  if(!value)return "";
  value=value.replace(/\s*(?:presented|sponsored|powered)\s+by\b.*$/i,"").trim();
