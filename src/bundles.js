@@ -81,9 +81,6 @@ async function allBundles(env) {
     ).bind(BUNDLE_KEY).all()
   ]);
   const allItems=itemRows.results||[];
-  const candidateChildren=allItems.filter(eligibleChild);
-  const candidateSingles=(singleRows.results||[]).filter(eligibleChild);
-  const readyIds=await readyProductTabProductIds(env,[...candidateChildren,...candidateSingles]);
   const byBundle=new Map();
   for(const item of allItems){
     if(!byBundle.has(item.bundle_id))byBundle.set(item.bundle_id,[]);
@@ -94,14 +91,14 @@ async function allBundles(env) {
     const items=byBundle.get(bundle.id)||[];
     const components=items.map(item=>({
       id:item.product_id,title:item.title,status:item.status,
-      available:eligibleChild(item)&&readyIds.has(item.product_id),
+      available:eligibleChild(item),
       bundle_only:!!item.asset_id
     }));
     bundles.push({...bundle,categories:[...new Set([bundle.category,...items.map(x=>x.category)].filter(Boolean))],
       product_ids:items.map(x=>x.product_id),components});
   }
   const available_products=(singleRows.results||[]).map(item=>({
-    ...item,bundle_eligible:eligibleChild(item)&&readyIds.has(item.id)?1:0
+    ...item,bundle_eligible:eligibleChild(item)?1:0
   }));
   return out({bundles,available_products});
 }
