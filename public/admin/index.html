@@ -226,9 +226,9 @@
         <div class="field"><label for="description">Product description</label><textarea id="description" maxlength="4000" placeholder="Premium analysis and probability-driven insights for today's card."></textarea></div>
         <div class="field"><label for="pdf">Replace attached PDF <span id="pdfStatus"></span></label><input id="pdf" type="file" accept="application/pdf,.pdf" disabled><div class="detail">Optional source file. Customers receive access to the on-site tab. Existing source-file replacement notices remain separate from tab access.</div></div>
         <div class="field"><label for="cover">Cover image <span id="coverStatus"></span></label><input id="cover" type="file" accept="image/jpeg,image/png,image/webp"><div class="detail">Optional JPG, PNG or WebP, up to 6 MB. Visible publicly only when the product is published.</div></div>
-        <div class="field"><label for="scheduleAt">Scheduled release · Eastern Time</label><input id="scheduleAt" type="datetime-local" step="60"><div class="detail">Choose a future time in New York. The release is automatic. Avoid 1:00–1:59 AM on the fall daylight-saving change night.</div></div>
-        <div class="actions"><button type="button" class="primary" id="draftBtn">Save draft</button><button type="button" class="gold" id="publishBtn">Publish now</button><button type="button" class="gold" id="scheduleBtn">Schedule publication</button><button type="button" class="secondary" id="cancelScheduleBtn" hidden>Cancel scheduled release</button><button type="button" class="secondary" id="archiveBtn" disabled>Archive</button></div>
-        <p class="detail" style="margin-top:12px">Publishing makes this category and racing date available when its structured race data is present. Scheduled tabs stay out of the storefront and checkout until their release time. To change a release, choose a new time and schedule again.</p>
+        <div class="field"><label for="scheduleAt">Scheduled release · Eastern Time</label><input id="scheduleAt" type="datetime-local" step="60"><div class="detail">Future-race-date editions queue for 3:00 AM Eastern on race day. Choose a different release time here only when needed.</div></div>
+        <div class="actions"><button type="button" class="primary" id="draftBtn">Save draft</button><button type="button" class="gold" id="publishBtn">Publish / queue</button><button type="button" class="gold" id="scheduleBtn">Schedule publication</button><button type="button" class="secondary" id="cancelScheduleBtn" hidden>Cancel scheduled release</button><button type="button" class="secondary" id="archiveBtn" disabled>Archive</button></div>
+        <p class="detail" style="margin-top:12px">Publishing a future race date queues it for 3:00 AM Eastern on race day. Today's editions stay on the storefront until that rollover. Scheduled tabs stay out of the storefront and checkout until release.</p>
       </form>
     </section>
     <aside>
@@ -504,6 +504,7 @@
       await refresh(id);
       let msg;
       if(action==='scheduled')msg='Scheduled for '+$('scheduleAt').value.replace('T',' ')+' Eastern Time. The product remains private until release.';
+      else if(action==='published'&&pending(products.find(p=>p.id===id)))msg='Queued for '+expiryLabel(products.find(p=>p.id===id).release_at)+'. Today\'s editions remain live until then.';
       else if(action==='published')msg=paymentMode==='live'?'Published LIVE. Stripe checkout is active.':paymentMode==='paused'?'Published. Checkout remains paused.':'Published in test mode.';
       else if(action==='archive')msg='Product archived.';
       else if(action==='cancel')msg='Scheduled release cancelled; product returned to a private draft.';

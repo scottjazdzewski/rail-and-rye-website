@@ -109,8 +109,9 @@ export async function handleAdminBundles(request,env,path) {
   if(request.method!=='GET'&&!originOk(request))return bad('Same-origin request required',403);
   if(path==='/api/admin/bundles'&&request.method==='GET')return allBundles(env);
   if(path==='/api/admin/bundles'&&request.method==='POST') {
-    let b;try{
+    let b,release_at;try{
       b=await payload(request);
+      release_at=b.status==='published'?(b.release_at||releaseAt3amEastern(b.race_date)):null;
       if(b.id){
         const existing=await env.STORE_DB.prepare('SELECT status,pdf_key FROM products WHERE id=?').bind(b.id).first();
         if(existing){
@@ -119,7 +120,7 @@ export async function handleAdminBundles(request,env,path) {
           return out({id:b.id,created:false,already_exists:true});
         }
       }
-      if(b.release_at&&!releaseWindowValid(b.release_at))throw Error('Choose a release at least one minute ahead, within the next year');
+      if(release_at&&!releaseWindowValid(release_at))throw Error('Choose a release at least one minute ahead, within the next year');
       await validatedChildren(env,b.product_ids);
     }catch(e){return bad(e.message);}
     const id=b.id||crypto.randomUUID();
@@ -129,9 +130,9 @@ export async function handleAdminBundles(request,env,path) {
     b.product_ids.forEach((p,i)=>ops.push(env.STORE_DB.prepare(
       'INSERT INTO bundle_items (bundle_id,product_id,position) VALUES (?,?,?)'
     ).bind(id,p,i)));
-    if(b.release_at)ops.push(env.STORE_DB.prepare(
+    if(release_at)ops.push(env.STORE_DB.prepare(
       'INSERT INTO product_release_schedule(product_id,release_at) VALUES (?,?)'
-    ).bind(id,b.release_at));
+    ).bind(id,release_at));
     await env.STORE_DB.batch(ops);
     return out({id,created:true},201);
   }
@@ -144,10 +145,12 @@ export async function handleAdminBundles(request,env,path) {
   try{
     b=await payload(request);
     if(b.product_ids.includes(id))throw Error('Bundles cannot contain bundles');
-    release_at=b.status==='published'?(b.release_at===undefined?(original.release_at||null):b.release_at):null;
+    const requestedRelease=b.release_at===undefined?(original.release_at||null):b.release_at;
+    release_at=b.status==='published'?(requestedRelease||releaseAt3amEastern(b.race_date)):null;
     if(release_at&&release_at!==original.release_at){
       if(!releaseWindowValid(release_at))throw Error('Choose a release at least one minute ahead, within the next year');
-      if(original.status==='published'&&(!original.release_at||Date.parse(original.release_at.replace(' ','T')+'Z')<=Date.now()))
+      if(original.status==='published'&&(!original.release_at||Date.parse(original.release_at.replace(' ','T')+'Z')<=Date.now())&&
+        release_at!==releaseAt3amEastern(b.race_date))
         throw Error('An already-live bundle cannot be scheduled again. Create a new draft');
     }
     if(b.status!=='archived')await validatedChildren(env,b.product_ids);

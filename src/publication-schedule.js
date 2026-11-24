@@ -86,6 +86,24 @@ export function pdfExpiryFromRaceDate(value){
   }
   return new Date(guess).toISOString().replace('T',' ').slice(0,19);
 }
+/* Future editions become visible at 3:00 AM Eastern on their racing date. */
+export function releaseAt3amEastern(raceDate,now=Date.now()){
+  const match=String(raceDate||"").match(/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/);
+  if(!match)return null;
+  const year=Number(match[1]),month=Number(match[2]),day=Number(match[3]);
+  const check=new Date(Date.UTC(year,month-1,day));
+  if(check.getUTCFullYear()!==year||check.getUTCMonth()!==month-1||check.getUTCDate()!==day)return null;
+  const target=Date.UTC(year,month-1,day,3,0,0);
+  const formatter=new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",hourCycle:"h23",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit"});
+  let guess=target+5*60*60*1000;
+  for(let i=0;i<4;i++){
+    const parts=Object.fromEntries(formatter.formatToParts(new Date(guess)).map(part=>[part.type,part.value]));
+    const wall=Date.UTC(Number(parts.year),Number(parts.month)-1,Number(parts.day),Number(parts.hour),Number(parts.minute),Number(parts.second));
+    guess+=target-wall;
+  }
+  if(guess<=now)return null;
+  return new Date(guess).toISOString().replace("T"," ").slice(0,19);
+}
 export function racePdfExpired(value,now=Date.now()){
   if(!value)return true;
   const source=String(value);

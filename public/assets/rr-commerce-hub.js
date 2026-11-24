@@ -4,9 +4,26 @@ const dollar=n=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"})
 const formatDate=d=>new Intl.DateTimeFormat("en-US",{timeZone:"UTC",dateStyle:"long"}).format(new Date(d+"T12:00:00Z"));
 const validDate=d=>typeof d==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(d)&&Number.isFinite(Date.parse(d+"T12:00:00Z"));
 const today=()=>new Intl.DateTimeFormat("en-CA",{timeZone:"America/New_York",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
+const easternClock=new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",hourCycle:"h23",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit"});
+const nextRollover=()=>{
+ const now=new Date(),parts=Object.fromEntries(easternClock.formatToParts(now).map(p=>[p.type,p.value]));
+ const toInstant=(year,month,day)=>{
+  const wall=Date.UTC(year,month-1,day,3,0,0);let guess=wall+5*3600000;
+  for(let i=0;i<4;i++){const x=Object.fromEntries(easternClock.formatToParts(new Date(guess)).map(p=>[p.type,p.value]));guess+=wall-Date.UTC(Number(x.year),Number(x.month)-1,Number(x.day),Number(x.hour),Number(x.minute),Number(x.second))}
+  return guess;
+ };
+ let target=toInstant(Number(parts.year),Number(parts.month),Number(parts.day));
+ if(target<=now.getTime()){const next=new Date(Date.UTC(Number(parts.year),Number(parts.month)-1,Number(parts.day)+1));target=toInstant(next.getUTCFullYear(),next.getUTCMonth()+1,next.getUTCDate())}
+ return target;
+};
 let products=[],days=[],universal=false,accessKnown=false,catalogKnown=false,checkoutReady=false,live=false;
 const note=s=>{if(notice)notice.textContent=s};
-if(!date)return;const visibleCats=qa(".rr-hub-product").map(card=>card.dataset.productCategory);const setText=(s,v)=>{const e=q(s);if(e)e.textContent=v};
+if(!date)return;
+if(!location.hash.match(/^#edition-[a-f0-9-]{36}$/i)){
+ const rolloverDelay=Math.max(0,nextRollover()-Date.now()+1000);
+ setTimeout(()=>location.replace("/store/"),rolloverDelay);
+}
+const visibleCats=qa(".rr-hub-product").map(card=>card.dataset.productCategory);const setText=(s,v)=>{const e=q(s);if(e)e.textContent=v};
 const bundleItems=p=>p.kind==="bundle"&&Array.isArray(p.included_products)?p.included_products:[];
 const covered=(p,cat,d)=>bundleItems(p).some(i=>i.category===cat&&i.race_date===d);
 const itemsForDate=d=>[...new Map(products.flatMap(p=>p.kind==="bundle"?bundleItems(p):[p]).filter(p=>p.race_date===d&&cats.includes(p.category)).map(p=>[p.id,p])).values()];

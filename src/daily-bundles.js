@@ -1,5 +1,5 @@
 import {BUNDLE_KEY} from "./bundles.js";
-import {ensureReleaseSchedule} from "./publication-schedule.js";
+import {ensureReleaseSchedule,releaseAt3amEastern} from "./publication-schedule.js";
 import {PRODUCT_TAB_CATEGORIES,readyProductTabProductIds} from "./product-tab-content.js";
 
 const AUTO_CATEGORIES=["Race Cards","Pick Tickets"];
@@ -67,7 +67,7 @@ function bundleDescription(kind,date,trackCount){
   const noun=kind==="race-cards"?"Race Cards":"Pick Tickets";
   return "All published "+noun+" editions for "+date+" across "+trackCount+" tracks. Price is tiered by the number of tracks. Access ends at 3:00 AM Eastern the following morning.";
 }
-async function syncOneBundle(env,{date,kind,category,title,items,priceCents,trackCount}){
+async function syncOneBundle(env,{date,kind,category,title,items,priceCents,trackCount,releaseAt}){
   const db=env.STORE_DB,children=ordered(items);
   if(children.length<2||children.length>100)return "skipped";
   const expiresAt=saleEndsAt3amEastern(date);
@@ -99,13 +99,15 @@ async function syncOneBundle(env,{date,kind,category,title,items,priceCents,trac
   const slug=existing?.slug||slugFor(title,id);
   const parentChanged=!existing||existing.title!==title||existing.slug!==slug||existing.category!==category||
     existing.race_date!==date||existing.description!==description||existing.price_cents!==finalPrice||
-    existing.status!=="published"||existing.pdf_expires_at!==expiresAt||!!existing.release_at;
+    existing.status!=="published"||existing.pdf_expires_at!==expiresAt||(existing.release_at||null)!==(releaseAt||null);
   const ops=[];
   if(parentChanged){
     ops.push(db.prepare("INSERT INTO products (id,title,slug,category,race_date,track,description,price_cents,pdf_key,status,pdf_expires_at) VALUES (?,?,?,?,?,?,?,?,'__rr_bundle__','published',?) ON CONFLICT(id) DO UPDATE SET title=excluded.title,slug=excluded.slug,category=excluded.category,race_date=excluded.race_date,track=excluded.track,description=excluded.description,price_cents=excluded.price_cents,status='published',pdf_expires_at=excluded.pdf_expires_at WHERE products.pdf_key='__rr_bundle__' AND products.status!='archived'")
       .bind(id,title,slug,category,date,"",description,finalPrice,expiresAt));
   }
-  if(existing?.release_at)ops.push(db.prepare("DELETE FROM product_release_schedule WHERE product_id=?").bind(id));
+  if(releaseAt){
+    if((existing?.release_at||null)!==releaseAt)ops.push(db.prepare("INSERT INTO product_release_schedule(product_id,release_at) VALUES (?,?) ON CONFLICT(product_id) DO UPDATE SET release_at=excluded.release_at").bind(id,releaseAt));
+  }else if(existing?.release_at)ops.push(db.prepare("DELETE FROM product_release_schedule WHERE product_id=?").bind(id));
   if(itemsChanged){
     ops.push(db.prepare("DELETE FROM bundle_items WHERE bundle_id=?").bind(id));
     children.forEach((child,index)=>ops.push(db.prepare("INSERT INTO bundle_items (bundle_id,product_id,position) VALUES (?,?,?)").bind(id,child.id,index)));
@@ -114,11 +116,31 @@ async function syncOneBundle(env,{date,kind,category,title,items,priceCents,trac
   if(!existing)return "created";
   return ops.length?"updated":"unchanged";
 }
+export async function ensureUpcomingProductReleaseSchedules(env){
+  if(!env?.STORE_DB)return 0;
+  await ensureReleaseSchedule(env);
+  const today=currentEasternDate(),lastScheduledDate=dateOffset(today,366);
+  const result=await env.STORE_DB.prepare("SELECT p.id,p.race_date FROM products p LEFT JOIN product_release_schedule s ON s.product_id=p.id WHERE p.status='published' AND p.category IN ('Race Cards','Pick Tickets','Longshot Radar','Target List') AND p.race_date>=? AND p.race_date<=? AND s.product_id IS NULL ORDER BY p.race_date,p.id LIMIT 1200")
+    .bind(today,lastScheduledDate).all();
+  const ops=[];
+  for(const product of result.results||[]){
+    const releaseAt=releaseAt3amEastern(product.race_date);
+    if(releaseAt)ops.push(env.STORE_DB.prepare("INSERT OR IGNORE INTO product_release_schedule(product_id,release_at) VALUES (?,?)").bind(product.id,releaseAt));
+  }
+  for(let i=0;i<ops.length;i+=80)await env.STORE_DB.batch(ops.slice(i,i+80));
+  return ops.length;
+}
+function bundleReleaseAt(date,products){
+  const candidates=products.map(item=>item.release_at).filter(value=>value&&Date.parse(String(value).replace(" ","T")+"Z")>Date.now());
+  const automatic=releaseAt3amEastern(date);
+  if(automatic)candidates.push(automatic);
+  return candidates.sort((a,b)=>Date.parse(String(b).replace(" ","T")+"Z")-Date.parse(String(a).replace(" ","T")+"Z"))[0]||null;
+}
 export async function syncDailyBundles(env){
   if(!env?.STORE_DB)return {skipped:true,created:0,updated:0};
-  await ensureReleaseSchedule(env);
+  await ensureUpcomingProductReleaseSchedules(env);
   const today=currentEasternDate(),lastScheduledDate=dateOffset(today,7);
-  const result=await env.STORE_DB.prepare("SELECT p.id,p.title,p.category,p.race_date,p.track,p.price_cents,p.pdf_key,p.pdf_expires_at,p.status,CASE WHEN s.release_at>CURRENT_TIMESTAMP THEN 1 ELSE 0 END AS pending_release FROM products p LEFT JOIN product_release_schedule s ON s.product_id=p.id LEFT JOIN bundle_only_assets a ON a.product_id=p.id WHERE p.status='published' AND p.category IN ('Race Cards','Pick Tickets','Longshot Radar','Target List') AND p.race_date>=? AND p.race_date<=? AND p.pdf_expires_at IS NOT NULL AND datetime(p.pdf_expires_at)>CURRENT_TIMESTAMP AND COALESCE(p.pdf_key,'')<>? AND a.product_id IS NULL AND (s.release_at IS NULL OR s.release_at<=CURRENT_TIMESTAMP) ORDER BY p.race_date,p.category,COALESCE(p.track,p.title),p.id LIMIT 600")
+  const result=await env.STORE_DB.prepare("SELECT p.id,p.title,p.category,p.race_date,p.track,p.price_cents,p.pdf_key,p.pdf_expires_at,p.status,s.release_at FROM products p LEFT JOIN product_release_schedule s ON s.product_id=p.id LEFT JOIN bundle_only_assets a ON a.product_id=p.id WHERE p.status='published' AND p.category IN ('Race Cards','Pick Tickets','Longshot Radar','Target List') AND p.race_date>=? AND p.race_date<=? AND p.pdf_expires_at IS NOT NULL AND datetime(p.pdf_expires_at)>CURRENT_TIMESTAMP AND COALESCE(p.pdf_key,'')<>? AND a.product_id IS NULL ORDER BY p.race_date,p.category,COALESCE(p.track,p.title),p.id LIMIT 600")
     .bind(today,lastScheduledDate,BUNDLE_KEY).all();
   const candidates=result.results||[];
   const readyIds=await readyProductTabProductIds(env,candidates);
@@ -138,13 +160,14 @@ export async function syncDailyBundles(env){
     }
     const trackCount=trackCountFor(byCategory);
     if(trackCount<1){record("skipped");continue;}
+    const releaseAt=bundleReleaseAt(date,products);
     for(const category of AUTO_CATEGORIES){
       const items=byCategory.get(category)||[];
       if(items.length<2||items.length>100){if(items.length>100)record("skipped");continue;}
       const kind=category==="Race Cards"?"race-cards":"pick-tickets";
       const bundle=await syncOneBundle(env,{
         date,kind,category,title:category==="Race Cards"?"All Race Cards":"All Pick Tickets",
-        items,trackCount,priceCents:dailyBundlePriceCents(kind,trackCount)
+        items,trackCount,priceCents:dailyBundlePriceCents(kind,trackCount),releaseAt
       });
       record(bundle);
     }
@@ -153,7 +176,7 @@ export async function syncDailyBundles(env){
     if(hasEveryCategory&&allItems.length>=2&&allItems.length<=100){
       const bundle=await syncOneBundle(env,{
         date,kind:"universal",category:"Race Cards",title:"Universal Access",items:allItems,trackCount,
-        priceCents:dailyBundlePriceCents("universal",trackCount)
+        priceCents:dailyBundlePriceCents("universal",trackCount),releaseAt
       });
       record(bundle);
     }else if(allItems.length>100){

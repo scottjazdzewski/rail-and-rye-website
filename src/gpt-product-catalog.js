@@ -1,4 +1,4 @@
-import {ensureReleaseSchedule,ensureRacePdfExpirySchema,pdfExpiryFromRaceDate,racePdfExpired} from "./publication-schedule.js";
+import {ensureReleaseSchedule,ensureRacePdfExpirySchema,pdfExpiryFromRaceDate,racePdfExpired,releaseAt3amEastern} from "./publication-schedule.js";
 
 const enc=new TextEncoder();
 const BUNDLE_KEY="__rr_bundle__";
@@ -63,34 +63,40 @@ export async function publishGPTProductCatalogEntry(env,entry){
  const price=suppliedPrice===undefined?defaultPrice:suppliedPrice;
  const title=String(entry?.title||titleFor(category,raceDate,track)).trim().slice(0,140);
  const description=String(entry?.description||"Digital access to the published "+category+(track?" for "+track:"")+" edition dated "+raceDate+". Open it in the Rail & Rye Racing Intelligence Hub.").slice(0,4000);
- const existing=await env.STORE_DB.prepare("SELECT id,status,pdf_key FROM products WHERE category=? AND race_date=? AND LOWER(COALESCE(TRIM(track),''))=? AND (pdf_key IS NULL OR pdf_key<>?) AND NOT EXISTS(SELECT 1 FROM bundle_only_assets a WHERE a.product_id=products.id) AND status<>'archived' ORDER BY CASE WHEN status='published' THEN 0 ELSE 1 END,created_at DESC LIMIT 1")
+ const existing=await env.STORE_DB.prepare("SELECT p.id,p.status,p.pdf_key,s.release_at FROM products p LEFT JOIN product_release_schedule s ON s.product_id=p.id WHERE p.category=? AND p.race_date=? AND LOWER(COALESCE(TRIM(p.track),''))=? AND (p.pdf_key IS NULL OR p.pdf_key<>?) AND NOT EXISTS(SELECT 1 FROM bundle_only_assets a WHERE a.product_id=p.id) AND p.status<>'archived' ORDER BY CASE WHEN p.status='published' THEN 0 ELSE 1 END,p.created_at DESC LIMIT 1")
    .bind(category,raceDate,track.toLowerCase(),BUNDLE_KEY).first();
+ const existingRelease=existing?.release_at||null;
+ const existingReleaseIsFuture=existingRelease&&Date.parse(existingRelease.replace(" ","T")+"Z")>Date.now();
+ const releaseAt=existingReleaseIsFuture?existingRelease:releaseAt3amEastern(raceDate);
+ if(releaseAt&&Date.parse(releaseAt.replace(" ","T")+"Z")>Date.now()+366*86400*1000)
+  throw Error("The racing date is beyond the one-year publication window.");
+ const scheduleOperation=id=>releaseAt
+  ?env.STORE_DB.prepare("INSERT INTO product_release_schedule(product_id,release_at) VALUES (?,?) ON CONFLICT(product_id) DO UPDATE SET release_at=excluded.release_at").bind(id,releaseAt)
+  :env.STORE_DB.prepare("DELETE FROM product_release_schedule WHERE product_id=?").bind(id);
  if(existing?.status==="published"){
-  await env.STORE_DB.prepare("DELETE FROM product_release_schedule WHERE product_id=?").bind(existing.id).run();
-  if(suppliedPrice===undefined){
-   await env.STORE_DB.prepare("UPDATE products SET pdf_expires_at=? WHERE id=? AND status='published'").bind(expiry,existing.id).run();
-  }else{
-   await env.STORE_DB.prepare("UPDATE products SET price_cents=?,pdf_expires_at=? WHERE id=? AND status='published'").bind(price,expiry,existing.id).run();
-  }
-  return {id:existing.id,title,created:false,published:true};
+  const update=suppliedPrice===undefined
+   ?env.STORE_DB.prepare("UPDATE products SET pdf_expires_at=? WHERE id=? AND status='published'").bind(expiry,existing.id)
+   :env.STORE_DB.prepare("UPDATE products SET price_cents=?,pdf_expires_at=? WHERE id=? AND status='published'").bind(price,expiry,existing.id);
+  await env.STORE_DB.batch([update,scheduleOperation(existing.id)]);
+  return {id:existing.id,title,created:false,published:true,release_at:releaseAt};
  }
  if(existing&&existing.pdf_key!==null&&existing.pdf_key!==""){
   // Keep dormant PDF-backed desk rows separate from tab-only GPT products.
  }else if(existing){
-  await env.STORE_DB.prepare("DELETE FROM product_release_schedule WHERE product_id=?").bind(existing.id).run();
-  if(suppliedPrice===undefined){
-   await env.STORE_DB.prepare("UPDATE products SET status='published',pdf_expires_at=? WHERE id=? AND status<>'archived'").bind(expiry,existing.id).run();
-  }else{
-   await env.STORE_DB.prepare("UPDATE products SET status='published',price_cents=?,pdf_expires_at=? WHERE id=? AND status<>'archived'").bind(price,expiry,existing.id).run();
-  }
-  return {id:existing.id,title,published:true,created:false};
+  const update=suppliedPrice===undefined
+   ?env.STORE_DB.prepare("UPDATE products SET status='published',pdf_expires_at=? WHERE id=? AND status<>'archived'").bind(expiry,existing.id)
+   :env.STORE_DB.prepare("UPDATE products SET status='published',price_cents=?,pdf_expires_at=? WHERE id=? AND status<>'archived'").bind(price,expiry,existing.id);
+  await env.STORE_DB.batch([update,scheduleOperation(existing.id)]);
+  return {id:existing.id,title,published:true,created:false,release_at:releaseAt};
  }
  let id=await directId(category,raceDate,track);
  const occupied=await env.STORE_DB.prepare("SELECT id FROM products WHERE id=?").bind(id).first();
  if(occupied)id=crypto.randomUUID();
- await env.STORE_DB.prepare("INSERT INTO products (id,title,slug,category,race_date,track,description,price_cents,pdf_key,image_url,status,pdf_expires_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)")
-   .bind(id,title,slug(title,id),category,raceDate,track,description,price,null,null,"published",expiry).run();
- return {id,title,created:true,published:true};
+ const ops=[env.STORE_DB.prepare("INSERT INTO products (id,title,slug,category,race_date,track,description,price_cents,pdf_key,image_url,status,pdf_expires_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)")
+   .bind(id,title,slug(title,id),category,raceDate,track,description,price,null,null,"published",expiry)];
+ if(releaseAt)ops.push(scheduleOperation(id));
+ await env.STORE_DB.batch(ops);
+ return {id,title,created:true,published:true,release_at:releaseAt};
 }
 
 /* GPT-only catalog control. Prices are explicit; bundle membership is a

@@ -6,13 +6,13 @@ import {handleAdminTargetList,readAdminTargetListReview} from './target-list.js'
 import { handleCommerce, sendQueuedEmails, checkoutReadiness, replacePdfAndNotifyBuyers, publicProductForShare } from './commerce.js';
 import {handleRacingWire,handleAdminRacingWire,refreshRacingWire} from './racing-wire.js';
 import {handleAdminBundles,BUNDLE_KEY} from './bundles.js';
-import {syncDailyBundles} from './daily-bundles.js';
+import {syncDailyBundles,ensureUpcomingProductReleaseSchedules} from './daily-bundles.js';
 import {handleAdminGPTProductCatalog} from './gpt-product-catalog.js';
 import {syncExistingGPTProductCatalog} from './gpt-product-catalog-sync.js';
 import {handleAdminBundleAssets} from './bundle-assets.js';
 import {handleAdminJournal,handlePublicJournal,publicJournalCover,publishScheduledJournalArticles} from './journal.js';
 import {handleSitemap,serveJournalDocument,serveProductDocument} from './seo.js';
-import {ensureReleaseSchedule,validReleaseAt,pdfExpiryFromRaceDate} from './publication-schedule.js';
+import {ensureReleaseSchedule,validReleaseAt,pdfExpiryFromRaceDate,releaseAt3amEastern} from './publication-schedule.js';
 import {purgeExpiredRacePdfs} from './race-pdf-expiry.js';
 import {handleMembershipApi,handleAdminMembershipPlans,reconcileMemberships,ownerSessionCookie,openVerifiedOwnerHub} from './memberships.js';
 import {handleProductTabs} from './product-tabs.js';
@@ -98,14 +98,15 @@ function readProduct(data) {
   const description=String(data.description||"").trim();
   const price_cents=Number(data.price_cents);
   const status=String(data.status||"draft");
-  const release_at=data.release_at===undefined||data.release_at===''?null:data.release_at;
-  if(!validReleaseAt(release_at))throw Error('Release time must be a valid UTC date and time');
-  if(release_at&&status!=='published')throw Error('Only published editions may have a scheduled release');
+  const requestedReleaseAt=data.release_at===undefined||data.release_at===''?null:data.release_at;
+  if(!validReleaseAt(requestedReleaseAt))throw Error('Release time must be a valid UTC date and time');
+  if(requestedReleaseAt&&status!=='published')throw Error('Only published editions may have a scheduled release');
   if(title.length<3||title.length>140) throw Error("Title must be 3–140 characters");
   if(category&&!CATEGORIES.has(category)) throw Error("Invalid category");
   if(status==="published"&&!CATEGORIES.has(category)) throw Error("Choose a collection before publishing");
   if(!validDate(race_date)) throw Error("Invalid date");
   if(status==='published'&&!race_date)throw Error('Enter a racing date before publishing this tab');
+  const release_at=status==='published'?(requestedReleaseAt||releaseAt3amEastern(race_date)):null;
   const pdf_expires_at=race_date?pdfExpiryFromRaceDate(race_date):null;
   if(status==='published'&&(!pdf_expires_at||Date.parse(pdf_expires_at.replace(' ','T')+'Z')<=Date.now()))throw Error('The racing date must be within its access period');
   if(track.length>100||description.length>4000) throw Error("Track or description too long");
@@ -194,9 +195,11 @@ async function handleAdminAPI(request,env,pathname,ctx) {
         catch(error){return fail('Longshot Radar is not ready to publish: '+String(error.message||error).slice(0,180),409);}
       }
       const id=crypto.randomUUID(),slug=slugFor(data.title,id);
-      await env.STORE_DB.prepare(`INSERT INTO products (id,title,slug,category,race_date,track,description,price_cents,pdf_key,image_url,status,pdf_expires_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`)
-        .bind(id,data.title,slug,data.category,data.race_date,data.track,data.description,data.price_cents,null,null,data.status,data.pdf_expires_at).run();
-      return json({product:await fetchProduct(env,id)},201);
+      const ops=[env.STORE_DB.prepare(`INSERT INTO products (id,title,slug,category,race_date,track,description,price_cents,pdf_key,image_url,status,pdf_expires_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`)
+        .bind(id,data.title,slug,data.category,data.race_date,data.track,data.description,data.price_cents,null,null,data.status,data.pdf_expires_at)];
+      if(data.release_at)ops.push(env.STORE_DB.prepare('INSERT INTO product_release_schedule (product_id,release_at) VALUES (?,?)').bind(id,data.release_at));
+      await env.STORE_DB.batch(ops);
+      return json({product:{...await fetchProduct(env,id),release_at:data.release_at}},201);
     }
   }
   const match=pathname.match(/^\/api\/admin\/products\/([0-9a-f-]{36})(?:\/(pdf|cover))?$/i);
@@ -413,6 +416,7 @@ export default {
         const response=await serveJournalDocument(original,{article,archive:journalArchive});
         return request.method==="HEAD"?new Response(null,{status:response.status,headers:response.headers}):response;
       }
+      if((path==='/store/'||path==='/store')&&url.searchParams.has('edition'))await ensureUpcomingProductReleaseSchedules(env);
       const sharedEdition=(path==='/store/'||path==='/store')?url.searchParams.get('edition'):null;
       if(sharedEdition!==null&&(request.method==='GET'||request.method==='HEAD')){
         if(!/^[0-9a-f-]{36}$/i.test(sharedEdition))return fail('Edition not found',404);
@@ -427,6 +431,7 @@ export default {
       if(path.startsWith("/api/product-tabs/"))return handleProductTabs(request,env,url);
       if(path.startsWith("/api/race-card-alerts/"))return handleRaceCardAlerts(request,env,url);
       if(path.startsWith("/api/membership/"))return handleMembershipApi(request,env,url);
+      if(path==="/api/products"||path==="/api/checkout")await ensureUpcomingProductReleaseSchedules(env);
       if(path.startsWith("/api/free-download/")||path==="/api/products"||path==="/api/checkout"||path==="/api/stripe/webhook"||path==="/api/stripe/live-webhook"||path.startsWith("/api/orders/")||path==="/api/delivery/download"||path==="/api/delivery/download-all"||path==="/api/delivery/items"||path==="/api/recovery/request")return handleCommerce(request,env,url,ctx);
       if(path.startsWith("/api/"))return fail("Not found",404);
       return env.ASSETS.fetch(request);
