@@ -1,0 +1,91 @@
+name: Compare November 24 V3.4 private trial against V3.3
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/verify-pick-v34-trial.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: pip install boto3==1.40.36
+      - name: Read private R2 current fields without displaying paid data
+        env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+        run: |
+          python - <<'PY'
+          import boto3,os,json
+          from botocore.exceptions import ClientError
+          from pathlib import Path
+          s3=boto3.client("s3",endpoint_url="https://"+os.environ["TRI_CLOUDFLARE_ACCOUNT_ID"].strip()+".r2.cloudflarestorage.com",region_name="auto",aws_access_key_id=os.environ["TRI_R2_ACCESS_KEY_ID"].strip(),aws_secret_access_key=os.environ["TRI_R2_SECRET_ACCESS_KEY"].strip())
+          keys=["pick-tickets/interim/2026-11-24/revision-0001.json"]+["projections/dashboard/2026-11-24/"+x+".json" for x in ["delta-downs","finger-lakes","mahoning-valley","mountaineer","parx-racing","zia-park"]]
+          result={}
+          for k in keys:
+              try:
+                  o=s3.get_object(Bucket="rail-and-rye-private-cards",Key=k)
+                  result[k]={"raw":o["Body"].read().decode(),"metadata":o.get("Metadata",{})}
+              except ClientError as e:
+                  if e.response.get("Error",{}).get("Code") not in ("NoSuchKey","404","NotFound"):raise
+          assert keys[0] in result
+          Path("/tmp/rr1124-private-readback.json").write_text(json.dumps(result))
+          print("Private date-specific source readback complete; no selections logged.")
+          PY
+      - name: Exhaustive math tests
+        run: node test-pick-tickets-v34.mjs
+      - name: Compare audited private November 24 tickets without logging selections
+        run: |
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          import fs from 'node:fs';
+          import {handleAdminPickTickets} from './src/pick-tickets.js';
+          const input=JSON.parse(fs.readFileSync('/tmp/rr1124-private-readback.json','utf8'));
+          const bucket={async list(){return {objects:[]}},async get(key){const v=input[key];return v?{text:async()=>v.raw,json:async()=>JSON.parse(v.raw),customMetadata:v.metadata}:null}};
+          const url='https://railandryeracing.com/api/admin/pick-tickets';
+          const old=await (await handleAdminPickTickets(new Request(url),{CARDS_BUCKET:bucket})).json();
+          const trial=await (await handleAdminPickTickets(new Request(url+'?trial=v34'),{CARDS_BUCKET:bucket})).json();
+          const b=old.cards.filter(x=>x.card.date==='2026-11-24'),a=trial.cards;
+          assert.equal(trial.trial,'V3.4');assert.equal(a.length,6);assert.equal(b.length,6);
+          const rows=[];
+          for(const {card:c} of a){
+           const prior=b.find(x=>x.card.track===c.track).card;
+           assert.equal(c.source_input_sha256,prior.source_input_sha256);
+           for(const s of c.sequences){
+            const p=prior.sequences.find(x=>x.name===s.name&&x.start_race===s.start_race&&x.end_race===s.end_race);
+            const x=s.tickets[0],y=p.tickets[0];
+            assert.equal(x.total_cents,x.combinations*x.unit_cents);
+            assert.equal(x.combinations,x.legs.reduce((n,l)=>n*l.programs.length,1));
+            assert.deepEqual(s.review_probabilities,p.review_probabilities);
+            assert.equal(s.review_meta.publication_qualified,false);
+            rows.push({track:c.track,n:x.legs.length,before:y.combinations,after:x.combinations,
+             beforeCost:y.total_cents,afterCost:x.total_cents,beforeHit:Number.parseFloat(y.hit_rate_display),afterHit:Number.parseFloat(x.hit_rate_display),
+             beforeSingles:y.legs.filter(l=>l.programs.length===1).length,afterSingles:x.legs.filter(l=>l.programs.length===1).length});
+           }
+          }
+          assert.equal(rows.length,50);
+          const avg=(r,k)=>Math.round(r.reduce((s,x)=>s+x[k],0)/r.length*100)/100;
+          function summarize(r){return {count:r.length,before_avg_combos:avg(r,'before'),after_avg_combos:avg(r,'after'),before_avg_cost_cents:avg(r,'beforeCost'),after_avg_cost_cents:avg(r,'afterCost'),before_avg_projected_hit_pct:avg(r,'beforeHit'),after_avg_projected_hit_pct:avg(r,'afterHit'),before_singles: r.reduce((s,x)=>s+x.beforeSingles,0),after_singles:r.reduce((s,x)=>s+x.afterSingles,0)}}
+          for(const n of [3,4,5,6])console.log('TRIAL_AGGREGATE',n,JSON.stringify(summarize(rows.filter(r=>r.n===n))));
+          for(const track of ['Delta Downs','Finger Lakes','Mahoning Valley']){
+           for(const n of [3,4,5,6]){
+            const r=rows.filter(x=>x.track===track&&x.n===n);
+            if(r.length)console.log('TRIAL_COMBO_RANGE',track,n,JSON.stringify({count:r.length,before:[Math.min(...r.map(x=>x.before)),Math.max(...r.map(x=>x.before))],after:[Math.min(...r.map(x=>x.after)),Math.max(...r.map(x=>x.after))]}));
+           }
+          }
+          console.log('PASS: all 50 V3.4 trials from identical audited current fields; baseline intact; no selected runners logged.');
+          JS
+      - name: Remove private temporary bytes
+        if: always()
+        run: rm -f /tmp/rr1124-private-readback.json
