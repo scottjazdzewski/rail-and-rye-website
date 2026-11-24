@@ -1,0 +1,39 @@
+name: Verify frozen TRI trainer-jockey reconciliation lock
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/tri_timeform_tj_reconcile_gate.py'
+      - 'scripts/tri_timeform_tj_reconcile.py'
+      - 'tests/test_tri_timeform_tj_reconciliation.py'
+      - 'docs/TRI_TIMEFORM_TJ_RECONCILIATION_LOCK.md'
+      - '.github/workflows/verify-tri-tj-source-geometry.yml'
+  pull_request:
+    paths:
+      - 'scripts/tri_timeform_tj_reconcile_gate.py'
+      - 'scripts/tri_timeform_tj_reconcile.py'
+      - 'tests/test_tri_timeform_tj_reconciliation.py'
+      - 'docs/TRI_TIMEFORM_TJ_RECONCILIATION_LOCK.md'
+      - '.github/workflows/verify-tri-tj-source-geometry.yml'
+permissions:
+  contents: read
+jobs:
+  verify-source-rules:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install native PDF geometry reader
+        run: pip install pymupdf==1.26.7
+      - name: Verify source-bound roles, printed zero and neutral blank logic
+        run: python -m unittest discover -s tests -p test_tri_timeform_tj_reconciliation.py -v
+      - name: Verify exact-stage gate exists and frozen model remains external
+        run: |
+          python -m py_compile scripts/tri_timeform_tj_reconcile_gate.py scripts/tri_timeform_tj_reconcile.py
+          grep -q 'SOURCE_PERSON_VERIFIED_GEOMETRICALLY' scripts/tri_timeform_tj_reconcile_gate.py
+          grep -q 'VERIFIED_UNRATED' scripts/tri_timeform_tj_reconcile_gate.py
+          grep -q 'JOCKEY_NAME_ABSENT_FROM_ORIGINAL_PDF' scripts/tri_timeform_tj_reconcile_gate.py
+          grep -q 'frozen_model_modified' scripts/tri_timeform_tj_reconcile.py
+          echo 'PASS: every daily source must reconcile trainer/jockey roles before frozen TRI scoring.'
