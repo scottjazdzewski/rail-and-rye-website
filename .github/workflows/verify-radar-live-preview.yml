@@ -45,38 +45,41 @@ jobs:
             fi
             sleep 10
           done
-          curl -fsSL --max-time 20 "https://railandryeracing.com/assets/longshot-radar.js?rev=${GITHUB_SHA}" -o /tmp/radar.js
-          grep -Fq 'rr-lr-inline-analysis' /tmp/radar.js
-          grep -Fq 'rr-lr-ml-inline' /tmp/radar.js
-          grep -Fq 'rr-lr-racebar-main' /tmp/radar.js
-          grep -Fq '/api/admin/longshot-radar-editorial' /tmp/radar.js
-          grep -Fq 'async function loadPublishedCard()' /tmp/radar.js
-          grep -Fq 'retry?.addEventListener("click",initialize)' /tmp/radar.js
-          ! grep -Fq 'visualSample()' /tmp/radar.js
-          ! grep -Fq 'rr-lr-upload-form' /tmp/radar.js
-          echo "PASS: live Radar script auto-loads private R2 source without any user JSON picker"
-          ! grep -Fq 'make("button","","Race details")' /tmp/radar.js
-          # Allow Cloudflare's asset propagation to finish before verifying
-          # exact bytes. A stale cache is not the same as a broken UI release.
+          # Compare deployed bytes to the exact merged version, allowing
+          # Cloudflare's asset propagation to complete before checking content.
           for attempt in $(seq 1 18); do
             token="${GITHUB_SHA}-${attempt}-$(date +%s)"
+            curl -fsSL --max-time 20 "https://railandryeracing.com/assets/longshot-radar.js?rev=${token}" -o /tmp/radar.js || true
             curl -fsSL --max-time 20 "https://railandryeracing.com/assets/longshot-radar.css?rev=${token}" -o /tmp/radar.css || true
             curl -fsSL --max-time 20 "https://railandryeracing.com/assets/target-list-dashboard.css?rev=${token}" -o /tmp/target.css || true
-            if cmp -s public/assets/longshot-radar.css /tmp/radar.css &&
+            if cmp -s public/assets/longshot-radar.js /tmp/radar.js &&
+               cmp -s public/assets/longshot-radar.css /tmp/radar.css &&
                cmp -s public/assets/target-list-dashboard.css /tmp/target.css; then
-              echo "PASS: live Cloudflare serves the current standalone Radar and Target CSS bytes"
+              echo "PASS: Cloudflare serves exact merged Radar and Target stylesheet bytes"
               break
             fi
             if [ "$attempt" -eq 18 ]; then
-              echo "::error::Live research CSS does not match main after propagation checks"
+              echo "::error::Cloudflare does not yet serve the updated Radar reader"
               exit 1
             fi
             sleep 6
           done
-          grep -Fq 'Longshot Radar v4' /tmp/radar.css
+          grep -Fq 'rr-lr-inline-analysis' /tmp/radar.js
+          grep -Fq 'rr-lr-ml-inline' /tmp/radar.js
+          grep -Fq 'rr-lr-racebar-main' /tmp/radar.js
+          grep -Fq '/api/admin/longshot-radar-editorial' /tmp/radar.js
+          grep -Fq 'async function loadAvailableEditions()' /tmp/radar.js
+          grep -Fq 'retry?.addEventListener("click",initialize)' /tmp/radar.js
+          grep -Fq 'make("p","rr-lr-case",item.betting_case)' /tmp/radar.js
+          ! grep -Fq 'item.source_causal_evidence' /tmp/radar.js
+          ! grep -Fq 'item.counterargument_checked' /tmp/radar.js
+          ! grep -Fq 'rr-lr-evidence' /tmp/radar.js
+          ! grep -Fq 'visualSample()' /tmp/radar.js
+          ! grep -Fq 'rr-lr-upload-form' /tmp/radar.js
+          ! grep -Fq 'make("button","","Race details")' /tmp/radar.js
           grep -Fq 'SHARED DAILY RESEARCH DESIGN STANDARD V1' /tmp/radar.css
-          cmp public/assets/longshot-radar.js /tmp/radar.js
           grep -Fq 'Shared Daily Research Reader V1' /tmp/target.css
+          echo "PASS: live Radar shows one short betting case, keeps internal QA hidden and has no manual upload"
 
           for path in /assets/approved/brand/rail-rye-ivory-logo.png /assets/approved/saddlecloths/1.png /assets/approved/saddlecloths/11.png /assets/approved/saddlecloths/20.png; do
             curl -fsSL --max-time 20 "https://railandryeracing.com$path" -o /dev/null

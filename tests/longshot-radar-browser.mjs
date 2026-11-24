@@ -15,7 +15,9 @@ const horses=names.map((horse_name,i)=>({
  race_number:i+1,post_time_et:(i+1)+":25 PM ET",program_number:String([11,1,20,2,3,4,5,6,7,8][i]),
  horse_name,original_morning_line:"10/1",pwin_display:19.5,
  fair_odds_display:"4/1",
- betting_case:"A source-shaped fictional test sentence that must remain entirely visible on the racing card."
+ betting_case:"A source-shaped fictional test sentence that must remain entirely visible on the racing card.",
+ source_causal_evidence:"PRIVATE_TEST_RESEARCH_NEVER_DISPLAY",
+ counterargument_checked:"PRIVATE_TEST_RISK_NEVER_DISPLAY"
 }));
 const editorial={review_only:true,customer_publish_approved:false,
  source_type:"rail_rye_published_pdf",production_receipt_verified:false,
@@ -31,7 +33,8 @@ const nextDate={
   track:"Fixture Downs",race_number:2,post_time_et:"1:40 PM ET",
   program_number:"5",horse_name:"Tomorrow Fixture Only",
   original_morning_line:"10/1",pwin_exact:0.15,pwin_display:15,
-  fair_odds_display:"6/1",betting_case:"Source-shaped fictional test case; no actual racing prediction."
+  fair_odds_display:"6/1",betting_case:"Source-shaped fictional test case; no actual racing prediction.",
+  source_causal_evidence:"PRIVATE_TEST_RESEARCH_NEVER_DISPLAY",counterargument_checked:"PRIVATE_TEST_RISK_NEVER_DISPLAY"
  }]
 };
 const server=createServer((req,res)=>{
@@ -196,6 +199,15 @@ try{
     throw Error("Race descriptions must remain beneath the complete navy header at "+width);
   if(await page.getByRole("button",{name:/Race details/i}).count())
     throw Error("Analysis must not require a Race details button at "+width);
+  if(await page.locator(".rr-lr-evidence").count()!==0)
+   throw Error("Private evidence/counterargument panels must not be visible on a Radar card at "+width);
+  const visibleText=await page.locator("#rr-lr-app").innerText();
+  if(visibleText.includes("PRIVATE_TEST_RESEARCH_NEVER_DISPLAY")||
+     visibleText.includes("PRIVATE_TEST_RISK_NEVER_DISPLAY")||
+     /\btimeform(?:us)?\b/i.test(visibleText))
+    throw Error("Radar must show only the approved single-sentence case, no QA research/source brand at "+width);
+  if(await page.locator(".rr-lr-case").count()!==10)
+    throw Error("Every approved Radar horse must have exactly one visible betting sentence at "+width);
   const infos=await page.locator(".rr-lr-inline-analysis .rr-lr-case").allTextContents();
   if(infos.length!==10||infos.some(t=>!t.includes("entirely visible")))
     throw Error("All 10 editorial statements must be rendered inline at "+width);
@@ -246,6 +258,7 @@ try{
   const errors=[];page.on("pageerror",err=>errors.push(err.message));
   await page.goto(base+"/admin/longshot-radar/",{waitUntil:"domcontentloaded"});
   await page.locator(".rr-lr-card").first().waitFor({timeout:15000});
+  if(await page.locator(".rr-lr-evidence").count())throw Error("New production editions must keep private editorial QA out of the cards");
   if(await page.locator("#rr-lr-date").inputValue()!=="2026-11-24"||
      await page.locator(".rr-lr-card").count()!==1||
      !(await page.locator(".rr-lr-card").first().innerText()).includes("Tomorrow Fixture Only"))
