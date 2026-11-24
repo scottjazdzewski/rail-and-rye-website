@@ -1,0 +1,15 @@
+import assert from "node:assert/strict";
+import {readFileSync} from "node:fs";
+import {openVerifiedOwnerHub,ownerSessionCookie} from "./src/memberships.js";
+const env={ADMIN_EMAIL:"owner@example.test"};
+const req=new Request("https://example.test/admin/owner-access/");
+assert.equal((await openVerifiedOwnerHub(req,env,"other@example.test")).status,403);
+assert.equal((await openVerifiedOwnerHub(new Request(req.url,{method:"POST"}),env,"owner@example.test")).status,405);
+await assert.rejects(()=>ownerSessionCookie(req,env,"other@example.test"),/authorization/);
+const worker=readFileSync("src/index.js","utf8");
+const gate=worker.indexOf("const auth=await verifyAdmin(request,env); if(!auth.ok)return auth.response;");
+const route=worker.indexOf("return openVerifiedOwnerHub(request,env,auth.email)");
+assert.ok(gate>=0&&route>gate);
+assert.match(worker,/ownerSessionCookie\(request,env,auth.email\)/);
+assert.match(worker,/crypto.subtle.verify/);
+console.log("PASS: owner SSO route behind existing verified Cloudflare JWT gate");

@@ -405,6 +405,25 @@ async function requestMagicLink(request,env){
   }
   return json({sent:true});
 }
+// Caller must have passed the Worker's signed Cloudflare Access JWT verifier.
+// Never expose this session issuer through the public membership API.
+export async function ownerSessionCookie(request,env,verifiedEmail){
+  if(!hasLifetimeOwnerAccess(env,verifiedEmail))throw Error("Owner authorization required");
+  await ensureMembershipSchema(env);
+  const email=emailOf(verifiedEmail);
+  if(await sessionEmail(request,env)===email)return null;
+  const now=nowSeconds(),raw=randomHex(),hash=await digest(raw);
+  await env.STORE_DB.prepare("INSERT INTO membership_sessions (token_hash,email,expires_at,created_at) VALUES (?,?,?,?)").bind(hash,email,now+SESSION_SECONDS,now).run();
+  return cookieHeader(raw,SESSION_SECONDS);
+}
+export async function openVerifiedOwnerHub(request,env,verifiedEmail){
+  if(request.method!=="GET")return error("Method not allowed",405);
+  if(!hasLifetimeOwnerAccess(env,verifiedEmail))return error("Owner authorization required",403);
+  const cookie=await ownerSessionCookie(request,env,verifiedEmail);
+  const headers={"Location":"/store/","Cache-Control":"private, no-store","X-Robots-Tag":"noindex, nofollow","Referrer-Policy":"no-referrer"};
+  if(cookie)headers["Set-Cookie"]=cookie;
+  return new Response(null,{status:303,headers});
+}
 async function verifyMagicLink(request,env){
   if(request.method!=="POST")return error("Method not allowed",405);
   if(!sameOrigin(request))return error("Same-origin request required",403);

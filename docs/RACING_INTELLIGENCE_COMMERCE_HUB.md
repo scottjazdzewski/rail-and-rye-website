@@ -23,3 +23,7 @@ Authorize each purchased SKU by ID, category, race date and exact track. Bundles
 ## Lifetime owner access
 
 The configured Cloudflare ADMIN_EMAIL receives non-expiring, complimentary all-product access through the existing verified membership magic-link session. No synthetic Stripe subscription or hardcoded email. Every request revalidates the configured owner email and normal session expiration. Billing controls are hidden for owner accounts without a paid subscription; existing real subscriptions remain manageable. The owner uses the customer-facing Intelligence Hub. Product publication and retention rules remain in force.
+
+### Owner single sign-on
+
+An existing, cryptographically verified Cloudflare Access administrator session automatically establishes the normal customer membership session when an admin page is opened. The owner can also select Owner sign in on the Membership page, which navigates to the protected /admin/owner-access/ route and returns to /store/. The Worker must verify JWT signature, issuer, audience, expiry and exact configured ADMIN_EMAIL before issuing the HttpOnly customer cookie. Email entry alone must never grant access. Regular members retain their existing verified email flow. No payment or entitlement rules are altered.

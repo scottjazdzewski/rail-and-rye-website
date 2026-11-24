@@ -12,7 +12,7 @@ import {handleAdminJournal,handlePublicJournal,publicJournalCover,publishSchedul
 import {handleSitemap,serveJournalDocument,serveProductDocument} from './seo.js';
 import {ensureReleaseSchedule,validReleaseAt,pdfExpiryFromRaceDate} from './publication-schedule.js';
 import {purgeExpiredRacePdfs} from './race-pdf-expiry.js';
-import {handleMembershipApi,handleAdminMembershipPlans,reconcileMemberships} from './memberships.js';
+import {handleMembershipApi,handleAdminMembershipPlans,reconcileMemberships,ownerSessionCookie,openVerifiedOwnerHub} from './memberships.js';
 import {handleProductTabs} from './product-tabs.js';
 import {serveCustomerReader,customerReaderPath} from './customer-readers.js';
 import {hasProductTabData} from './product-tab-content.js';
@@ -310,6 +310,7 @@ export default {
       if(path==="/sitemap.xml")return handleSitemap(env,request.method);
       if(path.startsWith("/api/admin/")||path==="/admin"||path.startsWith("/admin/")) {
         const auth=await verifyAdmin(request,env); if(!auth.ok)return auth.response;
+        if(path==="/admin/owner-access"||path==="/admin/owner-access/")return openVerifiedOwnerHub(request,env,auth.email);
         if(path==="/api/admin/gpt-product-catalog"){
           return handleAdminGPTProductCatalog(request,env,(bundleRequest,bundlePath)=>handleAdminBundles(bundleRequest,env,bundlePath));
         }
@@ -351,6 +352,12 @@ export default {
         headers.set("Cache-Control","no-store");headers.set("X-Frame-Options","DENY");headers.set("X-Content-Type-Options","nosniff");
         headers.set("Referrer-Policy","no-referrer");
         headers.set("Content-Security-Policy","default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'");
+        // The verified owner also receives the normal customer session on
+        // authenticated admin page visits; an existing valid session is reused.
+        if(request.method==="GET"&&result.ok){
+          try{const cookie=await ownerSessionCookie(request,env,auth.email);if(cookie)headers.append("Set-Cookie",cookie);}
+          catch(e){console.warn("Owner customer session unavailable",String(e).slice(0,100));}
+        }
         return new Response(result.body,{status:result.status,headers});
       }
       if(path.startsWith("/intelligence/"))return serveCustomerReader(request,env,url);
