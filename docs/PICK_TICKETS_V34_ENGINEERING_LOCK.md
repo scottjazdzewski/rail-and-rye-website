@@ -15,4 +15,4 @@ Exact single rectangular ticket; maximize ln(H) - cost_USD/S, where H is the pro
 Current November 24 prescratch source: 6 tracks, 51 races, 430 runners, 50 official sequences; comparison workflow 45313549329 passed. November 24 official scratch reconciliation and future date menu intake still require their date-specific integration, not assumed operational. Customer release authorization remains separate. All output is private admin review until approved through the existing gates.
 
 ## Independent sequence classification
-See [SQR 1.0 provisional](PICK_TICKETS_SQR_PROVISIONAL.md). Classification is computed after the locked constructor and cannot change selections or suppress a PASS ticket.
+See [SQR 1.1 provisional](PICK_TICKETS_SQR_PROVISIONAL.md). Classification is computed after the locked constructor and cannot change selections or suppress a PASS ticket.

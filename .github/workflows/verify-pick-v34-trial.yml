@@ -31,7 +31,7 @@ jobs:
           from botocore.exceptions import ClientError
           from pathlib import Path
           s3=boto3.client("s3",endpoint_url="https://"+os.environ["TRI_CLOUDFLARE_ACCOUNT_ID"].strip()+".r2.cloudflarestorage.com",region_name="auto",aws_access_key_id=os.environ["TRI_R2_ACCESS_KEY_ID"].strip(),aws_secret_access_key=os.environ["TRI_R2_SECRET_ACCESS_KEY"].strip())
-          keys=["pick-tickets/interim/2026-11-24/revision-0001.json"]+["projections/dashboard/2026-11-24/"+x+".json" for x in ["delta-downs","finger-lakes","mahoning-valley","mountaineer","parx-racing","zia-park"]]
+          keys=["pick-tickets/interim/2026-11-24/revision-0001.json","pick-tickets/interim/2026-11-24/revision-0002.json"]+["projections/dashboard/2026-11-24/"+x+".json" for x in ["delta-downs","finger-lakes","mahoning-valley","mountaineer","parx-racing","zia-park"]]
           result={}
           for k in keys:
               try:
@@ -75,16 +75,24 @@ jobs:
            }
           }
           assert.equal(rows.length,50);
-          const counts={PLAY:0,CONDITIONAL:0,PASS:0};
+          const counts={PLAY:0,CONDITIONAL:0,PASS:0},priorCounts={PLAY:0,CONDITIONAL:0,PASS:0},scores=[];
           for(const {card:c} of a)for(const seq of c.sequences){
            const q=seq.review_meta.sequence_quality;
            assert.ok(q&&Number.isFinite(q.score));
            assert.equal(seq.play_status,q.classification);
            assert.equal(seq.tickets.length,1);
            assert.equal(seq.tickets[0].role,"BEST_POSSIBLE");
+           assert.equal(q.version,"SQR-1.1-PROVISIONAL");
+           assert.equal(Object.hasOwn(q.components,"historical_performance"),false);
            counts[seq.play_status]++;
+           const oldScore=.85*q.score+7.5;
+           priorCounts[oldScore>=75?"PLAY":oldScore>=50?"CONDITIONAL":"PASS"]++;
+           scores.push(q.score);
+          
           }
           console.log("SQR_CLASSIFICATION_COUNTS",JSON.stringify(counts));
+          console.log("SQR_SAME_FIELD_OLD_COUNTS",JSON.stringify(priorCounts));
+          console.log("SQR_SCORE_RANGE",JSON.stringify([Math.min(...scores),Math.max(...scores)]));
           const avg=(r,k)=>Math.round(r.reduce((s,x)=>s+x[k],0)/r.length*100)/100;
           function summarize(r){return {count:r.length,before_avg_combos:avg(r,'before'),after_avg_combos:avg(r,'after'),before_avg_cost_cents:avg(r,'beforeCost'),after_avg_cost_cents:avg(r,'afterCost'),before_avg_projected_hit_pct:avg(r,'beforeHit'),after_avg_projected_hit_pct:avg(r,'afterHit'),before_singles: r.reduce((s,x)=>s+x.beforeSingles,0),after_singles:r.reduce((s,x)=>s+x.afterSingles,0)}}
           for(const n of [3,4,5,6])console.log('TRIAL_AGGREGATE',n,JSON.stringify(summarize(rows.filter(r=>r.n===n))));

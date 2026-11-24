@@ -1,8 +1,9 @@
-// Provisional owner-approved SQR 1.0. Classification only; never alter
+// Provisional owner-approved SQR 1.1. Classification only; never alter
 // V3.4 picks, probabilities, costs, eligibility or customer release gates.
 import {normalizeV32Legs} from "./pick-tickets-v32.js";
-export const SQR_VERSION="SQR-1.0-PROVISIONAL";
-export const SQR_WEIGHTS=Object.freeze({predictability:.25,efficiency:.25,difficulty:.20,single_opportunity:.15,historical_performance:.15});
+export const SQR_VERSION="SQR-1.1-PROVISIONAL";
+// Redistribute the removed 15% proportionally; preserve all four relative weights.
+export const SQR_WEIGHTS=Object.freeze({predictability:25/85,efficiency:25/85,difficulty:20/85,single_opportunity:15/85});
 export const SQR_THRESHOLDS=Object.freeze({play:75,conditional:50});
 // Frozen reference from the Nov 24 V3.4 verified aggregate comparison
 // (mean cost USD / mean modeled hit probability), not historical payouts.
@@ -33,14 +34,12 @@ export function sequenceQuality(inputLegs,ticket){
  const difficulty=clamp(100*Math.exp(mean(ranked.map(p=>Math.log(p.slice(0,3).reduce((a,b)=>a+b,0))))));
  // Best anchor opportunity: 55% or greater earns full credit.
  const single_opportunity=clamp(100*Math.max(...ranked.map(p=>p[0]))/.55);
- // No comparable historical calibration table is certified for this path.
- // Keep the agreed weight but use explicitly neutral credit, never invented history.
- const historical_performance=50;
- const components={predictability,efficiency,difficulty,single_opportunity,historical_performance};
+ // Historical performance is excluded entirely until verified calibration.
+ const components={predictability,efficiency,difficulty,single_opportunity};
  const raw=Object.keys(SQR_WEIGHTS).reduce((sum,k)=>sum+SQR_WEIGHTS[k]*components[k],0);
  const score=clamp(raw);
  return {version:SQR_VERSION,score,classification:classifySQR(score),components,
-  historical_status:"NEUTRAL_PLACEHOLDER_NOT_BACKTESTED",
+  historical_status:"EXCLUDED_PENDING_CALIBRATION",
   reference_status:"NOV24_MODELED_AGGREGATE_PROVISIONAL",
   validated_profitability:false};
 }
