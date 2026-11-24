@@ -230,35 +230,30 @@ assert.ok(ui.includes('!byDate.has(edition.race_date)'),"Legacy published PDF is
 assert.ok(!ui.includes("edition.candidates.length!==10"),"No fixed horse quota in new daily productions");
 assert.ok(ui.includes("AbortController")&&ui.includes("retry?.addEventListener"),"Show a recoverable error rather than a permanent loading spinner");
 
-assert.ok(html.includes("longshot-radar.css?v=reader-parity-v3-20261123"),"Load uncached shared V1 Radar stylesheet");
-assert.ok(html.includes("longshot-radar.js?v=one-line-20261124"),"Load daily date-aware private Radar without stale browser cache");
-assert.ok(!html.includes('id="rr-lr-stage"')&&!html.includes('id="rr-lr-date-title"')&&!html.includes('id="rr-lr-updated"'),"No duplicate date/status/product summaries");
-assert.ok(ui.includes('make("span","rr-lr-ml-inline","ML "+tote(item.original_morning_line))'),"Morning line must sit by horse identity, not a third stat cell");
-assert.ok(!ui.includes('market("ML ODDS"'),"WIN and FAIR are the only two right-side metrics");
-assert.ok(ui.includes('const facts=[item.distance,item.surface]'),"Display only source-supplied race description when available");
-assert.ok(ui.includes('make("p","rr-lr-race-facts",facts.join(" · "))'),"Source race facts must appear in the navy header");
-assert.ok(ui.includes('const raceMeta=make("div","rr-lr-race-meta")'),"Race number and post time must stay grouped and right-justified");
-assert.ok(css.includes("grid-template-columns:minmax(0,1fr) max-content"),"Left track / right metadata layout is required");
-assert.ok(!ui.includes('moduleNav.scrollLeft+='),"Old swipe-navigation repositioning must be removed");
-assert.ok(html.includes("rr-hub-header.css?v=1")&&html.includes("rr-intel-header__mobile-links"),
- "Radar uses the shared homepage-style masthead and five-link mobile menu");
-assert.ok(css.includes("SHARED DAILY RESEARCH DESIGN STANDARD V1"),"Radar follows shared Target List research reader design authority");
-assert.ok(css.includes("font:500 17px/1.52 Inter"),"Original analysis displays at readable 17px/1.52");
-assert.ok(css.includes("grid-template-columns:repeat(2,minmax(0,1fr))"),"WIN and FAIR are two aligned columns");
+assert.ok(html.includes("longshot-radar.js?v=shared-banner-v1-20261124"),"Load version-locked Radar client");
+assert.ok(html.includes("rr-research-race-banner.js?v=locked-v1-20261124"),"Load canonical banner renderer");
+assert.ok(html.includes("rr-research-race-banner.css?v=locked-v1-20261124"),"Load canonical banner CSS");
+assert.ok(!html.includes('id="rr-lr-stage"')&&!html.includes('id="rr-lr-date-title"')&&!html.includes('id="rr-lr-updated"'),"No duplicate page statuses");
+assert.ok(ui.includes('make("span","rr-lr-ml-inline","ML "+tote(item.original_morning_line))'),"Morning line belongs with horse identity");
+assert.ok(!ui.includes('market("ML ODDS"'),"WIN/FAIR remain the two right-side metrics");
+assert.ok(ui.includes('raceBanner.render(item)'),"Every Radar card must use the one shared banner renderer");
+assert.ok(!ui.includes("rr-lr-racebar")&&!ui.includes("sourceRaceTitle")&&!ui.includes("appendGradeTrophy("),
+ "No legacy Radar banner or grade DOM path may remain");
+const banner=readFileSync("public/assets/rr-research-race-banner.js","utf8");
+const bannerCSS=readFileSync("public/assets/rr-research-race-banner.css","utf8");
+assert.ok(banner.includes("RRResearchRaceBanner=Object.freeze"),"Shared renderer is an immutable global authority");
+assert.ok(banner.includes("rr-research-racebar__facts")&&banner.includes("appendGradeTrophy(facts,title.grade)"),"Shared renderer shows sourced titles and stakes trophies");
+assert.ok(bannerCSS.includes("grid-template-columns:minmax(0,1fr) max-content"),"Track stays left, race/post right");
+assert.ok(bannerCSS.includes("font:500 14px/1.35 Inter"),"Source race facts stay readable beneath the title");
+assert.ok(css.includes("SHARED DAILY RESEARCH DESIGN STANDARD V1"),"Keep existing Radar body design");
+assert.ok(css.includes("font:500 17px/1.52 Inter"),"Full analysis remains 17px");
+assert.ok(css.includes("grid-template-columns:repeat(2,minmax(0,1fr))"),"WIN/FAIR remain aligned");
+assert.ok(!/\\.rr-lr-racebar|\\.rr-lr-race-facts|\\.rr-lr-race-number|\\.rr-lr-post/.test(css),
+ "Remove obsolete Radar-specific race-header stylesheet rules");
+assert.ok(html.includes("rr-hub-header.css?v=1")&&html.includes("rr-intel-header__mobile-links"),"Keep the shared masthead");
+assert.ok(!ui.includes("rr-lr-upload-form")&&!ui.includes("visualSample"),"Only private production data");
+assert.ok(!ui.includes("rr-lr-evidence")&&!ui.includes('make("button","","Race details")'),"One short on-card betting sentence");
+assert.ok(!/\\btimeform(?:us)?\\b/i.test(ui+html),"No proprietary source label in the UI");
 checks++;
-
-assert.ok(!ui.includes("rr-lr-upload-form")&&!ui.includes("visualSample"),"Only server-provided horse data may be displayed");
-assert.ok(!ui.includes('make("button","","Race details")'),"Horse explanation must display inline");
-assert.ok(!ui.includes("rr-lr-evidence"),"One approved sentence only; no research-detail panels");
-checks++;
-
-assert.ok(html.includes("rr-race-titles.js?v=2")&&html.includes("rr-stakes-inline.css?v=1"),
- "Radar loads shared Projections stakes names and graded trophy styles");
-assert.ok(ui.includes("sourceRaceTitle(item)")&&ui.includes("appendGradeTrophy(line,title.grade)"),
- "Radar displays full source-certified titles and trophies without inventing grade");
-assert.ok(ui.includes("rr-ed-stakes-title")&&ui.includes("rr-ed-grade-trophy"),
- "Canonical event name and trophy belong within the navy race-facts bar");
-assert.ok(!ui.includes("[item.distance,item.surface,item.conditions]"),
- "Never show raw sponsor text or abbreviated S. as customer-facing source conditions");
 
 console.log("PASS: "+checks+" Longshot Radar private-review, noncertified published-PDF handoff, inline editorial and security/layout checks.");
