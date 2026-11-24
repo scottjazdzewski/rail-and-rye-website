@@ -459,6 +459,7 @@ async function recover(request,env,ctx){
 export async function listProducts(env){
   if(!env.STORE_DB)return error('Catalog temporarily unavailable',503);
   await ensureReleaseSchedule(env);
+  await ensureRacePdfExpirySchema(env);
   const records=await env.STORE_DB.prepare(`SELECT id,title,slug,category,race_date,track,description,price_cents,image_url,pdf_key,pdf_expires_at
     FROM products WHERE status='published' AND category <> 'Stable Notes'
     AND NOT EXISTS(SELECT 1 FROM product_release_schedule s WHERE s.product_id=products.id AND s.release_at>CURRENT_TIMESTAMP)
@@ -551,8 +552,8 @@ async function checkout(request,env){
     return error('This racing-date access period has ended.',410);
   }
   const accessDeadlines=(children.length?children.map(x=>expiryFor(x.pdf_expires_at)): [expiryFor(p.pdf_expires_at)]).filter(Boolean);
-  if(fileDeadlines.length!==(children.length||1))return error('Racing-date access timing is missing. Please contact support.',409);
-  const earliestExpiry=Math.min(...fileDeadlines.map(value=>Date.parse(value.replace(' ','T')+'Z')));
+  if(accessDeadlines.length!==(children.length||1))return error('Racing-date access timing is missing. Please contact support.',409);
+  const earliestExpiry=Math.min(...accessDeadlines.map(value=>Date.parse(value.replace(' ','T')+'Z')));
   const now=Date.now(),sessionExpiry=Math.min(now+24*60*60*1000,earliestExpiry);
   if(sessionExpiry<now+30*60*1000)return error('The racing-date access period is nearly over, so checkout is no longer available.',410);
   const orderExpiresAt=p.pdf_key===BUNDLE_KEY?null:expiryFor(p.pdf_expires_at);
