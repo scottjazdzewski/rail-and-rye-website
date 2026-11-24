@@ -109,8 +109,8 @@ assert.match(css,/\.rrp-race-head__scratch-bar\{[\s\S]*?justify-content:center/,
  "Centered scratch row is part of the canonical layout");
 for(const page of ["public/admin/longshot-radar.html","public/admin/target-list-preview.html"]){
  const html=readFileSync(page,"utf8");
- assert.match(html,/rr-race-titles\\.js\\?v=4/,"All readers use the same title authority.");
- assert.match(html,/rr-research-race-banner\\.js\\?v=locked-v2-20261124/,
+ assert.match(html,/rr-race-titles\.js\?v=5/,"All readers use the same title authority.");
+ assert.match(html,/rr-research-race-banner\.js\?v=locked-v2-20261124/,
   "All research readers use the same banner and trophy presentation.");
 }
 const pickPage=readFileSync("public/admin/pick-tickets-preview.html","utf8");
