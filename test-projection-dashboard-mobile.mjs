@@ -212,7 +212,7 @@ assert.match(css,/\.rr-dash-win-fair\{font-size:13px/,
  "Increase supporting fair odds to 13px");
 assert.match(css,/\.rr-dash-metric-value::before\{\s*font:800 10px\/1\.15/,
  "Make five factor labels readable at 10px");
-assert.match(css,/\.rr-dash-row-analysis\{display:none!important\}/,"No per-horse analysis footer in any card");
+assert.doesNotMatch(css,/rr-dash-row-analysis|rr-dash-full-analysis|rr-dash-analysis-connections|rr-dash-pdf-actions/,"Old runner footers and PDF controls are deleted, not hidden.");
 assert.match(css,/@media\(max-width:360px\)/,
  "Narrow screens must reduce only secondary sizes to prevent name clipping");
 console.log("PASS: compact Projections controls, readable runners, fair odds and five factors");
