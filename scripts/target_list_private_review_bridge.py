@@ -149,6 +149,17 @@ def publish_from_issue():
         current = s3.get_object(Bucket=bucket, Key=key)
         prior = current["Body"].read()
         if prior != plain:
+            previous=json.loads(prior)
+            old={(str(t.get("track","")).casefold(),t.get("race_number")):t for t in previous.get("targets",[])}
+            new={(str(t.get("track","")).casefold(),t.get("race_number")):t for t in data.get("targets",[])}
+            common=set(old)&set(new)
+            unchanged=sum(all(old[k][role].get(field)==new[k][role].get(field)
+                              for role in ("favorite","attack")
+                              for field in ("program_number","horse_name","morning_line","win_probability","fair_odds"))
+                          for k in common)
+            print("PRIVATE_1124_EDITION_CONFLICT_AUDIT: existing=%d incoming=%d overlapping=%d same_horses_and_scores=%d newly_proposed=%d omitted=%d source_zip_match=%s" %
+                  (len(old),len(new),len(common),unchanged,len(set(new)-set(old)),len(set(old)-set(new)),
+                   previous.get("source",{}).get("timeforms_zip_sha256")==data.get("source",{}).get("timeforms_zip_sha256")))
             raise RuntimeError("An existing private review revision cannot be silently replaced.")
         print(f"Private review {data['race_date']} revision {data['revision']} already matches, verified.")
         return
