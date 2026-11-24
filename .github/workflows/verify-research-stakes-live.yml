@@ -12,6 +12,7 @@ on:
       - 'test-longshot-radar.mjs'
       - 'test-rr-race-titles.mjs'
       - 'test-shared-research-race-banner.mjs'
+      - 'test-target-list-hub.mjs'
       - 'test-projection-race-information.mjs'
       - 'src/projection-race-information.js'
       - 'src/longshot-radar.js'
