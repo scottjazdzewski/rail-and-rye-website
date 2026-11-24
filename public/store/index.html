@@ -24,7 +24,7 @@ function productMeta(p){
  return parts.join(' · ');
 }function info(s){notice.textContent=s;notice.style.display='block';}if(new URL(location.href).searchParams.has('cancelled'))info('Checkout was cancelled. No payment was made.');
 try{const r=await fetch('/api/products',{cache:'no-store'});const data=await r.json();if(!r.ok)throw Error(data.error||'Unable to load products');cards.replaceChildren();
-const live=data.checkout_mode==='live',paused=data.checkout_mode==='paused';document.getElementById('paymentBanner').textContent=paused?'PURCHASES TEMPORARILY UNAVAILABLE. Existing customers can still recover purchased PDFs.':live?'Secure checkout via Stripe. Racing PDFs are removed at midnight Eastern two calendar days after their racing date; up to 5 downloads before expiry.':'TEST CHECKOUT ONLY. No real charges can be processed.';
+const live=data.checkout_mode==='live',paused=data.checkout_mode==='paused';document.getElementById('paymentBanner').textContent=paused?'PURCHASES TEMPORARILY UNAVAILABLE. Existing customers can still recover purchase access.':live?'Secure checkout via Stripe. Tab access ends at the published racing-date cutoff.':'TEST CHECKOUT ONLY. No real charges can be processed.';
 const publicProducts=(data.products||[]).filter(p=>{const categories=[p.category,...(Array.isArray(p.categories)?p.categories:[]),...(Array.isArray(p.included_products)?p.included_products.map(x=>x.category):[])];return !categories.includes('Stable Notes');});if(!publicProducts.length){cards.append(el('div','empty',live?'No publications are available at this time.':'No publications are available for testing. Products saved as drafts remain private.'));return;}
 for(const p of publicProducts){
  const card=el('article','store-card rr-glass-purchase-card');card.dataset.category=p.category;card.dataset.categories=JSON.stringify(Array.isArray(p.categories)?p.categories:[p.category]);if(/^[0-9a-f-]{36}$/i.test(String(p.id||'')))card.id='edition-'+p.id;
@@ -42,7 +42,7 @@ for(const p of publicProducts){
    const included=Array.isArray(p.included_titles)?p.included_titles.filter(title=>typeof title==='string'&&title.trim()):[];
    const count=Number.isInteger(p.bundle_count)&&p.bundle_count>0?p.bundle_count:included.length;
    inclusions=el('details','rr-store-bundle-contents');
-   const summary=el('summary','rr-store-bundle-summary',count+' included PDFs · View titles');
+   const summary=el('summary','rr-store-bundle-summary',count+' included editions · View titles');
    inclusions.append(summary);
    if(included.length){
      const list=el('ul','rr-store-bundle-list');
