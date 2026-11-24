@@ -397,6 +397,7 @@ export default {
         const response=await serveProductDocument(original,{product});
         return request.method==='HEAD'?new Response(null,{status:response.status,headers:response.headers}):response;
       }
+      if(path==="/api/racing-wire")return handleRacingWire(request,env);
       if(path.startsWith("/api/product-tabs/"))return handleProductTabs(request,env,url);
       if(path.startsWith("/api/race-card-alerts/"))return handleRaceCardAlerts(request,env,url);
       if(path.startsWith("/api/membership/"))return handleMembershipApi(request,env,url);

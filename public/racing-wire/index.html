@@ -274,7 +274,7 @@ async function loadVerified(){
  feedLoading=true;
  $('count').textContent='Loading live updates…';
  try{
-  const response=await fetch('/api/preview/racing-wire-5333548f0ffee31ba519b2470ffb?refresh='+Date.now(),{cache:'no-store'});
+  const response=await fetch('/api/racing-wire?refresh='+Date.now(),{cache:'no-store'});
   const result=await response.json();if(!response.ok)throw Error(result.error||'Unavailable');
   data=Array.isArray(result.items)?result.items:[];render();
   const stamp=new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
