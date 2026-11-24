@@ -190,7 +190,26 @@ async function readAll(env){
       cards.push(edition);
     }catch(e){console.warn("Rejected invalid Radar review object",item.key,String(e).slice(0,110));}
   }
-  return cards.sort((a,b)=>b.race_date.localeCompare(a.race_date));
+  // The stored production edition is deliberately projection-only: attach
+  // verified original race headers ONLY to this authenticated GET response.
+  // This is the identical frozen-source, track/race/horse join used for the
+  // historical Radar PDF, now also applied to every new scored daily edition.
+  // Missing/ambiguous source facts are omitted; NEVER invent race conditions.
+  const factsByDate=new Map();
+  const enriched=[];
+  for(const edition of cards.sort((a,b)=>b.race_date.localeCompare(a.race_date))){
+    let raceFacts=factsByDate.get(edition.race_date);
+    if(!raceFacts){
+      raceFacts=await readOriginalRaceFacts(env,edition.race_date);
+      factsByDate.set(edition.race_date,raceFacts);
+    }
+    enriched.push({...edition,candidates:edition.candidates.map(c=>{
+      const matched=raceFacts.get(sourceTrackName(c.track)+"|"+c.race_number);
+      const horse=c.program_number.trim().toUpperCase()+"|"+sourceHorseName(c.horse_name);
+      return matched?.horses.has(horse)?{...c,...matched.facts}:c;
+    })});
+  }
+  return enriched;
 }
 export async function handleAdminLongshotRadar(request,env){
   if(!env.CARDS_BUCKET)return error("Private Radar storage is not configured.",503);
@@ -232,6 +251,9 @@ export async function handleAdminLongshotRadar(request,env){
 }
 
 
+// Common strict race-details lookup for ALL Radar editions, including the
+// current scored daily private feed and the older published-PDF reference.
+// Never mutate stored editions, change PWIN/ML/odds, or infer facts from text.
 // November 23 published-card transcription: a SEPARATE, explicitly noncertified
 // admin-only visual review stream. Unlike the certified Radar edition above,
 // this read NEVER accepts a rounded PDF percentage as the unrounded TRI PWIN.
