@@ -57,11 +57,11 @@ const differentCard={...zia,track_name:"Another Park"};
 assert.equal(enrichRaceInformation(differentCard),differentCard,
  "Do not invent an event for an unmatched date/track.");
 const publisher=readFileSync("src/projections.js","utf8");
-assert.equal((publisher.match(/requireProductionStakesNames\\(enrichRaceInformation\\(card\\)\\)/g)||[]).length,2,
+assert.equal((publisher.match(/requireProductionStakesNames\(enrichRaceInformation\(card\)\)/g)||[]).length,2,
  "Both single and batch production upload paths must reject generic stakes names.");
 for(const path of ["src/longshot-radar.js","src/target-list.js"]){
  const reader=readFileSync(path,"utf8");
- assert.match(reader,/enrichRaceInformation\\((?:card|source)\\)/,
+ assert.match(reader,/enrichRaceInformation\((?:card|source)\)/,
   "Every research reader must use the same exact source-backed stakes names.");
 }
 const pick=readFileSync("src/pick-tickets.js","utf8");
