@@ -1,0 +1,47 @@
+name: Verify retired renders and canonical stakes names
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/index.js'
+      - 'src/projections.js'
+      - 'src/projection-race-information.js'
+      - 'src/longshot-radar.js'
+      - 'src/target-list.js'
+      - 'src/pick-tickets.js'
+      - 'public/admin/**'
+      - 'public/membership/dashboard/index.html'
+      - 'public/longshot-radar-preview/**'
+      - 'public/assets/rr-race-titles.js'
+      - 'public/assets/rr-research-race-banner.js'
+      - 'test-site-render-retirement.mjs'
+      - '.github/workflows/verify-site-render-retirement.yml'
+  pull_request:
+    paths:
+      - 'src/index.js'
+      - 'src/projections.js'
+      - 'src/projection-race-information.js'
+      - 'src/longshot-radar.js'
+      - 'src/target-list.js'
+      - 'src/pick-tickets.js'
+      - 'public/admin/**'
+      - 'public/membership/dashboard/index.html'
+      - 'public/longshot-radar-preview/**'
+      - 'public/assets/rr-race-titles.js'
+      - 'public/assets/rr-research-race-banner.js'
+      - 'test-site-render-retirement.mjs'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  retired-site-render-contract:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify obsolete renders absent and canonical stakes names retained
+        run: |
+          node test-site-render-retirement.mjs
+          node test-rr-race-titles.mjs
