@@ -54,6 +54,19 @@
    if(title.toLowerCase().endsWith(" - "+token)||
       title.toLowerCase().endsWith(" — "+token))
     title=title.slice(0,-name.length-3);
+   // The explicit sponsor_name field also authorizes stripping a bare
+   // sponsor prefix/suffix, but only when a meaningful named event remains.
+   // Do not turn "Sponsor Stakes" into the unhelpful generic word "Stakes".
+   const lower=title.toLowerCase();
+   if(lower.startsWith(token+" ")){
+    const remainder=title.slice(name.length).replace(/^[\\s:—–-]+/,"").trim();
+    if(remainder&&!genericStakes(remainder)&&/[A-Za-z]{3}/.test(remainder))
+     title=remainder;
+   }else if(lower.endsWith(" "+token)){
+    const remainder=title.slice(0,-name.length).trim();
+    if(remainder&&!genericStakes(remainder)&&/[A-Za-z]{3}/.test(remainder))
+     title=remainder;
+   }
   }
   return clean(title);
  }
