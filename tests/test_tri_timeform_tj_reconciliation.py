@@ -1,4 +1,8 @@
 import unittest
+import json
+import tempfile
+from types import SimpleNamespace
+from unittest.mock import patch
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
@@ -55,6 +59,32 @@ class TjReconciliationGateTests(unittest.TestCase):
     def test_horse_to_person_binding_fails_wrong_title(self):
         s=self.base()
         self.assertEqual(printed_person(s,'Different Horse','trainer')[1],'HORSE_TITLE_MISSING_OR_AMBIGUOUS')
+
+
+class MandatoryScoreLauncherTests(unittest.TestCase):
+    def test_missing_jockey_race_blocks_scoring_not_site_staging(self):
+        from tri_timeform_tj_verified_score import run
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp)
+            engine=root/'engine';(engine/'CODE').mkdir(parents=True)
+            (engine/'CODE/score_current_runtime_v1_3_7.py').write_text('# canonical scorer stub')
+            (root/'frozen.zip').write_bytes(b'REFERENCE_ONLY')
+            args=SimpleNamespace(roster=root/'roster.json',source_dir=root/'source',
+                                 sidecars_dir=root/'sidecars',race_date='2026-11-25',
+                                 out_dir=root/'verified',engine_dir=engine,
+                                 runtime_zip=root/'frozen.zip',timeout=5)
+            gate={'lock_id':'RAIL_RYE_TJ_SOURCE_GEOMETRY_V1',
+                  'neutral_policy':'TRI_TJ_NEUTRAL_MEAN_V4_ALWAYS_ON',
+                  'tracks':{'PRX':{'status':'PARTIAL_HOLD','held_races':[4,7,8],'runners':72}}}
+            with patch('tri_timeform_tj_verified_score.repair'), \
+                 patch('tri_timeform_tj_verified_score.reconcile',return_value=gate), \
+                 patch('tri_timeform_tj_verified_score.subprocess.run') as score:
+                self.assertEqual(run(args),2)
+                score.assert_not_called()
+            receipt=json.loads((root/'verified/source_to_tri_scoring_run_receipt.json').read_text())
+            self.assertFalse(receipt['publishing_enabled'])
+            self.assertEqual(receipt['held'][0]['held_races'],[4,7,8])
+            self.assertEqual(receipt['tracks_scored'],[])
 
 
 if __name__=='__main__':unittest.main()
