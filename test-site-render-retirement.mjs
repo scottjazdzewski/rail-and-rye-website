@@ -29,4 +29,22 @@ const ticket=readFileSync("src/pick-tickets.js","utf8");
 assert.match(ticket,/enrichRaceInformation\(/,"Ticket leg titles use the same named stakes source.");
 const banner=readFileSync("public/assets/rr-research-race-banner.js","utf8");
 assert.match(banner,/appendGradeTrophy/,"Both research readers keep Grade 1, 2 and 3 trophies.");
+for(const [name,style,obsolete] of [
+ ["Projections","public/assets/projections-dashboard.css",/rr-dash-row-analysis|rr-dash-full-analysis|rr-dash-analysis-connections|rr-dash-pdf-actions/],
+ ["Target List","public/assets/target-list-dashboard.css",/rr-target-card-bottom|rr-target-titlebar p|rr-target-analyze|rr-target-back/],
+ ["Longshot Radar","public/assets/longshot-radar.css",/rr-lr-list-head/]
+]){
+ assert.doesNotMatch(readFileSync(style,"utf8"),obsolete,
+  name+": remove obsolete render CSS entirely; do not layer display:none overrides.");
+}
+for(const [page,stylesheet] of [
+ ["public/admin/projections-preview.html","projections-dashboard.css"],
+ ["public/membership/dashboard/index.html","projections-dashboard.css"],
+ ["public/admin/target-list-preview.html","target-list-dashboard.css"],
+ ["public/admin/longshot-radar.html","longshot-radar.css"]
+]){
+ assert.match(readFileSync(page,"utf8"),
+  new RegExp(stylesheet.replace(".","\\.")+"\\?v=[^\\\"]+"),
+  "Active reader must load the current stylesheet.");
+}
 console.log("PASS: redundant site renders are physically removed; one verified stakes-name and trophy authority serves active products.");
