@@ -25,7 +25,7 @@ function bad(edit,match){
 good(base());
 bad(x=>x.candidates[0].original_morning_line="5/1",/at least 6\/1/);
 bad(x=>{x.candidates[0].original_morning_line="12/1";x.candidates[0].pwin_exact=.14;x.candidates[0].pwin_display=14;},/exact TRI model fair odds/);
-bad(x=>{x.candidates[0].original_morning_line="8/1";x.candidates[0].pwin_exact=1/7;x.candidates[0].pwin_display=14.3;},/50% provisional/);
+bad(x=>{x.candidates[0].original_morning_line="8/1";x.candidates[0].pwin_exact=1/7;x.candidates[0].pwin_display=14.3;},/required original morning-line price advantage/);
 bad(x=>x.candidates[0].pwin_display=25,/displayed PWIN/);
 bad(x=>x.candidates[0].fair_odds_display="11/2",/whole-number/);
 bad(x=>x.candidates[0].source_causal_evidence="",/authenticated source-causal/);
