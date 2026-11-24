@@ -39,6 +39,12 @@ for(const [number,title] of Object.entries(officialTitles)){
 }
 requireProductionStakesNames(fixed);
 assert.throws(()=>requireProductionStakesNames(zia),/full official stakes race name required/);
+assert.throws(()=>requireProductionStakesNames({races:[{race_number:9,
+ conditions:"Claiming",is_stakes:true}]}),/full official stakes race name required/,
+ "A stakes-flagged generic claiming class is not an official event name.");
+assert.throws(()=>requireProductionStakesNames({races:[{race_number:10,
+ conditions:"STAKES",race_name:"Race 10"}]}),/full official stakes race name required/,
+ "Race-number placeholders must not bypass the naming gate.");
 assert.equal(genericStakesTitle("STAKES"),true);
 assert.equal(genericStakesTitle("Overnight Stakes"),true);
 assert.equal(genericStakesTitle("Zia Park Derby"),false);
