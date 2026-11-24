@@ -8,6 +8,20 @@ const HEAD={"Content-Type":"application/json; charset=utf-8","Cache-Control":"no
 const out=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:HEAD});
 const bad=(message,status=400)=>out({error:message},status);
 const validPrice=value=>Number.isSafeInteger(value)&&value>=50&&value<=500000;
+const DEFAULT_GPT_PRICES={"Race Cards":200,"Pick Tickets":200,"Longshot Radar":100,"Target List":100};
+async function ensureGPTPriceDefaults(env){
+ const db=env.STORE_DB;
+ await db.prepare("CREATE TABLE IF NOT EXISTS gpt_product_price_defaults (category TEXT PRIMARY KEY CHECK(category IN ('Race Cards','Pick Tickets','Longshot Radar','Target List')),price_cents INTEGER NOT NULL CHECK(price_cents BETWEEN 50 AND 500000),updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)").run();
+ await db.batch(Object.entries(DEFAULT_GPT_PRICES).map(([category,price])=>
+  db.prepare("INSERT OR IGNORE INTO gpt_product_price_defaults(category,price_cents) VALUES (?,?)").bind(category,price)));
+}
+async function readGPTPriceDefaults(env){
+ await ensureGPTPriceDefaults(env);
+ const result=await env.STORE_DB.prepare("SELECT category,price_cents FROM gpt_product_price_defaults").all();
+ const prices={...DEFAULT_GPT_PRICES};
+ for(const row of result.results||[])if(Object.prototype.hasOwnProperty.call(DEFAULT_GPT_PRICES,row.category)&&validPrice(row.price_cents))prices[row.category]=row.price_cents;
+ return prices;
+}
 function sameOrigin(request){const u=new URL(request.url);return request.headers.get("origin")===u.origin&&request.headers.get("sec-fetch-site")!=="cross-site";}
 function slug(title,id){
  return (String(title||"").toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"")
@@ -44,8 +58,8 @@ export async function publishGPTProductCatalogEntry(env,entry){
  if(suppliedPrice!==undefined&&!validPrice(suppliedPrice))throw Error("Price must be between $0.50 and $5,000.");
  await ensureReleaseSchedule(env);
  await ensureRacePdfExpirySchema(env);
- const override=Number(env.RR_GPT_PRODUCT_PRICE_CENTS);
- const defaultPrice=Number.isSafeInteger(override)&&validPrice(override)?override:999;
+ const defaults=await readGPTPriceDefaults(env);
+ const defaultPrice=defaults[category];
  const price=suppliedPrice===undefined?defaultPrice:suppliedPrice;
  const title=String(entry?.title||titleFor(category,raceDate,track)).trim().slice(0,140);
  const description=String(entry?.description||"Digital access to the published "+category+(track?" for "+track:"")+" edition dated "+raceDate+". Open it in the Rail & Rye Racing Intelligence Hub.").slice(0,4000);
@@ -83,6 +97,10 @@ export async function publishGPTProductCatalogEntry(env,entry){
    validated set of existing product IDs passed to the existing bundle service. */
 export async function handleAdminGPTProductCatalog(request,env,bundleHandler,syncHandler){
  if(!env?.STORE_DB)return bad("Store catalog is unavailable.",503);
+ if(request.method==="GET"){
+  try{return out({default_prices:await readGPTPriceDefaults(env)});}
+  catch(error){console.error("GPT price defaults read failed",String(error).slice(0,120));return bad("Could not load GPT price defaults.",503);}
+ }
  if(request.method!=="POST")return bad("Method not allowed",405);
  if(!sameOrigin(request))return bad("Same-origin request required",403);
  if(!request.headers.get("content-type")?.toLowerCase().startsWith("application/json"))return bad("Expected JSON",400);
@@ -90,6 +108,25 @@ export async function handleAdminGPTProductCatalog(request,env,bundleHandler,syn
  const raw=await request.text();
  if(raw.length>12000)return bad("Request too large",413);
  let body;try{body=JSON.parse(raw);}catch{return bad("Invalid JSON",400);}
+ if(body?.action==="default_prices"){
+  const supplied=body.prices_cents;
+  if(!supplied||typeof supplied!=="object"||Array.isArray(supplied)||
+    Object.keys(DEFAULT_GPT_PRICES).some(category=>!validPrice(supplied[category])))
+   return bad("Set a valid price for Race Cards, Pick Tickets, Longshot Radar and Target List.");
+  try{
+   await ensureGPTPriceDefaults(env);
+   const entries=Object.entries(DEFAULT_GPT_PRICES);
+   const ops=entries.map(([category])=>env.STORE_DB.prepare(
+    "INSERT INTO gpt_product_price_defaults(category,price_cents,updated_at) VALUES (?,?,CURRENT_TIMESTAMP) ON CONFLICT(category) DO UPDATE SET price_cents=excluded.price_cents,updated_at=CURRENT_TIMESTAMP"
+   ).bind(category,supplied[category]));
+   for(const [category] of entries)ops.push(env.STORE_DB.prepare(
+    "UPDATE products SET price_cents=? WHERE category=? AND status='published' AND pdf_key IS NULL AND pdf_expires_at IS NOT NULL AND datetime(pdf_expires_at)>CURRENT_TIMESTAMP"
+   ).bind(supplied[category],category));
+   const results=await env.STORE_DB.batch(ops);
+   const updated_count=results.slice(entries.length).reduce((sum,result)=>sum+Number(result?.meta?.changes??result?.changes??0),0);
+   return out({ok:true,default_prices:supplied,updated_count});
+  }catch(error){console.error("GPT price defaults save failed",String(error).slice(0,140));return bad("Could not save GPT product price defaults.",503);}
+ }
  if(body?.action==="sync_existing"||body?.action==="publish_gpt_reviews"){
   if(typeof syncHandler!=="function")return bad("Catalog synchronization is unavailable.",503);
   try{return out(await syncHandler(env,body.action));}

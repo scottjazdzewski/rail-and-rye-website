@@ -2,7 +2,7 @@
    Buyer entitlements are captured at checkout, not resolved from the live catalog
    after payment. R2 keys are never exposed in an API response. */
 import {ensureReleaseSchedule,validReleaseAt} from './publication-schedule.js';
-import {hasProductTabData,PRODUCT_TAB_CATEGORIES} from './product-tab-content.js';
+import {readyProductTabProductIds,PRODUCT_TAB_CATEGORIES} from './product-tab-content.js';
 export const BUNDLE_KEY = '__rr_bundle__';
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const CATEGORIES=new Set(['Race Cards','Pick Tickets','Longshot Radar','Stable Notes','Target List']);
@@ -52,44 +52,57 @@ function releaseWindowValid(utc){
 }
 function eligibleChild(p){return !!p&&p.pdf_key!==BUNDLE_KEY&&PRODUCT_TAB_CATEGORIES.includes(p.category)&&!!p.race_date&&validDate(p.race_date)&&!!p.pdf_expires_at&&Date.parse(String(p.pdf_expires_at).replace(' ','T')+'Z')>Date.now()&&!p.pending_release&&(p.status==='published'||p.status==='draft');}
 async function validatedChildren(env,ids) {
-  const rows=[];
-  for (const id of ids) {
-    const p=await env.STORE_DB.prepare("SELECT p.id,p.title,p.category,p.race_date,p.pdf_key,p.pdf_expires_at,p.status,a.product_id AS asset_id,CASE WHEN s.release_at>CURRENT_TIMESTAMP THEN 1 ELSE 0 END AS pending_release FROM products p LEFT JOIN bundle_only_assets a ON a.product_id=p.id LEFT JOIN product_release_schedule s ON s.product_id=p.id WHERE p.id=?").bind(id).first();
-    if(!eligibleChild(p))
-      throw Error('Include only dated tab editions with a current access window');
-    if(!await hasProductTabData(env,p.category,p.race_date,[p]))
-      throw Error('Tab content is not available for '+p.category+' on '+p.race_date);
-    rows.push(p);
-  }
+  const placeholders=ids.map(()=>'?').join(',');
+  const result=await env.STORE_DB.prepare(
+    "SELECT p.id,p.title,p.category,p.race_date,p.track,p.pdf_key,p.pdf_expires_at,p.status,a.product_id AS asset_id,CASE WHEN s.release_at>CURRENT_TIMESTAMP THEN 1 ELSE 0 END AS pending_release FROM products p LEFT JOIN bundle_only_assets a ON a.product_id=p.id LEFT JOIN product_release_schedule s ON s.product_id=p.id WHERE p.id IN ("+placeholders+")"
+  ).bind(...ids).all();
+  const byId=new Map((result.results||[]).map(p=>[p.id,p]));
+  const rows=ids.map(id=>byId.get(id));
+  for(const p of rows)if(!eligibleChild(p))
+    throw Error('Include only dated tab editions with a current access window');
+  const ready=await readyProductTabProductIds(env,rows);
+  for(const p of rows)if(!ready.has(p.id))
+    throw Error('Tab content is not available for '+p.category+' on '+p.race_date);
   return rows;
 }
 function slugFor(title,id) {
   return (title.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,65)||'bundle')+'-'+id.slice(0,8);
 }
 async function allBundles(env) {
-  const products=await env.STORE_DB.prepare(
-    "SELECT p.id,p.title,p.category,p.race_date,p.description,p.price_cents,p.status,s.release_at FROM products p LEFT JOIN product_release_schedule s ON s.product_id=p.id WHERE p.pdf_key=? AND p.status!='archived' ORDER BY p.created_at DESC LIMIT 100"
-  ).bind(BUNDLE_KEY).all();
+  const [bundleRows,itemRows,singleRows]=await Promise.all([
+    env.STORE_DB.prepare(
+      "SELECT p.id,p.title,p.category,p.race_date,p.description,p.price_cents,p.status,p.created_at,s.release_at FROM products p LEFT JOIN product_release_schedule s ON s.product_id=p.id WHERE p.pdf_key=? AND p.status!='archived' ORDER BY p.created_at DESC LIMIT 100"
+    ).bind(BUNDLE_KEY).all(),
+    env.STORE_DB.prepare(
+      "SELECT bi.bundle_id,bi.product_id,p.id,p.title,p.category,p.race_date,p.track,p.status,p.pdf_key,p.pdf_expires_at,a.product_id AS asset_id,CASE WHEN s.release_at>CURRENT_TIMESTAMP THEN 1 ELSE 0 END AS pending_release FROM bundle_items bi LEFT JOIN products b ON b.id=bi.bundle_id LEFT JOIN products p ON p.id=bi.product_id LEFT JOIN bundle_only_assets a ON a.product_id=p.id LEFT JOIN product_release_schedule s ON s.product_id=p.id WHERE b.pdf_key=? AND b.status!='archived' AND b.id IN (SELECT id FROM products WHERE pdf_key=? AND status!='archived' ORDER BY created_at DESC LIMIT 100) ORDER BY b.created_at DESC,bi.position"
+    ).bind(BUNDLE_KEY,BUNDLE_KEY).all(),
+    env.STORE_DB.prepare(
+      "SELECT p.id,p.title,p.category,p.race_date,p.track,p.pdf_key,p.pdf_expires_at,p.price_cents,p.status,COALESCE(a.created_at,p.created_at) AS uploaded_at,CASE WHEN a.product_id IS NOT NULL THEN 1 ELSE 0 END AS bundle_only,CASE WHEN EXISTS(SELECT 1 FROM product_release_schedule s WHERE s.product_id=p.id AND s.release_at>CURRENT_TIMESTAMP) THEN 1 ELSE 0 END AS pending_release,CASE WHEN p.pdf_expires_at IS NOT NULL AND datetime(p.pdf_expires_at)>CURRENT_TIMESTAMP AND NOT EXISTS(SELECT 1 FROM product_release_schedule s WHERE s.product_id=p.id AND s.release_at>CURRENT_TIMESTAMP) THEN 1 ELSE 0 END AS bundle_eligible FROM products p LEFT JOIN bundle_only_assets a ON a.product_id=p.id WHERE p.status IN ('published','draft') AND COALESCE(p.pdf_key,'') != ? AND p.category IN ('Race Cards','Pick Tickets','Longshot Radar','Target List') ORDER BY uploaded_at DESC,p.id DESC LIMIT 250"
+    ).bind(BUNDLE_KEY).all()
+  ]);
+  const allItems=itemRows.results||[];
+  const candidateChildren=allItems.filter(eligibleChild);
+  const candidateSingles=(singleRows.results||[]).filter(eligibleChild);
+  const readyIds=await readyProductTabProductIds(env,[...candidateChildren,...candidateSingles]);
+  const byBundle=new Map();
+  for(const item of allItems){
+    if(!byBundle.has(item.bundle_id))byBundle.set(item.bundle_id,[]);
+    byBundle.get(item.bundle_id).push(item);
+  }
   const bundles=[];
-  for (const b of products.results||[]) {
-    const items=await env.STORE_DB.prepare(
-      "SELECT bi.product_id,p.title,p.category,p.race_date,p.status,p.pdf_key,p.pdf_expires_at,a.product_id AS asset_id,CASE WHEN s.release_at>CURRENT_TIMESTAMP THEN 1 ELSE 0 END AS pending_release FROM bundle_items bi LEFT JOIN products p ON p.id=bi.product_id LEFT JOIN bundle_only_assets a ON a.product_id=p.id LEFT JOIN product_release_schedule s ON s.product_id=p.id WHERE bi.bundle_id=? ORDER BY bi.position"
-    ).bind(b.id).all();
-    const components=[];
-    for(const item of items.results||[]){
-      const available=eligibleChild(item)&&await hasProductTabData(env,item.category,item.race_date,[item]);
-      components.push({id:item.product_id,title:item.title,status:item.status,available,bundle_only:!!item.asset_id});
-    }
-    bundles.push({...b,categories:[...new Set([b.category,...(items.results||[]).map(x=>x.category)].filter(Boolean))],product_ids:(items.results||[]).map(x=>x.product_id),components});
+  for(const bundle of bundleRows.results||[]){
+    const items=byBundle.get(bundle.id)||[];
+    const components=items.map(item=>({
+      id:item.product_id,title:item.title,status:item.status,
+      available:eligibleChild(item)&&readyIds.has(item.product_id),
+      bundle_only:!!item.asset_id
+    }));
+    bundles.push({...bundle,categories:[...new Set([bundle.category,...items.map(x=>x.category)].filter(Boolean))],
+      product_ids:items.map(x=>x.product_id),components});
   }
-  const singles=await env.STORE_DB.prepare(
-    "SELECT p.id,p.title,p.category,p.race_date,p.track,p.pdf_key,p.pdf_expires_at,p.price_cents,p.status,COALESCE(a.created_at,p.created_at) AS uploaded_at,CASE WHEN a.product_id IS NOT NULL THEN 1 ELSE 0 END AS bundle_only,CASE WHEN EXISTS(SELECT 1 FROM product_release_schedule s WHERE s.product_id=p.id AND s.release_at>CURRENT_TIMESTAMP) THEN 1 ELSE 0 END AS pending_release,CASE WHEN p.pdf_expires_at IS NOT NULL AND datetime(p.pdf_expires_at)>CURRENT_TIMESTAMP AND NOT EXISTS(SELECT 1 FROM product_release_schedule s WHERE s.product_id=p.id AND s.release_at>CURRENT_TIMESTAMP) THEN 1 ELSE 0 END AS bundle_eligible FROM products p LEFT JOIN bundle_only_assets a ON a.product_id=p.id WHERE p.status IN ('published','draft') AND COALESCE(p.pdf_key,'') != ? AND p.category IN ('Race Cards','Pick Tickets','Longshot Radar','Target List') ORDER BY uploaded_at DESC,p.id DESC LIMIT 250"
-  ).bind(BUNDLE_KEY).all();
-  const available_products=[];
-  for(const item of singles.results||[]){
-    const ready=eligibleChild(item)&&await hasProductTabData(env,item.category,item.race_date,[item]);
-    available_products.push({...item,bundle_eligible:ready?1:0});
-  }
+  const available_products=(singleRows.results||[]).map(item=>({
+    ...item,bundle_eligible:eligibleChild(item)&&readyIds.has(item.id)?1:0
+  }));
   return out({bundles,available_products});
 }
 export async function handleAdminBundles(request,env,path) {

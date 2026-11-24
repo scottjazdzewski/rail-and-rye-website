@@ -16,7 +16,7 @@ const fullBundle=(p,d)=>p.kind==="bundle"&&bundleItems(p).length>0&&bundleItems(
 const readerSlugs={"Race Cards":"race-cards","Pick Tickets":"pick-tickets","Longshot Radar":"longshot-radar","Target List":"target-list"};
 const open=(cat,d)=>location.assign("/intelligence/"+readerSlugs[cat]+"/?date="+encodeURIComponent(d));
 const checkout=async(p,button)=>{if(!p||!checkoutReady||!live)return;button.disabled=true;button.textContent="Opening checkout…";try{const r=await fetch("/api/checkout",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({product_id:p.id})}),x=await r.json();if(!r.ok||typeof x.url!=="string"||!x.url.startsWith("https://checkout.stripe.com/"))throw Error(x.error||"Checkout unavailable.");location.assign(x.url)}catch(e){note(e.message||"Checkout unavailable.");render()}};
-function choices(cat,d){return products.filter(p=>p.kind==="single"?p.category===cat&&p.race_date===d:covered(p,cat,d)&&bundleItems(p).every(i=>i.race_date===d&&i.category===cat));}
+function choices(cat,d){return products.filter(p=>p.kind==="single"?p.category===cat&&p.race_date===d:covered(p,cat,d)&&bundleItems(p).every(i=>i.race_date===d&&i.category===cat)).sort((a,b)=>Number(b.kind==="bundle")-Number(a.kind==="bundle"));}
 function render(){
  const d=date.value,all=products.filter(p=>fullBundle(p,d)),bundle=all.slice().sort((a,b)=>a.price_cents-b.price_cents)[0];let count=0,owned=0;
  for(const card of qa(".rr-hub-product")){
