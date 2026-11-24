@@ -51,7 +51,7 @@ function publicLongshot(edition){
   is_stakes:row.is_stakes===true,purse:text(row.purse,40),program_number:text(row.program_number,8),
   horse_name:text(row.horse_name,100),original_morning_line:text(row.original_morning_line,20),
   pwin_display:num(row.pwin_display),fair_odds_display:text(row.fair_odds_display,20),
-  betting_case:text(row.betting_case,360),post_time_et:text(row.post_time_et,50),
+  betting_case:text(row.betting_case,360),
   jockey:text(row.jockey,100),trainer:text(row.trainer,100)
  }))};
 }
