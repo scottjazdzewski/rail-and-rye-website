@@ -9,34 +9,40 @@ const note=s=>{if(notice)notice.textContent=s};
 if(!date)return;const visibleCats=qa(".rr-hub-product").map(card=>card.dataset.productCategory);const setText=(s,v)=>{const e=q(s);if(e)e.textContent=v};
 const bundleItems=p=>p.kind==="bundle"&&Array.isArray(p.included_products)?p.included_products:[];
 const covered=(p,cat,d)=>bundleItems(p).some(i=>i.category===cat&&i.race_date===d);
-const fullBundle=(p,d)=>p.kind==="bundle"&&bundleItems(p).length>0&&bundleItems(p).every(i=>i.race_date===d)&&cats.every(c=>covered(p,c,d));
-const owns=(cat,d)=>accessKnown&&days.some(x=>x.category===cat&&x.race_date===d&&x.unlocked);
+const itemsForDate=d=>[...new Map(products.flatMap(p=>p.kind==="bundle"?bundleItems(p):[p]).filter(p=>p.race_date===d&&cats.includes(p.category)).map(p=>[p.id,p])).values()];
+const ownsItem=p=>accessKnown&&(universal||days.some(x=>x.product_id===p.id&&x.category===p.category&&x.race_date===p.race_date&&x.unlocked));
+const ownsSKU=p=>p.kind==="bundle"?bundleItems(p).length>0&&bundleItems(p).every(ownsItem):ownsItem(p);
+const fullBundle=(p,d)=>p.kind==="bundle"&&bundleItems(p).length>0&&bundleItems(p).every(i=>i.race_date===d)&&cats.every(c=>covered(p,c,d))&&itemsForDate(d).every(i=>bundleItems(p).some(b=>b.id===i.id));
 const readerSlugs={"Race Cards":"race-cards","Pick Tickets":"pick-tickets","Longshot Radar":"longshot-radar","Target List":"target-list"};
 const open=(cat,d)=>location.assign("/intelligence/"+readerSlugs[cat]+"/?date="+encodeURIComponent(d));
 const checkout=async(p,button)=>{if(!p||!checkoutReady||!live)return;button.disabled=true;button.textContent="Opening checkout…";try{const r=await fetch("/api/checkout",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({product_id:p.id})}),x=await r.json();if(!r.ok||typeof x.url!=="string"||!x.url.startsWith("https://checkout.stripe.com/"))throw Error(x.error||"Checkout unavailable.");location.assign(x.url)}catch(e){note(e.message||"Checkout unavailable.");render()}};
-function choices(cat,d){return products.filter(p=>p.kind==="single"&&p.category===cat&&p.race_date===d)}
+function choices(cat,d){return products.filter(p=>p.kind==="single"?p.category===cat&&p.race_date===d:covered(p,cat,d)&&bundleItems(p).every(i=>i.race_date===d&&i.category===cat));}
 function render(){
  const d=date.value,all=products.filter(p=>fullBundle(p,d)),bundle=all.slice().sort((a,b)=>a.price_cents-b.price_cents)[0];let count=0,owned=0;
  for(const card of qa(".rr-hub-product")){
-  const cat=card.dataset.productCategory,available=choices(cat,d),published=available.length>0||products.some(p=>covered(p,cat,d)),unlocked=owns(cat,d),state=card.querySelector(".rr-hub-state"),amount=card.querySelector(".rr-hub-price"),button=card.querySelector("button"),choice=card.querySelector(".rr-hub-choice"),select=choice.querySelector("select"),old=select.value;
-  if(published)count++;if(published&&unlocked)owned++;
-  select.replaceChildren();for(const item of available){const option=document.createElement("option");option.value=item.id;option.textContent=(item.track&&item.track!=="All"?item.track:item.title)+" · "+(item.price_cents===0?"Free":dollar(item.price_cents));select.append(option)}
-  const deep=location.hash.match(/^#edition-([a-f0-9-]{36})$/i)?.[1];if(available.some(p=>p.id===(old||deep)))select.value=old||deep;
-  choice.hidden=available.length<2||unlocked;const selected=available.find(p=>p.id===select.value)||available[0];
-  amount.textContent=selected&&!unlocked?(selected.price_cents===0?"FREE":dollar(selected.price_cents)):"";
-  state.dataset.state=!catalogKnown?"loading":!published?"unavailable":unlocked?"owned":"published";
-  state.textContent=!catalogKnown?"Availability unavailable":!published?"Not yet published":unlocked?"Access granted":"Published";
+  const cat=card.dataset.productCategory,available=choices(cat,d),items=itemsForDate(d).filter(p=>p.category===cat),published=items.length>0,unlockedItems=items.filter(ownsItem),anyUnlocked=unlockedItems.length>0,allUnlocked=published&&unlockedItems.length===items.length,state=card.querySelector(".rr-hub-state"),amount=card.querySelector(".rr-hub-price"),button=card.querySelector("button"),choice=card.querySelector(".rr-hub-choice"),select=choice.querySelector("select"),old=select.value;
+  if(published)count++;if(allUnlocked)owned++;
+  select.replaceChildren();
+  if(anyUnlocked){const option=document.createElement("option");option.value="owned";option.textContent="Open purchased editions";select.append(option)}
+  for(const item of available){const option=document.createElement("option");option.value=item.id;option.textContent=(item.kind==="bundle"?item.title:(item.track||item.title))+" · "+(ownsSKU(item)?"Access granted":item.price_cents===0?"Free":dollar(item.price_cents));select.append(option)}
+  const deep=location.hash.match(/^#edition-([a-f0-9-]{36})$/i)?.[1];
+  if([...select.options].some(o=>o.value===(old||deep)))select.value=old||deep;
+  choice.hidden=select.options.length<2||allUnlocked;
+  const selected=available.find(p=>p.id===select.value),openOwned=select.value==="owned"||!!selected&&ownsSKU(selected);
+  amount.textContent=selected&&!openOwned?(selected.price_cents===0?"FREE":dollar(selected.price_cents)):"";
+  state.dataset.state=!catalogKnown?"loading":!published?"unavailable":allUnlocked?"owned":"published";
+  state.textContent=!catalogKnown?"Availability unavailable":!published?"Not yet published":allUnlocked?"Access granted":anyUnlocked?unlockedItems.length+" of "+items.length+" editions unlocked":"Published";
   button.disabled=true;button.onclick=null;
   if(!catalogKnown||!accessKnown){button.textContent="Check access";button.disabled=false;button.onclick=()=>location.reload()}
   else if(!published){button.textContent="Unavailable"}
-  else if(unlocked||selected?.price_cents===0){button.disabled=false;button.textContent="Open";button.onclick=()=>open(cat,d)}
+  else if(allUnlocked||openOwned||selected?.price_cents===0){button.disabled=false;button.textContent="Open";button.onclick=()=>open(cat,d)}
   else if(selected&&checkoutReady&&live){button.disabled=false;button.textContent="Purchase Access";button.onclick=()=>checkout(selected,button)}
   else if(!selected&&published){button.textContent="View bundle access";button.disabled=false;button.onclick=()=>location.assign("/store/?date="+encodeURIComponent(d))}
   else{button.textContent="Checkout unavailable"}
   select.onchange=render;
  }
  setText("#rr-hub-count",catalogKnown?count+" of 4 published":"Unavailable");
- setText("#rr-hub-access",!accessKnown?"Unavailable":universal?"All-Access membership":owned===4?"Full access":owned?owned+" of 4 unlocked":"No access for this date");
+ setText("#rr-hub-access",!accessKnown?"Unavailable":universal?"All-Access membership":owned===4?"Full access":itemsForDate(d).some(ownsItem)?itemsForDate(d).filter(ownsItem).length+" of "+itemsForDate(d).length+" editions unlocked":"No access for this date");
  if(!full||!price)return;
  price.textContent=bundle&&owned!==4&&!universal?dollar(bundle.price_cents):"";
  full.disabled=true;full.onclick=null;

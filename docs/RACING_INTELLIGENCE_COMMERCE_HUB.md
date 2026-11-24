@@ -15,3 +15,7 @@ Race Cards, Pick Tickets, Longshot Radar and Target List retain their individual
 ## Direct purchased-product readers
 
 The Hub Open action navigates directly to `/intelligence/{race-cards|pick-tickets|longshot-radar|target-list}/?date=YYYY-MM-DD`. The Worker serves the approved existing reader shell with customer navigation and a customer-mode marker; paid data is fetched only through the existing category/date entitlement API. Private publisher routes remain protected. The legacy `/my-products/` route redirects to a matching direct reader or the Hub. F4 ordered data also requires the published Race Cards entitlement and matching track/race. Do not send paying customers to a duplicate selection page. Missing certified values must remain unavailable rather than fabricated.
+
+## Track entitlement lock
+
+Authorize each purchased SKU by ID, category, race date and exact track. Bundles unlock only their recorded order components. Blank tracks are day-wide only for daily research. Filter server data before sending it to the customer; F4 uses the same authorized edition. Retain up to 24 signed order tokens for additional purchases. The Hub distinguishes partial and full access, and includes track-bundle purchase choices.

@@ -3,6 +3,8 @@ import {readPublishedPickTicketCards} from './pick-tickets.js';
 import {readLongshotRadarEdition} from './longshot-radar.js';
 import {readTargetListEdition} from './target-list.js';
 
+import {trackCovered} from './product-entitlements.js';
+
 export const PRODUCT_TAB_CATEGORIES=['Race Cards','Pick Tickets','Longshot Radar','Target List'];
 const text=(value,max=500)=>typeof value==='string'?value.slice(0,max):'';
 const num=value=>value==null||value===''?null:(Number.isFinite(Number(value))?Number(value):null);
@@ -86,26 +88,27 @@ export async function readProductTabEdition(env,category,raceDate,products=[]){
   const eligible=(products||[]).filter(p=>p.category==='Race Cards'&&p.race_date===raceDate);
   if(!eligible.length)return null;
   const cards=await readMemberProjectionCards(env,eligible);
-  const foldTrack=value=>String(value||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/\b(park|downs|racecourse|racetrack)\b/g,"").replace(/[^a-z0-9]+/g," ").trim();
-  const matching=cards.filter(item=>item.race_date===raceDate&&eligible.some(product=>
-   (product.id&&item.product_id===product.id)||
-   (product.track&&(()=>{const a=foldTrack(item.track||item.card?.track_name),b=foldTrack(product.track);return !!a&&!!b&&(a===b||a.includes(b)||b.includes(a));})())
-  )).map(item=>({
+  const matching=cards.filter(item=>item.card?.race_date===raceDate&&
+   trackCovered(eligible,category,item.card?.track_name)).map(item=>({
    product_id:item.product_id,title:text(item.title,140),track:text(item.track,100),
    race_date:item.race_date,card:publicProjection(item.card)
   }));
   return matching.length?{category,race_date:raceDate,cards:matching}:null;
  }
  if(category==='Pick Tickets'){
-  const cards=(await readPublishedPickTicketCards(env,raceDate)).map(publicPick).filter(Boolean);
+  const cards=(await readPublishedPickTicketCards(env,raceDate)).map(publicPick).filter(card=>card&&trackCovered(products,category,card.track));
   return cards.length?{category,race_date:raceDate,cards}:null;
  }
  if(category==='Longshot Radar'){
   const edition=await readLongshotRadarEdition(env,raceDate),safe=publicLongshot(edition);
-  return safe&&safe.candidates.length?{category,race_date:raceDate,...safe}:null;
+  if(!safe)return null;
+  safe.candidates=safe.candidates.filter(row=>trackCovered(products,category,row.track));
+  return safe.candidates.length?{category,race_date:raceDate,...safe}:null;
  }
  const edition=await readTargetListEdition(env,raceDate),safe=publicTarget(edition);
- return safe?{category,race_date:raceDate,...safe}:null;
+ if(!safe)return null;
+ safe.targets=safe.targets.filter(row=>trackCovered(products,category,row.track));
+ return safe.targets.length?{category,race_date:raceDate,...safe}:null;
 }
 
 const TARGET_LIST_PREFIX="racing-intelligence/target-list/";

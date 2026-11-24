@@ -4,6 +4,8 @@ import {listProducts,verifyStoreAccessCode} from './commerce.js';
 import {hasActiveMembershipSession} from './memberships.js';
 import {PRODUCT_TAB_CATEGORIES,readProductTabEdition} from './product-tab-content.js';
 
+import {entitledProducts,isProductUnlocked} from './product-entitlements.js';
+
 const COOKIE='__Host-rr_product_tab';
 const JSON_HEADERS={'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','X-Robots-Tag':'noindex, nofollow'};
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -34,7 +36,7 @@ function dateMillis(value){
 }
 async function orderScopes(env,orderId){
  if(!env.STORE_DB||!UUID.test(orderId||''))return [];
- const order=await env.STORE_DB.prepare(`SELECT o.id,o.status,o.paid_at,o.access_days,o.pdf_expires_at,o.stripe_payment_intent,
+ const order=await env.STORE_DB.prepare(`SELECT o.id,o.product_id,o.status,o.paid_at,o.access_days,o.pdf_expires_at,o.stripe_payment_intent,
      p.pdf_key AS catalog_pdf_key,p.category,p.race_date,p.track,p.title
    FROM orders o JOIN products p ON p.id=o.product_id
    WHERE o.id=? AND o.status='paid'
@@ -51,22 +53,27 @@ async function orderScopes(env,orderId){
     WHERE bi.order_id=? AND COALESCE(bi.pdf_expires_at,p.pdf_expires_at)>CURRENT_TIMESTAMP
     ORDER BY bi.position`).bind(orderId).all();
   rows.push(...(result.results||[]));
- }else rows.push({category:order.category,race_date:order.race_date,track:order.track,title:order.title,
+ }else rows.push({id:order.product_id,category:order.category,race_date:order.race_date,track:order.track,title:order.title,
    item_expiry:order.pdf_expires_at||null});
  return rows.map(row=>{
   const expires=Math.min(orderExpiry,dateMillis(row.item_expiry));
-  return {category:row.category,race_date:row.race_date,track:row.track||'',title:row.title||'',expires_at:expires};
+  return {product_id:row.id,category:row.category,race_date:row.race_date,track:row.track||'',title:row.title||'',expires_at:expires};
  }).filter(scope=>PRODUCT_TAB_CATEGORIES.includes(scope.category)&&/^\d{4}-\d{2}-\d{2}$/.test(String(scope.race_date||''))&&scope.expires_at>Date.now());
 }
-async function accessCookie(request,env){
- const raw=cookieValue(request),match=/^([0-9a-f-]{36})\.(\d{10})\.([a-f0-9]{64})$/i.exec(raw||'');
+async function verifiedOrderToken(raw,env){
+ const match=/^([0-9a-f-]{36})\.(\d{10})\.([a-f0-9]{64})$/i.exec(raw||'');
  if(!match)return {scopes:[],expires_at:0};
  const [,orderId,exp,supplied]=match,expires=Number(exp);
  if(!UUID.test(orderId)||expires<=Math.floor(Date.now()/1000))return {scopes:[],expires_at:0};
  const expected=await signature(env,orderId,exp);
  if(!expected||!equal(expected,supplied.toLowerCase()))return {scopes:[],expires_at:0};
  const scopes=await orderScopes(env,orderId);
- return {scopes,expires_at:Math.max(0,...scopes.map(scope=>scope.expires_at))};
+ return {scopes,expires_at:Math.max(0,...scopes.map(scope=>scope.expires_at)),token:raw};
+}
+async function accessCookie(request,env){
+ const tokens=(cookieValue(request)||'').split('~').slice(0,24);
+ const verified=(await Promise.all(tokens.map(token=>verifiedOrderToken(token,env)))).filter(item=>item.scopes.length);
+ return {scopes:verified.flatMap(item=>item.scopes),expires_at:Math.max(0,...verified.map(item=>item.expires_at)),tokens:verified.map(item=>item.token)};
 }
 async function productCatalog(env){
  const result=await listProducts(env);
@@ -80,16 +87,14 @@ async function productCatalog(env){
  }
  return {products,checkout_ready:body.checkout_ready,checkout_mode:body.checkout_mode};
 }
-function hasPurchaseScope(scopes,category,raceDate){
- return scopes.some(scope=>scope.category===category&&scope.race_date===raceDate&&scope.expires_at>Date.now());
-}
+
 async function currentAccess(request,env){
  const [purchase,member]=await Promise.all([accessCookie(request,env),hasActiveMembershipSession(request,env)]);
  return {scopes:purchase.scopes,access_expires_at:purchase.expires_at,universal:member};
 }
 function publicDay(product,access){
- return {category:product.category,race_date:product.race_date,track:product.track||'',title:product.title||'',
-  published:true,unlocked:access.universal||hasPurchaseScope(access.scopes,product.category,product.race_date)||Number(product.price_cents)===0};
+ return {product_id:product.id,category:product.category,race_date:product.race_date,track:product.track||'',title:product.title||'',
+  published:true,unlocked:isProductUnlocked(product,access)};
 }
 async function activate(request,env){
  if(request.method!=='POST')return error('Method not allowed',405);
@@ -111,15 +116,17 @@ async function activate(request,env){
  const exp=String(expires),sig=await signature(env,orderId,exp);
  if(!sig)return error('Tab access is temporarily unavailable.',503);
  const token=orderId+'.'+exp+'.'+sig;
- const maxAge=Math.max(0,expires-Math.floor(Date.now()/1000));
- return json({ok:true,next:'/my-products/'},200,{'Set-Cookie':COOKIE+'='+encodeURIComponent(token)+'; Path=/; Max-Age='+maxAge+'; Secure; HttpOnly; SameSite=Lax'});
+ const previous=await accessCookie(request,env);
+ const retained=[token,...(previous.tokens||[]).filter(value=>!value.startsWith(orderId+'.'))].slice(0,24);
+ const maxAge=Math.max(0,Math.max(expires,Math.floor(previous.expires_at/1000))-Math.floor(Date.now()/1000));
+ return json({ok:true,next:'/store/'},200,{'Set-Cookie':COOKIE+'='+encodeURIComponent(retained.join('~'))+'; Path=/; Max-Age='+maxAge+'; Secure; HttpOnly; SameSite=Lax'});
 }
 async function library(request,env){
  const [catalog,access]=await Promise.all([productCatalog(env),currentAccess(request,env)]);
  const days=[],seen=new Set();
  for(const product of catalog.products){
   if(!PRODUCT_TAB_CATEGORIES.includes(product.category)||!product.race_date)continue;
-  const day=publicDay(product,access),key=day.category+'|'+day.race_date+'|'+day.track+'|'+day.title;
+  const day=publicDay(product,access),key=day.product_id+'|'+day.unlocked;
   if(seen.has(key))continue;seen.add(key);days.push(day);
  }
  days.sort((a,b)=>b.race_date.localeCompare(a.race_date)||PRODUCT_TAB_CATEGORIES.indexOf(a.category)-PRODUCT_TAB_CATEGORIES.indexOf(b.category)||a.track.localeCompare(b.track));
@@ -134,9 +141,9 @@ async function edition(request,env,url){
  const [catalog,access]=await Promise.all([productCatalog(env),currentAccess(request,env)]);
  const matching=catalog.products.filter(product=>product.category===category&&product.race_date===raceDate);
  if(!matching.length)return error('No published tab exists for that category and racing date.',404);
- const free=matching.some(product=>Number(product.price_cents)===0);
- if(!access.universal&&!free&&!hasPurchaseScope(access.scopes,category,raceDate))return error('Purchase this category for the selected racing date to unlock its tab.',403);
- const content=await readProductTabEdition(env,category,raceDate,matching);
+ const eligible=entitledProducts(matching,access);
+ if(!eligible.length)return error('Purchase an edition for the selected racing date to unlock its tab.',403);
+ const content=await readProductTabEdition(env,category,raceDate,eligible);
  if(!content)return error('The published tab content is temporarily unavailable.',503);
  return json(content);
 }
