@@ -7,6 +7,7 @@ import { handleCommerce, sendQueuedEmails, checkoutReadiness, replacePdfAndNotif
 import {handleRacingWire,handleAdminRacingWire,refreshRacingWire} from './racing-wire.js';
 import {handleAdminBundles,BUNDLE_KEY} from './bundles.js';
 import {handleAdminGPTProductCatalog} from './gpt-product-catalog.js';
+import {syncExistingGPTProductCatalog} from './gpt-product-catalog-sync.js';
 import {handleAdminBundleAssets} from './bundle-assets.js';
 import {handleAdminJournal,handlePublicJournal,publicJournalCover,publishScheduledJournalArticles} from './journal.js';
 import {handleSitemap,serveJournalDocument,serveProductDocument} from './seo.js';
@@ -312,7 +313,7 @@ export default {
         const auth=await verifyAdmin(request,env); if(!auth.ok)return auth.response;
         if(path==="/admin/owner-access"||path==="/admin/owner-access/")return openVerifiedOwnerHub(request,env,auth.email);
         if(path==="/api/admin/gpt-product-catalog"){
-          return handleAdminGPTProductCatalog(request,env,(bundleRequest,bundlePath)=>handleAdminBundles(bundleRequest,env,bundlePath));
+          return handleAdminGPTProductCatalog(request,env,(bundleRequest,bundlePath)=>handleAdminBundles(bundleRequest,env,bundlePath),syncExistingGPTProductCatalog);
         }
         if(path==="/api/admin/pick-tickets"){
           if(request.method==="POST"&&!trustedOrigin(request))return fail("Same-origin request required",403);
@@ -342,7 +343,8 @@ export default {
           ["/admin/pick-tickets-preview","/admin/pick-tickets-preview.html"],
           ["/admin/target-list-preview","/admin/target-list-preview.html"],
           ["/admin/longshot-radar","/admin/longshot-radar.html"],
-          ["/admin/racing-intelligence-review","/admin/racing-intelligence-review.html"]
+          ["/admin/racing-intelligence-review","/admin/racing-intelligence-review.html"],
+          ["/admin/gpt-product-catalog","/admin/gpt-product-catalog.html"]
         ]);
         const normalizedAdminPath=path.endsWith("/index.html")?path.slice(0,-11):path.endsWith(".html")?path.slice(0,-5):path.endsWith("/")?path.slice(0,-1):path;
         const asset=new URL(url);

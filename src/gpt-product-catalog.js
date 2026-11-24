@@ -81,7 +81,7 @@ export async function publishGPTProductCatalogEntry(env,entry){
 
 /* GPT-only catalog control. Prices are explicit; bundle membership is a
    validated set of existing product IDs passed to the existing bundle service. */
-export async function handleAdminGPTProductCatalog(request,env,bundleHandler){
+export async function handleAdminGPTProductCatalog(request,env,bundleHandler,syncHandler){
  if(!env?.STORE_DB)return bad("Store catalog is unavailable.",503);
  if(request.method!=="POST")return bad("Method not allowed",405);
  if(!sameOrigin(request))return bad("Same-origin request required",403);
@@ -90,6 +90,11 @@ export async function handleAdminGPTProductCatalog(request,env,bundleHandler){
  const raw=await request.text();
  if(raw.length>12000)return bad("Request too large",413);
  let body;try{body=JSON.parse(raw);}catch{return bad("Invalid JSON",400);}
+ if(body?.action==="sync_existing"){
+  if(typeof syncHandler!=="function")return bad("Catalog synchronization is unavailable.",503);
+  try{return out(await syncHandler(env));}
+  catch(error){console.error("GPT catalog sync failed",String(error).slice(0,140));return bad("Could not sync existing live GPT editions.",503);}
+ }
  if(body?.action==="price"){
   const id=String(body.product_id||"");
   const price=body.price_cents;
