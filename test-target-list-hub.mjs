@@ -123,7 +123,7 @@ assert.match(js,/Post-time order/,"Summary uses the current display order, not a
 assert.match(css,/font-size:18px;/,"On-phone editorial body grows to 18px.");
 assert.match(css,/font-size:25px/,"On-phone win percentage remains prominent.");
 assert.match(js,/raceBanner\.render\(entry\)/,"All Target List cards use the shared banner renderer.");
-assert.match(html,/rr-research-race-banner\.js\?v=locked-v1-20261124/,"One shared right-aligned race-header renderer is mandatory.");
+assert.match(html,/rr-research-race-banner\.js\?v=locked-v2-20261124/,"One shared right-aligned race-header renderer is mandatory.");
 assert.doesNotMatch(js,/rr-research-racebar|rr-target-race-identifiers|rr-research-racebar__facts/,"Legacy Target List banner builder is retired.");
 assert.match(readFileSync("public/assets/rr-research-race-banner.css","utf8"),/\.rr-research-racebar__identifiers\{/,"Right-aligned header group uses one canonical stylesheet.");
 assert.match(readFileSync("public/assets/rr-research-race-banner.css","utf8"),/grid-template-columns:minmax\(0,1fr\) max-content/,"Canonical header uses the same left-track/right-identifiers grid.");
@@ -235,7 +235,7 @@ assert.ok(tree(card,el=>el.className==="rr-target-stat-value"&&el.textContent===
 assert.match(html,/id="rr-target-sort"/);
 assert.doesNotMatch(html,/rr-target-track|rr-target-search/,"Reader controls are date and independent sort only.");
 
-assert.match(html,/rr-race-titles\.js\?v=2/,"Locked canonical stakes parser is present");
+assert.match(html,/rr-race-titles\.js\?v=4/,"Locked canonical stakes parser is present");
 assert.match(html,/rr-stakes-inline\.css\?v=1/,"Locked shared graded trophy styles are present");
 assert.match(readFileSync("public/assets/rr-research-race-banner.js","utf8"),/appendGradeTrophy\(facts,title\.grade\)/,
  "The shared renderer preserves the sourced trophy and grade rule");
