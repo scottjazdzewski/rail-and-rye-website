@@ -500,9 +500,16 @@ export async function listProducts(env){
       LEFT JOIN products c ON c.id=bi.product_id LEFT JOIN bundle_only_assets a ON a.product_id=c.id
       LEFT JOIN product_release_schedule s ON s.product_id=c.id WHERE bi.bundle_id=? ORDER BY bi.position`).bind(p.id).all();
     const items=children.results||[];
-    if(items.length<2||items.length>24||items.some(c=>c.pdf_key===BUNDLE_KEY||c.expired||c.pending_release||c.category==='Stable Notes'||!(c.status==='published'||c.status==='draft')))continue;
-    const tabReady=await readyProductTabProductIds(env,items);
-    if(items.some(item=>!tabReady.has(item.id)))continue;
+    if(racePdfExpired(p.pdf_expires_at))continue;
+    if(items.length<2||items.length>100||items.some(c=>c.pdf_key===BUNDLE_KEY||c.expired||c.pending_release||c.category==='Stable Notes'||!(c.status==='published'||c.status==='draft')))continue;
+    // Published children were already checked together above. Only read tab
+    // sources again for draft children, and memoize those results across bundles.
+    const unverified=items.filter(item=>!readyProductIds.has(item.id));
+    if(unverified.length){
+      const tabReady=await readyProductTabProductIds(env,unverified);
+      for(const id of tabReady)readyProductIds.add(id);
+    }
+    if(items.some(item=>!readyProductIds.has(item.id)))continue;
     // A bundle unlocks each included category/date in the customer tabs.
     const categories=[...new Set([p.category,...items.map(x=>x.category)].filter(Boolean))];
     products.push({...publicFields,kind:'bundle',delivery_mode:'tab',categories,bundle_count:items.length,included_titles:items.map(x=>x.title),
@@ -523,13 +530,14 @@ export async function publicProductForShare(env,id){
     if(racePdfExpired(product.pdf_expires_at)||!await hasProductTabData(env,product.category,product.race_date,[product]))return null;
     return {...publicFields,kind:'single',delivery_mode:'tab'};
   }
+  if(racePdfExpired(product.pdf_expires_at))return null;
   const children=await env.STORE_DB.prepare(`SELECT c.id,c.title,c.category,c.race_date,c.track,c.pdf_expires_at,c.status,c.pdf_key,a.product_id AS asset_id,
     CASE WHEN c.pdf_expires_at IS NULL OR datetime(c.pdf_expires_at)<=CURRENT_TIMESTAMP THEN 1 ELSE 0 END AS expired,
     CASE WHEN s.release_at>CURRENT_TIMESTAMP THEN 1 ELSE 0 END AS pending_release FROM bundle_items bi
     LEFT JOIN products c ON c.id=bi.product_id LEFT JOIN bundle_only_assets a ON a.product_id=c.id
     LEFT JOIN product_release_schedule s ON s.product_id=c.id WHERE bi.bundle_id=? ORDER BY bi.position`).bind(id).all();
   const items=children.results||[];
-  if(items.length<2||items.length>24||items.some(c=>c.pdf_key===BUNDLE_KEY||c.expired||c.pending_release||c.category==='Stable Notes'||!(c.status==='published'||c.status==='draft')))return null;
+  if(items.length<2||items.length>100||items.some(c=>c.pdf_key===BUNDLE_KEY||c.expired||c.pending_release||c.category==='Stable Notes'||!(c.status==='published'||c.status==='draft')))return null;
   const tabReady=await readyProductTabProductIds(env,items);
   if(items.some(item=>!tabReady.has(item.id)))return null;
   return {...publicFields,kind:'bundle',delivery_mode:'tab',bundle_count:items.length,
@@ -555,6 +563,13 @@ async function checkout(request,env){
   if(!p)return error('Product is not available',404);
   if(!Number.isSafeInteger(p.price_cents)||p.price_cents<50||p.price_cents>500000)return error('Product is not available for purchase',400);
   const expiryFor=value=>value&&Number.isFinite(Date.parse(String(value).replace(' ','T')+'Z'))?String(value):null;
+  const earlierExpiry=(a,b)=>{
+    const first=expiryFor(a),second=expiryFor(b);
+    if(!first)return second;
+    if(!second)return first;
+    return Date.parse(first.replace(' ','T')+'Z')<=Date.parse(second.replace(' ','T')+'Z')?first:second;
+  };
+  if(p.pdf_key===BUNDLE_KEY&&racePdfExpired(p.pdf_expires_at))return error('This daily bundle is no longer available.',410);
   if(p.pdf_key!==BUNDLE_KEY&&!await hasProductTabData(env,p.category,p.race_date,[p]))return error('This racing tab has not been published yet.',409);
   const orderId=crypto.randomUUID(),children=[];
   if(p.pdf_key===BUNDLE_KEY){
@@ -566,14 +581,15 @@ async function checkout(request,env){
       LEFT JOIN product_release_schedule s ON s.product_id=c.id
       WHERE bi.bundle_id=? ORDER BY bi.position`).bind(p.id).all();
     children.push(...(result.results||[]));
-    if(children.length<2||children.length>24||children.some(x=>x.pdf_key===BUNDLE_KEY||x.expired||x.pending_release||!(x.status==='published'||x.status==='draft')))
+    if(children.length<2||children.length>100||children.some(x=>x.pdf_key===BUNDLE_KEY||x.expired||x.pending_release||!(x.status==='published'||x.status==='draft')))
       return error('Bundle contents are currently unavailable',409);
     const ready=await readyProductTabProductIds(env,children);
     if(children.some(item=>!ready.has(item.id)))return error('A tab in this bundle has not been published yet.',409);
   }else if(racePdfExpired(p.pdf_expires_at)){
     return error('This racing-date access period has ended.',410);
   }
-  const accessDeadlines=(children.length?children.map(x=>expiryFor(x.pdf_expires_at)): [expiryFor(p.pdf_expires_at)]).filter(Boolean);
+  const bundleAccessExpiry=p.pdf_key===BUNDLE_KEY?expiryFor(p.pdf_expires_at):null;
+  const accessDeadlines=(children.length?children.map(x=>earlierExpiry(x.pdf_expires_at,bundleAccessExpiry)): [expiryFor(p.pdf_expires_at)]).filter(Boolean);
   if(accessDeadlines.length!==(children.length||1))return error('Racing-date access timing is missing. Please contact support.',409);
   const earliestExpiry=Math.min(...accessDeadlines.map(value=>Date.parse(value.replace(' ','T')+'Z')));
   const now=Date.now(),sessionExpiry=Math.min(now+24*60*60*1000,earliestExpiry);
@@ -583,7 +599,7 @@ async function checkout(request,env){
     VALUES (?,?,?,?,?,'initiated',7,?)`).bind(orderId,p.id,p.title,TAB_KEY,p.price_cents,orderExpiresAt)];
   children.forEach((item,i)=>ops.push(env.STORE_DB.prepare(
     'INSERT INTO bundle_order_items (order_id,product_id,product_title,pdf_key,position,pdf_expires_at) VALUES (?,?,?,?,?,?)'
-  ).bind(orderId,item.id,item.title,TAB_KEY,i,expiryFor(item.pdf_expires_at))));
+  ).bind(orderId,item.id,item.title,TAB_KEY,i,earlierExpiry(item.pdf_expires_at,bundleAccessExpiry))));
   await env.STORE_DB.batch(ops);
   const base=new URL(request.url).origin;
   const fields=new URLSearchParams({

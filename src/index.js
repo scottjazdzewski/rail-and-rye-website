@@ -6,6 +6,7 @@ import {handleAdminTargetList,readAdminTargetListReview} from './target-list.js'
 import { handleCommerce, sendQueuedEmails, checkoutReadiness, replacePdfAndNotifyBuyers, publicProductForShare } from './commerce.js';
 import {handleRacingWire,handleAdminRacingWire,refreshRacingWire} from './racing-wire.js';
 import {handleAdminBundles,BUNDLE_KEY} from './bundles.js';
+import {syncDailyBundles} from './daily-bundles.js';
 import {handleAdminGPTProductCatalog} from './gpt-product-catalog.js';
 import {syncExistingGPTProductCatalog} from './gpt-product-catalog-sync.js';
 import {handleAdminBundleAssets} from './bundle-assets.js';
@@ -318,11 +319,15 @@ export default {
         const auth=await verifyAdmin(request,env); if(!auth.ok)return auth.response;
         if(path==="/admin/owner-access"||path==="/admin/owner-access/")return openVerifiedOwnerHub(request,env,auth.email);
         if(path==="/api/admin/gpt-product-catalog"){
-          return handleAdminGPTProductCatalog(request,env,(bundleRequest,bundlePath)=>handleAdminBundles(bundleRequest,env,bundlePath),syncExistingGPTProductCatalog);
+          const result=await handleAdminGPTProductCatalog(request,env,(bundleRequest,bundlePath)=>handleAdminBundles(bundleRequest,env,bundlePath),syncExistingGPTProductCatalog);
+          if(request.method!=="GET"&&result.ok)ctx.waitUntil(syncDailyBundles(env).catch(e=>console.warn("Daily bundles sync deferred",String(e).slice(0,140))));
+          return result;
         }
         if(path==="/api/admin/pick-tickets"){
           if(request.method==="POST"&&!trustedOrigin(request))return fail("Same-origin request required",403);
-          return handleAdminPickTickets(request,env);
+          const result=await handleAdminPickTickets(request,env);
+          if(request.method!=="GET"&&result.ok)ctx.waitUntil(syncDailyBundles(env).catch(e=>console.warn("Daily bundles sync deferred",String(e).slice(0,140))));
+          return result;
         }
         if(path==='/api/admin/membership-plans')return handleAdminMembershipPlans(request,env);
         if(path.startsWith('/api/admin/bundles'))return handleAdminBundlesWithRaceAlerts(request,env,path,ctx);
@@ -339,7 +344,11 @@ export default {
         }
         if(path.startsWith("/api/admin/articles"))return handleAdminJournal(request,env,path);
         if(path==="/api/admin/racing-wire-editorial")return handleAdminRacingWire(request,env);
-        if(path.startsWith("/api/admin/"))return handleAdminAPI(request,env,path,ctx);
+        if(path.startsWith("/api/admin/")){
+          const result=await handleAdminAPI(request,env,path,ctx);
+          if(request.method!=="GET"&&result.ok)ctx.waitUntil(syncDailyBundles(env).catch(e=>console.warn("Daily bundles sync deferred",String(e).slice(0,140))));
+          return result;
+        }
         if(request.method!=="GET"&&request.method!=="HEAD")return fail("Method not allowed",405);
         const adminPages=new Map([
           ["/admin/projections","/admin/projections-preview.html"],
@@ -424,6 +433,9 @@ export default {
     }catch(e){console.error("Rail & Rye request error",e);return fail("An internal error occurred",500);}
   },
   async scheduled(controller,env,ctx){
+    ctx.waitUntil(syncDailyBundles(env).then(result=>{
+      if(result.created||result.updated)console.info("Daily product bundles synchronized",result);
+    }).catch(e=>console.warn("Daily bundles sync deferred",String(e).slice(0,160))));
     ctx.waitUntil(refreshRacingWire(env).then(result=>{
       if(result.checked)console.info('Racing Wire feeds refreshed',result);
     }).catch(e=>console.warn('Racing Wire feed refresh deferred',String(e).slice(0,140))));
