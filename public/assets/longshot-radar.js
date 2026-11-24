@@ -24,8 +24,8 @@ const timeLabel=value=>{
  if(!Number.isFinite(parsed))return "";
  return new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",month:"short",day:"numeric",hour:"numeric",minute:"2-digit",timeZoneName:"short"}).format(new Date(parsed));
 };
-// Both Radar and Target List use source-declared Eastern post times. Unknown
-// or unparsable times remain at the end, in their original editorial order.
+// Both readers use the shared source-declared post-time parser and the
+// same track/race-number tie breaks. Unknown times sort after sourced times.
 function orderByDay(items,mode){return raceOrder.sort(items,mode);}
 function programChip(value){
  const chip=make("span","rr-lr-program"),program=String(value||""),match=program.match(/^(\d{1,2})([A-Za-z]?)$/),number=match?Number(match[1]):NaN;
