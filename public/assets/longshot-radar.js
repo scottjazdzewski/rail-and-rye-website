@@ -134,18 +134,10 @@ function makeCard(item){
   market("FAIR ODDS",tote(item.fair_odds_display),"rr-lr-fair")
  );
  top.append(programChip(item.program_number),identity,markets);
+ // Match the approved printed Radar: one source-approved betting sentence.
+ // Supporting research/counterarguments stay in private editorial QA, not on the card.
  const analysis=make("div","rr-lr-inline-analysis");
  analysis.append(make("p","rr-lr-case",item.betting_case));
- if(item.source_causal_evidence){
-  const evidence=make("div","rr-lr-evidence");
-  evidence.append(make("strong","","Evidence"),make("p","",item.source_causal_evidence));
-  analysis.append(evidence);
- }
- if(item.counterargument_checked){
-  const counter=make("div","rr-lr-evidence");
-  counter.append(make("strong","","Counterargument"),make("p","",item.counterargument_checked));
-  analysis.append(counter);
- }
  card.append(racebar,top,analysis);
  return card;
 }
