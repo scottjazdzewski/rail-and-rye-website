@@ -40,7 +40,7 @@ The single source of truth for **horse saddle chips**, authentic saddlecloth-bac
 
 - Horse selections everywhere use `/assets/approved/saddlecloths/{1..20}.png` and preserve legitimate coupled-entry suffixes; no recreated chip colors.
 - Race navigation tabs and the header race-number marker use the **exact approved saddlecloth image corresponding to the race number** (#1–20), preserving color/number art. Only the selected tab adds an outside gold ring; remove the stacked RACE caption and thick fake CSS chip borders.
-- Keep the approved Rail & Rye horseshoe and track name/date visible, and **restore the existing authentic track-logo artwork** from `/assets/approved/track-logos/*.webp` (where available). Show it uncropped inside the seamless white track masthead with no separate tile, border, shadow, filters or blend artifacts; do not use the interim invented `FL`/`MV`/`PRX` racing monograms. Where no approved logo exists, show the full track name and Rail & Rye horseshoe rather than inventing one.
+- Keep the shared Rail & Rye horseshoe and the complete track name/date. **Do not render racetrack-logo badges in the current mobile-first Hub pages.** All five approved original logo assets remain saved for a separate desktop design decision. Never substitute invented track initials.
 - The Bet Builder is part of Projections, not a separate product or purchase. Its model-only exacta/trifecta UI never displays made-up probability/payoff values. Exact F4 joint probabilities require a verified server-side production receipt and private, entitlement-checked delivery.
 - The user consults any actual tote prices independently; Rail & Rye does not connect to tote services or accept wagers.
 
@@ -48,13 +48,13 @@ The single source of truth for **horse saddle chips**, authentic saddlecloth-bac
 
 - Remove the redundant **Find a horse** input entirely from Projections and its event handlers, styles, and tests. Keep date and track selectors plus race saddlecloths; preserve All Tracks chronological mode.
 - Track identity has **one CSS owner**, `public/assets/rr-projections-track-identity.css`. Previous logo styles were removed from general and shared CSS rather than overlaid.
-- Preserve five original approved venue WebP logos. Their native source files are low-resolution; present them uncropped at or below source size, integrated on one continuous white editorial masthead (never a separate bordered white box) with zero contrast filtering, blending, opacity adjustment or stretching. Never fabricate a logo or use invented venue initials.
-- The full track masthead is a single white editorial strip with a thin gold divider; no independent advertising-style logo plaque may return. Full track name, date and approved Rail & Rye horseshoe remain central; an unknown logo falls back to that identity alone. This edit changes no TRI/F4 data.
+- Preserve the five original venue WebP logo files unchanged but do not load them in Projections or Pick Tickets while the mobile design is being finalized. Desktop may revisit them later.
+- Projections has one compact full-width text-only track name/date row inside its navigation deck. No extra logo column, framed plaque or badge. The shared site header already provides the Rail & Rye emblem. This does not change TRI/F4 data.
 
 ## Projections integrated command layout — approved November 23, 2026
 
-- On admin/member Projections, date/track selectors, By Track/All Tracks switch, the full official venue title/date/mark, and genuine race saddlecloth tabs form **one compact navigation deck**. Do not restore several separate vertical cards.
-- The shared site header already displays Rail & Rye's horseshoe. The compact venue identity keeps its full name/date and original racetrack mark, but no extra branded emblem.
+- On admin/member Projections, date/track selectors, By Track/All Tracks switch, full track name/date, and genuine numbered saddlecloth tabs form **one compact navigation deck**. Do not restore logo artwork or stacked cards.
+- The shared site header displays Rail & Rye's horseshoe. The venue identity below it is track name/date only, without an additional racetrack emblem.
 - `public/assets/rr-projections-command.css` is the only navigation style authority. Previous mode/toolbar/race-tab-container styles were retired from `projections-dashboard.css`, not overlaid.
 - The race title, purse/runners/post time and centered scratch chips retain their exact approved hierarchy. On normal phone widths metadata shares one slim row; at narrow widths it wraps to preserve text.
 - Pace, Surface and Distance remain authentic, equal, center-aligned picture badges, now attached directly beneath the navy race header in a **short integrated band**, not a large separate card.
@@ -133,3 +133,11 @@ The single source of truth for **horse saddle chips**, authentic saddlecloth-bac
 3. Do NOT publish publicly or enable `PROJECTIONS_MEMBER_LAUNCH` (or future product launch flags) without explicit customer-launch instruction. Admin/private previews are okay under correct access controls.
 4. Run CI, validate 320/375/390/430px and desktop; explicitly inspect for clipping, full field coverage, percent/font consistency, data integrity, exact current status and product-only access. Do not claim "pushed" just because a PR merged: confirm Cloudflare Workers deployment.
 5. This contract establishes shared UI/product infrastructure, NOT any new scoring, ticket construction or marketing entitlement assumptions.
+
+## Mobile UI review: track logo removal and hierarchy (November 23, 2026)
+
+- Track-logo badges are removed from active Projections (admin and member) and Pick Tickets HTML/JS/CSS. Radar and Target List were already text-first. Do not remove or restyle **race-number saddlecloths, horse saddlecloths, graded-stakes trophies, or Pace/Surface/Distance badges**.
+- **1. Hierarchy:** Leading visual priority is horse name plus authentic numbered saddlecloth; then WIN % and FAIR ODDS. Pick Tickets prioritizes PLAY/CONDITIONAL/PASS, race sequence and hit probability/cost rather than inventing single-horse fair odds.
+- **2. Vertical density:** Avoid empty venue artwork frames. Show full track names and race descriptions, remove duplicate helper text, and keep the date/sort or date/track controls compact with readable touch targets. Do not hide actual scratch or betting data to save space.
+- **3. Consistency:** The four products share the same Hub masthead, gold/narrow input controls, navy/gold race headers, clear saddlecloths, readable labels, and mobile-first spacing. Longshot Radar and Target List share their count/active-sort rhythm but retain product-specific runner analysis. Do not alter Radar's separately owned banner redesign during this pass.
+- This is a mobile-first design change; **desktop-specific venue logo presentation is not approved** and must be revisited separately.
