@@ -1,0 +1,27 @@
+name: Lock source-neutral Rail & Rye customer copy
+on:
+  pull_request:
+    paths:
+      - "public/**"
+      - "test-radar-customer-copy.mjs"
+      - ".github/workflows/lock-source-neutral-customer-copy.yml"
+  push:
+    branches: [main]
+    paths:
+      - "public/**"
+      - "test-radar-customer-copy.mjs"
+      - ".github/workflows/lock-source-neutral-customer-copy.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-neutral-copy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verify no proprietary source names in customer-facing pages
+        run: node test-radar-customer-copy.mjs
