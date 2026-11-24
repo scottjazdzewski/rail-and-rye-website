@@ -550,7 +550,7 @@ async function checkout(request,env){
       LEFT JOIN product_release_schedule s ON s.product_id=c.id
       WHERE bi.bundle_id=? ORDER BY bi.position`).bind(p.id).all();
     children.push(...(result.results||[]));
-    if(children.length<2||children.length>12||children.some(x=>x.pdf_key===BUNDLE_KEY||x.expired||x.pending_release||!(x.status==='published'||(x.status==='draft'&&x.asset_id))))
+    if(children.length<2||children.length>12||children.some(x=>x.pdf_key===BUNDLE_KEY||x.expired||x.pending_release||!(x.status==='published'||x.status==='draft')))
       return error('Bundle contents are currently unavailable',409);
     const ready=await Promise.all(children.map(item=>hasProductTabData(env,item.category,item.race_date,[item])));
     if(ready.some(value=>!value))return error('A tab in this bundle has not been published yet.',409);

@@ -625,7 +625,7 @@
       note('A bundle already live for sale cannot be scheduled again. Create a new draft bundle.');return;
     }
     if(action!=='archived'&&action!=='cancel'&&(ids.length<2||ids.length>12)){
-      note('Select 2 to 12 eligible PDFs.');return;
+      note('Select 2 to 12 eligible tab editions.');return;
     }
     let release_at=null;
     if(action==='scheduled'){
