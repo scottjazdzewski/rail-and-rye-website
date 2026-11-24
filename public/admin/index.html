@@ -166,13 +166,15 @@
     .workflow-journal>.panel+.panel{border-top:1px solid rgba(25,45,65,.12)}
     @media(max-width:900px){.workflow>.layout{padding:10px}.workflow>.panel{padding:12px}}
   </style>
-<link rel="icon" href="/favicon.png" type="image/png"></head>
+<link rel="icon" href="/favicon.png" type="image/png"><style>.rr-launch-readiness{margin:14px 0 0;padding:11px 14px;border-left:4px solid var(--gold);background:#fff;color:var(--deep);font-size:13px}.rr-launch-readiness.ready{border-color:var(--success)}.rr-launch-readiness.blocked{border-color:var(--error)}.pill.waiting{background:#fff1ce;color:#8f581e}</style>
+</head>
 <body>
 <header><div class="top"><div class="logo">RAIL &amp; RYE <small>The Publisher's Desk</small></div><nav aria-label="Publisher tools" style="display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:14px"><a href="#workflow-journal">Journal tools ↓</a><a href="/preview/racing-wire-5333548f0ffee31ba519b2470ffb/">Racing Wire private preview ↗</a><a href="/admin/membership-plans/">Membership plans ↗</a><a href="/admin/racing-intelligence-review/">Racing Intelligence review ↗</a><a href="/admin/projections/">Projection dashboard upload ↗</a><a href="/store/">Publication desk ↗</a><a href="/">View website ↗</a></nav></div></header>
 <main>
   <div class="kicker">Independent thoroughbred racing intelligence</div>
   <h1>Publisher's Desk</h1>
   <p class="sub">Choose an individual tab or bundle on the left. Publishing unlocks the matching category and racing date; uploaded PDFs remain in the private source library.</p>
+  <div id="launchReadiness" class="rr-launch-readiness" role="status" aria-live="polite">Checking checkout readiness…</div>
   <div id="notice" class="notice" role="status" aria-live="polite"></div>
   <details class="workflow workflow-upload" id="workflow-uploads" name="publisher-workflow" open>
     <summary><strong>Private source library</strong><span>Store reference PDFs here. Customers always receive access through the matching on-site tab.</span></summary>
@@ -432,7 +434,7 @@
       const b=document.createElement('button');b.type='button';b.className='product'+(p.id===currentId?' active':'');b.addEventListener('click',()=>edit(p));
       const name=document.createElement('strong');name.textContent=p.title;
       const status=document.createElement('em');status.className='pill scheduled';status.textContent='Scheduled';name.append(status);
-      const details=document.createElement('span');details.textContent=[p.category,p.race_date||'No date',p.pdf_key?'Source file attached':'Tab only','Releases '+localRelease(p.release_at).replace('T',' ')+' ET'].join(' • ');
+      const details=document.createElement('span');details.textContent=[p.category,p.race_date||'No date',p.pdf_key?'Private source attached':'Tab only',p.tab_content_ready===true?'Tab ready':p.tab_content_ready===false?'Waiting for tab data':null,'Releases '+localRelease(p.release_at).replace('T',' ')+' ET'].filter(Boolean).join(' • ');
       b.append(name,details);el.append(b);
     }
   }
@@ -452,7 +454,7 @@
   }
   function pendingBundleForDesk(bundle){return bundle.status==='published'&&bundle.release_at&&Date.parse(String(bundle.release_at).replace(' ','T')+'Z')>Date.now();}
   function renderList(){const el=$('productList');el.replaceChildren();renderScheduledList();if(!products.length){let e=document.createElement('div');e.className='empty';e.textContent='No products yet. Start with your first racing tab.';el.append(e);return;}
-    for(const p of products){const b=document.createElement('button');b.type='button';b.className='product'+(p.id===currentId?' active':'');b.addEventListener('click',()=>edit(p));let name=document.createElement('strong');name.textContent=p.title;let status=document.createElement('em');status.className='pill '+(pending(p)?'scheduled':p.status==='published'?'published':'');status.textContent=pending(p)?'Scheduled':p.status;name.append(status);let details=document.createElement('span');details.textContent=[p.category,p.race_date||'No date',money(p.price_cents),p.pdf_key?'Private source attached':'Tab only',p.pdf_expires_at?'Tab access through '+expiryLabel(p.pdf_expires_at):null,pending(p)?'Release '+localRelease(p.release_at).replace('T',' ')+' ET':null].filter(Boolean).join(' • ');b.append(name,details);el.append(b);}
+    for(const p of products){const b=document.createElement('button');b.type='button';b.className='product'+(p.id===currentId?' active':'');b.addEventListener('click',()=>edit(p));let name=document.createElement('strong');name.textContent=p.title;let status=document.createElement('em');status.className='pill '+(pending(p)?'scheduled':p.status==='published'?'published':'');status.textContent=pending(p)?'Scheduled':p.status;name.append(status);if(p.tab_content_ready!==null&&p.tab_content_ready!==undefined){const readiness=document.createElement('em');readiness.className='pill '+(p.tab_content_ready?'published':'waiting');readiness.textContent=p.tab_content_ready?'Tab ready':'Waiting for content';name.append(readiness);}let details=document.createElement('span');details.textContent=[p.category,p.race_date||'No date',money(p.price_cents),p.pdf_key?'Private source attached':'Tab only',p.pdf_expires_at?'Tab access through '+expiryLabel(p.pdf_expires_at):null,pending(p)?'Release '+localRelease(p.release_at).replace('T',' ')+' ET':null].filter(Boolean).join(' • ');b.append(name,details);el.append(b);}
   }
   async function refresh(selectId){const data=await api('/api/admin/products');products=data.products||[];if(selectId){const item=products.find(p=>p.id===selectId);if(item)edit(item);}else renderList();}
   function payload(status){const priceText=$('price').value.trim();const dollars=Number(priceText);const cents=Math.round(dollars*100);if(!Number.isFinite(dollars)||dollars<0||Math.abs(dollars*100-cents)>1e-5)throw Error('Enter a valid price with at most two decimal places.');
@@ -524,7 +526,20 @@
       if(prefill.scheduleAt)$('scheduleAt').value=prefill.scheduleAt;
     }).catch(e=>message(e.message,'error'));
   });
-  api('/api/admin/status').then(r=>{paymentMode=r.payment_mode||'test';return refresh();}).catch(e=>message('Admin service unavailable: '+e.message,'error'));
+  api('/api/admin/status').then(r=>{
+    paymentMode=r.payment_mode||'test';
+    const launch=$('launchReadiness');
+    launch.className='rr-launch-readiness'+(paymentMode==='live'&&r.checkout_ready?' ready':paymentMode==='paused'||paymentMode==='live'?' blocked':'');
+    if(paymentMode==='live'&&r.checkout_ready)launch.textContent='Checkout status: Live checkout is ready. Only published tabs with available race content appear for sale.';
+    else if(paymentMode==='live')launch.textContent='Checkout status: Live mode is selected, but required Stripe or fulfillment settings are incomplete. Purchases remain unavailable.';
+    else if(paymentMode==='paused')launch.textContent='Checkout status: Paused. New purchases are disabled.';
+    else launch.textContent='Checkout status: Test mode. Real charges are disabled.';
+    return refresh();
+  }).catch(e=>{
+    $('launchReadiness').classList.add('blocked');
+    $('launchReadiness').textContent='Checkout status is unavailable. '+e.message;
+    message('Admin service unavailable: '+e.message,'error');
+  });
 })();
 </script>
 
