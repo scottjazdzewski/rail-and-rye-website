@@ -8,9 +8,7 @@
   status:$("#rr-pt-status"),app:$("#rr-pt-app"),date:$("#rr-pt-date"),track:$("#rr-pt-track"),
   types:$("#rr-pt-types"),sequences:$("#rr-pt-sequences"),
   updated:$("#rr-pt-updated"),current:$("#rr-pt-current"),
-  empty:$("#rr-pt-empty"),intakePanel:$("#rr-pt-intake"),
-  dialog:$("#rr-pt-dialog"),dialogTitle:$("#rr-pt-dialog-title"),
-  dialogBody:$("#rr-pt-detail")
+  empty:$("#rr-pt-empty"),intakePanel:$("#rr-pt-intake")
  };
  let certified=[],entries=[],intake=null,scratchUpdate=null,activeSeq=null,activeTier=0;
  let activeMode="rail",builderLegs=[],expandedRaceNumbers=new Set();
@@ -25,22 +23,81 @@
  const option=(select,key,label)=>{const o=node("option","",label);o.value=key;select.append(o)};
  const setMessage=(text,visible=true)=>{E.status.hidden=!visible;E.status.textContent=text;};
  const hitRate=t=>t?.hit_rate_display?t.hit_rate_display:"—";
+ // Only use the full, current race-field probability vector. A missing
+ // runner or incomplete distribution is unknown, never a zero probability.
+ function racePwin(race){
+  const source=activeSeq?.review_probabilities?.[String(race)];
+  const field=activeSeq?.race_fields?.find(x=>x.race_number===race)?.programs;
+  if(!source||!Array.isArray(field)||!field.length||new Set(field).size!==field.length||
+     Object.keys(source).length!==field.length)return null;
+  let total=0;
+  for(const p of field){
+   if(!Object.prototype.hasOwnProperty.call(source,p))return null;
+   const n=source[p];
+   if(typeof n!=="number"||!Number.isFinite(n)||n<0||n>100)return null;
+   total+=n;
+  }
+  return Math.abs(total-100)<=.00001?source:null;
+ }
+ function legPwin(leg){
+  const source=racePwin(leg.race_number);
+  if(!source||!Array.isArray(leg.programs)||new Set(leg.programs).size!==leg.programs.length)return null;
+  let sum=0;
+  for(const p of leg.programs){
+   if(!Object.prototype.hasOwnProperty.call(source,p))return null;
+   sum+=source[p];
+  }
+  return Math.min(100,sum);
+ }
+ const pwinText=n=>n===null?"—":n.toFixed(1)+"%";
  function reviewHitRate(legs){
-  if(!activeSeq?.review_probabilities||!Array.isArray(legs)||!legs.length)return "—";
+  if(!Array.isArray(legs)||!legs.length)return "—";
   let hit=1;
   for(const leg of legs){
-   const source=activeSeq.review_probabilities[String(leg.race_number)];
-   if(!source||!Array.isArray(leg.programs)||!leg.programs.length)return "—";
-   let legMass=0;
-   for(const p of leg.programs){
-    if(!Object.prototype.hasOwnProperty.call(source,p))return "—";
-    const n=source[p];if(typeof n!=="number"||!Number.isFinite(n)||n<0||n>100)return "—";
-    legMass+=n;
-   }
-   if(legMass>100.000001)return "—";
-   hit*=legMass/100;
+   const mass=legPwin(leg);
+   if(mass===null)return "—";
+   hit*=mass/100;
   }
-  return (hit*100).toFixed(1)+"%";
+  return pwinText(hit*100);
+ }
+ function coverageHeading(){
+  const header=node("div","rr-pt-pwin-heading");
+  header.append(node("span","","PWIN COVERED"));
+  return header;
+ }
+ function coverageCell(leg,{builder=false}={}){
+  const mass=legPwin(leg),cell=node("div","rr-pt-pwin-cell");
+  const value=node("strong","rr-pt-pwin-value",pwinText(mass));
+  cell.setAttribute("aria-label","Race "+leg.race_number+" PWIN covered: "+(mass===null?"not available":pwinText(mass)));
+  cell.append(value);
+  const track=node("span","rr-pt-pwin-track");
+  const fill=node("span","rr-pt-pwin-fill");
+  fill.style.width=(mass===null?0:mass)+"%";
+  track.setAttribute("aria-hidden","true");track.append(fill);cell.append(track);
+  if(builder){
+   const base=selectedTicket()?.legs.find(x=>x.race_number===leg.race_number);
+   const baseMass=base?legPwin(base):null;
+   if(mass!==null&&baseMass!==null){
+    const delta=mass-baseMass;
+    if(Math.abs(delta)>=.05){
+     const diff=node("span","rr-pt-pwin-delta", (delta>0?"+":"−")+Math.abs(delta).toFixed(1)+" pp");
+     diff.dataset.direction=delta>0?"up":"down";
+     diff.title="Percentage-point change from Rail & Rye selections";
+     cell.append(diff);
+    }
+   }
+  }
+  return cell;
+ }
+ function appendRunnerPwin(button,race,program,{selected=false}={}){
+  if(isScratched(race,program)){
+   button.append(node("span","rr-pt-runner-pwin","SCR"));return;
+  }
+  const source=racePwin(race);
+  const prob=source&&Object.prototype.hasOwnProperty.call(source,program)?source[program]:null;
+  button.append(node("span","rr-pt-runner-pwin",prob===null?"—":(selected?"":"+")+pwinText(prob)));
+  const label=button.getAttribute("aria-label");
+  if(prob!==null)button.setAttribute("aria-label",label+", PWIN "+pwinText(prob));
  }
  const escapeText=String;
  function programChip(p){
@@ -77,12 +134,14 @@
   }
   return line;
  }
- function ticketRows(ticket){
+ function ticketRows(ticket,{coverage=true}={}){
   const rows=node("div","rr-pt-race-rows");
+  if(coverage)rows.append(coverageHeading());
   for(const leg of ticket.legs){
-   const row=node("div","rr-pt-race-row"),name=node("span","rr-pt-row-race","RACE "+leg.race_number),chips=node("div","rr-pt-row-chips");
+   const row=node("div","rr-pt-race-row"+(coverage?" rr-pt-has-coverage":"")),name=node("span","rr-pt-row-race","RACE "+leg.race_number),chips=node("div","rr-pt-row-chips");
    for(const p of leg.programs)chips.append(programChip(p));
    row.append(name,chips);
+   if(coverage)row.append(coverageCell(leg));
    const named=stakesLine(leg.race_number);if(named)row.append(named);
    rows.append(row);
   }
@@ -160,8 +219,10 @@
   intro.append(node("strong","","Build Your Ticket"));
   area.append(intro);
   const rows=node("div","rr-pt-builder-rows");
+  rows.append(coverageHeading());
   for(const leg of builderLegs){
-   const row=node("section","rr-pt-builder-row");
+   const row=node("section","rr-pt-builder-row rr-pt-has-coverage");
+   let expandedField=null;
    const name=node("span","rr-pt-row-race","RACE "+leg.race_number);
    const body=node("div","rr-pt-builder-leg-body");
    const picks=node("div","rr-pt-builder-chips");
@@ -171,6 +232,7 @@
     button.setAttribute("aria-label","Race "+leg.race_number+" horse "+program+" selected");
     button.append(programChip(program));
     disableScratchButton(button,leg.race_number,program);
+    appendRunnerPwin(button,leg.race_number,program,{selected:true});
     button.addEventListener("click",()=>{if(isScratched(leg.race_number,program))return;leg.programs=leg.programs.filter(x=>x!==program);renderActive()});
     return button;
    });
@@ -198,13 +260,15 @@
       button.setAttribute("aria-label","Race "+leg.race_number+" horse "+program+" not selected");
       button.append(programChip(program));
       disableScratchButton(button,leg.race_number,program);
+      appendRunnerPwin(button,leg.race_number,program);
       button.addEventListener("click",()=>{if(isScratched(leg.race_number,program))return;leg.programs.push(program);renderActive()});
       field.append(button);
      });
-     body.append(field);
+     expandedField=field;
     }
    }
-   row.append(name,body);
+   row.append(name,body,coverageCell(leg,{builder:true}));
+   if(expandedField)row.append(expandedField);
    const named=stakesLine(leg.race_number);if(named)row.append(named);
    rows.append(row);
   }
@@ -288,117 +352,8 @@
    box.append(meta,ticketRows(chosen),stats(chosen));
    if(activeSeq.play_status==="PASS")box.append(node("p","rr-pt-pass-note",
     "PASS — not recommended. Best available ticket shown for reference."));
-   const actions=node("div","rr-pt-ticket-actions");
-   const analysis=node("button","rr-pt-analysis-button","Ticket Insights");
-   analysis.type="button";analysis.addEventListener("click",openAnalysis);
-   actions.append(analysis);box.append(actions);
   }
   E.current.append(box);
- }
- function openAnalysis(){
-  if(!activeSeq)return;
-  const c=entries.find(x=>x.card.track===E.track.value&&x.card.date===E.date.value)?.card;
-  if(!c)return;
-  E.dialogBody.replaceChildren();
-  E.dialogTitle.textContent=activeSeq.name+" · Races "+activeSeq.start_race+"–"+activeSeq.end_race;
-  const info=node("div","rr-pt-dialog-info");
-  info.append(state(activeSeq.play_status),node("span","",c.track+" · "+toDate(c.date)));
-  E.dialogBody.append(info);
-  // Before/after selections appear only when a later verified field upload
-  // changed this exact wager sequence. Keep the main ticket layout compact.
-  const change=activeSeq.upload_change;
-  if(change?.previous_ticket){
-   const prior=change.previous_ticket;
-   const compare=node("details","rr-pt-prior-ticket");
-   compare.append(node("summary","",
-    "Previous field · "+prior.combinations+" combinations · "+money(prior.cost_cents)));
-   const label=node("div","rr-pt-prior-label",
-    "Previous selection · "+prior.hit_rate+" projected hit");
-   const previousRows=ticketRows({legs:prior.legs});
-   compare.append(label,previousRows);
-   E.dialogBody.append(compare);
-  }
-  // A sequence-wide legacy percentage must never masquerade as a tier-specific hit rate.
-  const publicRecommendation=displayTicketNote(activeSeq.recommendation);
-  if(publicRecommendation)E.dialogBody.append(node("p","rr-pt-analysis-reason",publicRecommendation));
-  const stage=node("div","rr-pt-analysis-stage");
-  function show(i){
-   stage.replaceChildren();
-   stage.append(tierPicker(activeSeq,i,show));
-   stage.append(node("h3","rr-pt-analysis-tier",displayTicketName(activeSeq.tickets[i])));
-   if(hitRate(activeSeq.tickets[i])!=="—")stage.append(node("p","rr-pt-analysis-rate","Projected hit chance: "+hitRate(activeSeq.tickets[i])));
-   stage.append(ticketRows(activeSeq.tickets[i]),stats(activeSeq.tickets[i]));
-   // Current V3.3 ticket: show what each selected leg covers and the
-   // incremental opportunity cost of OPTIONAL runners only inside Insights.
-   const meta=activeSeq.review_meta;
-   if((meta?.method==="V3.3-TRI-ONLY-SINGLE-RECTANGLE-COVER50"||meta?.method==="V3.4-TRI-ONLY-LENGTH-SENSITIVE-TRIAL-A")&&
-      Array.isArray(meta.selected_leg_coverage)){
-    const section=node("section","rr-pt-coverage-breakdown");
-    section.append(node("h4","","Race coverage"));
-    const grid=node("div","rr-pt-coverage-grid");
-    for(let j=0;j<activeSeq.tickets[i].legs.length;j++){
-     const leg=activeSeq.tickets[i].legs[j],mass=meta.selected_leg_coverage[j];
-     const row=node("div","rr-pt-coverage-line");
-     row.append(node("span","", "Race "+leg.race_number));
-     row.append(node("strong","",(mass*100).toFixed(1)+"%"));
-     row.append(node("span","",leg.programs.length+" "+(leg.programs.length===1?"horse":"horses")));
-     grid.append(row);
-    }
-    section.append(grid);
-    const extras=(meta.marginal_opportunity_cost||[]).filter(x=>x.status==="ADDITIONAL_COVERAGE");
-    if(extras.length){
-     const details=node("details","rr-pt-coverage-marginals");
-     details.append(node("summary","", "Additional horse costs ("+extras.length+")"));
-     const table=node("table","rr-pt-sensitivity-table");
-     const thead=node("thead",""),head=node("tr","");
-     for(const title of ["Race","Horse","Added cost","Added hit"]){
-      const th=node("th","",title);th.scope="col";head.append(th);
-     }
-     thead.append(head);table.append(thead);
-     const body=node("tbody","");
-     for(const x of extras){
-      const row=node("tr","");
-      for(const value of ["Race "+x.race_number,"#"+x.program,money(x.additional_cost_cents),
-       (x.additional_sequence_hit_probability*100).toFixed(2)+" pp"]){
-       row.append(node("td","",value));
-      }
-      body.append(row);
-     }
-     table.append(body);details.append(table);section.append(details);
-    }
-    stage.append(section);
-   }
-   const priorTrial=meta?.comparison_v33;
-   if(priorTrial){
-    const block=node("section","rr-pt-sensitivity");
-    block.append(node("h4","","V3.3 comparison"));
-    block.append(node("p","","Previous ticket: "+priorTrial.combinations+" combinations · "+money(priorTrial.total_cents)+" · "+priorTrial.hit_rate_display+" projected hit"));
-    stage.append(block);
-   }
-   const comparisons=activeSeq.review_meta?.cost_preference_comparison;
-   if(Array.isArray(comparisons)&&comparisons.length){
-    const box=node("section","rr-pt-sensitivity");
-    box.append(node("h4","","Coverage vs cost"));
-    const table=node("table","rr-pt-sensitivity-table");
-    const thead=node("thead",""),tr=node("tr","");
-    for(const heading of ["Scale","Combos","Hit","Cost","Singles"]){
-     const th=node("th","",heading);th.scope="col";tr.append(th);
-    }
-    thead.append(tr);table.append(thead);
-    const tbody=node("tbody","");
-    for(const item of comparisons){
-     const row=node("tr",item.current_approved?"rr-pt-sensitivity-current":"");
-     const values=["$"+Number(item.scale_dollars).toFixed(0),
-      String(item.combinations),String(item.hit_rate_display),
-      money(item.total_cents),String(item.singles)];
-     for(const value of values)row.append(node("td","",value));
-     tbody.append(row);
-    }
-    table.append(tbody);box.append(table);stage.append(box);
-   }
-  }
-  show(activeTier);E.dialogBody.append(stage);
-  E.dialog.showModal();
  }
  function availableSequences(){
   const chosen=entries.find(x=>x.card.date===E.date.value&&x.card.track===E.track.value);
@@ -460,7 +415,7 @@
   E.app.hidden=!entry;E.empty.hidden=!!entry;
 
   if(!entry){renderIntake();return;}
-  E.updated.textContent=entry.card.track+" · "+toDate(entry.card.date)+(entry.card.formula_version?.startsWith("V3.4-")?" · V3.4":"");
+  E.updated.textContent=entry.card.track+" · "+toDate(entry.card.date);
   renderTypes();
  }
  async function call(url,opts){
@@ -475,7 +430,7 @@
    const mode=new URLSearchParams(window.location.search).get("trial");
    const requestedTrial=mode==="v34";
    const real=await call("/api/admin/pick-tickets"+(mode==="v33"?"?trial=v33":requestedTrial?"?trial=v34":""));
-   if(requestedTrial&&real.trial!=="V3.4")throw Error("V3.4 trial is not available on this deployment.");
+   if(requestedTrial&&real.trial!=="V3.4")throw Error("Requested ticket edition is not available.");
    certified=(real.cards||[]).filter(entry=>entry?.card?.status!=="demo"&&!entry?.card?.is_demo);
    intake=real.intake||null;scratchUpdate=real.scratch_update||null;
     useData();
@@ -492,7 +447,5 @@
  }
  E.date.addEventListener("change",updateTrack);
  E.track.addEventListener("change",()=>{activeSeq=null;E.types.dataset.selected="3";render()});
- $("#rr-pt-close").addEventListener("click",()=>E.dialog.close());
- E.dialog.addEventListener("click",event=>{if(event.target===E.dialog)E.dialog.close()});
  load();
 })();
