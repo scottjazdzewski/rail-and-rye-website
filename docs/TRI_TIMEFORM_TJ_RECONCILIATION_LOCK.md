@@ -31,3 +31,17 @@ python scripts/tri_timeform_tj_reconcile_gate.py --roster reconciled/source_rost
 - All source-person strings equal the corrected per-horse sidecars; no leaked headings or neighboring runner labels.
 - Canonical V4 scorer gate confirms no unresolved roles, approved neutral means in the **actual consumed** model feature matrix, original zeros preserved, race PWIN total reconciled, and same-run F4 receipt.
 - Preserve prescratch vs scratch-update status honestly. Stage next-day output only after all applicable source/scoring/editorial/visual checks. Never advance the customer-facing day before the established 3 AM rollover.
+
+## Mandatory one-command daily launcher (not optional manual QA)
+
+Future card-production windows MUST invoke `scripts/tri_timeform_tj_verified_score.py` instead of calling `CODE/score_current_runtime_v1_3_7.py` directly. The launcher automatically repairs only geometrically proven merged trainer headings, audits both roles for every original-card starter, holds source-unverified races, scores only fully verified tracks through the unchanged promoted runtime, and verifies actual consumed model-role receipts. It writes a source-to-score custody report; no customer/staging upload is performed by this launcher.
+
+```
+python scripts/tri_timeform_tj_verified_score.py \
+  --roster source_roster_geometry.json --source-dir original-pdfs \
+  --sidecars-dir original-dated-sidecars --engine-dir TRI_V4_1_promoted \
+  --runtime-zip TRI_V1372_FROZEN_PARENT.zip --race-date YYYY-MM-DD \
+  --out-dir verified-scored-output
+```
+
+Never bypass the launcher to turn a missing-jockey track into a PASS. Where one PDF contains some source-held races, the custody report identifies **the exact held race numbers** so verified unaffected races can be run in a separately scoped source-preserving batch rather than misrepresented as part of the complete-track receipt.
