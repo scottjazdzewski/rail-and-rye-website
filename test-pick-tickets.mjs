@@ -113,7 +113,8 @@ assert.equal(Object.keys(getPickTicketsIntake()).some(k=>/selections|pwin|win_pr
 assert.equal(data.cards[0].card.revision,2);
 assert.equal(data.cards[0].card.status,"scratch_updated");
 assert.equal(data.cards[0].card.formula_version,PICK_V33_ENGINE);
-assert.equal(data.engine,PICK_V33_ENGINE);
+assert.equal(data.engine,"V3.4-TRI-ONLY-LENGTH-SENSITIVE-TRIAL-A");
+assert.deepEqual(data.cost_scale_by_length,{3:15,4:30,5:60,6:120});
 assert.equal(listing.headers.get("Cache-Control"),"private, no-store");
 const wrongBatch=[card(),({...card(),date:"2026-11-24",revision:3,sequences:[{...card().sequences[0],tickets:[]} ]})];
 result=await post({cards:wrongBatch});assert.equal(result.response.status,400);
@@ -146,9 +147,9 @@ liveEnv.CARDS_BUCKET.objects.set("projections/dashboard/2026-11-23/finger-lakes.
 const sourcePreview=await handleAdminPickTickets(
  new Request("https://railandryeracing.com/api/admin/pick-tickets"),liveEnv);
 const sourcePayload=await sourcePreview.json();
-assert.equal(sourcePayload.engine,PICK_V33_ENGINE);
-assert.equal(sourcePayload.soft_cost_scale_dollars,30);
-assert.equal(sourcePayload.minimum_leg_coverage,.5);
+assert.equal(sourcePayload.engine,"V3.4-TRI-ONLY-LENGTH-SENSITIVE-TRIAL-A");
+assert.equal(sourcePayload.soft_cost_scale_dollars,null);
+assert.equal(sourcePayload.minimum_leg_coverage,null);
 assert.equal(sourcePayload.private_review_only,true);
 assert.equal(sourcePayload.review_count,0,
  "scratch-adjusted field with verified PRESCRATCH scores must not appear as verified tickets");

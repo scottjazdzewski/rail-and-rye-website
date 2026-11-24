@@ -262,6 +262,31 @@ assert.equal(newAudit.date,"2026-11-24");
 assert.equal(newAudit.review_card.date,"2026-11-24");
 assert.equal(newAudit.sequence_count,7);
 assert.equal(newAudit.production_release_approved,false);
+assert.equal(newAudit.v34_review_card,undefined,"no V3.4 without scorer receipts");
+const currentRoute="https://railandryeracing.com/api/admin/pick-tickets";
+const missingPairView=await (await handleAdminPickTickets(new Request(currentRoute),env)).json();
+assert.equal(missingPairView.cards.some(x=>x.card.date==="2026-11-24"),false,"no fallback to V3.3 for current scoreless fields");
+const scoredNext=structuredClone(nextDay);
+scoredNext.model_receipts={tri_sha256:"a".repeat(64),f4_sha256:"b".repeat(64)};
+const scoredResponse=await handleAdminProjectionBatchUpload(new Request(
+ "https://railandryeracing.com/api/admin/projections/batch",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({cards:[scoredNext]})}),env);
+assert.equal(scoredResponse.status,200);
+const scoredSource=JSON.parse(await (await env.CARDS_BUCKET.get("projections/dashboard/2026-11-24/finger-lakes.json")).text());
+const lockedAudit=JSON.parse(await (await env.CARDS_BUCKET.get(pickUploadAuditKey(scoredSource))).text());
+assert.equal(lockedAudit.active_optimizer,"V3.4-TRI-ONLY-LENGTH-SENSITIVE-TRIAL-A");
+assert.equal(lockedAudit.v34_review_card.sequences.length,7);
+const currentView=await (await handleAdminPickTickets(new Request(currentRoute),env)).json();
+const activeNext=currentView.cards.find(x=>x.card.date==="2026-11-24");
+assert.equal(activeNext.card.formula_version,lockedAudit.active_optimizer);
+assert.deepEqual(activeNext.card.sequences.map(s=>s.tickets),lockedAudit.v34_review_card.sequences.map(s=>s.tickets));
+const baselineView=await (await handleAdminPickTickets(new Request(currentRoute+"?trial=v33"),env)).json();
+assert.equal(baselineView.cards.find(x=>x.card.date==="2026-11-24").card.formula_version,PICK_V33_ENGINE);
+const changedNext=structuredClone(scoredSource);
+changedNext.races[0].entries[0].horse_name="QA Changed Horse";
+const heldAudit=await auditV33FieldUpload(changedNext,scoredSource);
+assert.equal(heldAudit.input_changes_require_rescoring,true);
+assert.equal(heldAudit.v34_review_card,undefined,"no V3.4 with stale receipt pair");
+
 const unknown=fullTrack();unknown.race_date="2026-11-25";
 const unknownResponse=await handleAdminProjectionBatchUpload(new Request(
  "https://railandryeracing.com/api/admin/projections/batch",{
