@@ -108,7 +108,7 @@ assert.doesNotMatch(js,/rr-target-upload-form|rr-target-file|\.text\(\)\}/,"Read
 assert.doesNotMatch(css,/rr-target-publisher/,"No obsolete upload form CSS.");
 assert.match(html,/target-list-dashboard\.css\?v=20261123-parity-v16/,"Ensure the readable style loads on phones.");
 assert.match(css,/font:500 17px\/1\.52 Inter/,"Published editorial uses current readable 17px typography.");
-assert.match(css,/Target List v5 — legibility-first mobile race reading/,"Phone layout uses larger, no-zoom typography.");
+assert.match(readFileSync("public/assets/rr-research-race-banner.css","utf8"),/font:800 17px\/1\.23 Inter/,"Shared banner preserves the original readable track typography.");
 assert.match(css,/Shared Daily Research Reader V1 — Target List implementation/,"Target List consumes shared cross-product mobile standard.");
 assert.match(html,/rr-research-race-banner\.css\?v=locked-v1-20261124/,"Target List loads the sole race-header stylesheet.");
 assert.doesNotMatch(css,/RAIL & RYE DAILY RESEARCH V9|right-justified RACE \/ POST group/,"Remove redundant header patches.");
