@@ -42,12 +42,12 @@ function appendGradeTrophy(parent,grade){
 function conditionsFact(entry,title){
  let value=text(entry?.conditions);
  if(!value)return "";
- value=value.replace(/\\s*(?:presented|sponsored|powered)\\s+by\\b.*$/i,"").trim();
+ value=value.replace(/\s*(?:presented|sponsored|powered)\s+by\b.*$/i,"").trim();
  const sponsor=text(entry?.sponsor_name||entry?.sponsor);
  if(sponsor){
-  const escaped=sponsor.replace(/[.*+?^${}()|[\\]\\\\]/g,"\\\\function render(entry){");
-  value=value.replace(new RegExp("\\\\s*(?:[-–—,:]\\\\s*)?"+escaped+"\\\\s*$","i"),"").trim();
-  value=value.replace(new RegExp("^"+escaped+"\\\\s*(?:[-–—,:]\\\\s*)?","i"),"").trim();
+  const escaped=sponsor.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+  value=value.replace(new RegExp("\\s*(?:[-–—,:]\\s*)?"+escaped+"\\s*$","i"),"").trim();
+  value=value.replace(new RegExp("^"+escaped+"\\s*(?:[-–—,:]\\s*)?","i"),"").trim();
  }
  const describeTitle=root.RRRaceTitles?.describe;
  if(title?.title&&typeof describeTitle==="function"){
