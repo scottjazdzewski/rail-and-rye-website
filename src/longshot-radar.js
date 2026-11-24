@@ -12,6 +12,12 @@ function requiredText(value,label,max=500){
   if(typeof value!=="string"||!value.trim()||value.length>max)throw Error(label+" is required ("+max+" characters maximum).");
   return value.trim();
 }
+function approvedEditorialCopy(value,label,max){
+  const text=requiredText(value,label,max);
+  if(/\btimeform(?:us)?\b/i.test(text))
+    throw Error(label+" contains a restricted source-provider reference.");
+  return text;
+}
 function date(value){
   if(typeof value!=="string"||!/^\d{4}-\d{2}-\d{2}$/.test(value)||new Date(value+"T00:00:00Z").toISOString().slice(0,10)!==value)throw Error("A valid race_date in YYYY-MM-DD format is required.");
   return value;
@@ -25,11 +31,11 @@ function sha(value,label){
   return value.toLowerCase();
 }
 function originalMl(value){
-  const raw=requiredText(value,"Original Timeform morning line",20);
+  const raw=requiredText(value,"Original morning line",20);
   const match=raw.match(/^(\d+)(?:\/|-)(\d+)$/);
-  if(!match||Number(match[2])===0)throw Error("Original Timeform morning line must be a numeric fraction.");
+  if(!match||Number(match[2])===0)throw Error("Original morning line must be a numeric fraction.");
   const net=Number(match[1])/Number(match[2]);
-  if(!Number.isFinite(net)||net<6)throw Error("Longshot candidates require original Timeform morning line of at least 6/1.");
+  if(!Number.isFinite(net)||net<6)throw Error("Longshot candidates require an original morning line of at least 6/1.");
   return {raw,net};
 }
 function candidate(row,index){
@@ -45,7 +51,7 @@ function candidate(row,index){
   if(typeof row.pwin_exact!=="number"||!Number.isFinite(row.pwin_exact)||row.pwin_exact<=0||row.pwin_exact>=1)throw Error(id+" requires an exact TRI probability between 0 and 1 (not a displayed percent).");
   const p=row.pwin_exact;
   if(p+1e-12<1/7)throw Error(id+" does not meet exact TRI model fair odds of 6/1 or shorter.");
-  if(p*(1+ml.net)-1+1e-12<0.50)throw Error(id+" does not meet the 50% provisional Timeform morning-line price advantage.");
+  if(p*(1+ml.net)-1+1e-12<0.50)throw Error(id+" does not meet the required original morning-line price advantage.");
   const display=Number(row.pwin_display);
   if(!Number.isFinite(display)||display<0||display>100||Math.abs(display-100*p)>0.051)throw Error(id+" displayed PWIN must agree with signed exact PWIN (one decimal place).");
   const fair=requiredText(row.fair_odds_display,id+" source fair odds",20);
@@ -54,6 +60,10 @@ function candidate(row,index){
   const fairNet=Number(fairMatch[1])/Number(fairMatch[2]);
   if(fairNet>=5&&Number(fairMatch[2])!==1)throw Error(id+" must use whole-number /1 American fair odds at 5/1 or longer.");
   const thesis=requiredText(row.betting_case,id+" one-sentence race-specific betting case",360);
+  // Customer-facing copy must never disclose a private data-source brand.
+  // Keep proprietary provenance and detailed opponent/counterargument work in QA.
+  if(/\btimeform(?:us)?\b/i.test(thesis))
+    throw Error(id+" has a restricted source-provider reference in customer copy.");
   const evidence=requiredText(row.source_causal_evidence,id+" authenticated source-causal evidence",1000);
   const counterargument=requiredText(row.counterargument_checked,id+" checked counterargument",600);
   if(!/[.!?]$/.test(thesis))throw Error(id+" betting case must end with sentence punctuation.");
@@ -328,7 +338,7 @@ export async function handleAdminLongshotEditorialPreview(request,env){
       post_time_et:requiredText(value.post_time_et,"Published post time",50),
       original_morning_line:ml.raw,pwin_display:display,
       fair_odds_display:requiredText(value.fair_odds_display,"Published fair odds",20),
-      betting_case:requiredText(value.betting_case,"Published one-sentence analysis",360),
+      betting_case:approvedEditorialCopy(value.betting_case,"Published one-sentence analysis",360),
       ...(matched?.horses.has(sourceIdentity)?matched.facts:{})
     });
   }
