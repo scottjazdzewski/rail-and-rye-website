@@ -20,7 +20,7 @@ jobs:
       - name: Syntax-only review, never access R2 from untrusted PR
         run: python -m py_compile scripts/radar_1124_private_publish.py
   sealed-publish:
-    if: github.event_name == 'issue_comment' && github.event.issue.number == 0 && github.event.comment.user.login == 'scottjazdzewski' && startsWith(github.event.comment.body, 'RR_RADAR_1124_PRIVATE_APPROVED_V1')
+    if: github.event_name == 'issue_comment' && github.event.issue.number == 229 && github.event.comment.user.login == 'scottjazdzewski' && startsWith(github.event.comment.body, 'RR_RADAR_1124_PRIVATE_APPROVED_V1')
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
