@@ -45,7 +45,7 @@ jobs:
           assert len({(t["track"],t["race_number"],t["favorite"]["program_number"],t["attack"]["program_number"]) for t in card["targets"]})==6
           assert card["review_only"] is True and card["customer_publish_approved"] is False
           assert card["production_receipt_verified"] is False
-          assert len(card["targets"])==6 and len({(t["track"],t["race_number"]) for t in card["targets"]})==4
+          assert len(card["targets"])==6 and len({(t["track"],t["race_number"]) for t in card["targets"]})==6
           assert not any("sample" in t["favorite"]["horse_name"].lower() or "sample" in t["attack"]["horse_name"].lower() for t in card["targets"])
           Path("/tmp/target-private-source.json").write_bytes(raw)
           Path("/tmp/target-private-metadata.json").write_text(json.dumps(meta))
