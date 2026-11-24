@@ -316,7 +316,7 @@ export default {
         if(path.startsWith("/api/admin/"))return handleAdminAPI(request,env,path,ctx);
         if(request.method!=="GET"&&request.method!=="HEAD")return fail("Method not allowed",405);
         const adminPages=new Map([
-          ["/admin/projections","/admin/projections.html"],
+          ["/admin/projections","/admin/projections-preview.html"],
           ["/admin/projections-preview","/admin/projections-preview.html"],
           ["/admin/membership-plans","/admin/membership-plans.html"],
           ["/admin/pick-tickets-preview","/admin/pick-tickets-preview.html"],
