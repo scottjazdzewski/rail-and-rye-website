@@ -39,6 +39,24 @@ function appendGradeTrophy(parent,grade){
   make("strong","rr-ed-grade-trophy-label","G"+grade));
  parent.append(badge);
 }
+function conditionsFact(entry,title){
+ let value=text(entry?.conditions);
+ if(!value)return "";
+ value=value.replace(/\\s*(?:presented|sponsored|powered)\\s+by\\b.*$/i,"").trim();
+ const sponsor=text(entry?.sponsor_name||entry?.sponsor);
+ if(sponsor){
+  const escaped=sponsor.replace(/[.*+?^${}()|[\\]\\\\]/g,"\\\\function render(entry){");
+  value=value.replace(new RegExp("\\\\s*(?:[-–—,:]\\\\s*)?"+escaped+"\\\\s*$","i"),"").trim();
+  value=value.replace(new RegExp("^"+escaped+"\\\\s*(?:[-–—,:]\\\\s*)?","i"),"").trim();
+ }
+ const describeTitle=root.RRRaceTitles?.describe;
+ if(title?.title&&typeof describeTitle==="function"){
+  const found=describeTitle({race_name:"",stakes_name:"",conditions:value,
+   stakes_grade:entry.stakes_grade??entry.grade,is_stakes:entry.is_stakes,sponsor_name:sponsor});
+  if(found?.title&&found.title.toLocaleLowerCase("en-US")===title.title.toLocaleLowerCase("en-US"))return "";
+ }
+ return value;
+}
 function render(entry){
  if(!entry||!text(entry.track)||!Number.isInteger(Number(entry.race_number)))
   throw Error("An original track and race number are required for the race header.");
@@ -59,10 +77,10 @@ function render(entry){
   if(existing){if(kind==="title")existing.kind="title";return;}
   factsParts.push({text:valueText,kind});
  };
+ const title=describe(entry);
  addFact(entry.distance,"fact");
  addFact(entry.surface,"fact");
- addFact(entry.conditions,"fact");
- const title=describe(entry);
+ addFact(conditionsFact(entry,title),"fact");
  if(title?.title)addFact(title.title,"title");
  if(factsParts.length){
   const facts=make("p","rr-research-racebar__facts");
