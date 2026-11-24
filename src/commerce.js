@@ -797,7 +797,7 @@ async function download(url,env){
 // No order, payment method, account or buyer email is required.
 async function freeDownload(request,env,url){
   if(request.method!=='GET')return error('Method not allowed',405);
-  const match=url.pathname.match(/^\\/api\\/free-download\\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i);
+  const match=url.pathname.match(/^\/api\/free-download\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i);
   if(!match)return error('Not found',404);
   if(!env.STORE_DB||!env.CARDS_BUCKET)return error('Tab access unavailable',503);
   await ensureReleaseSchedule(env);
