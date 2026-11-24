@@ -20,12 +20,6 @@ color:var(--navy);
 line-height:1.05;
 font-weight:850;
 }
-.rr-pt-heading p{
-margin:0;
-max-width:700px;
-color:#526b7d;
-line-height:1.45;
-}
 .rr-pt-toolbar{
 display:grid;
 border:1px solid #d8d1c4;
@@ -197,9 +191,7 @@ border-left:1px solid #ddcfb2;
  --rr-type-main:26px;--rr-type-section:16px;--rr-type-body:13px;--rr-type-label:10px;
  --rr-space-1:4px;--rr-space-2:8px;--rr-space-3:12px;--rr-space-4:16px;
 }
-.rr-pt-heading{margin:0 0 11px}
 .rr-pt-heading h1{font-size:var(--rr-type-main)}
-.rr-pt-heading p{font-size:12px}
 .rr-pt-toolbar{grid-template-columns:repeat(2,minmax(0,1fr));padding:8px;gap:7px}
 .rr-pt-toolbar label{font-size:var(--rr-type-label)}
 .rr-pt-toolbar select{min-height:42px}
