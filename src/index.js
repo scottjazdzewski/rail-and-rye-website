@@ -1,3 +1,4 @@
+import {prepareScheduledPickStages} from "./pick-tickets-staging.js";
 import {handleAdminProjectionUpload,handleAdminProjectionBatchUpload,readAdminProjectionCards} from './projections.js';
 import {readCertifiedF4Exotics} from './f4-exotics.js';
 import {handleAdminLongshotRadar,handleAdminLongshotEditorialPreview,publishLongshotRadarTab} from './longshot-radar.js';
@@ -439,6 +440,9 @@ export default {
     }catch(e){console.error("Rail & Rye request error",e);return fail("An internal error occurred",500);}
   },
   async scheduled(controller,env,ctx){
+    ctx.waitUntil(prepareScheduledPickStages(env).then(result=>{
+      if(result.prepared)console.info("Dated Pick Tickets prepared for scheduled release",result.prepared);
+    }).catch(e=>console.warn("Scheduled Pick Tickets preparation deferred",String(e.message||e).slice(0,140))));
     ctx.waitUntil(syncDailyBundles(env).then(result=>{
       if(result.created||result.updated)console.info("Daily product bundles synchronized",result);
     }).catch(e=>console.warn("Daily bundles sync deferred",String(e).slice(0,160))));
