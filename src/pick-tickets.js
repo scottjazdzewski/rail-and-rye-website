@@ -304,7 +304,7 @@ export async function handleAdminPickTickets(request,env){
    for(const race of enrichRaceInformation(source).races||[]){
     const name=String(race.stakes_name||race.race_name||race.conditions||"").trim();
     const hasStakes=race.is_stakes===true||
-     /\b(?:Stakes?|Stks?\.?|S\.)\b/i.test(name);
+     /(?:\bStakes?\b|\bStks?\.?\b|\bS\.(?:\s|$))/i.test(name);
     if(!hasStakes||!name||genericStakesTitle(name))continue;
     stakes[String(race.race_number)]={
      race_number:race.race_number,stakes_name:race.stakes_name||"",
