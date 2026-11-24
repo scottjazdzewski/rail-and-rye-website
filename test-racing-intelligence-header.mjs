@@ -42,4 +42,18 @@ assert.match(pick,/\.rr-pt-scratch-chip \.rr-pt-chip\{[^}]*background:#fff/,"Pic
 assert.match(pick,/\.rr-pt-builder \.rr-pt-runner-button\.rr-pt-scratched,[\s\S]*?opacity:1/,"Disabled scratch chips remain visible");
 assert.match(target,/\.rr-target-scratch \.rr-target-saddle\{[^}]*background:#fff/,"Target List scratches need opaque backing");
 assert.doesNotMatch(readFileSync("public/admin/pick-tickets-preview.html","utf8"),/rr-pt-brand-id|rr-pt-brand-rail/,"Pick Tickets must not repeat Rail & Rye brand");
+const logoFreePages=["public/admin/projections-preview.html","public/membership/dashboard/index.html","public/admin/pick-tickets-preview.html","public/admin/longshot-radar.html","public/admin/target-list-preview.html"];
+for(const path of logoFreePages){
+ const html=readFileSync(path,"utf8");
+ assert.doesNotMatch(html,/rr-pt-track-logo|rr-pt-track-mark|rrp-track-head__venue-mark/,
+  "Racing Intelligence pages must not display venue-logo badges.");
+}
+for(const path of ["public/assets/projections-dashboard.js","public/assets/pick-tickets-dashboard.js"]){
+ assert.doesNotMatch(readFileSync(path,"utf8"),/approved\/track-logos\//,
+  "No production client may fetch track logos during the mobile pass.");
+}
+const identity=readFileSync("public/assets/rr-projections-track-identity.css","utf8");
+assert.match(identity,/grid-template-columns:minmax\(0,1fr\)/,"Full-width venue name/date replaces logo frame.");
+assert.doesNotMatch(identity,/rrp-track-head__venue-mark|rrp-track-head__logo/,
+ "Delete old logo CSS rather than hiding it.");
 console.log("PASS: six identical homepage-style mastheads, five matching links, unclipped mobile dropdown and opaque scratch chips");
