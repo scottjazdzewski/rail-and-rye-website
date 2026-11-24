@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""One-off 2026-11-24 private Target List addendum.
+"""One-off 2026-11-24 private Target List concise-editorial revision.
 
-Merge a separately reviewed 7-race source with the previously published six
-without changing ANY published favorite, attack, fair price, or original prose.
-Only a sealed payload comes through the public GH issue-comment transport.
-Everything remains private / non-customer-facing / prescratch.
+Reconcile exactly six source-qualified race selections against the existing
+private R2 card and revise ONLY the analysis to follow the locked editorial
+voice; never alter horse selection, source ML, published PWIN or fair price.
+No seventh unsupported class-evidence HOLD is permitted in this edition.
+The transported review is sealed and the output remains private prescratch.
 """
 import base64
 import hashlib
@@ -26,7 +27,9 @@ ORIGINAL = DIR + "revision-0001.json"
 SECOND = DIR + "revision-0002.json"
 SOURCE_SHA = "7395a45700a3aa4fdf9f3dff05f393f7079adf4deb30cb2413aea7a78d4345c3"
 PRIOR_EDITORIAL_SHA = "7636865e6f4fd950bbbb80a5a9c37711acc440533486bd501e0dcc92168adeb0"
-ADDENDUM_EDITORIAL_SHA = "e6a8c96174ca562f2d592554c5362302f795837982341eeed7aa6e6980e7f612"
+NEW_EDITORIAL_SHA = "9bfa31b6ff051495863c0e965a767b4b3e5042499208c953371d3bb95948c639"
+ORIGINAL_SEVEN_EDITORIAL_SHA = "e6a8c96174ca562f2d592554c5362302f795837982341eeed7aa6e6980e7f612"
+VOICE_LOCK_SHA = "8dc2e64fc660b6bbc28d31a3a56668caa5e05b30363fc2fdc01cffc9a28d151d"
 AUDIT_SHA = "e4ec222f6ac01fe2132c98c4715c584b262bfcdb8c4b253def88d85f5ef4a042"
 
 
@@ -50,9 +53,9 @@ def load_cipher():
     require(len(plain) < 512 * 1024, "Editorial review exceeds size limit")
     incoming = validate_review(json.loads(plain))
     require(incoming["race_date"] == "2026-11-24" and incoming["revision"] == 1 and incoming["status"] == "initial", "Incoming edition mismatch")
-    require(len(incoming["targets"]) == 7, "Expected exactly seven fresh source-reviewed candidates")
+    require(len(incoming["targets"]) == 6, "Only six qualified race selections are authorized")
     src = incoming["source"]
-    require(src.get("timeforms_zip_sha256") == SOURCE_SHA and src.get("editorial_sha256") == ADDENDUM_EDITORIAL_SHA and src.get("private_scorer_audit_sha256") == AUDIT_SHA, "Source/editorial/audit checksum mismatch")
+    require(src.get("timeforms_zip_sha256") == SOURCE_SHA and src.get("editorial_sha256") == NEW_EDITORIAL_SHA and src.get("original_editorial_sha256") == ORIGINAL_SEVEN_EDITORIAL_SHA and src.get("private_scorer_audit_sha256") == AUDIT_SHA and src.get("editorial_voice_lock") == "TARGET_LIST_EDITORIAL_VOICE_LOCK_V2_20261025", "Source/editorial/voice/audit checksum mismatch")
     return incoming
 
 
@@ -80,29 +83,39 @@ def merge(existing, incoming):
     require(len(existing["targets"]) == 6 and existing["source"].get("timeforms_zip_sha256")==SOURCE_SHA and existing["source"].get("editorial_sha256")==PRIOR_EDITORIAL_SHA, "Unexpected original published card")
     old={racekey(t):t for t in existing["targets"]}
     new={racekey(t):t for t in incoming["targets"]}
-    require(len(old)==6 and len(new)==7 and set(old)<set(new), "Incoming must preserve all six previously published races")
+    require(len(old)==len(new)==6 and set(old)==set(new), "Voice revision must preserve exactly six qualifying source races")
     differences=[]
     for key in old:
         for role in ("favorite","attack"):
             for field in ("program_number","horse_name","morning_line","win_probability","fair_odds"):
                 if old[key][role].get(field)!=new[key][role].get(field):
                     differences.append((new[key]["rank"],role,field))
-    require(differences == [(2,"favorite","fair_odds")], "Unexpected change to a published horse or probability")
-    added_keys=set(new)-set(old)
-    require(len(added_keys)==1, "Exactly one new qualifying race required")
-    only=new[next(iter(added_keys))].copy()
-    require(only.get("analysis") and len(only["analysis"])>125, "New selection lacks source-backed explanation")
-    require(only["attack"]["win_probability"]-only["favorite"]["win_probability"]>=10, "New selection under 10pp display floor")
+    require(differences == [(2,"favorite","fair_odds")], "Unexpected changed source score or horse identity")
     prior_targets=sorted(existing["targets"],key=lambda t:t["rank"])
-    require(sorted(t["rank"] for t in prior_targets)==list(range(1,7)), "Original ordering invalid")
-    only["rank"]=7
-    merged_targets=[*prior_targets,only]
+    require(sorted(t["rank"] for t in prior_targets)==list(range(1,7)), "Original target ordering invalid")
+    # Preserve every originally published number and horse. Replace prose only.
+    merged_targets=[]
+    for item in prior_targets:
+        revised=dict(item)
+        updated=new[racekey(item)]
+        prose=updated["analysis"]
+        words=prose.split()
+        require(24<=len(words)<=60 and not any(x in prose.casefold() for x in
+                ("tri ","timeform", "algorithm", "that matters", "the key here", "what stands out")),
+                "Concise editorial voice check failed")
+        for role in ("favorite","attack"):
+            require(item[role]["horse_name"].casefold() in prose.casefold(), "Missing two-sided horse context")
+        revised["analysis"]=prose
+        merged_targets.append(revised)
     source=dict(existing["source"])
     source["initial_editorial_sha256"]=PRIOR_EDITORIAL_SHA
-    source["addendum_editorial_sha256"]=ADDENDUM_EDITORIAL_SHA
+    source["revised_editorial_sha256"]=NEW_EDITORIAL_SHA
+    source["previous_source_review_sha256"]=ORIGINAL_SEVEN_EDITORIAL_SHA
+    source["editorial_voice_lock"]="TARGET_LIST_EDITORIAL_VOICE_LOCK_V2_20261025"
+    source["editorial_voice_lock_sha256"]=VOICE_LOCK_SHA
     source["private_scorer_audit_sha256"]=AUDIT_SHA
     source["card_state"]="PRESCRATCH"
-    source["editorial_checksum_basis"]="sha256 of newline-joined race IDs plus approved analyses in display order"
+    source["editorial_checksum_basis"]="sha256 of newline-joined race IDs plus edited analyses in displayed order"
     editorial="\n".join(f"{t['track']}|{t['race_number']}|{t['analysis']}" for t in merged_targets)
     source["editorial_sha256"]=hashlib.sha256(editorial.encode()).hexdigest()
     combined={**existing,"revision":2,"status":"editorial_update","source":source,"targets":merged_targets}
@@ -124,14 +137,14 @@ def run():
         require(e.response.get("Error",{}).get("Code") in ("NoSuchKey","404","NotFound"),"Cannot inspect existing revision 2")
     else:
         require(current["Body"].read()==raw,"An existing revision 2 cannot be replaced")
-        print("PRIVATE_NOV24_TARGET_UPDATE_ALREADY_IDENTICAL: 7 selections, revision 2, preserved original 6")
+        print("PRIVATE_NOV24_TARGET_UPDATE_ALREADY_IDENTICAL: 6 selections, revision 2, no numeric edits")
         return
     s3.put_object(Bucket=BUCKET,Key=SECOND,Body=raw,ContentType="application/json; charset=utf-8",CacheControl="private, no-store",
       Metadata={"sha256":digest,"uploaded_at":datetime.now(timezone.utc).isoformat(),"review_only":"true", "editorial_sha256":card["source"]["editorial_sha256"]})
     check=get_checked(s3,SECOND)
     require(check==card,"Private R2 addendum readback failed")
     Path("/tmp/target-list-private-nov24-revision2.json").write_bytes(raw)
-    print("PRIVATE_NOV24_TARGET_UPDATE_PASS: revision=2, targets=7, existing_unchanged=6, added=1, no scratches claimed, admin-only, readback_sha256="+digest)
+    print("PRIVATE_NOV24_TARGET_UPDATE_PASS: revision=2, targets=6, numeric_unchanged=6, prose_concise_voice_lock_v2, no scratches claimed, admin-only, readback_sha256="+digest)
 
 if __name__ == "__main__":
     run()
