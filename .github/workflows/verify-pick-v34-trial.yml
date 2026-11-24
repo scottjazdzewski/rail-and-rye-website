@@ -43,8 +43,10 @@ jobs:
           Path("/tmp/rr1124-private-readback.json").write_text(json.dumps(result))
           print("Private date-specific source readback complete; no selections logged.")
           PY
-      - name: Exhaustive math tests
-        run: node test-pick-tickets-v34.mjs
+      - name: Exhaustive math and classification tests
+        run: |
+          node test-pick-tickets-v34.mjs
+          node test-pick-tickets-sqr.mjs
       - name: Compare audited private November 24 tickets without logging selections
         run: |
           node --input-type=module <<'JS'
@@ -59,6 +61,8 @@ jobs:
           const b=old.cards.filter(x=>x.card.date==='2026-11-24'),a=trial.cards.filter(x=>x.card.date==='2026-11-24');
           assert.equal(trial.engine,'V3.4-TRI-ONLY-LENGTH-SENSITIVE-TRIAL-A');assert.ok(a.every(x=>x.card.formula_version===trial.engine));assert.equal(a.length,6);assert.equal(b.length,6);
           const rows=[];
+          // Verify every ticket against the unchanged locked constructor.
+          const {chooseV34}=await import('./src/pick-tickets-v34.js');
           for(const {card:c} of a){
            const prior=b.find(x=>x.card.track===c.track).card;
            assert.equal(c.source_input_sha256,prior.source_input_sha256);
@@ -66,6 +70,10 @@ jobs:
             const p=prior.sequences.find(x=>x.name===s.name&&x.start_race===s.start_race&&x.end_race===s.end_race);
             const x=s.tickets[0],y=p.tickets[0];
             assert.equal(x.total_cents,x.combinations*x.unit_cents);
+            const exact=chooseV34(s.race_fields.map(f=>({race_number:f.race_number,entries:f.programs.map(program=>({program_number:program,pwin:s.review_probabilities[String(f.race_number)][program]/100}))})),x.unit_cents);
+            assert.deepEqual(x.legs.map(l=>l.programs),exact.picks);
+            assert.equal(x.total_cents,exact.total_cents);
+            assert.equal(x.hit_rate_display,(100*exact.hit_probability).toFixed(1)+"%");
             assert.equal(x.combinations,x.legs.reduce((n,l)=>n*l.programs.length,1));
             assert.deepEqual(s.review_probabilities,p.review_probabilities);
             assert.equal(s.review_meta.publication_qualified,false);
@@ -82,12 +90,14 @@ jobs:
            assert.equal(seq.play_status,q.classification);
            assert.equal(seq.tickets.length,1);
            assert.equal(seq.tickets[0].role,"BEST_POSSIBLE");
-           assert.equal(q.version,"SQR-1.1-PROVISIONAL");
+           assert.equal(q.version,"SQR-1.2-PROVISIONAL");
            assert.equal(Object.hasOwn(q.components,"historical_performance"),false);
            counts[seq.play_status]++;
-           const oldScore=.85*q.score+7.5;
+           const oldScore=q.score;
            priorCounts[oldScore>=75?"PLAY":oldScore>=50?"CONDITIONAL":"PASS"]++;
            scores.push(q.score);
+           assert.equal(seq.play_status,q.score>=65?"PLAY":q.score>=50?"CONDITIONAL":"PASS");
+           if(seq.play_status==="PLAY")console.log("SQR_PLAY_SEQUENCE",JSON.stringify({track:c.track,name:seq.name,start:seq.start_race,end:seq.end_race,score:Number(q.score.toFixed(2))}));
           
           }
           console.log("SQR_CLASSIFICATION_COUNTS",JSON.stringify(counts));

@@ -1,10 +1,10 @@
-// Provisional owner-approved SQR 1.1. Classification only; never alter
+// Provisional owner-approved SQR 1.2. Classification only; never alter
 // V3.4 picks, probabilities, costs, eligibility or customer release gates.
 import {normalizeV32Legs} from "./pick-tickets-v32.js";
-export const SQR_VERSION="SQR-1.1-PROVISIONAL";
+export const SQR_VERSION="SQR-1.2-PROVISIONAL";
 // Redistribute the removed 15% proportionally; preserve all four relative weights.
 export const SQR_WEIGHTS=Object.freeze({predictability:25/85,efficiency:25/85,difficulty:20/85,single_opportunity:15/85});
-export const SQR_THRESHOLDS=Object.freeze({play:75,conditional:50});
+export const SQR_THRESHOLDS=Object.freeze({play:65,conditional:50});
 // Frozen reference from the Nov 24 V3.4 verified aggregate comparison
 // (mean cost USD / mean modeled hit probability), not historical payouts.
 export const SQR_REFERENCE=Object.freeze({

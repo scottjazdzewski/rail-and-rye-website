@@ -4,7 +4,7 @@ import {chooseV34,buildV34TrialCard} from "./src/pick-tickets-v34.js";
 import {chooseV33,PICK_V33_ENGINE} from "./src/pick-tickets-v33.js";
 assert.ok(Math.abs(Object.values(SQR_WEIGHTS).reduce((a,b)=>a+b,0)-1)<1e-12);
 assert.deepEqual(SQR_WEIGHTS,{predictability:25/85,efficiency:25/85,difficulty:20/85,single_opportunity:15/85});
-for(const [x,label] of [[0,"PASS"],[49.999,"PASS"],[50,"CONDITIONAL"],[74.999,"CONDITIONAL"],[75,"PLAY"],[100,"PLAY"]])assert.equal(classifySQR(x),label);
+for(const [x,label] of [[0,"PASS"],[49.999,"PASS"],[50,"CONDITIONAL"],[64.999,"CONDITIONAL"],[65,"PLAY"],[74.999,"PLAY"],[75,"PLAY"],[100,"PLAY"]])assert.equal(classifySQR(x),label);
 for(const n of [3,4,5,6]){
  const unit=n===6?20:50;
  for(const [p,label] of [[[.8,.1,.06,.04],"PLAY"],[Array(12).fill(1/12),"PASS"],[[.44,.28,.14,.08,.06],"CONDITIONAL"]]){
