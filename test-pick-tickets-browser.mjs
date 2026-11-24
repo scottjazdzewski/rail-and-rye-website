@@ -48,14 +48,18 @@ const synthetic={cards:fixture.cards.map(x=>({...x,card:{
   "Focused interim construction. lean: $4.00 / 25.0%; focused: $6.00 / 28.0%.";
 const mime={".html":"text/html; charset=utf-8",".css":"text/css; charset=utf-8",".js":"text/javascript; charset=utf-8",".png":"image/png",".webp":"image/webp"};
 const root=path.resolve("public");
-let sourceHoldMode=false,scratchBuilderMode=false;
+let sourceHoldMode=false,scratchBuilderMode=false,scoredMode=false;
+const scored=structuredClone(synthetic);
+for(const entry of scored.cards)for(const seq of entry.card.sequences){
+ seq.review_probabilities=Object.fromEntries(seq.race_fields.map(f=>[String(f.race_number),Object.fromEntries(f.programs.map((p,i)=>[p,[24,18,14,10,8,6,5,4,3,3,3,2][i]]))]));
+}
 const server=http.createServer((request,response)=>{
  const url=new URL(request.url,"http://127.0.0.1");
  if(url.pathname==="/api/admin/pick-tickets"){
   response.writeHead(200,{"content-type":"application/json","cache-control":"private, no-store"});
   response.end(JSON.stringify(sourceHoldMode?{cards:[],intake:getPickTicketsIntake(),
     scratch_update:{...getNov23ScratchLedger(),dependent_sequences:officialScratchSequenceCount(PICK_MENU_1123)},
-    demo:false}:scratchBuilderMode?{...synthetic,scratch_update:getNov23ScratchLedger()}:synthetic));return;
+    demo:false}:scratchBuilderMode?{...synthetic,scratch_update:getNov23ScratchLedger()}:scoredMode?scored:synthetic));return;
  }
  const raw=url.pathname==="/admin/pick-tickets-preview/"?"admin/pick-tickets-preview.html":url.pathname.replace(/^\/+/,"");
  const full=path.resolve(root,raw);
@@ -79,6 +83,7 @@ try{
   assert.equal(await page.locator(".rr-pt-sequence-tab").count(),3,"one Pick 3 tab per available sequence");
   assert.equal(await page.locator(".rr-pt-seq-range").allTextContents().then(x=>x.join("|")),"Races 1–3|Races 4–6|Races 7–9");
   assert.equal(await page.locator(".rr-pt-race-row").count(),3,"Pick 3 has three complete race legs");
+  assert.deepEqual(await page.locator(".rr-pt-pwin-value").allTextContents(),["—","—","—"],"missing PWIN is not fabricated");
   assert.equal(await page.locator(".rr-pt-interim-model-label").count(),0,"scratch-day status banner is not customer-facing");
   assert.equal(await page.locator(".rr-pt-source-check").count(),0,"internal source verification notice stays off the user interface");
   assert.doesNotMatch(await page.locator("#rr-pt-current").innerText(),/SOURCE CHECK.*Customer access remains disabled/i);
@@ -191,6 +196,37 @@ try{
   await page.close();
  }
 
+ // Independently verify exact current PWIN on narrow and wide viewports.
+ scoredMode=true;
+ for(const width of [320,375,390,430,768,1280]){
+  const page=await browser.newPage({viewport:{width,height:880}});
+  await page.goto(addr,{waitUntil:"domcontentloaded"});
+  await page.locator(".rr-pt-ticket-screen").waitFor();
+  assert.deepEqual(await page.locator(".rr-pt-pwin-value").allTextContents(),["32.0%","32.0%","15.0%"]);
+  const align=await page.locator(".rr-pt-pwin-value").evaluateAll(nodes=>nodes.map(n=>Math.round(n.getBoundingClientRect().right)));
+  assert.equal(new Set(align).size,1,"right aligned coverage column");
+  await page.getByRole("button",{name:"Build My Ticket"}).click();
+  assert.equal(await page.locator(".rr-pt-compare-table tbody tr").first().locator("td").last().innerText(),"1.5%");
+  await page.getByRole("button",{name:"Add runners for Race 1"}).click();
+  const add=page.getByRole("button",{name:/Race 1 horse 2 not selected/});
+  assert.equal(await add.locator(".rr-pt-runner-pwin").innerText(),"+18.0%");
+  await add.click();
+  const row=page.locator(".rr-pt-builder-row").first();
+  assert.equal(await row.locator(".rr-pt-pwin-value").innerText(),"50.0%");
+  assert.equal(await row.locator(".rr-pt-pwin-delta").innerText(),"+18.0 pp");
+  assert.equal(await page.locator(".rr-pt-compare-table tbody tr").first().locator("td").last().innerText(),"2.4%");
+  assert.equal(await page.locator(".rr-pt-compare-table tbody tr").nth(1).locator("td").last().innerText(),"12");
+  assert.equal(await page.locator(".rr-pt-compare-table tbody tr").nth(3).locator("td").last().innerText(),"$6.00");
+  const bounds=await page.evaluate(()=>({w:innerWidth,doc:document.documentElement.scrollWidth,body:document.body.scrollWidth}));
+  assert.ok(bounds.doc<=bounds.w+1&&bounds.body<=bounds.w+1,"PWIN builder overflow at "+width);
+  await page.screenshot({path:"test-artifacts/pick-tickets-pwin-"+width+".png",fullPage:true});
+  await row.getByRole("button",{name:/Race 1 horse 2 selected/}).click();
+  assert.equal(await row.locator(".rr-pt-pwin-value").innerText(),"32.0%");
+  await page.getByRole("button",{name:"Reset to Rail & Rye Selections"}).click();
+  assert.equal(await page.locator(".rr-pt-pwin-delta").count(),0);
+  await page.close();
+ }
+ scoredMode=false;
  // The owner wants scratches ONLY inside the ticket builder, as gray disabled chips.
  scratchBuilderMode=true;
  const builderPage=await browser.newPage({viewport:{width:375,height:800}});

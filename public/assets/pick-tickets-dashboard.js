@@ -25,22 +25,81 @@
  const option=(select,key,label)=>{const o=node("option","",label);o.value=key;select.append(o)};
  const setMessage=(text,visible=true)=>{E.status.hidden=!visible;E.status.textContent=text;};
  const hitRate=t=>t?.hit_rate_display?t.hit_rate_display:"—";
+ // Only use the full, current race-field probability vector. A missing
+ // runner or incomplete distribution is unknown, never a zero probability.
+ function racePwin(race){
+  const source=activeSeq?.review_probabilities?.[String(race)];
+  const field=activeSeq?.race_fields?.find(x=>x.race_number===race)?.programs;
+  if(!source||!Array.isArray(field)||!field.length||new Set(field).size!==field.length||
+     Object.keys(source).length!==field.length)return null;
+  let total=0;
+  for(const p of field){
+   if(!Object.prototype.hasOwnProperty.call(source,p))return null;
+   const n=source[p];
+   if(typeof n!=="number"||!Number.isFinite(n)||n<0||n>100)return null;
+   total+=n;
+  }
+  return Math.abs(total-100)<=.00001?source:null;
+ }
+ function legPwin(leg){
+  const source=racePwin(leg.race_number);
+  if(!source||!Array.isArray(leg.programs)||new Set(leg.programs).size!==leg.programs.length)return null;
+  let sum=0;
+  for(const p of leg.programs){
+   if(!Object.prototype.hasOwnProperty.call(source,p))return null;
+   sum+=source[p];
+  }
+  return Math.min(100,sum);
+ }
+ const pwinText=n=>n===null?"—":n.toFixed(1)+"%";
  function reviewHitRate(legs){
-  if(!activeSeq?.review_probabilities||!Array.isArray(legs)||!legs.length)return "—";
+  if(!Array.isArray(legs)||!legs.length)return "—";
   let hit=1;
   for(const leg of legs){
-   const source=activeSeq.review_probabilities[String(leg.race_number)];
-   if(!source||!Array.isArray(leg.programs)||!leg.programs.length)return "—";
-   let legMass=0;
-   for(const p of leg.programs){
-    if(!Object.prototype.hasOwnProperty.call(source,p))return "—";
-    const n=source[p];if(typeof n!=="number"||!Number.isFinite(n)||n<0||n>100)return "—";
-    legMass+=n;
-   }
-   if(legMass>100.000001)return "—";
-   hit*=legMass/100;
+   const mass=legPwin(leg);
+   if(mass===null)return "—";
+   hit*=mass/100;
   }
-  return (hit*100).toFixed(1)+"%";
+  return pwinText(hit*100);
+ }
+ function coverageHeading(){
+  const header=node("div","rr-pt-pwin-heading");
+  header.append(node("span","","PWIN COVERED"));
+  return header;
+ }
+ function coverageCell(leg,{builder=false}={}){
+  const mass=legPwin(leg),cell=node("div","rr-pt-pwin-cell");
+  const value=node("strong","rr-pt-pwin-value",pwinText(mass));
+  cell.setAttribute("aria-label","Race "+leg.race_number+" PWIN covered: "+(mass===null?"not available":pwinText(mass)));
+  cell.append(value);
+  const track=node("span","rr-pt-pwin-track");
+  const fill=node("span","rr-pt-pwin-fill");
+  fill.style.width=(mass===null?0:mass)+"%";
+  track.setAttribute("aria-hidden","true");track.append(fill);cell.append(track);
+  if(builder){
+   const base=selectedTicket()?.legs.find(x=>x.race_number===leg.race_number);
+   const baseMass=base?legPwin(base):null;
+   if(mass!==null&&baseMass!==null){
+    const delta=mass-baseMass;
+    if(Math.abs(delta)>=.05){
+     const diff=node("span","rr-pt-pwin-delta", (delta>0?"+":"−")+Math.abs(delta).toFixed(1)+" pp");
+     diff.dataset.direction=delta>0?"up":"down";
+     diff.title="Percentage-point change from Rail & Rye selections";
+     cell.append(diff);
+    }
+   }
+  }
+  return cell;
+ }
+ function appendRunnerPwin(button,race,program,{selected=false}={}){
+  if(isScratched(race,program)){
+   button.append(node("span","rr-pt-runner-pwin","SCR"));return;
+  }
+  const source=racePwin(race);
+  const prob=source&&Object.prototype.hasOwnProperty.call(source,program)?source[program]:null;
+  button.append(node("span","rr-pt-runner-pwin",prob===null?"—":(selected?"":"+")+pwinText(prob)));
+  const label=button.getAttribute("aria-label");
+  if(prob!==null)button.setAttribute("aria-label",label+", PWIN "+pwinText(prob));
  }
  const escapeText=String;
  function programChip(p){
@@ -77,12 +136,14 @@
   }
   return line;
  }
- function ticketRows(ticket){
+ function ticketRows(ticket,{coverage=true}={}){
   const rows=node("div","rr-pt-race-rows");
+  if(coverage)rows.append(coverageHeading());
   for(const leg of ticket.legs){
-   const row=node("div","rr-pt-race-row"),name=node("span","rr-pt-row-race","RACE "+leg.race_number),chips=node("div","rr-pt-row-chips");
+   const row=node("div","rr-pt-race-row"+(coverage?" rr-pt-has-coverage":"")),name=node("span","rr-pt-row-race","RACE "+leg.race_number),chips=node("div","rr-pt-row-chips");
    for(const p of leg.programs)chips.append(programChip(p));
    row.append(name,chips);
+   if(coverage)row.append(coverageCell(leg));
    const named=stakesLine(leg.race_number);if(named)row.append(named);
    rows.append(row);
   }
@@ -160,8 +221,10 @@
   intro.append(node("strong","","Build Your Ticket"));
   area.append(intro);
   const rows=node("div","rr-pt-builder-rows");
+  rows.append(coverageHeading());
   for(const leg of builderLegs){
-   const row=node("section","rr-pt-builder-row");
+   const row=node("section","rr-pt-builder-row rr-pt-has-coverage");
+   let expandedField=null;
    const name=node("span","rr-pt-row-race","RACE "+leg.race_number);
    const body=node("div","rr-pt-builder-leg-body");
    const picks=node("div","rr-pt-builder-chips");
@@ -171,6 +234,7 @@
     button.setAttribute("aria-label","Race "+leg.race_number+" horse "+program+" selected");
     button.append(programChip(program));
     disableScratchButton(button,leg.race_number,program);
+    appendRunnerPwin(button,leg.race_number,program,{selected:true});
     button.addEventListener("click",()=>{if(isScratched(leg.race_number,program))return;leg.programs=leg.programs.filter(x=>x!==program);renderActive()});
     return button;
    });
@@ -198,13 +262,15 @@
       button.setAttribute("aria-label","Race "+leg.race_number+" horse "+program+" not selected");
       button.append(programChip(program));
       disableScratchButton(button,leg.race_number,program);
+      appendRunnerPwin(button,leg.race_number,program);
       button.addEventListener("click",()=>{if(isScratched(leg.race_number,program))return;leg.programs.push(program);renderActive()});
       field.append(button);
      });
-     body.append(field);
+     expandedField=field;
     }
    }
-   row.append(name,body);
+   row.append(name,body,coverageCell(leg,{builder:true}));
+   if(expandedField)row.append(expandedField);
    const named=stakesLine(leg.race_number);if(named)row.append(named);
    rows.append(row);
   }
@@ -314,7 +380,7 @@
     "Previous field · "+prior.combinations+" combinations · "+money(prior.cost_cents)));
    const label=node("div","rr-pt-prior-label",
     "Previous selection · "+prior.hit_rate+" projected hit");
-   const previousRows=ticketRows({legs:prior.legs});
+   const previousRows=ticketRows({legs:prior.legs},{coverage:false});
    compare.append(label,previousRows);
    E.dialogBody.append(compare);
   }

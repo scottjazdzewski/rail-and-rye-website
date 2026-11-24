@@ -376,3 +376,33 @@ gap:4px;
 .rr-pt-prior-ticket>summary{cursor:pointer;color:#264762;font:750 12px/1.45 Inter,Arial,system-ui,sans-serif}
 .rr-pt-prior-label{margin:9px 0 6px;color:#50637a;font:650 12px/1.4 Inter,Arial,system-ui,sans-serif}
 .rr-pt-prior-ticket .rr-pt-race-rows{margin:3px 0 0}
+
+/* Exact current-field PWIN coverage: fixed right column, unchanged saddle art. */
+.rr-pt-pwin-heading{display:flex;justify-content:flex-end;padding:5px 10px 3px;color:#586a72;font:800 9px/1.2 Inter,Arial,sans-serif;letter-spacing:.035em}
+.rr-pt-race-row.rr-pt-has-coverage{grid-template-columns:92px minmax(0,1fr) 78px}
+.rr-pt-builder-row.rr-pt-has-coverage{grid-template-columns:77px minmax(0,1fr) 78px}
+.rr-pt-pwin-cell{min-width:0;display:grid;justify-items:end;align-content:center;align-self:center;gap:4px;padding:2px 0}
+.rr-pt-pwin-value{color:#234b39;font:800 19px/1.05 Inter,Arial,sans-serif;font-variant-numeric:tabular-nums;white-space:nowrap}
+.rr-pt-pwin-track{display:block;width:100%;max-width:68px;height:4px;background:#dce2dc;border-radius:5px;overflow:hidden}
+.rr-pt-pwin-fill{display:block;height:100%;background:#234b39;border-radius:5px}
+.rr-pt-pwin-delta{font:750 10px/1.2 Inter,Arial,sans-serif;white-space:nowrap;font-variant-numeric:tabular-nums;color:#234b39}
+.rr-pt-pwin-delta[data-direction="down"]{color:#a0443b}
+.rr-pt-builder-row .rr-pt-pwin-cell{align-self:start;padding-top:7px}
+.rr-pt-builder-row .rr-pt-field-grid{grid-column:1/-1;min-width:0}
+.rr-pt-builder .rr-pt-runner-button{gap:3px;align-content:center}
+.rr-pt-runner-pwin{color:#234b39;font:800 10px/1.15 Inter,Arial,sans-serif;font-variant-numeric:tabular-nums;white-space:nowrap}
+.rr-pt-builder .rr-pt-scratched .rr-pt-runner-pwin{color:#8a5149}
+.rr-pt-builder-chips{min-width:0}
+@media(max-width:800px){
+ .rr-pt-race-row.rr-pt-has-coverage,.rr-pt-builder-row.rr-pt-has-coverage{grid-template-columns:58px minmax(0,1fr) 62px;gap:5px}
+ .rr-pt-pwin-heading{padding-right:5px}
+ .rr-pt-pwin-value{font-size:17px}
+ .rr-pt-runner-pwin{font-size:9px}
+ .rr-pt-pwin-track{max-width:56px}
+}
+@media(max-width:340px){
+ .rr-pt-race-row.rr-pt-has-coverage,.rr-pt-builder-row.rr-pt-has-coverage{grid-template-columns:49px minmax(0,1fr) 55px;gap:4px}
+ .rr-pt-pwin-value{font-size:15px}
+ .rr-pt-pwin-heading{font-size:8px}
+ .rr-pt-pwin-track{max-width:50px}
+}
