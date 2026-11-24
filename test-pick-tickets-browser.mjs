@@ -50,6 +50,7 @@ const mime={".html":"text/html; charset=utf-8",".css":"text/css; charset=utf-8",
 const root=path.resolve("public");
 let sourceHoldMode=false,scratchBuilderMode=false,scoredMode=false;
 const scored=structuredClone(synthetic);
+for(const entry of scored.cards)entry.card.formula_version="V3.4-TRI-ONLY-LENGTH-SENSITIVE-TRIAL-A";
 for(const entry of scored.cards)for(const seq of entry.card.sequences){
  seq.review_probabilities=Object.fromEntries(seq.race_fields.map(f=>[String(f.race_number),Object.fromEntries(f.programs.map((p,i)=>[p,[24,18,14,10,8,6,5,4,3,3,3,2][i]]))]));
 }
@@ -164,28 +165,9 @@ try{
   await page.getByRole("button",{name:"Rail & Rye Ticket"}).click();
   assert.equal(await page.locator(".rr-pt-race-row").count(),4);
 
-  await page.locator(".rr-pt-analysis-button").click();
-  assert.equal(await page.locator("#rr-pt-dialog").evaluate(n=>n.open),true,"full analysis opens");
-  assert.equal(await page.locator("#rr-pt-dialog .rr-pt-race-row").count(),8,
-   "Ticket Insights includes current plus prior four-leg ticket");
-  assert.equal(await page.locator("#rr-pt-dialog .rr-pt-prior-ticket").count(),1);
-  assert.match(await page.locator("#rr-pt-dialog .rr-pt-prior-ticket summary").innerText(),/Previous field/);
-  await page.locator("#rr-pt-dialog .rr-pt-prior-ticket summary").click();
-  assert.equal(await page.locator("#rr-pt-dialog .rr-pt-prior-ticket .rr-pt-race-row").count(),4);
-  assert.equal(await page.locator("#rr-pt-dialog .rr-pt-coverage-line").count(),4,
-   "every Pick 4 leg displays its exact modeled coverage");
-  assert.equal(await page.locator("#rr-pt-dialog .rr-pt-coverage-line strong").first().innerText(),"62.0%");
-  assert.equal(await page.locator("#rr-pt-dialog .rr-pt-coverage-marginals summary").count(),1,
-   "additional runner opportunity costs remain available in ticket insights");
-  await page.locator("#rr-pt-dialog .rr-pt-coverage-marginals summary").click();
-  assert.equal(await page.locator("#rr-pt-dialog .rr-pt-coverage-marginals tbody tr").count(),1);
-  assert.match(await page.locator("#rr-pt-dialog .rr-pt-coverage-marginals tbody tr").innerText(),/\$1\.00/);
-  assert.doesNotMatch(await page.locator("#rr-pt-dialog").innerText(),/interim|prescratch model review/i,"Ticket Insights has no legacy internal labels");
-  const drawerBounds=await page.locator("#rr-pt-dialog").evaluate(n=>({left:n.getBoundingClientRect().left,right:n.getBoundingClientRect().right,width:innerWidth}));
-  assert.ok(drawerBounds.left>=-1&&drawerBounds.right<=drawerBounds.width+1,"dialog overflow at "+width);
-  await page.screenshot({path:"test-artifacts/pick-tickets-detail-"+width+".png"});
-  await page.keyboard.press("Escape");
-  assert.equal(await page.locator("#rr-pt-dialog").evaluate(n=>n.open),false);
+  assert.equal(await page.locator(".rr-pt-analysis-button,#rr-pt-dialog,.rr-pt-ticket-actions").count(),0,"Retired insights controls and modal are removed");
+  assert.doesNotMatch(await page.locator("#rr-pt-app").innerText(),/Ticket Insights|V3\.4|V3\.3/,"No internal version labels or retired insights");
+  assert.equal(await page.locator("#rr-pt-current .rr-pt-pwin-value").count(),4,"Coverage remains inline on each leg");
 
   // All five track names select independently and remain grouped by available wager.
   await page.selectOption("#rr-pt-track","Zia Park");
@@ -203,6 +185,8 @@ try{
   await page.goto(addr,{waitUntil:"domcontentloaded"});
   await page.locator(".rr-pt-ticket-screen").waitFor();
   assert.deepEqual(await page.locator(".rr-pt-pwin-value").allTextContents(),["32.0%","32.0%","15.0%"]);
+  assert.doesNotMatch(await page.locator("#rr-pt-app").innerText(),/V3\.4|Ticket Insights/);
+  assert.equal(await page.locator(".rr-pt-analysis-button,#rr-pt-dialog").count(),0);
   const align=await page.locator(".rr-pt-pwin-value").evaluateAll(nodes=>nodes.map(n=>Math.round(n.getBoundingClientRect().right)));
   assert.equal(new Set(align).size,1,"right aligned coverage column");
   await page.getByRole("button",{name:"Build My Ticket"}).click();

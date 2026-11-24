@@ -152,23 +152,8 @@ font-weight:850;
 border-left:1px solid #ddcfb2;
 }
 .rr-pt-pass-note{margin:0;padding:10px 13px;border-top:1px solid #ebdfdb;color:#91473e;background:#fff7f3;font-size:11px;font-weight:750;line-height:1.4}
-.rr-pt-ticket-actions{display:flex;justify-content:flex-end;padding:7px 12px;border-top:1px solid #ece8dd}
-.rr-pt-analysis-button{min-height:42px;padding:8px 12px;border:0;background:transparent;color:#173d64;font-size:12px;font-weight:850;cursor:pointer}
-.rr-pt-analysis-button::after{content:"›";margin-left:9px;color:#b98e3d;font-size:19px;vertical-align:-1px}
 
 
-.rr-pt-dialog{width:min(820px,calc(100% - 24px));max-height:89dvh;margin:auto;padding:0;border:0;border-radius:13px;background:var(--ivory);overflow-y:auto;box-shadow:0 22px 65px rgba(5,23,44,.3)}
-.rr-pt-dialog::backdrop{background:rgba(5,23,42,.60)}
-.rr-pt-dialog-head{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 15px;border-bottom:1px solid #e0d7c9;background:#fff}
-.rr-pt-dialog-head h2{margin:0;color:var(--navy);font-size:17px;font-weight:850;overflow-wrap:anywhere}
-.rr-pt-dialog-info{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px;color:#637588;font-size:12px;font-weight:750}
-.rr-pt-analysis-rate{margin:0 12px 9px;color:#183e64;font:700 18px/1.3 "Tinos","Times New Roman",serif}
-.rr-pt-analysis-reason{margin:0 12px 11px;color:#39556c;font-size:13px;line-height:1.5}
-.rr-pt-analysis-stage{margin:0 11px 13px;border:1px solid #d2bd8f;border-radius:9px;background:#fff;overflow:hidden}
-.rr-pt-analysis-stage .rr-pt-tier-tabs{padding:9px 10px}
-.rr-pt-analysis-tier{margin:0;padding:12px 13px 5px;color:var(--navy);font-size:14px;font-weight:850}
-.rr-pt-analysis-stage .rr-pt-race-rows{padding:4px 7px 9px}
-.rr-pt-analysis-notes{margin:0;padding:10px 12px;border-top:1px solid #ebe5d9;color:#687b8a;font-size:11px;line-height:1.5}
 @media(min-width:900px){.rr-pt-ticket-screen{max-width:1050px}}
 @media(max-width:800px){
  .rr-pt-main{padding:12px 11px 36px}
@@ -185,9 +170,6 @@ border-left:1px solid #ddcfb2;
  .rr-pt-chip,.rr-pt-chip-fallback{width:33px;height:33px}
  
  
- .rr-pt-dialog{position:fixed;inset:auto 0 0;width:100%;max-width:none;max-height:89dvh;margin:0;border-radius:18px 18px 0 0;padding-bottom:env(safe-area-inset-bottom)}
- .rr-pt-dialog::before{content:"";display:block;width:40px;height:4px;margin:9px auto 0;border-radius:6px;background:#bcc3c9}
- .rr-pt-dialog-head{padding:11px 13px}
 }
 @media(max-width:340px){
  .rr-pt-sequence-tab{min-width:118px}
@@ -350,32 +332,8 @@ gap:4px;
 }
 
 
-/* Protected Ticket Insights: exact V3.2 frontier diagnostics, not an alternate ticket. */
-.rr-pt-sensitivity{margin:12px 0 4px;padding-top:12px;border-top:1px solid #d9dbd9}
-.rr-pt-sensitivity h4{margin:0 0 8px;color:#143457;font:800 14px/1.3 Inter,Arial,system-ui,sans-serif}
-.rr-pt-sensitivity-table{width:100%;border-collapse:collapse;table-layout:fixed;font:650 12px/1.3 Inter,Arial,system-ui,sans-serif;color:#1d3954}
-.rr-pt-sensitivity-table th{padding:8px 5px;text-align:right;color:#61758a;border-bottom:1px solid #cbd0d3;font-weight:800}
-.rr-pt-sensitivity-table td{padding:9px 5px;text-align:right;border-bottom:1px solid #e1e4e5;font-variant-numeric:tabular-nums}
-.rr-pt-sensitivity-table th:first-child,.rr-pt-sensitivity-table td:first-child{text-align:left}
-.rr-pt-sensitivity-current{background:#eff3f6;color:#0c2f50;font-weight:850}
-@media(max-width:375px){.rr-pt-sensitivity-table{font-size:10px}.rr-pt-sensitivity-table th,.rr-pt-sensitivity-table td{padding:7px 3px}}
 
-/* V3.3 private Insights: real race coverage and incremental opportunity cost. */
-.rr-pt-coverage-breakdown{margin:14px 0 4px;padding:12px 0 0;border-top:1px solid #d9dbd9}
-.rr-pt-coverage-breakdown h4{margin:0 0 9px;color:#143457;font:800 14px/1.3 Inter,Arial,system-ui,sans-serif}
-.rr-pt-coverage-grid{display:grid;gap:0}
-.rr-pt-coverage-line{display:grid;grid-template-columns:1fr 78px 90px;gap:8px;align-items:center;padding:8px 6px;border-bottom:1px solid #e7e9e8;color:#435e76;font:650 12px/1.3 Inter,Arial,system-ui,sans-serif}
-.rr-pt-coverage-line strong{color:#13395d;text-align:right;font:800 14px/1.25 Inter,Arial,system-ui,sans-serif;font-variant-numeric:tabular-nums}
-.rr-pt-coverage-line span:last-child{text-align:right}
-.rr-pt-coverage-marginals{margin:10px 0 3px}
-.rr-pt-coverage-marginals summary{font:750 12px/1.35 Inter,Arial,system-ui,sans-serif;color:#214a6e;cursor:pointer}
-@media(max-width:350px){.rr-pt-coverage-line{grid-template-columns:1fr 70px 70px;gap:4px;font-size:11px}}
 
-/* Previous-vs-current tickets are private and visible only inside Insights. */
-.rr-pt-prior-ticket{margin:10px 0 12px;border:1px solid #d9d7cd;border-radius:8px;background:#f7f6f2;padding:8px 10px}
-.rr-pt-prior-ticket>summary{cursor:pointer;color:#264762;font:750 12px/1.45 Inter,Arial,system-ui,sans-serif}
-.rr-pt-prior-label{margin:9px 0 6px;color:#50637a;font:650 12px/1.4 Inter,Arial,system-ui,sans-serif}
-.rr-pt-prior-ticket .rr-pt-race-rows{margin:3px 0 0}
 
 /* Exact current-field PWIN coverage: fixed right column, unchanged saddle art. */
 .rr-pt-pwin-heading{display:flex;justify-content:flex-end;padding:5px 10px 3px;color:#586a72;font:800 9px/1.2 Inter,Arial,sans-serif;letter-spacing:.035em}
