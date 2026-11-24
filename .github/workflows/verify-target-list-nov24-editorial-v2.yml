@@ -1,0 +1,89 @@
+name: Verify Nov24 Target List editorial V2 private reader
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/verify-target-list-nov24-editorial-v2.yml'
+      - 'src/target-list.js'
+      - 'scripts/target_list_nov24_editorial_addendum.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect-private-edition:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install boto3==1.40.36
+      - name: Verify both immutable versions and exact numeric parity
+        env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+        run: |
+          python - <<'PY'
+          import boto3,os,json,hashlib
+          from pathlib import Path
+          account=os.environ["TRI_CLOUDFLARE_ACCOUNT_ID"]
+          store=boto3.client("s3",endpoint_url=f"https://{account}.r2.cloudflarestorage.com",region_name="auto",
+            aws_access_key_id=os.environ["TRI_R2_ACCESS_KEY_ID"],
+            aws_secret_access_key=os.environ["TRI_R2_SECRET_ACCESS_KEY"])
+          prefix="racing-intelligence/target-list-review/2026-11-24/revision-"
+          cards={}
+          for rev in (1,2):
+              obj=store.get_object(Bucket="rail-and-rye-private-cards",Key=f"{prefix}{rev:04}.json")
+              raw=obj["Body"].read()
+              assert hashlib.sha256(raw).hexdigest()==(obj.get("Metadata") or {}).get("sha256")
+              cards[rev]=json.loads(raw)
+              Path(f"/tmp/target-list-nov24-revision{rev}.json").write_bytes(raw)
+          old,new=cards[1],cards[2]
+          assert old["race_date"]==new["race_date"]=="2026-11-24"
+          assert old["revision"]==1 and new["revision"]==2 and new["status"]=="editorial_update"
+          assert len(old["targets"])==len(new["targets"])==6
+          assert new["review_only"] and not new["customer_publish_approved"] and not new["production_receipt_verified"]
+          assert new["source"]["editorial_voice_lock_sha256"]=="8dc2e64fc660b6bbc28d31a3a56668caa5e05b30363fc2fdc01cffc9a28d151d"
+          assert new["source"]["revised_editorial_sha256"]=="9bfa31b6ff051495863c0e965a767b4b3e5042499208c953371d3bb95948c639"
+          def key(x):return (x["track"].casefold(),x["race_number"])
+          a={key(x):x for x in old["targets"]}
+          b={key(x):x for x in new["targets"]}
+          assert a.keys()==b.keys()
+          for k in a:
+              for role in ("favorite","attack"):
+                  assert a[k][role]==b[k][role],"Source horse pricing or probability changed."
+              assert a[k]["analysis"]!=b[k]["analysis"],"Expected editorial revision."
+              assert len(b[k]["analysis"].split())<=60
+          print("PASS: Nov24 private R2 editorial revision 2: six source races, unchanged horse pricing/probabilities, short locked-voice copy, checksum verified.")
+          PY
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify actual private Worker accepts latest editorial revision
+        run: |
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          import {readFileSync} from 'node:fs';
+          import {webcrypto,createHash} from 'node:crypto';
+          import {readAdminTargetListReview} from './src/target-list.js';
+          globalThis.crypto??=webcrypto;
+          const key=n=>`racing-intelligence/target-list-review/2026-11-24/revision-${String(n).padStart(4,'0')}.json`;
+          const raw=new Map([1,2].map(n=>[key(n),readFileSync(`/tmp/target-list-nov24-revision${n}.json`,'utf8')]));
+          const env={CARDS_BUCKET:{
+            async list({prefix}){return {objects:[...raw.keys()].filter(key=>key.startsWith(prefix)).map(key=>({key})),truncated:false};},
+            async get(requested){
+              if(!raw.has(requested))return null;
+              const body=raw.get(requested);
+              return {customMetadata:{sha256:createHash('sha256').update(body).digest('hex')},text:async()=>body};
+            }
+          }};
+          const response=await readAdminTargetListReview(env,new URL('https://railandryeracing.com/api/admin/target-list-review'));
+          assert.equal(response.status,200);
+          const body=await response.json();
+          assert.equal(body.edition?.revision,2);
+          assert.equal(body.edition?.targets?.length,6);
+          assert.equal(body.edition?.status,'editorial_update');
+          assert.equal(body.review_only,true);
+          console.log('PASS: Private Worker reads latest Nov24 six-race editorial revision automatically.');
+          JS
