@@ -16,11 +16,10 @@
 - The race navigation order remains true post-time order and a valid 44px+ phone touch target. If a program-number image is not part of the approved art (outside #1–20), use a clearly identified accessible fallback, not fabricated colors.
 - Bet Builder selections still always show the same approved saddlecloth program numbers and native coupled suffixes.
 
-### Track identity in headers — approved real artwork restored
-- Keep the Rail & Rye horseshoe and the full track name and race date.
-- Display **the existing approved authentic venue logo** when the venue has a source file: `/assets/approved/track-logos/finger-lakes.webp`, `mahoning-valley.webp`, `mountaineer.webp`, `parx-racing.webp` and `zia-park.webp`. Do not replace real track logos with fabricated venue initials or the interim R&R `RACECOURSE` monogram.
-- Present the complete logo in a consistent, unobtrusive ivory area with `object-fit: contain` and `mix-blend-mode: multiply` to reduce source white rectangular backgrounds. Never clip or distort official branding; no large generic frames or thick borders.
-- For an unrecognized venue with no approved logo, display the Rail & Rye horseshoe and full track name/date only. Never borrow another track's image.
+### Track identity in headers — mobile-first text only
+- Keep the shared Rail & Rye horseshoe in the site masthead and the complete track name/date in the compact venue identity.
+- Do **not** render venue-logo badges in Projections or Pick Tickets; Longshot Radar and Target List already use text-only track names. Do not leave blank frames, decorative placeholders or reserved artwork columns.
+- Preserve the authentic source WebP files under `/assets/approved/track-logos/` for possible **future desktop review**, not current rendering. Never manufacture track initials.
 - Race-header saddlecloth chips retain their actual approved PNG art. Some PNG color/lettering pixels are transparent, so the race-header version **must** have an ivory underlay matching the navigation chips, not dark navy shining through its transparent text.
 - Long stakes race names are full, sponsor-free and **balanced at natural word boundaries**. The title gets its own grid row; runner count, purse, source-status and post time receive distinct rows in the mobile layout. No truncated names or orphaned fragments.
 
