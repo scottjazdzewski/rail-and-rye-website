@@ -355,3 +355,14 @@ body.heritage-home.heritage-inner-page.heritage-store-page.rr-member-page .rr-jo
  .rr-pdf-reader-header h2{font-size:17px}
  .rr-pdf-reader-header .rr-member-button{padding:10px 12px}
 }
+
+/* Signed-in membership account: centered editorial layout at every viewport. */
+#member-account{text-align:center}
+#member-account #member-subscriptions .rr-member-note{margin:8px auto;text-align:center}
+#member-account .rr-member-account-actions{justify-content:center;align-items:center}
+#member-account .rr-member-library{grid-template-columns:minmax(0,1fr)}
+#member-account .rr-library-item{flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:14px}
+#member-account .rr-library-item>div{max-width:100%;min-width:0;text-align:center}
+#member-account .rr-library-item h3,#member-account .rr-library-item p{text-align:center}
+#member-account .rr-library-actions{width:100%;justify-content:center}
+#member-account .rr-member-button{text-align:center;justify-content:center;white-space:normal;max-width:100%}
