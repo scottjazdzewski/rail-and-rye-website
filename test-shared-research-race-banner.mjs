@@ -8,25 +8,25 @@ const radarCSS=read("public/assets/longshot-radar.css");
 const targetCSS=read("public/assets/target-list-dashboard.css");
 const shared=read("public/assets/rr-research-race-banner.js");
 const css=read("public/assets/rr-research-race-banner.css");
-const legacy=/\\.rr-(?:lr|target)-(?:racebar|race-number|post|race-facts|race-meta|race-identifiers)\\b/;
+const legacy=/\.rr-(?:lr|target)-(?:racebar|race-number|post|race-facts|race-meta|race-identifiers)\b/;
 for(const [product,js,styles] of [["Radar",radar,radarCSS],["Target List",target,targetCSS]]){
- assert.match(js,/raceBanner\\.render\\((?:item|entry)\\)/,product+" must call canonical renderer");
- assert.doesNotMatch(js,/sourceRaceTitle\\(|rr-(?:lr|target)-racebar/,product+" must have no independent banner builder");
+ assert.match(js,/raceBanner\.render\((?:item|entry)\)/,product+" must call canonical renderer");
+ assert.doesNotMatch(js,/sourceRaceTitle\(|rr-(?:lr|target)-racebar/,product+" must have no independent banner builder");
  assert.doesNotMatch(styles,legacy,product+" must not contain legacy race-header CSS");
 }
 for(const page of ["public/admin/longshot-radar.html","public/admin/target-list-preview.html"]){
  const h=read(page);
- assert.match(h,/rr-research-race-banner\\.css\\?v=locked-v1-20261124/);
- assert.match(h,/rr-research-race-banner\\.js\\?v=locked-v1-20261124/);
+ assert.match(h,/rr-research-race-banner\.css\?v=locked-v1-20261124/);
+ assert.match(h,/rr-research-race-banner\.js\?v=locked-v1-20261124/);
  const helper=h.indexOf("rr-research-race-banner.js"),app=h.indexOf(page.includes("longshot")?"longshot-radar.js":"target-list-dashboard.js");
  assert.ok(helper>=0&&helper<app,"Canonical banner script must execute before "+page);
 }
-assert.match(css,/grid-template-columns:minmax\\(0,1fr\\) max-content/);
-assert.match(css,/font:800 17px\\/1\\.23 Inter/);
-assert.match(css,/font:700 13px\\/1\\.3 Inter/);
-assert.match(css,/font:500 14px\\/1\\.35 Inter/);
+assert.match(css,/grid-template-columns:minmax\(0,1fr\) max-content/);
+assert.match(css,/font:800 17px\/1\.23 Inter/);
+assert.match(css,/font:700 13px\/1\.3 Inter/);
+assert.match(css,/font:500 14px\/1\.35 Inter/);
 assert.match(css,/border-top:3px solid #c99831/);
-assert.doesNotMatch(shared,/innerHTML|localStorage|fetch\\(/);
+assert.doesNotMatch(shared,/innerHTML|localStorage|fetch\(/);
 class El{
  constructor(tag){this.tagName=tag.toUpperCase();this.className="";this.textContent="";this.children=[];this.attrs={};}
  append(...children){this.children.push(...children);}
