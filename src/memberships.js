@@ -21,6 +21,11 @@ const error=(message,status=400)=>json({error:message},status);
 const emailOf=value=>String(value||"").trim().toLowerCase();
 const validEmail=value=>EMAIL_RE.test(value)&&value.length<=254;
 const nowSeconds=()=>Math.floor(Date.now()/1000);
+// Owner entitlement is independent of Stripe; identity still requires a verified email session.
+export function hasLifetimeOwnerAccess(env,email){
+  const owner=emailOf(env.ADMIN_EMAIL),candidate=emailOf(email);
+  return validEmail(owner)&&validEmail(candidate)&&owner===candidate;
+}
 const stripeMode=env=>{
   if(env.RR_PAYMENT_MODE==="live")return env.RR_LIVE_ACTIVATION==="CONFIRM_LIVE_SALES"?"live":"paused";
   if(env.RR_PAYMENT_MODE==="paused")return "paused";
@@ -96,6 +101,7 @@ async function membershipRows(env,email){
   return result.results||[];
 }
 async function activeMembership(env,email){
+  if(hasLifetimeOwnerAccess(env,email))return {owner_access:true};
   let rows=await membershipRows(env,email);
   const admin=emailOf(env.ADMIN_EMAIL),now=nowSeconds();
   const near=rows.find(r=>(r.stripe_mode==="live"||(r.stripe_mode==="test"&&admin&&email===admin))&&
@@ -359,7 +365,7 @@ async function confirmCheckout(request,env){
     const statement=await subscriptionData(env,mode,sub,emailOf(session.customer_details?.email||session.customer_email));
     if(statement)await env.STORE_DB.batch([statement]);
     const email=emailOf(session.customer_details?.email||session.customer_email);
-    const active=validEmail(email)?await activeMembership(env,email):null;
+    const active=validEmail(email)?getActiveRows(await membershipRows(env,email),email,env)[0]:null;
     return json({confirmed:!!active, pending:!active, email:active?maskEmail(email):null});
   }catch(e){
     console.warn("Membership checkout confirmation delayed",String(e).slice(0,120));
@@ -447,7 +453,7 @@ async function memberDetails(request,env){
     status:r.status,cancel_at_period_end:!!r.cancel_at_period_end,
     paid_through:new Date(Number(r.period_end)*1000).toISOString()
   }));
-  return json({active:true,email,subscriptions,tabs_url:"/my-products/"});
+  return json({active:true,email,owner_access:hasLifetimeOwnerAccess(env,email),subscriptions,tabs_url:"/store/"});
 }
 async function logout(request,env){
   if(request.method!=="POST")return error("Method not allowed",405);
@@ -463,7 +469,7 @@ async function cancelAtPeriodEnd(request,env){
   if(!email)return error("Sign in to manage your membership.",401);
   const rows=getActiveRows(await membershipRows(env,email),email,env);
   const selected=rows.find(r=>!r.cancel_at_period_end);
-  if(!selected)return json({ok:true,message:"Your membership is already set to end at the close of its paid period."});
+  if(!selected)return json({ok:true,message:hasLifetimeOwnerAccess(env,email)?"Lifetime Owner Access has no recurring billing and does not expire.":"Your membership is already set to end at the close of its paid period."});
   const fields=new URLSearchParams({cancel_at_period_end:"true"});
   try{
     const updated=await stripeRequest(env,selected.stripe_mode,"POST","subscriptions/"+encodeURIComponent(selected.stripe_subscription_id),fields);
@@ -482,7 +488,7 @@ async function billingPortal(request,env){
   if(!email)return error("Sign in to manage your membership.",401);
   const rows=getActiveRows(await membershipRows(env,email),email,env);
   const current=rows.find(r=>r.stripe_mode==="live")||rows[0];
-  if(!current)return error("Active membership not found.",404);
+  if(!current)return error(hasLifetimeOwnerAccess(env,email)?"Lifetime Owner Access has no billing account.":"Active membership not found.",404);
   try{
     const portal=await stripeRequest(env,current.stripe_mode,"POST","billing_portal/sessions",new URLSearchParams({
       customer:current.stripe_customer_id,return_url:SITE+"/membership/"

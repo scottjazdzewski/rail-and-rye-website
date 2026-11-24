@@ -1,0 +1,12 @@
+import assert from "node:assert/strict";
+import {hasLifetimeOwnerAccess,hasActiveMembershipSession,handleMembershipApi} from "./src/memberships.js";
+import {webcrypto} from "node:crypto";
+globalThis.crypto??=webcrypto;
+const owner="owner@example.test",env={ADMIN_EMAIL:owner};
+assert.equal(hasLifetimeOwnerAccess(env,owner),true);
+assert.equal(hasLifetimeOwnerAccess(env," OWNER@example.test "),true);
+assert.equal(hasLifetimeOwnerAccess(env,"someone@example.test"),false);
+assert.equal(hasLifetimeOwnerAccess({},""),false);
+assert.equal(hasLifetimeOwnerAccess({ADMIN_EMAIL:"invalid"},"invalid"),false);
+assert.equal(await hasActiveMembershipSession(new Request("https://example.test/"),env),false);
+console.log("PASS: owner email normalization, exact match, missing config fail closed, no unauthenticated access");

@@ -100,9 +100,12 @@ function renderLibrary(data){
  if(heroActions)heroActions.hidden=true;
  const toggle=q("#member-signin-toggle");if(toggle)toggle.setAttribute("aria-expanded","false");
  show(status,"Signed in as "+data.email+".");
+ const owner=data.owner_access===true,hasPaid=(data.subscriptions||[]).length>0;
+ for(const selector of ["#member-billing","#member-cancel"]){const control=q(selector);if(control)control.hidden=owner&&!hasPaid;}
  const subs=q("#member-subscriptions");
  if(subs){
   subs.replaceChildren();
+  if(owner){const p=document.createElement("p");p.className="rr-member-note";p.textContent="Lifetime Owner Access · All published products · No expiration · No recurring billing";subs.append(p);}
   for(const item of data.subscriptions||[]){
    const p=document.createElement("p");p.className="rr-member-note";
    const end=new Date(item.paid_through);
@@ -114,10 +117,10 @@ function renderLibrary(data){
   list.replaceChildren();
   const row=document.createElement("article");row.className="rr-library-item";
   const info=document.createElement("div"),title=document.createElement("h3"),detail=document.createElement("p");
-  title.textContent="All published racing tabs";detail.textContent="Your active All-Access membership opens every currently published category and racing date. The tabs show which race days are available.";
+  title.textContent="All published racing tabs";detail.textContent=owner?"Your lifetime owner entitlement opens every currently published product and track.":"Your active All-Access membership opens every currently published category and racing date. The tabs show which race days are available.";
   info.append(title,detail);
   const actions=document.createElement("div");actions.className="rr-library-actions";
-  const open=document.createElement("a");open.className="rr-member-button";open.href="/my-products/";open.textContent="Open Racing Tabs";
+  const open=document.createElement("a");open.className="rr-member-button";open.href="/store/";open.textContent="Open Intelligence Hub";
   actions.append(open);row.append(info,actions);list.append(row);
  }
 }

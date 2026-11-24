@@ -19,3 +19,7 @@ The Hub Open action navigates directly to `/intelligence/{race-cards|pick-ticket
 ## Track entitlement lock
 
 Authorize each purchased SKU by ID, category, race date and exact track. Bundles unlock only their recorded order components. Blank tracks are day-wide only for daily research. Filter server data before sending it to the customer; F4 uses the same authorized edition. Retain up to 24 signed order tokens for additional purchases. The Hub distinguishes partial and full access, and includes track-bundle purchase choices.
+
+## Lifetime owner access
+
+The configured Cloudflare ADMIN_EMAIL receives non-expiring, complimentary all-product access through the existing verified membership magic-link session. No synthetic Stripe subscription or hardcoded email. Every request revalidates the configured owner email and normal session expiration. Billing controls are hidden for owner accounts without a paid subscription; existing real subscriptions remain manageable. The owner uses the customer-facing Intelligence Hub. Product publication and retention rules remain in force.
