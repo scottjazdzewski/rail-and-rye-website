@@ -1,3 +1,4 @@
+import {pickPostTimes} from "./pick-tickets-post-times.js";
 import {buildV34TrialCard,PICK_V34_ENGINE,PICK_V34_TRIAL_SCALES,usesV34,hasV34ReceiptPair} from './pick-tickets-v34.js';
 import {getPickTicketsIntake,getPickTicketsIntake1124} from './pick-tickets-intake.js';
 import {buildPrescratchPickTicketReview,buildV33PostScratchReviewed,
@@ -314,7 +315,9 @@ export async function handleAdminPickTickets(request,env){
      is_stakes:true
     };
    }
-   return Object.keys(stakes).length?{...item,stakes_by_race:stakes}:item;
+   const postTimes=pickPostTimes(item.card,source);
+   return {...item,...(Object.keys(stakes).length?{stakes_by_race:stakes}:{}),
+    ...(Object.keys(postTimes).length?{post_times_by_race:postTimes}:{})};
   });
   // V3.4 is the owner-approved default from Nov 24. Earlier editions
   // remain historical V3.3; explicit baseline is a protected QA rollback view.

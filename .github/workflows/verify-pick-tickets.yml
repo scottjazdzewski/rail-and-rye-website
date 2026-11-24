@@ -66,6 +66,8 @@ jobs:
         run: node test-pick-tickets-v32.mjs
       - name: Versioned V3.3 exact 50%-per-leg and opportunity-cost optimization
         run: node test-pick-tickets-v33.mjs
+      - name: Date-specific post time source verification
+        run: node test-pick-tickets-post-times.mjs
       - name: Locked V3.4 exact length-sensitive frontier
         run: node test-pick-tickets-v34.mjs
       - name: Private V3.2 cost-sensitivity frontier parity

@@ -65,8 +65,21 @@
   header.append(node("span","","PWIN COVERED"));
   return header;
  }
+ // Match the displayed one-decimal percentage to the color threshold.
+ // Dark, accessible reds/greens become stronger away from the neutral band.
+ function coverageColor(mass){
+  if(mass===null)return {band:"unknown",color:"#68737b"};
+  const n=Number(mass.toFixed(1));
+  const mix=(a,b,t)=>"rgb("+a.map((v,i)=>Math.round(v+(b[i]-v)*Math.max(0,Math.min(1,t)))).join(", ")+")";
+  if(n<40)return {band:"red",color:mix([132,34,32],[178,75,68],n/40)};
+  if(n<=60)return {band:"gray",color:"#65717b"};
+  return {band:"green",color:mix([56,117,77],[20,65,42],(n-60)/40)};
+ }
  function coverageCell(leg,{builder=false}={}){
   const mass=legPwin(leg),cell=node("div","rr-pt-pwin-cell");
+  const palette=coverageColor(mass);
+  cell.dataset.coverageBand=palette.band;
+  cell.style.setProperty("--rr-pt-coverage-color",palette.color);
   const value=node("strong","rr-pt-pwin-value",pwinText(mass));
   cell.setAttribute("aria-label","Race "+leg.race_number+" PWIN covered: "+(mass===null?"not available":pwinText(mass)));
   cell.append(value);
@@ -332,12 +345,15 @@
  function renderActive(){
   if(!activeSeq)return;
   E.current.replaceChildren();
-  const card=entries.find(x=>x.card.track===E.track.value&&x.card.date===E.date.value)?.card;
+  const item=entries.find(x=>x.card.track===E.track.value&&x.card.date===E.date.value);
+  const card=item?.card;
   if(!card)return;
   const box=node("section","rr-pt-ticket-screen");
   const head=node("div","rr-pt-ticket-header"),left=node("div","rr-pt-ticket-title");
   left.append(node("span","rr-pt-kicker","RAIL & RYE PICK TICKETS"));
   left.append(node("h2","",activeSeq.name+" · Races "+activeSeq.start_race+"–"+activeSeq.end_race));
+  const post=item.post_times_by_race?.[String(activeSeq.start_race)];
+  if(post)left.append(node("span","rr-pt-sequence-post","POST TIME · "+post));
   head.append(left,state(activeSeq.play_status));
   box.append(head);
   box.append(modeControls());

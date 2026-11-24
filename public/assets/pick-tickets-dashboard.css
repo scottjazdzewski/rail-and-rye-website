@@ -364,3 +364,11 @@ gap:4px;
  .rr-pt-pwin-heading{font-size:8px}
  .rr-pt-pwin-track{max-width:50px}
 }
+
+/* Sequence start and responsive conditional PWIN colors, display only. */
+.rr-pt-sequence-post{display:block;margin-top:5px;color:#e0c48e;font:800 11px/1.2 Inter,Arial,sans-serif;font-variant-numeric:tabular-nums;letter-spacing:.025em;white-space:nowrap}
+.rr-pt-pwin-value{color:var(--rr-pt-coverage-color,#65717b)}
+.rr-pt-pwin-track{height:7px;background:#dce1dd;max-width:none}
+.rr-pt-pwin-fill{background:var(--rr-pt-coverage-color,#65717b)}
+.rr-pt-pwin-cell[data-coverage-band="unknown"] .rr-pt-pwin-track{background:#e1e3e3}
+@media(max-width:430px){.rr-pt-sequence-post{font-size:10px;margin-top:4px}.rr-pt-pwin-track{height:6px}}
