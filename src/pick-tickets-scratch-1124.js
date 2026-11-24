@@ -6,7 +6,10 @@ export const PICK_SCRATCH_1124_MNR_KEY="pick-tickets/interim/2026-11-24/revision
 export const PICK_SCRATCH_1124_MNR_SHA="d77fb7cbead2b1793e1cba6fb0bbb91b536a3db1cf59c60e1a6f82bb4ca6997c";
 export const PICK_SCRATCH_1124_FL_KEY="pick-tickets/interim/2026-11-24/revision-0004.json";
 export const PICK_SCRATCH_1124_FL_SHA="2da2477a0adeb728c1090cdb62e6038f017145219d312b38f0226eb851588589";
+export const PICK_SCRATCH_1124_ZIA_KEY="pick-tickets/interim/2026-11-24/revision-0005.json";
+export const PICK_SCRATCH_1124_ZIA_SHA="b43f4eaa67d51017367987bda2298083e6d8c794ebfdef06ac7774c88474abe0";
 export const PICK_SCRATCH_1124_TRACKS=Object.freeze({
+ "Zia Park":{code:"ZIA",races:10,before:93,after:85,scratches:{1:["2"],4:["7"],5:["1","2","5"],8:["8"],10:["2","8"]},snapshot_sha:"1c381718275ee7256732f701a22a071c519d7b0563ac562b8907b08220e2fcfc",official_sha:"63574f3499efeda3be119635bb9952d8472d9246902003b436650ac1e62b73a7",handoff_sha:PICK_SCRATCH_1124_ZIA_SHA},
  "Finger Lakes":{code:"FL",races:8,before:65,after:60,scratches:{4:["6"],5:["1","5"],8:["2","3"]},snapshot_sha:"a45aacafe705795f112d87ca71036beebd710a080516c34ad079476ac71ba928",official_sha:"746857c6ff74c0baf505ee46ed086e6a50f72e8ca163699ef10cf173239e53c8",handoff_sha:PICK_SCRATCH_1124_FL_SHA},
  "Mountaineer":{code:"MNR",races:8,before:66,after:55,scratches:{1:["3"],2:["3","7"],6:["6"],7:["1","4","7"],8:["7","11","12","13"]},snapshot_sha:"c878603e4093e65dad49d814a321a6d1d8ba2d38c9aa77960fc21f9e4d99a70f",official_sha:"736be32f353fb45df93933d5bf2ec7b493838059b89489de3803c696181c5df2",handoff_sha:PICK_SCRATCH_1124_MNR_SHA},
  "Parx Racing":{code:"PRX",races:9,before:74,after:71,scratches:{3:["2"],4:["6"],6:["10"]},snapshot_sha:"6a50eb80522f1a1dd4844522ff4be38a3cbd2628d3a08635d947da70f97f629b",official_sha:"83b40052bb8e4048a585f077cf7aeaf4f2c7f398e098573c39f19de71ef581ec"},
@@ -60,7 +63,8 @@ export async function readNov24ScratchHandoff(env){
  const configs=[
   [PICK_SCRATCH_1124_KEY,PICK_SCRATCH_1124_SHA,"pick_tickets_scratch_source_1124",2,["Parx Racing","Mahoning Valley"]],
   [PICK_SCRATCH_1124_MNR_KEY,PICK_SCRATCH_1124_MNR_SHA,"pick_tickets_scratch_source_1124_mnr",3,["Mountaineer"]],
-  [PICK_SCRATCH_1124_FL_KEY,PICK_SCRATCH_1124_FL_SHA,"pick_tickets_scratch_source_1124_fl",4,["Finger Lakes"]]
+  [PICK_SCRATCH_1124_FL_KEY,PICK_SCRATCH_1124_FL_SHA,"pick_tickets_scratch_source_1124_fl",4,["Finger Lakes"]],
+  [PICK_SCRATCH_1124_ZIA_KEY,PICK_SCRATCH_1124_ZIA_SHA,"pick_tickets_scratch_source_1124_zia",5,["Zia Park"]]
  ];
  const out=[];
  for(const config of configs){

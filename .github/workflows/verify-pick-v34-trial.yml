@@ -7,7 +7,7 @@ permissions:
   contents: read
 jobs:
   verify:
-    if: github.event_name == 'workflow_dispatch' || (github.event.issue.number == 183 && github.event.comment.user.login == 'scottjazdzewski' && github.event.comment.body == 'RR_VERIFY_PICK_1124_REV4')
+    if: github.event_name == 'workflow_dispatch' || (github.event.issue.number == 183 && github.event.comment.user.login == 'scottjazdzewski' && github.event.comment.body == 'RR_VERIFY_PICK_1124_REV5')
     runs-on: ubuntu-24.04
     timeout-minutes: 6
     steps:
@@ -30,7 +30,7 @@ jobs:
           from botocore.exceptions import ClientError
           from pathlib import Path
           s3=boto3.client("s3",endpoint_url="https://"+os.environ["TRI_CLOUDFLARE_ACCOUNT_ID"].strip()+".r2.cloudflarestorage.com",region_name="auto",aws_access_key_id=os.environ["TRI_R2_ACCESS_KEY_ID"].strip(),aws_secret_access_key=os.environ["TRI_R2_SECRET_ACCESS_KEY"].strip())
-          keys=["pick-tickets/interim/2026-11-24/revision-0001.json","pick-tickets/interim/2026-11-24/revision-0002.json","pick-tickets/interim/2026-11-24/revision-0003.json","pick-tickets/interim/2026-11-24/revision-0004.json"]+["projections/dashboard/2026-11-24/"+x+".json" for x in ["delta-downs","finger-lakes","mahoning-valley","mountaineer","parx-racing","zia-park"]]
+          keys=["pick-tickets/interim/2026-11-24/revision-0001.json","pick-tickets/interim/2026-11-24/revision-0002.json","pick-tickets/interim/2026-11-24/revision-0003.json","pick-tickets/interim/2026-11-24/revision-0004.json","pick-tickets/interim/2026-11-24/revision-0005.json"]+["projections/dashboard/2026-11-24/"+x+".json" for x in ["delta-downs","finger-lakes","mahoning-valley","mountaineer","parx-racing","zia-park"]]
           result={}
           for k in keys:
               try:
@@ -111,7 +111,7 @@ jobs:
             if(r.length)console.log('TRIAL_COMBO_RANGE',track,n,JSON.stringify({count:r.length,before:[Math.min(...r.map(x=>x.before)),Math.max(...r.map(x=>x.before))],after:[Math.min(...r.map(x=>x.after)),Math.max(...r.map(x=>x.after))]}));
            }
           }
-          console.log('PASS: 50 current verified sequences; four scratch-updated tracks; baseline intact; no selections logged.');
+          console.log('PASS: 50 current verified sequences; five scratch-updated tracks; baseline intact; no selections logged.');
           JS
       - name: Remove private temporary bytes
         if: always()
