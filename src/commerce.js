@@ -525,16 +525,17 @@ async function checkout(request,env){
   if(Number(request.headers.get('content-length')||0)>1000)return error('Request too large',413);
   let data;try{data=await request.json();}catch{return error('Invalid JSON',400);}
   if(!UUID_RE.test(data?.product_id||''))return error('Invalid product',400);
-  const p=await env.STORE_DB.prepare(`SELECT id,title,description,price_cents,pdf_key,category,status,race_date,pdf_expires_at
+  const p=await env.STORE_DB.prepare(`SELECT id,title,description,price_cents,pdf_key,category,status,race_date,track,pdf_expires_at
     FROM products WHERE id=? AND status='published'
     AND NOT EXISTS(SELECT 1 FROM product_release_schedule s WHERE s.product_id=products.id AND s.release_at>CURRENT_TIMESTAMP)
     AND NOT EXISTS(SELECT 1 FROM bundle_only_assets a WHERE a.product_id=products.id)`).bind(data.product_id).first();
   if(!p)return error('Product is not available',404);
   if(!Number.isSafeInteger(p.price_cents)||p.price_cents<50||p.price_cents>500000)return error('Product is not available for purchase',400);
   const expiryFor=value=>value&&Number.isFinite(Date.parse(String(value).replace(' ','T')+'Z'))?String(value):null;
+  if(p.pdf_key!==BUNDLE_KEY&&!await hasProductTabData(env,p.category,p.race_date,[p]))return error('This racing tab has not been published yet.',409);
   const orderId=crypto.randomUUID(),children=[];
   if(p.pdf_key===BUNDLE_KEY){
-    const result=await env.STORE_DB.prepare(`SELECT c.id,c.title,c.pdf_key,c.status,c.pdf_expires_at,a.product_id AS asset_id,
+    const result=await env.STORE_DB.prepare(`SELECT c.id,c.title,c.category,c.race_date,c.track,c.pdf_key,c.status,c.pdf_expires_at,a.product_id AS asset_id,
       CASE WHEN c.pdf_expires_at IS NULL OR datetime(c.pdf_expires_at)<=CURRENT_TIMESTAMP THEN 1 ELSE 0 END AS expired,
       CASE WHEN s.release_at>CURRENT_TIMESTAMP THEN 1 ELSE 0 END AS pending_release
       FROM bundle_items bi LEFT JOIN products c ON c.id=bi.product_id
@@ -544,11 +545,13 @@ async function checkout(request,env){
     children.push(...(result.results||[]));
     if(children.length<2||children.length>12||children.some(x=>!x.pdf_key||x.pdf_key===BUNDLE_KEY||x.expired||x.pending_release||!(x.status==='published'||(x.status==='draft'&&x.asset_id))))
       return error('Bundle contents are currently unavailable',409);
+    const ready=await Promise.all(children.map(item=>hasProductTabData(env,item.category,item.race_date,[item])));
+    if(ready.some(value=>!value))return error('A tab in this bundle has not been published yet.',409);
   }else if(racePdfExpired(p.pdf_expires_at)){
-    return error('This PDF is no longer available. Need a copy? Email support@railandryeracing.com.',410);
+    return error('This racing-date access period has ended.',410);
   }
-  const fileDeadlines=(children.length?children.map(x=>expiryFor(x.pdf_expires_at)): [expiryFor(p.pdf_expires_at)]).filter(Boolean);
-  if(fileDeadlines.length!==(children.length||1))return error('PDF racing-date availability is missing. Please contact support.',409);
+  const accessDeadlines=(children.length?children.map(x=>expiryFor(x.pdf_expires_at)): [expiryFor(p.pdf_expires_at)]).filter(Boolean);
+  if(fileDeadlines.length!==(children.length||1))return error('Racing-date access timing is missing. Please contact support.',409);
   const earliestExpiry=Math.min(...fileDeadlines.map(value=>Date.parse(value.replace(' ','T')+'Z')));
   const now=Date.now(),sessionExpiry=Math.min(now+24*60*60*1000,earliestExpiry);
   if(sessionExpiry<now+30*60*1000)return error('The racing-date access period is nearly over, so checkout is no longer available.',410);
@@ -626,7 +629,7 @@ async function confirmPendingOrder(env,id,order,ctx){
 async function orderStatus(url,env,ctx){
   const id=orderSessionId(url);if(!id)return error('Invalid session',400);
   if(!env.STORE_DB)return error('Orders unavailable',503);
-  const lookup=()=>env.STORE_DB.prepare(`SELECT o.id,o.product_title,o.pdf_key,o.amount_cents,o.status,o.paid_at,o.download_count,o.access_days,
+  const lookup=()=>env.STORE_DB.prepare(`SELECT o.id,o.product_title,o.pdf_key,p.pdf_key AS catalog_pdf_key,o.amount_cents,o.status,o.paid_at,o.download_count,o.access_days,
       datetime(o.paid_at, '+' || o.access_days || ' days') AS expires_at,
       COALESCE(o.pdf_expires_at,p.pdf_expires_at) AS pdf_expires_at
     FROM orders o LEFT JOIN products p ON p.id=o.product_id WHERE o.stripe_session_id=?`).bind(id).first();
@@ -636,7 +639,7 @@ async function orderStatus(url,env,ctx){
     await confirmPendingOrder(env,id,o,ctx);
     o=await lookup();
   }
-  const bundle=o.pdf_key===BUNDLE_KEY;
+  const bundle=o.catalog_pdf_key===BUNDLE_KEY;
   const fileExpired=!bundle&&(!o.pdf_expires_at||Date.parse(String(o.pdf_expires_at).replace(' ','T')+'Z')<=Date.now());
   return reply({title:o.product_title,amount_cents:o.amount_cents,status:o.status,paid_at:o.paid_at,access_days:o.access_days,
     expires_at:o.expires_at,pdf_expires_at:o.pdf_expires_at,file_expired:fileExpired,
@@ -772,28 +775,18 @@ async function download(url,env){
 // No order, payment method, account or buyer email is required.
 async function freeDownload(request,env,url){
   if(request.method!=='GET')return error('Method not allowed',405);
-  const match=url.pathname.match(/^\/api\/free-download\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i);
+  const match=url.pathname.match(/^\\/api\\/free-download\\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i);
   if(!match)return error('Not found',404);
-  if(!env.STORE_DB||!env.CARDS_BUCKET)return error('Downloads unavailable',503);
+  if(!env.STORE_DB||!env.CARDS_BUCKET)return error('Tab access unavailable',503);
   await ensureReleaseSchedule(env);
-  const product=await env.STORE_DB.prepare(`SELECT p.id,p.title,p.pdf_key,p.pdf_expires_at
-    FROM products p WHERE p.id=? AND p.status='published' AND p.price_cents=0
-      AND p.pdf_expires_at IS NOT NULL AND p.pdf_expires_at>CURRENT_TIMESTAMP
-      AND NOT EXISTS(SELECT 1 FROM product_release_schedule s WHERE s.product_id=p.id AND s.release_at>CURRENT_TIMESTAMP)
-      AND p.pdf_key IS NOT NULL AND p.pdf_key!=?
-      AND NOT EXISTS(SELECT 1 FROM bundle_only_assets a WHERE a.product_id=p.id)`
-  ).bind(match[1],BUNDLE_KEY).first();
-  if(!product)return error('This free PDF is no longer available after its two-day race-date window. Need a copy? Email support@railandryeracing.com.',410);
-  const object=await env.CARDS_BUCKET.get(product.pdf_key);
-  if(!object)return error('PDF temporarily unavailable',503);
-  const name=String(product.title||'rail-and-rye').normalize('NFKD')
-    .replace(/[^a-zA-Z0-9 -]/g,'').trim().replace(/\s+/g,'-').slice(0,70)||'rail-and-rye';
-  return new Response(object.body,{headers:{
-    'Content-Type':'application/pdf','Content-Disposition':`attachment; filename="${name}.pdf"`,
-    'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer'
-  }});
+  const product=await env.STORE_DB.prepare(`SELECT id,category,race_date FROM products WHERE id=? AND status='published' AND price_cents=0
+    AND pdf_expires_at IS NOT NULL AND pdf_expires_at>CURRENT_TIMESTAMP
+    AND NOT EXISTS(SELECT 1 FROM product_release_schedule s WHERE s.product_id=products.id AND s.release_at>CURRENT_TIMESTAMP)
+    AND NOT EXISTS(SELECT 1 FROM bundle_only_assets a WHERE a.product_id=products.id)`).bind(match[1]).first();
+  if(!product||!await hasProductTabData(env,product.category,product.race_date,[product]))return error('This free racing tab is not available.',404);
+  const target=new URL('/my-products/?category='+encodeURIComponent(product.category)+'&date='+encodeURIComponent(product.race_date),url.origin);
+  return Response.redirect(target.toString(),302);
 }
-
 export async function handleCommerce(request,env,url,ctx){
   if(env.STORE_DB)await ensureRacePdfExpirySchema(env);
   const p=url.pathname;
