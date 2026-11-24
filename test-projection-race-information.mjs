@@ -1,0 +1,17 @@
+import assert from "node:assert/strict";
+import {enrichRaceInformation,validPurse,requireProductionPurses} from "./src/projection-race-information.js";
+const sizes=[7,6,7,8,10,9,8,10];
+const card={race_date:"2026-11-24",track_name:"Finger Lakes",projection_status:"prescratch",races:sizes.map((n,i)=>({race_number:i+1,purse:"",entries:Array.from({length:n},()=>({pwin:0.1})),conditions:"Claiming $5K"}))};
+const enriched=enrichRaceInformation(card);
+assert.equal(enriched.races[0].purse,"$13,700");
+assert.equal(enriched.races[4].purse,"$32,600");
+assert.equal(card.races[0].purse,"");
+assert.equal(enriched.races[0].entries,card.races[0].entries);
+assert.equal(enriched.races[0].conditions,"Claiming $5K");
+const next={...card,race_date:"2026-11-25"};assert.equal(enrichRaceInformation(next),next);
+assert.throws(()=>requireProductionPurses(card));
+requireProductionPurses(enriched);
+assert.equal(validPurse("$5K"),false);
+assert.equal(validPurse("$0"),false);
+assert.equal(validPurse("$13,700"),true);
+console.log("race information checks passed");

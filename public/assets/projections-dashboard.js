@@ -88,10 +88,15 @@ function approvedRaceSaddle(raceNumber){
  }
  return makeNode("span","rr-race-saddle-fallback",String(raceNumber));
 }
+function compactRaceTitle(value){
+ const title=String(value||"").trim();
+ const match=title.match(/^(Maiden Special Weight|Maiden Optional Claiming|Maiden Claiming|Maiden Allowance|Allowance Optional Claiming|Starter Optional Claiming|Starter Allowance|Starter Handicap|Optional Claiming|Allowance|Claiming|Maiden|Ratings Handicap)\s+\$\s*\d[\d,]*(?:\.\d+)?\s*[KM]?(?:\s*[-–—/]\s*\$?\s*\d[\d,]*(?:\.\d+)?\s*[KM]?)?$/i);
+ return match?match[1]:title;
+}
 function editorialRacePresentation(race){
  const fromHelper=globalThis.RRRaceTitles?.describe?.(race);
  if(fromHelper&&typeof fromHelper.title==="string"&&fromHelper.title.trim()&&
-    !/\b(?:S|Stk|Stks)\.$/i.test(fromHelper.title.trim()))return fromHelper;
+    !/\b(?:S|Stk|Stks)\.$/i.test(fromHelper.title.trim()))return {...fromHelper,title:compactRaceTitle(fromHelper.title)};
  // Defensive display fallback: if the separate shared helper is blocked,
  // its absence must NEVER expose "First Lady S." to customers again.
  const raw=String(race.stakes_name||race.race_name||race.conditions||"Race projections").trim();
@@ -109,7 +114,7 @@ function editorialRacePresentation(race){
   title=title.toLowerCase().replace(/\b[a-z]/g,letter=>letter.toUpperCase());
  const match=raw.match(/\(\s*(?:G(?:rade)?\.?|Gr\.?)\s*[-:]?\s*(III|II|I|[123])\s*\)/i);
  const grade=match?({I:1,II:2,III:3}[match[1].toUpperCase()]||Number(match[1])):null;
- return {title:title||"Race projections",grade:Number.isInteger(grade)&&grade>=1&&grade<=3?grade:null};
+ return {title:compactRaceTitle(title)||"Race projections",grade:Number.isInteger(grade)&&grade>=1&&grade<=3?grade:null};
 }
 function renderRaceNav(card){
  const nav=q("#rr-dash-races");nav.replaceChildren();

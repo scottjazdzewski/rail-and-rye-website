@@ -1,3 +1,4 @@
+import {enrichRaceInformation,requireProductionPurses} from "./projection-race-information.js";
 import {verifyCertifiedScratchFinalTrack} from "./f4-exotics.js";
 import {auditV33FieldUpload,pickUploadAuditKey,isPickV33Field}
  from "./pick-tickets-field-audit.js";
@@ -32,7 +33,7 @@ async function readDashboardCards(env,products=[],onlyCurrent=false){
   try{
    const file=await env.CARDS_BUCKET.get(object.key);
    if(!file)return null;
-   const card=normalizeCard(JSON.parse(await file.text()));
+   const card=enrichRaceInformation(normalizeCard(JSON.parse(await file.text())));
    if(onlyCurrent&&!currentProjection(card))return null;
    const matched=productForCard(card,products);
    return {product_id:matched?.id||null,title:matched?.title||card.track_name,track:matched?.track||card.track_name,race_date:card.race_date,pdf_expires_at:matched?.pdf_expires_at||null,uploaded_at:file.customMetadata?.uploaded_at||null,card};
@@ -199,6 +200,7 @@ export async function handleAdminProjectionUpload(request,env){
   body=await readBody(request);
   if(!isObject(body)||!UUID_RE.test(String(body.product_id||"")))throw Error("Choose a valid Race Cards publication.");
   card=normalizeCard(body.card);
+  requireProductionPurses(card);
  }catch(e){return fail(e.message||"Could not read projection data.");}
  const product=await env.STORE_DB.prepare("SELECT id,title,category,race_date,track,pdf_key,status FROM products WHERE id=? AND category='Race Cards' AND status IN ('draft','published','archived') AND pdf_key IS NOT NULL AND pdf_key!='__rr_bundle__' AND NOT EXISTS(SELECT 1 FROM bundle_only_assets a WHERE a.product_id=products.id)").bind(body.product_id).first();
  if(!product)return fail("Choose an individual Race Cards publication with a PDF attached.",404);
@@ -258,6 +260,7 @@ export async function handleAdminProjectionBatchUpload(request,env){
   const seen=new Set();
   cards=raw.map(input=>{
    const card=normalizeCard(input),key=card.race_date+"|"+foldTrack(card.track_name);
+   requireProductionPurses(card);
    if(seen.has(key))throw Error("The JSON contains the same track and date more than once.");
    seen.add(key);
    return card;
@@ -341,7 +344,7 @@ async function readProjectionCards(env,products,onlyCurrent=false){
   try{
    const file=await env.CARDS_BUCKET.get(projectionKey(item.id));
    if(!file)return null;
-   const card=normalizeCard(JSON.parse(await file.text()));
+   const card=enrichRaceInformation(normalizeCard(JSON.parse(await file.text())));
    if(onlyCurrent&&!currentProjection(card))return null;
    return {product_id:item.id,title:item.title,track:item.track||card.track_name,race_date:item.race_date||card.race_date,pdf_expires_at:item.pdf_expires_at,uploaded_at:file.customMetadata?.uploaded_at||null,card};
   }catch(e){
