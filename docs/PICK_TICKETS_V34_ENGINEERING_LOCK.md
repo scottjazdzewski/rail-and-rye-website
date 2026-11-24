@@ -13,3 +13,6 @@ Exact single rectangular ticket; maximize ln(H) - cost_USD/S, where H is the pro
 5. On official scratches, jockey changes or other material race changes: rerun TRI/F4 on affected complete fields, attach fresh receipt pair plus parent and official change evidence, rerun all dependent sequences with identical V3.4 parameters, verify and publish the new current edition. Unaffected races retain their exact scores. Never renormalize old probabilities or merely remove scratched selections. A missing date-specific official scratch gate is a HOLD, not permission to display old tickets as current.
 
 Current November 24 prescratch source: 6 tracks, 51 races, 430 runners, 50 official sequences; comparison workflow 45313549329 passed. November 24 official scratch reconciliation and future date menu intake still require their date-specific integration, not assumed operational. Customer release authorization remains separate. All output is private admin review until approved through the existing gates.
+
+## Independent sequence classification
+See [SQR 1.0 provisional](PICK_TICKETS_SQR_PROVISIONAL.md). Classification is computed after the locked constructor and cannot change selections or suppress a PASS ticket.

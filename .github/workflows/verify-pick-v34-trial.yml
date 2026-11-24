@@ -75,6 +75,16 @@ jobs:
            }
           }
           assert.equal(rows.length,50);
+          const counts={PLAY:0,CONDITIONAL:0,PASS:0};
+          for(const {card:c} of a)for(const seq of c.sequences){
+           const q=seq.review_meta.sequence_quality;
+           assert.ok(q&&Number.isFinite(q.score));
+           assert.equal(seq.play_status,q.classification);
+           assert.equal(seq.tickets.length,1);
+           assert.equal(seq.tickets[0].role,"BEST_POSSIBLE");
+           counts[seq.play_status]++;
+          }
+          console.log("SQR_CLASSIFICATION_COUNTS",JSON.stringify(counts));
           const avg=(r,k)=>Math.round(r.reduce((s,x)=>s+x[k],0)/r.length*100)/100;
           function summarize(r){return {count:r.length,before_avg_combos:avg(r,'before'),after_avg_combos:avg(r,'after'),before_avg_cost_cents:avg(r,'beforeCost'),after_avg_cost_cents:avg(r,'afterCost'),before_avg_projected_hit_pct:avg(r,'beforeHit'),after_avg_projected_hit_pct:avg(r,'afterHit'),before_singles: r.reduce((s,x)=>s+x.beforeSingles,0),after_singles:r.reduce((s,x)=>s+x.afterSingles,0)}}
           for(const n of [3,4,5,6])console.log('TRIAL_AGGREGATE',n,JSON.stringify(summarize(rows.filter(r=>r.n===n))));

@@ -1,6 +1,7 @@
 // Owner-approved engineering lock effective 2026-11-24. Private production review only.
 // V3.3 remains a reproducible baseline; scoring and customer release gates stay unchanged.
 import {exactV32Frontier,normalizeV32Legs} from "./pick-tickets-v32.js";
+import {sequenceQuality} from "./pick-tickets-sqr.js";
 export const PICK_V34_ENGINE="V3.4-TRI-ONLY-LENGTH-SENSITIVE-TRIAL-A";
 export const PICK_V34_TRIAL_SCALES=Object.freeze({3:15,4:30,5:60,6:120});
 export const PICK_V34_EFFECTIVE_DATE="2026-11-24";
@@ -53,16 +54,17 @@ export function buildV34TrialCard(review){
   }))}));
   if(legs.length!==s.end_race-s.start_race+1||legs[0].race_number!==s.start_race)throw Error("Wrong sequence field");
   const x=chooseV34(legs,old.unit_cents);
+  const quality=sequenceQuality(legs,x);
   const ticket={...old,combinations:x.combinations,total_cents:x.total_cents,
    legs:x.picks.map((programs,i)=>({race_number:legs[i].race_number,programs})),
    hit_rate_display:pct(x.hit_probability),notes:""};
-  return {...s,play_status:"CONDITIONAL",recommendation:"",
+  return {...s,play_status:quality.classification,recommendation:"",
    hit_rate_display:ticket.hit_rate_display,tickets:[ticket],upload_change:null,
    review_meta:{method:PICK_V34_ENGINE,soft_cost_scale_dollars:x.soft_cost_scale_dollars,
     minimum_leg_coverage:null,selected_leg_coverage:x.leg_coverage,
     marginal_opportunity_cost:x.marginal_opportunity_cost,frontier_points:x.frontier_points,
     stage:s.review_meta?.stage,publication_qualified:false,
-    profitability_validation:"NOT_PERFORMED",
+    profitability_validation:"NOT_PERFORMED",sequence_quality:quality,
     comparison_v33:{combinations:old.combinations,total_cents:old.total_cents,
       hit_rate_display:old.hit_rate_display,legs:old.legs}}
   };
