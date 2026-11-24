@@ -8,7 +8,7 @@ import {buildPrescratchPickTicketReview,buildV33PostScratchReviewed,
 import {PICK_V33_ENGINE,PICK_V33_COST_SCALE_DOLLARS,
  PICK_V33_MIN_LEG_COVERAGE} from './pick-tickets-v33.js';
 import {readAdminProjectionCards} from './projections.js';
-import {enrichRaceInformation,genericStakesTitle,maidenPresentation,sourceMaidenClass} from './projection-race-information.js';
+import {enrichRaceInformation,genericStakesTitle} from './projection-race-information.js';
 import {getNov23ScratchLedger,sourceIsScratchCurrent,officialScratchSequenceCount} from './pick-tickets-scratch-1123.js';
 import {PICK_MENU_1123} from './pick-tickets-auto.js';
 import {auditV33FieldUpload,pickUploadAuditKey,projectionFieldFingerprint,
@@ -255,9 +255,9 @@ function pickRaceTitles(source){
  for(const race of enrichRaceInformation(source).races||[]){
   const name=String(race.stakes_name||race.race_name||race.conditions||"").trim();
   const stakes=race.is_stakes===true||/(?:\\bStakes?\\b|\\bStks?\\.?\\b|\\bS\\.(?:\\s|$))/i.test(name);
-  if(!(stakes&&name&&!genericStakesTitle(name))&&!maidenPresentation(race))continue;
+  if(!stakes||!name||genericStakesTitle(name))continue;
   titles[String(race.race_number)]={race_number:race.race_number,stakes_name:race.stakes_name||"",
-   race_name:race.race_name||"",conditions:race.conditions||"",display_race_class:sourceMaidenClass(race),
+   race_name:race.race_name||"",conditions:race.conditions||"",
    stakes_grade:race.stakes_grade||"",sponsor_name:race.sponsor_name||"",is_stakes:stakes};
  }
  return titles;
