@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import {readFileSync} from "node:fs";
 import {enrichRaceInformation,validPurse,requireProductionPurses,requireProductionStakesNames,genericStakesTitle} from "./src/projection-race-information.js";
 const sizes=[7,6,7,8,10,9,8,10];
 const card={race_date:"2026-11-24",track_name:"Finger Lakes",projection_status:"prescratch",races:sizes.map((n,i)=>({race_number:i+1,purse:"",entries:Array.from({length:n},()=>({pwin:0.1})),conditions:"Claiming $5K"}))};
@@ -55,4 +56,14 @@ assert.equal(enrichRaceInformation(scratched).races[9].stakes_name,"Zia Park Der
 const differentCard={...zia,track_name:"Another Park"};
 assert.equal(enrichRaceInformation(differentCard),differentCard,
  "Do not invent an event for an unmatched date/track.");
+const publisher=readFileSync("src/projections.js","utf8");
+assert.equal((publisher.match(/requireProductionStakesNames\\(enrichRaceInformation\\(card\\)\\)/g)||[]).length,2,
+ "Both single and batch production upload paths must reject generic stakes names.");
+for(const path of ["src/longshot-radar.js","src/target-list.js"]){
+ const reader=readFileSync(path,"utf8");
+ assert.match(reader,/enrichRaceInformation\\((?:card|source)\\)/,
+  "Every research reader must use the same exact source-backed stakes names.");
+}
+const pick=readFileSync("src/pick-tickets.js","utf8");
+assert.match(pick,/stakes_by_race/,"Pick ticket publication carries official named stakes metadata.");
 console.log("race information checks passed");
