@@ -237,6 +237,6 @@ assert.doesNotMatch(html,/rr-target-track|rr-target-search/,"Reader controls are
 
 assert.match(html,/rr-race-titles\.js\?v=2/,"Locked canonical stakes parser is present");
 assert.match(html,/rr-stakes-inline\.css\?v=1/,"Locked shared graded trophy styles are present");
-assert.match(js,/appendGradeTrophy\(facts,title\.grade\)/,
- "Trophies require the source-backed parsed grade");
+assert.match(readFileSync("public/assets/rr-research-race-banner.js","utf8"),/appendGradeTrophy\(facts,title\.grade\)/,
+ "The shared renderer preserves the sourced trophy and grade rule");
 console.log("PASS: Target List private upload, revision protection, no forced picks, official chips, drawer, mobile contracts, and no PDF dependency");
