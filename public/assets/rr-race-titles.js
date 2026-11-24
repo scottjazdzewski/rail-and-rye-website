@@ -59,7 +59,7 @@
    // Do not turn "Sponsor Stakes" into the unhelpful generic word "Stakes".
    const lower=title.toLowerCase();
    if(lower.startsWith(token+" ")){
-    const remainder=title.slice(name.length).replace(/^[\\s:—–-]+/,"").trim();
+    const remainder=title.slice(name.length).replace(/^[\s:—–-]+/,"").trim();
     if(remainder&&!genericStakes(remainder)&&/[A-Za-z]{3}/.test(remainder))
      title=remainder;
    }else if(lower.endsWith(" "+token)){
