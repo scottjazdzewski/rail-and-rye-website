@@ -125,8 +125,6 @@ gap:3px;
  .rr-lr-list-head{font-size:9px}
  .rr-lr-identity strong{font-size:16px}
 }
-@media(min-width:801px){
-}
 
 
 
@@ -137,11 +135,6 @@ gap:3px;
 .rr-lr-list-head{display:none}
 .rr-lr-candidates{display:grid;grid-template-columns:minmax(0,1fr);gap:9px}
 .rr-lr-card{overflow:hidden;padding:0;border:1px solid #b7c3ca;border-radius:7px;background:#fff;box-shadow:none}
-.rr-lr-racebar{display:flex;align-items:center;flex-wrap:wrap;gap:7px 12px;min-height:39px;padding:8px 12px;border-top:3px solid #c99831;background:#102d53;color:#fff}
-.rr-lr-racebar h3{margin:0;font:850 14px/1.2 Inter,Arial,system-ui,sans-serif;letter-spacing:.035em;overflow-wrap:anywhere}
-.rr-lr-race-number,.rr-lr-post{color:#f4f0e6;font:750 11px/1.3 Inter,Arial,system-ui,sans-serif}
-.rr-lr-race-number{padding-left:11px;border-left:1px solid #b3c2d255}
-.rr-lr-post{margin-left:auto;font-variant-numeric:tabular-nums}
 .rr-lr-top{display:grid;grid-template-columns:35px minmax(0,1fr) 310px;grid-template-areas:"program horse market";align-items:center;gap:8px;min-width:0;margin:0;padding:10px 12px}
 .rr-lr-program{grid-area:program;width:34px;height:34px}
 .rr-lr-program img{width:34px;height:34px}
@@ -157,7 +150,6 @@ gap:3px;
 @media(max-width:800px){
  .rr-lr-top{grid-template-columns:34px minmax(0,1fr) 240px;grid-template-areas:"program horse market";gap:8px;padding:8px 11px}
  .rr-lr-overview{margin:7px 0 5px;padding:3px 2px}
- .rr-lr-racebar{padding:7px 10px}
  .rr-lr-markets{border:0;padding:0}
  .rr-lr-market{padding:0}
 }
@@ -169,21 +161,16 @@ gap:3px;
  .rr-lr-market strong{font-size:16px}
  .rr-lr-market.rr-lr-model strong{font-size:20px}
  .rr-lr-case{padding:7px 10px 3px;font-size:12px}
- .rr-lr-racebar h3{font-size:13px}
- .rr-lr-post{margin-left:0}
 }
 @media(max-width:430px){
  .rr-lr-main{padding:9px 9px 28px}
  .rr-lr-toolbar{grid-template-columns:repeat(2,minmax(0,1fr));padding:8px;gap:7px}
- .rr-lr-racebar{gap:6px 9px}
- .rr-lr-racebar h3{font-size:12px}
  .rr-lr-top{padding:7px 9px}
  .rr-lr-case{padding:7px 9px 3px}
 }
 @media(max-width:359px){
  .rr-lr-toolbar{grid-template-columns:minmax(0,1fr)}
  .rr-lr-identity strong{font-size:12px}
- .rr-lr-race-number{padding-left:8px}
 }
 
 
@@ -205,7 +192,6 @@ align-items:center;
  .rr-lr-page .rr-lr-summary-meta{margin-top:2px}
 }
 @media(max-width:375px){
- .rr-lr-page .rr-lr-racebar{min-height:35px;padding:6px 9px}
  .rr-lr-page .rr-lr-case{padding-top:5px;padding-bottom:2px}
 }
 
@@ -213,9 +199,6 @@ align-items:center;
 /* Longshot Radar v4 — published-card reader. The explanatory sentence is
    permanently visible: no hidden Race Details action, no text truncation. */
 .rr-lr-page .rr-lr-card{border-color:#b5c3cc}
-.rr-lr-page .rr-lr-racebar{
-gap:7px 12px;
-}
 
 
 
@@ -252,14 +235,10 @@ margin-top:4px;
  .rr-lr-page .rr-lr-market.rr-lr-model strong{font-size:27px}
  .rr-lr-page .rr-lr-inline-analysis{padding:10px 12px 13px}
  .rr-lr-page .rr-lr-inline-analysis .rr-lr-case{font-size:15px;line-height:1.5}
- .rr-lr-page .rr-lr-racebar{padding:9px 12px}
- .rr-lr-page .rr-lr-racebar h3{font-size:14px}
- .rr-lr-page .rr-lr-race-number,.rr-lr-page .rr-lr-post{font-size:11px}
 }
 @media(max-width:360px){
  .rr-lr-page .rr-lr-identity strong{font-size:17px}
  .rr-lr-page .rr-lr-inline-analysis .rr-lr-case{font-size:14px;line-height:1.52}
- .rr-lr-page .rr-lr-racebar h3{font-size:13px}
  .rr-lr-page .rr-lr-program,.rr-lr-page .rr-lr-program img{width:38px;height:38px}
  .rr-lr-page .rr-lr-market strong{font-size:21px}
  .rr-lr-page .rr-lr-market.rr-lr-model strong{font-size:25px}
@@ -330,29 +309,6 @@ margin-top:4px;
   min-width:0;overflow:hidden;padding:0;
   border:1px solid #b7c3ca;border-radius:7px;
   background:#fff;box-shadow:none;
-}
-.rr-lr-page .rr-lr-racebar{
-  display:block;min-height:0;margin:0;padding:9px 12px 10px;
-  background:#102d53;border-top:3px solid #c99831;color:#fff;
-}
-.rr-lr-page .rr-lr-racebar-main{
-flex-wrap:wrap;
-}
-.rr-lr-page .rr-lr-racebar h3{
-  margin:0;color:#fff;text-transform:uppercase;
-  font:800 17px/1.23 Inter,Arial,system-ui,sans-serif;
-  letter-spacing:.01em;overflow-wrap:anywhere;
-}
-.rr-lr-page .rr-lr-race-number,.rr-lr-page .rr-lr-post{
-  margin:0;padding:0;border:0;color:#f4f0e6;
-  font:700 13px/1.3 Inter,Arial,system-ui,sans-serif;
-  white-space:nowrap;font-variant-numeric:tabular-nums;
-}
-.rr-lr-page .rr-lr-post{margin-left:0}
-.rr-lr-page .rr-lr-race-facts{
-  margin:6px 0 0;color:#e9f0f7;
-  font:500 14px/1.35 Inter,Arial,system-ui,sans-serif;
-  overflow-wrap:anywhere;white-space:normal;
 }
 .rr-lr-page .rr-lr-top{
   display:grid;grid-template-columns:36px minmax(0,1fr) minmax(120px,42%);
@@ -442,12 +398,9 @@ flex-wrap:wrap;
 .rr-lr-page .rr-member-footer nav,.rr-lr-page .rr-member-footer small{
   font:500 11px/1.5 Inter,Arial,system-ui,sans-serif;
 }
-@media(max-width:900px){
-}
 @media(max-width:430px){
   .rr-lr-page .rr-lr-main{padding:9px 10px 30px}
   .rr-lr-page .rr-lr-top{gap:7px;padding:10px 9px}
-  .rr-lr-page .rr-lr-racebar{padding:9px 10px 10px}
   .rr-lr-page .rr-lr-inline-analysis{padding:11px 12px 13px}
 }
 @media(max-width:359px){
@@ -461,47 +414,6 @@ flex-wrap:wrap;
     width:34px;height:34px;min-width:34px;
   }
   /* Preserve 17px horse names, 25px WIN, 22px FAIR, 17px analysis. */
-}
-
-/* Race header alignment — preserve V1's original type scale and full race
-   description beneath. The race number and post time form one right-aligned
-   group opposite the left-aligned track name. */
-.rr-lr-page .rr-lr-racebar-main{
-  display:grid;
-  grid-template-columns:minmax(0,1fr) max-content;
-  align-items:start;
-  gap:5px 10px;
-}
-.rr-lr-page .rr-lr-racebar-main h3{
-  min-width:0;
-  text-align:left;
-}
-.rr-lr-page .rr-lr-race-meta{
-  display:flex;
-  flex-wrap:nowrap;
-  align-items:baseline;
-  justify-content:flex-end;
-  justify-self:end;
-  gap:10px;
-  text-align:right;
-  white-space:nowrap;
-  min-width:0;
-}
-.rr-lr-page .rr-lr-race-meta .rr-lr-race-number,
-.rr-lr-page .rr-lr-race-meta .rr-lr-post{
-  font:700 13px/1.3 Inter,Arial,system-ui,sans-serif;
-  white-space:nowrap;
-  text-align:right;
-}
-@media(max-width:359px){
-  .rr-lr-page .rr-lr-racebar-main{
-    grid-template-columns:minmax(0,1fr);
-    row-gap:3px;
-  }
-  .rr-lr-page .rr-lr-race-meta{
-    grid-column:1;
-    justify-self:end;
-  }
 }
 
 
