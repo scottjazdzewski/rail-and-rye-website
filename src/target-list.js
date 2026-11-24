@@ -186,7 +186,9 @@ async function readEdition(env,selected,dates){
  try{edition=validateTargetList(JSON.parse(await object.text()));}
  catch{return fail("The stored edition failed validation.",503);}
  if(edition.race_date!==selected.race_date||edition.revision!==selected.revision)return fail("Stored edition identity does not match.",503);
- return response({dates:dates.map(v=>v.race_date),edition,uploaded_at:object.customMetadata?.uploaded_at||null});
+ const raceFacts=await targetOriginalRaceFacts(env,edition.race_date);
+ const displayEdition={...edition,targets:edition.targets.map(entry=>enrichTargetRace(entry,raceFacts))};
+ return response({dates:dates.map(v=>v.race_date),edition:displayEdition,uploaded_at:object.customMetadata?.uploaded_at||null});
 }
 
 
@@ -214,7 +216,7 @@ async function targetOriginalRaceFacts(env,date){
     if(!track||!Number.isInteger(n)||n<1||n>30||!Array.isArray(race.entries)||conflicts.has(id))continue;
     if(records.has(id)){records.delete(id);conflicts.add(id);continue;}
     const facts={};
-    for(const [key,max] of [["distance",60],["surface",50],["conditions",240],
+    for(const [key,max] of [["post_time_et",40],["distance",60],["surface",50],["conditions",240],
       ["race_name",240],["stakes_name",240],["stakes_grade",30],["sponsor_name",120]]){
      if(typeof race[key]==="string"&&race[key].trim()&&race[key].length<=max)
       facts[key]=race[key].trim();

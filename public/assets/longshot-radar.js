@@ -4,6 +4,8 @@
 const q=selector=>document.querySelector(selector);
 const raceBanner=globalThis.RRResearchRaceBanner;
 if(!raceBanner?.render)throw Error("Canonical research race banner must load before Radar.");
+const raceOrder=globalThis.RRResearchRaceOrder;
+if(!raceOrder?.sort)throw Error("Canonical research race ordering must load before Radar.");
 const state={editions:[],date:"",sort:"post-time"};
 const status=q("#rr-lr-loading"),app=q("#rr-lr-app"),empty=q("#rr-lr-empty");
 const make=(tag,cls,content)=>{
@@ -24,30 +26,7 @@ const timeLabel=value=>{
 };
 // Both Radar and Target List use source-declared Eastern post times. Unknown
 // or unparsable times remain at the end, in their original editorial order.
-function postMinutes(value){
- const raw=String(value||"").trim();
- const twelve=raw.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)(?:\s*(?:ET|EDT|EST))?$/i);
- if(twelve){
-  const h=Number(twelve[1]),m=Number(twelve[2]);
-  if(h<1||h>12||m>59)return Infinity;
-  return (h%12+(twelve[3].toUpperCase()==="PM"?12:0))*60+m;
- }
- const twentyfour=raw.match(/^([01]?\d|2[0-3]):([0-5]\d)(?:\s*(?:ET|EDT|EST))?$/i);
- if(twentyfour)return Number(twentyfour[1])*60+Number(twentyfour[2]);
- return Infinity;
-}
-function orderByDay(items,mode){
- const ordered=[...items];
- if(mode==="track")return ordered.sort((a,b)=>
-  a.track.localeCompare(b.track,"en-US")||a.race_number-b.race_number||
-  postMinutes(a.post_time_et)-postMinutes(b.post_time_et));
- return ordered.sort((a,b)=>{
-  const first=postMinutes(a.post_time_et),second=postMinutes(b.post_time_et);
-  // Avoid Infinity minus Infinity yielding NaN and breaking stable source order.
-  if(first!==second)return first<second?-1:1;
-  return 0;
- });
-}
+function orderByDay(items,mode){return raceOrder.sort(items,mode);}
 function programChip(value){
  const chip=make("span","rr-lr-program"),program=String(value||""),match=program.match(/^(\d{1,2})([A-Za-z]?)$/),number=match?Number(match[1]):NaN;
  if(Number.isInteger(number)&&number>=1&&number<=20){

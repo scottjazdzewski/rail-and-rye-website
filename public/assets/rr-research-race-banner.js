@@ -9,18 +9,24 @@ const make=(tag,cls,value)=>{
  if(value!==undefined&&value!==null)el.textContent=String(value);
  return el;
 };
+function genericStakes(value){
+ const official=root.RRRaceTitles?.genericStakes;
+ if(typeof official==="function")return official(value);
+ return /^(?:(?:overnight|listed|graded|ungraded|restricted|open|non-graded)\s+)?(?:stake|stakes|stks?\.?|s\.?)\s*(?:\(?\s*(?:g[123]|grade\s*[123])\s*\)?)?$/i.test(text(value));
+}
 function describe(entry){
- const raw=entry?.stakes_name||entry?.race_name||entry?.conditions;
- if(typeof raw!=="string"||!raw.trim())return null;
+ const candidates=[entry?.stakes_name,entry?.race_name,entry?.conditions].map(text).filter(Boolean);
+ if(!candidates.length)return null;
  const official=root.RRRaceTitles?.describe?.(entry);
- if(official?.title)return official;
- // Text-only fallback if the grade-sensitive title helper is unavailable.
- // Never infer a graded stakes trophy from wording alone.
+ if(official?.title&&!official.missingStakesName)return official;
+ // If the named-race contract is unavailable, use only source text that is
+ // not a generic stakes classification. Never turn "STAKES" into a race name.
+ const raw=candidates.find(value=>!genericStakes(value));
+ if(!raw)return null;
  let title=raw.replace(/\s*(?:presented|sponsored|powered)\s+by\b.*$/i,"")
   .replace(/\s*\(\s*(?:G(?:rade)?\.?|Gr\.?)\s*[-:]?\s*(?:III|II|I|[123])\s*\)\s*$/i,"").trim();
  const caps=/[A-Z]/.test(title)&&!/[a-z]/.test(title);
  title=title.replace(/\b(?:S|Stk|Stks)\.?$/i,"Stakes").trim();
- if(/^Stakes?$/i.test(title))title="Race "+entry.race_number;
  if(caps)title=title.toLowerCase().replace(/\b[a-z]/g,c=>c.toUpperCase());
  return title?{title,grade:null}:null;
 }
@@ -44,15 +50,27 @@ function render(entry){
  if(text(entry.post_time_et))meta.append(make("span","rr-research-racebar__post",text(entry.post_time_et)));
  row.append(make("h3","rr-research-racebar__track",text(entry.track)),meta);
  panel.append(row);
- const parts=[entry.distance,entry.surface].filter(v=>typeof v==="string"&&v.trim()).map(text);
+ const factsParts=[];
+ const addFact=(value,kind)=>{
+  const valueText=text(value);
+  if(!valueText||genericStakes(valueText))return;
+  const key=valueText.toLocaleLowerCase("en-US");
+  const existing=factsParts.find(part=>part.text.toLocaleLowerCase("en-US")===key);
+  if(existing){if(kind==="title")existing.kind="title";return;}
+  factsParts.push({text:valueText,kind});
+ };
+ addFact(entry.distance,"fact");
+ addFact(entry.surface,"fact");
+ addFact(entry.conditions,"fact");
  const title=describe(entry);
- if(parts.length||title){
-  const facts=make("p","rr-research-racebar__facts",parts.join(" · "));
-  if(title){
-   if(parts.length)facts.append(make("span","rr-ed-race-separator"," · "));
-   facts.append(make("span","rr-ed-stakes-title",title.title));
-   appendGradeTrophy(facts,title.grade);
-  }
+ if(title?.title)addFact(title.title,"title");
+ if(factsParts.length){
+  const facts=make("p","rr-research-racebar__facts");
+  factsParts.forEach((part,index)=>{
+   if(index)facts.append(make("span","rr-ed-race-separator"," · "));
+   facts.append(make("span",part.kind==="title"?"rr-ed-stakes-title":"",part.text));
+   if(part.kind==="title")appendGradeTrophy(facts,title?.grade);
+  });
   panel.append(facts);
  }
  return panel;

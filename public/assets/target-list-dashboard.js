@@ -6,6 +6,8 @@ const get=id=>document.getElementById(id);
 const state={edition:null,dates:[],uploadedAt:null,lastFocus:null,reviewOnly:false};
 const raceBanner=globalThis.RRResearchRaceBanner;
 if(!raceBanner?.render)throw Error("Canonical research race banner must load before Target List.");
+const raceOrder=globalThis.RRResearchRaceOrder;
+if(!raceOrder?.sort)throw Error("Canonical research race ordering must load before Target List.");
 const dateSelect=get("rr-target-date"),sortSelect=get("rr-target-sort");
 const status=get("rr-target-status"),app=get("rr-target-app"),empty=get("rr-target-empty");
 const list=get("rr-target-list"),dialog=get("rr-target-dialog");
@@ -24,29 +26,8 @@ const displayDate=value=>{
  return new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric",year:"numeric"}).format(new Date(year,month-1,day,12));
 };
 const option=(select,value,label)=>{const el=node("option","",label);el.value=value;select.append(el);};
-// A missing/invalid post time sorts after sourced times, never guessed from track or race number.
-function postMinutes(value){
- const match=/\b(\d{1,2}):(\d{2})\s*(AM|PM)\b/i.exec(String(value||""));
- if(!match)return Number.POSITIVE_INFINITY;
- const hour=Number(match[1]),minute=Number(match[2]);
- if(hour<1||hour>12||minute>59)return Number.POSITIVE_INFINITY;
- return (hour%12+(match[3].toUpperCase()==="PM"?12:0))*60+minute;
-}
-const collator=new Intl.Collator("en",{sensitivity:"base",numeric:true});
 function sortedTargets(edition){
- const result=[...edition.targets];
- const choice=sortSelect?.value==="track"?"track":"post-time";
- const compareTime=(a,b)=>{
-  const t=postMinutes(a.post_time_et)-postMinutes(b.post_time_et);
-  // Infinity-Infinity is NaN; source-rank only provides a stable fallback.
-  return Number.isNaN(t)?0:t;
- };
- result.sort((a,b)=>{
-  const track=collator.compare(a.track,b.track),time=compareTime(a,b);
-  if(choice==="track")return track||time||a.race_number-b.race_number||a.rank-b.rank;
-  return time||track||a.race_number-b.race_number||a.rank-b.rank;
- });
- return result;
+ return raceOrder.sort(edition.targets,sortSelect?.value==="track"?"track":"post-time");
 }
 function saddle(program){
  const wrapper=node("span","rr-target-saddle");
