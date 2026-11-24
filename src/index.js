@@ -14,6 +14,7 @@ import {handleAdminJournal,handlePublicJournal,publicJournalCover,publishSchedul
 import {handleSitemap,serveJournalDocument,serveProductDocument} from './seo.js';
 import {ensureReleaseSchedule,validReleaseAt,pdfExpiryFromRaceDate,releaseAt3amEastern} from './publication-schedule.js';
 import {purgeExpiredRacePdfs} from './race-pdf-expiry.js';
+import {purgeStaleRacingStaging} from './staging-cleanup.js';
 import {handleMembershipApi,handleAdminMembershipPlans,reconcileMemberships,ownerSessionCookie,openVerifiedOwnerHub} from './memberships.js';
 import {handleProductTabs} from './product-tabs.js';
 import {serveCustomerReader,customerReaderPath} from './customer-readers.js';
@@ -449,5 +450,8 @@ export default {
     ctx.waitUntil(sendRaceCardAlerts(env,20).catch(e=>console.warn('Race Card alert queue retry deferred',String(e).slice(0,120))));
     ctx.waitUntil(reconcileMemberships(env,25));
     ctx.waitUntil(purgeExpiredRacePdfs(env,8).catch(e=>console.warn('Expired PDF cleanup deferred',String(e).slice(0,140))));
+    ctx.waitUntil(purgeStaleRacingStaging(env,24).then(result=>{
+      if(result.catalog_archived||result.private_pdfs_purged)console.info('Stale racing staging cleaned',result);
+    }).catch(e=>console.warn('Stale racing staging cleanup deferred',String(e).slice(0,140))));
   }
 };
