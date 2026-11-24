@@ -1,10 +1,13 @@
 name: Compare November 24 V3.4 private trial against V3.3
 on:
   workflow_dispatch:
+  issue_comment:
+    types: [created]
 permissions:
   contents: read
 jobs:
   verify:
+    if: github.event_name == 'workflow_dispatch' || (github.event.issue.number == 183 && github.event.comment.user.login == 'scottjazdzewski' && github.event.comment.body == 'RR_VERIFY_PICK_1124_REV4')
     runs-on: ubuntu-24.04
     timeout-minutes: 6
     steps:
@@ -27,7 +30,7 @@ jobs:
           from botocore.exceptions import ClientError
           from pathlib import Path
           s3=boto3.client("s3",endpoint_url="https://"+os.environ["TRI_CLOUDFLARE_ACCOUNT_ID"].strip()+".r2.cloudflarestorage.com",region_name="auto",aws_access_key_id=os.environ["TRI_R2_ACCESS_KEY_ID"].strip(),aws_secret_access_key=os.environ["TRI_R2_SECRET_ACCESS_KEY"].strip())
-          keys=["pick-tickets/interim/2026-11-24/revision-0001.json","pick-tickets/interim/2026-11-24/revision-0002.json","pick-tickets/interim/2026-11-24/revision-0003.json"]+["projections/dashboard/2026-11-24/"+x+".json" for x in ["delta-downs","finger-lakes","mahoning-valley","mountaineer","parx-racing","zia-park"]]
+          keys=["pick-tickets/interim/2026-11-24/revision-0001.json","pick-tickets/interim/2026-11-24/revision-0002.json","pick-tickets/interim/2026-11-24/revision-0003.json","pick-tickets/interim/2026-11-24/revision-0004.json"]+["projections/dashboard/2026-11-24/"+x+".json" for x in ["delta-downs","finger-lakes","mahoning-valley","mountaineer","parx-racing","zia-park"]]
           result={}
           for k in keys:
               try:
@@ -55,7 +58,7 @@ jobs:
           const old=await (await handleAdminPickTickets(new Request(url+'?trial=v33'),{CARDS_BUCKET:bucket})).json();
           const trial=await (await handleAdminPickTickets(new Request(url),{CARDS_BUCKET:bucket})).json();
           const b=old.cards.filter(x=>x.card.date==='2026-11-24'),a=trial.cards.filter(x=>x.card.date==='2026-11-24');
-          assert.equal(trial.engine,'V3.4-TRI-ONLY-LENGTH-SENSITIVE-TRIAL-A');assert.ok(a.every(x=>x.card.formula_version===trial.engine));assert.equal(a.length,5);assert.equal(b.length,5);assert.ok(!a.some(x=>x.card.track==="Finger Lakes"));
+          assert.equal(trial.engine,'V3.4-TRI-ONLY-LENGTH-SENSITIVE-TRIAL-A');assert.ok(a.every(x=>x.card.formula_version===trial.engine));assert.equal(a.length,6);assert.equal(b.length,6);
           const rows=[];
           // Verify every ticket against the unchanged locked constructor.
           const {chooseV34}=await import('./src/pick-tickets-v34.js');
@@ -78,7 +81,7 @@ jobs:
              beforeSingles:y.legs.filter(l=>l.programs.length===1).length,afterSingles:x.legs.filter(l=>l.programs.length===1).length});
            }
           }
-          assert.equal(rows.length,43);assert.equal(a.find(x=>x.card.track==="Mountaineer").card.sequences.length,5);
+          assert.equal(rows.length,50);assert.equal(a.find(x=>x.card.track==="Finger Lakes").card.sequences.length,7);assert.equal(a.find(x=>x.card.track==="Mountaineer").card.sequences.length,5);
           const counts={PLAY:0,CONDITIONAL:0,PASS:0},priorCounts={PLAY:0,CONDITIONAL:0,PASS:0},scores=[];
           for(const {card:c} of a)for(const seq of c.sequences){
            const q=seq.review_meta.sequence_quality;
@@ -108,7 +111,7 @@ jobs:
             if(r.length)console.log('TRIAL_COMBO_RANGE',track,n,JSON.stringify({count:r.length,before:[Math.min(...r.map(x=>x.before)),Math.max(...r.map(x=>x.before))],after:[Math.min(...r.map(x=>x.after)),Math.max(...r.map(x=>x.after))]}));
            }
           }
-          console.log('PASS: 43 current verified sequences; Finger Lakes held for complete changes; baseline intact; no selections logged.');
+          console.log('PASS: 50 current verified sequences; four scratch-updated tracks; baseline intact; no selections logged.');
           JS
       - name: Remove private temporary bytes
         if: always()

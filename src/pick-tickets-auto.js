@@ -287,8 +287,7 @@ export async function readPrivatePickProjections1124(env){
   }catch(e){unavailable.add(track);console.warn("Unreadable November 24 private TRI source for Pick Tickets",track);return null}
  }));
  let direct=found.filter(Boolean);
- // Finger Lakes screenshot has an obscured section; no certified complete ledger yet.
- const officialTracks=new Set([...Object.keys(PICK_SCRATCH_1124_TRACKS),"Finger Lakes"]);
+ const officialTracks=new Set(Object.keys(PICK_SCRATCH_1124_TRACKS));
  const existing=new Map(direct.map(x=>[x.card.track_name,x.card]));
  // Once official scratches are known, don't serve prescratch for these tracks.
  // The private, score-verified handoff replaces only Pick's source, not Projections.

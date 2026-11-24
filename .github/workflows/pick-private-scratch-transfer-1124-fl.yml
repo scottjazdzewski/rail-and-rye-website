@@ -1,0 +1,23 @@
+name: Private November 24 Finger Lakes Pick Tickets scratch handoff
+on:
+  issue_comment:
+    types: [created]
+permissions:
+  contents: read
+jobs:
+  encrypted-ingest:
+    if: github.event.issue.number == 183 && github.event.comment.user.login == 'scottjazdzewski' && startsWith(github.event.comment.body, 'RR_PICK_PRIVATE_SCRATCH_1124_FL_V1')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pynacl==1.5.0 boto3==1.40.36
+      - name: Verify exact scored input and publish private review source
+        env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+        run: python scripts/pick_private_scratch_bridge_1124_fl.py
