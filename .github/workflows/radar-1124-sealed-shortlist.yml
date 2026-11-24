@@ -1,0 +1,32 @@
+name: Seal Nov24 numerically eligible Radar candidates
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/radar_1124_sealed_shortlist.py
+      - .github/workflows/radar-1124-sealed-shortlist.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  sealed-shortlist:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --quiet boto3==1.40.36 pynacl==1.5.0
+      - name: Audit frozen six-track source, seal qualifying numerics
+        env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+        run: python scripts/radar_1124_sealed_shortlist.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: radar-1124-shortlist-sealed
+          path: radar_1124_numeric_only.sealed
+          retention-days: 1
+          if-no-files-found: error
