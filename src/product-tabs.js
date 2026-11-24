@@ -28,7 +28,7 @@ async function signature(env,orderId,expires){
 }
 function dateMillis(value){
  if(!value)return 0;
- const raw=String(value).replace(' ','T'),fixed=/Z$|[+-]\\d\\d:\\d\\d$/.test(raw)?raw:raw+'Z';
+ const raw=String(value).replace(' ','T'),fixed=/Z$|[+-]\d\d:\d\d$/.test(raw)?raw:raw+'Z';
  const valueMs=Date.parse(fixed);return Number.isFinite(valueMs)?valueMs:0;
 }
 async function orderScopes(env,orderId){
@@ -55,10 +55,10 @@ async function orderScopes(env,orderId){
  return rows.map(row=>{
   const expires=Math.min(orderExpiry,dateMillis(row.item_expiry));
   return {category:row.category,race_date:row.race_date,track:row.track||'',title:row.title||'',expires_at:expires};
- }).filter(scope=>PRODUCT_TAB_CATEGORIES.includes(scope.category)&&/^\\d{4}-\\d{2}-\\d{2}$/.test(String(scope.race_date||''))&&scope.expires_at>Date.now());
+ }).filter(scope=>PRODUCT_TAB_CATEGORIES.includes(scope.category)&&/^\d{4}-\d{2}-\d{2}$/.test(String(scope.race_date||''))&&scope.expires_at>Date.now());
 }
 async function accessCookie(request,env){
- const raw=cookieValue(request),match=/^([0-9a-f-]{36})\\.(\\d{10})\\.([a-f0-9]{64})$/i.exec(raw||'');
+ const raw=cookieValue(request),match=/^([0-9a-f-]{36})\.(\d{10})\.([a-f0-9]{64})$/i.exec(raw||'');
  if(!match)return {scopes:[],expires_at:0};
  const [,orderId,exp,supplied]=match,expires=Number(exp);
  if(!UUID.test(orderId)||expires<=Math.floor(Date.now()/1000))return {scopes:[],expires_at:0};
@@ -129,7 +129,7 @@ async function library(request,env){
 }
 async function edition(request,env,url){
  const category=url.searchParams.get('category')||'',raceDate=url.searchParams.get('date')||'';
- if(!PRODUCT_TAB_CATEGORIES.includes(category)||!/^\\d{4}-\\d{2}-\\d{2}$/.test(raceDate))return error('Choose a published category and race date.',400);
+ if(!PRODUCT_TAB_CATEGORIES.includes(category)||!/^\d{4}-\d{2}-\d{2}$/.test(raceDate))return error('Choose a published category and race date.',400);
  const [catalog,access]=await Promise.all([productCatalog(env),currentAccess(request,env)]);
  const matching=catalog.products.filter(product=>product.category===category&&product.race_date===raceDate);
  if(!matching.length)return error('No published tab exists for that category and racing date.',404);
