@@ -175,7 +175,7 @@
   <p class="sub">Choose an individual tab or bundle on the left. Publishing unlocks the matching category and racing date; uploaded PDFs remain in the private source library.</p>
   <div id="notice" class="notice" role="status" aria-live="polite"></div>
   <details class="workflow workflow-upload" id="workflow-uploads" name="publisher-workflow" open>
-    <summary><strong>Publications</strong><span>Choose what you are publishing on the left. Select the uploaded PDF or PDFs on the right.</span></summary>
+    <summary><strong>Private source library</strong><span>Store reference PDFs here. Customers always receive access through the matching on-site tab.</span></summary>
   <section class="rr-private-library" id="pdf-repository" aria-label="Private PDF repository">
         <div class="head-row"><h3 style="margin:0">Your PDF Library</h3><button type="button" class="secondary mini" id="assetNew">+ Add PDF</button></div>
         <p class="detail">Upload files once. Your full library stays visible while you build an individual publication or bundle.</p>
@@ -247,7 +247,7 @@
   </div>
   </details>
   <details class="workflow workflow-bundles" id="workflow-bundles" name="publisher-workflow">
-    <summary><strong>Bundles</strong><span>Choose PDFs already in the repository and publish or schedule a package</span></summary>
+    <summary><strong>Bundles</strong><span>Combine eligible racing tabs and publish or schedule a bundle</span></summary>
   <section class="panel rr-bundle-area" aria-label="Automatic product bundles">
     <div class="head-row"><h2>Build and manage bundles</h2></div>
     <p class="detail" style="margin-bottom:10px">Select 2–12 eligible tab editions in the picker above. Buyers open every included category and racing date in My Tabs.</p>
@@ -265,7 +265,7 @@
         <div class="actions"><button type="button" class="primary" id="bundleDraft">Save bundle draft</button><button type="button" class="gold" id="bundlePublish">Publish bundle now</button><button type="button" class="gold" id="bundleSchedule">Schedule bundle</button><button type="button" class="secondary" id="bundleCancelSchedule" hidden>Cancel scheduled release</button><button type="button" class="secondary" id="bundleArchive">Delete bundle</button></div>
       </div>
       <div>
-        <p class="kicker">Choose repository PDFs and published individual PDFs</p>
+        <p class="kicker">Choose eligible racing tabs</p>
         <div id="bundleCandidates" class="list" style="max-height:320px;overflow:auto;margin-bottom:22px"><div class="empty">Loading published products…</div></div>
         <p class="kicker">Your bundles</p>
         <div id="bundleInventory" class="list"><div class="empty">Loading bundles…</div></div>
@@ -446,13 +446,13 @@
       const isScheduled=pendingBundleForDesk(bundle);
       const status=document.createElement('em');status.className='pill '+(isScheduled?'scheduled':bundle.status==='published'?'published':'');status.textContent=isScheduled?'Scheduled':bundle.status;name.append(status);
       const release=bundle.release_at?localRelease(bundle.release_at).replace('T',' ')+' ET':null;
-      const details=document.createElement('span');details.textContent=[bundle.category,bundle.race_date||'No date',money(bundle.price_cents),bundle.product_ids.length+' PDFs',isScheduled?'Releases '+release:null].filter(Boolean).join(' • ');
+      const details=document.createElement('span');details.textContent=[bundle.category,bundle.race_date||'No date',money(bundle.price_cents),bundle.product_ids.length+' tabs',isScheduled?'Releases '+release:null].filter(Boolean).join(' • ');
       button.append(name,details);el.append(button);
     }
   }
   function pendingBundleForDesk(bundle){return bundle.status==='published'&&bundle.release_at&&Date.parse(String(bundle.release_at).replace(' ','T')+'Z')>Date.now();}
-  function renderList(){const el=$('productList');el.replaceChildren();renderScheduledList();if(!products.length){let e=document.createElement('div');e.className='empty';e.textContent='No products yet. Start with your first race card.';el.append(e);return;}
-    for(const p of products){const b=document.createElement('button');b.type='button';b.className='product'+(p.id===currentId?' active':'');b.addEventListener('click',()=>edit(p));let name=document.createElement('strong');name.textContent=p.title;let status=document.createElement('em');status.className='pill '+(pending(p)?'scheduled':p.status==='published'?'published':'');status.textContent=pending(p)?'Scheduled':p.status;name.append(status);let details=document.createElement('span');details.textContent=[p.category,p.race_date||'No date',money(p.price_cents),p.pdf_key?'PDF attached':'PDF missing',p.pdf_expires_at?'Auto-delete '+expiryLabel(p.pdf_expires_at):null,pending(p)?'Release '+localRelease(p.release_at).replace('T',' ')+' ET':null].filter(Boolean).join(' • ');b.append(name,details);el.append(b);}
+  function renderList(){const el=$('productList');el.replaceChildren();renderScheduledList();if(!products.length){let e=document.createElement('div');e.className='empty';e.textContent='No products yet. Start with your first racing tab.';el.append(e);return;}
+    for(const p of products){const b=document.createElement('button');b.type='button';b.className='product'+(p.id===currentId?' active':'');b.addEventListener('click',()=>edit(p));let name=document.createElement('strong');name.textContent=p.title;let status=document.createElement('em');status.className='pill '+(pending(p)?'scheduled':p.status==='published'?'published':'');status.textContent=pending(p)?'Scheduled':p.status;name.append(status);let details=document.createElement('span');details.textContent=[p.category,p.race_date||'No date',money(p.price_cents),p.pdf_key?'Private source attached':'Tab only',p.pdf_expires_at?'Tab access through '+expiryLabel(p.pdf_expires_at):null,pending(p)?'Release '+localRelease(p.release_at).replace('T',' ')+' ET':null].filter(Boolean).join(' • ');b.append(name,details);el.append(b);}
   }
   async function refresh(selectId){const data=await api('/api/admin/products');products=data.products||[];if(selectId){const item=products.find(p=>p.id===selectId);if(item)edit(item);}else renderList();}
   function payload(status){const priceText=$('price').value.trim();const dollars=Number(priceText);const cents=Math.round(dollars*100);if(!Number.isFinite(dollars)||dollars<0||Math.abs(dollars*100-cents)>1e-5)throw Error('Enter a valid price with at most two decimal places.');
@@ -549,7 +549,7 @@
   }
   function drawCandidates(selected=[]){
     const box=$('bundleCandidates');box.replaceChildren();
-    if(!available.length){const e=document.createElement('div');e.className='empty';e.textContent='Upload PDFs in the library on the right, or publish an individual PDF first.';box.append(e);return;}
+    if(!available.length){const e=document.createElement('div');e.className='empty';e.textContent='Publish at least two eligible tabs before creating a bundle.';box.append(e);return;}
     const newest=[...available].sort((a,b)=>{
       const ta=Date.parse(String(a.uploaded_at||'').replace(' ','T')+'Z');
       const tb=Date.parse(String(b.uploaded_at||'').replace(' ','T')+'Z');
@@ -570,7 +570,7 @@
         const stamp=Date.parse(String(p.uploaded_at).replace(' ','T')+'Z');
         if(Number.isFinite(stamp))meta.push('Uploaded '+new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',dateStyle:'medium',timeStyle:'short'}).format(stamp)+' ET');
       }
-      if(!eligible)meta.push(p.pending_release?'Scheduled for later':!p.race_date||!p.pdf_expires_at?'Add a racing date in PDF details on the right':'Outside the active race-date window');
+      if(!eligible)meta.push(p.pending_release?'Scheduled for later':!p.race_date||!p.pdf_expires_at?'Add a racing date to this tab':'Outside the active race-date window');
       const detail=document.createElement('small');detail.style.cssText='display:block;margin-top:4px;color:#64748b;font-size:11px;font-weight:500';detail.textContent=meta.join(' · ');copy.append(detail);
       const match=String(p.race_date||'').match(/^(\d{4})-(\d{2})-(\d{2})/);
       const date=document.createElement('span');date.style.cssText='flex:none;margin-left:auto;white-space:nowrap;color:#64748b;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums';
@@ -587,7 +587,7 @@
       const row=document.createElement('div');row.className='rr-bundle-row';
       const btn=document.createElement('button');btn.type='button';btn.className='product'+(b.id===selectedId?' active':'');
       const title=document.createElement('strong');title.textContent=b.title;
-      const line=document.createElement('span');line.textContent=[pendingBundle(b)?'SCHEDULED':b.status,pendingBundle(b)?'Releases '+localRelease(b.release_at).replace('T',' ')+' ET':null,money(b.price_cents),b.product_ids.length+' PDFs','Appears in: '+(Array.isArray(b.categories)?b.categories.join(', '):b.category)].filter(Boolean).join(' · ');
+      const line=document.createElement('span');line.textContent=[pendingBundle(b)?'SCHEDULED':b.status,pendingBundle(b)?'Releases '+localRelease(b.release_at).replace('T',' ')+' ET':null,money(b.price_cents),b.product_ids.length+' tabs','Appears in: '+(Array.isArray(b.categories)?b.categories.join(', '):b.category)].filter(Boolean).join(' · ');
       btn.append(title,line);btn.addEventListener('click',()=>edit(b));
       const remove=document.createElement('button');remove.type='button';remove.className='secondary mini rr-delete-bundle';remove.textContent='Delete';
       remove.setAttribute('aria-label','Delete bundle '+b.title);
@@ -604,7 +604,7 @@
     rrRestoreRacingDate('bundleDate',b.race_date);$('bundlePrice').value=(b.price_cents/100).toFixed(2);
     $('bundleDescription').value=b.description||'';$('bundleReleaseAt').value=localRelease(b.release_at);drawCandidates(b.product_ids);
     $('bundleCancelSchedule').hidden=!pendingBundle(b);
-    drawBundles();note(pendingBundle(b)?'Scheduled bundle: '+localRelease(b.release_at).replace('T',' ')+' ET. You may reschedule or cancel.':'Editing '+b.title+'. Existing buyers retain their original included PDFs.');
+    drawBundles();note(pendingBundle(b)?'Scheduled bundle: '+localRelease(b.release_at).replace('T',' ')+' ET. You may reschedule or cancel.':'Editing '+b.title+'. Existing buyers retain access to their originally included tabs.');
   }
   async function refresh(id){
     const x=await api('/api/admin/bundles');bundles=x.bundles||[];available=x.available_products||[];
@@ -812,7 +812,7 @@
           headers:{'Content-Type':'application/pdf','X-File-Size':String(file.size)}});
       }
       await refresh(id);
-      notice('PDF saved in the private repository. Choose Create individual draft or select it while building a bundle.');
+      notice('Private source PDF saved. Create an individual tab first, then add that tab to a bundle if needed.');
       window.dispatchEvent(new Event('rr-bundle-assets-changed'));
     }catch(e){notice('Private PDF not saved completely: '+e.message+'. If created, select it below to retry.');await refresh(selectedId).catch(()=>{});}
     finally{setBusy(false);}
@@ -833,7 +833,7 @@
       await refresh();
       window.dispatchEvent(new CustomEvent('rr-open-product',{detail:{id}}));
       window.dispatchEvent(new Event('rr-bundle-assets-changed'));
-      notice('PDF assigned to Individual. Set its collection, racing date and price on the left, then publish or schedule it.');
+      notice('Source PDF attached to the individual tab. Set its collection, racing date and price on the left, then publish or schedule it.');
     }catch(error){notice(error.message);}
     finally{setBusy(false);}
   }
@@ -1377,7 +1377,7 @@
   picker.id='rr-bundle-picker';picker.className='panel rr-bundle-picker';
   const pickerTitle=document.createElement('h3');pickerTitle.textContent='Choose PDFs for this bundle';
   const pickerHelp=document.createElement('p');pickerHelp.className='detail';
-  pickerHelp.textContent='Select 2–12 eligible files here. The full upload-sorted PDF library is on the right.';
+  pickerHelp.textContent='Select 2–12 eligible racing tabs. Optional source PDFs remain private.';
   const candidateTitle=candidateList.previousElementSibling;
   if(candidateTitle)candidateTitle.remove();
   picker.append(pickerTitle,pickerHelp,candidateList);
