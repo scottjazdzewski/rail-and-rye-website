@@ -1,31 +1,21 @@
-/* Rail & Rye Racing Intelligence: one homepage-style masthead for all five modules and member Projections. */
-.rr-intel-header{position:relative;z-index:40;background:#061d2d;border-bottom:2px solid #d4a759;color:#fff6e8}
-.rr-intel-header *,.rr-intel-header *::before,.rr-intel-header *::after{box-sizing:border-box}
-.rr-intel-header__inner{display:flex;align-items:center;justify-content:space-between;gap:clamp(16px,2vw,32px);max-width:1290px;min-height:85px;margin:auto;padding:10px clamp(14px,2.6vw,30px)}
-.rr-intel-header__brand{display:inline-flex;flex:0 0 auto;align-items:center;gap:10px;min-width:0;color:#fff6e8;text-decoration:none;white-space:nowrap;font:500 clamp(25px,2.25vw,34px)/1 Georgia,"Times New Roman",serif;letter-spacing:.045em}
-.rr-intel-header__brand:hover{color:#fff6e8}
-.rr-intel-header__logo{display:block;flex:0 0 60px;width:60px;height:60px;object-fit:contain;filter:drop-shadow(0 2px 4px #0006)}
-.rr-intel-header__nav{display:flex;align-items:center;justify-content:flex-end;flex-wrap:nowrap;gap:clamp(5px,.6vw,10px);min-width:0;margin:0}
-.rr-intel-header__pill{display:inline-flex;flex:0 0 auto;align-items:center;justify-content:center;min-height:43px;padding:10px clamp(8px,.82vw,13px);border:1px solid rgba(226,176,89,.92);border-radius:999px;background:linear-gradient(140deg,rgba(5,22,34,.7),rgba(10,28,35,.32));box-shadow:inset 0 1px 0 #fff2c81c,0 4px 14px #0005;color:#fef7e9;text-decoration:none;text-align:center;text-transform:uppercase;white-space:nowrap;letter-spacing:.06em;font:700 clamp(10px,.88vw,12px)/1.2 Inter,Arial,system-ui,sans-serif;transition:background-color .2s,color .2s}
-.rr-intel-header__pill:hover,.rr-intel-header__pill[aria-current="page"]{border-color:#e2b059;background:#1a415c;color:#ffdfac}
-.rr-intel-header__pill:focus-visible,.rr-intel-header__brand:focus-visible,.rr-intel-header__mobile summary:focus-visible{outline:3px solid #e9c379;outline-offset:3px}
-.rr-intel-header__mobile{display:none}
-@media(max-width:1080px){
- .rr-intel-header__inner{min-height:72px;padding:9px 15px}
- .rr-intel-header__logo{width:54px;height:54px;flex-basis:54px}
- .rr-intel-header__brand{font-size:clamp(22px,4vw,30px)}
- .rr-intel-header__nav{display:none}
- .rr-intel-header__mobile{position:relative;display:block;flex:0 0 auto}
- .rr-intel-header__mobile summary{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:43px;padding:10px 15px;border:1px solid #d4a759;border-radius:999px;background:rgba(5,22,34,.48);color:#fef7e9;cursor:pointer;list-style:none;font:700 12px/1.2 Inter,Arial,system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase}
- .rr-intel-header__mobile summary::-webkit-details-marker{display:none}
- .rr-intel-header__mobile[open] summary{background:#1a415c}
- .rr-intel-header__mobile-links{position:absolute;top:calc(100% + 10px);right:0;z-index:60;display:grid;gap:7px;width:min(290px,calc(100vw - 26px));padding:11px;border:1px solid #d4a759;border-radius:12px;background:#061d2d;box-shadow:0 15px 34px #0009}
- .rr-intel-header__mobile-links .rr-intel-header__pill{min-height:44px;width:100%;padding:11px 13px;justify-content:flex-start;font-size:12px}
+/* Racing Intelligence reuses the public Rail & Rye heritage masthead.
+   rail-rye-core.css owns the brand, sizing, strapline, gold navigation
+   pills and responsive menu. Only the standalone photo backdrop lives here. */
+.rr-intel-header.heritage-header{
+ background:
+  linear-gradient(90deg,rgba(2,17,28,.96) 0%,rgba(3,18,29,.84) 32%,rgba(3,20,30,.59) 58%,rgba(4,20,29,.20) 100%),
+  url('/assets/approved/home/hero-dust-charged-finish.jpg') center 36%/cover no-repeat !important;
+ color:#fef7e9;
+ isolation:isolate;
+ z-index:40;
 }
-@media(max-width:390px){
- .rr-intel-header__inner{padding:8px 12px;gap:8px}
- .rr-intel-header__logo{width:46px;height:46px;flex-basis:46px}
- .rr-intel-header__brand{gap:7px;font-size:clamp(19px,5.5vw,24px);letter-spacing:.02em}
- .rr-intel-header__mobile summary{padding:9px 11px;font-size:11px}
+.rr-intel-header .heritage-nav .heritage-nav-pill:focus-visible,
+.rr-intel-header .heritage-brand:focus-visible,
+.rr-intel-header .heritage-mobile-nav summary:focus-visible,
+.rr-intel-header .heritage-mobile-nav nav a:focus-visible{
+ outline:3px solid #e9c379;
+ outline-offset:3px;
 }
-@media(prefers-reduced-motion:reduce){.rr-intel-header__pill{transition:none}}
+@media(prefers-reduced-motion:reduce){
+ .rr-intel-header .heritage-nav .heritage-nav-pill{transition:none}
+}
