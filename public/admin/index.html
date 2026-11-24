@@ -424,8 +424,12 @@
   };
   function setBusy(value){busy=value;const existing=products.find(p=>p.id===currentId);$('pdf').disabled=value||!existing?.pdf_key;['draftBtn','publishBtn','scheduleBtn','cancelScheduleBtn','archiveBtn','refreshBtn','newBtn'].forEach(id=>$(id).disabled=value||(id==='archiveBtn'&&!currentId)||(id==='cancelScheduleBtn'&&!pending(existing)));}
   window.rrCanUsePdfForNewProduct=()=>!currentId;
-  function reset(){currentId=null;$('editor-title').textContent='New publication';$('productForm').reset();rrPrefillRacingDate('raceDate');$('price').value='9.99';$('scheduleAt').value='';$('pdfStatus').textContent='';$('coverStatus').textContent='';$('draftBtn').textContent='Save draft';$('cancelScheduleBtn').hidden=true;setBusy(false);renderList();}
-  function edit(item){currentId=item.id;$('editor-title').textContent='Edit publication';$('title').value=safeText(item.title);$('category').value=item.category;rrRestoreRacingDate('raceDate',item.race_date);$('track').value=item.track||'';$('price').value=(item.price_cents/100).toFixed(2);$('description').value=item.description||'';$('scheduleAt').value=localRelease(item.release_at);$('pdf').value='';$('cover').value='';$('pdfStatus').textContent=item.pdf_key?'— Uploaded':'— Missing';$('coverStatus').textContent=item.image_url?'— Uploaded':'';$('draftBtn').textContent=item.status==='published'?'Save changes':'Save draft';$('cancelScheduleBtn').hidden=!pending(item);setBusy(false);renderList();window.scrollTo({top:0,behavior:'smooth'});}
+  let priceTouched=false;
+  const defaultPriceFor=category=>category==='Race Cards'||category==='Pick Tickets'?'2.00':category==='Longshot Radar'||category==='Target List'?'1.00':'9.99';
+  $('price').addEventListener('input',()=>{priceTouched=true;});
+  $('category').addEventListener('change',()=>{if(!currentId&&!priceTouched)$('price').value=defaultPriceFor($('category').value);});
+  function reset(){currentId=null;priceTouched=false;$('editor-title').textContent='New publication';$('productForm').reset();rrPrefillRacingDate('raceDate');$('price').value=defaultPriceFor($('category').value);$('scheduleAt').value='';$('pdfStatus').textContent='';$('coverStatus').textContent='';$('draftBtn').textContent='Save draft';$('cancelScheduleBtn').hidden=true;setBusy(false);renderList();}
+  function edit(item){currentId=item.id;priceTouched=false;$('editor-title').textContent='Edit publication';$('title').value=safeText(item.title);$('category').value=item.category;rrRestoreRacingDate('raceDate',item.race_date);$('track').value=item.track||'';$('price').value=(item.price_cents/100).toFixed(2);$('description').value=item.description||'';$('scheduleAt').value=localRelease(item.release_at);$('pdf').value='';$('cover').value='';$('pdfStatus').textContent=item.pdf_key?'— Uploaded':'— Missing';$('coverStatus').textContent=item.image_url?'— Uploaded':'';$('draftBtn').textContent=item.status==='published'?'Save changes':'Save draft';$('cancelScheduleBtn').hidden=!pending(item);setBusy(false);renderList();window.scrollTo({top:0,behavior:'smooth'});}
   function renderScheduledList(){
     const el=$('scheduledProductList');el.replaceChildren();
     const scheduled=products.filter(pending);
@@ -520,7 +524,7 @@
     const prefill=event.detail?.prefill;
     refresh(id).then(async()=>{
       if(!prefill)return;
-      if(prefill.price!=null)$('price').value=String(prefill.price);
+      if(prefill.price!=null){$('price').value=String(prefill.price);priceTouched=true;}
       $('description').value=safeText(prefill.description);
       await save('draft');
       if(prefill.scheduleAt)$('scheduleAt').value=prefill.scheduleAt;
