@@ -93,12 +93,23 @@
 .rr-dash-races .rr-dash-race-button.rr-race-saddle-tab:hover{
  background:rgba(195,155,62,.1);box-shadow:none;
 }
+/* Selected race: reserve a small underline lane for EVERY chip.
+   No external halo, no selected-state resizing, no cropped focus ring. */
+.rr-dash-races .rr-dash-race-button.rr-race-saddle-tab{
+ position:relative;height:57px;min-height:57px;padding-bottom:9px;
+}
+.rr-dash-races .rr-dash-race-button.rr-race-saddle-tab::after{
+ content:"";position:absolute;bottom:2px;left:50%;transform:translateX(-50%);
+ width:28px;height:3px;border-radius:2px;background:transparent;pointer-events:none;
+}
 .rr-dash-races .rr-dash-race-button.rr-race-saddle-tab[aria-current="true"]{
- background:#fff4d7;box-shadow:0 0 0 2px #c99831;
- outline:0;
+ background:transparent;box-shadow:none;outline:none;
+}
+.rr-dash-races .rr-dash-race-button.rr-race-saddle-tab[aria-current="true"]::after{
+ background:#c99831;
 }
 .rr-dash-races .rr-dash-race-button.rr-race-saddle-tab:focus-visible{
- outline:3px solid #bc8d2c;outline-offset:3px;
+ outline:2px solid #bc8d2c;outline-offset:-2px;
 }
 .rr-dash-race-button.rr-race-saddle-tab .rr-race-saddle-image{
  display:block;flex:0 0 auto;width:44px;height:44px;max-width:100%;
@@ -119,8 +130,8 @@
 
 @media(max-width:800px){
  .rr-dash-races .rr-dash-race-button.rr-race-saddle-tab{
-  flex-basis:49px;min-width:49px;width:49px;min-height:49px;height:49px;
-  padding:3px;
+  flex-basis:49px;min-width:49px;width:49px;min-height:55px;height:55px;
+  padding:3px 3px 9px;
  }
  .rr-dash-race-button.rr-race-saddle-tab .rr-race-saddle-image{
   width:43px;height:43px;
