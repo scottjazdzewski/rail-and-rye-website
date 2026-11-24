@@ -27,3 +27,7 @@ The configured Cloudflare ADMIN_EMAIL receives non-expiring, complimentary all-p
 ### Owner single sign-on
 
 An existing, cryptographically verified Cloudflare Access administrator session automatically establishes the normal customer membership session when an admin page is opened. The owner can also select Owner sign in on the Membership page, which navigates to the protected /admin/owner-access/ route and returns to /store/. The Worker must verify JWT signature, issuer, audience, expiry and exact configured ADMIN_EMAIL before issuing the HttpOnly customer cookie. Email entry alone must never grant access. Regular members retain their existing verified email flow. No payment or entitlement rules are altered.
+
+### Desktop storefront priority
+
+Page six places Universal Access immediately under the left-hand overview on desktop, alongside the compact right-hand 2×2 product grid. Product artwork is constrained to its card rather than determining card height. Preserve the original mobile order, approved art, navy/gold palette, shared header/footer and all commerce behavior. Never use a fixed viewport height or overflow clipping that can hide checkout controls.

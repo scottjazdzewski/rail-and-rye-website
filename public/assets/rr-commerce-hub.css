@@ -68,3 +68,48 @@ body.heritage-home.heritage-store-page.rr-commerce-hub .heritage-store-layout{di
 .rr-hub-product-rail .rr-hub-links{margin-top:0}
 .rr-hub-product-rail .rr-hub-date-label{margin-top:4px}
 .rr-hub-product-rail #rr-hub-date{width:100%}
+
+/* Page six desktop storefront: the primary offer lives beside, not below,
+   the two-by-two product grid. Keep the existing mobile reading order. */
+@media(min-width:1001px){
+ body.heritage-home.rr-single-screen-hero.heritage-store-page.rr-commerce-hub .rr-hub-layout{
+  grid-template-columns:minmax(0,.83fr) minmax(0,1.17fr);
+  grid-template-areas:"intro products" "universal products" "notice notice";
+  grid-template-rows:auto auto;
+  align-content:start;align-items:start;
+  gap:12px clamp(18px,2.5vw,42px);
+  padding-top:clamp(12px,1.3vw,20px);padding-bottom:18px
+ }
+ body.rr-commerce-hub .rr-hub-layout>.heritage-store-copy{grid-area:intro;min-width:0}
+ body.rr-commerce-hub .rr-hub-layout>.rr-hub-inventory{grid-area:products;min-width:0}
+ body.rr-commerce-hub .rr-hub-layout>.rr-hub-universal{
+  grid-area:universal;align-self:start;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.9fr);
+  align-items:center;gap:12px;padding:13px 15px;
+  border:2px solid #d4a759;background:linear-gradient(135deg,#061d2d,#18313b)
+ }
+ body.rr-commerce-hub .rr-hub-layout>.rr-hub-notice{grid-area:notice;margin:0}
+ body.rr-commerce-hub .rr-hub-layout .rr-hub-universal h2{font-size:clamp(26px,2.25vw,36px);margin:3px 0 5px}
+ body.rr-commerce-hub .rr-hub-layout .rr-hub-universal p{font-size:11px;line-height:1.35;margin:0}
+ body.rr-commerce-hub .rr-hub-layout .rr-hub-universal-actions{min-width:0;gap:5px}
+ body.rr-commerce-hub .rr-hub-layout .rr-hub-universal-actions strong:empty{display:none}
+ body.rr-commerce-hub .rr-hub-layout .rr-hub-full-action{min-height:42px;text-align:center}
+ body.rr-commerce-hub .rr-hub-layout .rr-hub-member-link{text-align:center;line-height:1.3}
+ body.rr-commerce-hub .rr-hub-layout .rr-hub-grid{gap:10px;grid-auto-rows:1fr}
+ body.rr-commerce-hub .rr-hub-layout .rr-hub-product{position:relative;min-height:0}
+ /* Absolutely positioned art cannot inflate the grid row via its intrinsic size.
+    Text and interactive controls determine the height, without clipping. */
+ body.rr-commerce-hub .rr-hub-layout .rr-hub-product-art{
+  position:absolute;inset:0 auto 0 0;width:32%;height:100%;min-height:0;object-fit:cover
+ }
+ body.rr-commerce-hub .rr-hub-layout .rr-hub-product-body{grid-column:2;padding:9px 10px;gap:4px}
+ body.rr-commerce-hub .rr-hub-layout .rr-hub-product h2{margin:1px 0 0}
+ body.rr-commerce-hub .rr-hub-layout .rr-hub-product .rr-hub-state{padding:4px 7px}
+ body.rr-commerce-hub .rr-hub-layout .rr-hub-choice{gap:2px}
+ body.rr-commerce-hub .rr-hub-layout .rr-hub-choice select{padding:6px 8px;min-height:32px}
+ body.rr-commerce-hub .rr-hub-layout .rr-hub-product .rr-hub-action{min-height:36px}
+ body.rr-commerce-hub .rr-hub-layout .rr-hub-overview{margin:10px 0 7px}
+ body.rr-commerce-hub .rr-hub-layout .rr-hub-links{margin-top:6px}
+}
+@media(min-width:1001px) and (max-width:1250px){
+ body.rr-commerce-hub .rr-hub-layout>.rr-hub-universal{grid-template-columns:minmax(0,1fr);gap:8px}
+}
