@@ -35,12 +35,13 @@ jobs:
           URL="https://railandryeracing.com/longshot-radar-preview/"
           for attempt in $(seq 1 12); do
             code=$(curl -LsS --connect-timeout 10 --max-time 20 -H 'Cache-Control: no-cache'               -w '%{http_code}' -o /tmp/rr-radar-landing.html "$URL?rev=${GITHUB_SHA}-$attempt" || true)
-            if [ "$code" = "200" ] &&
-               grep -Fq 'http-equiv="refresh" content="0;url=/admin/longshot-radar/"' /tmp/rr-radar-landing.html &&
-               grep -Fq 'href="/admin/longshot-radar/"' /tmp/rr-radar-landing.html &&
+            if { [ "$code" = "404" ] || [ "$code" = "410" ] ||
+                 { [ "$code" = "200" ] &&
+                   grep -Fq 'http-equiv="refresh" content="0;url=/admin/longshot-radar/"' /tmp/rr-radar-landing.html &&
+                   grep -Fq 'href="/admin/longshot-radar/"' /tmp/rr-radar-landing.html; }; } &&
                ! grep -Fq 'rr-lr-candidates' /tmp/rr-radar-landing.html &&
                ! grep -Fq 'data-rr-design-only' /tmp/rr-radar-landing.html; then
-              echo "PASS: live former design URL routes to protected genuine Radar, no fake/paid public rows"
+              echo "PASS: retired public Radar preview is absent or redirects securely, no paid/mock rows"
               break
             fi
             if [ "$attempt" -eq 12 ]; then
