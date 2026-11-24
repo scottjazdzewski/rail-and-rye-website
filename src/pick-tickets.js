@@ -471,5 +471,5 @@ export async function handleAdminPickTickets(request,env){
    return respond({ok:false,updated,published,held,error:"Pick Tickets saved, but a customer edition could not be verified."},503);
   }
  }
- return respond({ok:held.length===0,updated,published,held,unchanged:cards.length-updated.length,...(held.length?{error:"One or more editions did not pass the customer-publication audit."}:{})},held.length?409:200);
+ return respond({ok:held.length===0,updated,published,held,unchanged:cards.length-updated.length,...(held.length?{error:"One or more editions did not pass the customer-publication audit."}:{})},200);
 }
