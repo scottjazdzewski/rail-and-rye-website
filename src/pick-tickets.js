@@ -5,6 +5,7 @@ import {buildPrescratchPickTicketReview,buildV33PostScratchReviewed,
 import {PICK_V33_ENGINE,PICK_V33_COST_SCALE_DOLLARS,
  PICK_V33_MIN_LEG_COVERAGE} from './pick-tickets-v33.js';
 import {readAdminProjectionCards} from './projections.js';
+import {enrichRaceInformation,genericStakesTitle} from './projection-race-information.js';
 import {getNov23ScratchLedger,sourceIsScratchCurrent,officialScratchSequenceCount} from './pick-tickets-scratch-1123.js';
 import {PICK_MENU_1123} from './pick-tickets-auto.js';
 import {auditV33FieldUpload,pickUploadAuditKey,projectionFieldFingerprint,
@@ -294,7 +295,27 @@ export async function handleAdminPickTickets(request,env){
   const reviewCards=reviews.filter(x=>!released.has(x.card.date+"|"+x.card.track));
   const scratch_update=getNov23ScratchLedger();
   scratch_update.dependent_sequences=officialScratchSequenceCount(PICK_MENU_1123);
-  return respond({cards:[...authorized,...reviewCards],
+  // Display-only, certified source-backed event metadata for ticket legs.
+  // No TRI, F4, wager combinations, receipts or signed R2 cards are altered.
+  const displayed=[...authorized,...reviewCards].map(item=>{
+   const source=byTrack.get(item.card.date+"|"+item.card.track)?.card;
+   if(!source)return item;
+   const stakes={};
+   for(const race of enrichRaceInformation(source).races||[]){
+    const name=String(race.stakes_name||race.race_name||race.conditions||"").trim();
+    const hasStakes=race.is_stakes===true||
+     /\b(?:Stakes?|Stks?\.?|S\.)\b/i.test(name);
+    if(!hasStakes||!name||genericStakesTitle(name))continue;
+    stakes[String(race.race_number)]={
+     race_number:race.race_number,stakes_name:race.stakes_name||"",
+     race_name:race.race_name||"",conditions:race.conditions||"",
+     stakes_grade:race.stakes_grade||"",sponsor_name:race.sponsor_name||"",
+     is_stakes:true
+    };
+   }
+   return Object.keys(stakes).length?{...item,stakes_by_race:stakes}:item;
+  });
+  return respond({cards:displayed,
    intake:getPickTicketsIntake1124(),scratch_update,
    stale_revisions:staleRevisions,source_rejections:sourceRejects,
    latest_field_versions:sourceVersions,
