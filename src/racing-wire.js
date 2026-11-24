@@ -27,6 +27,17 @@ async function ensureEditorialSchema(env){
   }
   await editorialSchemaPromise;
 }
+let racingWireItemsSchemaPromise=null;
+async function ensureRacingWireItemsSchema(env){
+  if(!env.STORE_DB)throw Error('Racing Wire database binding missing');
+  if(!racingWireItemsSchemaPromise){
+    racingWireItemsSchemaPromise=(async()=>{
+      await env.STORE_DB.prepare("CREATE TABLE IF NOT EXISTS racing_wire_items (source TEXT NOT NULL, category TEXT NOT NULL, title TEXT NOT NULL, article_url TEXT PRIMARY KEY, published_at TEXT NOT NULL)").run();
+      await env.STORE_DB.prepare("CREATE INDEX IF NOT EXISTS racing_wire_items_published ON racing_wire_items(published_at DESC)").run();
+    })().catch(error=>{racingWireItemsSchemaPromise=null;throw error;});
+  }
+  await racingWireItemsSchemaPromise;
+}
 const BROWSER_FEED_UA='Mozilla/5.0 (compatible; RailAndRyeRacingWire/1.0; +https://railandryeracing.com)';
 export const PREVIEW_LIVE_FEEDS=Object.freeze([
   {id:'tdn-all',name:'Thoroughbred Daily News',url:'https://www.thoroughbreddailynews.com/feed/',host:'thoroughbreddailynews.com'},
@@ -561,6 +572,7 @@ export async function testPreviewRssFeeds(fetchFn=fetch){
 
 export async function refreshRacingWire(env){
   if(!env.STORE_DB||!FEEDS.some(f=>f.authorized))return {checked:0,added:0};
+  await ensureRacingWireItemsSchema(env);
   let added=0,checked=0;
   for(const feed of FEEDS){
     if(!feed.authorized||!feed.id||!feed.host||!feed.url)continue;
@@ -575,6 +587,8 @@ export async function refreshRacingWire(env){
       if(len>MAX_FEED_BYTES)continue;
       const xml=await response.text();if(xml.length>MAX_FEED_BYTES)continue;
       for(const item of parseRacingRss(xml,feed)){
+        const age=Date.now()-Date.parse(item.published_at||'');
+        if(!previewHeadlineRelevant(item.title,item.section)||!Number.isFinite(age)||age>PREVIEW_MAX_ITEM_AGE_MS)continue;
         const r=await env.STORE_DB.prepare(
           'INSERT OR IGNORE INTO racing_wire_items(source,category,title,article_url,published_at) VALUES (?,?,?,?,?)'
         ).bind(item.source,item.category,item.title,item.link,item.published_at).run();
@@ -1025,6 +1039,7 @@ export async function handleRacingWire(request,env){
   }catch(e){console.warn('Racing Wire journal unavailable',String(e).slice(0,90));}
   let syndicated=[];
   if(FEEDS.some(f=>f.authorized))try{
+    await ensureRacingWireItemsSchema(env);
     const r=await env.STORE_DB.prepare(
       'SELECT source,category,title,article_url,published_at FROM racing_wire_items ORDER BY published_at DESC LIMIT 200'
     ).all();

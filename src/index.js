@@ -4,7 +4,7 @@ import {handleAdminLongshotRadar,handleAdminLongshotEditorialPreview,publishLong
 import {handleAdminPickTickets} from './pick-tickets.js';
 import {handleAdminTargetList,readAdminTargetListReview} from './target-list.js';
 import { handleCommerce, sendQueuedEmails, checkoutReadiness, replacePdfAndNotifyBuyers, publicProductForShare } from './commerce.js';
-import {handleRacingWire,handleAdminRacingWire} from './racing-wire.js';
+import {handleRacingWire,handleAdminRacingWire,refreshRacingWire} from './racing-wire.js';
 import {handleAdminBundles,BUNDLE_KEY} from './bundles.js';
 import {handleAdminBundleAssets} from './bundle-assets.js';
 import {handleAdminJournal,handlePublicJournal,publicJournalCover,publishScheduledJournalArticles} from './journal.js';
@@ -406,6 +406,9 @@ export default {
     }catch(e){console.error("Rail & Rye request error",e);return fail("An internal error occurred",500);}
   },
   async scheduled(controller,env,ctx){
+    ctx.waitUntil(refreshRacingWire(env).then(result=>{
+      if(result.checked)console.info('Racing Wire feeds refreshed',result);
+    }).catch(e=>console.warn('Racing Wire feed refresh deferred',String(e).slice(0,140))));
     ctx.waitUntil(publishScheduledJournalArticles(env).catch(e=>console.warn('Scheduled Journal publication deferred',String(e).slice(0,160))));
     ctx.waitUntil(sendQueuedEmails(env,8));
     ctx.waitUntil(sendRaceCardAlerts(env,20).catch(e=>console.warn('Race Card alert queue retry deferred',String(e).slice(0,120))));
