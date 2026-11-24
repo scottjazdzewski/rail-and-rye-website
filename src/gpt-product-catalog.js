@@ -181,6 +181,7 @@ export async function handleAdminGPTProductCatalog(request,env,bundleHandler,syn
  if(!Number.isSafeInteger(price)||price<50||price>500000)return bad("Set an explicit bundle price of at least $0.50, up to $5,000.");
  if(!["draft","published","archived"].includes(status))return bad("Invalid bundle status.");
  const payload={title,description,category,race_date:raceDate,price_cents:price,status,product_ids:productIds};
+ if(!bundleId&&body.id!==undefined)payload.id=body.id;
  if(body.release_at!==undefined)payload.release_at=body.release_at;
  else if(current&&releaseAt)payload.release_at=releaseAt;
  const headers=new Headers(request.headers);headers.delete("content-length");headers.set("content-type","application/json");
