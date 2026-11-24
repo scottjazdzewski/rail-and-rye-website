@@ -196,7 +196,7 @@ assert.ok(!html.includes("/assets/projections-dashboard.css"),"Radar must never 
 assert.ok(!html.includes("Race details")&&!html.includes('id="rr-lr-dialog"'));
 assert.ok(!html.includes("rr-lr-import")&&!html.includes("rr-lr-file")&&!html.includes("rr-lr-upload-form"),"No user-supplied JSON form");
 assert.ok(html.includes("id=\"rr-lr-retry\""),"A failed R2 load must permit retry");
-assert.ok(html.includes("longshot-radar.js?v=one-line-20261124"),"Publish the PDF-style one-sentence Radar reader without stale browser cache");
+assert.ok(html.includes("longshot-radar.js?v=shared-banner-v1-20261124"),"Publish the PDF-style one-sentence Radar reader without stale browser cache");
 assert.ok(!html.includes("longshot-hero.jpg")&&!html.includes("longshot-mark.png"));
 assert.ok(ui.includes('make("div","rr-lr-inline-analysis")'));
 assert.ok(ui.includes('make("p","rr-lr-case",item.betting_case)'),"Display the exact approved one-sentence PDF betting case");
