@@ -1,0 +1,54 @@
+name: Retire legacy website publication PDFs (2026-11-24)
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/retire-legacy-website-pdfs-20261124.yml'
+permissions:
+  contents: read
+concurrency:
+  group: retire-legacy-website-pdfs-20261124
+  cancel-in-progress: false
+jobs:
+  remove-legacy-publication-files:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install boto3==1.40.36
+      - name: Delete and verify legacy customer PDF objects only
+        env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+        run: |
+          python - <<'PY'
+          import os, re, boto3
+          bucket = "rail-and-rye-private-cards"
+          account = os.environ["TRI_CLOUDFLARE_ACCOUNT_ID"]
+          client = boto3.client("s3", endpoint_url=f"https://{account}.r2.cloudflarestorage.com",
+              region_name="auto", aws_access_key_id=os.environ["TRI_R2_ACCESS_KEY_ID"],
+              aws_secret_access_key=os.environ["TRI_R2_SECRET_ACCESS_KEY"])
+          def inventory():
+              return [o for page in client.get_paginator("list_objects_v2").paginate(Bucket=bucket)
+                  for o in page.get("Contents", []) if o["Key"].lower().endswith(".pdf")]
+          def customer_pdf(o):
+              return o["Key"].startswith("cards/") and o["Key"].lower().endswith(".pdf")
+          before = inventory()
+          targets = [o for o in before if customer_pdf(o)]
+          print(f"Customer PDFs found: {len(targets)}; bytes: {sum(o['Size'] for o in targets)}", flush=True)
+          print(f"PDFs outside customer publication prefix preserved: {len(before)-len(targets)}", flush=True)
+          for start in range(0, len(targets), 500):
+              keys = [{"Key":o["Key"]} for o in targets[start:start+500]]
+              result = client.delete_objects(Bucket=bucket, Delete={"Objects":keys,"Quiet":True})
+              if result.get("Errors"):
+                  raise RuntimeError("One or more PDF objects could not be removed")
+          after = inventory()
+          remaining = [o for o in after if customer_pdf(o)]
+          print(f"Verified customer PDFs remaining: {len(remaining)}", flush=True)
+          print(f"Verified outside-prefix PDFs preserved: {len(after)-len(remaining)}", flush=True)
+          print(f"Removed customer PDFs: {len(targets)-len(remaining)}", flush=True)
+          assert not remaining, "Legacy customer PDFs still present"
+          PY
