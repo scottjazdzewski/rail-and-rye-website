@@ -112,17 +112,13 @@ function renderLibrary(data){
  }
  if(list){
   list.replaceChildren();
-  if(!(data.library||[]).length){show(list,"No publications are available in the member library yet.");return;}
-  for(const item of data.library){
-   const row=document.createElement("article");row.className="rr-library-item";
-   const info=document.createElement("div");
-   const title=document.createElement("h3");title.textContent=item.title;info.append(title);
-   const detail=document.createElement("p");detail.textContent=[item.category,item.race_date].filter(Boolean).join(" · ")+(formatPdfExpiry(item.pdf_expires_at)?" · Available through "+formatPdfExpiry(item.pdf_expires_at):"");info.append(detail);
-   const actions=document.createElement("div");actions.className="rr-library-actions";
-   const viewButton=document.createElement("button");viewButton.type="button";viewButton.className="rr-member-button";viewButton.textContent="Read on site";viewButton.setAttribute("aria-label","Read "+item.title+" on site");viewButton.addEventListener("click",()=>openReader(item));
-   const downloadButton=document.createElement("button");downloadButton.type="button";downloadButton.className="rr-member-button rr-member-button-secondary";downloadButton.textContent="Download PDF";downloadButton.addEventListener("click",()=>location.assign("/api/membership/download/"+encodeURIComponent(item.id)));
-   actions.append(viewButton,downloadButton);row.append(info,actions);list.append(row);
-  }
+  const row=document.createElement("article");row.className="rr-library-item";
+  const info=document.createElement("div"),title=document.createElement("h3"),detail=document.createElement("p");
+  title.textContent="All published racing tabs";detail.textContent="Your active All-Access membership opens every currently published category and racing date. The tabs show which race days are available.";
+  info.append(title,detail);
+  const actions=document.createElement("div");actions.className="rr-library-actions";
+  const open=document.createElement("a");open.className="rr-member-button";open.href="/my-products/";open.textContent="Open Racing Tabs";
+  actions.append(open);row.append(info,actions);list.append(row);
  }
 }
 async function loadAccount(){
