@@ -6,6 +6,8 @@ on:
       - '.github/workflows/verify-target-list-live-preview.yml'
       - 'public/assets/target-list-dashboard.js'
       - 'public/assets/target-list-dashboard.css'
+      - 'public/assets/rr-research-race-banner.js'
+      - 'public/assets/rr-research-race-banner.css'
       - 'public/admin/target-list-preview.html'
       - 'src/target-list.js'
   workflow_dispatch:
@@ -32,11 +34,10 @@ jobs:
             if [ "$code" = '200' ] && grep -Fq '/api/admin/target-list-review' /tmp/target-list-live.js &&
                grep -Fq 'const tote=value' /tmp/target-list-live.js &&
                grep -Fq 'rr-target-runner-info' /tmp/target-list-live.js &&
-               grep -Fq 'rr-target-racebar-main' /tmp/target-list-live.js &&
-               grep -Fq 'rr-target-race-identifiers' /tmp/target-list-live.js &&
+               grep -Fq 'raceBanner.render(entry)' /tmp/target-list-live.js &&
+               grep -Fq 'RRResearchRaceBanner' /tmp/target-list-live.js &&
                grep -Fq 'Post-time order' /tmp/target-list-live.js &&
-               grep -Fq 'appendGradeTrophy(facts,title.grade)' /tmp/target-list-live.js &&
-               grep -Fq 'rr-ed-stakes-title' /tmp/target-list-live.js &&
+               ! grep -Fq 'rr-target-racebar' /tmp/target-list-live.js &&
                ! grep -Fq 'rr-target-race-facts-long' /tmp/target-list-live.js &&
                ! grep -Eq 'DEMO_EXAMPLE|Sample Favorite|Example Downs|rr-target-local-file|rr-target-analyze|rr-target-upload-form|rr-target-file' /tmp/target-list-live.js; then
               echo 'LIVE_PREVIEW_DEPLOYED: Actual private R2 daily reader is live, with no synthetic horses or local-file loader.'
@@ -54,9 +55,17 @@ jobs:
           grep -Fq 'Target List v3' /tmp/target-list-live.css
           grep -Fq -- '-webkit-line-clamp:unset' /tmp/target-list-live.css
           grep -Fq 'Shared Daily Research Reader V1' /tmp/target-list-live.css
-          grep -Fq 'canonical Longshot Radar race header' /tmp/target-list-live.css
-          grep -Fq 'grid-template-columns:minmax(0,1fr) max-content' /tmp/target-list-live.css
-          grep -Fq 'rr-target-race-identifiers' /tmp/target-list-live.css
+          ! grep -Fq '.rr-target-racebar' /tmp/target-list-live.css
+          ! grep -Fq '.rr-target-race-identifiers' /tmp/target-list-live.css
+          bannerJS="https://railandryeracing.com/assets/rr-research-race-banner.js?v=${GITHUB_SHA}-$(date +%s)"
+          bannerCSS="https://railandryeracing.com/assets/rr-research-race-banner.css?v=${GITHUB_SHA}-$(date +%s)"
+          curl -fsSL --max-time 20 "$bannerJS" -o /tmp/research-banner-live.js
+          curl -fsSL --max-time 20 "$bannerCSS" -o /tmp/research-banner-live.css
+          grep -Fq 'RRResearchRaceBanner=Object.freeze' /tmp/research-banner-live.js
+          grep -Fq 'rr-research-racebar__facts' /tmp/research-banner-live.js
+          grep -Fq 'grid-template-columns:minmax(0,1fr) max-content' /tmp/research-banner-live.css
+          grep -Fq 'font:800 17px/1.23 Inter' /tmp/research-banner-live.css
+          grep -Fq 'font:700 13px/1.3 Inter' /tmp/research-banner-live.css
           ! grep -Fq 'RAIL & RYE DAILY RESEARCH V9' /tmp/target-list-live.css
           ! grep -Fq 'Target List: source distance/surface on the SAME navy header row' /tmp/target-list-live.css
           ! grep -Fq '.rr-target-page .rr-member-nav' /tmp/target-list-live.css
@@ -68,7 +77,7 @@ jobs:
           grep -Fq 'font:700 25px/1.06 Tinos' /tmp/target-list-live.css
           grep -Fq 'Readable editorial:' /tmp/target-list-live.css
           ! grep -Fq 'rr-target-publisher' /tmp/target-list-live.css
-          echo 'LIVE_TARGET_HEADER_RADAR_PARITY_V11: Sourced stakes text and grade, with Radar grid and right-aligned identifiers in production.'
+          echo 'LIVE_SHARED_RACE_BANNER_V1: One renderer/CSS controls Target List and Radar; obsolete Target List race header removed.'
           protected=$(curl -sS --connect-timeout 10 --max-time 20 -o /dev/null -w '%{http_code}' 'https://railandryeracing.com/api/admin/target-list-review' || true)
           echo "Unauthenticated private data endpoint: HTTP $protected"
           case "$protected" in
