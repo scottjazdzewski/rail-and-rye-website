@@ -25,6 +25,23 @@ def main():
     dec=zlib.decompressobj(); plain=dec.decompress(SealedBox(private_key()).decrypt(base64.b64decode(enc,validate=True)),200001)
     need(dec.eof and not dec.unused_data and len(plain)<=200000,"Invalid encrypted packet")
     packet=json.loads(plain); edition=packet["edition"]; qa=packet["qa_decisions"]
+    correction=None
+    patch_path=Path("private-ingest/20261125/radar-correction.enc")
+    if patch_path.exists():
+        dc=zlib.decompressobj(); patch_raw=dc.decompress(SealedBox(private_key()).decrypt(base64.b64decode(patch_path.read_bytes(),validate=True)),10001)
+        need(dc.eof and not dc.unused_data and len(patch_raw)<=10000,"Invalid reconciliation envelope")
+        correction=json.loads(patch_raw)
+        need(correction["original_qa_hash"]==packet["qa_hash"]==edition["receipts"]["editorial_qa_sha256"],"Reconciliation receipt mismatch")
+        need(re.fullmatch("[a-f0-9]{64}",correction["new_qa_hash"]) is not None,"Invalid new QA receipt")
+        ck=key(correction["track"],correction["race"],correction["program"],correction["horse"])
+        qr=[x for x in qa if key(x["track"],x["race"],x["program"],x["horse"])==ck]
+        er=[x for x in edition["candidates"] if key(x["track"],x["race_number"],x["program_number"],x["horse_name"])==ck]
+        need(len(qr)==len(er)==1 and qr[0]["disposition"]=="PASS","Reconciliation identity mismatch")
+        need(abs(qr[0]["pwin_exact"]-correction["old_pwin"])<1e-12 and abs(er[0]["pwin_exact"]-correction["old_pwin"])<1e-12,"Reconciliation prior PWIN mismatch")
+        qr[0]["pwin_exact"]=correction["pwin_exact"]
+        er[0]["pwin_exact"]=correction["pwin_exact"];er[0]["pwin_display"]=correction["pwin_display"]
+        packet["qa_hash"]=edition["receipts"]["editorial_qa_sha256"]=correction["new_qa_hash"]
+        edition["generated_at"]=correction["generated_at"]
     need(edition["race_date"]==D and edition["revision"]==1 and edition["status"]=="prescratch","Wrong edition")
     need(edition["receipts"]["source_sha256"]==SRC and packet["runtime_hash"]==MODEL and edition["receipts"]["editorial_qa_sha256"]==packet["qa_hash"],"Receipt mismatch")
     node="""import {validateLongshotEdition} from './src/longshot-radar.js';let s='';for await(const c of process.stdin)s+=c;process.stdout.write(JSON.stringify(validateLongshotEdition(JSON.parse(s))));"""
@@ -54,6 +71,11 @@ def main():
                 if ml is not None and ml>=6 and p>=1/7 and p*(1+ml)-1>=.5:
                     elig[k]={"track":t["name"],"race":race["race_number"],"program":e["program_number"],"horse":e["horse_name"],"pwin_exact":p,"original_ml":e["morning_line"],"trainer":e["trainer"],"jockey":e["jockey"],"post_time":race.get("post_time_et"),"display":e["win_probability"],"field":[[x["program_number"],x["horse_name"]] for x in race["entries"]]}
     need(nr==76 and n==626,"Unexpected staged field counts")
+    if correction is not None:
+        need(ck in elig,"Corrected runner no longer qualifies")
+        x=elig[ck]
+        need(sha(compact(sorted(x["field"])))==correction["field_sha256"],"Corrected race field identity differs")
+        need(abs(x["pwin_exact"]-correction["pwin_exact"])<1e-12 and x["display"]==correction["pwin_display"],"Corrected value not exact staged projection")
     q={key(x["track"],x["race"],x["program"],x["horse"]):x for x in qa}
     need(len(q)==len(qa),"Duplicate QA decision")
     selected={key(c["track"],c["race_number"],c["program_number"],c["horse_name"]):c for c in edition["candidates"]}
