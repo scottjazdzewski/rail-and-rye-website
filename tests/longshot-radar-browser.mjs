@@ -204,7 +204,7 @@ try{
   const visibleText=await page.locator("#rr-lr-app").innerText();
   if(visibleText.includes("PRIVATE_TEST_RESEARCH_NEVER_DISPLAY")||
      visibleText.includes("PRIVATE_TEST_RISK_NEVER_DISPLAY")||
-     /\\btimeform(?:us)?\\b/i.test(visibleText))
+     /\btimeform(?:us)?\b/i.test(visibleText))
     throw Error("Radar must show only the approved single-sentence case, no QA research/source brand at "+width);
   if(await page.locator(".rr-lr-case").count()!==10)
     throw Error("Every approved Radar horse must have exactly one visible betting sentence at "+width);
