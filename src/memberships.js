@@ -514,6 +514,12 @@ async function memberDownload(request,env,url,inline=false){
     "X-Robots-Tag":"noindex, nofollow"
   }});
 }
+export async function hasActiveMembershipSession(request,env){
+  if(!env.STORE_DB)return false;
+  await ensureMembershipSchema(env);
+  const email=await sessionEmail(request,env);
+  return !!email;
+}
 export async function handleMembershipApi(request,env,url){
   if(!env.STORE_DB)return error("Memberships are temporarily unavailable.",503);
   try{
