@@ -1,3 +1,4 @@
+import {enrichRaceInformation} from "./projection-race-information.js";
 /* Rail & Rye Target List: private, receipt-referenced structured editorial preview.
    Customer-facing entitlement and launch routes deliberately not enabled here. */
 const HEADERS={"Content-Type":"application/json; charset=utf-8","Cache-Control":"private, no-store","X-Content-Type-Options":"nosniff","X-Robots-Tag":"noindex, nofollow, noarchive"};
@@ -206,6 +207,7 @@ async function targetOriginalRaceFacts(env,date){
    let card;try{card=JSON.parse(await obj.text());}catch{continue;}
    if(card?.schema_version!==1||card.race_date!==date||
       typeof card.track_name!=="string"||!Array.isArray(card.races))continue;
+   card=enrichRaceInformation(card);
    const track=targetTrackKey(card.track_name);
    for(const race of card.races){
     const n=Number(race?.race_number),id=track+"|"+n;
