@@ -77,6 +77,38 @@ function normalizeTicket(input,first,last,label){
   hit_rate_display:validPercent(input.hit_rate_display,label+" ticket hit rate"),
   notes:input.notes==null?"":text(input.notes,label+" ticket notes",1200,false)};
 }
+// Preserve complete exact source probabilities on the protected customer path.
+// Reject partial vectors, wrong fields and arithmetic inconsistent with the ticket.
+function normalizeReviewProbabilities(raw,fields,tickets,label){
+ if(raw===undefined)return undefined;
+ if(!obj(raw)||!fields.length||Object.keys(raw).length!==fields.length)throw Error(label+" requires complete PWIN fields.");
+ const safe={};
+ for(const field of fields){
+  const key=String(field.race_number),v=raw[key];
+  if(!obj(v)||Object.keys(v).length!==field.programs.length)throw Error(label+" PWIN field mismatch.");
+  let sum=0;const probs={};
+  for(const p of field.programs){
+   const n=v[p];
+   if(!Object.hasOwn(v,p)||typeof n!=="number"||!Number.isFinite(n)||n<0||n>100)throw Error(label+" invalid PWIN.");
+   probs[p]=n;sum+=n;
+  }
+  if(Math.abs(sum-100)>1e-5)throw Error(label+" PWIN mass must equal 100%.");
+  safe[key]=probs;
+ }
+ for(const ticket of tickets){
+  if(!ticket.hit_rate_display)continue;
+  const hit=100*ticket.legs.reduce((h,l)=>h*l.programs.reduce((n,p)=>n+safe[String(l.race_number)][p],0)/100,1);
+  const shown=Number.parseFloat(ticket.hit_rate_display),digits=(ticket.hit_rate_display.split(".")[1]||"").replace("%","").length;
+  if(Math.abs(hit-shown)>.5*Math.pow(10,-digits)+1e-8)throw Error(label+" PWIN does not match ticket hit rate.");
+ }
+ return safe;
+}
+function normalizedPostTimes(value){
+ if(!obj(value))return undefined;
+ const result={};
+ for(const [k,v] of Object.entries(value))if(/^(?:[1-9]|1[0-9]|20)$/.test(k)&&typeof v==="string"&&/^(?:[1-9]|1[0-2]):[0-5][0-9] [AP]M(?: ET)?$/.test(v))result[k]=v;
+ return Object.keys(result).length?result:undefined;
+}
 function normalizeSequence(s,index){
  const label="Sequence "+(index+1);
  if(!obj(s))throw Error(label+" must be an object.");
@@ -104,9 +136,11 @@ function normalizeSequence(s,index){
    if(leg.programs.some(p=>!eligible.programs.includes(p)))throw Error(label+" ticket contains a program not in the certified race_fields.");
   }
  }
+ const probabilities=normalizeReviewProbabilities(s.review_probabilities,race_fields,tickets,label);
  return {name,start_race:first,end_race:last,play_status,hit_rate_display:hit_rate,
   recommendation:s.recommendation==null?"":text(s.recommendation,label+" recommendation",1500,false),
-  tickets,...(s.race_fields!==undefined?{race_fields}:{})};
+  tickets,...(s.race_fields!==undefined?{race_fields}:{}),
+  ...(probabilities?{review_probabilities:probabilities}:{})};
 }
 export function normalizePickTickets(input){
  if(!obj(input)||input.schema_version!==1||input.product_type!=="pick_tickets")throw Error("Expected Pick Tickets schema version 1.");
@@ -137,10 +171,11 @@ export function normalizePickTickets(input){
  if(formula_version===PICK_V33_ENGINE&&input.date==="2026-11-23"&&PICK_MENU_1123.some(x=>x.track===track)&&!source_input_sha256)
   throw Error("Certified V3.3 Pick Tickets must identify the exact uploaded TRI field.");
  const scratches=publicScratches(input.scratches_by_race);
+ const postTimes=normalizedPostTimes(input.post_times_by_race);
  return {schema_version:1,product_type:"pick_tickets",date:input.date,track,revision,status,
   formula_version,source_input_sha256,...(sourceReceipt?{source_receipt:sourceReceipt}:{}),
   ...(ownerRelease?{publication_mode:"owner-approved-gpt"}:{}),scratch_verified_at,sequences,
-  ...(scratches?{scratches_by_race:scratches}:{})};
+  ...(scratches?{scratches_by_race:scratches}:{}),...(postTimes?{post_times_by_race:postTimes}:{})};
 }
 function normalizeStoredPickTickets(raw){
  const hasReceipt=obj(raw?.source_receipt)&&typeof raw.source_receipt.sha256==="string";
@@ -232,7 +267,41 @@ export async function readPublishedPickTicketCards(env,raceDate){
    if(card.date===match[1])cards.push({...card,...(scratches?{scratches_by_race:scratches}:{})});
   }catch(error){console.warn("Invalid published Pick Tickets edition skipped",object.key,String(error).slice(0,100));}
  }
+ // Backfill older approved copies that were stripped by the former serializer.
+ // Only match the exact certified current field and identical ticket arithmetic;
+ // never change a paid edition's selections, label or hit rate here.
+ const missing=cards.filter(c=>c.source_input_sha256&&c.sequences.some(s=>!s.review_probabilities));
+ if(missing.length){
+  try{
+   const response=await handleAdminPickTickets(new Request("https://internal.invalid/api/admin/pick-tickets",{method:"GET"}),env);
+   if(response.ok){
+    const data=await response.json();
+    for(const card of missing){
+     const row=(data.cards||[]).find(r=>r.card?.date===card.date&&r.card?.track===card.track&&r.card?.source_input_sha256===card.source_input_sha256);
+     if(!row)continue;
+     enrichPublishedPickFromVerified(card,row);
+    }
+   }
+  }catch(e){console.warn("Published Pick PWIN backfill unavailable",String(e).slice(0,120));}
+ }
  return cards.sort((a,b)=>b.date.localeCompare(a.date)||a.track.localeCompare(b.track));
+}
+export function enrichPublishedPickFromVerified(card,row){
+ const source=row?.card;
+ if(!card.source_input_sha256||source?.source_input_sha256!==card.source_input_sha256||
+    source.date!==card.date||source.track!==card.track||source.formula_version!==card.formula_version)return false;
+ let repaired=false;
+ for(const seq of card.sequences){
+  if(seq.review_probabilities)continue;
+  const match=source.sequences?.find(s=>s.name===seq.name&&s.start_race===seq.start_race&&s.end_race===seq.end_race);
+  if(!match?.review_probabilities||!seq.race_fields||
+     JSON.stringify(match.race_fields)!==JSON.stringify(seq.race_fields))continue;
+  const identity=t=>JSON.stringify([t.role,t.unit_cents,t.combinations,t.total_cents,t.legs,t.hit_rate_display]);
+  if(JSON.stringify(match.tickets.map(identity))!==JSON.stringify(seq.tickets.map(identity)))continue;
+  try{seq.review_probabilities=normalizeReviewProbabilities(match.review_probabilities,seq.race_fields,seq.tickets,"Published sequence");repaired=true;}catch{}
+ }
+ if(!card.post_times_by_race&&row.post_times_by_race)card.post_times_by_race=normalizedPostTimes(row.post_times_by_race);
+ return repaired;
 }
 
 export async function publishGPTPickTicketReviews(env){
@@ -246,7 +315,8 @@ export async function publishGPTPickTicketReviews(env){
   const date=source?.date,track=source?.track;
   try{
    const customerCard=normalizePickTickets({...source,publication_mode:"owner-approved-gpt",
-    ...(row.scratches_by_race?{scratches_by_race:row.scratches_by_race}:{})});
+    ...(row.scratches_by_race?{scratches_by_race:row.scratches_by_race}:{}),
+    ...(row.post_times_by_race?{post_times_by_race:row.post_times_by_race}:{})});
    const customerKey=CUSTOMER_PREFIX+customerCard.date+"/"+slug(customerCard.track)+".json";
    const customerJson=JSON.stringify(customerCard),customerHash=await sha256(customerJson);
    const prior=await env.CARDS_BUCKET.get(customerKey);
@@ -516,7 +586,7 @@ export async function handleAdminPickTickets(request,env){
   }
   let customerCard;
   const scratches=publicScratches(ownerRelease?source.scratches_by_race:row?.scratches_by_race);
-  try{customerCard={...normalizePickTickets(card),...(scratches?{scratches_by_race:scratches}:{})};}catch{
+  try{customerCard=normalizePickTickets({...card,...(scratches?{scratches_by_race:scratches}:{}),...(row?.post_times_by_race?{post_times_by_race:row.post_times_by_race}:{})});}catch{
    held.push({date:source.date,track:source.track,reason:"The customer edition failed structural validation."});
    continue;
   }

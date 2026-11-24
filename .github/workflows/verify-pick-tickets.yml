@@ -64,6 +64,8 @@ jobs:
           node --check src/pick-tickets-scratch-1123.js
           node --check src/index.js
           node --check public/assets/pick-tickets-dashboard.js
+      - name: Protected customer PWIN round trip and entitlement regression
+        run: node test-pick-tickets-customer-pwin.mjs
       - name: Certified input, ticket integrity, revisions and private-route regression
         run: node test-pick-tickets.mjs
       - name: Frozen V3.2 Python mathematical parity and scratch guards

@@ -41,6 +41,7 @@ function publicPick(item){
    play_status:sequence.play_status,hit_rate_display:sequence.hit_rate_display,
    recommendation:text(sequence.recommendation,1500),
    ...(Array.isArray(sequence.race_fields)?{race_fields:sequence.race_fields.map(f=>({race_number:f.race_number,programs:f.programs}))}:{}),
+   ...(sequence.review_probabilities?{review_probabilities:sequence.review_probabilities}:{}),
    tickets:(sequence.tickets||[]).map(ticket=>({
     role:ticket.role,title:ticket.title,unit_cents:ticket.unit_cents,
     combinations:ticket.combinations,total_cents:ticket.total_cents,
