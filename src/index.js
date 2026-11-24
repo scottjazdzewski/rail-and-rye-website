@@ -16,7 +16,7 @@ import {purgeExpiredRacePdfs} from './race-pdf-expiry.js';
 import {handleMembershipApi,handleAdminMembershipPlans,reconcileMemberships,ownerSessionCookie,openVerifiedOwnerHub} from './memberships.js';
 import {handleProductTabs} from './product-tabs.js';
 import {serveCustomerReader,customerReaderPath} from './customer-readers.js';
-import {hasProductTabData} from './product-tab-content.js';
+import {readyProductTabProductIds} from './product-tab-content.js';
 import {handleRaceCardAlerts,syncRaceCardAnnouncement,sendRaceCardAlerts} from './race-card-alerts.js';
 /* Rail & Rye admin MVP. Dependencies: Cloudflare Workers, R2, D1, Cloudflare Access.
    Admin routes FAIL CLOSED until ACCESS_TEAM_DOMAIN, ACCESS_AUD and ADMIN_EMAIL
@@ -173,12 +173,17 @@ async function handleAdminAPI(request,env,pathname,ctx) {
   if(pathname==="/api/admin/products") {
     if(request.method==="GET") {
       const result=await env.STORE_DB.prepare("SELECT p.*,s.release_at FROM products p LEFT JOIN product_release_schedule s ON s.product_id=p.id WHERE (p.pdf_key IS NULL OR p.pdf_key != '__rr_bundle__') AND NOT EXISTS (SELECT 1 FROM bundle_only_assets a WHERE a.product_id=p.id) ORDER BY p.created_at DESC, p.id DESC LIMIT 250").all();
-      const rows=result.results||[],products=await Promise.all(rows.map(async p=>{
+      const rows=result.results||[];
+      const readyRows=rows.filter(p=>{
         const expiry=Date.parse(String(p.pdf_expires_at||'').replace(' ','T')+'Z');
-        if(p.status==='archived'||!Number.isFinite(expiry)||expiry<=Date.now())return {...p,tab_content_ready:null};
-        const ready=await hasProductTabData(env,p.category,p.race_date,[p]);
-        return {...p,tab_content_ready:ready};
-      }));
+        return p.status!=='archived'&&Number.isFinite(expiry)&&expiry>Date.now();
+      });
+      const readyIds=await readyProductTabProductIds(env,readyRows);
+      const products=rows.map(p=>{
+        const expiry=Date.parse(String(p.pdf_expires_at||'').replace(' ','T')+'Z');
+        const active=p.status!=='archived'&&Number.isFinite(expiry)&&expiry>Date.now();
+        return {...p,tab_content_ready:active?readyIds.has(p.id):null};
+      });
       return json({products});
     }
     if(request.method==="POST") {
