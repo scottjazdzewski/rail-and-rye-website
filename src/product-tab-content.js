@@ -5,7 +5,7 @@ import {readTargetListEdition} from './target-list.js';
 
 export const PRODUCT_TAB_CATEGORIES=['Race Cards','Pick Tickets','Longshot Radar','Target List'];
 const text=(value,max=500)=>typeof value==='string'?value.slice(0,max):'';
-const num=value=>Number.isFinite(Number(value))?Number(value):null;
+const num=value=>value==null||value===''?null:(Number.isFinite(Number(value))?Number(value):null);
 function publicProjection(card){
  return {race_date:card.race_date,track_name:card.track_name,
   races:(card.races||[]).map(race=>({
@@ -72,7 +72,7 @@ function publicTarget(edition){
 }
 
 export async function readProductTabEdition(env,category,raceDate,products=[]){
- if(!PRODUCT_TAB_CATEGORIES.includes(category)||!/^\\d{4}-\\d{2}-\\d{2}$/.test(String(raceDate||'')))return null;
+ if(!PRODUCT_TAB_CATEGORIES.includes(category)||!/^\d{4}-\d{2}-\d{2}$/.test(String(raceDate||'')))return null;
  if(category==='Race Cards'){
   const eligible=(products||[]).filter(p=>p.category==='Race Cards'&&p.race_date===raceDate);
   if(!eligible.length)return null;
