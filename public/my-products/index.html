@@ -96,7 +96,7 @@ const dollars=value=>Number.isFinite(Number(value))?'$'+(Number(value)/100).toFi
 function titleFor(row){
  let title=String(row?.stakes_name||row?.race_name||'').trim()
   .replace(/\s+(?:presented by|sponsored by)\s+.*$/i,'')
-  .replace(/\bS\.\s*$/i,' Stakes')
+  .replace(/\bS\.?\s*$/i,' Stakes')
   .trim();
  if(!title||/^(?:(?:overnight|listed|graded|ungraded|restricted|open|non-graded)\s+)?(?:stake|stakes|stks?\.?|s\.?)\s*(?:\(?(?:g[123]|grade\s*[123])\)?)?$/i.test(title))
   return 'Race '+String(row?.race_number??'');
