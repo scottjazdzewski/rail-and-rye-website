@@ -5,6 +5,7 @@ import {enrichRaceInformation} from "./projection-race-information.js";
    checks in the Product Tabs route. */
 const HEADERS={"Content-Type":"application/json; charset=utf-8","Cache-Control":"private, no-store","X-Content-Type-Options":"nosniff","X-Robots-Tag":"noindex, nofollow, noarchive"};
 const PREFIX="racing-intelligence/target-list/";
+const GPT_RELEASE_PREFIX="racing-intelligence/product-tabs/target-list/";
 const MAX_BYTES=512*1024;
 const response=(value,status=200)=>new Response(JSON.stringify(value),{status,headers:HEADERS});
 const fail=(message,status=400)=>response({error:message},status);
@@ -101,6 +102,89 @@ export function validateTargetList(input){
  return {schema_version:1,product_type:"target_list",race_date:input.race_date,revision:input.revision,
   status:input.status,source:{receipt_id,sha256:sha256.toLowerCase()},targets};
 }
+function validateGPTReleasedTargetList(input){
+ if(!object(input)||input.schema_version!==1||input.product_type!=="target_list"||
+    input.publication_mode!=="owner-approved-gpt")throw Error("Expected an owner-released GPT Target List.");
+ if(!dateValid(input.race_date))throw Error("Valid race_date is required.");
+ if(!Number.isInteger(input.revision)||input.revision<1||input.revision>10000)throw Error("Revision must be a positive integer.");
+ if(!["initial","scratch_update","editorial_update"].includes(input.status))throw Error("Invalid GPT Target List status.");
+ if(!object(input.source)||!/^[a-f0-9]{64}$/i.test(input.source.editorial_sha256||""))
+  throw Error("The GPT Target List must retain its editorial source checksum.");
+ if(!Array.isArray(input.targets)||input.targets.length<1||input.targets.length>100)
+  throw Error("A live Target List must contain 1–100 selected races.");
+ const ranks=new Set(),races=new Set();
+ const liveRunner=(value,label)=>{
+  if(!object(value))throw Error(label+" must contain a horse.");
+  const program_number=field(value.program_number,label+" saddlecloth",4);
+  if(!/^\d{1,2}[A-Za-z]?$/.test(program_number))throw Error(label+" saddlecloth must be a valid program number.");
+  const horse_name=field(value.horse_name,label+" horse",120);
+  const morning_line=field(value.morning_line,label+" morning line",24);
+  const fair_odds=field(value.fair_odds,label+" fair odds",32);
+  if(typeof value.win_probability!=="number"||!Number.isFinite(value.win_probability)||value.win_probability<0||value.win_probability>100)
+   throw Error(label+" needs its stored displayed probability.");
+  return {program_number,horse_name,morning_line,win_probability:value.win_probability,fair_odds,
+   trainer:field(value.trainer,label+" trainer",100,false),jockey:field(value.jockey,label+" jockey",100,false)};
+ };
+ const targets=input.targets.map((entry,index)=>{
+  if(!object(entry))throw Error("Target "+(index+1)+" must be a record.");
+  if(!Number.isInteger(entry.rank)||entry.rank<1||entry.rank>10000||ranks.has(entry.rank))throw Error("Each target needs a distinct positive rank.");
+  ranks.add(entry.rank);
+  const track=field(entry.track,"Target track",100);
+  if(!Number.isInteger(entry.race_number)||entry.race_number<1||entry.race_number>99)throw Error("Target race number must be supplied.");
+  const identity=track.toLowerCase()+"|"+entry.race_number;
+  if(races.has(identity))throw Error("Duplicate target race.");
+  races.add(identity);
+  const favorite=liveRunner(entry.favorite,"Favorite"),attack=liveRunner(entry.attack,"ATTACK");
+  if(attack.program_number===favorite.program_number||attack.win_probability<=favorite.win_probability)
+   throw Error("ATTACK must remain distinct from and rate above the favorite.");
+  if(entry.also_live!=null)throw Error("This GPT review has no verified secondary runner.");
+  const scratches=entry.scratches==null?[]:entry.scratches;
+  if(!Array.isArray(scratches)||scratches.length>40)throw Error("Invalid scratch list.");
+  return {rank:entry.rank,track,race_number:entry.race_number,tier:field(entry.tier,"Target tier",16,false).toUpperCase(),
+   post_time_et:field(entry.post_time_et,"Post time",40,false),surface:field(entry.surface,"Surface",50,false),
+   distance:field(entry.distance,"Distance",80,false),conditions:field(entry.conditions,"Conditions",200,false),
+   race_name:field(entry.race_name,"Race name",240,false),stakes_name:field(entry.stakes_name,"Canonical stakes name",240,false),
+   stakes_grade:field(entry.stakes_grade,"Stakes grade",24,false),sponsor_name:field(entry.sponsor_name,"Race sponsor",120,false),
+   is_stakes:entry.is_stakes===true,analysis:field(entry.analysis,"The Rail & Rye Analysis",4000),
+   favorite,attack,also_live:null,scratches:scratches.map(item=>{
+    if(!object(item))throw Error("Scratch requires a horse and saddlecloth.");
+    const program_number=field(item.program_number,"Scratch number",4);
+    if(!/^\d{1,2}[A-Za-z]?$/.test(program_number))throw Error("Invalid scratch number.");
+    return {program_number,horse_name:field(item.horse_name,"Scratched horse",120)};
+   })};
+ });
+ targets.sort((a,b)=>a.rank-b.rank);
+ return {schema_version:1,product_type:"target_list",race_date:input.race_date,revision:input.revision,
+  status:input.status,publication_mode:"owner-approved-gpt",
+  source:{editorial_sha256:input.source.editorial_sha256.toLowerCase()},targets};
+}
+async function storeGPTReleasedTargetList(env,input){
+ const edition=validateGPTReleasedTargetList(input),raceDate=edition.race_date;
+ const certified=await findRevisions(env,raceDate);
+ if(certified[0]&&certified[0].revision>=edition.revision)
+  throw Error("A receipt-validated Target List edition already covers this revision.");
+ const key=GPT_RELEASE_PREFIX+raceDate+".json",sourceJson=JSON.stringify(edition),checksum=await sha256(sourceJson);
+ const prior=await env.CARDS_BUCKET.get(key);
+ if(prior){
+  const priorRevision=Number(prior.customMetadata?.revision||0);
+  if(priorRevision>edition.revision)throw Error("A newer GPT Target List is already live.");
+  if(priorRevision===edition.revision&&prior.customMetadata?.content_sha256!==checksum)
+   throw Error("This GPT Target List revision already exists with different content.");
+ }
+ await env.CARDS_BUCKET.put(key,sourceJson,{
+  httpMetadata:{contentType:"application/json; charset=utf-8",cacheControl:"private, no-store"},
+  customMetadata:{customer_publish_approved:"true",publication_mode:"owner-approved-gpt",
+   revision:String(edition.revision),content_sha256:checksum,source_sha256:edition.source.editorial_sha256,
+   published_at:new Date().toISOString()}
+ });
+ const written=await env.CARDS_BUCKET.get(key);
+ if(!written||await sha256(await written.text())!==checksum)throw Error("GPT Target List read-back checksum did not match.");
+ const listing=env.STORE_DB?await publishGPTProductCatalogEntry(env,{category:"Target List",race_date:raceDate,track:"",
+  title:"Target List — "+raceDate}):null;
+ if(env.STORE_DB&&!listing?.published)throw Error("The Target List catalog listing was not created.");
+ return {race_date:raceDate,revision:edition.revision,targets:edition.targets.length,product_id:listing?.id||null};
+}
+
 const keyFor=(date,revision)=>PREFIX+date+"/revision-"+String(revision).padStart(4,"0")+".json";
 async function findRevisions(env,date){
  const found=[];
@@ -161,8 +245,19 @@ export async function handleAdminTargetList(request,env,url){
  let raw;
  try{raw=await request.text();}catch{return fail("Could not read the submitted JSON.");}
  if(new TextEncoder().encode(raw).byteLength>MAX_BYTES)return fail("Target List exceeds the private upload limit.",413);
+ let payload;try{payload=JSON.parse(raw);}catch{return fail("Invalid Target List JSON.",400);}
  let edition;
- try{edition=validateTargetList(JSON.parse(raw));}catch(e){return fail(String(e.message||"Invalid Target List."),400);}
+ try{edition=validateTargetList(payload);}catch(error){
+  if(payload?.publication_mode==="owner-approved-gpt"||payload?.review_only===true||payload?.customer_publish_approved===false){
+   try{
+    const ownerPayload={...payload,publication_mode:"owner-approved-gpt",
+     source:{editorial_sha256:payload?.source?.editorial_sha256||payload?.source?.revised_editorial_sha256}};
+    const released=await storeGPTReleasedTargetList(env,ownerPayload);
+    return response({ok:true,published:true,publication_mode:"owner-approved-gpt",...released},201);
+   }catch(releaseError){return fail(String(releaseError.message||"Could not publish GPT Target List."),400);}
+  }
+  return fail(String(error.message||"Invalid Target List."),400);
+ }
  const revisions=await findRevisions(env,edition.race_date),latest=revisions[0];
  const objectKey=keyFor(edition.race_date,edition.revision);
  const sourceJson=JSON.stringify(edition),checksum=await sha256(sourceJson);
@@ -203,11 +298,28 @@ async function readEdition(env,selected,dates){
 
 export async function readTargetListEdition(env,raceDate){
  if(!env.CARDS_BUCKET||!dateValid(raceDate))return null;
+ let certified=null;
  const revisions=await findRevisions(env,raceDate),latest=revisions[0];
- if(!latest)return null;
- const object=await env.CARDS_BUCKET.get(latest.key);if(!object)return null;
- const edition=validateTargetList(JSON.parse(await object.text()));
- if(edition.race_date!==raceDate||edition.revision!==latest.revision)return null;
+ if(latest){
+  const object=await env.CARDS_BUCKET.get(latest.key);
+  if(object)try{
+   const edition=validateTargetList(JSON.parse(await object.text()));
+   if(edition.race_date===raceDate&&edition.revision===latest.revision)certified=edition;
+  }catch{}
+ }
+ let gptRelease=null;
+ const released=await env.CARDS_BUCKET.get(GPT_RELEASE_PREFIX+raceDate+".json");
+ if(released&&released.customMetadata?.customer_publish_approved==="true"&&
+    released.customMetadata?.publication_mode==="owner-approved-gpt")try{
+  const plain=await released.text();
+  if(released.customMetadata?.content_sha256===await sha256(plain)){
+   const edition=validateGPTReleasedTargetList(JSON.parse(plain));
+   if(edition.race_date===raceDate&&edition.revision===Number(released.customMetadata?.revision))
+    gptRelease=edition;
+  }
+ }catch{}
+ const edition=gptRelease&&(!certified||gptRelease.revision>certified.revision)?gptRelease:certified;
+ if(!edition)return null;
  const facts=await targetOriginalRaceFacts(env,raceDate);
  return {...edition,targets:edition.targets.map(entry=>enrichTargetRace(entry,facts))};
 }
@@ -342,4 +454,30 @@ export async function readAdminTargetListReview(env,url){
  const displayEdition={...edition,targets:edition.targets.map(entry=>enrichTargetRace(entry,raceFacts))};
  return response({dates,edition:displayEdition,review_only:true,demo_example:false,
   uploaded_at:obj.customMetadata?.uploaded_at||null});
+}
+
+export async function publishGPTTargetListReviews(env){
+ if(!env?.CARDS_BUCKET)throw Error("Private Target List review storage is not configured.");
+ const keys=[];let cursor;
+ do{
+  const page=await env.CARDS_BUCKET.list({prefix:REVIEW_PREFIX,limit:1000,...(cursor?{cursor}:{})});
+  for(const item of page.objects||[])keys.push(item.key);
+  cursor=page.truncated?page.cursor:null;
+  if(page.truncated&&!cursor)throw Error("Target List review inventory is incomplete.");
+  if(keys.length>10000)throw Error("Target List review inventory is too large.");
+ }while(cursor);
+ const dates=[...new Set(keys.map(key=>/^racing-intelligence\/target-list-review\/(\d{4}-\d{2}-\d{2})\/revision-\d{4}\.json$/.exec(key)?.[1]).filter(Boolean))].sort().reverse();
+ const published=[],skipped=[];
+ for(const raceDate of dates){
+  try{
+   const response=await readAdminTargetListReview(env,new URL("https://internal.invalid/api/admin/target-list-review?date="+raceDate));
+   if(!response.ok)throw Error("The dated Target List review failed integrity checks.");
+   const body=await response.json(),review=body.edition;
+   if(!review||!Array.isArray(review.targets)||!review.targets.length)throw Error("No staged Target List edition has publishable targets.");
+   const released=await storeGPTReleasedTargetList(env,{...review,publication_mode:"owner-approved-gpt",
+    source:{editorial_sha256:review.source?.editorial_sha256}});
+   published.push({...released,category:"Target List"});
+  }catch(error){skipped.push({category:"Target List",race_date:raceDate,reason:String(error.message||error).slice(0,180)});}
+ }
+ return {published,skipped};
 }

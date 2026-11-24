@@ -109,32 +109,43 @@ function normalizeSequence(s,index){
   tickets,...(s.race_fields!==undefined?{race_fields}:{})};
 }
 export function normalizePickTickets(input){
- if(!obj(input)||input.schema_version!==1||input.product_type!=="pick_tickets")throw Error("Expected certified Pick Tickets schema version 1.");
+ if(!obj(input)||input.schema_version!==1||input.product_type!=="pick_tickets")throw Error("Expected Pick Tickets schema version 1.");
  if(!validDate(input.date))throw Error("A real YYYY-MM-DD race date is required.");
  const track=text(input.track,"Track",100);
  if(!slug(track))throw Error("Invalid track.");
  const revision=integer(input.revision,"Revision",1,99999);
  const status=text(input.status,"Source status",30);
  if(!["initial_current","scratch_updated"].includes(status))throw Error("Source status must be initial_current or scratch_updated.");
- if(!obj(input.source_receipt))throw Error("Production receipt required.");
- const reference=text(input.source_receipt.reference,"Production receipt reference",160);
- const sha256=text(input.source_receipt.sha256,"Production receipt SHA256",64).toLowerCase();
- if(!/^[0-9a-f]{64}$/.test(sha256))throw Error("Source receipt SHA256 must be 64 hex characters.");
+ const ownerRelease=input.publication_mode==="owner-approved-gpt";
+ let sourceReceipt=null;
+ if(!ownerRelease){
+  if(!obj(input.source_receipt))throw Error("Production receipt required.");
+  const reference=text(input.source_receipt.reference,"Production receipt reference",160);
+  const sha256=text(input.source_receipt.sha256,"Production receipt SHA256",64).toLowerCase();
+  if(!/^[0-9a-f]{64}$/.test(sha256))throw Error("Source receipt SHA256 must be 64 hex characters.");
+  sourceReceipt={reference,sha256};
+ }
  const scratch_verified_at=input.scratch_verified_at==null?"":text(input.scratch_verified_at,"Scratch verified timestamp",36,false);
- if(status==="scratch_updated"&&(!scratch_verified_at||!Number.isFinite(Date.parse(scratch_verified_at))))throw Error("Scratch-updated editions require a verified scratch timestamp.");
- if(!Array.isArray(input.sequences)||input.sequences.length<1||input.sequences.length>80)throw Error("Include between 1 and 80 source-certified sequences.");
+ if(status==="scratch_updated"&&!ownerRelease&&(!scratch_verified_at||!Number.isFinite(Date.parse(scratch_verified_at))))throw Error("Scratch-updated editions require a verified scratch timestamp.");
+ if(!Array.isArray(input.sequences)||input.sequences.length<1||input.sequences.length>80)throw Error("Include between 1 and 80 Pick Ticket sequences.");
  const sequences=input.sequences.map(normalizeSequence);
  unique(sequences.map(s=>s.name+"|"+s.start_race+"|"+s.end_race),"Sequence identities");
  const formula_version=input.formula_version==null?"":text(input.formula_version,"Formula version",90,false);
- const source_input_sha256=input.source_input_sha256==null?"":text(input.source_input_sha256,
-  "Source field SHA-256",64,false).toLowerCase();
- if(source_input_sha256&&!/^[a-f0-9]{64}$/.test(source_input_sha256))
-  throw Error("Source input SHA-256 must be 64 hex.");
- if(formula_version===PICK_V33_ENGINE&&input.date==="2026-11-23"&&
-    PICK_MENU_1123.some(x=>x.track===track)&&!source_input_sha256)
+ const source_input_sha256=input.source_input_sha256==null?"":text(input.source_input_sha256,"Source field SHA-256",64,false).toLowerCase();
+ if(source_input_sha256&&!/^[a-f0-9]{64}$/.test(source_input_sha256))throw Error("Source input SHA-256 must be 64 hex.");
+ if(ownerRelease&&!/^[a-f0-9]{64}$/.test(source_input_sha256))throw Error("Owner-released GPT tickets must identify the source field.");
+ if(formula_version===PICK_V33_ENGINE&&input.date==="2026-11-23"&&PICK_MENU_1123.some(x=>x.track===track)&&!source_input_sha256)
   throw Error("Certified V3.3 Pick Tickets must identify the exact uploaded TRI field.");
+ const scratches=publicScratches(input.scratches_by_race);
  return {schema_version:1,product_type:"pick_tickets",date:input.date,track,revision,status,
-  formula_version,source_input_sha256,source_receipt:{reference,sha256},scratch_verified_at,sequences};
+  formula_version,source_input_sha256,...(sourceReceipt?{source_receipt:sourceReceipt}:{}),
+  ...(ownerRelease?{publication_mode:"owner-approved-gpt"}:{}),scratch_verified_at,sequences,
+  ...(scratches?{scratches_by_race:scratches}:{})};
+}
+function normalizeStoredPickTickets(raw){
+ const hasReceipt=obj(raw?.source_receipt)&&typeof raw.source_receipt.sha256==="string";
+ const hasSourceHash=typeof raw?.source_input_sha256==="string"&&/^[a-f0-9]{64}$/i.test(raw.source_input_sha256);
+ return normalizePickTickets(!hasReceipt&&hasSourceHash?{...raw,publication_mode:"owner-approved-gpt"}:raw);
 }
 async function sha256(source){
  const bytes=new TextEncoder().encode(source);
@@ -152,7 +163,11 @@ async function parseBody(request){
  if(raw.length<1||raw.length>25)throw Error("Upload 1–25 track editions per batch.");
  // Admin-only mock fixtures are never valid published/source-certified data.
  if(raw.some(c=>c?.is_demo||c?.status==="demo"||c?.source_receipt?.reference?.startsWith("MOCK-")||c?.source_receipt?.sha256==="0".repeat(64)))throw Error("Mock layout selections cannot be uploaded as certified tickets.");
- const cards=raw.map(normalizePickTickets);
+ const cards=raw.map(card=>{
+  const hasReceipt=obj(card?.source_receipt)&&typeof card.source_receipt.sha256==="string";
+  const hasSourceHash=typeof card?.source_input_sha256==="string"&&/^[a-f0-9]{64}$/i.test(card.source_input_sha256);
+  return normalizePickTickets(!hasReceipt&&hasSourceHash?{...card,publication_mode:"owner-approved-gpt"}:card);
+ });
  unique(cards.map(c=>currentKey(c)),"Track/date editions");
  return cards;
 }
@@ -162,7 +177,7 @@ async function readCards(env){
   try{
    const file=await env.CARDS_BUCKET.get(obj.key);
    if(!file)return null;
-   const card=normalizePickTickets(JSON.parse(await file.text()));
+   const card=normalizeStoredPickTickets(JSON.parse(await file.text()));
    // Authenticated administrator-only R2 audit allows source-based custom
    // ticket hit recalculation after the model's actual scratch-final run.
    // Never put private runner PWIN in a public JS file, git JSON or open route.
@@ -211,11 +226,54 @@ export async function readPublishedPickTicketCards(env,raceDate){
   if(!file||file.customMetadata?.customer_publish_approved!=="true")continue;
   try{
    const raw=JSON.parse(await file.text());
+   const ownerRelease=raw?.publication_mode==="owner-approved-gpt";
+   if(ownerRelease!== (file.customMetadata?.publication_mode==="owner-approved-gpt"))continue;
    const card=normalizePickTickets(raw),scratches=publicScratches(raw?.scratches_by_race);
    if(card.date===match[1])cards.push({...card,...(scratches?{scratches_by_race:scratches}:{})});
   }catch(error){console.warn("Invalid published Pick Tickets edition skipped",object.key,String(error).slice(0,100));}
  }
  return cards.sort((a,b)=>b.date.localeCompare(a.date)||a.track.localeCompare(b.track));
+}
+
+export async function publishGPTPickTicketReviews(env){
+ if(!env?.CARDS_BUCKET)throw Error("Private Pick Tickets storage is not configured.");
+ const response=await handleAdminPickTickets(new Request("https://internal.invalid/api/admin/pick-tickets",{method:"GET"}),env);
+ if(!response.ok)throw Error("Pick Tickets review inventory is unavailable.");
+ const body=await response.json(),published=[],skipped=[];
+ for(const row of body.cards||[]){
+  if(row?.review_only!==true)continue;
+  const source=row?.card||row;
+  const date=source?.date,track=source?.track;
+  try{
+   const customerCard=normalizePickTickets({...source,publication_mode:"owner-approved-gpt",
+    ...(row.scratches_by_race?{scratches_by_race:row.scratches_by_race}:{})});
+   const customerKey=CUSTOMER_PREFIX+customerCard.date+"/"+slug(customerCard.track)+".json";
+   const customerJson=JSON.stringify(customerCard),customerHash=await sha256(customerJson);
+   const prior=await env.CARDS_BUCKET.get(customerKey);
+   if(prior){
+    const priorRevision=Number(prior.customMetadata?.revision||0);
+    if(priorRevision>customerCard.revision)throw Error("A newer customer edition is already published.");
+    if(priorRevision===customerCard.revision){
+     const priorText=await prior.text();
+     if(await sha256(priorText)!==customerHash)throw Error("This revision already exists with different content.");
+    }
+   }
+   const publishedAt=new Date().toISOString();
+   await env.CARDS_BUCKET.put(customerKey,customerJson,{
+    httpMetadata:{contentType:"application/json; charset=utf-8",cacheControl:"private, no-store"},
+    customMetadata:{customer_publish_approved:"true",publication_mode:"owner-approved-gpt",
+     revision:String(customerCard.revision),content_sha256:customerHash,
+     source_sha256:customerCard.source_input_sha256,published_at:publishedAt}
+   });
+   const written=await env.CARDS_BUCKET.get(customerKey);
+   if(!written||await sha256(await written.text())!==customerHash)throw Error("R2 read-back checksum did not match.");
+   const listing=env.STORE_DB?await publishGPTProductCatalogEntry(env,{category:"Pick Tickets",race_date:customerCard.date,track:customerCard.track,
+    title:customerCard.track+" — "+customerCard.date+" Pick Tickets"}):null;
+   if(env.STORE_DB&&!listing?.published)throw Error("The store catalog listing was not created.");
+   published.push({date:customerCard.date,track:customerCard.track,revision:customerCard.revision,product_id:listing?.id||null});
+  }catch(error){skipped.push({date,track,reason:String(error.message||error).slice(0,180)});}
+ }
+ return {published,skipped,source_rejections:body.source_rejections||[]};
 }
 
 export async function handleAdminPickTickets(request,env){
@@ -403,7 +461,7 @@ export async function handleAdminPickTickets(request,env){
    const key=currentKey(card),data=JSON.stringify(card),hash=await sha256(data);
    const prior=await env.CARDS_BUCKET.get(key);
    if(prior){
-    const previous=normalizePickTickets(JSON.parse(await prior.text()));
+    const previous=normalizeStoredPickTickets(JSON.parse(await prior.text()));
     const oldHash=await sha256(JSON.stringify(previous));
     if(card.revision<previous.revision)throw Error(card.track+": revision rollback rejected.");
     if(previous.status==="scratch_updated"&&card.status==="initial_current")throw Error(card.track+": scratch-updated edition cannot be replaced with initial data.");
@@ -417,7 +475,10 @@ export async function handleAdminPickTickets(request,env){
  for(const item of toWrite){
   const updatedAt=new Date().toISOString();
   try{
-   const metadata={content_sha256:item.hash,updated_at:updatedAt,receipt_sha256:item.card.source_receipt.sha256};
+   const metadata={content_sha256:item.hash,updated_at:updatedAt,
+    ...(item.card.source_receipt?{receipt_sha256:item.card.source_receipt.sha256}:{}),
+    ...(item.card.publication_mode?{publication_mode:item.card.publication_mode}:{}),
+    ...(item.card.source_input_sha256?{source_sha256:item.card.source_input_sha256}:{})};
    const options={httpMetadata:{contentType:"application/json; charset=utf-8",cacheControl:"private, no-store"},customMetadata:metadata};
    await env.CARDS_BUCKET.put(revisionKey(item.card,item.hash),item.data,options);
    await env.CARDS_BUCKET.put(item.key,item.data,options);
@@ -429,30 +490,34 @@ export async function handleAdminPickTickets(request,env){
 // A successful GPT-window push is the Pick Tickets publication event.
  // Rebuild from the existing exact-field audit before creating the customer copy;
  // the admin review response itself remains private.
- const verification=await handleAdminPickTickets(new Request("https://internal.invalid/api/admin/pick-tickets",{method:"GET"}),env);
- if(!verification.ok)return respond({ok:false,updated,error:"Pick Tickets saved, but publication verification is unavailable."},503);
- const verified=await verification.json();
+ let verified={cards:[],source_rejections:[],latest_field_versions:[]};
+ if(cards.some(card=>card.publication_mode!=="owner-approved-gpt")){
+  const verification=await handleAdminPickTickets(new Request("https://internal.invalid/api/admin/pick-tickets",{method:"GET"}),env);
+  if(!verification.ok)return respond({ok:false,updated,error:"Pick Tickets saved, but publication verification is unavailable."},503);
+  verified=await verification.json();
+ }
  const published=[],held=[];
  for(const source of cards){
-  const blocked=(verified.source_rejections||[]).some(item=>item.track===source.track);
-  const row=(verified.cards||[]).find(item=>{
+  const ownerRelease=source.publication_mode==="owner-approved-gpt";
+  const blocked=ownerRelease?false:(verified.source_rejections||[]).some(item=>item.track===source.track);
+  const row=ownerRelease?null:(verified.cards||[]).find(item=>{
    const card=item?.card||item;
    return card?.date===source.date&&card?.track===source.track;
   });
-  const card=row?.card||row;
-  if(blocked||!card){
+  const card=ownerRelease?source:(row?.card||row);
+  if(!ownerRelease&&(blocked||!card)){
    held.push({date:source.date,track:source.track,reason:"Current source audit did not approve this edition for customer access."});
    continue;
   }
-  const sourceVersion=(verified.latest_field_versions||[]).find(item=>item.date===source.date&&item.track===source.track);
-  if(row?.review_only===true&&(!sourceVersion||card.source_input_sha256!==sourceVersion.sha256)){
+  const sourceVersion=ownerRelease?null:(verified.latest_field_versions||[]).find(item=>item.date===source.date&&item.track===source.track);
+  if(!ownerRelease&&row?.review_only===true&&(!sourceVersion||card.source_input_sha256!==sourceVersion.sha256)){
    held.push({date:source.date,track:source.track,reason:"The customer copy did not match the verified source field."});
    continue;
   }
   let customerCard;
-  const scratches=publicScratches(row?.scratches_by_race);
+  const scratches=publicScratches(ownerRelease?source.scratches_by_race:row?.scratches_by_race);
   try{customerCard={...normalizePickTickets(card),...(scratches?{scratches_by_race:scratches}:{})};}catch{
-   held.push({date:source.date,track:source.track,reason:"The audited customer edition failed validation."});
+   held.push({date:source.date,track:source.track,reason:"The customer edition failed structural validation."});
    continue;
   }
   const customerKey=CUSTOMER_PREFIX+customerCard.date+"/"+slug(customerCard.track)+".json";
@@ -462,7 +527,10 @@ export async function handleAdminPickTickets(request,env){
    await env.CARDS_BUCKET.put(customerKey,customerJson,{
     httpMetadata:{contentType:"application/json; charset=utf-8",cacheControl:"private, no-store"},
     customMetadata:{customer_publish_approved:"true",revision:String(customerCard.revision),
-     content_sha256:customerHash,source_sha256:customerCard.source_receipt.sha256,published_at:publishedAt}
+     content_sha256:customerHash,published_at:publishedAt,
+     ...(customerCard.source_receipt?{source_sha256:customerCard.source_receipt.sha256}:{}),
+     ...(customerCard.publication_mode?{publication_mode:customerCard.publication_mode,
+       source_sha256:customerCard.source_input_sha256}:{})}
    });
    const written=await env.CARDS_BUCKET.get(customerKey);
    if(!written||await sha256(await written.text())!==customerHash)throw Error("R2 read-back checksum did not match.");

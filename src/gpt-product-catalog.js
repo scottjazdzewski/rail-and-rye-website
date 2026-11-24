@@ -90,10 +90,10 @@ export async function handleAdminGPTProductCatalog(request,env,bundleHandler,syn
  const raw=await request.text();
  if(raw.length>12000)return bad("Request too large",413);
  let body;try{body=JSON.parse(raw);}catch{return bad("Invalid JSON",400);}
- if(body?.action==="sync_existing"){
+ if(body?.action==="sync_existing"||body?.action==="publish_gpt_reviews"){
   if(typeof syncHandler!=="function")return bad("Catalog synchronization is unavailable.",503);
-  try{return out(await syncHandler(env));}
-  catch(error){console.error("GPT catalog sync failed",String(error).slice(0,140));return bad("Could not sync existing live GPT editions.",503);}
+  try{return out(await syncHandler(env,body.action));}
+  catch(error){console.error("GPT catalog publication failed",String(error).slice(0,140));return bad("Could not publish the staged GPT editions.",503);}
  }
  if(body?.action==="price"){
   const id=String(body.product_id||"");

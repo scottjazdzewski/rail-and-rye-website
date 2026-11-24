@@ -252,7 +252,7 @@ export async function publishLongshotRadarTab(env,raceDate){
     throw Error("A newer Longshot Radar tab revision is already published.");
   await env.CARDS_BUCKET.put(destination,raw,{
     httpMetadata:{contentType:"application/json; charset=utf-8",cacheControl:"private, no-store"},
-    customMetadata:{customer_publish_approved:"true",source_review_only:"true",revision:String(edition.revision)}
+    customMetadata:{customer_publish_approved:"true",publication_mode:"owner-approved-gpt",revision:String(edition.revision)}
   });
   return {race_date:raceDate,revision:edition.revision,candidates:edition.candidates.length};
 }
