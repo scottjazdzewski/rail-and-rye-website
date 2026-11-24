@@ -1,0 +1,74 @@
+name: Verify current entitled Pick Tickets PWIN
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/verify-pick-customer-pwin-live.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: pip install boto3==1.40.36
+      - name: Read approved editions and current verified fields privately
+        env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+        run: |
+          python - <<'PY'
+          import os,json,boto3
+          from pathlib import Path
+          from botocore.exceptions import ClientError
+          s3=boto3.client("s3",endpoint_url="https://"+os.environ["TRI_CLOUDFLARE_ACCOUNT_ID"].strip()+".r2.cloudflarestorage.com",region_name="auto",aws_access_key_id=os.environ["TRI_R2_ACCESS_KEY_ID"].strip(),aws_secret_access_key=os.environ["TRI_R2_SECRET_ACCESS_KEY"].strip())
+          bucket="rail-and-rye-private-cards"
+          day="2026-11-24"
+          keys=[f"pick-tickets/interim/{day}/revision-{i:04d}.json" for i in range(1,10)]
+          for prefix in [f"racing-intelligence/product-tabs/pick-tickets/{day}/",f"projections/dashboard/{day}/",f"pick-tickets/dashboard/{day}/",f"pick-tickets/field-audit/{day}/"]:
+              for page in s3.get_paginator("list_objects_v2").paginate(Bucket=bucket,Prefix=prefix):
+                  keys.extend(x["Key"] for x in page.get("Contents",[]))
+          result={}
+          for k in set(keys):
+              try:
+                  o=s3.get_object(Bucket=bucket,Key=k)
+                  result[k]={"raw":o["Body"].read().decode(),"metadata":o.get("Metadata",{})}
+              except ClientError as e:
+                  if e.response.get("Error",{}).get("Code") not in ("NoSuchKey","404","NotFound"):raise
+          Path("/tmp/rr-pwin-customer-private.json").write_text(json.dumps(result))
+          PY
+      - name: Validate customer response against real published edition
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          import assert from 'node:assert/strict';
+          import {readPublishedPickTicketCards,handleAdminPickTickets} from './src/pick-tickets.js';
+          import {readProductTabEdition} from './src/product-tab-content.js';
+          const input=JSON.parse(fs.readFileSync('/tmp/rr-pwin-customer-private.json','utf8'));
+          const bucket={async list({prefix}){return {objects:Object.keys(input).filter(k=>k.startsWith(prefix)).map(key=>({key}))}},async get(key){const v=input[key];return v?{text:async()=>v.raw,json:async()=>JSON.parse(v.raw),customMetadata:v.metadata}:null}};
+          const env={CARDS_BUCKET:bucket},date='2026-11-24';
+          const approved=await readPublishedPickTicketCards(env,date);
+          const admin=await (await handleAdminPickTickets(new Request('https://internal.invalid/api/admin/pick-tickets'),env)).json();
+          const products=approved.map(c=>({id:c.track,category:'Pick Tickets',race_date:date,track:c.track,title:c.track}));
+          const edition=await readProductTabEdition(env,'Pick Tickets',date,products);
+          const summary=[];
+          for(const c of approved){
+            const a=admin.cards.find(r=>r.card.date===date&&r.card.track===c.track);
+            const customer=edition?.cards.find(r=>r.track===c.track);
+            summary.push({track:c.track,revision:c.revision,sourceMatch:c.source_input_sha256===a?.card.source_input_sha256,formulaMatch:c.formula_version===a?.card.formula_version,sequenceCount:c.sequences.length,coverageReady:customer?.sequences.filter(s=>s.review_probabilities).length||0,postTimes:!!customer?.post_times_by_race});
+          }
+          console.log('CUSTOMER_PWIN_STATUS',JSON.stringify(summary));
+          assert.ok(approved.length,'No approved editions found');
+          assert.ok(summary.every(s=>s.coverageReady===s.sequenceCount),'Approved edition lacks matching complete PWIN');
+          JS
+      - if: always()
+        run: rm -f /tmp/rr-pwin-customer-private.json
