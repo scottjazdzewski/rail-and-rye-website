@@ -111,7 +111,7 @@ async function activate(request,env){
  if(!sig)return error('Tab access is temporarily unavailable.',503);
  const token=orderId+'.'+exp+'.'+sig;
  const maxAge=Math.max(0,expires-Math.floor(Date.now()/1000));
- return json({ok:true,next:'/my-products/'},200,{Set-Cookie:COOKIE+'='+encodeURIComponent(token)+'; Path=/; Max-Age='+maxAge+'; Secure; HttpOnly; SameSite=Lax'});
+ return json({ok:true,next:'/my-products/'},200,{'Set-Cookie':COOKIE+'='+encodeURIComponent(token)+'; Path=/; Max-Age='+maxAge+'; Secure; HttpOnly; SameSite=Lax'});
 }
 async function library(request,env){
  const [catalog,access]=await Promise.all([productCatalog(env),currentAccess(request,env)]);
