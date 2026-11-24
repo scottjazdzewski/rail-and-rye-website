@@ -194,6 +194,9 @@
   builderLegs=ticket?ticket.legs.map(l=>({race_number:l.race_number,programs:[...l.programs]})):[];
  }
  function scratchedInRace(race){
+  const item=entries.find(x=>x.card.track===E.track.value&&x.card.date===E.date.value);
+  const current=item?.scratches_by_race?.[String(race)];
+  if(Array.isArray(current))return current;
   if(scratchUpdate?.date!==E.date.value)return [];
   const track=scratchUpdate.tracks?.find(t=>t.name===E.track.value);
   return track?.scratches?.[String(race)]||[];

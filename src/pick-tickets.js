@@ -316,8 +316,13 @@ export async function handleAdminPickTickets(request,env){
     };
    }
    const postTimes=pickPostTimes(item.card,source);
+   const scratches={};
+   for(const race of source.races||[]){
+    if(race.scratches?.length)scratches[String(race.race_number)]=race.scratches.map(p=>String(typeof p==="object"?p.program_number:p).toUpperCase());
+   }
    return {...item,...(Object.keys(stakes).length?{stakes_by_race:stakes}:{}),
-    ...(Object.keys(postTimes).length?{post_times_by_race:postTimes}:{})};
+    ...(Object.keys(postTimes).length?{post_times_by_race:postTimes}:{}),
+    ...(Object.keys(scratches).length?{scratches_by_race:scratches}:{})};
   });
   // V3.4 is the owner-approved default from Nov 24. Earlier editions
   // remain historical V3.3; explicit baseline is a protected QA rollback view.

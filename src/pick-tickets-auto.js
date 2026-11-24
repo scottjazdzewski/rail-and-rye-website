@@ -1,3 +1,4 @@
+import {verifyNov24Scratch,readNov24ScratchHandoff,PICK_SCRATCH_1124_TRACKS,agreesWithNov24Scratch} from "./pick-tickets-scratch-1124.js";
 // Source-driven date-scoped Pick Ticket constructor, private admin preview only.
 // NEVER import or embed paid TRI data here. Read current full-field PWIN from private
 // R2 Projections on request; reject missing/mismatched exact model distributions.
@@ -197,7 +198,7 @@ export function buildV33ScratchFieldPreview(wrapped){
  if(!card||card.projection_status!=="scratch_final"||
     !["verified_prescratch","verified_scratch_final"].includes(card.factor_basis))
   return null;
- const official=verifyV32OwnerScratchSnapshot(card);
+ const official=card.race_date===PICK_DAY_1124?verifyNov24Scratch(card):verifyV32OwnerScratchSnapshot(card);
  if(!official.ok)return null;
  const view=buildTrackV33(card,wrapped);
  if(!view)return null;
@@ -285,8 +286,27 @@ export async function readPrivatePickProjections1124(env){
    return {card,uploaded_at:file.customMetadata?.uploaded_at||null};
   }catch(e){unavailable.add(track);console.warn("Unreadable November 24 private TRI source for Pick Tickets",track);return null}
  }));
- const direct=found.filter(Boolean);
- const names=new Set(direct.map(x=>x.card.track_name));
+ let direct=found.filter(Boolean);
+ const officialTracks=new Set(Object.keys(PICK_SCRATCH_1124_TRACKS));
+ const existing=new Map(direct.map(x=>[x.card.track_name,x.card]));
+ // Once official scratches are known, don't serve prescratch for these tracks.
+ // The private, score-verified handoff replaces only Pick's source, not Projections.
+ direct=direct.filter(x=>!officialTracks.has(x.card.track_name));
+ try{
+  const updates=await readNov24ScratchHandoff(env);
+  for(const item of updates){
+   const name=item.card.track_name,old=existing.get(name);
+   if(unavailable.has(name)||old&&!agreesWithNov24Scratch(old,item.card))continue;
+   // Preserve source-backed display metadata, but never copy old scores.
+   if(old)for(const r of item.card.races){
+    const original=old.races?.find(x=>x.race_number===r.race_number);
+    for(const k of ["stakes_name","race_name","conditions","stakes_grade","sponsor_name","is_stakes"])
+     if(original?.[k]!=null)r[k]=original[k];
+   }
+   if(checkedCurrentFields(item.card))direct.push(item);
+  }
+ }catch(e){console.warn("11/24 scratch source held",String(e).slice(0,100))}
+ const names=new Set([...direct.map(x=>x.card.track_name),...officialTracks]);
  // Exact scored handoff is a separate, prescratch-only Pick source.
  // Never supersede current projections or fall back after a read error.
  try {
