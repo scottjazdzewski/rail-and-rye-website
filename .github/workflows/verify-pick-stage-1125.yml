@@ -1,0 +1,60 @@
+name: Confirm November 25 Pick Tickets scheduled catalog receipt
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/verify-pick-stage-1125.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install boto3==1.40.36
+      - name: Read actual stage and scheduled catalog receipt without modifying site
+        env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+        run: |
+          python - <<'PY'
+          import os,json,hashlib,boto3
+          from botocore.exceptions import ClientError
+          s3=boto3.client("s3",endpoint_url="https://"+os.environ["TRI_CLOUDFLARE_ACCOUNT_ID"].strip()+".r2.cloudflarestorage.com",region_name="auto",aws_access_key_id=os.environ["TRI_R2_ACCESS_KEY_ID"].strip(),aws_secret_access_key=os.environ["TRI_R2_SECRET_ACCESS_KEY"].strip())
+          bucket="rail-and-rye-private-cards"
+          def read(k):
+              try:
+                  o=s3.get_object(Bucket=bucket,Key=k)
+                  return o["Body"].read(),o.get("Metadata",{})
+              except ClientError as e:
+                  if e.response.get("Error",{}).get("Code") in ("NoSuchKey","404","NotFound"):return None,{}
+                  raise
+          prefix="pick-tickets/staging/2026-11-25/"
+          raw,meta=read(prefix+"revision-0001.json")
+          assert raw and meta.get("stage_only")=="true"
+          digest=hashlib.sha256(raw).hexdigest()
+          assert meta.get("sha256")==digest and meta.get("release_at")=="2026-11-25T08:00:00Z"
+          stage=json.loads(raw)
+          print("STAGE_STORAGE_VERIFIED",len(stage["tracks"]),sum(len(x["card"]["sequences"]) for x in stage["tracks"]),meta["release_at"])
+          receipt,_=read(prefix+"prepared-0001.json")
+          if not receipt:
+              print("CATALOG_QUEUE_NOT_YET_CONFIRMED")
+              raise SystemExit(2)
+          r=json.loads(receipt)
+          assert r["sha256"]==digest and r["date"]=="2026-11-25" and r["release_at"]=="2026-11-25T08:00:00Z"
+          assert len(r["tracks"])==9 and sum(x["sequence_count"] for x in r["tracks"])==92
+          assert all(x["release_at"]=="2026-11-25 08:00:00" and x["product_id"] for x in r["tracks"])
+          for x in r["tracks"]:
+              import re
+              slug=re.sub("[^a-z0-9]+","-",x["track"].lower()).strip("-")
+              data,m=read("racing-intelligence/product-tabs/pick-tickets/2026-11-25/"+slug+".json")
+              assert data and m.get("customer_publish_approved")=="true"
+              card=json.loads(data)
+              assert card["date"]=="2026-11-25" and card["track"]==x["track"] and len(card["sequences"])==x["sequence_count"]
+              assert all(s.get("review_probabilities") for s in card["sequences"])
+          print("CATALOG_QUEUE_VERIFIED",r["prepared_at"],"9 tracks, 92 sequences, 08:00 UTC; customer objects read back.")
+          PY
