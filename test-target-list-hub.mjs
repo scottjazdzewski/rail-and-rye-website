@@ -204,7 +204,7 @@ assert.ok(tree(card,el=>el.className==="rr-target-analysis-text"&&el.textContent
 assert.ok(tree(card,el=>el.className==="rr-target-horse-row rr-target-attack"),"ATTACK appears in its own compact race row.");
 const racebar=tree(card,el=>el.className==="rr-research-racebar");
 assert.ok(racebar,"Race has integrated navy header.");
-assert.ok(tree(racebar,el=>el.className==="rr-research-racebar__facts"&&el.textContent==="6 furlongs · Dirt"),"Race facts sit fully within the banner.");
+assert.equal(textOf(tree(racebar,el=>el.className==="rr-research-racebar__facts")),"6 furlongs · Dirt","Race facts sit fully within the banner.");
 const namedCard=elements.get("rr-target-list").children.find(entry=>
  tree(entry,el=>el.tagName==="H3")?.textContent==="Synthetic Test Track");
 assert.ok(namedCard,"Stakes fixture must be rendered");
