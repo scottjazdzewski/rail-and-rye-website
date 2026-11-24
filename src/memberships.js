@@ -447,7 +447,7 @@ async function memberDetails(request,env){
     status:r.status,cancel_at_period_end:!!r.cancel_at_period_end,
     paid_through:new Date(Number(r.period_end)*1000).toISOString()
   }));
-  return json({active:true,email,subscriptions,library:await memberLibrary(env)});
+  return json({active:true,email,subscriptions,tabs_url:"/my-products/"});
 }
 async function logout(request,env){
   if(request.method!=="POST")return error("Method not allowed",405);
