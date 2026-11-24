@@ -172,7 +172,7 @@ async function handleAdminAPI(request,env,pathname,ctx) {
       const result=await env.STORE_DB.prepare("SELECT p.*,s.release_at FROM products p LEFT JOIN product_release_schedule s ON s.product_id=p.id WHERE (p.pdf_key IS NULL OR p.pdf_key != '__rr_bundle__') AND NOT EXISTS (SELECT 1 FROM bundle_only_assets a WHERE a.product_id=p.id) ORDER BY p.created_at DESC, p.id DESC LIMIT 250").all();
       const rows=result.results||[],products=await Promise.all(rows.map(async p=>{
         const expiry=Date.parse(String(p.pdf_expires_at||'').replace(' ','T')+'Z');
-        if(p.status!=='published'||!Number.isFinite(expiry)||expiry<=Date.now())return {...p,tab_content_ready:null};
+        if(p.status==='archived'||!Number.isFinite(expiry)||expiry<=Date.now())return {...p,tab_content_ready:null};
         const ready=await hasProductTabData(env,p.category,p.race_date,[p]);
         return {...p,tab_content_ready:ready};
       }));
