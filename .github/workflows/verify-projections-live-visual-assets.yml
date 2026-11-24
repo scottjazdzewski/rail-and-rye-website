@@ -47,7 +47,7 @@ jobs:
                cmp -s public/assets/rr-projections-track-identity.css /tmp/rr-track-identity-live.css &&
                cmp -s public/assets/rr-projections-command.css /tmp/rr-projections-command-live.css &&
                cmp -s public/assets/rr-race-facts.css /tmp/rr-race-facts-live.css; then
-              echo "LIVE_PROJECTIONS_ASSETS_MATCH: Cloudflare serves source-authentic track logos, readable saddlecloths and full-stakes-name code"
+              echo "LIVE_PROJECTIONS_ASSETS_MATCH: Cloudflare serves text-only track identity, authentic saddlecloths and full-stakes names"
               break
             fi
             echo "Not deployed yet: attempt ${attempt}/24 JS=${code1}, title=${code2}, chips=${code3}, header=${code4}, base=${code5}, track=${code6}, command=${code7}, facts=${code8}"
@@ -59,28 +59,29 @@ jobs:
           done
           grep -Fq 'approvedRaceSaddle(race.race_number)' /tmp/projections-live.js
           grep -Fq 'editorialRacePresentation(race)' /tmp/projections-live.js
-          grep -Fq 'rrp-track-head__logo' /tmp/projections-live.js
-          grep -Fq 'rrp-track-head__venue-mark' /tmp/rr-track-identity-live.css
+          ! grep -Fq 'rrp-track-head__logo' /tmp/projections-live.js
+          ! grep -Fq 'rrp-track-head__venue-mark' /tmp/rr-track-identity-live.css
+          grep -Fq 'grid-template-columns:minmax(0,1fr)' /tmp/rr-track-identity-live.css
           grep -Fq 'rrp-command__controls' /tmp/rr-projections-command-live.css
           grep -Fq 'min-height:59px' /tmp/rr-race-facts-live.css
           grep -Fq 'context.replaceChildren(cardHeader(activeCard))' /tmp/projections-live.js
           ! grep -Fq '.rr-dash-mode-switch{' /tmp/projections-base-live.css
           ! grep -Fq '.rr-dash-toolbar{' /tmp/projections-base-live.css
-          grep -Fq 'originalTrackLogos={' /tmp/projections-live.js
+          ! grep -Fq 'originalTrackLogos={' /tmp/projections-live.js
           ! grep -Fq 'rr-dash-track-mark-letters' /tmp/projections-live.js
           grep -Fq 'text-wrap:balance' /tmp/rr-header-live.css
           grep -Fq 'rrp-race-head__scratch-bar' /tmp/rr-header-live.css
           grep -Fq 'justify-content:center' /tmp/rr-header-live.css
           ! grep -Fq '.rr-dash-race-banner{' /tmp/rr-chips-live.css
           ! grep -Fq '.rr-dash-race-banner{' /tmp/projections-base-live.css
-          grep -Fq 'filter:none;mix-blend-mode:normal' /tmp/rr-track-identity-live.css
+          ! grep -Fq 'rrp-track-head__logo' /tmp/rr-track-identity-live.css
           ! grep -Fq '.rr-dash-approved-track-logo{' /tmp/rr-chips-live.css
           ! grep -Fq 'rr-dash-search' /tmp/projections-live.js
           ! grep -Fq 'rr-dash-search-field' /tmp/projections-base-live.css
           ! grep -Fq 'approvedTrackLogos={' /tmp/projections-live.js
           grep -Fq 'rr-race-saddle-tab' /tmp/rr-chips-live.css
           grep -Fq 'FIRST LADY' test-projection-dashboard-mobile.mjs
-          echo 'PASS: source track-logo art, balanced race titles, light-backed real saddlecloths, no invented venue monograms'
+          echo 'PASS: full track names and race titles, readable saddlecloths, no mobile venue-logo badges'
           for n in 1 5 10 12 20; do
             curl -fsSL --connect-timeout 10 --max-time 20 "${BASE}/assets/approved/saddlecloths/${n}.png" -o "/tmp/saddle-${n}.png"
             test -s "/tmp/saddle-${n}.png"
@@ -91,4 +92,4 @@ jobs:
             test -s "/tmp/${logo}.webp"
             echo "LIVE_APPROVED_TRACK_LOGO ${logo} PASS"
           done
-          echo 'LIVE_PROJECTIONS_READY: consolidated mobile command deck, integrated race facts, compact track identity, original chips and source-safe model delivery.'
+          echo 'LIVE_PROJECTIONS_READY: compact text-only track identity, original saddlecloths, model output unchanged.'
