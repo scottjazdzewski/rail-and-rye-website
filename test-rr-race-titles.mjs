@@ -72,8 +72,8 @@ assert.match(js,/approvedRaceSaddle\(race\.race_number\)/,
  "Race heading must show actual saddlecloth number art rather than a fake badge");
 assert.match(js,/approvedRaceSaddle\(raceNumber\)/,
  "Race navigation uses the same race saddlecloth source");
-assert.match(js,/originalTrackLogos=\{/,"Preserve the actual five venue logos");
-assert.match(js,/rrp-track-head__logo/,"Display real venue logos in compact plaques");
+assert.doesNotMatch(js,/originalTrackLogos|rrp-track-head__logo|approved\/track-logos\//,
+ "Race headings use original saddlecloths, not track-logo badges.");
 assert.doesNotMatch(js,/rr-dash-track-mark-letters/,
  "Remove invented FL/PRX/MNR monogram substitutes from the live dashboard");
 
@@ -85,8 +85,9 @@ assert.match(css,/rrp-race-head__trophy--g3/);
 assert.match(css,/text-transform:none/,"Race names are never forced uppercase");
 const chipCss=readFileSync("public/assets/rr-intelligence-chips.css","utf8");
 const trackCss=readFileSync("public/assets/rr-projections-track-identity.css","utf8");
-assert.match(trackCss,/\.rrp-track-head__logo\{/,"Authentic logo art has one uniform plaque system");
-assert.match(trackCss,/filter:none;mix-blend-mode:normal/,"No old high-contrast white-tile blending");
+assert.match(trackCss,/rrp-track-head__name/,"Keep full venue name.");
+assert.doesNotMatch(trackCss,/rrp-track-head__venue-mark|rrp-track-head__logo/,
+ "Retire track badge CSS entirely.");
 assert.doesNotMatch(chipCss,/\.rr-dash-approved-track-logo/,"Do not stack old logo CSS beneath new CSS");
 assert.doesNotMatch(chipCss,/\.rr-dash-race-banner\s*\{/,
  "Retire the competing shared-chip header rules");
@@ -96,9 +97,9 @@ assert.match(css,/\.rrp-race-head__number\{[\s\S]*?background:#f4f0e6/,
  "Keep ivory beneath race-number artwork to prevent dark transparency bleed");
 assert.match(css,/\.rrp-race-head__scratch-bar\{[\s\S]*?justify-content:center/,
  "Centered scratch row is part of the canonical layout");
-console.log("PASS: Mahoning Distaff sponsor removed, authentic venue logos restored, balanced full names and transparent saddlecloths fixed");
+console.log("PASS: Mahoning Distaff sponsor removed, text-only venue headings retained, balanced full names and transparent saddlecloths fixed");
 
-assert.match(trackCss,/\.rrp-track-head__venue-mark\{/,"The official venue mark integrates into one editorial masthead");
+assert.match(trackCss,/grid-template-columns:minmax\(0,1fr\)/,"Venue text takes full width.");
 assert.doesNotMatch(trackCss,/__plaque/,"The former separate venue plaque must be entirely removed");
 
 assert.match(js,/context\.replaceChildren\(cardHeader\(activeCard\)\)/,"Track title belongs in one integrated navigation deck");
