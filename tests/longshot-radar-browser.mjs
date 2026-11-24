@@ -287,12 +287,16 @@ try{
  if(await errorPage.locator("#rr-lr-loading").isVisible())
   throw Error("Retry succeeded but loading message remained.");
  await errorPage.close();
- // Old public link is just a redirect. No paid selections exposed outside admin.
+ // The old public design route was removed; 404/410 is the preferred
+ // fail-closed result. If a historical redirect exists it may ONLY point
+ // to the protected real reader, never to a paid or synthetic public feed.
  const publicPage=await browser.newPage();
  const raw=await publicPage.request.get(base+"/longshot-radar-preview/");
  const html=await raw.text();
- if(!html.includes('url=/admin/longshot-radar/')||html.includes("rr-lr-candidates")||html.includes("Fixture One"))
-  throw Error("Public URL must redirect to private reader with no horse rows.");
+ if(html.includes("rr-lr-candidates")||html.includes("Fixture One")||
+    !([404,410].includes(raw.status())||
+      raw.status()===200&&html.includes('url=/admin/longshot-radar/')))
+  throw Error("Retired public Radar route must be absent or redirect safely to protected private reader.");
  await publicPage.close();
  console.log("PASS: date-aware private Radar automatically accepts Nov24 certified editions and retains Nov23 historical card; Shared Daily Research V1 at 320/375/390/430/768/1280, 5 identical homepage-style pills, mobile menu, authentic logo, 17px intact analysis, 25px WIN/22px FAIR, source race facts, zero manual JSON, and R2 retry.");
 }finally{
