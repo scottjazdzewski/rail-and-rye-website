@@ -290,8 +290,8 @@ export async function readAdminTargetListReview(env,url){
      !/^[a-f0-9]{64}$/.test(edition.source.timeforms_zip_sha256||'')||
      edition.source.tri_full_field_receipt_id!=null||edition.source.tri_unrounded_scoring_receipt_sha256!=null)
    throw Error('Missing review-only source custody.');
-  if(edition.status!=='initial'&&edition.status!=='scratch_update')throw Error('Invalid review status.');
-  if(edition.revision===1&&edition.status!=='initial'||edition.revision>1&&edition.status!=='scratch_update')throw Error('Invalid review revision.');
+  if(!['initial','scratch_update','editorial_update'].includes(edition.status))throw Error('Invalid review status.');
+  if(edition.revision===1&&edition.status!=='initial'||edition.revision>1&&!['scratch_update','editorial_update'].includes(edition.status))throw Error('Invalid review revision.');
   const ids=new Set(),ranks=new Set();
   for(const item of edition.targets){
    if(!object(item)||!Number.isInteger(item.rank)||item.rank<1||ranks.has(item.rank))throw Error('Invalid rank.');
