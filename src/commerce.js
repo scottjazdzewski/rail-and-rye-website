@@ -1,6 +1,7 @@
 import {BUNDLE_KEY} from './bundles.js';
 import {ensureReleaseSchedule,ensureRacePdfExpirySchema,racePdfExpired} from './publication-schedule.js';
 import {processMembershipStripeEvent} from './memberships.js';
+import {hasProductTabData} from './product-tab-content.js';
 /* Rail & Rye fail-closed checkout. Default sandbox. Live activation is separate,
    requires verified Stripe keys and an explicit control flag; no public R2 URLs.
    Stripe secrets are Cloudflare Worker SECRETS, never source files. */
@@ -161,36 +162,35 @@ async function resendEmail(env,j,order){
   if(!env.RESEND_API_KEY?.startsWith('re_') || !deliverySigningKey(env)) throw Error('Email integration is not configured');
   if(!recipientAllowed(env,j.email,order.stripe_session_id))throw Error('Delivery recipient not eligible');
   const link=await deliveryLink(env,j);
-  const title=String(order.product_title||'Race Card');
+  const title=String(order.product_title||'Racing Intelligence');
   const live=sessionMode(order.stripe_session_id)==='live';
-  const bundle=order.pdf_key===BUNDLE_KEY;
-  const deliveryAction=bundle?'Open your secure bundle':'Download your PDF';
-  const accessLimit=bundle
-    ? `Each included PDF allows up to 5 downloads within ${order.access_days} days of payment and remains available only until through the second calendar day after its racing date.`
-    : `This PDF allows up to 5 downloads within ${order.access_days} days of payment and remains available only until through the second calendar day after its racing date.`;
-  const intro=j.purpose==='recover'?'Here is your requested replacement download link.':live?`Your purchase is confirmed and your ${bundle?'bundle':'PDF'} is ready.`:`Your Stripe sandbox purchase is confirmed and the test ${bundle?'bundle':'PDF'} is ready.`;
-  const textBody=`Rail & Rye Racing\n\n${intro}\n\n${title}\n${deliveryAction}: ${link}\n\nThis secure link expires 24 hours after delivery. ${accessLimit} Refunded orders lose access. To request a new link, visit ${RR_SITE}/store/recover.html\n\n${live?'For support: support@railandryeracing.com':'SANDBOX TEST EMAIL - NO REAL PAYMENT WAS TAKEN.'}\n\nRail & Rye Racing`;
-  const html=`<!doctype html><html><body style="background:#f7f5ef;color:#12253c;font-family:Arial,sans-serif;padding:28px"><div style="max-width:560px;margin:auto;background:#fff;border:1px solid #e1d7c9;padding:30px"><p style="font:28px Georgia,serif;letter-spacing:4px;color:#0b203a">RAIL &amp; RYE</p><p style="font-size:11px;color:#987548;letter-spacing:2px">SECURE DIGITAL DELIVERY${live?'':' · SANDBOX'}</p><h1 style="font:30px Georgia,serif;color:#0b203a">Your publication is ready</h1><p>${escapeHtml(intro)}</p><h2 style="font:22px Georgia,serif">${escapeHtml(title)}</h2><p><a style="display:inline-block;padding:17px 20px;background:#0b203a;color:#fff;text-decoration:none" href="${escapeHtml(link)}">${bundle?'ACCESS YOUR BUNDLE':'ACCESS YOUR PDF'}</a></p><p style="line-height:1.7;color:#566477;font-size:13px">Link expires 24 hours after delivery. ${escapeHtml(accessLimit)} Refunded orders lose access. <a href="${RR_SITE}/store/recover.html">Request a new link</a>.</p>${live?'<p style="font-size:12px;color:#a36728">Questions? Email support@railandryeracing.com</p>':'<p style="font-size:12px;color:#a36728">SANDBOX ONLY — NO REAL CHARGES</p>'}</div></body></html>`;
+  const intro=j.purpose==='recover'?'Here is your replacement access link.':live?'Your purchase is confirmed and your tabs are ready.':'Your Stripe sandbox purchase is confirmed and the test tabs are ready.';
+  const accessLimit='The secure activation link expires 24 hours after delivery. Once activated, your purchased tab access lasts up to '+String(order.access_days||7)+' days and ends at the racing-date access cutoff. Refunded orders lose access.';
+  const textBody='Rail & Rye Racing\\n\\n'+intro+'\\n\\n'+title+'\\nOpen your purchase: '+link+'\\n\\n'+accessLimit+' Visit '+RR_SITE+'/store/recover.html to request a replacement link.\\n\\n'+(live?'For support: support@railandryeracing.com':'SANDBOX TEST EMAIL - NO REAL PAYMENT WAS TAKEN.')+'\\n\\nRail & Rye Racing';
+  const html='<!doctype html><html><body style="background:#f7f5ef;color:#12253c;font-family:Arial,sans-serif;padding:28px"><div style="max-width:560px;margin:auto;background:#fff;border:1px solid #e1d7c9;padding:30px"><p style="font:28px Georgia,serif;letter-spacing:4px;color:#0b203a">RAIL &amp; RYE</p><p style="font-size:11px;color:#987548;letter-spacing:2px">SECURE TAB ACCESS'+(live?'':' · SANDBOX')+'</p><h1 style="font:30px Georgia,serif;color:#0b203a">Your purchase is ready</h1><p>'+escapeHtml(intro)+'</p><h2 style="font:22px Georgia,serif">'+escapeHtml(title)+'</h2><p><a style="display:inline-block;padding:17px 20px;background:#0b203a;color:#fff;text-decoration:none" href="'+escapeHtml(link)+'">OPEN YOUR PURCHASE</a></p><p style="line-height:1.7;color:#566477;font-size:13px">'+escapeHtml(accessLimit)+' <a href="'+RR_SITE+'/store/recover.html">Request a replacement access link</a>.</p>'+(live?'<p style="font-size:12px;color:#a36728">Questions? Email support@railandryeracing.com</p>':'<p style="font-size:12px;color:#a36728">SANDBOX ONLY — NO REAL CHARGES</p>')+'</div></body></html>';
   const response=await fetch('https://api.resend.com/emails',{
-    method:'POST',headers:{Authorization:`Bearer ${env.RESEND_API_KEY}`,'Content-Type':'application/json','Idempotency-Key':`rr-v3-${j.id}`},
-    body:JSON.stringify({from:MAIL_FROM,to:[j.email],subject:`Rail & Rye | ${j.purpose==='recover'?'Your replacement publication link':'Your publication is ready'}${live?'':' (TEST)'}`,html,text:textBody})
+    method:'POST',headers:{Authorization:'Bearer '+env.RESEND_API_KEY,'Content-Type':'application/json','Idempotency-Key':'rr-tab-v1-'+j.id},
+    body:JSON.stringify({from:MAIL_FROM,to:[j.email],subject:'Rail & Rye | Your tab access is ready'+(live?'':' (TEST)'),html,text:textBody})
   });
   const body=await response.json().catch(()=>({}));
   if(!response.ok||!body.id){console.warn('Resend delivery failed',response.status,body?.name||'unknown');throw Error('Email provider request failed');}
   return String(body.id).slice(0,120);
 }
-// Called after webhook via waitUntil and from the 10-minute cron. Claim a job
-// atomically; duplicate webhooks and concurrent workers cannot double-send it.
 export async function sendQueuedEmails(env,limit=8){
   if(!env.STORE_DB||!env.RESEND_API_KEY?.startsWith('re_')||!deliverySigningKey(env))return 0;
   const pending=await env.STORE_DB.prepare(`SELECT j.id,j.order_id,j.email,j.purpose,j.attempts,o.stripe_session_id
     FROM email_jobs j JOIN orders o ON o.id=j.order_id
     WHERE o.status='paid' AND datetime(o.paid_at, '+' || o.access_days || ' days') > CURRENT_TIMESTAMP
-    AND ((o.pdf_key<>? AND COALESCE(o.pdf_expires_at,(SELECT pdf_expires_at FROM products WHERE id=o.product_id))>CURRENT_TIMESTAMP)
+    AND (
+      (o.pdf_key IS NULL AND EXISTS(SELECT 1 FROM products sku WHERE sku.id=o.product_id AND
+        ((sku.pdf_key=? AND EXISTS(SELECT 1 FROM bundle_order_items bi JOIN products bp ON bp.id=bi.product_id
+          WHERE bi.order_id=o.id AND COALESCE(bi.pdf_expires_at,bp.pdf_expires_at)>CURRENT_TIMESTAMP))
+         OR ((sku.pdf_key IS NULL OR sku.pdf_key<>?) AND COALESCE(o.pdf_expires_at,sku.pdf_expires_at)>CURRENT_TIMESTAMP))))
+      OR (o.pdf_key<>? AND COALESCE(o.pdf_expires_at,(SELECT pdf_expires_at FROM products WHERE id=o.product_id))>CURRENT_TIMESTAMP)
       OR (o.pdf_key=? AND EXISTS(SELECT 1 FROM bundle_order_items bi JOIN products p ON p.id=bi.product_id WHERE bi.order_id=o.id AND COALESCE(bi.pdf_expires_at,p.pdf_expires_at)>CURRENT_TIMESTAMP)))
     AND j.attempts<6 AND ((j.state='queued' AND j.next_attempt_at<=CURRENT_TIMESTAMP)
     OR (j.state='sending' AND j.claimed_at<datetime('now','-3 minutes')))
-    ORDER BY j.created_at ASC LIMIT ?`).bind(BUNDLE_KEY,BUNDLE_KEY,limit).all();
+    ORDER BY j.created_at ASC LIMIT ?`).bind(BUNDLE_KEY,BUNDLE_KEY,BUNDLE_KEY,BUNDLE_KEY,limit).all();
   let sent=0;
   for(const j of pending.results||[]){
     if(!JOB_RE.test(j.id)||!recipientAllowed(env,j.email,j.stripe_session_id))continue;
@@ -294,7 +294,7 @@ async function downloadBundleItem(env,orderId,itemId) {
     AND datetime(o.paid_at, '+' || o.access_days || ' days') > CURRENT_TIMESTAMP
     AND COALESCE(bi.pdf_expires_at,p.pdf_expires_at)>CURRENT_TIMESTAMP
     AND bi.download_count<5`).bind(orderId,itemId).first();
-  if(!item)return error('This PDF is no longer available. Need a copy? Email support@railandryeracing.com.',410);
+  if(!item)return error('This racing-date access period has ended.',410);
   const file=await env.CARDS_BUCKET.get(item.pdf_key);
   if(!file)return error('PDF temporarily unavailable',503);
   const change=await env.STORE_DB.prepare(`UPDATE bundle_order_items SET download_count=download_count+1
@@ -366,6 +366,21 @@ async function accessJob(code,env){
   return valid?j:null;
 }
 
+export async function verifyStoreAccessCode(code,env){
+  const match=ACCESS_RE.exec(String(code||''));
+  if(!match||match[1].startsWith('update-')||!env.STORE_DB||!deliverySigningKey(env))return null;
+  const job=await env.STORE_DB.prepare(`SELECT j.id,j.order_id FROM email_jobs j JOIN orders o ON o.id=j.order_id
+    WHERE j.id=? AND j.purpose IN ('purchase','recover') AND j.state='sent'
+      AND j.sent_at>=datetime('now','-24 hours') AND o.status='paid'
+      AND datetime(o.paid_at, '+' || o.access_days || ' days')>CURRENT_TIMESTAMP`).bind(match[1]).first();
+  if(!job)return null;
+  const supplied=match[2].toLowerCase();
+  const valid=safeEq(await jobSignature(env,job.id,job.order_id),supplied)||
+    (!!env.RR_DELIVERY_SIGNING_KEY&&!!env.STRIPE_WEBHOOK_SECRET&&
+      safeEq(await jobSignature(env,job.id,job.order_id,env.STRIPE_WEBHOOK_SECRET),supplied));
+  return valid?job.order_id:null;
+}
+
 async function accessPdf(request,env){
   if(request.method!=='POST')return error('Method not allowed',405);
   if(!sameOrigin(request))return error('Same-origin request required',403);
@@ -421,9 +436,13 @@ async function recover(request,env,ctx){
   if(!allowedIp||!allowedEmail)return neutral();
   const paid=await env.STORE_DB.prepare(`SELECT o.id,o.stripe_session_id FROM orders o WHERE lower(o.buyer_email)=? AND o.status='paid'
     AND datetime(o.paid_at, '+' || o.access_days || ' days') > CURRENT_TIMESTAMP
-    AND ((o.pdf_key=? AND EXISTS(SELECT 1 FROM bundle_order_items bi JOIN products p ON p.id=bi.product_id WHERE bi.order_id=o.id AND COALESCE(bi.pdf_expires_at,p.pdf_expires_at)>CURRENT_TIMESTAMP))
+    AND (
+      (o.pdf_key IS NULL AND EXISTS(SELECT 1 FROM products sku WHERE sku.id=o.product_id AND
+        ((sku.pdf_key=? AND EXISTS(SELECT 1 FROM bundle_order_items bi JOIN products bp ON bp.id=bi.product_id WHERE bi.order_id=o.id AND COALESCE(bi.pdf_expires_at,bp.pdf_expires_at)>CURRENT_TIMESTAMP))
+         OR ((sku.pdf_key IS NULL OR sku.pdf_key<>?) AND COALESCE(o.pdf_expires_at,sku.pdf_expires_at)>CURRENT_TIMESTAMP))))
+      OR (o.pdf_key=? AND EXISTS(SELECT 1 FROM bundle_order_items bi JOIN products p ON p.id=bi.product_id WHERE bi.order_id=o.id AND COALESCE(bi.pdf_expires_at,p.pdf_expires_at)>CURRENT_TIMESTAMP))
       OR (o.pdf_key<>? AND o.download_count<5 AND COALESCE(o.pdf_expires_at,(SELECT pdf_expires_at FROM products WHERE id=o.product_id))>CURRENT_TIMESTAMP))
-    ORDER BY o.paid_at DESC LIMIT 8`).bind(email,BUNDLE_KEY,BUNDLE_KEY).all();
+    ORDER BY o.paid_at DESC LIMIT 8`).bind(email,BUNDLE_KEY,BUNDLE_KEY,BUNDLE_KEY,BUNDLE_KEY).all();
   let queued=0;
   for(const order of paid.results||[]){
     // Legacy Stripe sandbox purchases may NEVER send recovery mail to an
@@ -437,11 +456,11 @@ async function recover(request,env,ctx){
   return neutral();
 }
 
-async function listProducts(env){
+export async function listProducts(env){
   if(!env.STORE_DB)return error('Catalog temporarily unavailable',503);
   await ensureReleaseSchedule(env);
   const records=await env.STORE_DB.prepare(`SELECT id,title,slug,category,race_date,track,description,price_cents,image_url,pdf_key,pdf_expires_at
-    FROM products WHERE status='published' AND category <> 'Stable Notes' AND pdf_key IS NOT NULL
+    FROM products WHERE status='published' AND category <> 'Stable Notes'
     AND NOT EXISTS(SELECT 1 FROM product_release_schedule s WHERE s.product_id=products.id AND s.release_at>CURRENT_TIMESTAMP)
     AND NOT EXISTS(SELECT 1 FROM bundle_only_assets a WHERE a.product_id=products.id)
     ORDER BY race_date DESC,created_at DESC LIMIT 150`).all();
@@ -450,7 +469,8 @@ async function listProducts(env){
     const {pdf_key,...publicFields}=p;
     if(pdf_key!==BUNDLE_KEY){
       if(racePdfExpired(p.pdf_expires_at))continue;
-      products.push({...publicFields,kind:'single',categories:[p.category]});continue;
+      if(!await hasProductTabData(env,p.category,p.race_date,[p]))continue;
+      products.push({...publicFields,kind:'single',delivery_mode:'tab',categories:[p.category]});continue;
     }
     // Fail closed: a published bundle must still contain 2–12 available PDFs.
     const children=await env.STORE_DB.prepare(`SELECT c.id,c.title,c.category,c.race_date,c.track,c.pdf_expires_at,c.status,c.pdf_key,a.product_id AS asset_id,
@@ -460,9 +480,11 @@ async function listProducts(env){
       LEFT JOIN product_release_schedule s ON s.product_id=c.id WHERE bi.bundle_id=? ORDER BY bi.position`).bind(p.id).all();
     const items=children.results||[];
     if(items.length<2||items.length>12||items.some(c=>!c.pdf_key||c.pdf_key===BUNDLE_KEY||c.expired||c.pending_release||c.category==='Stable Notes'||!(c.status==='published'||(c.status==='draft'&&c.asset_id))))continue;
-    // A bundle is one SKU, listed under its primary category and every included PDF category.
+    const tabReady=await Promise.all(items.map(item=>hasProductTabData(env,item.category,item.race_date,[item])));
+    if(tabReady.some(ready=>!ready))continue;
+    // A bundle unlocks each included category/date in the customer tabs.
     const categories=[...new Set([p.category,...items.map(x=>x.category)].filter(Boolean))];
-    products.push({...publicFields,kind:'bundle',categories,bundle_count:items.length,included_titles:items.map(x=>x.title),
+    products.push({...publicFields,kind:'bundle',delivery_mode:'tab',categories,bundle_count:items.length,included_titles:items.map(x=>x.title),
       included_products:items.map(x=>({id:x.id,title:x.title,category:x.category,race_date:x.race_date,track:x.track,pdf_expires_at:x.pdf_expires_at}))});
   }
   return reply({products,checkout_ready:stripeReady(env),checkout_mode:checkoutMode(env)});
@@ -503,8 +525,8 @@ async function checkout(request,env){
   if(Number(request.headers.get('content-length')||0)>1000)return error('Request too large',413);
   let data;try{data=await request.json();}catch{return error('Invalid JSON',400);}
   if(!UUID_RE.test(data?.product_id||''))return error('Invalid product',400);
-  const p=await env.STORE_DB.prepare(`SELECT id,title,description,price_cents,pdf_key,category,status,pdf_expires_at
-    FROM products WHERE id=? AND status='published' AND pdf_key IS NOT NULL
+  const p=await env.STORE_DB.prepare(`SELECT id,title,description,price_cents,pdf_key,category,status,race_date,pdf_expires_at
+    FROM products WHERE id=? AND status='published'
     AND NOT EXISTS(SELECT 1 FROM product_release_schedule s WHERE s.product_id=products.id AND s.release_at>CURRENT_TIMESTAMP)
     AND NOT EXISTS(SELECT 1 FROM bundle_only_assets a WHERE a.product_id=products.id)`).bind(data.product_id).first();
   if(!p)return error('Product is not available',404);
@@ -529,10 +551,10 @@ async function checkout(request,env){
   if(fileDeadlines.length!==(children.length||1))return error('PDF racing-date availability is missing. Please contact support.',409);
   const earliestExpiry=Math.min(...fileDeadlines.map(value=>Date.parse(value.replace(' ','T')+'Z')));
   const now=Date.now(),sessionExpiry=Math.min(now+24*60*60*1000,earliestExpiry);
-  if(sessionExpiry<now+30*60*1000)return error('The two-day PDF window is nearly over, so checkout is no longer available.',410);
+  if(sessionExpiry<now+30*60*1000)return error('The racing-date access period is nearly over, so checkout is no longer available.',410);
   const orderExpiresAt=p.pdf_key===BUNDLE_KEY?null:expiryFor(p.pdf_expires_at);
   const ops=[env.STORE_DB.prepare(`INSERT INTO orders (id,product_id,product_title,pdf_key,amount_cents,status,access_days,pdf_expires_at)
-    VALUES (?,?,?,?,?,'initiated',7,?)`).bind(orderId,p.id,p.title,p.pdf_key,p.price_cents,orderExpiresAt)];
+    VALUES (?,?,?,?,?,'initiated',7,?)`).bind(orderId,p.id,p.title,null,p.price_cents,orderExpiresAt)];
   children.forEach((item,i)=>ops.push(env.STORE_DB.prepare(
     'INSERT INTO bundle_order_items (order_id,product_id,product_title,pdf_key,position,pdf_expires_at) VALUES (?,?,?,?,?,?)'
   ).bind(orderId,item.id,item.title,item.pdf_key,i,expiryFor(item.pdf_expires_at))));
@@ -548,7 +570,7 @@ async function checkout(request,env){
     'line_items[0][price_data][currency]':'usd',
     'line_items[0][price_data][unit_amount]':String(p.price_cents),
     'line_items[0][price_data][product_data][name]':p.title.slice(0,120),
-    'line_items[0][price_data][product_data][description]':String(p.description||'Rail & Rye racing analysis PDF').slice(0,450),
+    'line_items[0][price_data][product_data][description]':String(p.description||'Rail & Rye racing intelligence tab access').slice(0,450),
     'metadata[order_id]':orderId,
     'metadata[product_id]':p.id,
     client_reference_id:orderId,
