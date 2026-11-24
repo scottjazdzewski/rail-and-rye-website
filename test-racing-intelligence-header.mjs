@@ -1,14 +1,14 @@
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 const pages=[
- ["public/admin/projections-preview.html","Projections"],
+ ["public/admin/projections-preview.html","Race Cards"],
  ["public/admin/pick-tickets-preview.html","Pick Tickets"],
  ["public/admin/longshot-radar.html","Longshot Radar"],
  ["public/admin/target-list-preview.html","Target List"],
- ["public/admin/racing-intelligence-review.html","Hub"],
- ["public/membership/dashboard/index.html","Projections"]
+ ["public/admin/racing-intelligence-review.html","Intelligence Hub"],
+ ["public/membership/dashboard/index.html","Race Cards"]
 ];
-const names=["Hub","Projections","Pick Tickets","Longshot Radar","Target List"];
+const names=["Intelligence Hub","Race Cards","Pick Tickets","Longshot Radar","Target List"];
 let reference=null;
 for(const [path,active] of pages){
  const html=readFileSync(path,"utf8");
