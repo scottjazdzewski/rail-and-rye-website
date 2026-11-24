@@ -28,6 +28,8 @@ check({conditions:"Frizette S. (GIII)"},"Frizette Stakes",3);
 check({conditions:"Carter H. (G2)"},"Carter Handicap",2);
 check({conditions:"Golden Rose S. (G3) powered by Race Sponsor"},"Golden Rose Stakes",3);
 check({conditions:"NYRA Bets — Belmont S. (G1)",sponsor_name:"NYRA Bets"},"Belmont Stakes",1);
+check({conditions:"NYRA Bets Belmont S. (G1)",sponsor_name:"NYRA Bets"},"Belmont Stakes",1);
+check({conditions:"Belmont S. (G1) NYRA Bets",sponsor_name:"NYRA Bets"},"Belmont Stakes",1);
 check({conditions:"Belmont S. (G1) — NYRA Bets",sponsor_name:"NYRA Bets"},"Belmont Stakes",1);
 check({conditions:"Belmont S. (G1) Presented by NYRA Bets",
        stakes_name:"Belmont S.",stakes_grade:"G1"},"Belmont Stakes",1);
@@ -70,7 +72,7 @@ const cssVersion=html=>/projections-dashboard\.css\?v=(\d+)/.exec(html)?.[1];
 assert.ok(cssVersion(admin),"Approved dashboard CSS needs an explicit version.");
 assert.equal(cssVersion(admin),cssVersion(member),"Admin and member must load the same current dashboard CSS.");
 for(const html of [admin,member]){
- assert.match(html,/rr-race-titles\.js\?v=4/,"Load shared race presentation helper before dashboard");
+ assert.match(html,/rr-race-titles\.js\?v=5/,"Load shared race presentation helper before dashboard");
  assert.match(html,/projections-dashboard\.js\?v=\d+/,"Use verified stakes heading dashboard revision");
  assert.match(html,/rr-projections-race-header\.css\?v=4/,"Load the sole graded-trophy and race-header stylesheet");
 }
@@ -111,6 +113,11 @@ for(const page of ["public/admin/longshot-radar.html","public/admin/target-list-
  assert.match(html,/rr-research-race-banner\\.js\\?v=locked-v2-20261124/,
   "All research readers use the same banner and trophy presentation.");
 }
+const pickPage=readFileSync("public/admin/pick-tickets-preview.html","utf8");
+assert.match(pickPage,/rr-race-titles\\.js\\?v=5/,"Pick Tickets uses the same source-certified title parser.");
+const pickRenderer=readFileSync("public/assets/pick-tickets-dashboard.js","utf8");
+assert.match(pickRenderer,/RRRaceTitles\\?\\.describe/,"Ticket legs use full canonical stakes names.");
+assert.match(pickRenderer,/rr-ed-grade-trophy--g/,"Ticket legs show correct G1 G2 G3 trophies.");
 const banner=readFileSync("public/assets/rr-research-race-banner.js","utf8");
 assert.match(banner,/RRRaceTitles\\?\\.describe/,"Shared race header uses the canonical title formatter.");
 assert.match(banner,/rr-ed-grade-trophy--g/,"Graded stakes must use the G1/G2/G3 trophy design.");
