@@ -51,7 +51,21 @@ function stripeReady(env){
   return !!env.STORE_DB&&!!env.CARDS_BUCKET&&stripeReadyFor(env,mode)&&mailReady&&signingReady&&webhookReady&&liveReady;
 }
 // Admin can inspect readiness without exposing any secret values.
-export function checkoutReadiness(env){return {payment_mode:checkoutMode(env),checkout_ready:stripeReady(env)};}
+export function checkoutReadiness(env){
+  const payment_mode=checkoutMode(env);
+  const inspectMode=payment_mode==='paused'?(env.RR_PAYMENT_MODE==='live'?'live':'test'):payment_mode;
+  const delivery=deliverySigningKey(env);
+  return {payment_mode,checkout_ready:stripeReady(env),requirements:{
+    store_database:!!env.STORE_DB,
+    private_storage:!!env.CARDS_BUCKET,
+    stripe_key:stripeReadyFor(env,inspectMode),
+    stripe_webhook:typeof webhookSecret(env,inspectMode)==='string'&&webhookSecret(env,inspectMode).startsWith('whsec_'),
+    email_delivery:typeof env.RESEND_API_KEY==='string'&&env.RESEND_API_KEY.startsWith('re_'),
+    access_signing_key:typeof delivery==='string'&&delivery.length>=16,
+    live_activation:env.RR_PAYMENT_MODE!=='live'||env.RR_LIVE_ACTIVATION==='CONFIRM_LIVE_SALES',
+    dedicated_live_signing_key:inspectMode!=='live'||(typeof env.RR_DELIVERY_SIGNING_KEY==='string'&&env.RR_DELIVERY_SIGNING_KEY.length>=32)
+  }};
+}
 function webhookSecret(env,mode){return mode==='live'?env.STRIPE_LIVE_WEBHOOK_SECRET:env.STRIPE_WEBHOOK_SECRET;}
 function deliverySigningKey(env){return env.RR_DELIVERY_SIGNING_KEY||env.STRIPE_WEBHOOK_SECRET;}
 function sessionMode(sessionId){return String(sessionId||'').startsWith('cs_live_')?'live':'test';}

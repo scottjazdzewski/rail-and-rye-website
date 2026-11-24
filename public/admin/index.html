@@ -530,8 +530,11 @@
     paymentMode=r.payment_mode||'test';
     const launch=$('launchReadiness');
     launch.className='rr-launch-readiness'+(paymentMode==='live'&&r.checkout_ready?' ready':paymentMode==='paused'||paymentMode==='live'?' blocked':'');
+    const names={store_database:'database binding',private_storage:'private storage bucket',stripe_key:'Stripe key',stripe_webhook:'Stripe webhook signing secret',email_delivery:'email delivery key',access_signing_key:'tab-access signing key',live_activation:'live activation flag',dedicated_live_signing_key:'dedicated live signing key'};
+    const missing=Object.entries(names).filter(([key])=>r.requirements?.[key]===false).map(([,label])=>label);
     if(paymentMode==='live'&&r.checkout_ready)launch.textContent='Checkout status: Live checkout is ready. Only published tabs with available race content appear for sale.';
-    else if(paymentMode==='live')launch.textContent='Checkout status: Live mode is selected, but required Stripe or fulfillment settings are incomplete. Purchases remain unavailable.';
+    else if(paymentMode==='live')launch.textContent='Checkout status: Live mode is selected, but these requirements are missing: '+(missing.join(', ')||'required settings')+'. Purchases remain unavailable.';
+    else if(paymentMode==='paused'&&r.requirements?.live_activation===false)launch.textContent='Checkout status: Live sales are paused until live activation is confirmed.';
     else if(paymentMode==='paused')launch.textContent='Checkout status: Paused. New purchases are disabled.';
     else launch.textContent='Checkout status: Test mode. Real charges are disabled.';
     return refresh();
