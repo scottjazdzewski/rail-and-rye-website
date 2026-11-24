@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import {normalizePickTickets,enrichPublishedPickFromVerified,readPublishedPickTicketCards} from "./src/pick-tickets.js";
+import {normalizePickTickets,enrichPublishedPickFromVerified,readPublishedPickTicketCards,prepareVerifiedCustomerPick,requireCustomerPickPwin} from "./src/pick-tickets.js";
 import {readProductTabEdition} from "./src/product-tab-content.js";
 const raw={schema_version:1,product_type:"pick_tickets",date:"2026-11-24",track:"Synthetic QA Track",revision:2,status:"scratch_updated",publication_mode:"owner-approved-gpt",source_input_sha256:"a".repeat(64),formula_version:"V3.4-TRI-ONLY-LENGTH-SENSITIVE-TRIAL-A",post_times_by_race:{"1":"12:05 PM ET"},scratches_by_race:{"1":["4"]},sequences:[{name:"Pick 3",start_race:1,end_race:3,play_status:"CONDITIONAL",hit_rate_display:"24.0%",race_fields:[1,2,3].map(race_number=>({race_number,programs:["1","2","3"]})),review_probabilities:{"1":{"1":60,"2":25,"3":15},"2":{"1":50,"2":30,"3":20},"3":{"1":80,"2":10,"3":10}},tickets:[{role:"BEST_POSSIBLE",title:"Rail & Rye Ticket",unit_cents:50,combinations:1,total_cents:50,hit_rate_display:"24.0%",legs:[1,2,3].map(race_number=>({race_number,programs:["1"]}))}]}]};
 const safe=normalizePickTickets(raw);
@@ -24,3 +24,16 @@ const edition=await readProductTabEdition(env,"Pick Tickets",raw.date,products);
 assert.deepEqual(edition.cards[0].sequences[0].review_probabilities,raw.sequences[0].review_probabilities);
 assert.equal(await readProductTabEdition(env,"Pick Tickets",raw.date,[{...products[0],track:"Other Track",title:"Other Track"}]),null);
 console.log("PASS protected customer PWIN round trip, exact hit validation, matched-source backfill and track entitlements.");
+
+const row={card:{...safe,revision:1},review_only:true,post_times_by_race:raw.post_times_by_race,scratches_by_race:raw.scratches_by_race};
+const stripped=structuredClone(safe);delete stripped.sequences[0].review_probabilities;
+assert.throws(()=>requireCustomerPickPwin(stripped),/Complete verified PWIN/);
+const restored=prepareVerifiedCustomerPick(row,stripped);
+assert.equal(restored.revision,3);
+assert.deepEqual(restored.sequences[0].review_probabilities,safe.sequences[0].review_probabilities);
+assert.deepEqual(prepareVerifiedCustomerPick(row,restored),restored);
+const badRow=structuredClone(row);delete badRow.card.sequences[0].review_probabilities;
+assert.throws(()=>prepareVerifiedCustomerPick(badRow,restored),/Complete verified PWIN/);
+const rollback=structuredClone(row);rollback.card.status="initial_current";
+assert.throws(()=>prepareVerifiedCustomerPick(rollback,restored),/Cannot replace scratch-final/);
+console.log("PASS verified publication revision advances, retains PWIN and rejects incomplete replacements.");

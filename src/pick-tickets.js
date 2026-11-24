@@ -201,7 +201,7 @@ async function parseBody(request){
  const cards=raw.map(card=>{
   const hasReceipt=obj(card?.source_receipt)&&typeof card.source_receipt.sha256==="string";
   const hasSourceHash=typeof card?.source_input_sha256==="string"&&/^[a-f0-9]{64}$/i.test(card.source_input_sha256);
-  return normalizePickTickets(!hasReceipt&&hasSourceHash?{...card,publication_mode:"owner-approved-gpt"}:card);
+  return requireCustomerPickPwin(normalizePickTickets(!hasReceipt&&hasSourceHash?{...card,publication_mode:"owner-approved-gpt"}:card));
  });
  unique(cards.map(c=>currentKey(c)),"Track/date editions");
  return cards;
@@ -344,6 +344,32 @@ export function enrichPublishedPickFromVerified(card,row){
  return repaired;
 }
 
+// Current customer editions must carry full-field PWIN. Legacy reads remain
+// backward compatible, but a new owner-approved V3.4 publication cannot omit it.
+export function requireCustomerPickPwin(card){
+ if(usesV34(card.date)&&card.formula_version===PICK_V34_ENGINE){
+  if(!card.sequences.every(s=>s.race_fields?.length&&s.review_probabilities))throw Error("Complete verified PWIN is required for every current Pick Ticket sequence.");
+ }
+ return card;
+}
+// The review's revision is an internal build number, not the customer revision.
+// Advance only on changed verified content; keep exact repeats idempotent.
+export function prepareVerifiedCustomerPick(row,priorRaw){
+ const source=row?.card;
+ if(row?.review_only!==true||!source?.source_input_sha256)throw Error("Verified review required.");
+ const next=requireCustomerPickPwin(normalizePickTickets({...source,publication_mode:"owner-approved-gpt",
+  ...(row.scratches_by_race?{scratches_by_race:row.scratches_by_race}:{}),
+  ...(row.post_times_by_race?{post_times_by_race:row.post_times_by_race}:{})}));
+ if(!priorRaw)return next;
+ const prior=normalizePickTickets(priorRaw);
+ if(prior.date!==next.date||prior.track!==next.track)throw Error("Customer edition identity mismatch.");
+ if(prior.status==="scratch_updated"&&next.status!=="scratch_updated")throw Error("Cannot replace scratch-final with prescratch.");
+ next.revision=prior.revision;
+ if(JSON.stringify(next)===JSON.stringify(prior))return next;
+ next.revision=integer(prior.revision+1,"Next customer revision",1,99999);
+ return next;
+}
+
 export async function publishGPTPickTicketReviews(env){
  if(!env?.CARDS_BUCKET)throw Error("Private Pick Tickets storage is not configured.");
  const response=await handleAdminPickTickets(new Request("https://internal.invalid/api/admin/pick-tickets",{method:"GET"}),env);
@@ -354,19 +380,14 @@ export async function publishGPTPickTicketReviews(env){
   const source=row?.card||row;
   const date=source?.date,track=source?.track;
   try{
-   const customerCard=normalizePickTickets({...source,publication_mode:"owner-approved-gpt",
-    ...(row.scratches_by_race?{scratches_by_race:row.scratches_by_race}:{}),
-    ...(row.post_times_by_race?{post_times_by_race:row.post_times_by_race}:{})});
-   const customerKey=CUSTOMER_PREFIX+customerCard.date+"/"+slug(customerCard.track)+".json";
-   const customerJson=JSON.stringify(customerCard),customerHash=await sha256(customerJson);
+   const customerKey=CUSTOMER_PREFIX+date+"/"+slug(track)+".json";
    const prior=await env.CARDS_BUCKET.get(customerKey);
-   if(prior){
-    const priorRevision=Number(prior.customMetadata?.revision||0);
-    if(priorRevision>customerCard.revision)throw Error("A newer customer edition is already published.");
-    if(priorRevision===customerCard.revision){
-     const priorText=await prior.text();
-     if(await sha256(priorText)!==customerHash)throw Error("This revision already exists with different content.");
-    }
+   const priorText=prior?await prior.text():null;
+   const customerCard=prepareVerifiedCustomerPick(row,priorText?JSON.parse(priorText):null);
+   const customerJson=JSON.stringify(customerCard),customerHash=await sha256(customerJson);
+   if(prior&&priorText!==customerJson){
+    const previous=JSON.parse(priorText);
+    await env.CARDS_BUCKET.put("pick-tickets/customer-revisions/"+date+"/"+slug(track)+"/r"+String(previous.revision).padStart(5,"0")+"-"+(await sha256(priorText)).slice(0,16)+".json",priorText,{httpMetadata:{contentType:"application/json",cacheControl:"private, no-store"},customMetadata:prior.customMetadata||{}});
    }
    const publishedAt=new Date().toISOString();
    await env.CARDS_BUCKET.put(customerKey,customerJson,{
@@ -614,7 +635,7 @@ export async function handleAdminPickTickets(request,env){
   }
   let customerCard;
   const scratches=publicScratches(ownerRelease?source.scratches_by_race:row?.scratches_by_race);
-  try{customerCard=normalizePickTickets({...card,...(scratches?{scratches_by_race:scratches}:{}),...(row?.post_times_by_race?{post_times_by_race:row.post_times_by_race}:{})});}catch{
+  try{customerCard=requireCustomerPickPwin(normalizePickTickets({...card,...(scratches?{scratches_by_race:scratches}:{}),...(row?.post_times_by_race?{post_times_by_race:row.post_times_by_race}:{})}));}catch{
    held.push({date:source.date,track:source.track,reason:"The customer edition failed structural validation."});
    continue;
   }

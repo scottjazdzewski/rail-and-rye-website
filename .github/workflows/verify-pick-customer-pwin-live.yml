@@ -1,4 +1,4 @@
-name: Verify current entitled Pick Tickets PWIN
+name: Repair and verify current entitled Pick Tickets PWIN
 on:
   push:
     branches: [main]
@@ -46,6 +46,48 @@ jobs:
                   if e.response.get("Error",{}).get("Code") not in ("NoSuchKey","404","NotFound"):raise
           Path("/tmp/rr-pwin-customer-private.json").write_text(json.dumps(result))
           PY
+      - name: Validate publication contract and prepare six current editions
+        run: |
+          node test-pick-tickets-customer-pwin.mjs
+          node scripts/repair_pick_customer_pwin_1124.mjs
+      - name: Atomically refresh existing approved customer editions and read back
+        env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+        run: |
+          python - <<'PY'
+          import os,json,hashlib,boto3
+          from pathlib import Path
+          from datetime import datetime,timezone
+          s3=boto3.client("s3",endpoint_url="https://"+os.environ["TRI_CLOUDFLARE_ACCOUNT_ID"].strip()+".r2.cloudflarestorage.com",region_name="auto",aws_access_key_id=os.environ["TRI_R2_ACCESS_KEY_ID"].strip(),aws_secret_access_key=os.environ["TRI_R2_SECRET_ACCESS_KEY"].strip())
+          bucket="rail-and-rye-private-cards"
+          def sha(raw):return hashlib.sha256(raw).hexdigest()
+          path=Path("/tmp/rr-pwin-customer-private.json")
+          snapshot=json.loads(path.read_text())
+          rows=json.loads(Path("/tmp/rr-pwin-customer-repair.json").read_text())
+          # Recheck every input object before any customer write, including the current scratch manifests.
+          for key,v in snapshot.items():
+              current=s3.get_object(Bucket=bucket,Key=key)
+              assert current["Body"].read()==v["raw"].encode(),"Source changed during repair; no writes"
+          for row in rows:
+              key=row["key"];previous=row["previous"].encode();new=row["next"].encode()
+              old=s3.get_object(Bucket=bucket,Key=key)
+              assert old["Body"].read()==previous,"Customer edition changed during repair"
+              assert old["Metadata"].get("customer_publish_approved")=="true"
+              if previous!=new:
+                  prior=json.loads(previous)
+                  archive="pick-tickets/customer-revisions/2026-11-24/"+key.rsplit("/",1)[1][:-5]+"/r"+str(prior["revision"]).zfill(5)+"-"+sha(previous)[:16]+".json"
+                  s3.put_object(Bucket=bucket,Key=archive,Body=previous,ContentType="application/json",CacheControl="private, no-store",Metadata=old["Metadata"])
+                  metadata=dict(old["Metadata"])
+                  metadata.update(customer_publish_approved="true",publication_mode="owner-approved-gpt",revision=str(row["revision"]),content_sha256=sha(new),source_sha256=row["source_sha256"],published_at=datetime.now(timezone.utc).isoformat())
+                  s3.put_object(Bucket=bucket,Key=key,Body=new,ContentType="application/json",CacheControl="private, no-store",Metadata=metadata,IfMatch=old["ETag"])
+              confirm=s3.get_object(Bucket=bucket,Key=key)
+              assert confirm["Body"].read()==new,"Customer readback mismatch"
+              snapshot[key]={"raw":new.decode(),"metadata":confirm["Metadata"]}
+              print("PWIN_REPAIR_READBACK",row["track"],row["revision"],row["sequenceCount"])
+          path.write_text(json.dumps(snapshot))
+          PY
       - name: Validate customer response against real published edition
         run: |
           node --input-type=module <<'JS'
@@ -71,4 +113,4 @@ jobs:
           assert.ok(summary.every(s=>s.coverageReady===s.sequenceCount),'Approved edition lacks matching complete PWIN');
           JS
       - if: always()
-        run: rm -f /tmp/rr-pwin-customer-private.json
+        run: rm -f /tmp/rr-pwin-customer-private.json /tmp/rr-pwin-customer-repair.json
