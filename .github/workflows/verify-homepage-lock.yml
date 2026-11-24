@@ -6,6 +6,9 @@ on:
       - 'test-homepage-lock.mjs'
       - 'test-projection-dashboard-mobile.mjs'
       - 'test-rr-race-titles.mjs'
+      - 'test-projection-race-information.mjs'
+      - 'src/projection-race-information.js'
+      - 'src/pick-tickets.js'
       - 'test-rr-exotic-bet-builder.mjs'
       - 'test-rr-f4-exotics-api.mjs'
       - 'src/f4-exotics.js'
@@ -26,6 +29,10 @@ on:
       - 'public/**'
       - 'test-homepage-lock.mjs'
       - 'test-projection-dashboard-mobile.mjs'
+      - 'test-rr-race-titles.mjs'
+      - 'test-projection-race-information.mjs'
+      - 'src/projection-race-information.js'
+      - 'src/pick-tickets.js'
       - 'test-prescratch-projection-import.mjs'
       - 'src/projections.js'
       - 'scripts/tri_dashboard_sync.py'
@@ -50,6 +57,8 @@ jobs:
         run: node test-projection-dashboard-mobile.mjs
       - name: Fully written sponsor-free stakes and source-verified graded trophies
         run: node test-rr-race-titles.mjs
+      - name: Reject unnamed stakes and preserve signed model source
+        run: node test-projection-race-information.mjs
       - name: Real chip assets and source-gated exotic research Bet Builder
         run: node test-rr-exotic-bet-builder.mjs
       - name: Source-verified private F4 exotic API protects complete runner field
