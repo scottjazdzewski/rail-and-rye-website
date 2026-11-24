@@ -73,6 +73,57 @@ assert.equal(res.status,200);assert.equal((await res.json()).review_only,true);c
 res=await handleAdminLongshotRadar(req("GET"),env);
 assert.equal(res.status,200);let data=await res.json();
 assert.equal(data.editions.length,1);assert.equal(data.editions[0].candidates[0].horse_name,"Synthetic Unit-Test Runner");checks++;
+ // Regression: the current scored date MUST receive the same race facts as
+ // Target List and the older Radar PDF. Previously only 11/23 was enriched.
+ // This source fixture is an original, signed, full-field 11/24 TRI projection.
+ const nov24=base();nov24.race_date="2026-11-24";
+ nov24.generated_at="2026-11-24T05:00:00Z";
+ nov24.candidates[0].track="Zia Park";
+ nov24.candidates[0].race_number=6;
+ nov24.candidates[0].program_number="5";
+ nov24.candidates[0].horse_name="Verified Synthetic Zia Runner";
+ const verified24={...projection,race_date:"2026-11-24",track_name:"Zia Park",
+  races:[{race_number:6,distance:"6F",surface:"Dirt",
+   conditions:"Zia Park Distaff Stakes",stakes_name:"Zia Park Distaff Stakes",
+   is_stakes:true,entries:[
+    {...projection.races[0].entries[0],program_number:"5",horse_name:"Verified Synthetic Zia Runner"},
+    {...projection.races[0].entries[1],program_number:"2",horse_name:"Synthetic Zia Opponent"}
+   ]}]};
+ const source24="projections/dashboard/2026-11-24/zia-park.json";
+ memory.set(source24,JSON.stringify(verified24));
+ res=await handleAdminLongshotRadar(req("POST",nov24),env);
+ assert.equal(res.status,200,"Test race must pass existing exact TRI 100% full-field cross-check.");
+ res=await handleAdminLongshotRadar(req("GET"),env);
+ assert.equal(res.status,200);
+ data=await res.json();
+ const matched24=data.editions.find(e=>e.race_date==="2026-11-24");
+ assert.ok(matched24,"The current daily edition must be in the private feed.");
+ assert.deepEqual([matched24.candidates[0].distance,matched24.candidates[0].surface,
+  matched24.candidates[0].stakes_name],["6F","Dirt","Zia Park Distaff Stakes"],
+  "Current Radar must show the same verified race description and named stake as Target List.");
+ assert.equal(matched24.candidates[0].pwin_exact,1/6);
+ assert.equal(matched24.candidates[0].original_morning_line,"8/1");
+ assert.equal(matched24.candidates[0].betting_case,nov24.candidates[0].betting_case);
+ const stored24=JSON.parse(memory.get("intelligence/longshot-radar/review/2026-11-24.json"));
+ assert.equal(stored24.candidates[0].distance,undefined,
+  "Source descriptions are joined at read time, never written into certified Radar data.");
+ // Missing original projections: no guesses and the selection stays visible.
+ memory.delete(source24);
+ data=await (await handleAdminLongshotRadar(req("GET"),env)).json();
+ const absent24=data.editions.find(e=>e.race_date==="2026-11-24");
+ assert.equal(absent24.candidates[0].distance,undefined);
+ assert.equal(absent24.candidates[0].stakes_name,undefined);
+ assert.equal(absent24.candidates[0].horse_name,"Verified Synthetic Zia Runner");
+ // Exact runner identity is mandatory, even when the track/race happens to match.
+ const wrongHorse24={...verified24,races:verified24.races.map(r=>({...r,entries:
+  r.entries.map(v=>({...v,horse_name:v.horse_name+" mismatched"}))}))};
+ memory.set(source24,JSON.stringify(wrongHorse24));
+ data=await (await handleAdminLongshotRadar(req("GET"),env)).json();
+ assert.equal(data.editions.find(e=>e.race_date==="2026-11-24").candidates[0].distance,undefined,
+  "Race title must not leak from a same-number race without an exact runner match.");
+ memory.set(source24,JSON.stringify(verified24));
+ checks+=6;
+
 // A valid editorial receipt must ALSO match the signed full-field source in R2.
 const mismatchProb=base();mismatchProb.pwin_exact=.2;mismatchProb.pwin_display=20;
 res=await handleAdminLongshotRadar(req("POST",mismatchProb),env);
