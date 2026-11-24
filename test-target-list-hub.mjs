@@ -176,6 +176,7 @@ const fixture={dates:["2026-11-23"],edition:{...good,targets:[synthetic,zulu,alp
 const context={document:doc,fetch:async()=>({ok:true,json:async()=>fixture}),Date,Intl,RegExp,Number,String,Array,Set,console,encodeURIComponent};
 vm.runInNewContext(readFileSync("public/assets/rr-race-titles.js","utf8"),context,{filename:"rr-race-titles.js"});
 vm.runInNewContext(readFileSync("public/assets/rr-research-race-banner.js","utf8"),context,{filename:"rr-research-race-banner.js"});
+vm.runInNewContext(readFileSync("public/assets/rr-research-race-order.js","utf8"),context,{filename:"rr-research-race-order.js"});
 vm.runInNewContext(js,context,{filename:"target-list-dashboard.js"});
 await new Promise(resolve=>setTimeout(resolve,30));
 assert.equal(elements.get("rr-target-app").hidden,false);
