@@ -1,6 +1,6 @@
 import {handleAdminProjectionUpload,handleAdminProjectionBatchUpload,readAdminProjectionCards} from './projections.js';
 import {readCertifiedF4Exotics} from './f4-exotics.js';
-import {handleAdminLongshotRadar,handleAdminLongshotEditorialPreview} from './longshot-radar.js';
+import {handleAdminLongshotRadar,handleAdminLongshotEditorialPreview,publishLongshotRadarTab} from './longshot-radar.js';
 import {handleAdminPickTickets} from './pick-tickets.js';
 import {handleAdminTargetList,readAdminTargetListReview} from './target-list.js';
 import { handleCommerce, sendQueuedEmails, checkoutReadiness, replacePdfAndNotifyBuyers, publicProductForShare } from './commerce.js';
@@ -173,6 +173,10 @@ async function handleAdminAPI(request,env,pathname,ctx) {
     }
     if(request.method==="POST") {
       let data; try{data=readProduct(await parseJSON(request));}catch(e){return fail(e.message);}
+      if(data.status==='published'&&data.category==='Longshot Radar'){
+        try{await publishLongshotRadarTab(env,data.race_date);}
+        catch(error){return fail('Longshot Radar is not ready to publish: '+String(error.message||error).slice(0,180),409);}
+      }
       const id=crypto.randomUUID(),slug=slugFor(data.title,id);
       await env.STORE_DB.prepare(`INSERT INTO products (id,title,slug,category,race_date,track,description,price_cents,pdf_key,image_url,status,pdf_expires_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`)
         .bind(id,data.title,slug,data.category,data.race_date,data.track,data.description,data.price_cents,null,null,data.status,data.pdf_expires_at).run();
@@ -194,6 +198,10 @@ async function handleAdminAPI(request,env,pathname,ctx) {
     if(data.release_at&&(!existing||existing.release_at!==data.release_at)){
       const when=Date.parse(data.release_at.replace(' ','T')+'Z');
       if(when<=Date.now()+30*1000||when>Date.now()+366*86400*1000)return fail('Choose a release at least 1 minute ahead, within the next year');
+    }
+    if(data.status==='published'&&data.category==='Longshot Radar'){
+      try{await publishLongshotRadarTab(env,data.race_date);}
+      catch(error){return fail('Longshot Radar is not ready to publish: '+String(error.message||error).slice(0,180),409);}
     }
     const alertAnnouncement=data.status==='published'&&data.category==='Race Cards'&&(item.status!=='published'||(existing?.release_at||null)!==(data.release_at||null));
     const ops=[env.STORE_DB.prepare(`UPDATE products SET title=?,category=?,race_date=?,track=?,description=?,price_cents=?,status=?,pdf_expires_at=? WHERE id=?`)

@@ -93,7 +93,15 @@ const node=(tag,cls,txt)=>{const n=document.createElement(tag);if(cls)n.classNam
 const dateParts=value=>{const m=String(value||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);if(!m)return null;const d=new Date(Date.UTC(+m[1],+m[2]-1,+m[3]));return {short:new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',timeZone:'UTC'}).format(d),long:new Intl.DateTimeFormat('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric',timeZone:'UTC'}).format(d)};};
 const pct=value=>value==null||value===''?'—':(Number.isFinite(Number(value))?Number(value).toFixed(1)+'%':'—');
 const dollars=value=>Number.isFinite(Number(value))?'$'+(Number(value)/100).toFixed(2):'';
-function titleFor(row){return String(row?.stakes_name||row?.race_name||'').trim()||('Race '+String(row?.race_number??''));}
+function titleFor(row){
+ let title=String(row?.stakes_name||row?.race_name||'').trim()
+  .replace(/\s+(?:presented by|sponsored by)\s+.*$/i,'')
+  .replace(/\bS\.\s*$/i,' Stakes')
+  .trim();
+ if(!title||/^(?:(?:overnight|listed|graded|ungraded|restricted|open|non-graded)\s+)?(?:stake|stakes|stks?\.?|s\.?)\s*(?:\(?(?:g[123]|grade\s*[123])\)?)?$/i.test(title))
+  return 'Race '+String(row?.race_number??'');
+ return title;
+}
 function raceHeading(parent,track,row){
  const title=node('h3','rr-race-title',(track?track+' · ':'')+'Race '+row.race_number+' — '+titleFor(row));
  if(row.is_stakes&&/^(1|2|3|I|II|III)$/i.test(String(row.stakes_grade||'').replace(/^(?:grade|gr?\.?|g)\s*/i,'')))title.append(' 🏆');
@@ -143,14 +151,12 @@ function pickCard(row){
 }
 function longshotCard(row){
  const card=node('article','rr-edition-card wide'),head=node('header','rr-edition-top');
- head.append(node('h3','',row.track+' · Race '+row.race_number+' — '+(row.horse_name||'Longshot')),node('p','',[
-  row.post_time_et,'#'+row.program_number,'ML '+row.original_morning_line
- ].filter(Boolean).join(' · ')));card.append(head);
- const body=node('section','rr-race-card');
- body.append(node('div','rr-score','Projected win '+pct(row.pwin_display)+' · Fair odds '+row.fair_odds_display));
- body.append(node('p','rr-race-meta',row.betting_case));
- const sub=[row.trainer,row.jockey].filter(Boolean).join(' | ');if(sub)body.append(node('p','rr-race-meta',sub));
- card.append(body);return card;
+ raceHeading(head,row.track,row);card.append(head);
+ card.append(horseRow({program_number:row.program_number,horse_name:row.horse_name,
+  win_probability:row.pwin_display,fair_odds:row.fair_odds_display,
+  morning_line:row.original_morning_line,trainer:row.trainer,jockey:row.jockey,metrics:[]}));
+ if(row.betting_case)card.append(node('p','rr-race-meta',row.betting_case));
+ return card;
 }
 function targetCard(row){
  const card=node('article','rr-edition-card wide'),head=node('header','rr-edition-top');
@@ -158,7 +164,9 @@ function targetCard(row){
  const roles=node('div','rr-two-col');
  for(const [label,horse] of [['Favorite',row.favorite],['ATTACK',row.attack],['Also live',row.also_live]]){
   if(!horse)continue;const box=node('div','rr-horse-role');box.append(node('strong','',label));
-  box.append(node('div','rr-horse-name',horse.program_number+' · '+horse.horse_name));
+  const name=node('div','rr-horse-name');
+  name.append(node('span','rr-saddle-chip',horse.program_number),node('span','',horse.horse_name));
+  box.append(name);
   box.append(node('p','rr-race-meta',pct(horse.win_probability)+' · ML '+horse.morning_line+' · Fair odds '+horse.fair_odds));
   const trainer=[horse.trainer,horse.jockey].filter(Boolean).join(' | ');if(trainer)box.append(node('p','rr-race-meta',trainer));
   roles.append(box);

@@ -227,7 +227,7 @@ async function targetOriginalRaceFacts(env,date){
     if(records.has(id)){records.delete(id);conflicts.add(id);continue;}
     const facts={};
     for(const [key,max] of [["post_time_et",40],["distance",60],["surface",50],["conditions",240],
-      ["race_name",240],["stakes_name",240],["stakes_grade",30],["sponsor_name",120]]){
+      ["race_name",240],["stakes_name",240],["stakes_grade",30],["purse",40],["sponsor_name",120]]){
      if(typeof race[key]==="string"&&race[key].trim()&&race[key].length<=max)
       facts[key]=race[key].trim();
     }

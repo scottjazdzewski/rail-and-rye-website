@@ -3,6 +3,7 @@ import {enrichRaceInformation} from "./projection-race-information.js";
  * All requests must pass verifyAdmin in src/index.js before arriving here.
  */
 const PREFIX="intelligence/longshot-radar/review/";
+const PRODUCT_TAB_PREFIX="racing-intelligence/product-tabs/longshot-radar/";
 const HEADERS={"Content-Type":"application/json; charset=utf-8","Cache-Control":"private, no-store","X-Content-Type-Options":"nosniff","X-Robots-Tag":"noindex, nofollow, noarchive"};
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:HEADERS});
 const error=(message,status=400)=>json({error:message},status);
@@ -212,8 +213,48 @@ async function readAll(env){
   return enriched;
 }
 export async function readLongshotRadarEdition(env,raceDate){
-  return (await readAll(env)).find(edition=>edition.race_date===raceDate)||null;
+  if(!env.CARDS_BUCKET||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(String(raceDate||'')))return null;
+  const stored=await env.CARDS_BUCKET.get(PRODUCT_TAB_PREFIX+raceDate+".json");
+  if(!stored||stored.customMetadata?.customer_publish_approved!=="true")return null;
+  let edition;
+  try{
+    edition=validateLongshotEdition(JSON.parse(await stored.text()));
+    if(edition.race_date!==raceDate)return null;
+  }catch(error){
+    console.warn("Rejected invalid Radar product edition",raceDate,String(error).slice(0,110));
+    return null;
+  }
+  const raceFacts=await readOriginalRaceFacts(env,raceDate);
+  return {...edition,candidates:edition.candidates.map(candidate=>{
+    const matched=raceFacts.get(sourceTrackName(candidate.track)+"|"+candidate.race_number);
+    const horse=candidate.program_number.trim().toUpperCase()+"|"+sourceHorseName(candidate.horse_name);
+    return matched?.horses.has(horse)?{...candidate,...matched.facts}:candidate;
+  })};
 }
+export async function publishLongshotRadarTab(env,raceDate){
+  if(!env.CARDS_BUCKET||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(String(raceDate||'')))
+    throw Error("A valid Longshot Radar racing date is required.");
+  const source=await env.CARDS_BUCKET.get(PREFIX+raceDate+".json");
+  if(!source||source.customMetadata?.review_only!=="true")
+    throw Error("There is no review-approved Longshot Radar edition for this racing date.");
+  const raw=await source.text();
+  if(raw.length>512*1024)throw Error("Longshot Radar edition exceeds the publishing size limit.");
+  let edition;
+  try{edition=validateLongshotEdition(JSON.parse(raw));}
+  catch(error){throw Error("Longshot Radar edition is invalid: "+String(error.message||error).slice(0,180));}
+  if(edition.race_date!==raceDate)throw Error("Longshot Radar edition date does not match the product date.");
+  await verifyRadarAgainstStoredTri(edition,env);
+  const destination=PRODUCT_TAB_PREFIX+raceDate+".json";
+  const prior=await env.CARDS_BUCKET.get(destination);
+  if(prior&&Number(prior.customMetadata?.revision||0)>edition.revision)
+    throw Error("A newer Longshot Radar tab revision is already published.");
+  await env.CARDS_BUCKET.put(destination,raw,{
+    httpMetadata:{contentType:"application/json; charset=utf-8",cacheControl:"private, no-store"},
+    customMetadata:{customer_publish_approved:"true",source_review_only:"true",revision:String(edition.revision)}
+  });
+  return {race_date:raceDate,revision:edition.revision,candidates:edition.candidates.length};
+}
+
 export async function handleAdminLongshotRadar(request,env){
   if(!env.CARDS_BUCKET)return error("Private Radar storage is not configured.",503);
   if(request.method==="GET"){
@@ -295,7 +336,7 @@ async function readOriginalRaceFacts(env,raceDate){
      continue;
     }
     const facts={};
-    for(const [key,max] of [["distance",60],["surface",50],["conditions",240],["stakes_name",240],["race_name",240],["sponsor_name",120],["stakes_grade",30]]){
+    for(const [key,max] of [["post_time_et",40],["distance",60],["surface",50],["conditions",240],["stakes_name",240],["race_name",240],["sponsor_name",120],["stakes_grade",30],["purse",40]]){
      if(typeof race[key]==="string"&&race[key].trim()&&race[key].length<=max)
       facts[key]=race[key].trim();
     }

@@ -45,7 +45,10 @@ function publicPick(item){
 function publicLongshot(edition){
  if(!edition||!Array.isArray(edition.candidates))return null;
  return {race_date:edition.race_date,candidates:edition.candidates.map(row=>({
-  track:text(row.track,100),race_number:row.race_number,program_number:text(row.program_number,8),
+  track:text(row.track,100),race_number:row.race_number,post_time_et:text(row.post_time_et,40),
+  distance:text(row.distance,80),surface:text(row.surface,50),conditions:text(row.conditions,240),
+  race_name:text(row.race_name,240),stakes_name:text(row.stakes_name,240),stakes_grade:text(row.stakes_grade,20),
+  is_stakes:row.is_stakes===true,purse:text(row.purse,40),program_number:text(row.program_number,8),
   horse_name:text(row.horse_name,100),original_morning_line:text(row.original_morning_line,20),
   pwin_display:num(row.pwin_display),fair_odds_display:text(row.fair_odds_display,20),
   betting_case:text(row.betting_case,360),post_time_et:text(row.post_time_et,50),
@@ -63,7 +66,7 @@ function publicTarget(edition){
   rank:row.rank,track:text(row.track,100),race_number:row.race_number,tier:text(row.tier,16),
   post_time_et:text(row.post_time_et,40),surface:text(row.surface,50),distance:text(row.distance,80),
   conditions:text(row.conditions,200),race_name:text(row.race_name,240),
-  stakes_name:text(row.stakes_name,240),stakes_grade:text(row.stakes_grade,20),is_stakes:row.is_stakes===true,
+  stakes_name:text(row.stakes_name,240),stakes_grade:text(row.stakes_grade,20),is_stakes:row.is_stakes===true,purse:text(row.purse,40),
   analysis:text(row.analysis,4000),favorite:runner(row.favorite),attack:runner(row.attack),
   also_live:runner(row.also_live),scratches:Array.isArray(row.scratches)?row.scratches.map(x=>({
    program_number:text(x.program_number,4),horse_name:text(x.horse_name,120)
