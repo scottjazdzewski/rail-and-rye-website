@@ -1,0 +1,100 @@
+name: Verify November 24 initial TRI F4 live cards
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/verify-1124-initial-f4-live.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  certify-initial-f4:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    env:
+      TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+      TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+      TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Retrieve authenticated six-track November 24 initial model snapshots
+        run: |
+          python -m pip install --disable-pip-version-check --quiet boto3
+          python - <<'PY'
+          import boto3,json,os,pathlib
+          account=os.environ["TRI_CLOUDFLARE_ACCOUNT_ID"]
+          r2=boto3.session.Session().client('s3',region_name='auto',endpoint_url=f'https://{account}.r2.cloudflarestorage.com',aws_access_key_id=os.environ['TRI_R2_ACCESS_KEY_ID'],aws_secret_access_key=os.environ['TRI_R2_SECRET_ACCESS_KEY'])
+          bucket='rail-and-rye-private-cards';date='2026-11-24'
+          expected={'delta-downs':8,'finger-lakes':8,'mahoning-valley':8,'mountaineer':8,'parx-racing':9,'zia-park':10}
+          root=pathlib.Path('/tmp/rr1124cert');root.mkdir(mode=0o700,exist_ok=True)
+          for slug,nrace in expected.items():
+           cardKey=f'projections/dashboard/{date}/{slug}.json'
+           f4Key=f'projections/f4-ordered/{date}/{slug}.json'
+           co=r2.get_object(Bucket=bucket,Key=cardKey);fo=r2.get_object(Bucket=bucket,Key=f4Key)
+           card=json.loads(co['Body'].read());f4=json.loads(fo['Body'].read())
+           assert card['race_date']==date and card['projection_status']=='prescratch'
+           assert f4['date']==date and f4['scratch_state']=='PRESCRATCH'
+           assert len(card['races'])==len(f4['races'])==nrace
+           data={'card':card,'f4':f4,'metadata':co['Metadata']}
+           (root/(slug+'.json')).write_text(json.dumps(data))
+          print('PRIVATE_1124_INITIAL_ALL_TRACKS_READBACK_OK tracks=6')
+          PY
+      - name: Verify every protected F4 exacta/trifecta endpoint and probability receipt
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          import assert from 'node:assert/strict';
+          import {readCertifiedF4Exotics} from './src/f4-exotics.js';
+          const dir='/tmp/rr1124cert';
+          const files=fs.readdirSync(dir).filter(f=>f.endsWith('.json'));
+          assert.equal(files.length,6);
+          let races=0,runners=0,checkedTickets=0;
+          for(const file of files){
+           const {card,f4,metadata}=JSON.parse(fs.readFileSync(dir+'/'+file,'utf8'));
+           const env={CARDS_BUCKET:{get:async key=>{
+            if(key.startsWith('projections/dashboard/'))return {json:async()=>card,customMetadata:metadata};
+            if(key.startsWith('projections/f4-ordered/'))return {json:async()=>f4};
+            throw Error('Unexpected private object');
+           }}};
+           for(const race of card.races){
+            const url=new URL('https://railandryeracing.com/api/admin/projections-f4');
+            url.searchParams.set('date',card.race_date);
+            url.searchParams.set('track',card.track_name);
+            url.searchParams.set('race',String(race.race_number));
+            const result=await readCertifiedF4Exotics(env,url);
+            if(result.status!==200)throw Error(card.track_name+' Race '+race.race_number+': '+await result.text());
+            const obj=(await result.json()).f4;
+            assert.equal(obj.scratch_state,'PRESCRATCH');
+            assert.equal(obj.status,'verified');
+            assert.equal(obj.receipt_sha256,card.model_receipts.f4_sha256);
+            assert.equal(obj.source_sha256,metadata.source_sha256);
+            assert.deepEqual(new Set(obj.programs),new Set(race.entries.map(x=>String(x.program_number))));
+            assert.ok(race.entries.every(x=>x.metrics.length===5));
+            const n=obj.programs.length, w2sum=obj.p2_weights.reduce((a,b)=>a+b,0);
+            const chosen=obj.pwin.map((p,i)=>({i,p})).sort((a,b)=>b.p-a.p).slice(0,2);
+            const exacta=chosen[0].p*obj.p2_weights[chosen[1].i]/(w2sum-obj.p2_weights[chosen[0].i]);
+            assert.ok(exacta>0&&exacta<1);
+            const breakEven=1/exacta;
+            assert.ok(Number.isFinite(breakEven)&&breakEven>1);
+            checkedTickets++;races++;runners+=n;
+           }
+          }
+          assert.equal(races,51);assert.equal(runners,430);assert.equal(checkedTickets,51);
+          console.log('PRIVATE_1124_BET_BUILDER_PASS tracks=6 races=51 runners=430 positive_hit_chances=51 finite_break_even_payouts=51');
+          JS
+          rm -rf /tmp/rr1124cert
+      - name: Confirm deployed site uses current certified F4 Bet Builder
+        run: |
+          set -euo pipefail
+          BASE=https://railandryeracing.com
+          curl -fsSL --max-time 25 -H 'Cache-Control: no-cache' "${BASE}/assets/rr-exotic-bet-builder.js?proof=1124-f4-${GITHUB_SHA}" -o /tmp/builder-live.js
+          curl -fsSL --max-time 25 -H 'Cache-Control: no-cache' "${BASE}/assets/projections-dashboard.js?proof=1124-f4-${GITHUB_SHA}" -o /tmp/dashboard-live.js
+          cmp -s public/assets/rr-exotic-bet-builder.js /tmp/builder-live.js
+          cmp -s public/assets/projections-dashboard.js /tmp/dashboard-live.js
+          echo NOV24_LIVE_BET_BUILDER_ASSETS_MATCH
