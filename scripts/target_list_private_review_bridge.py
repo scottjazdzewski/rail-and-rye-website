@@ -157,6 +157,14 @@ def publish_from_issue():
                               for role in ("favorite","attack")
                               for field in ("program_number","horse_name","morning_line","win_probability","fair_odds"))
                           for k in common)
+            field_diffs=[]
+            for k in common:
+                changes=[role+"."+field for role in ("favorite","attack")
+                    for field in ("program_number","horse_name","morning_line","win_probability","fair_odds")
+                    if old[k][role].get(field)!=new[k][role].get(field)]
+                if changes:
+                    field_diffs.append({"incoming_rank":new[k]["rank"],"changed_fields":changes})
+            print("PRIVATE_1124_FIELD_DIFFS:",json.dumps(sorted(field_diffs,key=lambda v:v["incoming_rank"])))
             print("PRIVATE_1124_EDITION_CONFLICT_AUDIT: existing=%d incoming=%d overlapping=%d same_horses_and_scores=%d newly_proposed=%d omitted=%d source_zip_match=%s" %
                   (len(old),len(new),len(common),unchanged,len(set(new)-set(old)),len(set(old)-set(new)),
                    previous.get("source",{}).get("timeforms_zip_sha256")==data.get("source",{}).get("timeforms_zip_sha256")))
