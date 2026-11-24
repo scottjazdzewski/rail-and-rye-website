@@ -1,0 +1,80 @@
+{
+  "date": "2026-11-25",
+  "release_at": "2026-11-25T08:00:00Z",
+  "source_sha256": "8a1538f5ced6efb2ced53013c1fc4bc01052a209c840091b45af6245460a0b13",
+  "badge_evaluator_sha256": "26d720690875a06cef9cf0bb3db4a699e7ca56aa5ed1ca4997717f3c2bfeadac",
+  "tracks": [
+    {
+      "slug": "finger-lakes",
+      "name": "Finger Lakes",
+      "races": 8,
+      "runners": 61,
+      "raw_sha256": "4fdc303b98dd0fe82b3e0459743b95523f028af1e8195175162cef3d1f288f57",
+      "cipher_sha256": "ed4f94dd876e92d3f3c69b23b3ff20e1fffd8fd199f84125e2640aa2297b873c"
+    },
+    {
+      "slug": "parx-racing",
+      "name": "Parx Racing",
+      "races": 9,
+      "runners": 72,
+      "raw_sha256": "0cef5c4b6dabe0f42701ed2641c3336940fdb2f193a853442f0f8f042e4d056c",
+      "cipher_sha256": "e6e5813f0b070d858acf93800b7a3a65c46bf9ab34f213b967260b6dd46f96c8"
+    },
+    {
+      "slug": "delta-downs",
+      "name": "Delta Downs",
+      "races": 8,
+      "runners": 67,
+      "raw_sha256": "b3fedb20ebdd54b5f601e875727f2f347570dd90fbfea30b95b460fe96189209",
+      "cipher_sha256": "7b6f94da3ceaa26ed279de35bd3735ad798558214adc79eaf6db834009d0e352"
+    },
+    {
+      "slug": "mahoning-valley",
+      "name": "Mahoning Valley",
+      "races": 8,
+      "runners": 64,
+      "raw_sha256": "a152a5eb2363fe6a8daeda54ec0174ba35a2d2496146d6ce61a7eb38f7ce6a7e",
+      "cipher_sha256": "acd459bab5861c7587f227a4844568abc510b077a50bc7b3f714c7ea7e04e13b"
+    },
+    {
+      "slug": "mountaineer",
+      "name": "Mountaineer",
+      "races": 8,
+      "runners": 66,
+      "raw_sha256": "fe5ff008feed24fe2fd0916b23e9c073c5aafba8a2f73add8a3b82686247c969",
+      "cipher_sha256": "243a9ad6171b398393a7a3b84665b52bbc39f9e7b8524d27c2a62833d39c6723"
+    },
+    {
+      "slug": "tampa-bay-downs",
+      "name": "Tampa Bay Downs",
+      "races": 9,
+      "runners": 74,
+      "raw_sha256": "8ac696b8a6c0e12e9dfe83a6041649bc43db4b8e1627bcd4927ef6db7f6d2af8",
+      "cipher_sha256": "2c5351815a2e223cc282d33d91dee30757902a238c14d8d409052e199eb24f16"
+    },
+    {
+      "slug": "churchill-downs",
+      "name": "Churchill Downs",
+      "races": 10,
+      "runners": 93,
+      "raw_sha256": "cf1c57619cab78384841e98b7393af5e1df46f850900862cbd7cc45b010fba8b",
+      "cipher_sha256": "d7ec0813ad0b753796e8b94a126ebe21acbddcf3647f4cfb6d3f0ba6572b629e"
+    },
+    {
+      "slug": "charles-town",
+      "name": "Charles Town",
+      "races": 8,
+      "runners": 68,
+      "raw_sha256": "c1d468909f578d1482572af646ac52dc9a3f92184576b2764ce49a4231b4a824",
+      "cipher_sha256": "1a67504511c6b0fa6634aafa35b5b0cc4d2209b5b91bd99198b487a599f66e83"
+    },
+    {
+      "slug": "penn-national",
+      "name": "Penn National",
+      "races": 8,
+      "runners": 61,
+      "raw_sha256": "3626356ca49b6ae5e3e489c0351a61b8a57b14bdb54b60bb405ba086be073df1",
+      "cipher_sha256": "6ad2f630e582172a8bf0f3691333eaac1bcb5f7ea2e0e5417b9834eed1fa1909"
+    }
+  ]
+}

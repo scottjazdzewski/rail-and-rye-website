@@ -8,6 +8,7 @@ import { handleCommerce, sendQueuedEmails, checkoutReadiness, replacePdfAndNotif
 import {handleRacingWire,handleAdminRacingWire,refreshRacingWire} from './racing-wire.js';
 import {handleAdminBundles,BUNDLE_KEY} from './bundles.js';
 import {syncDailyBundles,ensureUpcomingProductReleaseSchedules} from './daily-bundles.js';
+import {syncStagedRaceCardCatalog} from './staged-race-card-catalog.js';
 import {handleAdminGPTProductCatalog} from './gpt-product-catalog.js';
 import {syncExistingGPTProductCatalog} from './gpt-product-catalog-sync.js';
 import {handleAdminBundleAssets} from './bundle-assets.js';
@@ -443,7 +444,7 @@ export default {
     ctx.waitUntil(prepareScheduledPickStages(env).then(result=>{
       if(result.prepared)console.info("Dated Pick Tickets prepared for scheduled release",result.prepared);
     }).catch(e=>console.warn("Scheduled Pick Tickets preparation deferred",String(e.message||e).slice(0,140))));
-    ctx.waitUntil(syncDailyBundles(env).then(result=>{
+    ctx.waitUntil(syncStagedRaceCardCatalog(env).then(()=>syncDailyBundles(env)).then(result=>{
       if(result.created||result.updated)console.info("Daily product bundles synchronized",result);
     }).catch(e=>console.warn("Daily bundles sync deferred",String(e).slice(0,160))));
     ctx.waitUntil(refreshRacingWire(env).then(result=>{

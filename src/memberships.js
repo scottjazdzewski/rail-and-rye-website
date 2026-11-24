@@ -1,7 +1,8 @@
 import {BUNDLE_KEY} from './bundles.js';
 import {readMemberProjectionCards} from './projections.js';
 import {readCertifiedF4Exotics} from './f4-exotics.js';
-import {ensureReleaseSchedule,ensureRacePdfExpirySchema} from './publication-schedule.js';
+import {ensureReleaseSchedule,ensureRacePdfExpirySchema,releaseAt3amEastern,pdfExpiryFromRaceDate,racePdfExpired} from './publication-schedule.js';
+const availableRaceEdition=card=>!releaseAt3amEastern(card.race_date)&&!racePdfExpired(pdfExpiryFromRaceDate(card.race_date));
 
 const API_HEADERS={"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store","X-Content-Type-Options":"nosniff"};
 const SITE="https://railandryeracing.com";
@@ -444,7 +445,7 @@ async function memberProjectionData(request,env){
   const email=await sessionEmail(request,env);
   if(!email)return error("Sign in to access your membership.",401);
   if(!env.CARDS_BUCKET)return error("The member dashboard is temporarily unavailable.",503);
-  return json({active:true,cards:await readMemberProjectionCards(env,await memberLibrary(env))});
+  return json({active:true,cards:(await readMemberProjectionCards(env,await memberLibrary(env))).filter(availableRaceEdition)});
 }
 async function memberCertifiedF4(request,env,url){
   if(env.PROJECTIONS_MEMBER_LAUNCH!=="on")return error("Not found.",404);
@@ -457,7 +458,7 @@ async function memberCertifiedF4(request,env,url){
      !track||!Number.isInteger(race)||race<1||race>20)
    return error("Invalid race selection.",400);
   const cards=await readMemberProjectionCards(env,await memberLibrary(env));
-  const chosen=cards.some(c=>c.race_date===date&&
+  const chosen=cards.some(c=>availableRaceEdition(c)&&c.race_date===date&&
       (c.track===track||c.card?.track_name===track)&&
       c.card?.races?.some(r=>r.race_number===race));
   if(!chosen)return error("Current race not available for this member.",404);
