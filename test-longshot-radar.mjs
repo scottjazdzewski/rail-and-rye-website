@@ -299,7 +299,7 @@ assert.ok(!ui.includes("rr-lr-racebar")&&!ui.includes("sourceRaceTitle")&&!ui.in
 const banner=readFileSync("public/assets/rr-research-race-banner.js","utf8");
 const bannerCSS=readFileSync("public/assets/rr-research-race-banner.css","utf8");
 assert.ok(banner.includes("RRResearchRaceBanner=Object.freeze"),"Shared renderer is an immutable global authority");
-assert.ok(banner.includes("rr-research-racebar__facts")&&banner.includes("appendGradeTrophy(facts,title.grade)"),"Shared renderer shows sourced titles and stakes trophies");
+assert.ok(banner.includes("rr-research-racebar__facts")&&(banner.includes("appendGradeTrophy(facts,title.grade)")||banner.includes("appendGradeTrophy(facts,title?.grade)")),"Shared renderer shows sourced titles and stakes trophies");
 assert.ok(bannerCSS.includes("grid-template-columns:minmax(0,1fr) max-content"),"Track stays left, race/post right");
 assert.ok(bannerCSS.includes("font:500 14px/1.35 Inter"),"Source race facts stay readable beneath the title");
 assert.ok(css.includes("SHARED DAILY RESEARCH DESIGN STANDARD V1"),"Keep existing Radar body design");
