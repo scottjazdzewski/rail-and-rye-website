@@ -3,7 +3,6 @@ import {ensureReleaseSchedule} from "./publication-schedule.js";
 import {PRODUCT_TAB_CATEGORIES,readyProductTabProductIds} from "./product-tab-content.js";
 
 const AUTO_CATEGORIES=["Race Cards","Pick Tickets"];
-const DAILY_BUNDLE_PRICE_CENTS=600;
 const ET_DATE_FORMAT=new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",year:"numeric",month:"2-digit",day:"2-digit"});
 const ET_CLOCK_FORMAT=new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",hourCycle:"h23",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit"});
 const partsFor=(formatter,date)=>Object.fromEntries(formatter.formatToParts(date).map(part=>[part.type,part.value]));
@@ -49,12 +48,26 @@ function slugFor(title,id){
 function ordered(items){
   return [...items].sort((a,b)=>String(a.track||a.title||"").localeCompare(String(b.track||b.title||""),"en")||String(a.id).localeCompare(String(b.id)));
 }
-function bundleDescription(kind,date){
-  if(kind==="universal")return "One day of access to all published Race Cards, Pick Tickets, Longshot Radar, and Target List editions for "+date+". Available through 3:00 AM Eastern the following morning.";
-  const noun=kind==="race-cards"?"Race Cards":"Pick Tickets";
-  return "All published "+noun+" editions for "+date+", bundled in one purchase. Available through 3:00 AM Eastern the following morning.";
+function trackKey(product){
+  const source=String(product.track||product.title||"").split(" — ")[0].split(" - ")[0];
+  return source.normalize("NFKD").toLowerCase().replace(/[^a-z0-9]+/g,"");
 }
-async function syncOneBundle(env,{date,kind,category,title,items,priceCents}){
+function trackCountFor(byCategory){
+  const cards=byCategory.get("Race Cards")||[];
+  const tickets=byCategory.get("Pick Tickets")||[];
+  const source=cards.length?cards:tickets;
+  return new Set(source.map(trackKey).filter(Boolean)).size;
+}
+function dailyBundlePriceCents(kind,trackCount){
+  const tier=trackCount<=6?0:trackCount<=11?1:2;
+  return (kind==="universal"?600:400)+tier*100;
+}
+function bundleDescription(kind,date,trackCount){
+  if(kind==="universal")return "One day of access to all published Race Cards, Pick Tickets, Longshot Radar, and Target List editions for "+date+" across "+trackCount+" tracks. Price is tiered by the number of tracks. Access ends at 3:00 AM Eastern the following morning.";
+  const noun=kind==="race-cards"?"Race Cards":"Pick Tickets";
+  return "All published "+noun+" editions for "+date+" across "+trackCount+" tracks. Price is tiered by the number of tracks. Access ends at 3:00 AM Eastern the following morning.";
+}
+async function syncOneBundle(env,{date,kind,category,title,items,priceCents,trackCount}){
   const db=env.STORE_DB,children=ordered(items);
   if(children.length<2||children.length>100)return "skipped";
   const expiresAt=saleEndsAt3amEastern(date);
@@ -81,12 +94,8 @@ async function syncOneBundle(env,{date,kind,category,title,items,priceCents}){
   const previousIds=previous.map(item=>item.id);
   const childIds=children.map(item=>item.id);
   const itemsChanged=previousIds.length!==childIds.length||previousIds.some((value,index)=>value!==childIds[index]);
-  const previousAutoPrice=previous.reduce((sum,item)=>sum+(Number.isSafeInteger(item.price_cents)?item.price_cents:0),0);
-  const newAutoPrice=Math.max(50,Math.min(500000,children.reduce((sum,item)=>sum+(Number.isSafeInteger(item.price_cents)?item.price_cents:0),0)));
-  let finalPrice=existing&&Number.isSafeInteger(existing.price_cents)&&existing.price_cents>=50&&existing.price_cents<=500000?existing.price_cents:priceCents;
-  if(!existing)finalPrice=priceCents;
-  else if(kind!=="universal"&&previous.length&&finalPrice===previousAutoPrice)finalPrice=newAutoPrice;
-  const description=bundleDescription(kind,date);
+  const finalPrice=priceCents;
+  const description=bundleDescription(kind,date,trackCount);
   const slug=existing?.slug||slugFor(title,id);
   const parentChanged=!existing||existing.title!==title||existing.slug!==slug||existing.category!==category||
     existing.race_date!==date||existing.description!==description||existing.price_cents!==finalPrice||
@@ -127,13 +136,15 @@ export async function syncDailyBundles(env){
       if(!byCategory.has(product.category))byCategory.set(product.category,[]);
       byCategory.get(product.category).push(product);
     }
+    const trackCount=trackCountFor(byCategory);
+    if(trackCount<1){record("skipped");continue;}
     for(const category of AUTO_CATEGORIES){
       const items=byCategory.get(category)||[];
       if(items.length<2||items.length>100){if(items.length>100)record("skipped");continue;}
+      const kind=category==="Race Cards"?"race-cards":"pick-tickets";
       const bundle=await syncOneBundle(env,{
-        date,kind:category==="Race Cards"?"race-cards":"pick-tickets",category,
-        title:category==="Race Cards"?"All Race Cards":"All Pick Tickets",
-        items,priceCents:Math.max(50,Math.min(500000,items.reduce((sum,item)=>sum+item.price_cents,0)))
+        date,kind,category,title:category==="Race Cards"?"All Race Cards":"All Pick Tickets",
+        items,trackCount,priceCents:dailyBundlePriceCents(kind,trackCount)
       });
       record(bundle);
     }
@@ -141,7 +152,8 @@ export async function syncDailyBundles(env){
     const allItems=PRODUCT_TAB_CATEGORIES.flatMap(category=>byCategory.get(category)||[]);
     if(hasEveryCategory&&allItems.length>=2&&allItems.length<=100){
       const bundle=await syncOneBundle(env,{
-        date,kind:"universal",category:"Race Cards",title:"Universal Access",items:allItems,priceCents:DAILY_BUNDLE_PRICE_CENTS
+        date,kind:"universal",category:"Race Cards",title:"Universal Access",items:allItems,trackCount,
+        priceCents:dailyBundlePriceCents("universal",trackCount)
       });
       record(bundle);
     }else if(allItems.length>100){
