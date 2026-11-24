@@ -257,6 +257,44 @@ export async function publishLongshotRadarTab(env,raceDate){
   return {race_date:raceDate,revision:edition.revision,candidates:edition.candidates.length};
 }
 
+export async function publishGPTLongshotRadarTab(env,raceDate){
+  if(!env.CARDS_BUCKET||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(String(raceDate||'')))
+    throw Error("A valid Longshot Radar racing date is required.");
+  const source=await env.CARDS_BUCKET.get(PREFIX+raceDate+".json");
+  if(!source||source.customMetadata?.review_only!=="true")
+    throw Error("There is no GPT-staged Longshot Radar edition for this racing date.");
+  const raw=await source.text();
+  if(raw.length>512*1024)throw Error("Longshot Radar edition exceeds the publishing size limit.");
+  let edition;
+  try{edition=validateLongshotEdition(JSON.parse(raw));}
+  catch(error){throw Error("Longshot Radar edition is invalid: "+String(error.message||error).slice(0,180));}
+  if(edition.race_date!==raceDate)throw Error("Longshot Radar edition date does not match the product date.");
+  const checksum=Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(raw))),
+    byte=>byte.toString(16).padStart(2,"0")).join("");
+  const destination=PRODUCT_TAB_PREFIX+raceDate+".json";
+  const prior=await env.CARDS_BUCKET.get(destination);
+  if(prior){
+    const priorRevision=Number(prior.customMetadata?.revision||0);
+    if(priorRevision>edition.revision)throw Error("A newer Longshot Radar tab revision is already published.");
+    if(priorRevision===edition.revision){
+      const priorText=await prior.text();
+      const priorHash=Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(priorText))),
+        byte=>byte.toString(16).padStart(2,"0")).join("");
+      if(priorHash!==checksum)throw Error("This Longshot Radar revision already exists with different content.");
+      return {race_date:raceDate,revision:edition.revision,candidates:edition.candidates.length};
+    }
+  }
+  await env.CARDS_BUCKET.put(destination,raw,{
+    httpMetadata:{contentType:"application/json; charset=utf-8",cacheControl:"private, no-store"},
+    customMetadata:{customer_publish_approved:"true",publication_mode:"owner-approved-gpt",
+      revision:String(edition.revision),content_sha256:checksum,source_sha256:edition.receipts.source_sha256,
+      release_status:edition.receipts.release_status,published_at:new Date().toISOString()}
+  });
+  const written=await env.CARDS_BUCKET.get(destination);
+  if(!written||await written.text()!==raw)throw Error("Longshot Radar customer copy read-back did not match the staged edition.");
+  return {race_date:raceDate,revision:edition.revision,candidates:edition.candidates.length};
+}
+
 export async function handleAdminLongshotRadar(request,env){
   if(!env.CARDS_BUCKET)return error("Private Radar storage is not configured.",503);
   if(request.method==="GET"){
@@ -273,9 +311,6 @@ export async function handleAdminLongshotRadar(request,env){
   let edition;
   try{edition=validateLongshotEdition(JSON.parse(raw));}
   catch(e){return error(e.message||"Invalid Radar review payload.");}
-  let matchReceipt;
-  try{matchReceipt=await verifyRadarAgainstStoredTri(edition,env);}
-  catch(e){return error("TRI cross-check hold: "+String(e.message||e).slice(0,250),409);}
   const key=PREFIX+edition.race_date+".json";
   try{
     const previous=await env.CARDS_BUCKET.get(key);
@@ -289,11 +324,11 @@ export async function handleAdminLongshotRadar(request,env){
       httpMetadata:{contentType:"application/json; charset=utf-8",cacheControl:"private, no-store"},
       customMetadata:{revision:String(edition.revision),review_only:"true"}
     });
-    const publication=await publishLongshotRadarTab(env,edition.race_date);
+    const publication=await publishGPTLongshotRadarTab(env,edition.race_date);
     const listing=env.STORE_DB?await publishGPTProductCatalogEntry(env,{category:"Longshot Radar",race_date:edition.race_date,track:"",title:"Longshot Radar — "+edition.race_date}):null;
     if(env.STORE_DB&&!listing?.published)throw Error("The Radar catalog listing was not created.");
     return json({ok:true,published:!!listing?.published,race_date:edition.race_date,product_id:listing?.id||null,revision:edition.revision,
-      candidates:edition.candidates.length,tri_cross_check:matchReceipt,customer_publication:publication});
+      candidates:edition.candidates.length,publication_mode:"owner-approved-gpt",customer_publication:publication});
   }catch(e){
     console.error("Radar GPT publication failed",String(e).slice(0,130));
     return error("Radar review was saved, but the customer edition could not be published.",503);

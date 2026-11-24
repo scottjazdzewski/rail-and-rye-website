@@ -1,5 +1,5 @@
 import {readPublishedPickTicketCards,publishGPTPickTicketReviews} from "./pick-tickets.js";
-import {readLongshotRadarEdition,publishLongshotRadarTab} from "./longshot-radar.js";
+import {readLongshotRadarEdition,publishGPTLongshotRadarTab} from "./longshot-radar.js";
 import {readTargetListEdition,publishGPTTargetListReviews} from "./target-list.js";
 import {hasProductTabData} from "./product-tab-content.js";
 import {publishGPTProductCatalogEntry} from "./gpt-product-catalog.js";
@@ -33,7 +33,7 @@ export async function syncExistingGPTProductCatalog(env,action="sync_existing"){
   ).filter(Boolean));
   for(const race_date of [...radarDates].sort()){
    try{
-    const customer=await publishLongshotRadarTab(env,race_date);
+    const customer=await publishGPTLongshotRadarTab(env,race_date);
     const listing=await publishGPTProductCatalogEntry(env,{category:"Longshot Radar",race_date,track:"",
      title:"Longshot Radar — "+race_date});
     if(!listing?.published)throw Error("The store catalog listing was not created.");
