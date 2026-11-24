@@ -1,0 +1,106 @@
+/* Rail & Rye — desktop-only refinement. Mobile baseline is immutable.
+   The link also has a matching media attribute. Never put rules outside this block. */
+@media (min-width: 1100px) {
+  /* Shared workspace and gold/navy title. Existing mobile title remains untouched. */
+  html.rr-intel-document > body.rr-member-page > main:is(.rr-dashboard-main,.rr-pt-main,.rr-target-main,.rr-hub-review-main) {
+    width:100%; max-width:1440px; padding:20px clamp(28px,3vw,48px) 28px; margin-inline:auto;
+  }
+  .rr-member-page main > .rr-desktop-title {display:block!important;margin:0 0 16px;padding:0;}
+  .rr-desktop-title > span {display:block;color:#a87933;font:800 12px/1.25 Inter,Arial,system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase;}
+  .rr-desktop-title > h1 {margin:4px 0 0;color:#102d53;font:800 32px/1.12 Inter,Arial,system-ui,sans-serif;letter-spacing:-.025em;}
+  .rr-desktop-title::after {content:"";display:block;width:52px;height:2px;margin-top:9px;background:#c99831;}
+  .rr-member-page main > :is(.rr-dash-visually-hidden,.rr-pt-heading,.rr-dash-heading,.rr-target-titlebar,.rr-hub-review-intro) {display:none!important;}
+  .rr-member-page main :is(.rr-pt-toolbar,.rr-lr-toolbar,.rr-target-toolbar) {
+    display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%;max-width:none;
+    align-items:end;gap:12px;margin:0 0 10px;padding:9px 12px;
+    border:1px solid #d6c8ad;border-top:2px solid #c99831;border-radius:8px;background:#fff;
+  }
+  .rr-member-page main :is(.rr-pt-toolbar,.rr-lr-toolbar,.rr-target-toolbar,.rrp-command .rr-dash-toolbar) label {
+    display:grid;gap:4px;color:#4b6176;font:750 11px/1.2 Inter,Arial,system-ui,sans-serif;letter-spacing:.04em;text-transform:uppercase;
+  }
+  .rr-member-page main :is(.rr-pt-toolbar,.rr-lr-toolbar,.rr-target-toolbar,.rrp-command .rr-dash-toolbar) select {
+    min-height:38px;max-height:none;border:1px solid #c6b082;border-radius:6px;color:#102d53;background:#fff;
+    font:650 14px/1.2 Inter,Arial,system-ui,sans-serif;
+  }
+  /* Race Cards: one compact race header and readable data table. */
+  .rr-dashboard-page:not(.rr-lr-page) .rrp-command {gap:5px;padding:9px 12px;}
+  .rr-dashboard-page:not(.rr-lr-page) .rrp-command__controls {grid-template-columns:minmax(230px,.7fr) minmax(0,1.8fr);gap:12px;align-items:end;}
+  .rr-dashboard-page:not(.rr-lr-page) .rr-dash-mode-button {min-height:34px;}
+  .rr-dashboard-page:not(.rr-lr-page) .rrp-track-head {padding:7px 2px 3px;}
+  .rr-dashboard-page:not(.rr-lr-page) .rrp-track-head[data-rr-desktop-logo] {min-height:43px;padding-left:60px;background-position:4px center;background-repeat:no-repeat;background-size:48px 36px;}
+  .rrp-track-head[data-rr-desktop-logo="finger-lakes"] {background-image:url('/assets/approved/track-logos/finger-lakes.webp');}
+  .rrp-track-head[data-rr-desktop-logo="mahoning-valley"] {background-image:url('/assets/approved/track-logos/mahoning-valley.webp');}
+  .rrp-track-head[data-rr-desktop-logo="mountaineer"] {background-image:url('/assets/approved/track-logos/mountaineer.webp');}
+  .rrp-track-head[data-rr-desktop-logo="parx-racing"] {background-image:url('/assets/approved/track-logos/parx-racing.webp');}
+  .rrp-track-head[data-rr-desktop-logo="zia-park"] {background-image:url('/assets/approved/track-logos/zia-park.webp');}
+  .rr-dashboard-page:not(.rr-lr-page) .rr-dash-race-layout {margin-top:12px;}
+  .rr-dashboard-page:not(.rr-lr-page) .rr-dash-race-panel {padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;}
+  .rr-dashboard-page .rrp-race-head {margin:0;padding:10px 16px 6px;border-radius:10px 10px 0 0;}
+  .rr-dashboard-page .rrp-race-head__title-row {gap:12px;padding:0 0 8px;}
+  .rr-dashboard-page .rrp-race-head__number {flex:0 0 46px;width:46px;height:46px;padding:3px;border-radius:9px;}
+  .rr-dashboard-page .rrp-race-head__condition,
+  .rr-dashboard-page .rrp-race-head.rr-dash-race-banner--extended-title .rrp-race-head__condition {font-size:23px;line-height:1.18;}
+  .rr-dashboard-page .rrp-race-head__details {padding:8px 3px;column-gap:20px;}
+  .rr-dashboard-page .rrp-race-head__runners,.rr-dashboard-page .rrp-race-head__purse {font-size:13px;padding-right:20px;}
+  .rr-dashboard-page .rrp-race-head__time span {font-size:12px;}
+  .rr-dashboard-page .rrp-race-head__time strong {font-size:15px;}
+  .rr-dashboard-page .rrp-race-head__scratch-bar {height:40px;min-height:40px;padding:3px 4px 2px;}
+  .rr-dashboard-page .rrp-race-head__scratch-count {font-size:12px;}
+  .rr-dashboard-page .rr-dash-race-tiles:not(.rr-dash-sheet-facts) {padding:3px 8px;margin-bottom:10px;}
+  .rr-dashboard-page .rr-dash-race-tiles:not(.rr-dash-sheet-facts) .rr-dash-race-tile {min-height:48px;flex-direction:row;gap:8px;padding:3px 10px;}
+  .rr-dashboard-page .rr-dash-race-tiles:not(.rr-dash-sheet-facts) .rr-dash-tile-mark {flex:0 0 32px;width:32px;height:30px;margin:0;}
+  .rr-dashboard-page .rr-dash-race-tiles:not(.rr-dash-sheet-facts) .rr-dash-tile-mark img {max-width:32px;max-height:28px;}
+  .rr-dashboard-page .rr-dash-table {overflow:clip;border-radius:9px;border-width:1px;}
+  .rr-dashboard-page .rr-dash-table-heading,.rr-dashboard-page .rr-dash-runner-row {
+    grid-template-columns:54px minmax(245px,1.7fr) minmax(350px,2.65fr) minmax(145px,1fr);
+  }
+  .rr-dashboard-page .rr-dash-table-heading {position:sticky;top:0;z-index:3;min-height:38px;}
+  .rr-dashboard-page .rr-dash-table-heading>span,.rr-dashboard-page .rr-dash-table-heading .rr-dash-metric-group>span {font:750 10px/1.2 Inter,Arial,system-ui,sans-serif;}
+  .rr-dashboard-page .rr-dash-runner-row {min-height:60px;}
+  .rr-dashboard-page .rr-dash-runner-row>div {padding:5px 8px;}
+  .rr-dashboard-page .rr-dash-horse-name {font-size:16px;white-space:normal;overflow-wrap:anywhere;}
+  .rr-dashboard-page .rr-dash-horse-ml {font-size:14px;}
+  .rr-dashboard-page .rr-dash-horse-connections {font-size:11px;}
+  .rr-dashboard-page .rr-dash-win {display:flex;flex-direction:column;justify-content:center;align-items:center;gap:4px;}
+  .rr-dashboard-page .rr-dash-win-percent {font-size:23px;}
+  .rr-dashboard-page .rr-dash-win-fair {font-size:13px;border:0;padding:0;}
+  /* Pick Tickets: source order, unchanged buttons and builder; desktop grid only. */
+  .rr-pt-page #rr-pt-app:not([hidden]) {display:grid;grid-template-columns:minmax(220px,260px) minmax(0,1fr);grid-template-rows:auto auto 1fr;gap:0 16px;align-items:start;}
+  .rr-pt-page #rr-pt-updated {grid-area:1/1/2/-1;margin:0 0 10px;}
+  .rr-pt-page .rr-pt-product-nav {grid-area:2/1/3/2;margin:0 0 10px;padding:11px;border:1px solid #d6c8ad;border-radius:8px;background:#fffdf8;}
+  .rr-pt-page .rr-pt-types {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;}
+  .rr-pt-page .rr-pt-types .rr-pt-type {min-width:0;min-height:36px;padding:5px 3px;font-size:12px;}
+  .rr-pt-page .rr-pt-sequence-nav {grid-area:3/1/4/2;margin:0;padding:11px;border:1px solid #d6c8ad;border-radius:8px;background:#fffdf8;}
+  .rr-pt-page .rr-pt-sequences {display:flex;flex-direction:column;gap:6px;overflow:visible;scroll-snap-type:none;padding:0;}
+  .rr-pt-page .rr-pt-sequence-tab {min-width:0;min-height:44px;flex-direction:row;justify-content:space-between;align-items:center;gap:5px;padding:8px;}
+  .rr-pt-page .rr-pt-sequence-tab[aria-pressed="true"] {box-shadow:inset 3px 0 0 var(--gold);}
+  .rr-pt-page .rr-pt-seq-range {font-size:12px;}
+  .rr-pt-page .rr-pt-sequence-tab .rr-pt-state {font-size:9px;gap:4px;}
+  .rr-pt-page #rr-pt-current {grid-area:2/2/4/3;min-width:0;align-self:start;}
+  .rr-pt-page .rr-pt-ticket-screen {width:100%;max-width:none;}
+  .rr-pt-page .rr-pt-ticket-stats {grid-template-columns:repeat(4,minmax(0,1fr));}
+  /* Radar: two-column reading order, no clamping and no new content. */
+  .rr-lr-page .rr-lr-candidates {grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:stretch;}
+  .rr-lr-page .rr-lr-candidates > .rr-lr-list-empty {grid-column:1/-1;}
+  .rr-lr-page .rr-lr-card {display:flex;flex-direction:column;min-width:0;border-radius:9px;border-color:#c3cbd0;}
+  .rr-lr-page .rr-lr-top {grid-template-columns:38px minmax(0,1fr) minmax(140px,35%);grid-template-areas:"program horse market";gap:9px;padding:12px;}
+  .rr-lr-page .rr-lr-identity strong {font-size:16px;}
+  .rr-lr-page .rr-lr-markets {gap:5px;}
+  .rr-lr-page .rr-lr-market + .rr-lr-market {border-left:1px solid #e4dfd6;}
+  .rr-lr-page .rr-lr-inline-analysis {flex:1 0 auto;padding:12px 14px;}
+  .rr-lr-page .rr-lr-inline-analysis .rr-lr-case {font-size:14px;line-height:1.52;}
+  /* Target List: two horses compared horizontally; optional third stays visible. */
+  .rr-target-page .rr-target-list {gap:12px;}
+  .rr-target-page .rr-target-card {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch;border-radius:9px;}
+  .rr-target-page .rr-target-card > :is(.rr-research-racebar,.rr-target-analysis-text,.rr-target-scratches) {grid-column:1/-1;}
+  .rr-target-page .rr-target-card > .rr-target-horse-row {grid-template-columns:minmax(0,1fr) minmax(140px,36%);gap:12px;min-height:96px;padding:12px 15px;align-content:center;}
+  .rr-target-page .rr-target-card > .rr-target-horse-row:not(.rr-target-attack) {border-right:1px solid #e0e6ea;}
+  .rr-target-page .rr-target-card > .rr-target-horse-row:nth-of-type(3) {grid-column:1/-1;}
+  .rr-target-page .rr-target-card .rr-target-runner-info {grid-template-columns:minmax(0,1fr);gap:5px;}
+  .rr-target-page .rr-target-card .rr-target-horse-name {font-size:16px;}
+  .rr-target-page .rr-target-card .rr-target-horse-connections {padding-left:0;}
+  .rr-target-page .rr-target-card .rr-target-analysis-text {padding:12px 15px;font-size:14px;line-height:1.52;}
+  .rr-lr-page .rr-research-racebar,.rr-target-page .rr-research-racebar {padding:9px 12px;}
+  .rr-lr-page .rr-research-racebar__track,.rr-target-page .rr-research-racebar__track {font-size:16px;}
+  .rr-lr-page .rr-research-racebar__facts,.rr-target-page .rr-research-racebar__facts {font-size:13px;}
+}
