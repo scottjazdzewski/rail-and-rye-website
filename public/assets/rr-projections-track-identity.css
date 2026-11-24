@@ -1,40 +1,9 @@
-/* RAIL & RYE PROJECTIONS / COMPACT TRACK IDENTITY V3
-   Rendered inside the integrated command deck, not a second masthead card.
-   The global header already contains the Rail & Rye horseshoe logo. */
-.rrp-track-head{
- box-sizing:border-box;display:grid;grid-template-columns:minmax(0,1fr) 75px;
- align-items:center;column-gap:12px;min-width:0;
- margin:0;padding:5px 2px 1px;background:transparent;
- border:0;border-radius:0;color:#102e57;
-}
+/* Rail & Rye Projections — one unboxed venue name/date, mobile-first.
+   Track logo artwork stays in approved assets for possible desktop use later. */
+.rrp-track-head{box-sizing:border-box;display:grid;grid-template-columns:minmax(0,1fr);align-items:center;min-width:0;margin:0;padding:5px 2px 1px;background:transparent;border:0;border-radius:0;color:#102e57}
 .rrp-track-head *{box-sizing:border-box}
-.rrp-track-head--no-logo{grid-template-columns:minmax(0,1fr)}
 .rrp-track-head__identity{display:flex;flex-direction:column;justify-content:center;gap:2px;min-width:0}
-.rrp-track-head__name{
- margin:0;color:#102e57;font:800 clamp(17px,2vw,22px)/1.12 Inter,Arial,system-ui,sans-serif;
- letter-spacing:-.02em;text-transform:uppercase;text-wrap:balance;overflow-wrap:anywhere;
-}
-.rrp-track-head__date{
- margin:0;color:#627487;font:650 11px/1.17 Inter,Arial,system-ui,sans-serif;
- letter-spacing:.02em;text-transform:uppercase;
-}
-.rrp-track-head__venue-mark{
- display:grid;place-items:center;justify-self:end;width:75px;height:37px;max-width:100%;min-width:0;
- margin:0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;overflow:visible;
-}
-.rrp-track-head__logo{
- display:block;max-width:100%;max-height:100%;width:auto;height:auto;
- object-fit:contain;object-position:center;image-rendering:auto;opacity:1;filter:none;mix-blend-mode:normal;
-}
-@media(max-width:800px){
- .rrp-track-head{grid-template-columns:minmax(0,1fr) 64px;column-gap:8px;padding:4px 1px 1px}
- .rrp-track-head__name{font-size:16px;line-height:1.12}
- .rrp-track-head__date{font-size:10px;letter-spacing:0}
- .rrp-track-head__venue-mark{width:64px;height:32px}
-}
-@media(max-width:370px){
- .rrp-track-head{grid-template-columns:minmax(0,1fr) 54px;column-gap:6px}
- .rrp-track-head__name{font-size:15px}
- .rrp-track-head__date{font-size:9px}
- .rrp-track-head__venue-mark{width:54px;height:28px}
-}
+.rrp-track-head__name{margin:0;color:#102e57;font:800 clamp(17px,2vw,22px)/1.12 Inter,Arial,system-ui,sans-serif;letter-spacing:-.02em;text-transform:uppercase;text-wrap:balance;overflow-wrap:anywhere}
+.rrp-track-head__date{margin:0;color:#627487;font:650 11px/1.17 Inter,Arial,system-ui,sans-serif;letter-spacing:.02em;text-transform:uppercase}
+@media(max-width:800px){.rrp-track-head{padding:4px 1px 1px}.rrp-track-head__name{font-size:16px;line-height:1.12}.rrp-track-head__date{font-size:10px;letter-spacing:0}}
+@media(max-width:370px){.rrp-track-head__name{font-size:15px}.rrp-track-head__date{font-size:9px}}

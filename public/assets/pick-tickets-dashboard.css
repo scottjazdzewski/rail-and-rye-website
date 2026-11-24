@@ -12,7 +12,7 @@
 .rr-pt-page :is(h1,h2,h3,h4){font-family:Inter,Arial,system-ui,sans-serif}
 .rr-pt-main{max-width:1160px;width:100%;margin:0 auto;padding:14px 17px 56px}
 
-.rr-pt-heading{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;min-width:0;margin-bottom:15px}
+.rr-pt-heading{display:flex;align-items:center;gap:8px;min-width:0;margin-bottom:10px}
 .rr-pt-kicker{display:block;color:#677889;font-size:10px;font-weight:850;letter-spacing:.09em;text-transform:uppercase}
 .rr-pt-heading h1{
 margin:5px 0 5px;
@@ -197,12 +197,6 @@ border-left:1px solid #ddcfb2;
  --rr-type-main:26px;--rr-type-section:16px;--rr-type-body:13px;--rr-type-label:10px;
  --rr-space-1:4px;--rr-space-2:8px;--rr-space-3:12px;--rr-space-4:16px;
 }
-.rr-pt-track-mark{
- display:flex;align-items:center;gap:8px;justify-content:flex-end;min-width:0;
- padding:3px 6px;border:1px solid #d6c4a3;border-radius:7px;background:#fff;max-width:min(100%,235px);flex:none;margin-left:auto
-}
-.rr-pt-track-mark img{display:block;max-width:110px;width:auto;height:47px;object-fit:contain}
-.rr-pt-brand-track{max-width:155px;color:#15385c;font-size:10px;font-weight:850;line-height:1.2;text-align:right}
 .rr-pt-heading{margin:0 0 11px}
 .rr-pt-heading h1{font-size:var(--rr-type-main)}
 .rr-pt-heading p{font-size:12px}
@@ -267,9 +261,6 @@ height:100%;
 .rr-pt-reset-button{display:block;width:calc(100% - 24px);min-height:44px;margin:8px 12px 14px;padding:8px;border:1px solid #abc0cf;border-radius:6px;color:#214a6d;background:#fff;font-size:12px;font-weight:800;cursor:pointer}
 
 @media(max-width:800px){
- .rr-pt-track-mark{margin-left:auto;gap:4px;padding:2px 4px}
- .rr-pt-track-mark img{max-width:95px;height:42px}
- .rr-pt-brand-track{display:none}
  .rr-pt-ticket-stats{gap:4px;padding:9px 7px}
  .rr-pt-stat strong{font-size:20px}
  .rr-pt-stat span{font-size:10px}
@@ -280,7 +271,6 @@ gap:4px;
  .rr-pt-runner-button{min-width:41px;min-height:41px}
 }
 @media(max-width:340px){
- .rr-pt-track-mark img{max-width:83px}
  .rr-pt-stat span{font-size:9px}
  .rr-pt-stat strong{font-size:19px}
  .rr-pt-mode-button{padding:7px 5px;font-size:11px}

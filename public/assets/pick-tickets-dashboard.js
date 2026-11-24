@@ -8,7 +8,7 @@
   status:$("#rr-pt-status"),app:$("#rr-pt-app"),date:$("#rr-pt-date"),track:$("#rr-pt-track"),
   types:$("#rr-pt-types"),sequences:$("#rr-pt-sequences"),
   updated:$("#rr-pt-updated"),current:$("#rr-pt-current"),
-  empty:$("#rr-pt-empty"),intakePanel:$("#rr-pt-intake"),brandTrack:$("#rr-pt-brand-track"),brandLogo:$("#rr-pt-track-logo"),
+  empty:$("#rr-pt-empty"),intakePanel:$("#rr-pt-intake"),
   dialog:$("#rr-pt-dialog"),dialogTitle:$("#rr-pt-dialog-title"),
   dialogBody:$("#rr-pt-detail")
  };
@@ -24,7 +24,6 @@
  const statusText=s=>({PLAY:"PLAY",PASS:"PASS",CONDITIONAL:"CONDITIONAL"}[s]||s);
  const option=(select,key,label)=>{const o=node("option","",label);o.value=key;select.append(o)};
  const setMessage=(text,visible=true)=>{E.status.hidden=!visible;E.status.textContent=text;};
- const TRACK_LOGOS={"Finger Lakes":"finger-lakes","Mahoning Valley":"mahoning-valley","Mountaineer":"mountaineer","Parx Racing":"parx-racing","Zia Park":"zia-park"};
  const hitRate=t=>t?.hit_rate_display?t.hit_rate_display:"—";
  function reviewHitRate(legs){
   if(!activeSeq?.review_probabilities||!Array.isArray(legs)||!legs.length)return "—";
@@ -429,9 +428,7 @@
  function render(){
   const entry=entries.find(x=>x.card.date===E.date.value&&x.card.track===E.track.value);
   E.app.hidden=!entry;E.empty.hidden=!!entry;
-  if(E.brandTrack)E.brandTrack.textContent=E.track.value||"Select track";
-  if(E.brandLogo){const slug=TRACK_LOGOS[E.track.value];E.brandLogo.hidden=!slug;
-   if(slug){E.brandLogo.src="/assets/approved/track-logos/"+slug+".webp";E.brandLogo.alt=E.track.value+" logo";}}
+
   if(!entry){renderIntake();return;}
   E.updated.textContent=entry.card.track+" · "+toDate(entry.card.date);
   renderTypes();

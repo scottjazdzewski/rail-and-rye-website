@@ -340,23 +340,6 @@ function cardHeader(card){
   title=makeNode("h2","rrp-track-head__name",name),
   date=makeNode("p","rrp-track-head__date",dateLabel(card.race_date));
  identity.append(title,date);wrapper.append(identity);
- const originalTrackLogos={
-  "Finger Lakes":"finger-lakes.webp",
-  "Mountaineer":"mountaineer.webp",
-  "Mahoning Valley":"mahoning-valley.webp",
-  "Parx Racing":"parx-racing.webp",
-  "Zia Park":"zia-park.webp"
- };
- const filename=originalTrackLogos[name];
- if(filename){
-  const venue=makeNode("div","rrp-track-head__venue-mark"),image=document.createElement("img");
-  image.className="rrp-track-head__logo";
-  image.src="/assets/approved/track-logos/"+filename;
-  image.alt=name+" official racetrack logo";
-  image.loading="eager";image.decoding="async";
-  image.addEventListener("error",()=>{venue.replaceChildren();wrapper.className+=" rrp-track-head--no-logo";});
-  venue.append(image);wrapper.append(venue);
- }else wrapper.className+=" rrp-track-head--no-logo";
  return wrapper;
 }
 function scratchList(race){
