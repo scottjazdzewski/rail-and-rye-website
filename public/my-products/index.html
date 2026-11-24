@@ -94,8 +94,10 @@ const dateParts=value=>{const m=String(value||'').match(/^(\d{4})-(\d{2})-(\d{2}
 const pct=value=>value==null||value===''?'—':(Number.isFinite(Number(value))?Number(value).toFixed(1)+'%':'—');
 const dollars=value=>Number.isFinite(Number(value))?'$'+(Number(value)/100).toFixed(2):'';
 function titleFor(row){
- let title=String(row?.stakes_name||row?.race_name||'').trim()
+ let title=String(row?.stakes_name||row?.race_name||row?.conditions||'').trim()
+  .replace(/\s*\((?:presented by|sponsored by)\s+[^)]*\)\s*$/i,'')
   .replace(/\s+(?:presented by|sponsored by)\s+.*$/i,'')
+  .replace(/\s+\($/,'')
   .replace(/\bS\.?\s*$/i,' Stakes')
   .trim();
  if(!title||/^(?:(?:overnight|listed|graded|ungraded|restricted|open|non-graded)\s+)?(?:stake|stakes|stks?\.?|s\.?)\s*(?:\(?(?:g[123]|grade\s*[123])\)?)?$/i.test(title))
@@ -149,13 +151,16 @@ function pickCard(row){
  }
  return card;
 }
-function longshotCard(row){
+function longshotCard(group){
+ const rows=group.candidates||[group],first=rows[0];
  const card=node('article','rr-edition-card wide'),head=node('header','rr-edition-top');
- raceHeading(head,row.track,row);card.append(head);
- card.append(horseRow({program_number:row.program_number,horse_name:row.horse_name,
-  win_probability:row.pwin_display,fair_odds:row.fair_odds_display,
-  morning_line:row.original_morning_line,trainer:row.trainer,jockey:row.jockey,metrics:[]}));
- if(row.betting_case)card.append(node('p','rr-race-meta',row.betting_case));
+ raceHeading(head,group.track||first.track,first);card.append(head);
+ for(const row of rows){
+  card.append(horseRow({program_number:row.program_number,horse_name:row.horse_name,
+   win_probability:row.pwin_display,fair_odds:row.fair_odds_display,
+   morning_line:row.original_morning_line,trainer:row.trainer,jockey:row.jockey,metrics:[]}));
+  if(row.betting_case)card.append(node('p','rr-race-meta',row.betting_case));
+ }
  return card;
 }
 function targetCard(row){
@@ -216,7 +221,15 @@ function renderEdition(data){
  const content=$('rr-edition-content');content.replaceChildren();
  if(data.category==='Race Cards'){for(const item of data.cards||[])content.append(projectionCard(item));}
  if(data.category==='Pick Tickets'){for(const item of data.cards||[])content.append(pickCard(item));}
- if(data.category==='Longshot Radar'){for(const item of data.candidates||[])content.append(longshotCard(item));}
+ if(data.category==='Longshot Radar'){
+  const groups=new Map();
+  for(const item of data.candidates||[]){
+   const key=String(item.track||'')+'|'+String(item.race_number||'');
+   if(!groups.has(key))groups.set(key,{track:item.track,candidates:[]});
+   groups.get(key).candidates.push(item);
+  }
+  for(const group of groups.values())content.append(longshotCard(group));
+ }
  if(data.category==='Target List'){for(const item of data.targets||[])content.append(targetCard(item));}
  if(!content.children.length)$('rr-edition-status').textContent='This edition is published, but it contains no selections for this category and date.';
 }
