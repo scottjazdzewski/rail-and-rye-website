@@ -1,0 +1,80 @@
+name: Verify November 24 private Target List R2 edition
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/verify-target-list-nov24-r2.yml'
+      - 'src/target-list.js'
+      - 'public/assets/target-list-dashboard.js'
+      - 'public/admin/target-list-preview.html'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  read-private-source:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install private R2 read-only client
+        run: pip install boto3==1.40.36
+      - name: Verify November 24 original editorial card in private R2
+        env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+        run: |
+          python - <<'PY'
+          import boto3, hashlib, json, os
+          from pathlib import Path
+          account=os.environ["TRI_CLOUDFLARE_ACCOUNT_ID"]
+          client=boto3.client("s3",endpoint_url=f"https://{account}.r2.cloudflarestorage.com",
+              region_name="auto",aws_access_key_id=os.environ["TRI_R2_ACCESS_KEY_ID"],
+              aws_secret_access_key=os.environ["TRI_R2_SECRET_ACCESS_KEY"])
+          key="racing-intelligence/target-list-review/2026-11-24/revision-0001.json"
+          obj=client.get_object(Bucket="rail-and-rye-private-cards",Key=key)
+          raw=obj["Body"].read()
+          meta=obj.get("Metadata") or {}
+          assert hashlib.sha256(raw).hexdigest()==meta.get("sha256"),"Private R2 checksum mismatch"
+          card=json.loads(raw)
+          assert card["race_date"]=="2026-11-24" and card["revision"]==1
+          assert card["source"]["timeforms_zip_sha256"]=="7395a45700a3aa4fdf9f3dff05f393f7079adf4deb30cb2413aea7a78d4345c3"
+          assert card["source"]["editorial_sha256"]=="7636865e6f4fd950bbbb80a5a9c37711acc440533486bd501e0dcc92168adeb0"
+          assert len({(t["track"],t["race_number"],t["favorite"]["program_number"],t["attack"]["program_number"]) for t in card["targets"]})==6
+          assert card["review_only"] is True and card["customer_publish_approved"] is False
+          assert card["production_receipt_verified"] is False
+          assert len(card["targets"])==6 and len({(t["track"],t["race_number"]) for t in card["targets"]})==4
+          assert not any("sample" in t["favorite"]["horse_name"].lower() or "sample" in t["attack"]["horse_name"].lower() for t in card["targets"])
+          Path("/tmp/target-private-source.json").write_bytes(raw)
+          Path("/tmp/target-private-metadata.json").write_text(json.dumps(meta))
+          print("PASS: Actual November 24 private R2 review: 6 source-backed selections, sha256 readback; not certified for customers.")
+          PY
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Execute actual Worker review endpoint against fetched private source
+        run: |
+          node --input-type=module <<'JS'
+          import assert from "node:assert/strict";
+          import {readFileSync} from "node:fs";
+          import {webcrypto} from "node:crypto";
+          import {readAdminTargetListReview} from "./src/target-list.js";
+          globalThis.crypto??=webcrypto;
+          const body=readFileSync("/tmp/target-private-source.json","utf8");
+          const meta=JSON.parse(readFileSync("/tmp/target-private-metadata.json","utf8"));
+          const key="racing-intelligence/target-list-review/2026-11-24/revision-0001.json";
+          const env={CARDS_BUCKET:{
+            async list({prefix}){return {objects:key.startsWith(prefix)?[{key}]:[],truncated:false};},
+            async get(requested){return requested===key?{customMetadata:meta,text:async()=>body}:null;}
+          }};
+          const url=new URL("https://railandryeracing.com/api/admin/target-list-review");
+          const res=await readAdminTargetListReview(env,url);
+          assert.equal(res.status,200,"Actual 11/24 source must be accepted by the real Worker reader");
+          const payload=await res.json();
+          assert.equal(payload.edition?.targets?.length,6);
+          assert.equal(payload.edition?.race_date,"2026-11-24");
+          assert.equal(payload.review_only,true);
+          console.log("PASS: Actual data renders through the Worker review contract; 6 real races, no synthetic fallback.");
+          JS
