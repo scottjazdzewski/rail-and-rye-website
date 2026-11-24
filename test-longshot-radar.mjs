@@ -247,7 +247,7 @@ assert.ok(!html.includes("/assets/projections-dashboard.css"),"Radar must never 
 assert.ok(!html.includes("Race details")&&!html.includes('id="rr-lr-dialog"'));
 assert.ok(!html.includes("rr-lr-import")&&!html.includes("rr-lr-file")&&!html.includes("rr-lr-upload-form"),"No user-supplied JSON form");
 assert.ok(html.includes("id=\"rr-lr-retry\""),"A failed R2 load must permit retry");
-assert.ok(html.includes("longshot-radar.js?v=shared-banner-v1-20261124"),"Publish the PDF-style one-sentence Radar reader without stale browser cache");
+assert.ok(html.includes("longshot-radar.js?v=shared-race-order-v1-20261124"),"Publish the PDF-style one-sentence Radar reader without stale browser cache");
 assert.ok(!html.includes("longshot-hero.jpg")&&!html.includes("longshot-mark.png"));
 assert.ok(ui.includes('make("div","rr-lr-inline-analysis")'));
 assert.ok(ui.includes('make("p","rr-lr-case",item.betting_case)'),"Display the exact approved one-sentence PDF betting case");
@@ -287,7 +287,7 @@ assert.ok(ui.includes('!byDate.has(edition.race_date)'),"Legacy published PDF is
 assert.ok(!ui.includes("edition.candidates.length!==10"),"No fixed horse quota in new daily productions");
 assert.ok(ui.includes("AbortController")&&ui.includes("retry?.addEventListener"),"Show a recoverable error rather than a permanent loading spinner");
 
-assert.ok(html.includes("longshot-radar.js?v=shared-banner-v1-20261124"),"Load version-locked Radar client");
+assert.ok(html.includes("longshot-radar.js?v=shared-race-order-v1-20261124"),"Load version-locked Radar client");
 assert.ok(html.includes("rr-research-race-banner.js?v=locked-v4-20261124"),"Load canonical banner renderer");
 assert.ok(html.includes("rr-research-race-banner.css?v=locked-v1-20261124"),"Load canonical banner CSS");
 assert.ok(!html.includes('id="rr-lr-stage"')&&!html.includes('id="rr-lr-date-title"')&&!html.includes('id="rr-lr-updated"'),"No duplicate page statuses");
