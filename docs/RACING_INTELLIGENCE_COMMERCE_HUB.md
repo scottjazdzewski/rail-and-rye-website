@@ -31,3 +31,5 @@ An existing, cryptographically verified Cloudflare Access administrator session 
 ### Desktop storefront priority
 
 Page six places Universal Access immediately under the left-hand overview on desktop, alongside the compact right-hand 2×2 product grid. Product artwork is constrained to its card rather than determining card height. Preserve the original mobile order, approved art, navy/gold palette, shared header/footer and all commerce behavior. Never use a fixed viewport height or overflow clipping that can hide checkout controls.
+
+Recover Access is centered inside the race-date/access-status overview as a secondary gold text link, not a standalone purchase-style pill. Preserve the recovery destination and all authorization behavior.

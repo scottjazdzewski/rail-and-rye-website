@@ -113,3 +113,10 @@ body.heritage-home.heritage-store-page.rr-commerce-hub .heritage-store-layout{di
 @media(min-width:1001px) and (max-width:1250px){
  body.rr-commerce-hub .rr-hub-layout>.rr-hub-universal{grid-template-columns:minmax(0,1fr);gap:8px}
 }
+
+/* Recovery is a secondary account action, not a competing purchase CTA. */
+.rr-commerce-hub .rr-hub-overview .rr-hub-recovery{display:flex;justify-content:center;border-top:1px solid #d4a75944;padding-top:3px;text-align:center}
+.rr-commerce-hub .rr-hub-overview .rr-hub-recovery a{display:inline-flex;align-items:center;justify-content:center;min-height:34px;padding:4px 12px;color:#e8bd72;font:700 11px/1.4 var(--heritage-sans);text-decoration:none}
+.rr-commerce-hub .rr-hub-overview .rr-hub-recovery a:hover,.rr-commerce-hub .rr-hub-overview .rr-hub-recovery a:focus-visible{text-decoration:underline;color:#fff7e9}
+.rr-commerce-hub .rr-hub-overview .rr-hub-recovery a:focus-visible{outline:2px solid #e8bd72;outline-offset:2px;border-radius:4px}
+@media(max-width:1000px){.rr-commerce-hub .rr-hub-overview .rr-hub-recovery a{min-height:44px}}
