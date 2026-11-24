@@ -235,7 +235,7 @@ assert.ok(tree(card,el=>el.className==="rr-target-stat-value"&&el.textContent===
 assert.match(html,/id="rr-target-sort"/);
 assert.doesNotMatch(html,/rr-target-track|rr-target-search/,"Reader controls are date and independent sort only.");
 
-assert.match(html,/rr-race-titles\.js\?v=4/,"Locked canonical stakes parser is present");
+assert.match(html,/rr-race-titles\.js\?v=5/,"Locked canonical stakes parser is present");
 assert.match(html,/rr-stakes-inline\.css\?v=1/,"Locked shared graded trophy styles are present");
 assert.match(readFileSync("public/assets/rr-research-race-banner.js","utf8"),/appendGradeTrophy\(facts,title\.grade\)/,
  "The shared renderer preserves the sourced trophy and grade rule");
