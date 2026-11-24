@@ -1,4 +1,4 @@
-import {enrichRaceInformation,requireProductionPurses} from "./projection-race-information.js";
+import {enrichRaceInformation,requireProductionPurses,requireProductionStakesNames} from "./projection-race-information.js";
 import {verifyCertifiedScratchFinalTrack} from "./f4-exotics.js";
 import {auditV33FieldUpload,pickUploadAuditKey,isPickV33Field}
  from "./pick-tickets-field-audit.js";
@@ -201,6 +201,7 @@ export async function handleAdminProjectionUpload(request,env){
   if(!isObject(body)||!UUID_RE.test(String(body.product_id||"")))throw Error("Choose a valid Race Cards publication.");
   card=normalizeCard(body.card);
   requireProductionPurses(card);
+  requireProductionStakesNames(enrichRaceInformation(card));
  }catch(e){return fail(e.message||"Could not read projection data.");}
  const product=await env.STORE_DB.prepare("SELECT id,title,category,race_date,track,pdf_key,status FROM products WHERE id=? AND category='Race Cards' AND status IN ('draft','published','archived') AND pdf_key IS NOT NULL AND pdf_key!='__rr_bundle__' AND NOT EXISTS(SELECT 1 FROM bundle_only_assets a WHERE a.product_id=products.id)").bind(body.product_id).first();
  if(!product)return fail("Choose an individual Race Cards publication with a PDF attached.",404);
@@ -261,6 +262,7 @@ export async function handleAdminProjectionBatchUpload(request,env){
   cards=raw.map(input=>{
    const card=normalizeCard(input),key=card.race_date+"|"+foldTrack(card.track_name);
    requireProductionPurses(card);
+   requireProductionStakesNames(enrichRaceInformation(card));
    if(seen.has(key))throw Error("The JSON contains the same track and date more than once.");
    seen.add(key);
    return card;
