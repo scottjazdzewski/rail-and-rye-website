@@ -11,14 +11,14 @@ from pick_private_score_bridge import private_key,BUCKET,REPO,OWNER,ISSUE
 import boto3
 PREFIX="RR_RACECARD_SCRATCH_1124_DED_V1"
 DATE="2026-11-24"
-EXPECTED="33075efb819479a4f0c33b47b8a4ab4847fc4f6057e8d7527612ea0b412ffbb3"
+EXPECTED="d119588995f680bb233eb18a273717093c00b9ad23bea1ffdbe2e82daf75658d"
 PICK_SHA="74ea0b745220994c41b6f81e705ca72c73441e2082c4b82d59eb83ead0f8a4ac"
 SOURCE="7395a45700a3aa4fdf9f3dff05f393f7079adf4deb30cb2413aea7a78d4345c3"
 MODEL="TRI_F4_ORDERING_MODEL_V2_RANK_OFFSET"
 EVAL="TBS_FACTOR_BADGE_EVALUATOR_V1_2_6_FIT_CLASS_FORM_GUARDS"
 FACTORS=["Speed","Form","Class","Pace Fit","Surface / Distance"]
 COLORS={"g":"green","n":"gray","r":"red"}
-CONFIG={"Delta Downs":(8,65,62,{3:["7"],4:["5"],6:["6"]},"4c82cd506a5cf60c2d689a658635b87b9ef2a1e92b8d19c0391d6e4ef156577e")}
+CONFIG={"Delta Downs":(8,65,62,{2:[],3:["7"],4:["5"],6:["6"],8:[]},"4c82cd506a5cf60c2d689a658635b87b9ef2a1e92b8d19c0391d6e4ef156577e")}
 FIELDS=["exact_p1","exact_p2","exact_p3","exact_p4","exact_p5","p6_plus"]
 def require(ok,message):
  if not ok:raise ValueError(message)
@@ -72,7 +72,11 @@ def main():
   for r in card["races"]:
    i=r["race_number"];orig={str(e["program_number"]):e for e in r["entries"]}
    if set(orig)!=set(pr[i]) or not all(abs(orig[p]["win_probability_exact"]/100-pr[i][p])<=1e-10 for p in orig if p in pr[i]):mismatch.append(i)
-  require(not mismatch,"Replayed parent differs in races "+",".join(str(i) for i in mismatch))
+  require(not mismatch,"Original blank-rating parent differs in races "+",".join(str(i) for i in mismatch))
+  require(fingerprint(card["races"])==t["pre_marginal_sha"],"Original blank-rating F4 parent mismatch")
+  corrections=[c for c in t["non_scratch_changes"] if c.get("resolution")=="VERIFIED_MATCH"]
+  require(corrections==[{"race":2,"program":"4","role":"jockey","name":"E. Del Cid","resolution":"VERIFIED_MATCH","rating":50,"source_page":1},{"race":8,"program":"5","role":"jockey","name":"B. Spann","resolution":"VERIFIED_MATCH","rating":12,"source_page":7}],"Same-card source recovery evidence missing")
+  print("ORIGINAL_PARENT_REPLAY_AND_TWO_SOURCE_RECOVERIES_VERIFIED",flush=True)
   for r in card["races"]:
    i=r["race_number"]; orig={str(e["program_number"]):e for e in r["entries"]};prior=pr[i];new={e[0]:e[4] for e in delta[i]["rows"]} if i in delta else prior
    require(set(orig)==set(prior) and all(abs(orig[p]["win_probability_exact"]/100-prior[p])<=1e-10 for p in orig),"Replayed parent differs from race cards")
