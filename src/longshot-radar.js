@@ -211,6 +211,9 @@ async function readAll(env){
   }
   return enriched;
 }
+export async function readLongshotRadarEdition(env,raceDate){
+  return (await readAll(env)).find(edition=>edition.race_date===raceDate)||null;
+}
 export async function handleAdminLongshotRadar(request,env){
   if(!env.CARDS_BUCKET)return error("Private Radar storage is not configured.",503);
   if(request.method==="GET"){
