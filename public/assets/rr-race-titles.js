@@ -153,5 +153,35 @@
    stakes:!!hasStakesSignal,missingStakesName:!!missingStakesName};
  }
  function isNumber(value){return Number.isInteger(value)&&value>=1&&value<=3;}
- root.RRRaceTitles=Object.freeze({describe,numericGrade,genericStakes,maidenClass,maidenPresentation});
+
+ // Editorial distances only: exact furlong arithmetic, never a model input.
+ // Standard American notation uses furlongs for sprints and miles for routes.
+ function formatDistance(value){
+  const raw=clean(value);
+  const match=raw.match(/^(?:(about|approx(?:imately)?\.?)\s+)?(\d+(?:\.\d+)?)\s*(?:f|fur(?:longs?)?)\.?$/i);
+  if(!match)return raw; // Preserve already-written miles, yards, meters, etc.
+  const f=Number(match[2]);
+  if(!Number.isFinite(f)||f<=0||f>100)return raw;
+  const prefix=match[1]?"About ":"";
+  const yards=f*220;
+  const near=(a,b)=>Math.abs(a-b)<0.12; // Recover whole-yard distances from rounded decimals.
+  if(f<8){
+   const half=Math.round(f*2);
+   if(near(yards,half*110))return prefix+Math.floor(half/2)+(half%2?" 1/2":"")+" F";
+  }else{
+   const sixteenths=Math.round(f*2);
+   if(near(yards,sixteenths*110)){
+    const miles=Math.floor(sixteenths/16),rem=sixteenths%16;
+    if(!rem)return prefix+miles+"M";
+    const gcd=(a,b)=>b?gcd(b,a%b):a,g=gcd(rem,16);
+    return prefix+miles+" "+(rem/g)+"/"+(16/g)+" M";
+   }
+  }
+  const nearest=Math.round(yards);
+  const approximate=near(yards,nearest)?"":"About ";
+  const unit=f>=8?1760:220;
+  const whole=Math.floor(nearest/unit),remainder=nearest%unit;
+  return (prefix||approximate)+(whole?whole+(f>=8?"M":"F")+(remainder?" ":""):"")+(remainder?remainder+"Y":"");
+ }
+ root.RRRaceTitles=Object.freeze({describe,numericGrade,genericStakes,maidenClass,maidenPresentation,formatDistance});
 })(globalThis);

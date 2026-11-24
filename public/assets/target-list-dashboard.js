@@ -77,7 +77,7 @@ function horseRow(role,runner,entry){
 // This changes presentation only — never the underlying Target List model.
 function raceMeta(entry){
  const title=raceBanner.describe(entry);
- return [entry.distance,entry.surface,title?.title].filter(Boolean).join(" · ");
+ return [globalThis.RRRaceTitles?.formatDistance?.(entry.distance)??entry.distance,entry.surface,title?.title].filter(Boolean).join(" · ");
 }
 function scratchList(entry){
  if(!entry.scratches?.length)return null;

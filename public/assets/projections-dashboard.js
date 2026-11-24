@@ -304,7 +304,7 @@ function showHorse(entry){
   const section=makeNode("section","rr-dash-sheet-section");section.append(makeNode("h3","","RACE CONTEXT"));
   const facts=makeNode("div","rr-dash-race-tiles rr-dash-sheet-facts");
   facts.setAttribute("role","group");facts.setAttribute("aria-label","Race facts");
-  facts.append(makeTile("Pace",race.pace),makeTile("Surface",race.surface),makeTile("Distance",race.distance));
+  facts.append(makeTile("Pace",race.pace),makeTile("Surface",race.surface),makeTile("Distance",globalThis.RRRaceTitles?.formatDistance?.(race.distance)??race.distance));
   section.append(facts);mobile.append(section);
  }
  if(entry.f4_probabilities){
@@ -425,7 +425,7 @@ function renderCard(){
 
  const tiles=makeNode("div","rr-dash-race-tiles");
  tiles.setAttribute("role","group");tiles.setAttribute("aria-label","Race facts");
- tiles.append(makeTile("Pace",race.pace),makeTile("Surface",race.surface),makeTile("Distance",race.distance));
+ tiles.append(makeTile("Pace",race.pace),makeTile("Surface",race.surface),makeTile("Distance",globalThis.RRRaceTitles?.formatDistance?.(race.distance)??race.distance));
  panel.append(tiles);
  
  const table=makeNode("div","rr-dash-table");table.setAttribute("role","table");table.setAttribute("aria-label","Race "+race.race_number+" projections");

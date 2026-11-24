@@ -80,7 +80,7 @@ function render(entry){
   factsParts.push({text:valueText,kind});
  };
  const title=describe(entry);
- addFact(entry.distance,"fact");
+ addFact(root.RRRaceTitles?.formatDistance?.(entry.distance)??entry.distance,"fact");
  addFact(entry.surface,"fact");
  addFact(conditionsFact(entry,title),"fact");
  if(title?.title)addFact(title.title,"title");
