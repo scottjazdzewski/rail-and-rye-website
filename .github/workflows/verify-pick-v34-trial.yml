@@ -54,10 +54,10 @@ jobs:
           const input=JSON.parse(fs.readFileSync('/tmp/rr1124-private-readback.json','utf8'));
           const bucket={async list(){return {objects:[]}},async get(key){const v=input[key];return v?{text:async()=>v.raw,json:async()=>JSON.parse(v.raw),customMetadata:v.metadata}:null}};
           const url='https://railandryeracing.com/api/admin/pick-tickets';
-          const old=await (await handleAdminPickTickets(new Request(url),{CARDS_BUCKET:bucket})).json();
-          const trial=await (await handleAdminPickTickets(new Request(url+'?trial=v34'),{CARDS_BUCKET:bucket})).json();
-          const b=old.cards.filter(x=>x.card.date==='2026-11-24'),a=trial.cards;
-          assert.equal(trial.trial,'V3.4');assert.equal(a.length,6);assert.equal(b.length,6);
+          const old=await (await handleAdminPickTickets(new Request(url+'?trial=v33'),{CARDS_BUCKET:bucket})).json();
+          const trial=await (await handleAdminPickTickets(new Request(url),{CARDS_BUCKET:bucket})).json();
+          const b=old.cards.filter(x=>x.card.date==='2026-11-24'),a=trial.cards.filter(x=>x.card.date==='2026-11-24');
+          assert.equal(trial.engine,'V3.4-TRI-ONLY-LENGTH-SENSITIVE-TRIAL-A');assert.ok(a.every(x=>x.card.formula_version===trial.engine));assert.equal(a.length,6);assert.equal(b.length,6);
           const rows=[];
           for(const {card:c} of a){
            const prior=b.find(x=>x.card.track===c.track).card;

@@ -1,4 +1,4 @@
-import {buildV34TrialCard,PICK_V34_ENGINE} from './pick-tickets-v34.js';
+import {buildV34TrialCard,PICK_V34_ENGINE,PICK_V34_TRIAL_SCALES,usesV34,hasV34ReceiptPair} from './pick-tickets-v34.js';
 import {getPickTicketsIntake,getPickTicketsIntake1124} from './pick-tickets-intake.js';
 import {buildPrescratchPickTicketReview,buildV33PostScratchReviewed,
  buildV33ScratchFieldPreview,readPrivatePickProjections,readPrivatePickProjections1124,
@@ -316,31 +316,42 @@ export async function handleAdminPickTickets(request,env){
    }
    return Object.keys(stakes).length?{...item,stakes_by_race:stakes}:item;
   });
-  // Explicit opt-in, authenticated, read-only trial. Never replace the
-  // V3.3 baseline or bypass its current-field hold / approval logic.
-  const trial=new URL(request.url).searchParams.get("trial")==="v34";
-  let output=displayed;
-  if(trial){
-   output=[];
-   for(const item of displayed){
-    if(item.card.date!=="2026-11-24"||item.review_only!==true)continue;
-    const source=byTrack.get(item.card.date+"|"+item.card.track)?.card;
-    if(!source?.model_receipts?.tri_sha256||!source?.model_receipts?.f4_sha256){
-     sourceRejects.push({track:item.card.track,reason:"V3.4 trial requires both scorer receipts."});continue;
-    }
-    try{output.push({...item,card:buildV34TrialCard(item.card)})}
-    catch(e){sourceRejects.push({track:item.card.track,reason:"V3.4 trial held: "+String(e.message||e).slice(0,100)})}
+  // V3.4 is the owner-approved default from Nov 24. Earlier editions
+  // remain historical V3.3; explicit baseline is a protected QA rollback view.
+  const mode=new URL(request.url).searchParams.get("trial");
+  const baseline=mode==="v33",onlyV34=mode==="v34";
+  let output=[];
+  for(const item of displayed){
+   if(!usesV34(item.card.date)){
+    if(!onlyV34)output.push(item);
+    continue;
    }
+   if(baseline){output.push(item);continue}
+   if(item.review_only!==true)continue;
+   const source=byTrack.get(item.card.date+"|"+item.card.track)?.card;
+   if(!hasV34ReceiptPair(source)){
+    sourceRejects.push({track:item.card.track,reason:"V3.4 requires both current scorer receipt hashes."});continue;
+   }
+   try{
+    const audit=currentAudits.get(item.card.date+"|"+item.card.track);
+    // Rebuild from the exact audited full field rather than old selected horses.
+    const converted=buildV34TrialCard(item.card);
+    if(audit?.v34_review_card&&JSON.stringify(audit.v34_review_card.sequences.map(x=>x.tickets))!==JSON.stringify(converted.sequences.map(x=>x.tickets)))throw Error("V3.4 stored audit differs from exact current construction");
+    output.push({...item,card:converted});
+   }catch(e){sourceRejects.push({track:item.card.track,reason:"V3.4 held: "+String(e.message||e).slice(0,100)})}
   }
   return respond({cards:output,
-   ...(trial?{trial:"V3.4",trial_engine:PICK_V34_ENGINE}:{}),
+   ...(onlyV34?{trial:"V3.4",trial_engine:PICK_V34_ENGINE}:{}),
+   default_engine:PICK_V34_ENGINE,
    intake:getPickTicketsIntake1124(),scratch_update,
    stale_revisions:staleRevisions,source_rejections:sourceRejects,
    latest_field_versions:sourceVersions,
-   engine:PICK_V33_ENGINE,soft_cost_scale_dollars:PICK_V33_COST_SCALE_DOLLARS,
-   minimum_leg_coverage:PICK_V33_MIN_LEG_COVERAGE,
+   engine:baseline?PICK_V33_ENGINE:PICK_V34_ENGINE,
+   soft_cost_scale_dollars:baseline?PICK_V33_COST_SCALE_DOLLARS:null,
+   cost_scale_by_length:baseline?null:PICK_V34_TRIAL_SCALES,
+   minimum_leg_coverage:baseline?PICK_V33_MIN_LEG_COVERAGE:null,
    private_review_only:true,
-   review_count:reviewCards.length,demo:false});
+   review_count:output.filter(x=>x.review_only===true).length,demo:false});
  }
  if(request.method!=="POST")return respond({error:"Method not allowed."},405);
  let cards;try{cards=await parseBody(request);}catch(e){return respond({error:e.message},400);}

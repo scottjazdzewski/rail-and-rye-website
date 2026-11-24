@@ -1,6 +1,6 @@
 # Pick Tickets V3.4 — length-sensitive trial A
 
-**Status:** reversible private admin research trial. V3.3 remains the default baseline and the frozen production release gates are unchanged.
+**Status:** historical trial record. Superseded for current private engineering by [V3.4 engineering lock](PICK_TICKETS_V34_ENGINEERING_LOCK.md); V3.3 remains the explicit comparison baseline. Customer release gates are unchanged.
 
 ## Trial design
 - Use identical, current-field audited TRI V4.1/F4 V2 inputs and the official minimum wager for each sequence.

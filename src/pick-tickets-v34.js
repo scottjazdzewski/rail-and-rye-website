@@ -1,8 +1,11 @@
-// Isolated, reversible research preview; never a customer release authority.
-// V3.3 and all scoring/field gates stay unchanged.
+// Owner-approved engineering lock effective 2026-11-24. Private production review only.
+// V3.3 remains a reproducible baseline; scoring and customer release gates stay unchanged.
 import {exactV32Frontier,normalizeV32Legs} from "./pick-tickets-v32.js";
 export const PICK_V34_ENGINE="V3.4-TRI-ONLY-LENGTH-SENSITIVE-TRIAL-A";
 export const PICK_V34_TRIAL_SCALES=Object.freeze({3:15,4:30,5:60,6:120});
+export const PICK_V34_EFFECTIVE_DATE="2026-11-24";
+export const usesV34=date=>typeof date==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(date)&&date>=PICK_V34_EFFECTIVE_DATE;
+export const hasV34ReceiptPair=card=>["tri_sha256","f4_sha256"].every(k=>/^[0-9a-f]{64}$/i.test(String(card?.model_receipts?.[k]||"")));
 export function chooseV34(legs,unit){
  const scale=PICK_V34_TRIAL_SCALES[legs.length];
  if(!scale)throw Error("Unsupported wager length");
@@ -39,9 +42,9 @@ export function chooseV34(legs,unit){
 }
 const pct=x=>(x*100).toFixed(1)+"%";
 export function buildV34TrialCard(review){
- if(!review?.review_only||review.date!=="2026-11-24"||
+ if(!review?.review_only||!usesV34(review.date)||
     review.formula_version!=="V3.3-TRI-ONLY-SINGLE-RECTANGLE-COVER50")
-  throw Error("Only the audited November 24 source review is eligible for this trial");
+  throw Error("Only a current-date audited source review is eligible for V3.4");
  const sequences=review.sequences.map(s=>{
   const old=s.tickets?.[0];
   if(s.tickets?.length!==1||!old||!s.race_fields||!s.review_probabilities)throw Error("Complete audited V3.3 source required");
@@ -52,7 +55,7 @@ export function buildV34TrialCard(review){
   const x=chooseV34(legs,old.unit_cents);
   const ticket={...old,combinations:x.combinations,total_cents:x.total_cents,
    legs:x.picks.map((programs,i)=>({race_number:legs[i].race_number,programs})),
-   hit_rate_display:pct(x.hit_probability),notes:"Length-sensitive V3.4 trial."};
+   hit_rate_display:pct(x.hit_probability),notes:""};
   return {...s,play_status:"CONDITIONAL",recommendation:"",
    hit_rate_display:ticket.hit_rate_display,tickets:[ticket],upload_change:null,
    review_meta:{method:PICK_V34_ENGINE,soft_cost_scale_dollars:x.soft_cost_scale_dollars,
@@ -65,5 +68,5 @@ export function buildV34TrialCard(review){
   };
  });
  return {...review,formula_version:PICK_V34_ENGINE,optimizer_basis:PICK_V34_ENGINE,
-  review_only:true,sequences,source_type:"PRIVATE_AUDITED_TRI_V34_RESEARCH_TRIAL"};
+  review_only:true,sequences,source_type:"PRIVATE_AUDITED_TRI_V34_ENGINEERING_LOCK"};
 }

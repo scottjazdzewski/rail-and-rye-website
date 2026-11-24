@@ -460,7 +460,7 @@
   E.app.hidden=!entry;E.empty.hidden=!!entry;
 
   if(!entry){renderIntake();return;}
-  E.updated.textContent=entry.card.track+" · "+toDate(entry.card.date)+(entry.card.formula_version?.startsWith("V3.4-")?" · V3.4 trial":"");
+  E.updated.textContent=entry.card.track+" · "+toDate(entry.card.date)+(entry.card.formula_version?.startsWith("V3.4-")?" · V3.4":"");
   renderTypes();
  }
  async function call(url,opts){
@@ -472,8 +472,9 @@
  async function load(){
   setMessage("Loading Pick Tickets…");
   try{
-   const requestedTrial=new URLSearchParams(window.location.search).get("trial")==="v34";
-   const real=await call("/api/admin/pick-tickets"+(requestedTrial?"?trial=v34":""));
+   const mode=new URLSearchParams(window.location.search).get("trial");
+   const requestedTrial=mode==="v34";
+   const real=await call("/api/admin/pick-tickets"+(mode==="v33"?"?trial=v33":requestedTrial?"?trial=v34":""));
    if(requestedTrial&&real.trial!=="V3.4")throw Error("V3.4 trial is not available on this deployment.");
    certified=(real.cards||[]).filter(entry=>entry?.card?.status!=="demo"&&!entry?.card?.is_demo);
    intake=real.intake||null;scratchUpdate=real.scratch_update||null;

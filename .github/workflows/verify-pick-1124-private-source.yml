@@ -55,7 +55,7 @@ jobs:
             async get(key){const v=items[key];return v?{text:async()=>v.raw,json:async()=>JSON.parse(v.raw),customMetadata:v.metadata}:null}
           });
           async function verify(items,label){
-            const response=await handleAdminPickTickets(new Request('https://railandryeracing.com/api/admin/pick-tickets'),{CARDS_BUCKET:makeBucket(items)});
+            const response=await handleAdminPickTickets(new Request('https://railandryeracing.com/api/admin/pick-tickets?trial=v33'),{CARDS_BUCKET:makeBucket(items)});
             assert.equal(response.status,200);
             const json=await response.json();
             const cards=json.cards.filter(x=>x.card.date==='2026-11-24');

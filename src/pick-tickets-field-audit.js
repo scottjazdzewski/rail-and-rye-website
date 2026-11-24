@@ -7,6 +7,7 @@
 import {pickMenuForDate,buildV33ScratchFieldPreview,
  buildPrescratchPickTicketReview} from "./pick-tickets-auto.js";
 import {PICK_V33_ENGINE} from "./pick-tickets-v33.js";
+import {buildV34TrialCard,PICK_V34_ENGINE,usesV34,hasV34ReceiptPair} from "./pick-tickets-v34.js";
 
 export const PICK_UPLOAD_AUDIT_PREFIX="pick-tickets/field-audits/";
 const slug=s=>String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
@@ -111,10 +112,17 @@ export async function auditV33FieldUpload(card,previousCard=null){
  // BEFORE the optimizer's calculated tickets can be served even for review.
  const scratchScoringReady=card.projection_status!=="scratch_final"||
   (!sourceInputHold&&signedFinal&&newScratches===0);
+ // Preserve the V3.3 gate and baseline; calculate V3.4 during each eligible upload.
+ let v34Review=null;
+ if(usesV34(card.race_date)&&hasV34ReceiptPair(card)&&!sourceInputHold&&scratchScoringReady){
+  v34Review=buildV34TrialCard(review);
+  if(v34Review.sequences.length!==expected||v34Review.sequences.some(s=>s.tickets.length!==1||s.tickets[0].combinations!==s.tickets[0].legs.reduce((n,l)=>n*l.programs.length,1)||s.tickets[0].total_cents!==s.tickets[0].unit_cents*s.tickets[0].combinations))throw Error("V3.4 upload arithmetic failed");
+ }
  return {
   schema_version:1,date:card.race_date,track:card.track_name,
   source_sha256:sourceSha,previous_source_sha256:priorSha,
   optimizer:PICK_V33_ENGINE,review_only:true,
+  ...(v34Review?{active_optimizer:PICK_V34_ENGINE,v34_review_card:v34Review}:{}),
   stage:card.projection_status,model_factor_basis:card.factor_basis,
   source_signature_status:sourceInputHold?"INPUT_CHANGED_WITHOUT_NEW_SCORE_RECEIPT":
    !signedFinal?"AWAITING_CERTIFIED_CURRENT_SCORING":
