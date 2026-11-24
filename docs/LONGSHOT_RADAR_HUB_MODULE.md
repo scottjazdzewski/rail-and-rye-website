@@ -4,6 +4,13 @@
 **Design authority:** [RACING_INTELLIGENCE_HUB_DESIGN_SYSTEM.md](RACING_INTELLIGENCE_HUB_DESIGN_SYSTEM.md)
 **Owning code:** `src/longshot-radar.js`, `public/admin/longshot-radar.html`, `public/assets/longshot-radar.{js,css}`.
 
+## Immutable editorial presentation — original PDF authority (November 24, 2026)
+
+- **User-approved original:** November 1 one-line betting-case editorial lock, confirmed against the November 23 two-page Radar PDF. Show only the original source-approved **single sentence** beneath each horse; no "Evidence" or "Counterargument" sections in the website reader.
+- No source-provider brand names in **any customer-facing copy, site labels, previews, or validation errors**. Keep exact branded provenance in private certificates and engineering source where needed for audit integrity; do not strip or rename original source data.
+- The published November 24 Radar already contains a signed one-sentence `betting_case` per horse. Do not regenerate, abbreviate mid-sentence, alter prices, rescore PWIN/F4, or edit selections. All supporting QA remains in protected R2.
+- When producing future editions, the editor must independently confirm a concrete race/pace/class/trip/price advantage in one natural sentence. Prefer rephrasing over smaller type, extra panels or a generic wins/starts recap. Keep the rest of the V1 mobile card proportions, badges and conditions intact.
+
 ## Protected review
 - Route: `/admin/longshot-radar/` — uses the **existing Cloudflare Access admin JWT verification** in `src/index.js`.
 - Private API: `GET /api/admin/longshot-radar`, `POST /api/admin/longshot-radar`.
@@ -33,7 +40,7 @@ Each candidate requires:
 - `pwin_display`: the *source-approved* one-decimal number to print with a % sign; must agree with exact PWIN to rounding precision.
 - `fair_odds_display`: authoritative American-style fair price string from the production output. At 5/1 or longer, whole-number `n/1` format only.
 - `betting_case`: the approved single-sentence, causal, race-specific reason. The UI displays this exactly and wraps rather than truncating.
-- `source_causal_evidence` and `counterargument_checked`: verifiable production-authored details used in the analysis drawer.
+- `source_causal_evidence` and `counterargument_checked`: mandatory private QA evidence; accepted and verified server-side, **never rendered on customer cards**.
 - Optional `post_time_et`, `trainer`, `jockey`, only if verified by production.
 
 ## Daily research presentation — shared with Target List
@@ -42,7 +49,7 @@ As approved for both Longshot Radar and Target List, the primary screen is a **d
 
 - **Post time · Earliest first** (default) sorts across ALL source tracks as one chronological sequence, regardless of track. Parse only declared Eastern post times; missing/unparseable times go last in original editorial order.
 - **Track · A to Z** groups tracks alphabetically, with races ordered within track. Sorting affects presentation only, never the source-certified editorial choices, rank, scoring or numerical values.
-- Each Radar result uses the same navy/gold **track / race / post time** header, authentic saddlecloth, readable horse name, **ML ODDS / WIN % / FAIR ODDS** columns, and the source one-sentence betting case. **No Race details button or drawer**: full analysis is visible directly on every horse card. When authenticated production provides evidence and counterarguments, they also appear inline.
+- Each Radar result uses the same navy/gold **track / race / post time** header, authentic saddlecloth, readable horse name, **ML ODDS / WIN % / FAIR ODDS** columns, and the source one-sentence betting case. **No Race details button or drawer**: full analysis is visible directly on every horse card. **Only the approved single-sentence `betting_case` is printed.** Detailed source evidence and checked counterarguments remain mandatory in the *private editorial QA record* but are never shown as extra paragraphs, cards, or drawers. The Radar copy answers why the horse is a value play in this race at this price, in direct horseplayer language. No source-provider brand or research-platform jargon may appear in the customer-facing sentence or UI.
 - Target List's corresponding result retains its **ML FAVORITE / ATTACK / optional ALSO LIVE** comparison rows, with the same saddlecloth/stat/analysis conventions. Never force Radar into the Target List's specific selection methodology or vice versa.
 - Do not add extra sort by model percentage, rank or horse name. Existing source publication order remains intact in storage. At phone widths, metric cells wrap beneath the identity without horizontal overflow.
 - Radar code changes reside in this branch. Target List owns its own branch [draft PR #149](https://github.com/scottjazdzewski/rail-and-rye-website/pull/149); the shared design direction was communicated there rather than overwriting another module's concurrent work.
