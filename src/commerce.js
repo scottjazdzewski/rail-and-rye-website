@@ -6,6 +6,7 @@ import {hasProductTabData} from './product-tab-content.js';
    requires verified Stripe keys and an explicit control flag; no public R2 URLs.
    Stripe secrets are Cloudflare Worker SECRETS, never source files. */
 const enc = new TextEncoder();
+const TAB_KEY='__rr_tab_access__';
 const API_JSON = {"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store","X-Content-Type-Options":"nosniff"};
 const reply = (o,s=200)=>new Response(JSON.stringify(o),{status:s,headers:API_JSON});
 const error = (m,s=400)=>reply({error:m},s);
@@ -182,7 +183,7 @@ export async function sendQueuedEmails(env,limit=8){
     FROM email_jobs j JOIN orders o ON o.id=j.order_id
     WHERE o.status='paid' AND datetime(o.paid_at, '+' || o.access_days || ' days') > CURRENT_TIMESTAMP
     AND (
-      (o.pdf_key IS NULL AND EXISTS(SELECT 1 FROM products sku WHERE sku.id=o.product_id AND
+      (o.pdf_key=? AND EXISTS(SELECT 1 FROM products sku WHERE sku.id=o.product_id AND
         ((sku.pdf_key=? AND EXISTS(SELECT 1 FROM bundle_order_items bi JOIN products bp ON bp.id=bi.product_id
           WHERE bi.order_id=o.id AND COALESCE(bi.pdf_expires_at,bp.pdf_expires_at)>CURRENT_TIMESTAMP))
          OR ((sku.pdf_key IS NULL OR sku.pdf_key<>?) AND COALESCE(o.pdf_expires_at,sku.pdf_expires_at)>CURRENT_TIMESTAMP))))
@@ -190,7 +191,7 @@ export async function sendQueuedEmails(env,limit=8){
       OR (o.pdf_key=? AND EXISTS(SELECT 1 FROM bundle_order_items bi JOIN products p ON p.id=bi.product_id WHERE bi.order_id=o.id AND COALESCE(bi.pdf_expires_at,p.pdf_expires_at)>CURRENT_TIMESTAMP)))
     AND j.attempts<6 AND ((j.state='queued' AND j.next_attempt_at<=CURRENT_TIMESTAMP)
     OR (j.state='sending' AND j.claimed_at<datetime('now','-3 minutes')))
-    ORDER BY j.created_at ASC LIMIT ?`).bind(BUNDLE_KEY,BUNDLE_KEY,BUNDLE_KEY,BUNDLE_KEY,limit).all();
+    ORDER BY j.created_at ASC LIMIT ?`).bind(TAB_KEY,BUNDLE_KEY,BUNDLE_KEY,BUNDLE_KEY,BUNDLE_KEY,limit).all();
   let sent=0;
   for(const j of pending.results||[]){
     if(!JOB_RE.test(j.id)||!recipientAllowed(env,j.email,j.stripe_session_id))continue;
@@ -437,12 +438,12 @@ async function recover(request,env,ctx){
   const paid=await env.STORE_DB.prepare(`SELECT o.id,o.stripe_session_id FROM orders o WHERE lower(o.buyer_email)=? AND o.status='paid'
     AND datetime(o.paid_at, '+' || o.access_days || ' days') > CURRENT_TIMESTAMP
     AND (
-      (o.pdf_key IS NULL AND EXISTS(SELECT 1 FROM products sku WHERE sku.id=o.product_id AND
+      (o.pdf_key=? AND EXISTS(SELECT 1 FROM products sku WHERE sku.id=o.product_id AND
         ((sku.pdf_key=? AND EXISTS(SELECT 1 FROM bundle_order_items bi JOIN products bp ON bp.id=bi.product_id WHERE bi.order_id=o.id AND COALESCE(bi.pdf_expires_at,bp.pdf_expires_at)>CURRENT_TIMESTAMP))
          OR ((sku.pdf_key IS NULL OR sku.pdf_key<>?) AND COALESCE(o.pdf_expires_at,sku.pdf_expires_at)>CURRENT_TIMESTAMP))))
       OR (o.pdf_key=? AND EXISTS(SELECT 1 FROM bundle_order_items bi JOIN products p ON p.id=bi.product_id WHERE bi.order_id=o.id AND COALESCE(bi.pdf_expires_at,p.pdf_expires_at)>CURRENT_TIMESTAMP))
       OR (o.pdf_key<>? AND o.download_count<5 AND COALESCE(o.pdf_expires_at,(SELECT pdf_expires_at FROM products WHERE id=o.product_id))>CURRENT_TIMESTAMP))
-    ORDER BY o.paid_at DESC LIMIT 8`).bind(email,BUNDLE_KEY,BUNDLE_KEY,BUNDLE_KEY,BUNDLE_KEY).all();
+    ORDER BY o.paid_at DESC LIMIT 8`).bind(email,TAB_KEY,BUNDLE_KEY,BUNDLE_KEY,BUNDLE_KEY,BUNDLE_KEY).all();
   let queued=0;
   for(const order of paid.results||[]){
     // Legacy Stripe sandbox purchases may NEVER send recovery mail to an
@@ -558,7 +559,7 @@ async function checkout(request,env){
   if(sessionExpiry<now+30*60*1000)return error('The racing-date access period is nearly over, so checkout is no longer available.',410);
   const orderExpiresAt=p.pdf_key===BUNDLE_KEY?null:expiryFor(p.pdf_expires_at);
   const ops=[env.STORE_DB.prepare(`INSERT INTO orders (id,product_id,product_title,pdf_key,amount_cents,status,access_days,pdf_expires_at)
-    VALUES (?,?,?,?,?,'initiated',7,?)`).bind(orderId,p.id,p.title,null,p.price_cents,orderExpiresAt)];
+    VALUES (?,?,?,?,?,'initiated',7,?)`).bind(orderId,p.id,p.title,TAB_KEY,p.price_cents,orderExpiresAt)];
   children.forEach((item,i)=>ops.push(env.STORE_DB.prepare(
     'INSERT INTO bundle_order_items (order_id,product_id,product_title,pdf_key,position,pdf_expires_at) VALUES (?,?,?,?,?,?)'
   ).bind(orderId,item.id,item.title,item.pdf_key,i,expiryFor(item.pdf_expires_at))));
