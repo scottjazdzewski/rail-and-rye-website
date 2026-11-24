@@ -1,3 +1,4 @@
+import {buildV34TrialCard,PICK_V34_ENGINE} from './pick-tickets-v34.js';
 import {getPickTicketsIntake,getPickTicketsIntake1124} from './pick-tickets-intake.js';
 import {buildPrescratchPickTicketReview,buildV33PostScratchReviewed,
  buildV33ScratchFieldPreview,readPrivatePickProjections,readPrivatePickProjections1124,
@@ -315,7 +316,24 @@ export async function handleAdminPickTickets(request,env){
    }
    return Object.keys(stakes).length?{...item,stakes_by_race:stakes}:item;
   });
-  return respond({cards:displayed,
+  // Explicit opt-in, authenticated, read-only trial. Never replace the
+  // V3.3 baseline or bypass its current-field hold / approval logic.
+  const trial=new URL(request.url).searchParams.get("trial")==="v34";
+  let output=displayed;
+  if(trial){
+   output=[];
+   for(const item of displayed){
+    if(item.card.date!=="2026-11-24"||item.review_only!==true)continue;
+    const source=byTrack.get(item.card.date+"|"+item.card.track)?.card;
+    if(!source?.model_receipts?.tri_sha256||!source?.model_receipts?.f4_sha256){
+     sourceRejects.push({track:item.card.track,reason:"V3.4 trial requires both scorer receipts."});continue;
+    }
+    try{output.push({...item,card:buildV34TrialCard(item.card)})}
+    catch(e){sourceRejects.push({track:item.card.track,reason:"V3.4 trial held: "+String(e.message||e).slice(0,100)})}
+   }
+  }
+  return respond({cards:output,
+   ...(trial?{trial:"V3.4",trial_engine:PICK_V34_ENGINE}:{}),
    intake:getPickTicketsIntake1124(),scratch_update,
    stale_revisions:staleRevisions,source_rejections:sourceRejects,
    latest_field_versions:sourceVersions,
