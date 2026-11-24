@@ -38,6 +38,14 @@ check({conditions:"Starter Allowance 7F"},"Starter Allowance 7F",null,false);
 check({conditions:"S. Florida Handicapper Open"},"S. Florida Handicapper Open",null,false);
 check({conditions:"John S. Smith Memorial (Nongraded)"},"John S. Smith Memorial (Nongraded)",null,false);
 check({conditions:"The Belmont Stakes"},"The Belmont Stakes",null);
+check({race_number:10,conditions:"STAKES"},"Race 10",null);
+check({race_number:9,conditions:"Stakes",stakes_name:"Zia Park Oaks",is_stakes:true},
+ "Zia Park Oaks",null);
+check({race_number:10,conditions:"STAKES",stakes_name:"Zia Park Derby",is_stakes:true},
+ "Zia Park Derby",null);
+assert.equal(describe({race_number:10,conditions:"STAKES"}).missingStakesName,true,
+ "A generic class can never masquerade as an official stakes name.");
+
 check({conditions:"Cigar Mile S. (G1)",stakes_grade:"G2"},
       "Cigar Mile S. (G1)",null,true);
 assert.equal(numericGrade("G1"),1);
@@ -62,7 +70,7 @@ const cssVersion=html=>/projections-dashboard\.css\?v=(\d+)/.exec(html)?.[1];
 assert.ok(cssVersion(admin),"Approved dashboard CSS needs an explicit version.");
 assert.equal(cssVersion(admin),cssVersion(member),"Admin and member must load the same current dashboard CSS.");
 for(const html of [admin,member]){
- assert.match(html,/rr-race-titles\.js\?v=3/,"Load shared race presentation helper before dashboard");
+ assert.match(html,/rr-race-titles\.js\?v=4/,"Load shared race presentation helper before dashboard");
  assert.match(html,/projections-dashboard\.js\?v=\d+/,"Use verified stakes heading dashboard revision");
  assert.match(html,/rr-projections-race-header\.css\?v=4/,"Load the sole graded-trophy and race-header stylesheet");
 }
@@ -97,6 +105,16 @@ assert.match(css,/\.rrp-race-head__number\{[\s\S]*?background:#f4f0e6/,
  "Keep ivory beneath race-number artwork to prevent dark transparency bleed");
 assert.match(css,/\.rrp-race-head__scratch-bar\{[\s\S]*?justify-content:center/,
  "Centered scratch row is part of the canonical layout");
+for(const page of ["public/admin/longshot-radar.html","public/admin/target-list-preview.html"]){
+ const html=readFileSync(page,"utf8");
+ assert.match(html,/rr-race-titles\\.js\\?v=4/,"All readers use the same title authority.");
+ assert.match(html,/rr-research-race-banner\\.js\\?v=locked-v2-20261124/,
+  "All research readers use the same banner and trophy presentation.");
+}
+const banner=readFileSync("public/assets/rr-research-race-banner.js","utf8");
+assert.match(banner,/RRRaceTitles\\?\\.describe/,"Shared race header uses the canonical title formatter.");
+assert.match(banner,/rr-ed-grade-trophy--g/,"Graded stakes must use the G1/G2/G3 trophy design.");
+assert.match(js,/rrp-race-head__trophy--g/,"Projections keep the G1/G2/G3 trophies.");
 console.log("PASS: Mahoning Distaff sponsor removed, text-only venue headings retained, balanced full names and transparent saddlecloths fixed");
 
 assert.match(trackCss,/grid-template-columns:minmax\(0,1fr\)/,"Venue text takes full width.");
