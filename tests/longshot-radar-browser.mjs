@@ -23,11 +23,27 @@ const editorial={review_only:true,customer_publish_approved:false,
 const mime={".html":"text/html; charset=utf-8",".js":"application/javascript; charset=utf-8",
  ".css":"text/css; charset=utf-8",".png":"image/png",".jpg":"image/jpeg",".webp":"image/webp"};
 let simulateError=false;
+let simulateScoredEdition=false;
+const nextDate={
+ schema_version:1,product_type:"longshot_radar",race_date:"2026-11-24",
+ revision:1,status:"prescratch",generated_at:"2026-11-24T00:00:00Z",
+ candidates:[{
+  track:"Fixture Downs",race_number:2,post_time_et:"1:40 PM ET",
+  program_number:"5",horse_name:"Tomorrow Fixture Only",
+  original_morning_line:"10/1",pwin_exact:0.15,pwin_display:15,
+  fair_odds_display:"6/1",betting_case:"Source-shaped fictional test case; no actual racing prediction."
+ }]
+};
 const server=createServer((req,res)=>{
  const path=new URL(req.url,"http://localhost").pathname;
  if(path==="/api/admin/longshot-radar-editorial"){
   res.writeHead(simulateError?503:200,{"Content-Type":"application/json; charset=utf-8","Cache-Control":"private, no-store"});
   res.end(JSON.stringify(simulateError?{error:"Source temporarily unavailable."}:editorial));return;
+ }
+ if(path==="/api/admin/longshot-radar"){
+  res.writeHead(simulateError?503:200,{"Content-Type":"application/json; charset=utf-8","Cache-Control":"private, no-store"});
+  res.end(JSON.stringify(simulateError?{error:"Scored feed unavailable"}:
+    {review_only:true,editions:simulateScoredEdition?[nextDate]:[]}));return;
  }
  if(path.startsWith("/api/admin/")){res.writeHead(404);res.end("Unexpected private API called");return;}
  const pathname=(path==="/admin/longshot-radar/"||path==="/admin/longshot-radar")?
@@ -204,8 +220,10 @@ try{
   const layout=await page.evaluate(()=>({page:document.documentElement.scrollWidth,body:document.body.scrollWidth,viewport:document.documentElement.clientWidth}));
   if(layout.page>width+1||layout.body>width+1)
     throw Error("Radar content overflow "+width+": "+JSON.stringify(layout));
-  if(errors.length||calls.length!==1||calls[0]!=="/api/admin/longshot-radar-editorial")
-    throw Error("Unexpected JS errors or calls "+width+": "+JSON.stringify({errors,calls}));
+  if(errors.length||calls.length!==2||
+    !calls.includes("/api/admin/longshot-radar-editorial")||
+    !calls.includes("/api/admin/longshot-radar"))
+    throw Error("Reader must request both the validated future edition and historical approved publication at "+width+": "+JSON.stringify({errors,calls}));
   await page.screenshot({path:join("test-artifacts","longshot-push-only-"+width+".png"),fullPage:true});
   if(width===390){
    await page.evaluate(()=>{
@@ -220,6 +238,26 @@ try{
   }
   await page.close();
  }
+ // A source-validated future date becomes the default automatically, while
+ // the previous November 23 PDF remains selectable. No UI horse scoring.
+ simulateScoredEdition=true;
+ for(const width of [375,1280]){
+  const page=await browser.newPage({viewport:{width,height:850}});
+  const errors=[];page.on("pageerror",err=>errors.push(err.message));
+  await page.goto(base+"/admin/longshot-radar/",{waitUntil:"domcontentloaded"});
+  await page.locator(".rr-lr-card").first().waitFor({timeout:15000});
+  if(await page.locator("#rr-lr-date").inputValue()!=="2026-11-24"||
+     await page.locator(".rr-lr-card").count()!==1||
+     !(await page.locator(".rr-lr-card").first().innerText()).includes("Tomorrow Fixture Only"))
+    throw Error("New verified edition must replace old default without falsifying the source at "+width);
+  await page.locator("#rr-lr-date").selectOption("2026-11-23");
+  if(await page.locator(".rr-lr-card").count()!==10)
+    throw Error("Historical published date must remain accessible at "+width);
+  if(errors.length)throw Error("Future-date reader JavaScript failure at "+width+": "+errors.join(","));
+  await page.screenshot({path:join("test-artifacts","longshot-multiday-"+width+".png"),fullPage:true});
+  await page.close();
+ }
+ simulateScoredEdition=false;
  // Recovery test: real data route fails once, page shows error+retry rather than
  // a permanent "Checking private Radar editions…" spinner or file uploader.
  simulateError=true;
@@ -243,7 +281,7 @@ try{
  if(!html.includes('url=/admin/longshot-radar/')||html.includes("rr-lr-candidates")||html.includes("Fixture One"))
   throw Error("Public URL must redirect to private reader with no horse rows.");
  await publicPage.close();
- console.log("PASS: Shared Daily Research V1 Radar at 320/375/390/430/768/1280, 5 identical homepage-style pills, mobile menu, authentic logo, 17px intact analysis, 25px WIN/22px FAIR, source race facts, zero manual JSON, and R2 retry.");
+ console.log("PASS: date-aware private Radar automatically accepts Nov24 certified editions and retains Nov23 historical card; Shared Daily Research V1 at 320/375/390/430/768/1280, 5 identical homepage-style pills, mobile menu, authentic logo, 17px intact analysis, 25px WIN/22px FAIR, source race facts, zero manual JSON, and R2 retry.");
 }finally{
  if(browser)await browser.close();await new Promise(resolve=>server.close(resolve));
 }
