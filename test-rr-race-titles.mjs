@@ -114,12 +114,12 @@ for(const page of ["public/admin/longshot-radar.html","public/admin/target-list-
   "All research readers use the same banner and trophy presentation.");
 }
 const pickPage=readFileSync("public/admin/pick-tickets-preview.html","utf8");
-assert.match(pickPage,/rr-race-titles\\.js\\?v=5/,"Pick Tickets uses the same source-certified title parser.");
+assert.match(pickPage,/rr-race-titles\.js\?v=5/,"Pick Tickets uses the same source-certified title parser.");
 const pickRenderer=readFileSync("public/assets/pick-tickets-dashboard.js","utf8");
-assert.match(pickRenderer,/RRRaceTitles\\?\\.describe/,"Ticket legs use full canonical stakes names.");
+assert.match(pickRenderer,/RRRaceTitles\?\.describe/,"Ticket legs use full canonical stakes names.");
 assert.match(pickRenderer,/rr-ed-grade-trophy--g/,"Ticket legs show correct G1 G2 G3 trophies.");
 const banner=readFileSync("public/assets/rr-research-race-banner.js","utf8");
-assert.match(banner,/RRRaceTitles\\?\\.describe/,"Shared race header uses the canonical title formatter.");
+assert.match(banner,/RRRaceTitles\?\.describe/,"Shared race header uses the canonical title formatter.");
 assert.match(banner,/rr-ed-grade-trophy--g/,"Graded stakes must use the G1/G2/G3 trophy design.");
 assert.match(js,/rrp-race-head__trophy--g/,"Projections keep the G1/G2/G3 trophies.");
 console.log("PASS: Mahoning Distaff sponsor removed, text-only venue headings retained, balanced full names and transparent saddlecloths fixed");
