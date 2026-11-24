@@ -1,3 +1,4 @@
+import {enrichRaceInformation} from "./projection-race-information.js";
 /* Longshot Radar — private review only. No public data route or model scoring.
  * All requests must pass verifyAdmin in src/index.js before arriving here.
  */
@@ -255,6 +256,7 @@ async function readOriginalRaceFacts(env,raceDate){
    try{source=JSON.parse(await file.text());}catch{continue;}
    if(source?.schema_version!==1||source.race_date!==raceDate||
       !Array.isArray(source.races)||typeof source.track_name!=="string")continue;
+   source=enrichRaceInformation(source);
    const track=sourceTrackName(source.track_name);
    if(!track)continue;
    for(const race of source.races){
