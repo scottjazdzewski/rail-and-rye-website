@@ -196,7 +196,7 @@ export function enrichRaceInformation(card){
      card.projection_status==="prescratch"&&race.entries.length===source.n[i])
    result={...result,purse:"$"+source.p[i].toLocaleString("en-US")};
   const named=source.stakes?.[String(race.race_number)];
-  const current=[race.stakes_name,race.race_name,race.conditions]
+  const current=[race.stakes_name,race.race_name]
    .map(value=>String(value??"").trim()).filter(Boolean);
   // The date + complete track race list + verified purse must all match
   // before supplementing a missing race name. Scratches may change field sizes.
