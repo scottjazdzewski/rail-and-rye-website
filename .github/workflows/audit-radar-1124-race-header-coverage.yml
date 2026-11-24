@@ -1,0 +1,28 @@
+name: Audit private Radar current-date race header source
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/longshot-radar.js'
+      - 'scripts/audit_radar_1124_race_header_coverage.py'
+      - '.github/workflows/audit-radar-1124-race-header-coverage.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify-original-race-source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check 10 real Radar selections have exact original race header source
+        env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+        run: |
+          python -m pip -q install boto3==1.40.36
+          python scripts/audit_radar_1124_race_header_coverage.py
