@@ -197,6 +197,8 @@ try{
   assert.deepEqual(await redCells.evaluateAll(nodes=>nodes.map(n=>n.dataset.coverageBand)),["red","red","red"]);
   const reds=await redCells.evaluateAll(nodes=>nodes.map(n=>getComputedStyle(n.querySelector(".rr-pt-pwin-value")).color));
   assert.notEqual(reds[0],reds[2],"different red intensity");
+  const channels=color=>color.match(/\d+/g).map(Number);
+  assert.ok(channels(reds[2])[0]>channels(reds[0])[0],"lower PWIN means brighter red, not darker red");
   assert.equal(await redCells.first().locator(".rr-pt-pwin-fill").evaluate(n=>getComputedStyle(n).backgroundColor),reds[0]);
   assert.doesNotMatch(await page.locator("#rr-pt-app").innerText(),/V3\.4|Ticket Insights/);
   assert.equal(await page.locator(".rr-pt-analysis-button,#rr-pt-dialog").count(),0);
@@ -224,7 +226,9 @@ try{
   assert.equal(await row.locator(".rr-pt-pwin-fill").evaluate(n=>getComputedStyle(n).backgroundColor),green);
   await row.getByRole("button",{name:/Race 1 horse 4 not selected/}).click();
   assert.equal(await row.locator(".rr-pt-pwin-value").innerText(),"74.0%");
-  assert.notEqual(await row.locator(".rr-pt-pwin-value").evaluate(n=>getComputedStyle(n).color),green,"different green intensity");
+  const strongerGreen=await row.locator(".rr-pt-pwin-value").evaluate(n=>getComputedStyle(n).color);
+  assert.ok(channels(strongerGreen)[1]>channels(green)[1],"higher PWIN means brighter green, not darker green");
+  assert.ok(channels(strongerGreen)[0]<channels(green)[0],"stronger green remains saturated, not lime");
   await page.screenshot({path:"test-artifacts/pick-tickets-pwin-"+width+".png",fullPage:true});
   await row.getByRole("button",{name:/Race 1 horse 4 selected/}).click();
   await row.getByRole("button",{name:/Race 1 horse 3 selected/}).click();

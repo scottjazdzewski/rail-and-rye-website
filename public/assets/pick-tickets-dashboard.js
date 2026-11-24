@@ -66,14 +66,14 @@
   return header;
  }
  // Match the displayed one-decimal percentage to the color threshold.
- // Dark, accessible reds/greens become stronger away from the neutral band.
+ // Traffic-light intensity: muted near gray, brighter saturated colors at the extremes.
  function coverageColor(mass){
   if(mass===null)return {band:"unknown",color:"#68737b"};
   const n=Number(mass.toFixed(1));
   const mix=(a,b,t)=>"rgb("+a.map((v,i)=>Math.round(v+(b[i]-v)*Math.max(0,Math.min(1,t)))).join(", ")+")";
-  if(n<40)return {band:"red",color:mix([132,34,32],[178,75,68],n/40)};
+  if(n<40)return {band:"red",color:mix([211,33,48],[151,88,86],n/40)};
   if(n<=60)return {band:"gray",color:"#65717b"};
-  return {band:"green",color:mix([56,117,77],[20,65,42],(n-60)/40)};
+  return {band:"green",color:mix([58,111,79],[0,137,64],(n-60)/40)};
  }
  function coverageCell(leg,{builder=false}={}){
   const mass=legPwin(leg),cell=node("div","rr-pt-pwin-cell");
