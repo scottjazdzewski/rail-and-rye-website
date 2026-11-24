@@ -50,7 +50,7 @@ function fullTrack(stage="prescratch"){
    const programs=Array.from({length:30},(_,j)=>String(j+1))
     .filter(p=>stage==="prescratch"||!raw.includes(p))
     .slice(0,base+(i<extra?1:0));
-   return {race_number:race,
+   return {race_number:race,purse:"$10,000", // synthetic QA fixture, never published
     scratch_count:stage==="prescratch"?null:raw.length,
     scratches:stage==="prescratch"?[]:raw.map(p=>({program_number:p,horse_name:"QA Scratched "+p})),
     entries:raceEntries(programs)};
