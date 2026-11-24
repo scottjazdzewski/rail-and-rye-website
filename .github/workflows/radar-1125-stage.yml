@@ -2,7 +2,7 @@ name: Stage exact-source November 25 Longshot Radar privately
 on:
   push:
     branches: [main]
-    paths: ['private-ingest/20261125/radar.enc']
+    paths: ['private-ingest/20261125/radar.enc','private-ingest/20261125/radar-correction.enc']
 permissions:
   contents: read
 concurrency:
