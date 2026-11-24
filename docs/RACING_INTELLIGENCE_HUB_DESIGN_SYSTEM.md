@@ -115,22 +115,22 @@ The single source of truth for **horse saddle chips**, authentic saddlecloth-bac
 
 ### Permanent customer-copy lock — applies to all four products and future publications
 - Projections, Pick Tickets, Longshot Radar, and Target List must never render `INITIAL`, `PRESCRATCH`, `PRE-SCRATCH`, `INITIAL · CURRENT`, `SCRATCH UPDATED · CURRENT`, `MODEL REVIEW`, `TEST WINDOW`, `PRIVATE PREVIEW`, `CERTIFIED SOURCE TICKET`, or similar production/review-stage labels. This includes headers, race cards, tooltips, dialogs, fallback/loading/empty states and revisions.
-- Do not add customer-side JSON/file upload controls, test data toggles, production-source gates or revision receipts to those four pages. The user publishes through the existing backend and Publication Desk workflow, not by manually uploading JSON to product pages.
+- Do not add customer-side JSON/file upload controls or test-data toggles to those four pages. The user publishes validated editions by pushing from the GPT work windows to the authenticated backend; the store catalog syncs eligible editions from those private R2 records. Product pages remain read-only customer views.
 - Preserve underlying `projection_status`, `status`, `revision`, `factor_basis`, scratch arrays, provenance, receipt checks, R2 storage, and security gating exactly as source metadata. The presentation cleanup **must not** imply that stale selections are updated, alter TRI/F4 probabilities, or bypass a source verification gate.
 - Display official scratches as genuine racing information and allow clear, user-relevant uncertainty disclosures when appropriate, without revealing internal production terminology. A plain race-date or neutral `Updated` timestamp is acceptable.
 - Before each production push, run `node test-racing-intelligence-customer-copy.mjs`; the CI gate covers all four HTML pages and renderers. New product windows must follow this shared lock. Changes to the lock require an explicit design-policy decision.
 
-## Commerce and Publication Desk integration
+## Commerce and GPT publication integration
 - Reuse the existing Rail & Rye sign-in, Stripe commerce, membership/bundle/product entitlements and recovery flow. Do not create four payment systems or duplicate customer accounts.
 - One customer entitlement map determines which hub modules and individual products they can open; memberships and purchased singles/bundles must resolve under the same rules. Admin preview access remains separate from customer access.
-- Publication Desk should offer **one publish interface** that routes to product type: projections / pick_tickets / longshot_radar / target_list. Upload/replace/update/revoke/scratch revision without PDF requirements; use versioned, checksum-verified structured output in R2, with simple publish controls.
-- Product publication can use different structured schemas, but share stable metadata: `product_type`, `date`, `track` or scope, `revision`, `status`, `published_at`, `model/production_receipt`, access/entitlement key. Only add fields as legitimately supplied; no invented values.
+- GPT work windows publish through the authenticated product endpoints: projections / pick_tickets / longshot_radar / target_list. A successful validated push is the publication event; the purchase catalog creates or updates the matching product entry automatically. The old Publication Desk is not required for GPT-window editions.
+- Product publication can use different structured schemas, but share stable metadata: `product_type`, `date`, `track` or scope, `revision`, `status`, `published_at`, `model/production_receipt`, access/entitlement key. The catalog sync preserves existing prices and uses the established $9.99 default for a new GPT-window product unless `RR_GPT_PRODUCT_PRICE_CENTS` is configured. Only add fields as legitimately supplied; no invented source values.
 - UI components should be reusable: hub shell/nav, product tile, tab strip, status chip, date/track selector, card/row, drawer, source/updated metadata, empty/loading/error state and accessibility conventions.
 
 ## Release/engineering instructions for parallel production windows
 1. Read this file and inspect current deployed Projections DOM/CSS and existing website auth/commerce routes first. Do not copy a screenshot into a wholly separate design system.
 2. Implement modules in the SAME website repository. Coordinate file ownership/branches/PRs to avoid overwriting concurrent dashboard work. Prefer module-scoped files plus shared hub components; do not edit Projections CSS/JS while its own window owns them unless coordinated.
-3. Do NOT publish publicly or enable `PROJECTIONS_MEMBER_LAUNCH` (or future product launch flags) without explicit customer-launch instruction. Admin/private previews are okay under correct access controls.
+3. Do NOT publish publicly or enable `PROJECTIONS_MEMBER_LAUNCH` (or future product launch flags) without explicit customer-launch instruction. For the GPT-window workflow, the user's authenticated push to the site is that instruction; local generation and private review uploads are not.
 4. Run CI, validate 320/375/390/430px and desktop; explicitly inspect for clipping, full field coverage, percent/font consistency, data integrity, exact current status and product-only access. Do not claim "pushed" just because a PR merged: confirm Cloudflare Workers deployment.
 5. This contract establishes shared UI/product infrastructure, NOT any new scoring, ticket construction or marketing entitlement assumptions.
 

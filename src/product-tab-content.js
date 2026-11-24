@@ -1,5 +1,5 @@
-import {readMemberProjectionCards} from './projections.js';
-import {handleAdminPickTickets} from './pick-tickets.js';
+import {readMemberProjectionCards,readGPTPublishedProjectionCards} from './projections.js';
+import {readPublishedPickTicketCards} from './pick-tickets.js';
 import {readLongshotRadarEdition} from './longshot-radar.js';
 import {readTargetListEdition} from './target-list.js';
 
@@ -29,6 +29,7 @@ function publicPick(item){
  const card=item?.card||item;
  if(!card||card.date==null||!Array.isArray(card.sequences))return null;
  return {date:card.date,track:card.track,
+  ...(card.scratches_by_race?{scratches_by_race:card.scratches_by_race}:{}),
   sequences:card.sequences.map(sequence=>({
    name:sequence.name,start_race:sequence.start_race,end_race:sequence.end_race,
    play_status:sequence.play_status,hit_rate_display:sequence.hit_rate_display,
@@ -80,17 +81,18 @@ export async function readProductTabEdition(env,category,raceDate,products=[]){
   const eligible=(products||[]).filter(p=>p.category==='Race Cards'&&p.race_date===raceDate);
   if(!eligible.length)return null;
   const cards=await readMemberProjectionCards(env,eligible);
-  const matching=cards.filter(item=>item.race_date===raceDate).map(item=>({
+  const foldTrack=value=>String(value||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/\b(park|downs|racecourse|racetrack)\b/g,"").replace(/[^a-z0-9]+/g," ").trim();
+  const matching=cards.filter(item=>item.race_date===raceDate&&eligible.some(product=>
+   (product.id&&item.product_id===product.id)||
+   (product.track&&(()=>{const a=foldTrack(item.track||item.card?.track_name),b=foldTrack(product.track);return !!a&&!!b&&(a===b||a.includes(b)||b.includes(a));})())
+  )).map(item=>({
    product_id:item.product_id,title:text(item.title,140),track:text(item.track,100),
    race_date:item.race_date,card:publicProjection(item.card)
   }));
   return matching.length?{category,race_date:raceDate,cards:matching}:null;
  }
  if(category==='Pick Tickets'){
-  const response=await handleAdminPickTickets(new Request('https://internal.invalid/api/admin/pick-tickets',{method:'GET'}),env);
-  if(!response.ok)return null;
-  const payload=await response.json(),cards=(payload.cards||[]).map(publicPick).filter(Boolean)
-   .filter(card=>card.date===raceDate);
+  const cards=(await readPublishedPickTicketCards(env,raceDate)).map(publicPick).filter(Boolean);
   return cards.length?{category,race_date:raceDate,cards}:null;
  }
  if(category==='Longshot Radar'){
@@ -101,6 +103,71 @@ export async function readProductTabEdition(env,category,raceDate,products=[]){
  return safe?{category,race_date:raceDate,...safe}:null;
 }
 
+const TARGET_LIST_PREFIX="racing-intelligence/target-list/";
+const LONGSHOT_PRODUCT_PREFIX="racing-intelligence/product-tabs/longshot-radar/";
+function inProductWindow(raceDate){
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(String(raceDate||'')))return false;
+ const today=new Intl.DateTimeFormat("en-CA",{timeZone:"America/New_York"}).format(new Date());
+ const expiry=new Date(raceDate+"T00:00:00Z");
+ if(Number.isNaN(expiry.getTime()))return false;
+ expiry.setUTCDate(expiry.getUTCDate()+2);
+ return today<expiry.toISOString().slice(0,10);
+}
+function directProduct(category,raceDate,track=""){
+ const when=String(raceDate||"");
+ const place=String(track||"").trim();
+ const title=category==="Race Cards"?place+" — "+when+" Race Card":
+  category==="Pick Tickets"?place+" — "+when+" Pick Tickets":
+  category==="Longshot Radar"?"Longshot Radar — "+when:"Target List — "+when;
+ return {category,race_date:when,track:place,title,
+  description:"Digital access to the published "+category+(place?" for "+place:"")+" edition dated "+when+". Open it in the Rail & Rye Racing Intelligence Hub."};
+}
+/* GPT window pushes are the publication event. Discover only structured,
+   source-validated editions in private storage; checkout remains behind the
+   existing product/date entitlement and Stripe checks. */
+export async function discoverGPTPublishedProducts(env){
+ if(!env.CARDS_BUCKET)return [];
+ const found=new Map();
+ const add=(category,date,track="")=>{
+  if(!inProductWindow(date))return;
+  const product=directProduct(category,date,track);
+  found.set([category,date,product.track.toLowerCase()].join("|"),product);
+ };
+ try{
+  const projections=await readGPTPublishedProjectionCards(env);
+  for(const row of projections||[])add("Race Cards",row.race_date,row.track||row.card?.track_name||"");
+ }catch(error){console.warn("GPT Race Cards catalog scan held",String(error).slice(0,100));}
+ try{
+  const targetList=await env.CARDS_BUCKET.list({prefix:TARGET_LIST_PREFIX,limit:1000});
+  const targetDates=new Set();
+  for(const object of targetList.objects||[]){
+   const match=/^racing-intelligence\/target-list\/(\d{4}-\d{2}-\d{2})\/revision-\d{4,5}\.json$/.exec(object.key);
+   if(match&&inProductWindow(match[1]))targetDates.add(match[1]);
+  }
+  for(const date of targetDates){
+   try{
+    const edition=await readTargetListEdition(env,date);
+    if(Array.isArray(edition?.targets)&&edition.targets.length)add("Target List",date);
+   }catch(error){console.warn("GPT Target List catalog sync held",date,String(error).slice(0,100));}
+  }
+ }catch(error){console.warn("GPT Target List catalog scan held",String(error).slice(0,100));}
+ try{
+  const radar=await env.CARDS_BUCKET.list({prefix:LONGSHOT_PRODUCT_PREFIX,limit:1000});
+  for(const object of radar.objects||[]){
+   const match=/^racing-intelligence\/product-tabs\/longshot-radar\/(\d{4}-\d{2}-\d{2})\.json$/.exec(object.key);
+   if(!match||!inProductWindow(match[1]))continue;
+   try{
+    const edition=await readLongshotRadarEdition(env,match[1]);
+    if(Array.isArray(edition?.candidates)&&edition.candidates.length)add("Longshot Radar",match[1]);
+   }catch(error){console.warn("GPT Longshot catalog sync held",match[1],String(error).slice(0,100));}
+  }
+ }catch(error){console.warn("GPT Longshot catalog scan held",String(error).slice(0,100));}
+ try{
+  const tickets=await readPublishedPickTicketCards(env);
+  for(const card of tickets||[])if(Array.isArray(card.sequences)&&card.sequences.length)add("Pick Tickets",card.date,card.track);
+ }catch(error){console.warn("GPT Pick Tickets catalog scan held",String(error).slice(0,100));}
+ return [...found.values()];
+}
 export async function hasProductTabData(env,category,raceDate,products=[]){
  try{
   const edition=await readProductTabEdition(env,category,raceDate,products);

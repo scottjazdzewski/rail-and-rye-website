@@ -288,10 +288,12 @@ export async function handleAdminLongshotRadar(request,env){
       httpMetadata:{contentType:"application/json; charset=utf-8",cacheControl:"private, no-store"},
       customMetadata:{revision:String(edition.revision),review_only:"true"}
     });
-    return json({ok:true,review_only:true,race_date:edition.race_date,revision:edition.revision,candidates:edition.candidates.length,tri_cross_check:matchReceipt});
+    const publication=await publishLongshotRadarTab(env,edition.race_date);
+    return json({ok:true,published:true,race_date:edition.race_date,revision:edition.revision,
+      candidates:edition.candidates.length,tri_cross_check:matchReceipt,customer_publication:publication});
   }catch(e){
-    console.error("Radar private write failed",String(e).slice(0,130));
-    return error("Radar review upload could not be saved.",503);
+    console.error("Radar GPT publication failed",String(e).slice(0,130));
+    return error("Radar review was saved, but the customer edition could not be published.",503);
   }
 }
 

@@ -168,7 +168,7 @@ export async function handleAdminTargetList(request,env,url){
  if(latest&&edition.revision<=latest.revision){
   const prior=await env.CARDS_BUCKET.get(objectKey);
   if(prior&&(prior.customMetadata?.sha256===checksum||await sha256(await prior.text())===checksum))
-   return response({ok:true,unchanged:true,race_date:edition.race_date,revision:edition.revision});
+   return response({ok:true,published:true,unchanged:true,race_date:edition.race_date,revision:edition.revision});
   return fail("A different or newer revision already exists; never overwrite finalized analysis.",409);
  }
  if(!latest&&edition.revision!==1||latest&&edition.revision!==latest.revision+1)
@@ -178,7 +178,7 @@ export async function handleAdminTargetList(request,env,url){
   httpMetadata:{contentType:"application/json; charset=utf-8",cacheControl:"private, no-store"},
   customMetadata:{sha256:checksum,source_sha256:edition.source.sha256,receipt_id:edition.source.receipt_id,uploaded_at}
  });
- return response({ok:true,private_preview:true,race_date:edition.race_date,revision:edition.revision,targets:edition.targets.length,sha256:checksum},201);
+ return response({ok:true,published:true,race_date:edition.race_date,revision:edition.revision,targets:edition.targets.length,sha256:checksum},201);
 }
 async function readEdition(env,selected,dates){
  const object=await env.CARDS_BUCKET.get(selected.key);

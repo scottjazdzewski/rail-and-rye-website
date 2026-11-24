@@ -14,6 +14,7 @@ import {auditV33FieldUpload,pickUploadAuditKey,projectionFieldFingerprint,
  matchStoredTicketToLatestSource,isPickV33Field} from './pick-tickets-field-audit.js';
 /* Pick Tickets: admin-only dashboard staging. No scoring, public data, or customer-launch route. */
 const PREFIX="pick-tickets/dashboard/";
+const CUSTOMER_PREFIX="racing-intelligence/product-tabs/pick-tickets/";
 const ARCHIVE="pick-tickets/revisions/";
 const HEADERS={"Content-Type":"application/json; charset=utf-8","Cache-Control":"private, no-store","X-Robots-Tag":"noindex, nofollow, noarchive","X-Content-Type-Options":"nosniff"};
 const respond=(body,status=200)=>new Response(JSON.stringify(body),{status,headers:HEADERS});
@@ -22,6 +23,17 @@ const text=(v,label,max,required=true)=>{
  return v.trim();
 };
 const obj=v=>!!v&&typeof v==="object"&&!Array.isArray(v);
+
+function publicScratches(value){
+ if(!obj(value))return null;
+ const safe={};
+ for(const [race,numbers] of Object.entries(value)){
+  if(!/^(?:[1-9]|1[0-9]|20)$/.test(race)||!Array.isArray(numbers)||numbers.length>30)continue;
+  const clean=[...new Set(numbers.map(item=>String(item||"").trim().toUpperCase()).filter(item=>/^[0-9]{1,2}[A-Z]?$/.test(item)))];
+  if(clean.length)safe[race]=clean;
+ }
+ return Object.keys(safe).length?safe:null;
+}
 const integer=(v,label,min,max)=>{
  if(!Number.isSafeInteger(v)||v<min||v>max)throw Error(label+" must be a whole number between "+min+" and "+max+".");
  return v;
@@ -185,6 +197,26 @@ async function readCards(env){
  }));
  return records.filter(Boolean).sort((a,b)=>b.card.date.localeCompare(a.card.date)||a.card.track.localeCompare(b.card.track));
 }
+export async function readPublishedPickTicketCards(env,raceDate){
+ if(!env.CARDS_BUCKET)return [];
+ if(raceDate&&!validDate(raceDate))return [];
+ const prefix=CUSTOMER_PREFIX+(raceDate?raceDate+"/":"");
+ const listed=await env.CARDS_BUCKET.list({prefix,limit:1000});
+ const cards=[];
+ for(const object of listed.objects||[]){
+  const match=/^racing-intelligence\/product-tabs\/pick-tickets\/(\d{4}-\d{2}-\d{2})\/([a-z0-9-]+)\.json$/.exec(object.key);
+  if(!match||(raceDate&&match[1]!==raceDate))continue;
+  const file=await env.CARDS_BUCKET.get(object.key);
+  if(!file||file.customMetadata?.customer_publish_approved!=="true")continue;
+  try{
+   const raw=JSON.parse(await file.text());
+   const card=normalizePickTickets(raw),scratches=publicScratches(raw?.scratches_by_race);
+   if(card.date===match[1])cards.push({...card,...(scratches?{scratches_by_race:scratches}:{})});
+  }catch(error){console.warn("Invalid published Pick Tickets edition skipped",object.key,String(error).slice(0,100));}
+ }
+ return cards.sort((a,b)=>b.date.localeCompare(a.date)||a.track.localeCompare(b.track));
+}
+
 export async function handleAdminPickTickets(request,env){
  if(!env.CARDS_BUCKET)return respond({error:"Private R2 storage is not configured."},503);
  if(request.method==="GET"){
@@ -393,5 +425,51 @@ export async function handleAdminPickTickets(request,env){
    updated.push({track:item.card.track,date:item.card.date,revision:item.card.revision,sha256:item.hash});
   }catch(e){console.error("Pick Tickets private upload failed",item.key,String(e).slice(0,160));return respond({error:"A track could not be written and verified in private storage.",updated},503);}
  }
- return respond({ok:true,updated,unchanged:cards.length-updated.length});
+// A successful GPT-window push is the Pick Tickets publication event.
+ // Rebuild from the existing exact-field audit before creating the customer copy;
+ // the admin review response itself remains private.
+ const verification=await handleAdminPickTickets(new Request("https://internal.invalid/api/admin/pick-tickets",{method:"GET"}),env);
+ if(!verification.ok)return respond({ok:false,updated,error:"Pick Tickets saved, but publication verification is unavailable."},503);
+ const verified=await verification.json();
+ const published=[],held=[];
+ for(const source of cards){
+  const blocked=(verified.source_rejections||[]).some(item=>item.track===source.track);
+  const row=(verified.cards||[]).find(item=>{
+   const card=item?.card||item;
+   return card?.date===source.date&&card?.track===source.track;
+  });
+  const card=row?.card||row;
+  if(blocked||!card){
+   held.push({date:source.date,track:source.track,reason:"Current source audit did not approve this edition for customer access."});
+   continue;
+  }
+  const sourceVersion=(verified.latest_field_versions||[]).find(item=>item.date===source.date&&item.track===source.track);
+  if(row?.review_only===true&&(!sourceVersion||card.source_input_sha256!==sourceVersion.sha256)){
+   held.push({date:source.date,track:source.track,reason:"The customer copy did not match the verified source field."});
+   continue;
+  }
+  let customerCard;
+  const scratches=publicScratches(row?.scratches_by_race);
+  try{customerCard={...normalizePickTickets(card),...(scratches?{scratches_by_race:scratches}:{})};}catch{
+   held.push({date:source.date,track:source.track,reason:"The audited customer edition failed validation."});
+   continue;
+  }
+  const customerKey=CUSTOMER_PREFIX+customerCard.date+"/"+slug(customerCard.track)+".json";
+  const customerJson=JSON.stringify(customerCard),customerHash=await sha256(customerJson);
+  const publishedAt=new Date().toISOString();
+  try{
+   await env.CARDS_BUCKET.put(customerKey,customerJson,{
+    httpMetadata:{contentType:"application/json; charset=utf-8",cacheControl:"private, no-store"},
+    customMetadata:{customer_publish_approved:"true",revision:String(customerCard.revision),
+     content_sha256:customerHash,source_sha256:customerCard.source_receipt.sha256,published_at:publishedAt}
+   });
+   const written=await env.CARDS_BUCKET.get(customerKey);
+   if(!written||await sha256(await written.text())!==customerHash)throw Error("R2 read-back checksum did not match.");
+   published.push({date:customerCard.date,track:customerCard.track,revision:customerCard.revision});
+  }catch(error){
+   console.error("Pick Tickets customer publication failed",customerKey,String(error).slice(0,120));
+   return respond({ok:false,updated,published,held,error:"Pick Tickets saved, but a customer edition could not be verified."},503);
+  }
+ }
+ return respond({ok:held.length===0,updated,published,held,unchanged:cards.length-updated.length,...(held.length?{error:"One or more editions did not pass the customer-publication audit."}:{})},held.length?409:200);
 }
