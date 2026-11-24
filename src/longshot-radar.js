@@ -212,7 +212,23 @@ async function readAll(env){
   return enriched;
 }
 export async function readLongshotRadarEdition(env,raceDate){
-  return (await readAll(env)).find(edition=>edition.race_date===raceDate)||null;
+  if(!env.CARDS_BUCKET||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(String(raceDate||'')))return null;
+  const stored=await env.CARDS_BUCKET.get(PREFIX+raceDate+'.json');
+  if(!stored)return null;
+  let edition;
+  try{
+    edition=validateLongshotEdition(JSON.parse(await stored.text()));
+    if(edition.race_date!==raceDate)return null;
+  }catch(error){
+    console.warn("Rejected invalid Radar product edition",raceDate,String(error).slice(0,110));
+    return null;
+  }
+  const raceFacts=await readOriginalRaceFacts(env,raceDate);
+  return {...edition,candidates:edition.candidates.map(candidate=>{
+    const matched=raceFacts.get(sourceTrackName(candidate.track)+"|"+candidate.race_number);
+    const horse=candidate.program_number.trim().toUpperCase()+"|"+sourceHorseName(candidate.horse_name);
+    return matched?.horses.has(horse)?{...candidate,...matched.facts}:candidate;
+  })};
 }
 export async function handleAdminLongshotRadar(request,env){
   if(!env.CARDS_BUCKET)return error("Private Radar storage is not configured.",503);

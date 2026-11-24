@@ -250,7 +250,7 @@
     <summary><strong>Bundles</strong><span>Choose PDFs already in the repository and publish or schedule a package</span></summary>
   <section class="panel rr-bundle-area" aria-label="Automatic product bundles">
     <div class="head-row"><h2>Build and manage bundles</h2></div>
-    <p class="detail" style="margin-bottom:10px">Select 2–12 eligible PDFs in the picker above. Your full uploaded library stays visible on the right.</p>
+    <p class="detail" style="margin-bottom:10px">Select 2–12 eligible tab editions in the picker above. Buyers open every included category and racing date in My Tabs.</p>
     <div class="head-row" style="margin:16px 16px 10px"><h3 style="margin:0">Bundle details</h3><button type="button" class="secondary mini" id="bundleNew">+ New bundle</button></div>
     <div class="layout rr-bundle-editor">
       <div>
@@ -560,7 +560,7 @@
       const label=document.createElement('label');label.style.cssText='display:flex;align-items:center;gap:10px;border:1px solid #e7e1d7;padding:10px;cursor:'+(eligible?'pointer':'not-allowed')+';opacity:'+(eligible?'1':'.62')+';';
       const c=document.createElement('input');c.type='checkbox';c.dataset.bundleProduct=p.id;c.value=p.id;c.style.cssText='width:auto;flex:none';c.disabled=!eligible;c.checked=eligible&&selected.includes(p.id);
       const copy=document.createElement('span');copy.style.cssText='flex:1;min-width:0;line-height:1.35;overflow-wrap:anywhere';
-      const name=document.createElement('span');name.textContent=p.title+(p.bundle_only?' · PDF REPOSITORY':p.status==='draft'?' · INDIVIDUAL DRAFT':' · '+money(p.price_cents));
+      const name=document.createElement('span');name.textContent=p.title+(p.bundle_only?' · PRIVATE SOURCE':p.status==='draft'?' · DRAFT TAB':' · PUBLISHED TAB');
       copy.append(name);
       const meta=[];
       if(p.category)meta.push(p.category);

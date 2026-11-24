@@ -104,7 +104,7 @@ export async function hasProductTabData(env,category,raceDate,products=[]){
   if(!edition)return false;
   if(category==='Race Cards'||category==='Pick Tickets')return Array.isArray(edition.cards)&&edition.cards.length>0;
   if(category==='Longshot Radar')return Array.isArray(edition.candidates)&&edition.candidates.length>0;
-  if(category==='Target List')return Array.isArray(edition.targets);
+  if(category==='Target List')return Array.isArray(edition.targets)&&edition.targets.length>0;
   return false;
  }catch(error){
   console.warn('Product tab readiness check held',category,raceDate,String(error).slice(0,110));
