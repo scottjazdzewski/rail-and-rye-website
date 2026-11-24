@@ -9,7 +9,7 @@ export const PICK_SCRATCH_1124_FL_SHA="2da2477a0adeb728c1090cdb62e6038f017145219
 export const PICK_SCRATCH_1124_ZIA_KEY="pick-tickets/interim/2026-11-24/revision-0005.json";
 export const PICK_SCRATCH_1124_ZIA_SHA="b43f4eaa67d51017367987bda2298083e6d8c794ebfdef06ac7774c88474abe0";
 export const PICK_SCRATCH_1124_DED_KEY="pick-tickets/interim/2026-11-24/revision-0006.json";
-export const PICK_SCRATCH_1124_DED_SHA="3e153585679211258bdfac74e35fb11801c82d5363cfb6a17d877634c34b3c25";
+export const PICK_SCRATCH_1124_DED_SHA="2b09081796fe17146521b433df0fe4e613ff1b8cfbd4cb49f2d44a8df0971997";
 export const PICK_SCRATCH_1124_TRACKS=Object.freeze({
  "Delta Downs":{code:"DED",races:8,before:65,after:62,scratches:{3:["7"],4:["5"],6:["6"]},snapshot_sha:"4c82cd506a5cf60c2d689a658635b87b9ef2a1e92b8d19c0391d6e4ef156577e",official_sha:"1abf2e3a5ec17e2a07c49926135c89310eee9d1415eb20cb603b2f85695a3240",handoff_sha:PICK_SCRATCH_1124_DED_SHA},
  "Zia Park":{code:"ZIA",races:10,before:93,after:85,scratches:{1:["2"],4:["7"],5:["1","2","5"],8:["8"],10:["2","8"]},snapshot_sha:"1c381718275ee7256732f701a22a071c519d7b0563ac562b8907b08220e2fcfc",official_sha:"63574f3499efeda3be119635bb9952d8472d9246902003b436650ac1e62b73a7",handoff_sha:PICK_SCRATCH_1124_ZIA_SHA},
