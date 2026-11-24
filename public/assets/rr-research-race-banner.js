@@ -36,7 +36,7 @@ function render(entry){
  if(!entry||!text(entry.track)||!Number.isInteger(Number(entry.race_number)))
   throw Error("An original track and race number are required for the race header.");
  const panel=make("div","rr-research-racebar");
- panel.dataset.rrRaceBanner="canonical-v1";
+ panel.setAttribute("data-rr-race-banner","canonical-v1");
  const row=make("div","rr-research-racebar__main");
  const meta=make("div","rr-research-racebar__identifiers");
  meta.append(make("span","rr-research-racebar__number","RACE "+entry.race_number));
