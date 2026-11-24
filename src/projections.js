@@ -1,5 +1,5 @@
 import {publishGPTProductCatalogEntry} from "./gpt-product-catalog.js";
-import {enrichRaceInformation,requireProductionPurses,requireProductionStakesNames} from "./projection-race-information.js";
+import {enrichRaceInformation,requireProductionPurses,requireProductionStakesNames,sourceMaidenClass} from "./projection-race-information.js";
 import {verifyCertifiedScratchFinalTrack} from "./f4-exotics.js";
 import {auditV33FieldUpload,pickUploadAuditKey,isPickV33Field}
  from "./pick-tickets-field-audit.js";
@@ -175,6 +175,7 @@ function normalizeCard(input){
   return {race_number:number,post_time_et:text(race.post_time_et,"Post time",40),
    surface:text(race.surface,"Surface",50),distance:text(race.distance,"Distance",60),
    conditions:text(race.conditions,"Race conditions",240),
+   ...(sourceMaidenClass(race)?{display_race_class:sourceMaidenClass(race)}:{}),
    race_name:text(race.race_name,"Race name",240),
    stakes_name:text(race.stakes_name,"Canonical stakes name",240),
    stakes_grade:stakesGrade,sponsor_name:text(race.sponsor_name,"Sponsor name",120),

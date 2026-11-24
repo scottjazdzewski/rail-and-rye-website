@@ -13,7 +13,7 @@ function publicProjection(card){
   ...(card.model_receipts?{model_receipts:Object.fromEntries(["tri_sha256","f4_sha256","prescratch_parent_sha256","official_changes_sha256"].filter(k=>/^[a-f0-9]{64}$/i.test(String(card.model_receipts[k]||""))).map(k=>[k,card.model_receipts[k]]))}:{}),
   races:(card.races||[]).map(race=>({
    race_number:race.race_number,post_time_et:race.post_time_et,distance:race.distance,
-   surface:race.surface,pace:race.pace,conditions:race.conditions,race_name:race.race_name,
+   surface:race.surface,pace:race.pace,conditions:race.conditions,race_name:race.race_name,display_race_class:race.display_race_class,
    stakes_name:race.stakes_name,stakes_grade:race.stakes_grade,is_stakes:race.is_stakes===true,
    purse:race.purse,scratch_count:race.scratch_count,
    scratches:(race.scratches||[]).map(item=>({program_number:text(item.program_number,8),horse_name:text(item.horse_name,100)})),
@@ -55,7 +55,7 @@ function publicLongshot(edition){
  if(!edition||!Array.isArray(edition.candidates))return null;
  return {race_date:edition.race_date,candidates:edition.candidates.map(row=>({
   track:text(row.track,100),race_number:row.race_number,post_time_et:text(row.post_time_et,40),
-  distance:text(row.distance,80),surface:text(row.surface,50),conditions:text(row.conditions,240),
+  distance:text(row.distance,80),surface:text(row.surface,50),conditions:text(row.conditions,240),display_race_class:text(row.display_race_class,80),
   race_name:text(row.race_name,240),stakes_name:text(row.stakes_name,240),stakes_grade:text(row.stakes_grade,20),
   is_stakes:row.is_stakes===true,purse:text(row.purse,40),program_number:text(row.program_number,8),
   horse_name:text(row.horse_name,100),original_morning_line:text(row.original_morning_line,20),
@@ -74,7 +74,7 @@ function publicTarget(edition){
  return {race_date:edition.race_date,targets:edition.targets.map(row=>({
   rank:row.rank,track:text(row.track,100),race_number:row.race_number,tier:text(row.tier,16),
   post_time_et:text(row.post_time_et,40),surface:text(row.surface,50),distance:text(row.distance,80),
-  conditions:text(row.conditions,200),race_name:text(row.race_name,240),
+  conditions:text(row.conditions,200),display_race_class:text(row.display_race_class,80),race_name:text(row.race_name,240),
   stakes_name:text(row.stakes_name,240),stakes_grade:text(row.stakes_grade,20),is_stakes:row.is_stakes===true,purse:text(row.purse,40),
   analysis:text(row.analysis,4000),favorite:runner(row.favorite),attack:runner(row.attack),
   also_live:runner(row.also_live),scratches:Array.isArray(row.scratches)?row.scratches.map(x=>({

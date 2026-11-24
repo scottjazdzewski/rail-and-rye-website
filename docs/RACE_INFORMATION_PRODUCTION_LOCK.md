@@ -11,3 +11,7 @@
   - mountaineer: https://tvg.equibase.com/static/entry/RaceCardIndexMNR112426USA-EQB.html
   - parx-racing: https://tvg.equibase.com/static/entry/RaceCardIndexPRX112426USA-EQB.html
   - zia-park: https://tvg.equibase.com/static/entry/RaceCardIndexZIA112426USA-EQB.html
+
+## Universal maiden classification lock (Nov 24, 2026)
+
+Race Cards, Pick Tickets, Longshot Radar and Target List must spell out the actual source-confirmed class: Maiden Claiming, Maiden Special Weight, Maiden Optional Claiming or Maiden Allowance. Expand recognized class abbreviations (MCL, MSW, MOC and equivalent explicit forms). Never display bare `Maiden` for a known specific class. If source fields are missing or disagree, display `Race class unverified` and resolve using the official race conditions before certifying metadata. Never infer the class from purse, claiming price, horse ability or any model output. Preserve underlying raw conditions, scoring receipts, and approved stakes names/trophies. Pick Tickets may carry the class as display-only leg metadata from the matching track/date/race source.

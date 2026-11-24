@@ -347,7 +347,7 @@ async function targetOriginalRaceFacts(env,date){
     if(!track||!Number.isInteger(n)||n<1||n>30||!Array.isArray(race.entries)||conflicts.has(id))continue;
     if(records.has(id)){records.delete(id);conflicts.add(id);continue;}
     const facts={};
-    for(const [key,max] of [["post_time_et",40],["distance",60],["surface",50],["conditions",240],
+    for(const [key,max] of [["post_time_et",40],["distance",60],["surface",50],["conditions",240],["display_race_class",80],
       ["race_name",240],["stakes_name",240],["stakes_grade",30],["purse",40],["sponsor_name",120]]){
      if(typeof race[key]==="string"&&race[key].trim()&&race[key].length<=max)
       facts[key]=race[key].trim();
@@ -372,7 +372,7 @@ function enrichTargetRace(entry,all){
    .trim().toUpperCase()+"|"+targetHorseKey(runner.horse_name));
  if(!matches(entry.favorite)&&!matches(entry.attack))return entry;
  const copy={...entry};
- for(const [key,value] of Object.entries(original.facts))if(!copy[key])copy[key]=value;
+ for(const [key,value] of Object.entries(original.facts))if(!copy[key]||key==="display_race_class")copy[key]=value;
  return copy;
 }
 

@@ -8,7 +8,7 @@ import {buildPrescratchPickTicketReview,buildV33PostScratchReviewed,
 import {PICK_V33_ENGINE,PICK_V33_COST_SCALE_DOLLARS,
  PICK_V33_MIN_LEG_COVERAGE} from './pick-tickets-v33.js';
 import {readAdminProjectionCards} from './projections.js';
-import {enrichRaceInformation,genericStakesTitle} from './projection-race-information.js';
+import {enrichRaceInformation,genericStakesTitle,maidenPresentation,sourceMaidenClass} from './projection-race-information.js';
 import {getNov23ScratchLedger,sourceIsScratchCurrent,officialScratchSequenceCount} from './pick-tickets-scratch-1123.js';
 import {PICK_MENU_1123} from './pick-tickets-auto.js';
 import {auditV33FieldUpload,pickUploadAuditKey,projectionFieldFingerprint,
@@ -248,6 +248,45 @@ async function readCards(env){
  }));
  return records.filter(Boolean).sort((a,b)=>b.card.date.localeCompare(a.card.date)||a.card.track.localeCompare(b.card.track));
 }
+// Read-only descriptive facts for customer ticket legs. Exact date and track
+// joins only; duplicate source cards are ambiguous. Never return horse data here.
+function pickRaceTitles(source){
+ const titles={};
+ for(const race of enrichRaceInformation(source).races||[]){
+  const name=String(race.stakes_name||race.race_name||race.conditions||"").trim();
+  const stakes=race.is_stakes===true||/(?:\\bStakes?\\b|\\bStks?\\.?\\b|\\bS\\.(?:\\s|$))/i.test(name);
+  if(!(stakes&&name&&!genericStakesTitle(name))&&!maidenPresentation(race))continue;
+  titles[String(race.race_number)]={race_number:race.race_number,stakes_name:race.stakes_name||"",
+   race_name:race.race_name||"",conditions:race.conditions||"",display_race_class:sourceMaidenClass(race),
+   stakes_grade:race.stakes_grade||"",sponsor_name:race.sponsor_name||"",is_stakes:stakes};
+ }
+ return titles;
+}
+async function attachCustomerRaceTitles(env,cards){
+ const dates=[...new Set(cards.map(card=>card.date))];
+ for(const date of dates){
+  try{
+   const prefix="projections/dashboard/"+date+"/",listing=await env.CARDS_BUCKET.list({prefix,limit:1000});
+   if(listing.truncated)continue;
+   const sources=new Map(),ambiguous=new Set();
+   for(const item of listing.objects||[]){
+    if(!item.key.startsWith(prefix)||!item.key.endsWith(".json"))continue;
+    const file=await env.CARDS_BUCKET.get(item.key);if(!file)continue;
+    let source;try{source=JSON.parse(await file.text());}catch{continue;}
+    if(source?.schema_version!==1||source.race_date!==date||typeof source.track_name!=="string"||!Array.isArray(source.races))continue;
+    const track=source.track_name.trim().toLowerCase();
+    if(sources.has(track)){ambiguous.add(track);continue;}
+    sources.set(track,source);
+   }
+   for(const card of cards.filter(c=>c.date===date)){
+    const track=card.track.trim().toLowerCase(),source=sources.get(track);
+    if(!source||ambiguous.has(track))continue;
+    const facts=pickRaceTitles(source);
+    if(Object.keys(facts).length)card.stakes_by_race=facts;
+   }
+  }catch(e){console.warn("Pick race title metadata unavailable",String(e?.name||"source error"));}
+ }
+}
 export async function readPublishedPickTicketCards(env,raceDate){
  if(!env.CARDS_BUCKET)return [];
  if(raceDate&&!validDate(raceDate))return [];
@@ -284,6 +323,7 @@ export async function readPublishedPickTicketCards(env,raceDate){
    }
   }catch(e){console.warn("Published Pick PWIN backfill unavailable",String(e).slice(0,120));}
  }
+ await attachCustomerRaceTitles(env,cards);
  return cards.sort((a,b)=>b.date.localeCompare(a.date)||a.track.localeCompare(b.track));
 }
 export function enrichPublishedPickFromVerified(card,row){
@@ -463,19 +503,7 @@ export async function handleAdminPickTickets(request,env){
   const displayed=[...authorized,...reviewCards].map(item=>{
    const source=byTrack.get(item.card.date+"|"+item.card.track)?.card;
    if(!source)return item;
-   const stakes={};
-   for(const race of enrichRaceInformation(source).races||[]){
-    const name=String(race.stakes_name||race.race_name||race.conditions||"").trim();
-    const hasStakes=race.is_stakes===true||
-     /(?:\bStakes?\b|\bStks?\.?\b|\bS\.(?:\s|$))/i.test(name);
-    if(!hasStakes||!name||genericStakesTitle(name))continue;
-    stakes[String(race.race_number)]={
-     race_number:race.race_number,stakes_name:race.stakes_name||"",
-     race_name:race.race_name||"",conditions:race.conditions||"",
-     stakes_grade:race.stakes_grade||"",sponsor_name:race.sponsor_name||"",
-     is_stakes:true
-    };
-   }
+   const stakes=pickRaceTitles(source);
    const postTimes=pickPostTimes(item.card,source);
    const scratches={};
    for(const race of source.races||[]){

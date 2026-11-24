@@ -133,7 +133,7 @@
   const facts=item?.stakes_by_race?.[String(raceNumber)];
   if(!facts)return null;
   const named=globalThis.RRRaceTitles?.describe?.(facts);
-  return named?.stakes&&!named.missingStakesName?named:null;
+  return named&&!named.missingStakesName&&(named.stakes||named.maiden)?named:null;
  }
  function stakesLine(raceNumber){
   const event=sourceStakesFor(raceNumber);

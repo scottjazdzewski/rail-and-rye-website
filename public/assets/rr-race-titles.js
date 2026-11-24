@@ -100,7 +100,31 @@
  function genericStakes(value){
   return /^(?:(?:overnight|listed|graded|ungraded|restricted|open|non-graded)\s+)?(?:stake|stakes|stks?\.?|s\.?)\s*(?:\(?\s*(?:g[123]|grade\s*[123])\s*\)?)?$/i.test(clean(value));
  }
+ // Source-only maiden classifications; never infer from a purse or claiming price.
+ function maidenClass(value){
+  const raw=clean(value);
+  const token=raw.toLowerCase().replace(/[.]/g,"").replace(/[-–—]/g," ").replace(/\s+/g," ");
+  const patterns=[
+   [/^(?:maiden|mdn|md)\s+(?:optional\s+claiming|opt(?:ional)?\s+clm|oc)\b|^moc\b/,"Maiden Optional Claiming"],
+   [/^(?:maiden|mdn|md)\s+(?:special\s+weight|sp(?:ecial)?\s+w(?:t|eight)|spec\s+w(?:t|eight)|sw)\b|^msw\b/,"Maiden Special Weight"],
+   [/^(?:maiden|mdn|md)\s+(?:claiming|clm|claim)\b|^(?:mcl|mclm|mdcl)\b/,"Maiden Claiming"],
+   [/^(?:maiden|mdn|md)\s+(?:allowance|alw)\b|^malw\b/,"Maiden Allowance"]
+  ];
+  for(const [pattern,title] of patterns)if(pattern.test(token))return title;
+  if(/^(?:maiden|mdn|md)(?:$|\s+\$|\s+\d|\s+(?:race|races)\b)/.test(token))return "unverified";
+  return "";
+ }
+ function maidenPresentation(race){
+  const values=[race?.display_race_class,race?.race_class,race?.race_type,race?.class_name,race?.conditions,race?.race_name]
+   .map(maidenClass).filter(Boolean);
+  const known=[...new Set(values.filter(v=>v!=="unverified"))];
+  if(known.length===1)return {title:known[0],grade:null,stakes:false,missingStakesName:false,maiden:true,unverifiedClass:false};
+  if(values.length)return {title:"Race class unverified",grade:null,stakes:false,missingStakesName:false,maiden:true,unverifiedClass:true};
+  return null;
+ }
  function describe(race){
+  const maiden=maidenPresentation(race);
+  if(maiden&&race?.is_stakes!==true&&!clean(race?.stakes_name)&&!numericGrade(race?.stakes_grade??race?.grade))return maiden;
   const candidates=[race?.stakes_name,race?.race_name,race?.conditions]
    .map(clean).filter(Boolean);
   const raw=candidates.find(value=>!genericStakes(dropGrade(value)))||
@@ -126,5 +150,5 @@
    stakes:!!hasStakesSignal,missingStakesName:!!missingStakesName};
  }
  function isNumber(value){return Number.isInteger(value)&&value>=1&&value<=3;}
- root.RRRaceTitles=Object.freeze({describe,numericGrade,genericStakes});
+ root.RRRaceTitles=Object.freeze({describe,numericGrade,genericStakes,maidenClass,maidenPresentation});
 })(globalThis);

@@ -37,7 +37,7 @@ export async function serveCustomerReader(request,env,url){
  html=html.replace(/<a href="\/admin\/">Publisher[’']s Desk<\/a>/g,'<a href="/store/?date='+date+'">Intelligence Hub</a>');
  html=html.replace(/<a([^>]*href="\/intelligence\/race-cards\/[^"]*"[^>]*)>Projections<\/a>/g,"<a$1>Race Cards</a>");
  html=html.replaceAll('href="/membership/account/"','href="/store/?date='+date+'"').replaceAll('Go to member sign in','Return to Intelligence Hub').replaceAll('Open member library','Return to Intelligence Hub');
- html=html.replace(/(src="\/assets\/(?:projections-dashboard|pick-tickets-dashboard|longshot-radar|target-list-dashboard|rr-exotic-bet-builder)\.js)\?[^"]*"/g,'$1?v=customer-direct-1"');
+ html=html.replace(/(src="\/assets\/(?:projections-dashboard|pick-tickets-dashboard|longshot-radar|target-list-dashboard|rr-exotic-bet-builder)\.js)\?[^"]*"/g,'$1?v=customer-direct-2"');
  html=html.replace("</head>",'<script defer src="/assets/rr-customer-reader.js?v=1"></script></head>');
  // Reader helper must execute before deferred dashboard scripts.
  html=html.replace('<script defer src="/assets/rr-customer-reader.js?v=1"></script></head>',"</head>").replace(/(<script\b[^>]*src="\/assets\/[^"]+"[^>]*>)/,'<script defer src="/assets/rr-customer-reader.js?v=1"></script>$1');

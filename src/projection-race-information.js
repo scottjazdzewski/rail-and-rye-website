@@ -1,3 +1,10 @@
+import "../public/assets/rr-race-titles.js";
+const raceTitles=globalThis.RRRaceTitles;
+export const maidenPresentation=race=>raceTitles.maidenPresentation(race);
+export function sourceMaidenClass(race){
+ const result=maidenPresentation(race);
+ return result&&!result.unverifiedClass?result.title:"";
+}
 // Metadata-only repair for the already scored November 24 cards.
 // Source: date-specific official entry indexes, retrieved 2026-11-23.
 // The underlying certified scored objects and hashes are never rewritten.
@@ -185,6 +192,11 @@ export function requireProductionStakesNames(card){
  }
 }
 export function enrichRaceInformation(card){
+ const classes=(card.races||[]).map(race=>{
+  const label=sourceMaidenClass(race);
+  return label&&label!==race.display_race_class?{...race,display_race_class:label}:race;
+ });
+ if(classes.some((race,i)=>race!==card.races[i]))card={...card,races:classes};
  if(card.race_date!=="2026-11-24")return card;
  const slug=String(card.track_name||"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
  const source=entries1124[slug];
