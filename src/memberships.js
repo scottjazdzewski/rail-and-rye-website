@@ -447,7 +447,7 @@ async function memberDetails(request,env){
     status:r.status,cancel_at_period_end:!!r.cancel_at_period_end,
     paid_through:new Date(Number(r.period_end)*1000).toISOString()
   }));
-  return json({active:true,email,subscriptions,library:await memberLibrary(env)});
+  return json({active:true,email,subscriptions,tabs_url:"/my-products/"});
 }
 async function logout(request,env){
   if(request.method!=="POST")return error("Method not allowed",405);
@@ -514,6 +514,12 @@ async function memberDownload(request,env,url,inline=false){
     "X-Robots-Tag":"noindex, nofollow"
   }});
 }
+export async function hasActiveMembershipSession(request,env){
+  if(!env.STORE_DB)return false;
+  await ensureMembershipSchema(env);
+  const email=await sessionEmail(request,env);
+  return !!email;
+}
 export async function handleMembershipApi(request,env,url){
   if(!env.STORE_DB)return error("Memberships are temporarily unavailable.",503);
   try{
@@ -529,8 +535,8 @@ export async function handleMembershipApi(request,env,url){
     if(p==="/api/membership/projections-f4"&&request.method==="GET")return await memberCertifiedF4(request,env,url);
     if(p==="/api/membership/cancel")return await cancelAtPeriodEnd(request,env);
     if(p==="/api/membership/billing-portal")return await billingPortal(request,env);
-    if(/^\/api\/membership\/view\/[0-9a-f-]{36}$/i.test(p))return await memberDownload(request,env,url,true);
-    if(/^\/api\/membership\/download\/[0-9a-f-]{36}$/i.test(p))return await memberDownload(request,env,url,false);
+    if(/^\/api\/membership\/view\/[0-9a-f-]{36}$/i.test(p))return error("Membership access is now provided through Racing Tabs.",410);
+    if(/^\/api\/membership\/download\/[0-9a-f-]{36}$/i.test(p))return error("Membership access is now provided through Racing Tabs.",410);
     return error("Not found.",404);
   }catch(e){
     console.error("Membership request failed",String(e).slice(0,180));

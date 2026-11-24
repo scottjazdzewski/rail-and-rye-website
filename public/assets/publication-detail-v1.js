@@ -36,11 +36,11 @@ const latestMeta=p=>{
 };
 const freeProduct=p=>p.kind==='single'&&Number(p.price_cents)===0;
 const formatExpiry=value=>{if(!value)return '';const date=new Date(String(value).replace(' ','T')+'Z');if(Number.isNaN(date.getTime()))return '';date.setTime(date.getTime()-1000);return new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',dateStyle:'medium'}).format(date);};
-const accessNote=p=>p.kind==='bundle'?'Each included PDF is removed at midnight Eastern two calendar days after its racing date.':('Available through '+(formatExpiry(p.pdf_expires_at)||'the day before the two-day racing-date cutoff')+'.');
+const accessNote=p=>p.kind==='bundle'?'Each included tab remains available through its racing-date cutoff.':('Tab access is available through '+(formatExpiry(p.pdf_expires_at)||'the day before the two-day racing-date cutoff')+'.');
 const editionHref=p=>'/store/?category='+encodeURIComponent(category)+'#edition-'+encodeURIComponent(p.id);
 const makePurchaseButton=(p,data,onError)=>{
  const free=freeProduct(p),ready=Boolean(data.checkout_ready),live=data.checkout_mode==='live';
- const label=free?'Download free PDF':ready?(live?(p.kind==='bundle'?'Purchase bundle':'Purchase PDF'):'Test purchase'):'Checkout unavailable';
+ const label=free?'Open free tab':ready?(live?(p.kind==='bundle'?'Unlock bundle tabs':'Unlock tab'):'Test purchase'):'Checkout unavailable';
  const buy=txt('button',label,'rr-purchase-buy');
  buy.type='button';buy.disabled=!free&&(!ready||!Number.isFinite(Number(p.price_cents))||Number(p.price_cents)<50);
  buy.addEventListener('click',async()=>{
@@ -72,12 +72,12 @@ const makeGlassCard=(p,data,onError)=>{
  const includedTitles=Array.isArray(p.included_titles)?p.included_titles.filter(title=>typeof title==='string'&&title.trim()):[];
  if(isBundle){
   const count=Number.isInteger(p.bundle_count)&&p.bundle_count>0?p.bundle_count:includedTitles.length;
-  copy.append(txt('span','BUNDLE · '+count+' PDF'+(count===1?'':'s'),'rr-racecards-product-kind'));
+  copy.append(txt('span','BUNDLE · '+count+' TAB'+(count===1?'':'S'),'rr-racecards-product-kind'));
  }
  copy.append(txt('h3',displayTitle(p.title||category),'rr-purchase-title'));
  if(isBundle&&includedTitles.length){
   const details=document.createElement('details');details.className='rr-racecards-bundle-details';
-  details.append(txt('summary','Included PDFs · View titles','rr-racecards-bundle-summary'));
+  details.append(txt('summary','Included tabs · View titles','rr-racecards-bundle-summary'));
   const list=document.createElement('ul');list.className='rr-racecards-bundle-list';
   for(const title of includedTitles)list.append(txt('li',title.trim()));
   details.append(list);copy.append(details);

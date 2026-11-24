@@ -166,16 +166,18 @@
     .workflow-journal>.panel+.panel{border-top:1px solid rgba(25,45,65,.12)}
     @media(max-width:900px){.workflow>.layout{padding:10px}.workflow>.panel{padding:12px}}
   </style>
-<link rel="icon" href="/favicon.png" type="image/png"></head>
+<link rel="icon" href="/favicon.png" type="image/png"><style>.rr-launch-readiness{margin:14px 0 0;padding:11px 14px;border-left:4px solid var(--gold);background:#fff;color:var(--deep);font-size:13px}.rr-launch-readiness.ready{border-color:var(--success)}.rr-launch-readiness.blocked{border-color:var(--error)}.pill.waiting{background:#fff1ce;color:#8f581e}</style>
+</head>
 <body>
 <header><div class="top"><div class="logo">RAIL &amp; RYE <small>The Publisher's Desk</small></div><nav aria-label="Publisher tools" style="display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:14px"><a href="#workflow-journal">Journal tools ↓</a><a href="/preview/racing-wire-5333548f0ffee31ba519b2470ffb/">Racing Wire private preview ↗</a><a href="/admin/membership-plans/">Membership plans ↗</a><a href="/admin/racing-intelligence-review/">Racing Intelligence review ↗</a><a href="/admin/projections/">Projection dashboard upload ↗</a><a href="/store/">Publication desk ↗</a><a href="/">View website ↗</a></nav></div></header>
 <main>
   <div class="kicker">Independent thoroughbred racing intelligence</div>
   <h1>Publisher's Desk</h1>
-  <p class="sub">Choose <strong>Individual</strong>, <strong>Bundle</strong>, or <strong>Journal</strong> on the left. Your uploaded PDFs stay together on the right, newest upload first.</p>
+  <p class="sub">Choose an individual tab or bundle on the left. Publishing unlocks the matching category and racing date; uploaded PDFs remain in the private source library.</p>
+  <div id="launchReadiness" class="rr-launch-readiness" role="status" aria-live="polite">Checking checkout readiness…</div>
   <div id="notice" class="notice" role="status" aria-live="polite"></div>
   <details class="workflow workflow-upload" id="workflow-uploads" name="publisher-workflow" open>
-    <summary><strong>Publications</strong><span>Choose what you are publishing on the left. Select the uploaded PDF or PDFs on the right.</span></summary>
+    <summary><strong>Private source library</strong><span>Store reference PDFs here. Customers always receive access through the matching on-site tab.</span></summary>
   <section class="rr-private-library" id="pdf-repository" aria-label="Private PDF repository">
         <div class="head-row"><h3 style="margin:0">Your PDF Library</h3><button type="button" class="secondary mini" id="assetNew">+ Add PDF</button></div>
         <p class="detail">Upload files once. Your full library stays visible while you build an individual publication or bundle.</p>
@@ -219,14 +221,14 @@
         </div>
         <div class="row">
           <div class="field"><label for="track">Racetrack</label><input id="track" maxlength="100" placeholder="Keeneland"></div>
-          <div class="field"><label for="price">Price in USD *</label><input id="price" type="number" min="0" max="5000" step="0.01" value="9.99" required><div class="detail"><strong>Free publication:</strong> Set $0.00 and publish with a PDF. The public store will offer an immediate download with no checkout or card required. Anyone can download a published free PDF.</div></div>
+          <div class="field"><label for="price">Price in USD *</label><input id="price" type="number" min="0" max="5000" step="0.01" value="9.99" required><div class="detail"><strong>Free publication:</strong> Set $0.00 to make the published tab available without checkout. Customers open the tab on the site; no PDF is delivered.</div></div>
         </div>
         <div class="field"><label for="description">Product description</label><textarea id="description" maxlength="4000" placeholder="Premium analysis and probability-driven insights for today's card."></textarea></div>
-        <div class="field"><label for="pdf">Replace attached PDF <span id="pdfStatus"></span></label><input id="pdf" type="file" accept="application/pdf,.pdf" disabled><div class="detail">For a new publication, click <strong>Use for individual</strong> beside its PDF in the library. This field replaces the file on an existing publication and emails eligible buyers a secure update link.</div></div>
+        <div class="field"><label for="pdf">Replace attached PDF <span id="pdfStatus"></span></label><input id="pdf" type="file" accept="application/pdf,.pdf" disabled><div class="detail">Optional source file. Customers receive access to the on-site tab. Existing source-file replacement notices remain separate from tab access.</div></div>
         <div class="field"><label for="cover">Cover image <span id="coverStatus"></span></label><input id="cover" type="file" accept="image/jpeg,image/png,image/webp"><div class="detail">Optional JPG, PNG or WebP, up to 6 MB. Visible publicly only when the product is published.</div></div>
         <div class="field"><label for="scheduleAt">Scheduled release · Eastern Time</label><input id="scheduleAt" type="datetime-local" step="60"><div class="detail">Choose a future time in New York. The release is automatic. Avoid 1:00–1:59 AM on the fall daylight-saving change night.</div></div>
         <div class="actions"><button type="button" class="primary" id="draftBtn">Save draft</button><button type="button" class="gold" id="publishBtn">Publish now</button><button type="button" class="gold" id="scheduleBtn">Schedule publication</button><button type="button" class="secondary" id="cancelScheduleBtn" hidden>Cancel scheduled release</button><button type="button" class="secondary" id="archiveBtn" disabled>Archive</button></div>
-        <p class="detail" style="margin-top:12px">Publishing now makes a finished PDF immediately available. A scheduled PDF stays out of the storefront, free download and checkout until its release time. To change a release, choose a new time and schedule again.</p>
+        <p class="detail" style="margin-top:12px">Publishing makes this category and racing date available when its structured race data is present. Scheduled tabs stay out of the storefront and checkout until their release time. To change a release, choose a new time and schedule again.</p>
       </form>
     </section>
     <aside>
@@ -247,10 +249,10 @@
   </div>
   </details>
   <details class="workflow workflow-bundles" id="workflow-bundles" name="publisher-workflow">
-    <summary><strong>Bundles</strong><span>Choose PDFs already in the repository and publish or schedule a package</span></summary>
+    <summary><strong>Bundles</strong><span>Combine eligible racing tabs and publish or schedule a bundle</span></summary>
   <section class="panel rr-bundle-area" aria-label="Automatic product bundles">
     <div class="head-row"><h2>Build and manage bundles</h2></div>
-    <p class="detail" style="margin-bottom:10px">Select 2–12 eligible PDFs in the picker above. Your full uploaded library stays visible on the right.</p>
+    <p class="detail" style="margin-bottom:10px">Select 2–12 eligible tab editions in the picker above. Buyers open every included category and racing date in My Tabs.</p>
     <div class="head-row" style="margin:16px 16px 10px"><h3 style="margin:0">Bundle details</h3><button type="button" class="secondary mini" id="bundleNew">+ New bundle</button></div>
     <div class="layout rr-bundle-editor">
       <div>
@@ -265,7 +267,7 @@
         <div class="actions"><button type="button" class="primary" id="bundleDraft">Save bundle draft</button><button type="button" class="gold" id="bundlePublish">Publish bundle now</button><button type="button" class="gold" id="bundleSchedule">Schedule bundle</button><button type="button" class="secondary" id="bundleCancelSchedule" hidden>Cancel scheduled release</button><button type="button" class="secondary" id="bundleArchive">Delete bundle</button></div>
       </div>
       <div>
-        <p class="kicker">Choose repository PDFs and published individual PDFs</p>
+        <p class="kicker">Choose eligible racing tabs</p>
         <div id="bundleCandidates" class="list" style="max-height:320px;overflow:auto;margin-bottom:22px"><div class="empty">Loading published products…</div></div>
         <p class="kicker">Your bundles</p>
         <div id="bundleInventory" class="list"><div class="empty">Loading bundles…</div></div>
@@ -432,7 +434,7 @@
       const b=document.createElement('button');b.type='button';b.className='product'+(p.id===currentId?' active':'');b.addEventListener('click',()=>edit(p));
       const name=document.createElement('strong');name.textContent=p.title;
       const status=document.createElement('em');status.className='pill scheduled';status.textContent='Scheduled';name.append(status);
-      const details=document.createElement('span');details.textContent=[p.category,p.race_date||'No date',p.pdf_key?'PDF attached':'PDF missing','Releases '+localRelease(p.release_at).replace('T',' ')+' ET'].join(' • ');
+      const details=document.createElement('span');details.textContent=[p.category,p.race_date||'No date',p.pdf_key?'Private source attached':'Tab only',p.tab_content_ready===true?'Tab ready':p.tab_content_ready===false?'Waiting for tab data':null,'Releases '+localRelease(p.release_at).replace('T',' ')+' ET'].filter(Boolean).join(' • ');
       b.append(name,details);el.append(b);
     }
   }
@@ -446,13 +448,13 @@
       const isScheduled=pendingBundleForDesk(bundle);
       const status=document.createElement('em');status.className='pill '+(isScheduled?'scheduled':bundle.status==='published'?'published':'');status.textContent=isScheduled?'Scheduled':bundle.status;name.append(status);
       const release=bundle.release_at?localRelease(bundle.release_at).replace('T',' ')+' ET':null;
-      const details=document.createElement('span');details.textContent=[bundle.category,bundle.race_date||'No date',money(bundle.price_cents),bundle.product_ids.length+' PDFs',isScheduled?'Releases '+release:null].filter(Boolean).join(' • ');
+      const details=document.createElement('span');details.textContent=[bundle.category,bundle.race_date||'No date',money(bundle.price_cents),bundle.product_ids.length+' tabs',isScheduled?'Releases '+release:null].filter(Boolean).join(' • ');
       button.append(name,details);el.append(button);
     }
   }
   function pendingBundleForDesk(bundle){return bundle.status==='published'&&bundle.release_at&&Date.parse(String(bundle.release_at).replace(' ','T')+'Z')>Date.now();}
-  function renderList(){const el=$('productList');el.replaceChildren();renderScheduledList();if(!products.length){let e=document.createElement('div');e.className='empty';e.textContent='No products yet. Start with your first race card.';el.append(e);return;}
-    for(const p of products){const b=document.createElement('button');b.type='button';b.className='product'+(p.id===currentId?' active':'');b.addEventListener('click',()=>edit(p));let name=document.createElement('strong');name.textContent=p.title;let status=document.createElement('em');status.className='pill '+(pending(p)?'scheduled':p.status==='published'?'published':'');status.textContent=pending(p)?'Scheduled':p.status;name.append(status);let details=document.createElement('span');details.textContent=[p.category,p.race_date||'No date',money(p.price_cents),p.pdf_key?'PDF attached':'PDF missing',p.pdf_expires_at?'Auto-delete '+expiryLabel(p.pdf_expires_at):null,pending(p)?'Release '+localRelease(p.release_at).replace('T',' ')+' ET':null].filter(Boolean).join(' • ');b.append(name,details);el.append(b);}
+  function renderList(){const el=$('productList');el.replaceChildren();renderScheduledList();if(!products.length){let e=document.createElement('div');e.className='empty';e.textContent='No products yet. Start with your first racing tab.';el.append(e);return;}
+    for(const p of products){const b=document.createElement('button');b.type='button';b.className='product'+(p.id===currentId?' active':'');b.addEventListener('click',()=>edit(p));let name=document.createElement('strong');name.textContent=p.title;let status=document.createElement('em');status.className='pill '+(pending(p)?'scheduled':p.status==='published'?'published':'');status.textContent=pending(p)?'Scheduled':p.status;name.append(status);if(p.tab_content_ready!==null&&p.tab_content_ready!==undefined){const readiness=document.createElement('em');readiness.className='pill '+(p.tab_content_ready?'published':'waiting');readiness.textContent=p.tab_content_ready?'Tab ready':'Waiting for content';name.append(readiness);}let details=document.createElement('span');details.textContent=[p.category,p.race_date||'No date',money(p.price_cents),p.pdf_key?'Private source attached':'Tab only',p.pdf_expires_at?'Tab access through '+expiryLabel(p.pdf_expires_at):null,pending(p)?'Release '+localRelease(p.release_at).replace('T',' ')+' ET':null].filter(Boolean).join(' • ');b.append(name,details);el.append(b);}
   }
   async function refresh(selectId){const data=await api('/api/admin/products');products=data.products||[];if(selectId){const item=products.find(p=>p.id===selectId);if(item)edit(item);}else renderList();}
   function payload(status){const priceText=$('price').value.trim();const dollars=Number(priceText);const cents=Math.round(dollars*100);if(!Number.isFinite(dollars)||dollars<0||Math.abs(dollars*100-cents)>1e-5)throw Error('Enter a valid price with at most two decimal places.');
@@ -524,7 +526,23 @@
       if(prefill.scheduleAt)$('scheduleAt').value=prefill.scheduleAt;
     }).catch(e=>message(e.message,'error'));
   });
-  api('/api/admin/status').then(r=>{paymentMode=r.payment_mode||'test';return refresh();}).catch(e=>message('Admin service unavailable: '+e.message,'error'));
+  api('/api/admin/status').then(r=>{
+    paymentMode=r.payment_mode||'test';
+    const launch=$('launchReadiness');
+    launch.className='rr-launch-readiness'+(paymentMode==='live'&&r.checkout_ready?' ready':paymentMode==='paused'||paymentMode==='live'?' blocked':'');
+    const names={store_database:'database binding',private_storage:'private storage bucket',stripe_key:'Stripe key',stripe_webhook:'Stripe webhook signing secret',email_delivery:'email delivery key',access_signing_key:'tab-access signing key',live_activation:'live activation flag',dedicated_live_signing_key:'dedicated live signing key'};
+    const missing=Object.entries(names).filter(([key])=>r.requirements?.[key]===false).map(([,label])=>label);
+    if(paymentMode==='live'&&r.checkout_ready)launch.textContent='Checkout status: Live checkout is ready. Only published tabs with available race content appear for sale.';
+    else if(paymentMode==='live')launch.textContent='Checkout status: Live mode is selected, but these requirements are missing: '+(missing.join(', ')||'required settings')+'. Purchases remain unavailable.';
+    else if(paymentMode==='paused'&&r.requirements?.live_activation===false)launch.textContent='Checkout status: Live sales are paused until live activation is confirmed.';
+    else if(paymentMode==='paused')launch.textContent='Checkout status: Paused. New purchases are disabled.';
+    else launch.textContent='Checkout status: Test mode. Real charges are disabled.';
+    return refresh();
+  }).catch(e=>{
+    $('launchReadiness').classList.add('blocked');
+    $('launchReadiness').textContent='Checkout status is unavailable. '+e.message;
+    message('Admin service unavailable: '+e.message,'error');
+  });
 })();
 </script>
 
@@ -549,7 +567,7 @@
   }
   function drawCandidates(selected=[]){
     const box=$('bundleCandidates');box.replaceChildren();
-    if(!available.length){const e=document.createElement('div');e.className='empty';e.textContent='Upload PDFs in the library on the right, or publish an individual PDF first.';box.append(e);return;}
+    if(!available.length){const e=document.createElement('div');e.className='empty';e.textContent='Publish at least two eligible tabs before creating a bundle.';box.append(e);return;}
     const newest=[...available].sort((a,b)=>{
       const ta=Date.parse(String(a.uploaded_at||'').replace(' ','T')+'Z');
       const tb=Date.parse(String(b.uploaded_at||'').replace(' ','T')+'Z');
@@ -560,7 +578,7 @@
       const label=document.createElement('label');label.style.cssText='display:flex;align-items:center;gap:10px;border:1px solid #e7e1d7;padding:10px;cursor:'+(eligible?'pointer':'not-allowed')+';opacity:'+(eligible?'1':'.62')+';';
       const c=document.createElement('input');c.type='checkbox';c.dataset.bundleProduct=p.id;c.value=p.id;c.style.cssText='width:auto;flex:none';c.disabled=!eligible;c.checked=eligible&&selected.includes(p.id);
       const copy=document.createElement('span');copy.style.cssText='flex:1;min-width:0;line-height:1.35;overflow-wrap:anywhere';
-      const name=document.createElement('span');name.textContent=p.title+(p.bundle_only?' · PDF REPOSITORY':p.status==='draft'?' · INDIVIDUAL DRAFT':' · '+money(p.price_cents));
+      const name=document.createElement('span');name.textContent=p.title+(p.bundle_only?' · PRIVATE SOURCE':p.status==='draft'?' · DRAFT TAB':' · PUBLISHED TAB');
       copy.append(name);
       const meta=[];
       if(p.category)meta.push(p.category);
@@ -570,7 +588,7 @@
         const stamp=Date.parse(String(p.uploaded_at).replace(' ','T')+'Z');
         if(Number.isFinite(stamp))meta.push('Uploaded '+new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',dateStyle:'medium',timeStyle:'short'}).format(stamp)+' ET');
       }
-      if(!eligible)meta.push(p.pending_release?'Scheduled for later':!p.race_date||!p.pdf_expires_at?'Add a racing date in PDF details on the right':'Outside the active race-date window');
+      if(!eligible)meta.push(p.pending_release?'Scheduled for later':!p.race_date||!p.pdf_expires_at?'Add a racing date to this tab':'Outside the active race-date window');
       const detail=document.createElement('small');detail.style.cssText='display:block;margin-top:4px;color:#64748b;font-size:11px;font-weight:500';detail.textContent=meta.join(' · ');copy.append(detail);
       const match=String(p.race_date||'').match(/^(\d{4})-(\d{2})-(\d{2})/);
       const date=document.createElement('span');date.style.cssText='flex:none;margin-left:auto;white-space:nowrap;color:#64748b;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums';
@@ -587,7 +605,7 @@
       const row=document.createElement('div');row.className='rr-bundle-row';
       const btn=document.createElement('button');btn.type='button';btn.className='product'+(b.id===selectedId?' active':'');
       const title=document.createElement('strong');title.textContent=b.title;
-      const line=document.createElement('span');line.textContent=[pendingBundle(b)?'SCHEDULED':b.status,pendingBundle(b)?'Releases '+localRelease(b.release_at).replace('T',' ')+' ET':null,money(b.price_cents),b.product_ids.length+' PDFs','Appears in: '+(Array.isArray(b.categories)?b.categories.join(', '):b.category)].filter(Boolean).join(' · ');
+      const line=document.createElement('span');line.textContent=[pendingBundle(b)?'SCHEDULED':b.status,pendingBundle(b)?'Releases '+localRelease(b.release_at).replace('T',' ')+' ET':null,money(b.price_cents),b.product_ids.length+' tabs','Appears in: '+(Array.isArray(b.categories)?b.categories.join(', '):b.category)].filter(Boolean).join(' · ');
       btn.append(title,line);btn.addEventListener('click',()=>edit(b));
       const remove=document.createElement('button');remove.type='button';remove.className='secondary mini rr-delete-bundle';remove.textContent='Delete';
       remove.setAttribute('aria-label','Delete bundle '+b.title);
@@ -604,7 +622,7 @@
     rrRestoreRacingDate('bundleDate',b.race_date);$('bundlePrice').value=(b.price_cents/100).toFixed(2);
     $('bundleDescription').value=b.description||'';$('bundleReleaseAt').value=localRelease(b.release_at);drawCandidates(b.product_ids);
     $('bundleCancelSchedule').hidden=!pendingBundle(b);
-    drawBundles();note(pendingBundle(b)?'Scheduled bundle: '+localRelease(b.release_at).replace('T',' ')+' ET. You may reschedule or cancel.':'Editing '+b.title+'. Existing buyers retain their original included PDFs.');
+    drawBundles();note(pendingBundle(b)?'Scheduled bundle: '+localRelease(b.release_at).replace('T',' ')+' ET. You may reschedule or cancel.':'Editing '+b.title+'. Existing buyers retain access to their originally included tabs.');
   }
   async function refresh(id){
     const x=await api('/api/admin/bundles');bundles=x.bundles||[];available=x.available_products||[];
@@ -625,7 +643,7 @@
       note('A bundle already live for sale cannot be scheduled again. Create a new draft bundle.');return;
     }
     if(action!=='archived'&&action!=='cancel'&&(ids.length<2||ids.length>12)){
-      note('Select 2 to 12 eligible PDFs.');return;
+      note('Select 2 to 12 eligible tab editions.');return;
     }
     let release_at=null;
     if(action==='scheduled'){
@@ -812,7 +830,7 @@
           headers:{'Content-Type':'application/pdf','X-File-Size':String(file.size)}});
       }
       await refresh(id);
-      notice('PDF saved in the private repository. Choose Create individual draft or select it while building a bundle.');
+      notice('Private source PDF saved. Create an individual tab first, then add that tab to a bundle if needed.');
       window.dispatchEvent(new Event('rr-bundle-assets-changed'));
     }catch(e){notice('Private PDF not saved completely: '+e.message+'. If created, select it below to retry.');await refresh(selectedId).catch(()=>{});}
     finally{setBusy(false);}
@@ -833,7 +851,7 @@
       await refresh();
       window.dispatchEvent(new CustomEvent('rr-open-product',{detail:{id}}));
       window.dispatchEvent(new Event('rr-bundle-assets-changed'));
-      notice('PDF assigned to Individual. Set its collection, racing date and price on the left, then publish or schedule it.');
+      notice('Source PDF attached to the individual tab. Set its collection, racing date and price on the left, then publish or schedule it.');
     }catch(error){notice(error.message);}
     finally{setBusy(false);}
   }
@@ -1377,7 +1395,7 @@
   picker.id='rr-bundle-picker';picker.className='panel rr-bundle-picker';
   const pickerTitle=document.createElement('h3');pickerTitle.textContent='Choose PDFs for this bundle';
   const pickerHelp=document.createElement('p');pickerHelp.className='detail';
-  pickerHelp.textContent='Select 2–12 eligible files here. The full upload-sorted PDF library is on the right.';
+  pickerHelp.textContent='Select 2–12 eligible racing tabs. Optional source PDFs remain private.';
   const candidateTitle=candidateList.previousElementSibling;
   if(candidateTitle)candidateTitle.remove();
   picker.append(pickerTitle,pickerHelp,candidateList);

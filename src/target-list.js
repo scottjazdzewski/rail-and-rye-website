@@ -1,6 +1,7 @@
 import {enrichRaceInformation} from "./projection-race-information.js";
-/* Rail & Rye Target List: private, receipt-referenced structured editorial preview.
-   Customer-facing entitlement and launch routes deliberately not enabled here. */
+/* Receipt-validated Target List editions are stored privately in R2.
+   Buyer access is gated through product publication and category/date entitlement
+   checks in the Product Tabs route. */
 const HEADERS={"Content-Type":"application/json; charset=utf-8","Cache-Control":"private, no-store","X-Content-Type-Options":"nosniff","X-Robots-Tag":"noindex, nofollow, noarchive"};
 const PREFIX="racing-intelligence/target-list/";
 const MAX_BYTES=512*1024;
@@ -192,6 +193,16 @@ async function readEdition(env,selected,dates){
 }
 
 
+export async function readTargetListEdition(env,raceDate){
+ if(!env.CARDS_BUCKET||!dateValid(raceDate))return null;
+ const revisions=await findRevisions(env,raceDate),latest=revisions[0];
+ if(!latest)return null;
+ const object=await env.CARDS_BUCKET.get(latest.key);if(!object)return null;
+ const edition=validateTargetList(JSON.parse(await object.text()));
+ if(edition.race_date!==raceDate||edition.revision!==latest.revision)return null;
+ const facts=await targetOriginalRaceFacts(env,raceDate);
+ return {...edition,targets:edition.targets.map(entry=>enrichTargetRace(entry,facts))};
+}
 
 const targetTrackKey=value=>String(value||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"")
  .toLocaleLowerCase("en-US").replace(/[^a-z0-9]+/g," ").trim();
@@ -217,7 +228,7 @@ async function targetOriginalRaceFacts(env,date){
     if(records.has(id)){records.delete(id);conflicts.add(id);continue;}
     const facts={};
     for(const [key,max] of [["post_time_et",40],["distance",60],["surface",50],["conditions",240],
-      ["race_name",240],["stakes_name",240],["stakes_grade",30],["sponsor_name",120]]){
+      ["race_name",240],["stakes_name",240],["stakes_grade",30],["purse",40],["sponsor_name",120]]){
      if(typeof race[key]==="string"&&race[key].trim()&&race[key].length<=max)
       facts[key]=race[key].trim();
     }

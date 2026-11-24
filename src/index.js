@@ -1,6 +1,6 @@
 import {handleAdminProjectionUpload,handleAdminProjectionBatchUpload,readAdminProjectionCards} from './projections.js';
 import {readCertifiedF4Exotics} from './f4-exotics.js';
-import {handleAdminLongshotRadar,handleAdminLongshotEditorialPreview} from './longshot-radar.js';
+import {handleAdminLongshotRadar,handleAdminLongshotEditorialPreview,publishLongshotRadarTab} from './longshot-radar.js';
 import {handleAdminPickTickets} from './pick-tickets.js';
 import {handleAdminTargetList,readAdminTargetListReview} from './target-list.js';
 import { handleCommerce, sendQueuedEmails, checkoutReadiness, replacePdfAndNotifyBuyers, publicProductForShare } from './commerce.js';
@@ -12,6 +12,8 @@ import {handleSitemap,serveJournalDocument,serveProductDocument} from './seo.js'
 import {ensureReleaseSchedule,validReleaseAt,pdfExpiryFromRaceDate} from './publication-schedule.js';
 import {purgeExpiredRacePdfs} from './race-pdf-expiry.js';
 import {handleMembershipApi,handleAdminMembershipPlans,reconcileMemberships} from './memberships.js';
+import {handleProductTabs} from './product-tabs.js';
+import {hasProductTabData} from './product-tab-content.js';
 import {handleRaceCardAlerts,syncRaceCardAnnouncement,sendRaceCardAlerts} from './race-card-alerts.js';
 /* Rail & Rye admin MVP. Dependencies: Cloudflare Workers, R2, D1, Cloudflare Access.
    Admin routes FAIL CLOSED until ACCESS_TEAM_DOMAIN, ACCESS_AUD and ADMIN_EMAIL
@@ -99,9 +101,9 @@ function readProduct(data) {
   if(category&&!CATEGORIES.has(category)) throw Error("Invalid category");
   if(status==="published"&&!CATEGORIES.has(category)) throw Error("Choose a collection before publishing");
   if(!validDate(race_date)) throw Error("Invalid date");
-  if(status==='published'&&!race_date)throw Error('Enter the racing date printed on this PDF before publishing');
+  if(status==='published'&&!race_date)throw Error('Enter a racing date before publishing this tab');
   const pdf_expires_at=race_date?pdfExpiryFromRaceDate(race_date):null;
-  if(status==='published'&&(!pdf_expires_at||Date.parse(pdf_expires_at.replace(' ','T')+'Z')<=Date.now()))throw Error('The racing date must leave the PDF within its two-day availability period');
+  if(status==='published'&&(!pdf_expires_at||Date.parse(pdf_expires_at.replace(' ','T')+'Z')<=Date.now()))throw Error('The racing date must be within its access period');
   if(track.length>100||description.length>4000) throw Error("Track or description too long");
   if(!Number.isSafeInteger(price_cents)||price_cents<0||price_cents>500000) throw Error("Invalid price");
   if(!["draft","published","archived"].includes(status)) throw Error("Invalid status");
@@ -168,11 +170,20 @@ async function handleAdminAPI(request,env,pathname,ctx) {
   if(pathname==="/api/admin/products") {
     if(request.method==="GET") {
       const result=await env.STORE_DB.prepare("SELECT p.*,s.release_at FROM products p LEFT JOIN product_release_schedule s ON s.product_id=p.id WHERE (p.pdf_key IS NULL OR p.pdf_key != '__rr_bundle__') AND NOT EXISTS (SELECT 1 FROM bundle_only_assets a WHERE a.product_id=p.id) ORDER BY p.created_at DESC, p.id DESC LIMIT 250").all();
-      return json({products:result.results||[]});
+      const rows=result.results||[],products=await Promise.all(rows.map(async p=>{
+        const expiry=Date.parse(String(p.pdf_expires_at||'').replace(' ','T')+'Z');
+        if(p.status==='archived'||!Number.isFinite(expiry)||expiry<=Date.now())return {...p,tab_content_ready:null};
+        const ready=await hasProductTabData(env,p.category,p.race_date,[p]);
+        return {...p,tab_content_ready:ready};
+      }));
+      return json({products});
     }
     if(request.method==="POST") {
       let data; try{data=readProduct(await parseJSON(request));}catch(e){return fail(e.message);}
-      if(data.status==="published") return fail("Upload a PDF before publishing");
+      if(data.status==='published'&&data.category==='Longshot Radar'){
+        try{await publishLongshotRadarTab(env,data.race_date);}
+        catch(error){return fail('Longshot Radar is not ready to publish: '+String(error.message||error).slice(0,180),409);}
+      }
       const id=crypto.randomUUID(),slug=slugFor(data.title,id);
       await env.STORE_DB.prepare(`INSERT INTO products (id,title,slug,category,race_date,track,description,price_cents,pdf_key,image_url,status,pdf_expires_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`)
         .bind(id,data.title,slug,data.category,data.race_date,data.track,data.description,data.price_cents,null,null,data.status,data.pdf_expires_at).run();
@@ -188,13 +199,16 @@ async function handleAdminAPI(request,env,pathname,ctx) {
     const protectedAsset=await env.STORE_DB.prepare('SELECT product_id FROM bundle_only_assets WHERE product_id=?').bind(id).first();
     if(protectedAsset)return fail('Edit private PDFs using the PDF Repository',409);
     let data;try{data=readProduct(await parseJSON(request));}catch(e){return fail(e.message);}
-    if(data.status==="published"&&!item.pdf_key) return fail("Upload a PDF before publishing");
     // Atomic: a future-dated published product can never be visible between
     // writing the product and recording its release gate.
     const existing=await env.STORE_DB.prepare('SELECT release_at FROM product_release_schedule WHERE product_id=?').bind(id).first();
     if(data.release_at&&(!existing||existing.release_at!==data.release_at)){
       const when=Date.parse(data.release_at.replace(' ','T')+'Z');
       if(when<=Date.now()+30*1000||when>Date.now()+366*86400*1000)return fail('Choose a release at least 1 minute ahead, within the next year');
+    }
+    if(data.status==='published'&&data.category==='Longshot Radar'){
+      try{await publishLongshotRadarTab(env,data.race_date);}
+      catch(error){return fail('Longshot Radar is not ready to publish: '+String(error.message||error).slice(0,180),409);}
     }
     const alertAnnouncement=data.status==='published'&&data.category==='Race Cards'&&(item.status!=='published'||(existing?.release_at||null)!==(data.release_at||null));
     const ops=[env.STORE_DB.prepare(`UPDATE products SET title=?,category=?,race_date=?,track=?,description=?,price_cents=?,status=?,pdf_expires_at=? WHERE id=?`)
@@ -334,6 +348,16 @@ export default {
         headers.set("Content-Security-Policy","default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'");
         return new Response(result.body,{status:result.status,headers});
       }
+      const productTabsPage=path==="/my-products"||path==="/my-products/"||path==="/my-products/index.html";
+      if(productTabsPage){
+        if(request.method!=="GET"&&request.method!=="HEAD")return fail("Method not allowed",405);
+        const asset=new URL(url);asset.pathname="/my-products/index.html";asset.search="";
+        const result=await env.ASSETS.fetch(new Request(asset.toString(),{method:request.method}));
+        const headers=new Headers(result.headers);headers.set("Cache-Control","no-store");headers.set("X-Robots-Tag","noindex, nofollow, noarchive");
+        headers.set("X-Content-Type-Options","nosniff");headers.set("Referrer-Policy","same-origin");
+        headers.set("Content-Security-Policy","default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'");
+        return new Response(request.method==="HEAD"?null:result.body,{status:result.status,headers});
+      }
       const memberDashboardPage=path==="/membership/dashboard"||path==="/membership/dashboard/"||path==="/membership/dashboard/index.html";
       if(memberDashboardPage){
         if(env.PROJECTIONS_MEMBER_LAUNCH!=="on")return new Response("Not found.",{status:404,headers:{...textHeaders,"X-Robots-Tag":"noindex, nofollow, noarchive"}});
@@ -373,6 +397,7 @@ export default {
         const response=await serveProductDocument(original,{product});
         return request.method==='HEAD'?new Response(null,{status:response.status,headers:response.headers}):response;
       }
+      if(path.startsWith("/api/product-tabs/"))return handleProductTabs(request,env,url);
       if(path.startsWith("/api/race-card-alerts/"))return handleRaceCardAlerts(request,env,url);
       if(path.startsWith("/api/membership/"))return handleMembershipApi(request,env,url);
       if(path.startsWith("/api/free-download/")||path==="/api/products"||path==="/api/checkout"||path==="/api/stripe/webhook"||path==="/api/stripe/live-webhook"||path.startsWith("/api/orders/")||path==="/api/delivery/download"||path==="/api/delivery/download-all"||path==="/api/delivery/items"||path==="/api/recovery/request")return handleCommerce(request,env,url,ctx);

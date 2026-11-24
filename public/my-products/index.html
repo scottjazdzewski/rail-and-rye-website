@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="same-origin">
+<meta name="robots" content="noindex,nofollow">
+<title>My Racing Tabs | Rail &amp; Rye</title>
+<link rel="icon" href="/favicon.png" type="image/png">
+<link rel="stylesheet" href="/assets/rail-rye-core.css?v=13">
+<link rel="stylesheet" href="/assets/rail-rye-components.css?v=9">
+<link rel="stylesheet" href="/assets/rail-rye-pages.css?v=36">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--rr-navy:#0b203a;--rr-navy-2:#132e4b;--rr-gold:#a57536;--rr-paper:#f5f3ed;--rr-ink:#152437;--rr-muted:#667284;--rr-line:#d8d3c8;--rr-green:#1f6848;--rr-red:#8c3c34}
+body.rr-tabs-page{margin:0;background:var(--rr-paper);color:var(--rr-ink);font-family:"DM Sans",Arial,sans-serif}
+.rr-tabs-main{max-width:1180px;width:calc(100% - 32px);margin:30px auto 70px}
+.rr-tabs-hero{background:var(--rr-navy);color:#fff;padding:clamp(23px,5vw,42px);border-radius:4px;box-shadow:0 12px 28px #10213b1c}
+.rr-tabs-kicker{font-size:.75rem;letter-spacing:.16em;text-transform:uppercase;color:#d8b77e;font-weight:700}
+.rr-tabs-hero h1{font:700 clamp(2rem,5vw,3.1rem)/1.15 "Libre Baskerville",Georgia,serif;margin:14px 0 10px}
+.rr-tabs-hero p{max-width:690px;color:#e0e5eb;font-size:1rem;line-height:1.6;margin:0}
+.rr-tabs-notice{margin-top:18px;font-size:.9rem;color:#ead9b9}
+.rr-tabs-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+.rr-tabs-link{display:inline-flex;align-items:center;justify-content:center;min-height:43px;padding:0 14px;border:1px solid #caa96e;color:#fff;text-decoration:none;font-weight:700;border-radius:3px}
+.rr-tabs-link.secondary{border-color:#8190a3}
+.rr-tabs-panel{margin-top:22px;background:#fff;border:1px solid var(--rr-line);padding:clamp(15px,3vw,23px);border-radius:4px}
+.rr-tabs-heading{display:flex;justify-content:space-between;align-items:end;gap:10px;margin:0 0 14px}
+.rr-tabs-heading h2{font:700 1.25rem "Libre Baskerville",Georgia,serif;margin:0;color:var(--rr-navy)}
+.rr-tabs-hint{color:var(--rr-muted);font-size:.85rem}
+.rr-category-tabs{display:flex;gap:8px;overflow:auto;padding:0 0 9px;scrollbar-width:thin}
+.rr-category-tabs button,.rr-date-chip{font:700 .9rem "DM Sans",Arial,sans-serif;white-space:nowrap;border:1px solid #bfc6cf;background:#fff;color:var(--rr-navy);padding:11px 14px;border-radius:3px;cursor:pointer;min-height:44px}
+.rr-category-tabs button[aria-pressed=true]{background:var(--rr-navy);border-color:var(--rr-navy);color:#fff}
+.rr-category-tabs button small{display:block;font-size:.72rem;font-weight:500;margin-top:2px;color:inherit;opacity:.82}
+.rr-date-strip{display:flex;gap:9px;overflow:auto;padding:3px 0 10px;scrollbar-width:thin}
+.rr-date-chip{min-width:150px;text-align:left}
+.rr-date-chip[aria-pressed=true]{outline:2px solid var(--rr-gold);outline-offset:1px}
+.rr-date-chip .date-day{display:block;font-size:1rem}
+.rr-date-chip .date-meta{display:block;margin-top:5px;font-size:.76rem;color:var(--rr-muted);font-weight:500}
+.rr-date-chip .date-state{display:inline-block;margin-top:8px;font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;color:var(--rr-green)}
+.rr-date-chip.locked .date-state{color:var(--rr-gold)}
+.rr-content-status{padding:17px 0;color:var(--rr-muted);line-height:1.55}
+.rr-content-status.error{color:var(--rr-red)}
+.rr-edition-grid{display:grid;gap:13px}
+.rr-edition-card{border:1px solid var(--rr-line);border-radius:4px;background:#fff;overflow:hidden}
+.rr-edition-top{background:#edf0f3;padding:13px 16px;border-bottom:1px solid var(--rr-line)}
+.rr-edition-top h3{font:700 1.05rem "Libre Baskerville",Georgia,serif;margin:0;color:var(--rr-navy)}
+.rr-edition-top p{font-size:.83rem;color:var(--rr-muted);margin:6px 0 0}
+.rr-race-card{padding:16px;border-bottom:1px solid #e7e4dd}
+.rr-race-card:last-child{border-bottom:0}
+.rr-race-title{font-size:1rem;font-weight:700;color:var(--rr-navy);margin:0}
+.rr-race-meta{font-size:.82rem;color:var(--rr-muted);line-height:1.5;margin:5px 0 12px}
+.rr-horse-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px 12px;border-top:1px solid #eeece7;padding:10px 0}
+.rr-horse-name{display:flex;align-items:center;gap:9px;min-width:0;font-weight:700}
+.rr-saddle-chip{display:inline-flex;align-items:center;justify-content:center;flex:0 0 31px;height:31px;border:1px solid #bbb;border-radius:50%;background:#f0eee8;color:#172a40;font-weight:700;font-size:.8rem}
+.rr-horse-odds{text-align:right;white-space:nowrap;font-size:.9rem;font-weight:700;color:var(--rr-navy)}
+.rr-horse-sub{grid-column:1/-1;color:var(--rr-muted);font-size:.78rem;line-height:1.45}
+.rr-scratch-list{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 12px}
+.rr-scratch{display:inline-flex;align-items:center;gap:6px;background:#f4f1ea;border-radius:18px;padding:5px 9px;font-size:.76rem;color:#5d6268;text-decoration:line-through}
+.rr-score{font-size:.79rem;color:var(--rr-green);font-weight:700}
+.rr-two-col{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.rr-horse-role{background:#f5f4f0;border:1px solid #e5e1d8;padding:12px;border-radius:3px}
+.rr-horse-role strong{display:block;color:var(--rr-navy);margin-bottom:5px}
+.rr-ticket{border:1px solid #e2ded5;padding:13px;margin-top:9px;border-radius:3px}
+.rr-ticket-head{display:flex;justify-content:space-between;gap:10px;font-weight:700;color:var(--rr-navy)}
+.rr-legs{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.rr-leg{font-size:.82rem;background:#edf0f3;padding:7px 9px;border-radius:3px}
+.rr-locked-box{background:#f8f5ef;border:1px solid #e3d6bf;padding:16px;border-radius:4px;color:#5f4b31;line-height:1.55}
+@media(min-width:850px){.rr-edition-grid{grid-template-columns:1fr 1fr}.rr-edition-card.wide{grid-column:1/-1}}
+@media(max-width:600px){.rr-tabs-main{width:calc(100% - 20px);margin-top:16px}.rr-tabs-hero{border-radius:3px}.rr-tabs-heading{display:block}.rr-tabs-hint{margin-top:5px}.rr-date-chip{min-width:142px}.rr-two-col{grid-template-columns:1fr}.rr-race-card{padding:13px}.rr-horse-row{gap:5px 8px}}
+</style>
+</head>
+<body class="heritage-home rr-shell-page rr-tabs-page">
+<header class="heritage-header"><div class="heritage-shell heritage-header-inner">
+<a class="heritage-brand" href="/" aria-label="Rail and Rye home"><span class="heritage-brand-mark"><img src="/assets/approved/brand/rail-rye-ivory-logo.png" alt="" width="80" height="80" decoding="async"></span><span class="heritage-wordmark">RAIL &amp; RYE</span></a>
+<div class="heritage-strap"><img class="heritage-horse-mini" src="/assets/approved/brand/header-horse.webp" alt="" aria-hidden="true" width="66" height="76"><span>Thoroughbred Racing Intelligence</span></div>
+<nav class="heritage-nav" aria-label="Main navigation"><a class="heritage-nav-pill" href="/race-cards/">Race Cards</a><a class="heritage-nav-pill" href="/store/">Publications</a><a class="heritage-nav-pill" href="/my-products/" aria-current="page">My Tabs</a><a class="heritage-nav-pill" href="/membership/">Membership</a><a class="heritage-nav-pill" href="/our-approach/">Our Approach</a><a class="heritage-nav-pill" href="/journal/">The Journal</a></nav>
+<details class="heritage-mobile-nav"><summary aria-label="Open navigation">Menu <span aria-hidden="true">☰</span></summary><nav aria-label="Mobile navigation"><a href="/race-cards/">Race Cards</a><a href="/store/">Publications</a><a href="/my-products/">My Tabs</a><a href="/membership/">Membership</a><a href="/our-approach/">Our Approach</a><a href="/journal/">The Journal</a></nav></details>
+</div></header>
+<main class="rr-tabs-main">
+<section class="rr-tabs-hero"><span class="rr-tabs-kicker">Rail &amp; Rye · Customer Access</span><h1>Your Racing Tabs</h1><p>Open your purchased selections and see the racing dates with a published edition. A purchase unlocks its category for that racing date.</p><div id="rr-access-notice" class="rr-tabs-notice" role="status" aria-live="polite">Loading your access…</div><div class="rr-tabs-actions"><a class="rr-tabs-link" href="/store/">Browse Publications</a><a class="rr-tabs-link secondary" href="/store/recover.html">Recover a purchase</a></div></section>
+<section class="rr-tabs-panel" aria-labelledby="rr-category-heading"><div class="rr-tabs-heading"><h2 id="rr-category-heading">Choose a tab</h2><span class="rr-tabs-hint" id="rr-tab-hint">Published race dates are marked below.</span></div><div id="rr-category-tabs" class="rr-category-tabs" role="group" aria-label="Product categories"></div></section>
+<section class="rr-tabs-panel" aria-labelledby="rr-date-heading"><div class="rr-tabs-heading"><h2 id="rr-date-heading">Published race days</h2><span class="rr-tabs-hint" id="rr-date-hint"></span></div><div id="rr-date-strip" class="rr-date-strip" role="group" aria-label="Published race dates"></div><div id="rr-edition-status" class="rr-content-status" role="status" aria-live="polite">Choose a category and date.</div><div id="rr-edition-content" class="rr-edition-grid"></div></section>
+</main>
+<footer class="heritage-footer"><div class="heritage-shell heritage-footer-inner"><span class="heritage-footmark">RAIL &amp; RYE</span><nav aria-label="Footer"><a href="/store/">Publications</a><a href="/membership/">Membership</a><a href="/journal/">Journal</a><a href="mailto:support@railandryeracing.com">Support</a><a href="/policies/terms.html">Terms</a><a href="/policies/privacy.html">Privacy</a></nav><small>Independent research. No guarantees.</small></div></footer>
+<script>
+(()=>{'use strict';
+const CATEGORIES=['Race Cards','Pick Tickets','Longshot Radar','Target List'];
+const state={days:[],category:'Race Cards',date:'',universal:false,accessExpiry:null};
+const $=id=>document.getElementById(id);
+const node=(tag,cls,txt)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(txt!==undefined)n.textContent=String(txt);return n;};
+const dateParts=value=>{const m=String(value||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);if(!m)return null;const d=new Date(Date.UTC(+m[1],+m[2]-1,+m[3]));return {short:new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',timeZone:'UTC'}).format(d),long:new Intl.DateTimeFormat('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric',timeZone:'UTC'}).format(d)};};
+const pct=value=>value==null||value===''?'—':(Number.isFinite(Number(value))?Number(value).toFixed(1)+'%':'—');
+const dollars=value=>Number.isFinite(Number(value))?'$'+(Number(value)/100).toFixed(2):'';
+function titleFor(row){
+ let title=String(row?.stakes_name||row?.race_name||row?.conditions||'').trim()
+  .replace(/\s*\((?:presented by|sponsored by)\s+[^)]*\)\s*$/i,'')
+  .replace(/\s+(?:presented by|sponsored by)\s+.*$/i,'')
+  .replace(/\s+\($/,'')
+  .replace(/\bS\.?\s*$/i,' Stakes')
+  .trim();
+ if(!title||/^(?:(?:overnight|listed|graded|ungraded|restricted|open|non-graded)\s+)?(?:stake|stakes|stks?\.?|s\.?)\s*(?:\(?(?:g[123]|grade\s*[123])\)?)?$/i.test(title))
+  return 'Race '+String(row?.race_number??'');
+ return title;
+}
+function raceHeading(parent,track,row){
+ const title=node('h3','rr-race-title',(track?track+' · ':'')+'Race '+row.race_number+' — '+titleFor(row));
+ if(row.is_stakes&&/^(1|2|3|I|II|III)$/i.test(String(row.stakes_grade||'').replace(/^(?:grade|gr?\.?|g)\s*/i,'')))title.append(' 🏆');
+ parent.append(title);
+ const meta=[row.post_time_et,row.distance,row.surface,row.conditions,row.purse?('Purse '+row.purse):''].filter(Boolean).join(' · ');
+ if(meta)parent.append(node('p','rr-race-meta',meta));
+}
+function horseRow(entry){
+ const row=node('div','rr-horse-row'),name=node('div','rr-horse-name'),chip=node('span','rr-saddle-chip',entry.program_number);
+ chip.setAttribute('aria-label','Program '+entry.program_number);
+ name.append(chip,node('span','',entry.horse_name));
+ row.append(name,node('div','rr-horse-odds',pct(entry.win_probability)+' · '+(entry.fair_odds||'Fair odds unavailable')));
+ const sub=[entry.morning_line?'ML '+entry.morning_line:null,[entry.trainer,entry.jockey].filter(Boolean).join(' | '),...(entry.metrics||[]).map(m=>m.label+': '+m.value)].filter(Boolean).join(' · ');
+ if(sub)row.append(node('div','rr-horse-sub',sub));
+ return row;
+}
+function raceCard(track,race){
+ const card=node('article','rr-race-card');raceHeading(card,track,race);
+ if((race.scratches||[]).length){const list=node('div','rr-scratch-list');for(const s of race.scratches){const item=node('span','rr-scratch');item.append(node('span','rr-saddle-chip',s.program_number),node('span','',s.horse_name));list.append(item);}card.append(list);}
+ for(const entry of race.entries||[])card.append(horseRow(entry));
+ return card;
+}
+function projectionCard(row){
+ const card=node('article','rr-edition-card wide'),head=node('header','rr-edition-top');
+ head.append(node('h3','',row.track||row.card?.track_name||row.title||'Race Card'),node('p','',dateParts(row.race_date)?.long||row.race_date));card.append(head);
+ for(const race of row.card?.races||[])card.append(raceCard(row.track||row.card.track_name,race));
+ return card;
+}
+function pickCard(row){
+ const card=node('article','rr-edition-card'),head=node('header','rr-edition-top');
+ head.append(node('h3','',row.track+' Pick Tickets'),node('p','',dateParts(row.date)?.long||row.date));card.append(head);
+ for(const sequence of row.sequences||[]){
+  const section=node('section','rr-race-card');const label=node('h4','rr-race-title',sequence.name+' · Races '+sequence.start_race+'–'+sequence.end_race);
+  section.append(label,node('p','rr-race-meta','Status '+sequence.play_status+' · Projected hit '+pct(sequence.hit_rate_display)));
+  if(sequence.recommendation)section.append(node('p','rr-race-meta',sequence.recommendation));
+  for(const ticket of sequence.tickets||[]){
+   const box=node('div','rr-ticket'),top=node('div','rr-ticket-head');
+   top.append(node('span','',ticket.title+' · '+ticket.combinations+' combinations'),node('span','',dollars(ticket.total_cents)));
+   box.append(top,node('p','rr-race-meta','Projected hit '+pct(ticket.hit_rate_display)+' · '+(ticket.unit_cents/100).toLocaleString('en-US',{style:'currency',currency:'USD'})+' minimum unit'));
+   const legs=node('div','rr-legs');for(const leg of ticket.legs||[])legs.append(node('span','rr-leg','Race '+leg.race_number+': '+leg.programs.join(', ')));box.append(legs);
+   if(ticket.notes)box.append(node('p','rr-race-meta',ticket.notes));
+   section.append(box);
+  }
+  card.append(section);
+ }
+ return card;
+}
+function longshotCard(group){
+ const rows=group.candidates||[group],first=rows[0];
+ const card=node('article','rr-edition-card wide'),head=node('header','rr-edition-top');
+ raceHeading(head,group.track||first.track,first);card.append(head);
+ for(const row of rows){
+  card.append(horseRow({program_number:row.program_number,horse_name:row.horse_name,
+   win_probability:row.pwin_display,fair_odds:row.fair_odds_display,
+   morning_line:row.original_morning_line,trainer:row.trainer,jockey:row.jockey,metrics:[]}));
+  if(row.betting_case)card.append(node('p','rr-race-meta',row.betting_case));
+ }
+ return card;
+}
+function targetCard(row){
+ const card=node('article','rr-edition-card wide'),head=node('header','rr-edition-top');
+ raceHeading(head,row.track,row);card.append(head);
+ const roles=node('div','rr-two-col');
+ for(const [label,horse] of [['Favorite',row.favorite],['ATTACK',row.attack],['Also live',row.also_live]]){
+  if(!horse)continue;const box=node('div','rr-horse-role');box.append(node('strong','',label));
+  const name=node('div','rr-horse-name');
+  name.append(node('span','rr-saddle-chip',horse.program_number),node('span','',horse.horse_name));
+  box.append(name);
+  box.append(node('p','rr-race-meta',pct(horse.win_probability)+' · ML '+horse.morning_line+' · Fair odds '+horse.fair_odds));
+  const trainer=[horse.trainer,horse.jockey].filter(Boolean).join(' | ');if(trainer)box.append(node('p','rr-race-meta',trainer));
+  roles.append(box);
+ }
+ card.append(roles);if(row.analysis)card.append(node('p','rr-race-meta',row.analysis));
+ return card;
+}
+function categoryDays(){return state.days.filter(day=>day.category===state.category);}
+function selectedDay(){return categoryDays().find(day=>day.race_date===state.date)||null;}
+function renderCategories(){
+ const wrap=$('rr-category-tabs');wrap.replaceChildren();
+ for(const category of CATEGORIES){
+  const days=categoryDaysFor(category),unlocked=days.filter(day=>day.unlocked).length;
+  const button=node('button','',category);button.type='button';button.setAttribute('aria-pressed',String(state.category===category));
+  button.append(node('small','',days.length?(unlocked?unlocked+' unlocked':'published editions'): 'No published days'));
+  button.addEventListener('click',()=>{state.category=category;state.date='';updateHistory();render();});
+  wrap.append(button);
+ }
+}
+function categoryDaysFor(category){return state.days.filter(day=>day.category===category);}
+function renderDates(){
+ const wrap=$('rr-date-strip'),days=categoryDays();wrap.replaceChildren();
+ const grouped=new Map();for(const day of days){let item=grouped.get(day.race_date);if(!item){item={date:day.race_date,tracks:new Set(),unlocked:false};grouped.set(day.race_date,item);}if(day.track)item.tracks.add(day.track);item.unlocked=item.unlocked||day.unlocked;}
+ const values=[...grouped.values()].sort((a,b)=>b.date.localeCompare(a.date));
+ if(!values.length){wrap.append(node('p','rr-content-status','No published race days for this tab yet.'));return;}
+ if(!values.some(item=>item.date===state.date))state.date=values[0].date;
+ $('rr-date-hint').textContent=values.length+' published race day'+(values.length===1?'':'s');
+ for(const item of values){
+  const date=dateParts(item.date),button=node('button','rr-date-chip'+(item.unlocked?'':' locked'));
+  button.type='button';button.setAttribute('aria-pressed',String(state.date===item.date));
+  button.append(node('span','date-day',date?.short||item.date));
+  button.append(node('span','date-meta',item.tracks.size?[...item.tracks].join(', '):'Racing card'));
+  button.append(node('span','date-state',item.unlocked?'Published · unlocked':'Published · locked'));
+  button.addEventListener('click',()=>{if(!item.unlocked){location.assign('/store/?category='+encodeURIComponent(state.category));return;}state.date=item.date;updateHistory();render();});
+  wrap.append(button);
+ }
+}
+function updateHistory(){const q=new URLSearchParams();q.set('category',state.category);if(state.date)q.set('date',state.date);history.replaceState(null,'',location.pathname+'?'+q.toString());}
+function render(){
+ renderCategories();renderDates();const day=selectedDay(),content=$('rr-edition-content'),status=$('rr-edition-status');content.replaceChildren();
+ if(!day){status.textContent='No published race days for this tab yet.';return;}
+ if(!day.unlocked){status.replaceChildren();const box=node('div','rr-locked-box','This category and race date are published. Purchase this tab to open the race information.');const link=node('a','rr-tabs-link','Open Publication Desk');link.href='/store/?category='+encodeURIComponent(state.category);link.style.color='var(--rr-navy)';box.append(document.createElement('br'),link);status.append(box);return;}
+ status.textContent='Loading '+(dateParts(state.date)?.long||state.date)+'…';
+ fetch('/api/product-tabs/edition?category='+encodeURIComponent(state.category)+'&date='+encodeURIComponent(state.date),{credentials:'same-origin',cache:'no-store'}).then(async response=>{const data=await response.json();if(!response.ok)throw Error(data.error||'Unable to load this tab.');if(state.date!==data.race_date||state.category!==data.category)return;status.textContent='Published · '+(dateParts(state.date)?.long||state.date);renderEdition(data);}).catch(error=>{if(state.date!==day.race_date)return;status.classList.add('error');status.textContent=error.message;});
+}
+function renderEdition(data){
+ const content=$('rr-edition-content');content.replaceChildren();
+ if(data.category==='Race Cards'){for(const item of data.cards||[])content.append(projectionCard(item));}
+ if(data.category==='Pick Tickets'){for(const item of data.cards||[])content.append(pickCard(item));}
+ if(data.category==='Longshot Radar'){
+  const groups=new Map();
+  for(const item of data.candidates||[]){
+   const key=String(item.track||'')+'|'+String(item.race_number||'');
+   if(!groups.has(key))groups.set(key,{track:item.track,candidates:[]});
+   groups.get(key).candidates.push(item);
+  }
+  for(const group of groups.values())content.append(longshotCard(group));
+ }
+ if(data.category==='Target List'){for(const item of data.targets||[])content.append(targetCard(item));}
+ if(!content.children.length)$('rr-edition-status').textContent='This edition is published, but it contains no selections for this category and date.';
+}
+async function load(){
+ const query=new URLSearchParams(location.search);
+ try{
+  const response=await fetch('/api/product-tabs/library',{credentials:'same-origin',cache:'no-store'}),data=await response.json();
+  if(!response.ok)throw Error(data.error||'Unable to load product access.');
+  state.days=data.days||[];state.universal=Boolean(data.universal_access);state.accessExpiry=data.access_expires_at||null;
+  if(CATEGORIES.includes(query.get('category')))state.category=query.get('category');
+  const candidates=categoryDaysFor(state.category);
+  state.date=candidates.some(day=>day.race_date===query.get('date'))?query.get('date'):candidates[0]?.race_date||'';
+  const notice=$('rr-access-notice');
+  if(state.universal)notice.textContent='All-Access is active. Every published category and racing date is open.';
+  else if(state.days.some(day=>day.unlocked))notice.textContent='Your purchase access is active on this device. No separate sign-in is needed.';
+  else notice.textContent='No purchased tab is active on this device. Open the secure link from your purchase email, or recover a purchase.';
+  if(state.accessExpiry&&!state.universal){const until=new Date(state.accessExpiry);if(!Number.isNaN(until.getTime()))notice.textContent+=' Access runs through '+new Intl.DateTimeFormat('en-US',{month:'long',day:'numeric',timeZone:'UTC'}).format(until)+'.';}
+  render();
+ }catch(error){$('rr-access-notice').textContent=error.message;$('rr-edition-status').classList.add('error');$('rr-edition-status').textContent='Product tabs are temporarily unavailable.';}
+}
+load();
+})();
+</script>
+</body>
+</html>
