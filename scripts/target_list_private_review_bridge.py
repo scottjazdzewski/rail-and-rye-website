@@ -71,7 +71,7 @@ def validate_review(raw):
     revision = raw.get("revision")
     if not isinstance(revision, int) or isinstance(revision, bool) or revision < 1 or revision > 9999:
         raise ValueError("Invalid edition revision.")
-    if (revision == 1 and raw.get("status") != "initial") or (revision > 1 and raw.get("status") != "scratch_update"):
+    if (revision == 1 and raw.get("status") != "initial") or (revision > 1 and raw.get("status") not in ("scratch_update", "editorial_update")):
         raise ValueError("Private review revision/state mismatch.")
     src = raw.get("source")
     if not isinstance(src, dict):
