@@ -15,7 +15,7 @@ from botocore.exceptions import ClientError
 PREFIX="RR_RADAR_1124_PRIVATE_APPROVED_V1"
 KEY_CONTEXT=b"RAIL-RYE-R2-TARGET-EDITORIAL-REVIEW-ECIES-v1\0"
 OWNER="scottjazdzewski"
-ISSUE=0
+ISSUE=229
 REPO="scottjazdzewski/rail-and-rye-website"
 DATE="2026-11-24"
 BUCKET="rail-and-rye-private-cards"
