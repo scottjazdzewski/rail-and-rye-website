@@ -20,14 +20,14 @@ for(const [path,active] of pages){
  assert.match(found[0],/class="heritage-strap"/,path+": include horse emblem and tagline");
  assert.match(found[0],/class="heritage-nav rr-intel-header__nav"/,path+": use site-wide desktop pills");
  assert.match(found[0],/class="heritage-mobile-nav rr-intel-header__mobile"/,path+": use site-wide mobile menu");
- const clean=found[0].replaceAll(' aria-current="page"',"").replaceAll('<a class="heritage-nav-pill rr-intel-header__pill" href="/my-products/">My Tabs</a>',"").replaceAll('<a class="rr-intel-header__pill" href="/my-products/">My Tabs</a>',"");
+ const clean=found[0].replaceAll(' aria-current="page"',"");
  if(reference)assert.equal(clean,reference,path+": must reuse identical masthead markup");
  else reference=clean;
  for(const cls of ["rr-intel-header__nav","rr-intel-header__mobile-links"]){
   const slot=found[0].match(new RegExp('<nav class="[^"]*'+cls+'"[^>]*>([\\s\\S]*?)<\\/nav>'));
   assert.ok(slot,path+": "+cls+" exists");
   const links=[...slot[1].matchAll(/<a [^>]*href="([^"]+)"[^>]*>([^<]+)<\/a>/g)];
-  const expected=path.includes("/membership/dashboard/")?(cls==="rr-intel-header__nav"?["Hub","My Tabs",...names.slice(1)]:["My Tabs",...names]):names;
+  const expected=names;
   assert.deepEqual(links.map(x=>x[2]),expected,path+": retain existing tabs in the same order");
   assert.equal(links.filter(x=>x[0].includes('aria-current="page"')).length,1,path+": exactly one active product");
   assert.ok(links.find(x=>x[2]===active)?.[0].includes('aria-current="page"'),path+": correct active module");

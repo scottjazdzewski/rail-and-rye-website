@@ -36,7 +36,7 @@ function render(){
  q("#rr-hub-access").textContent=!accessKnown?"Unavailable":universal?"All-Access membership":owned===4?"Full access":owned?owned+" of 4 unlocked":"No access for this date";
  price.textContent=bundle&&owned!==4&&!universal?dollar(bundle.price_cents):"";
  full.disabled=true;full.onclick=null;
- if(accessKnown&&(universal||owned===4)){full.disabled=false;full.textContent="Open My Tabs";full.onclick=()=>location.assign("/my-products/?date="+encodeURIComponent(d))}
+ if(accessKnown&&(universal||owned===4)){full.disabled=false;full.textContent="Full Access Active";full.disabled=true;full.onclick=null}
  else if(catalogKnown&&accessKnown&&bundle&&checkoutReady&&live){full.disabled=false;full.textContent="Purchase Full Access";full.onclick=()=>checkout(bundle,full)}
  else full.textContent=bundle?"Checkout unavailable":"Full Access not yet available";
 }

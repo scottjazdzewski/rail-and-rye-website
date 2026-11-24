@@ -2,7 +2,7 @@
 
 **Status: OWNER APPROVED / DO NOT REDESIGN**  
 **Approved:** November 4, 2026 (owner-authorized Racing Wire header pill)
-**Frozen homepage HTML blob:** `ef80a298bfb922f3f52dde6e306228276fe6a3af` (owner approved November 22, 2026)  
+**Frozen homepage HTML blob:** `6e70da25719d5b4cfc242a052fffd73f95f62f8b` (owner-authorized navigation rename, November 24, 2026)  
 **Recovery snapshot branch:** `approved-homepage-2026-11-22`  
 **Website:** https://railandryeracing.com/
 
@@ -52,3 +52,7 @@ The owner explicitly authorized publishing The Racing Wire and adding **The Wire
 ## Owner-authorized Pick Tickets and Stories update (November 22, 2026)
 
 The owner approved **Pick Tickets** as Page 2 with `public/assets/approved/publications/pick-tickets-hero.png`, and **Stories from the Rail** in the Page 4 position with saddlecloth #4 and the Stable Notes badge artwork. The Pick Tickets description is **“Multi-race selections organized by sequence, with a projected hit rate for each.”** Stable Notes is hidden from the homepage and public Publication Desk, removed from the public sitemap, and retained in Publisher's Desk for future use. Pick Tickets remains an available Publisher's Desk category and uses the existing secure listing and checkout flow. The homepage baseline records the current approved cards and copy.
+
+## November 24 navigation-only change
+
+Owner requested Intelligence Hub instead of Publications and removal of My Tabs from customer-facing navigation. The homepage layout, artwork, typography, and existing routes remain unchanged.

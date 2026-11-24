@@ -35,3 +35,26 @@ body.heritage-home.heritage-store-page.rr-commerce-hub .heritage-store-layout{di
 .rr-commerce-hub .rr-hub-notice:empty{display:none}
 @media(max-width:1000px){body.heritage-home.heritage-store-page.rr-commerce-hub .heritage-store-layout{grid-template-columns:minmax(0,1fr);gap:18px}.rr-commerce-hub .rr-hub-product-art{height:clamp(80px,19vw,160px)}}
 @media(max-width:480px){.rr-commerce-hub .rr-hub-grid{grid-template-columns:minmax(0,1fr);gap:10px}.rr-commerce-hub .rr-hub-product{display:grid;grid-template-columns:100px minmax(0,1fr)}.rr-commerce-hub .rr-hub-product-art{height:100%;min-height:160px}.rr-commerce-hub .rr-hub-product-body{padding:10px}.rr-commerce-hub .rr-hub-universal{align-items:stretch;flex-direction:column;gap:12px}.rr-commerce-hub .rr-hub-universal-actions{min-width:0}}
+
+/* Desktop only: keep all four products and the purchase bar in the first screen when space permits.
+   The compact horizontal artwork is the same approved product image; mobile is unchanged. */
+@media(min-width:1001px){
+ body.heritage-home.rr-single-screen-hero.heritage-store-page.rr-commerce-hub>.heritage-inner-hero{height:auto;min-height:0;overflow:visible}
+ body.heritage-home.rr-single-screen-hero.heritage-store-page.rr-commerce-hub .heritage-store-layout{grid-template-columns:minmax(0,.83fr) minmax(0,1.17fr);gap:14px clamp(18px,2.5vw,42px);padding-top:clamp(12px,1.6vw,25px);padding-bottom:20px;align-items:start}
+ body.heritage-home.heritage-store-page.rr-commerce-hub .heritage-store-inventory{padding-top:0}
+ body.heritage-home.rr-commerce-hub .rr-page-intro .rr-page-title{font-size:clamp(43px,4.15vw,77px);margin:9px 0 12px}
+ body.heritage-home.rr-commerce-hub .rr-page-intro .rr-page-description{margin-top:12px;font-size:clamp(12px,.92vw,16px);line-height:1.45}
+ .rr-commerce-hub .rr-hub-overview{margin:12px 0 8px;padding:10px 12px;gap:6px}
+ .rr-commerce-hub .rr-hub-links{margin-top:8px}
+ .rr-commerce-hub .rr-hub-grid{gap:10px;grid-auto-rows:1fr}
+ .rr-commerce-hub .rr-hub-product{display:grid;grid-template-columns:minmax(0,.32fr) minmax(0,.68fr);align-items:stretch}
+ .rr-commerce-hub .rr-hub-product-art{width:100%;height:100%;min-height:128px;object-fit:cover}
+ .rr-commerce-hub .rr-hub-product-body{padding:9px;gap:5px}
+ .rr-commerce-hub .rr-hub-product h2{font-size:clamp(22px,1.9vw,30px);line-height:1.02}
+ .rr-commerce-hub .rr-hub-product p{font-size:11px;line-height:1.32}
+ .rr-commerce-hub .rr-hub-status-row{padding-top:2px}
+ .rr-commerce-hub .rr-hub-action{min-height:36px;padding:7px 10px}
+ .rr-commerce-hub .rr-hub-universal{padding:12px 18px;gap:14px}
+ .rr-commerce-hub .rr-hub-universal h2{font-size:clamp(27px,2.5vw,38px)}
+ .rr-commerce-hub .rr-hub-universal-actions{gap:5px}
+}
