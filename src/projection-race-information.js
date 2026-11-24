@@ -170,7 +170,9 @@ export const genericStakesTitle=value=>/^(?:(?:overnight|listed|graded|ungraded|
 export function hasVerifiedStakesTitle(race){
  const named=[race?.stakes_name,race?.race_name,race?.conditions]
   .map(value=>String(value??"").trim()).filter(Boolean);
- return named.some(value=>!genericStakesTitle(value));
+ return named.some(value=>!genericStakesTitle(value)&&
+  !/^(?:race\s*\d+|race projections|unnamed|name unavailable|tbd|unknown)$/i.test(value)&&
+  !/^(?:maiden special weight|maiden optional claiming|maiden claiming|maiden allowance|starter optional claiming|starter allowance|optional claiming|allowance|claiming|maiden)(?:\s+\$[\d,]+)?$/i.test(value));
 }
 export function requireProductionStakesNames(card){
  for(const race of card.races||[]){
