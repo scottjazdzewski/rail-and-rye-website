@@ -274,17 +274,46 @@ export async function readPrivatePickProjections(env){
 // Never fall back to the previous day's projections or estimate PWIN.
 export async function readPrivatePickProjections1124(env){
  if(!env?.CARDS_BUCKET)return [];
+ const unavailable=new Set();
  const found=await Promise.all(Object.keys(PICK_TRACK_COUNTS_1124).map(async track=>{
   const slug=track.toLowerCase().replace(/[^a-z0-9]+/g,"-");
   try{
    const file=await env.CARDS_BUCKET.get("projections/dashboard/"+PICK_DAY_1124+"/"+slug+".json");
    if(!file)return null;
    const card=JSON.parse(await file.text());
-   if(card?.race_date!==PICK_DAY_1124||card?.track_name!==track)return null;
+   if(card?.race_date!==PICK_DAY_1124||card?.track_name!==track){unavailable.add(track);return null}
    return {card,uploaded_at:file.customMetadata?.uploaded_at||null};
-  }catch(e){console.warn("Unreadable November 24 private TRI source for Pick Tickets",track);return null}
+  }catch(e){unavailable.add(track);console.warn("Unreadable November 24 private TRI source for Pick Tickets",track);return null}
  }));
- return found.filter(Boolean);
+ const direct=found.filter(Boolean);
+ const names=new Set(direct.map(x=>x.card.track_name));
+ // Exact scored handoff is a separate, prescratch-only Pick source.
+ // Never supersede current projections or fall back after a read error.
+ try {
+  const file=await env.CARDS_BUCKET.get("pick-tickets/interim/2026-11-24/revision-0001.json");
+  if(file){
+   const raw=await file.text(),bytes=new TextEncoder().encode(raw);
+   const digest=await crypto.subtle.digest("SHA-256",bytes);
+   const hash=[...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,"0")).join("");
+   if(hash!=="4130a2873d2369956ccbdd82dd7097ef700fb5b58e93722ec37927ba81e18399")throw Error("Private handoff hash mismatch");
+   const src=JSON.parse(raw);
+   if(src.schema_version!==1||src.product_type!=="pick_tickets_prescratch_tri_f4"||
+      src.race_date!==PICK_DAY_1124||src.review_only!==true||src.tracks?.length!==6)throw Error("Invalid November 24 source envelope");
+   const candidates=[];
+   for(const track of src.tracks){
+    if(names.has(track.track)||unavailable.has(track.track))continue;
+    if(!Object.hasOwn(PICK_TRACK_COUNTS_1124,track.track)||!(/^[0-9a-f]{64}$/.test(track.tri_sha256))||!(/^[0-9a-f]{64}$/.test(track.f4_sha256)))throw Error("Invalid frozen scorer receipt");
+    const card={race_date:PICK_DAY_1124,track_name:track.track,projection_status:"prescratch",
+     model_name:"TRI V4.1 / F4 V2",model_receipts:{tri_sha256:track.tri_sha256,f4_sha256:track.f4_sha256},
+     races:track.races.map(r=>({race_number:r.race_number,scratch_count:null,scratches:[],
+      entries:r.entries.map(e=>({program_number:e[0],win_probability_exact:e[1],f4_probabilities:{exact_p1:e[2]}}))}))};
+    if(!checkedCurrentFields(card))throw Error("Invalid frozen full-field handoff");
+    candidates.push({card,uploaded_at:file.customMetadata?.uploaded_at||null});
+   }
+   direct.push(...candidates);
+  }
+ }catch(e){console.warn("November 24 sealed Pick source rejected",String(e).slice(0,120))}
+ return direct;
 }
 export function buildPrescratchPickTicketReview(cards){
  const results=[],rejected=[];
