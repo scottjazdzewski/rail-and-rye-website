@@ -1,8 +1,8 @@
-/* Page six only. Shared public-site hero, typography, color palette and footer remain authoritative. */
+/* Shared customer product access and page six. Shared public-site hero, typography, color palette and footer remain authoritative. */
 .rr-commerce-hub .rr-hub-layout{align-items:start}
 body.heritage-home.heritage-store-page.rr-commerce-hub .heritage-store-layout{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.35fr);gap:clamp(16px,2vw,32px);align-items:start;padding-bottom:32px}
 .rr-commerce-hub .rr-hub-overview{display:grid;gap:8px;max-width:420px;margin:22px 0 14px;padding:14px 16px;border:1px solid #d4a75999;border-radius:9px;background:#061d2dd9;color:#f5ead7;font:600 12px/1.45 var(--heritage-sans)}
-.rr-commerce-hub .rr-hub-date-label,.rr-commerce-hub .rr-hub-eyebrow{font:700 10px/1.3 var(--heritage-sans);letter-spacing:.12em;text-transform:uppercase;color:#a77735}
+.rr-commerce-hub .rr-hub-date-label,.rr-commerce-hub .rr-hub-eyebrow{font:700 10px/1.3 var(--heritage-sans);letter-spacing:.12em;text-transform:uppercase;color:#e8bd72}
 .rr-commerce-hub .rr-hub-date-label{color:#e8bd72}
 .rr-commerce-hub select{font:600 12px/1.35 var(--heritage-sans);border:1px solid #c7a36c;border-radius:6px;background:#fff9ed;color:#152c37;padding:8px 10px;max-width:100%;min-width:0}
 .rr-commerce-hub .rr-hub-overview-row{display:flex;justify-content:space-between;align-items:center;gap:8px;border-top:1px solid #d4a75944;padding-top:7px}
@@ -10,19 +10,19 @@ body.heritage-home.heritage-store-page.rr-commerce-hub .heritage-store-layout{di
 .rr-commerce-hub .rr-hub-links{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
 .rr-commerce-hub .rr-hub-links .heritage-recovery{background:#061d2dcc;color:#f5ead7;border-color:#d4a759}
 .rr-commerce-hub .rr-hub-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.rr-commerce-hub .rr-hub-product{display:flex;flex-direction:column;min-width:0;background:#fff9ed;color:#152c37;border:1px solid #c7a36c;border-top:3px solid #d4a759;border-radius:9px;overflow:hidden;box-shadow:0 6px 20px #0003}
+.rr-commerce-hub .rr-hub-product{display:flex;flex-direction:column;min-width:0;background:linear-gradient(145deg,#0b2637f5,#061d2df5);color:#fff7e9;border:1px solid #c7a36c;border-top:3px solid #d4a759;border-radius:9px;overflow:hidden;box-shadow:0 6px 20px #0003}
 .rr-commerce-hub .rr-hub-product-art{display:block;width:100%;height:clamp(76px,8vw,130px);object-fit:cover;object-position:center}
 .rr-commerce-hub .rr-hub-product-body{display:flex;flex:1;flex-direction:column;gap:6px;padding:12px;min-width:0}
-.rr-commerce-hub .rr-hub-product h2{font:600 clamp(24px,2vw,34px)/.98 var(--heritage-serif);color:#152c37;margin:2px 0 0}
-.rr-commerce-hub .rr-hub-product p{font:500 12px/1.45 var(--heritage-sans);color:#43545a;margin:0}
+.rr-commerce-hub .rr-hub-product h2{font:600 clamp(24px,2vw,34px)/.98 var(--heritage-serif);color:#fff7e9;margin:2px 0 0}
+.rr-commerce-hub .rr-hub-product p{font:500 12px/1.45 var(--heritage-sans);color:#f5ead7;margin:0}
 .rr-commerce-hub .rr-hub-status-row{display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap;margin-top:auto;padding-top:5px}
-.rr-commerce-hub .rr-hub-state{font:700 9px/1.3 var(--heritage-sans);letter-spacing:.045em;text-transform:uppercase;color:#5c6364;border:1px solid #c5bda9;padding:5px 8px;border-radius:99px}
-.rr-commerce-hub .rr-hub-state[data-state="published"],.rr-commerce-hub .rr-hub-state[data-state="owned"]{color:#183c36;border-color:#809b82;background:#e7efe3}
-.rr-commerce-hub .rr-hub-price{font:700 13px/1.3 var(--heritage-sans);color:#152c37}
+.rr-commerce-hub .rr-hub-state{font:700 9px/1.3 var(--heritage-sans);letter-spacing:.045em;text-transform:uppercase;color:#e0ceb0;border:1px solid #c7a36c80;padding:5px 8px;border-radius:99px}
+.rr-commerce-hub .rr-hub-state[data-state="published"],.rr-commerce-hub .rr-hub-state[data-state="owned"]{color:#e4f2dc;border-color:#809b82;background:#183c36}
+.rr-commerce-hub .rr-hub-price{font:700 13px/1.3 var(--heritage-sans);color:#fff7e9}
 .rr-commerce-hub .rr-hub-choice{display:grid;gap:3px;font:600 10px var(--heritage-sans)}
 .rr-commerce-hub .rr-hub-choice[hidden]{display:none}
-.rr-commerce-hub .rr-hub-action{display:flex;align-items:center;justify-content:center;min-height:40px;width:100%;border:1px solid #d4a759;border-radius:99px;padding:9px 13px;color:#fff7e9;background:linear-gradient(140deg,#061d2d,#18313b);font:700 10px/1.25 var(--heritage-sans);letter-spacing:.07em;text-transform:uppercase;cursor:pointer}
-.rr-commerce-hub .rr-hub-action:disabled{background:#ede8dd;color:#5d6465;border-color:#c5bda9;cursor:default}
+.rr-commerce-hub .rr-hub-action{display:flex;align-items:center;justify-content:center;min-height:40px;width:100%;border:1px solid #d4a759;border-radius:99px;padding:9px 13px;color:#152c37;background:#e8bd72;font:700 10px/1.25 var(--heritage-sans);letter-spacing:.07em;text-transform:uppercase;cursor:pointer}
+.rr-commerce-hub .rr-hub-action:disabled{background:#173142;color:#c6cdd0;border-color:#73818b;cursor:default}
 .rr-commerce-hub .rr-hub-universal{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:20px;border:1px solid #d4a759;border-radius:9px;background:linear-gradient(135deg,#061d2d,#18313b);color:#fff7e9;padding:clamp(15px,2vw,24px);box-shadow:0 6px 20px #0003}
 .rr-commerce-hub .rr-hub-universal .rr-hub-eyebrow{color:#e8bd72}
 .rr-commerce-hub .rr-hub-universal h2{font:600 clamp(30px,3vw,45px)/1 var(--heritage-serif);margin:3px 0 6px;color:#fff7e9}
@@ -58,3 +58,13 @@ body.heritage-home.heritage-store-page.rr-commerce-hub .heritage-store-layout{di
  .rr-commerce-hub .rr-hub-universal h2{font-size:clamp(27px,2.5vw,38px)}
  .rr-commerce-hub .rr-hub-universal-actions{gap:5px}
 }
+
+/* Individual product pages share the exact Hub controls inside the approved navy purchase rail. */
+.rr-commerce-hub.rr-hub-product-rail{display:flex;flex-direction:column;gap:12px;color:#fff7e9}
+.rr-hub-product-rail .rr-hub-product{display:block;border:0;border-radius:0;background:transparent;box-shadow:none;min-width:0}
+.rr-hub-product-rail .rr-hub-product-body{padding:0;gap:12px}
+.rr-hub-product-rail .rr-hub-action{min-height:42px}
+.rr-hub-product-rail .rr-hub-status-row{margin:0;padding:0}
+.rr-hub-product-rail .rr-hub-links{margin-top:0}
+.rr-hub-product-rail .rr-hub-date-label{margin-top:4px}
+.rr-hub-product-rail #rr-hub-date{width:100%}

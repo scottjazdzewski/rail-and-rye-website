@@ -5,7 +5,8 @@ const formatDate=d=>new Intl.DateTimeFormat("en-US",{timeZone:"UTC",dateStyle:"l
 const validDate=d=>typeof d==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(d)&&Number.isFinite(Date.parse(d+"T12:00:00Z"));
 const today=()=>new Intl.DateTimeFormat("en-CA",{timeZone:"America/New_York",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
 let products=[],days=[],universal=false,accessKnown=false,catalogKnown=false,checkoutReady=false,live=false;
-const note=s=>{notice.textContent=s};
+const note=s=>{if(notice)notice.textContent=s};
+if(!date)return;const visibleCats=qa(".rr-hub-product").map(card=>card.dataset.productCategory);const setText=(s,v)=>{const e=q(s);if(e)e.textContent=v};
 const bundleItems=p=>p.kind==="bundle"&&Array.isArray(p.included_products)?p.included_products:[];
 const covered=(p,cat,d)=>bundleItems(p).some(i=>i.category===cat&&i.race_date===d);
 const fullBundle=(p,d)=>p.kind==="bundle"&&bundleItems(p).length>0&&bundleItems(p).every(i=>i.race_date===d)&&cats.every(c=>covered(p,c,d));
@@ -29,11 +30,13 @@ function render(){
   else if(!published){button.textContent="Unavailable"}
   else if(unlocked||selected?.price_cents===0){button.disabled=false;button.textContent="Open";button.onclick=()=>open(cat,d)}
   else if(selected&&checkoutReady&&live){button.disabled=false;button.textContent="Purchase Access";button.onclick=()=>checkout(selected,button)}
-  else{button.textContent=selected?"Checkout unavailable":"Available with bundle"}
+  else if(!selected&&published){button.textContent="View bundle access";button.disabled=false;button.onclick=()=>location.assign("/store/?date="+encodeURIComponent(d))}
+  else{button.textContent="Checkout unavailable"}
   select.onchange=render;
  }
- q("#rr-hub-count").textContent=catalogKnown?count+" of 4 published":"Unavailable";
- q("#rr-hub-access").textContent=!accessKnown?"Unavailable":universal?"All-Access membership":owned===4?"Full access":owned?owned+" of 4 unlocked":"No access for this date";
+ setText("#rr-hub-count",catalogKnown?count+" of 4 published":"Unavailable");
+ setText("#rr-hub-access",!accessKnown?"Unavailable":universal?"All-Access membership":owned===4?"Full access":owned?owned+" of 4 unlocked":"No access for this date");
+ if(!full||!price)return;
  price.textContent=bundle&&owned!==4&&!universal?dollar(bundle.price_cents):"";
  full.disabled=true;full.onclick=null;
  if(accessKnown&&(universal||owned===4)){full.disabled=false;full.textContent="Full Access Active";full.disabled=true;full.onclick=null}
@@ -45,7 +48,7 @@ async function load(path){const r=await fetch(path,{cache:"no-store",credentials
  const [catalog,access]=await Promise.allSettled([load("/api/products"),load("/api/product-tabs/library")]);
  if(catalog.status==="fulfilled"&&Array.isArray(catalog.value.products)){products=catalog.value.products.filter(p=>p&&typeof p.id==="string"&&Number.isInteger(p.price_cents));catalogKnown=true;checkoutReady=catalog.value.checkout_ready===true;live=catalog.value.checkout_mode==="live"}
  if(access.status==="fulfilled"&&Array.isArray(access.value.days)){days=access.value.days;universal=access.value.universal_access===true;accessKnown=true}
- const dates=new Set([today()]);for(const p of products){if(validDate(p.race_date))dates.add(p.race_date);for(const i of bundleItems(p))if(validDate(i.race_date))dates.add(i.race_date)}for(const i of days)if(validDate(i.race_date))dates.add(i.race_date);
+ const dates=new Set([today()]);for(const p of products){if(p.kind==="single"&&visibleCats.includes(p.category)&&validDate(p.race_date))dates.add(p.race_date);for(const i of bundleItems(p))if(visibleCats.includes(i.category)&&validDate(i.race_date))dates.add(i.race_date)}for(const i of days)if(visibleCats.includes(i.category)&&validDate(i.race_date))dates.add(i.race_date);
  const match=location.hash.match(/^#edition-([a-f0-9-]{36})$/i)?.[1],deep=products.find(p=>p.id===match),requested=deep?.race_date||query.get("date");
  date.replaceChildren();for(const d of [...dates].filter(validDate).sort().reverse()){const option=document.createElement("option");option.value=d;option.textContent=formatDate(d);date.append(option)}
  date.value=dates.has(requested)?requested:today();if(!date.value)date.selectedIndex=0;date.disabled=false;

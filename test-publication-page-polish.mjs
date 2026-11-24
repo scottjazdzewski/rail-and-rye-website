@@ -3,39 +3,35 @@ import {readFileSync} from 'node:fs';
 
 const read=path=>readFileSync(path,'utf8');
 const catalog=read('public/store/index.html');
-const pageJs=read('public/assets/publication-detail-v1.js');
+const pageJs=read('public/assets/rr-commerce-hub.js');
 const css=read('public/assets/rail-rye-pages.css');
+const hubCss=read('public/assets/rr-commerce-hub.css');
 const journal=read('public/journal/index.html');
 const expected=[
- ['longshot-radar','Longshot Radar','3'],
- ['stable-notes','Stable Notes','4'],
- ['target-list','Target List','5']
+ ['public/race-cards/index.html','Race Cards','1'],
+ ['public/publications/pick-tickets/index.html','Pick Tickets','2'],
+ ['public/publications/longshot-radar/index.html','Longshot Radar','3'],
+ ['public/publications/target-list/index.html','Target List','5']
 ];
-for(const [slug,category,chip] of expected){
- const page=read('public/publications/'+slug+'/index.html');
- assert.ok(page.includes('data-publication-category="'+category+'"'));
- assert.ok(page.includes('/assets/approved/saddlecloths/'+chip+'.png'), 'Preserve approved saddlecloth '+chip);
- assert.ok(page.includes('id="rr-pub-recent"'),category+' needs recent-edition links');
- assert.ok(page.includes('publication-detail-v1.js?v=8'), 'New linked-edition script not cache-stale');
- assert.ok(page.includes('rail-rye-pages.css?v=50'), 'New scoped layout not cache-stale');
- assert.ok(page.includes('class="rr-racecards-purchase-rail"'), 'Keep the approved hero rail');
- assert.ok(page.includes('href="/store/?category='+category.replaceAll(' ','%20')+'"'), 'Keep category browse link');
+for(const [path,category,chip] of expected){
+ const page=read(path);
+ assert.ok(page.includes('data-product-category="'+category+'"'));
+ assert.ok(page.includes('/assets/approved/saddlecloths/'+chip+'.png'),'Preserve approved saddlecloth');
+ assert.ok(page.includes('rr-commerce-hub.js?v=3'),'One shared purchase implementation');
+ assert.ok(page.includes('rr-commerce-hub.css?v=3'));
+ assert.ok(page.includes('rr-racecards-purchase-rail'));
+ assert.ok(page.includes('id="rr-hub-date"'));
+ assert.ok(!/script src="\/assets\/(?:race-cards-page-v1|publication-detail-v1)\.js/.test(page),'No old PDF purchase renderer');
+ assert.ok(!/<a[^>]*href="\/race-cards\/"[^>]*>Race Cards<\/a>/.test(page),'No redundant nav pill');
 }
-assert.ok(!read('public/publications/longshot-radar/index.html').includes('morning-line odds'),
-  'Longshot copy must not incorrectly present morning-line odds as the model input');
-assert.ok(pageJs.includes("editionHref=p=>'/store/?category='+encodeURIComponent(category)+'#edition-'+encodeURIComponent(p.id)"),
-  'Each edition must point to its product in the Publication Desk');
-assert.ok(pageJs.includes('renderRecent(products)'), 'Category hero rail must show recent editions');
-assert.ok(pageJs.includes('products.slice(1,5)'), 'Do not repeat the latest product; show a handful only');
-assert.ok(pageJs.includes("editionLink.className='rr-pub-edition-overlay'"),
-  'Latest glass card must have a clickable surface separate from purchase');
-assert.ok(pageJs.includes('makePurchaseButton(p,data,onError)'),
-  'Keep existing Stripe/free-PDF purchase behavior');
-assert.ok(catalog.includes("card.id='edition-'+p.id"), 'Store must anchor individual product IDs');
-assert.ok(catalog.includes("location.hash.match(/^#edition-[0-9a-f-]{36}$/i)"),
-  'Store must focus an edition only after asynchronous inventory loads');
-assert.ok(css.includes('body.heritage-publication-page .rr-pub-recent-link'), 'Responsive recent edition styles');
-assert.ok(css.includes('body.heritage-publication-page .rr-pub-edition-overlay'), 'Card link overlay styles');
+assert.ok(catalog.includes('rr-commerce-hub.js?v=3'));
+assert.ok(catalog.includes('rr-commerce-hub.css?v=3'));
+assert.ok(pageJs.includes('"/api/products"'));
+assert.ok(pageJs.includes('"/api/product-tabs/library"'));
+assert.ok(pageJs.includes('"/api/checkout"'));
+assert.ok(pageJs.includes('"/my-products/?category="'));
+assert.ok(hubCss.includes('linear-gradient(145deg,#0b2637f5,#061d2df5)'));
+assert.ok(!read('public/publications/longshot-radar/index.html').includes('morning-line odds'));
 assert.ok(journal.includes("if(returnLink){returnLink.href='/journal/';"),
   'Page 9 provides a clear return to the Page 2 Journal');
 assert.ok(journal.includes('rr-journal-archive-view'), 'Archive keeps its unique Page 9 route treatment');
@@ -47,10 +43,10 @@ assert.ok(css.includes('position:relative;z-index:1;flex:0 0 auto;'),'Footer no 
 
 assert.ok(journal.includes("if(archiveRoute){"), 'Archive counts are conditional, avoiding Page 2 changes');
 assert.ok(journal.includes('/assets/approved/saddlecloths/9.png'), 'Keep Page 9 numbered saddlecloth');
-assert.ok(journal.includes('rail-rye-pages.css?v=50'), 'Journal landing, archive and articles load updated shared stylesheet');
+assert.ok(/rail-rye-pages\.css\?v=\d+/.test(journal), 'Journal landing, archive and articles load updated shared stylesheet');
 assert.ok(css.includes('body.heritage-journal-page.rr-journal-archive-view .rr-journal-archive-pill'),
   'Page 9 archive return link is visible, without changing Page 2');
-for(const code of [pageJs,catalog.split('<script>').slice(-1)[0].split('</script>')[0],
+for(const code of [pageJs,
   journal.split('<script>').slice(-1)[0].split('</script>')[0]])new Function(code);
 const home=read('public/index.html');
 assert.ok(home.includes('The Science of Racing.'), 'Homepage remains approved');

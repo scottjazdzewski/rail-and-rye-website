@@ -2,7 +2,7 @@
 
 **Status: OWNER APPROVED / DO NOT REDESIGN**  
 **Approved:** November 4, 2026 (owner-authorized Racing Wire header pill)
-**Frozen homepage HTML blob:** `6e70da25719d5b4cfc242a052fffd73f95f62f8b` (owner-authorized navigation rename, November 24, 2026)  
+**Frozen homepage HTML blob:** `4ed5877178fd30070e7de7dc8e3ebc9de8ed7eae` (owner-authorized navigation rename, November 24, 2026)  
 **Recovery snapshot branch:** `approved-homepage-2026-11-22`  
 **Website:** https://railandryeracing.com/
 
@@ -56,3 +56,7 @@ The owner approved **Pick Tickets** as Page 2 with `public/assets/approved/publi
 ## November 24 navigation-only change
 
 Owner requested Intelligence Hub instead of Publications and removal of My Tabs from customer-facing navigation. The homepage layout, artwork, typography, and existing routes remain unchanged.
+
+## November 24 — consolidated product navigation
+
+Owner requested removal of the redundant Race Cards navigation pill. The homepage product tiles continue to point to their original individual landing pages; the Explore Intelligence Hub link retains /store/. No hero artwork, typography, tile geometry or shared styling was changed.
