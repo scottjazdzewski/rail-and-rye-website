@@ -1,0 +1,59 @@
+name: Confirm November 25 Radar scheduled catalog receipt
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/verify-radar-stage-1125.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check src/longshot-radar-staging.js && node --check src/index.js
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install boto3==1.40.36
+      - name: Verify private stage, customer copy and catalog timing readback
+        env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+        run: |
+          python - <<'PY'
+          import os,json,hashlib,boto3
+          from botocore.exceptions import ClientError
+          s3=boto3.client("s3",endpoint_url="https://"+os.environ["TRI_CLOUDFLARE_ACCOUNT_ID"].strip()+".r2.cloudflarestorage.com",region_name="auto",aws_access_key_id=os.environ["TRI_R2_ACCESS_KEY_ID"].strip(),aws_secret_access_key=os.environ["TRI_R2_SECRET_ACCESS_KEY"].strip())
+          def read(k):
+              try:
+                  o=s3.get_object(Bucket="rail-and-rye-private-cards",Key=k)
+                  return o["Body"].read(),o.get("Metadata",{})
+              except ClientError as e:
+                  if e.response.get("Error",{}).get("Code") in ("NoSuchKey","404","NotFound"):return None,{}
+                  raise
+          prefix="intelligence/longshot-radar/staging/2026-11-25/"
+          raw,meta=read(prefix+"revision-0001.json")
+          assert raw and meta.get("stage_only")=="true"
+          digest=hashlib.sha256(raw).hexdigest()
+          assert meta.get("sha256")==digest and meta.get("release_at")=="2026-11-25T08:00:00Z"
+          assert len(json.loads(raw)["candidates"])==11
+          print("RADAR_PRIVATE_STAGE_VERIFIED",digest,meta["release_at"],flush=True)
+          receipt,_=read(prefix+"prepared-0001.json")
+          if not receipt:
+              print("RADAR_CATALOG_QUEUE_NOT_YET_CONFIRMED",flush=True)
+              raise SystemExit(2)
+          r=json.loads(receipt)
+          assert r["sha256"]==digest and r["date"]=="2026-11-25" and r["release_at"]=="2026-11-25T08:00:00Z"
+          assert r["catalog_release_at"]=="2026-11-25 08:00:00" and r["product_id"] and r["candidates"]==11
+          review,rm=read("intelligence/longshot-radar/review/2026-11-25.json")
+          customer,cm=read("racing-intelligence/product-tabs/longshot-radar/2026-11-25.json")
+          assert review==raw and rm.get("review_only")=="true"
+          assert customer==raw and cm.get("customer_publish_approved")=="true" and cm.get("content_sha256")==digest
+          print("RADAR_CATALOG_QUEUE_VERIFIED",r["prepared_at"],"11 selections, 08:00 UTC, exact customer readback.",flush=True)
+          PY
