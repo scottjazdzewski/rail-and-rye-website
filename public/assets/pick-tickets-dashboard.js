@@ -331,7 +331,7 @@
    // Current V3.3 ticket: show what each selected leg covers and the
    // incremental opportunity cost of OPTIONAL runners only inside Insights.
    const meta=activeSeq.review_meta;
-   if(meta?.method==="V3.3-TRI-ONLY-SINGLE-RECTANGLE-COVER50"&&
+   if((meta?.method==="V3.3-TRI-ONLY-SINGLE-RECTANGLE-COVER50"||meta?.method==="V3.4-TRI-ONLY-LENGTH-SENSITIVE-TRIAL-A")&&
       Array.isArray(meta.selected_leg_coverage)){
     const section=node("section","rr-pt-coverage-breakdown");
     section.append(node("h4","","Race coverage"));
@@ -367,6 +367,13 @@
      table.append(body);details.append(table);section.append(details);
     }
     stage.append(section);
+   }
+   const priorTrial=meta?.comparison_v33;
+   if(priorTrial){
+    const block=node("section","rr-pt-sensitivity");
+    block.append(node("h4","","V3.3 comparison"));
+    block.append(node("p","","Previous ticket: "+priorTrial.combinations+" combinations · "+money(priorTrial.total_cents)+" · "+priorTrial.hit_rate_display+" projected hit"));
+    stage.append(block);
    }
    const comparisons=activeSeq.review_meta?.cost_preference_comparison;
    if(Array.isArray(comparisons)&&comparisons.length){
@@ -453,7 +460,7 @@
   E.app.hidden=!entry;E.empty.hidden=!!entry;
 
   if(!entry){renderIntake();return;}
-  E.updated.textContent=entry.card.track+" · "+toDate(entry.card.date);
+  E.updated.textContent=entry.card.track+" · "+toDate(entry.card.date)+(entry.card.formula_version?.startsWith("V3.4-")?" · V3.4 trial":"");
   renderTypes();
  }
  async function call(url,opts){
@@ -465,7 +472,9 @@
  async function load(){
   setMessage("Loading Pick Tickets…");
   try{
-   const real=await call("/api/admin/pick-tickets");
+   const requestedTrial=new URLSearchParams(window.location.search).get("trial")==="v34";
+   const real=await call("/api/admin/pick-tickets"+(requestedTrial?"?trial=v34":""));
+   if(requestedTrial&&real.trial!=="V3.4")throw Error("V3.4 trial is not available on this deployment.");
    certified=(real.cards||[]).filter(entry=>entry?.card?.status!=="demo"&&!entry?.card?.is_demo);
    intake=real.intake||null;scratchUpdate=real.scratch_update||null;
     useData();
