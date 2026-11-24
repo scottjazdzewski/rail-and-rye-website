@@ -83,26 +83,34 @@
   }
   return text;
  }
+ // An official event name must never be reduced to its race classification.
+ function genericStakes(value){
+  return /^(?:(?:overnight|listed|graded|ungraded|restricted|open|non-graded)\s+)?(?:stake|stakes|stks?\.?|s\.?)\s*(?:\(?\s*(?:g[123]|grade\s*[123])\s*\)?)?$/i.test(clean(value));
+ }
  function describe(race){
-  const raw=clean(race?.stakes_name||race?.race_name||race?.conditions||"Race projections");
-  const hasGradeField=race?.stakes_grade!==undefined||race?.grade!==undefined;
+  const candidates=[race?.stakes_name,race?.race_name,race?.conditions]
+   .map(clean).filter(Boolean);
+  const raw=candidates.find(value=>!genericStakes(dropGrade(value)))||
+   candidates[0]||"Race projections";
   const specificGrade=numericGrade(race?.stakes_grade??race?.grade);
   const printedGrade=extractGradeFromTitle(raw) ?? extractGradeFromTitle(race?.conditions);
-  // A conflict or unrecognized official grade must never be silently
-  // transformed into a different trophy.
   const conflict=specificGrade&&printedGrade&&specificGrade!==printedGrade;
   const grade=conflict?null:(specificGrade||printedGrade);
   const hasStakesSignal=Boolean(grade||race?.is_stakes===true||
-    /\bStakes?\b|\bStks?\.?\b|\bS\.$/i.test(raw)||
-    /\b(?:S|Stk|Stks)\.?\s*\(?\s*(?:G[123]|GI{1,3}|Grade\s+[123])\b/i.test(raw)||
-    (race?.stakes_name&&clean(race.stakes_name)));
+   candidates.some(value=>/\bStakes?\b|\bStks?\.?\b|\bS\.$/i.test(value))||
+   (race?.stakes_name&&clean(race.stakes_name)));
   let title=dropGrade(removeSponsor(raw,race?.sponsor||race?.sponsor_name));
   title=expandStakesTitle(title,hasStakesSignal);
-  // A conflicting grade in the source should never display a fabricated
-  // trophy. Preserve the text rather than guessing at its classification.
   if(conflict)title=expandStakesTitle(removeSponsor(raw,race?.sponsor||race?.sponsor_name),true);
-  return {title:title||"Race projections",grade:isNumber(grade)?grade:null,stakes:!!hasStakesSignal};
+  const missingStakesName=hasStakesSignal&&genericStakes(dropGrade(title));
+  // Legacy fallback never misrepresents an unnamed race as "Stakes".
+  // Publication validation rejects missing names; verified dated data repairs
+  // previously published metadata without changing TRI/F4 model inputs.
+  if(missingStakesName)title=Number.isInteger(Number(race?.race_number))?
+   "Race "+race.race_number:"Race";
+  return {title:title||"Race projections",grade:isNumber(grade)?grade:null,
+   stakes:!!hasStakesSignal,missingStakesName:!!missingStakesName};
  }
  function isNumber(value){return Number.isInteger(value)&&value>=1&&value<=3;}
- root.RRRaceTitles=Object.freeze({describe,numericGrade});
+ root.RRRaceTitles=Object.freeze({describe,numericGrade,genericStakes});
 })(globalThis);
