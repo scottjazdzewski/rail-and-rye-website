@@ -20,6 +20,7 @@ function describe(entry){
   .replace(/\s*\(\s*(?:G(?:rade)?\.?|Gr\.?)\s*[-:]?\s*(?:III|II|I|[123])\s*\)\s*$/i,"").trim();
  const caps=/[A-Z]/.test(title)&&!/[a-z]/.test(title);
  title=title.replace(/\b(?:S|Stk|Stks)\.?$/i,"Stakes").trim();
+ if(/^Stakes?$/i.test(title))title="Race "+entry.race_number;
  if(caps)title=title.toLowerCase().replace(/\b[a-z]/g,c=>c.toUpperCase());
  return title?{title,grade:null}:null;
 }
