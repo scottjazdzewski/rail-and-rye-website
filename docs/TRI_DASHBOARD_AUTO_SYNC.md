@@ -8,11 +8,14 @@ TRI scoring run + certified badge-evaluator QA → direct private R2 publisher �
 
 **Removed:** Google Cloud project, Google Drive API service account, Google Drive folder polling, Google Drive-to-R2 transfer, recurring manual JSON file conversions, and the unused two-hour GitHub Actions polling job. Keep Google Drive only for the existing production archive if desired.
 
+## Current operator decision — supersedes automatic scorer integration language below
+The operator runs the existing private PDF production workflow in ChatGPT and initiates output delivery from the same conversation. No website-hosted engine or autonomous model runner is authorized. The direct R2 publisher and approved encrypted transfer remain output-only options; use only a route available and authenticated in the session. The existing qualification requirements apply to the actual prescratch and scratch-final output handoff, not an engine migration. See [Website Race Card Production Lock V1](WEBSITE_RACECARD_PRODUCTION_LOCK_V1.md) for controlling daily instructions.
+
 ## What is running, what is pending
 
 - The direct publisher exists at `scripts/tri_dashboard_sync.py` and is regression-tested with synthetic TRI evidence and a simulated private R2 client.
 - The Cloudflare Worker and dashboard already read from `rail-and-rye-private-cards`; the Worker does not need new endpoints or deployment configuration.
-- **The actual TRI scorer does not run in this GitHub website repo.** The CLI must be invoked automatically by the trusted runtime that currently produces each verified scored package. Until that integration is executed, the website will **not** receive new model data automatically.
+- **The actual TRI scorer does not run in this GitHub website repo.** The publisher is invoked from the ChatGPT production workflow after each verified scored package is produced. There is no requirement for autonomous scoring or publishing.
 - The user has already saved their R2 credentials in GitHub Actions repository secrets, but those secrets **are not automatically available** to the separate TRI scoring environment. Never request them in chat or commit them to the public repository.
 - For November 23, the verified 5-track/45-race/367-runner source ZIP already exists. Publishing it requires running the direct publisher in a trusted environment with scoped R2 credentials; no extra Google project is needed.
 
@@ -28,14 +31,14 @@ python scripts/tri_dashboard_sync.py --zip "/path/to/VERIFIED_TRI_SOURCE.zip"
 python scripts/tri_dashboard_sync.py --zip "/path/to/VERIFIED_TRI_SOURCE.zip" \
   --badge-source-zip "/path/to/APPROVED_RACECARD_BADGE_QA.zip"
 
-# The production scorer calls this once after both current-source gates PASS:
+# The ChatGPT-operated private production workflow invokes this after both current-source gates PASS:
 python scripts/tri_dashboard_sync.py --zip "/path/to/VERIFIED_TRI_SOURCE.zip" \
   --badge-source-zip "/path/to/APPROVED_RACECARD_BADGE_QA.zip" --publish
 ```
 
 The publishing command **requires** the second source-verified badge QA ZIP. It will not publish an incomplete initial card that is missing its five factors. The QA ZIP must contain `SHA256_MANIFEST.json`, `output/FINAL_QA_RECEIPT.json`, all `data/<TRACK>/badge_audit_ledger.json` and `data/<TRACK>/<TRACK>_RACE_ONLY_INPUT.json`, and current-root renderer self-test proof. The exact evaluator release is `TBS_FACTOR_BADGE_EVALUATOR_V1_2_6_FIT_CLASS_FORM_GUARDS`. The publisher crosschecks every race, purse, original program/horse, frozen PWIN and all five colors against both evidence sets. No re-scoring or new color thresholds are performed.
 
-This command must be invoked **once, automatically, by the model runner**, only after its frozen scoring, badge-evaluator and receipt gates pass. It is idempotent by scored source SHA-256. For a no-write R2 permission/preflight test add `--dry-run` to `--publish`.
+This command may be invoked by the ChatGPT production session, only after its frozen scoring, badge-evaluator and receipt gates pass. It is idempotent by scored source SHA-256. For a no-write R2 permission/preflight test add `--dry-run` to `--publish`.
 
 Run `python -m unittest discover -s tests -p 'test_tri_dashboard_sync.py' -v` for the synthetic QA.
 
@@ -45,7 +48,7 @@ Run `python -m unittest discover -s tests -p 'test_tri_dashboard_sync.py' -v` fo
 - `TRI_R2_ACCESS_KEY_ID` — a token restricted to **Object Read & Write** on `rail-and-rye-private-cards`.
 - `TRI_R2_SECRET_ACCESS_KEY` — matching secret access key.
 
-Use an encrypted environment/secret manager where the **scorer runs**. Do not paste private values into GitHub source files or chat. If the scorer is moved into an authenticated GitHub Actions runner, it can use the three existing repository secrets without another provider. Otherwise configure the R2 credentials in the trusted scorer runtime. This is the only remaining integration dependency.
+Use an encrypted environment/secret manager where the **scorer runs**. Do not paste private values into GitHub source files or chat. The existing authenticated encrypted transfer can use the publisher's scoped secrets without moving the scorer into GitHub Actions. No engine migration is authorized. If direct credentials are not available in the private session, use the existing approved output-only handoff.
 
 Requires `boto3` in the publishing runtime (`pip install boto3`). No `google-auth`, Google Cloud project, `requests`, or Drive folder credentials required.
 
@@ -80,9 +83,9 @@ The trusted TRI runtime must process each date/track scratch upload in this orde
 4. The scorer/publisher uploads the full current scored field to the existing authenticated private `/api/admin/projections/batch` endpoint or approved direct R2 delivery. The batch route verifies ordered F4 and calls `auditV33FieldUpload`, which recomputes **every official V3.3 sequence** for the complete track, including cost/combos, independent TRI leg coverage and full sequence hit. The source-bound audit is saved privately.
 5. **Only after 1–4** should private Pick Tickets be displayed for review. Customer release is a separate approval. On missing/unchanged/scorer-unverified new inputs, hold **all** affected sequences. Neither the previous ticket nor scratch-elimination-only tickets can substitute.
 
-The website now explicitly withholds postscratch tickets while the field still has `factor_basis=verified_prescratch`, even when the scratch list and mathematical V3.3 output reconcile perfectly. This is a **prevention guard**, not an automatic scorer. The external scorer must be wired by the TRI engineering/runtime owner.
+The website now explicitly withholds postscratch tickets while the field still has `factor_basis=verified_prescratch`, even when the scratch list and mathematical V3.3 output reconcile perfectly. This is a **prevention guard**, not an automatic scorer. The ChatGPT-operated scratch output handoff must be qualified; the scorer remains private.
 
 
 ## Daily production authority
 
-Follow [Website Race Card Production Lock V1](WEBSITE_RACECARD_PRODUCTION_LOCK_V1.md). The CLI now preflights both dashboard and ordered F4 stores before either write and checks exact private object and receipt metadata readback. This is not an atomic multi-object transaction or a protected dashboard display check. External runtime integration and live qualification remain required.
+Follow [Website Race Card Production Lock V1](WEBSITE_RACECARD_PRODUCTION_LOCK_V1.md). The CLI now preflights both dashboard and ordered F4 stores before either write and checks exact private object and receipt metadata readback. This is not an atomic multi-object transaction or a protected dashboard display check. ChatGPT-operated output handoff and live qualification remain required; automated external scorer integration is not requested.
