@@ -1,6 +1,7 @@
 import {enrichRaceInformation} from "./projection-race-information.js";
-/* Rail & Rye Target List: private, receipt-referenced structured editorial preview.
-   Customer-facing entitlement and launch routes deliberately not enabled here. */
+/* Receipt-validated Target List editions are stored privately in R2.
+   Buyer access is gated through product publication and category/date entitlement
+   checks in the Product Tabs route. */
 const HEADERS={"Content-Type":"application/json; charset=utf-8","Cache-Control":"private, no-store","X-Content-Type-Options":"nosniff","X-Robots-Tag":"noindex, nofollow, noarchive"};
 const PREFIX="racing-intelligence/target-list/";
 const MAX_BYTES=512*1024;

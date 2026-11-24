@@ -1,6 +1,7 @@
 import {enrichRaceInformation} from "./projection-race-information.js";
-/* Longshot Radar — private review only. No public data route or model scoring.
- * All requests must pass verifyAdmin in src/index.js before arriving here.
+/* Longshot Radar review records stay private and are never served directly.
+ * Admin publication makes a validated copy for the buyer tab; the buyer route
+ * still requires a current category/date entitlement before reading it.
  */
 const PREFIX="intelligence/longshot-radar/review/";
 const PRODUCT_TAB_PREFIX="racing-intelligence/product-tabs/longshot-radar/";
