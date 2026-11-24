@@ -1,0 +1,75 @@
+name: Verify November 24 real Pick Tickets in private R2
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/verify-pick-1124-private-source.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: pip install boto3==1.40.36
+      - name: Read private R2 current fields without displaying paid data
+        env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+        run: |
+          python - <<'PY'
+          import boto3,os,json
+          from botocore.exceptions import ClientError
+          from pathlib import Path
+          s3=boto3.client("s3",endpoint_url="https://"+os.environ["TRI_CLOUDFLARE_ACCOUNT_ID"].strip()+".r2.cloudflarestorage.com",region_name="auto",aws_access_key_id=os.environ["TRI_R2_ACCESS_KEY_ID"].strip(),aws_secret_access_key=os.environ["TRI_R2_SECRET_ACCESS_KEY"].strip())
+          keys=["pick-tickets/interim/2026-11-24/revision-0001.json"]+["projections/dashboard/2026-11-24/"+x+".json" for x in ["delta-downs","finger-lakes","mahoning-valley","mountaineer","parx-racing","zia-park"]]
+          result={}
+          for k in keys:
+              try:
+                  o=s3.get_object(Bucket="rail-and-rye-private-cards",Key=k)
+                  result[k]={"raw":o["Body"].read().decode(),"metadata":o.get("Metadata",{})}
+              except ClientError as e:
+                  if e.response.get("Error",{}).get("Code") not in ("NoSuchKey","404","NotFound"):raise
+          assert keys[0] in result
+          Path("/tmp/rr1124-private-readback.json").write_text(json.dumps(result))
+          print("Private date-specific source readback complete; no selections logged.")
+          PY
+      - name: Run actual admin handler against verified private source
+        run: |
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          import fs from 'node:fs';
+          import {handleAdminPickTickets} from './src/pick-tickets.js';
+          const input=JSON.parse(fs.readFileSync('/tmp/rr1124-private-readback.json','utf8'));
+          const makeBucket=items=>({
+            async list(){return {objects:[]}},
+            async get(key){const v=items[key];return v?{text:async()=>v.raw,json:async()=>JSON.parse(v.raw),customMetadata:v.metadata}:null}
+          });
+          async function verify(items,label){
+            const response=await handleAdminPickTickets(new Request('https://railandryeracing.com/api/admin/pick-tickets'),{CARDS_BUCKET:makeBucket(items)});
+            assert.equal(response.status,200);
+            const json=await response.json();
+            const cards=json.cards.filter(x=>x.card.date==='2026-11-24');
+            assert.equal(cards.length,6,label+' track count');
+            const seq=cards.flatMap(x=>x.card.sequences);
+            assert.equal(seq.length,50,label+' sequence count');
+            assert.ok(seq.every(x=>x.tickets.length===1 && x.review_meta.selected_leg_coverage.every(p=>p+1e-12>=.5)));
+            assert.ok(seq.every(x=>x.tickets[0].combinations===x.tickets[0].legs.reduce((p,l)=>p*l.programs.length,1)&&x.tickets[0].total_cents===x.tickets[0].unit_cents*x.tickets[0].combinations));
+            console.log('PASS '+label+': six tracks, 50 exact V3.3 tickets, every leg coverage >=50%, cost/combinations verified.');
+          }
+          const key='pick-tickets/interim/2026-11-24/revision-0001.json';
+          await verify({[key]:input[key]},'sealed source only');
+          await verify(input,'current private source precedence');
+          JS
+      - name: Remove private temporary bytes
+        if: always()
+        run: rm -f /tmp/rr1124-private-readback.json
