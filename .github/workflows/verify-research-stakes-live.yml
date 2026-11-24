@@ -10,6 +10,9 @@ on:
       - 'test-longshot-radar.mjs'
       - 'test-racing-intelligence-header.mjs'
       - 'public/assets/target-list-dashboard.js'
+      - 'public/assets/rr-research-race-banner.js'
+      - 'public/assets/rr-research-race-banner.css'
+      - 'test-shared-research-race-banner.mjs'
       - 'public/admin/longshot-radar.html'
       - 'public/admin/target-list-preview.html'
       - '.github/workflows/verify-research-stakes-live.yml'
@@ -30,6 +33,7 @@ jobs:
           node test-rr-race-titles.mjs
           node test-longshot-radar.mjs
           node test-target-list-hub.mjs
+          node test-shared-research-race-banner.mjs
       - name: Confirm Cloudflare serves exact source-controlled research readers
         shell: bash
         run: |
@@ -38,6 +42,8 @@ jobs:
           assets=(
             'assets/rr-race-titles.js'
             'assets/rr-stakes-inline.css'
+            'assets/rr-research-race-banner.js'
+            'assets/rr-research-race-banner.css'
             'assets/longshot-radar.js'
             'assets/target-list-dashboard.js'
           )
@@ -62,16 +68,22 @@ jobs:
             echo "::error::Cloudflare does not yet serve source-locked canonical research readers"
             exit 1
           fi
-          grep -Fq 'sourceRaceTitle(item)' /tmp/longshot-radar.js
-          grep -Fq 'appendGradeTrophy(line,title.grade)' /tmp/longshot-radar.js
-          grep -Fq 'sourceRaceTitle(entry)' /tmp/target-list-dashboard.js
-          grep -Fq 'appendGradeTrophy(facts,title.grade)' /tmp/target-list-dashboard.js
-          grep -Fq 'rr-ed-stakes-title' /tmp/target-list-dashboard.js
+          grep -Fq 'raceBanner.render(item)' /tmp/longshot-radar.js
+          grep -Fq 'raceBanner.render(entry)' /tmp/target-list-dashboard.js
+          ! grep -Fq 'sourceRaceTitle' /tmp/longshot-radar.js
+          ! grep -Fq 'sourceRaceTitle' /tmp/target-list-dashboard.js
+          ! grep -Fq 'rr-lr-racebar' /tmp/longshot-radar.js
+          ! grep -Fq 'rr-target-racebar' /tmp/target-list-dashboard.js
+          grep -Fq 'RRResearchRaceBanner=Object.freeze' /tmp/rr-research-race-banner.js
+          grep -Fq 'rr-research-racebar__facts' /tmp/rr-research-race-banner.js
+          grep -Fq 'appendGradeTrophy(facts,title.grade)' /tmp/rr-research-race-banner.js
+          grep -Fq 'rr-ed-stakes-title' /tmp/rr-research-race-banner.js
+          grep -Fq 'grid-template-columns:minmax(0,1fr) max-content' /tmp/rr-research-race-banner.css
           grep -Fq 'rr-ed-grade-trophy--g1' /tmp/rr-stakes-inline.css
           grep -Fq 'rr-ed-grade-trophy--g2' /tmp/rr-stakes-inline.css
           grep -Fq 'rr-ed-grade-trophy--g3' /tmp/rr-stakes-inline.css
           grep -Fq 'root.RRRaceTitles=Object.freeze' /tmp/rr-race-titles.js
-          echo 'LIVE_RESEARCH_STAKES_NAMES_LOCKED: Cloudflare Radar + Target List + shared title/trophy assets byte-match main'
+          echo 'LIVE_SHARED_RACE_BANNER_LOCKED: Both private modules, canonical race header, named stakes and trophy assets byte-match main'
       - name: Verify customer-facing research source remains protected
         shell: bash
         run: |
