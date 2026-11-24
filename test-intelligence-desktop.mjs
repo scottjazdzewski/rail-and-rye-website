@@ -11,7 +11,7 @@ const pages=[
 ];
 for(const [path,title,logo] of pages){
  const html=read(path);
- assert.match(html,/href="\/assets\/rr-intelligence-desktop\.css\?v=1" media="\(min-width: 1100px\)"/,path);
+ assert.match(html,/href="\/assets\/rr-intelligence-desktop\.css\?v=2" media="\(min-width: 1100px\)"/,path);
  assert.ok(html.includes('<div class="rr-desktop-title" style="display:none"><span>Racing Intelligence</span><h1>'+title+'</h1></div>'),path+" mobile-hidden title");
  assert.equal(html.includes("rr-intelligence-desktop.js?v=1"),logo,path+" logo enhancement scope");
 }
@@ -25,10 +25,16 @@ for(let i=0;i<css.length;i++){
 assert.equal(depth,0);
 assert.match(css,/\.rr-lr-page \.rr-lr-candidates \{grid-template-columns:repeat\(2,/);
 assert.match(css,/\.rr-target-page \.rr-target-card \{display:grid;grid-template-columns:repeat\(2,/);
-assert.match(css,/#rr-pt-current \{grid-area:2\/2\/4\/3/);
+assert.match(css,/#rr-pt-current \{grid-area:1\/2\/3\/3/);
 assert.match(css,/\.rr-dash-table-heading \{position:sticky/);
 const logo=read("public/assets/rr-intelligence-desktop.js");
 new Function(logo);
 assert.match(logo,/if\(!viewport\.matches\)return/);
 assert.match(logo,/observer\.disconnect\(\)/);
 console.log("PASS: desktop media isolation, shared titles, grid layouts and logo scope.");
+
+assert.match(css,/data-mode="all"[^{}]*:is\(\.rr-dash-track-field,\.rr-dash-race-time-field\)\s*\{display:none;/);
+assert.match(css,/#rr-pt-updated\s*\{display:none;/);
+assert.match(css,/\.rr-pt-race-row\s*\{min-height:40px;/);
+assert.match(css,/\.rr-lr-inline-analysis \.rr-lr-case\s*\{font-size:16px;font-weight:600;/);
+assert.match(css,/\.rr-target-analysis-text\s*\{padding:12px 15px;font-size:16px;font-weight:600;/);

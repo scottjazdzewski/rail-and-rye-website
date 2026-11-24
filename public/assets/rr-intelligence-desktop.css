@@ -24,8 +24,13 @@
   }
   /* Race Cards: one compact race header and readable data table. */
   .rr-dashboard-page:not(.rr-lr-page) .rrp-command {gap:5px;padding:9px 12px;}
-  .rr-dashboard-page:not(.rr-lr-page) .rrp-command__controls {grid-template-columns:minmax(230px,.7fr) minmax(0,1.8fr);gap:12px;align-items:end;}
+  .rr-dashboard-page:not(.rr-lr-page) .rrp-command__controls {grid-template-columns:minmax(0,1fr);gap:8px;align-items:start;}
+  .rr-dashboard-page:not(.rr-lr-page) .rr-dash-mode-switch {width:min(100%,420px);justify-self:start;}
   .rr-dashboard-page:not(.rr-lr-page) .rr-dash-mode-button {min-height:34px;}
+  .rr-dashboard-page:not(.rr-lr-page) .rr-dash-app[data-mode="track"] .rr-dash-toolbar {grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}
+  .rr-dashboard-page:not(.rr-lr-page) .rr-dash-app[data-mode="all"] .rr-dash-toolbar {grid-template-columns:minmax(0,1fr);max-width:420px;}
+  /* Shared label styling must not override the all-tracks mode's hidden controls. */
+  .rr-dashboard-page:not(.rr-lr-page) .rr-dash-app[data-mode="all"] .rr-dash-toolbar :is(.rr-dash-track-field,.rr-dash-race-time-field) {display:none;}
   .rr-dashboard-page:not(.rr-lr-page) .rrp-track-head {padding:7px 2px 3px;}
   .rr-dashboard-page:not(.rr-lr-page) .rrp-track-head[data-rr-desktop-logo] {min-height:43px;padding-left:60px;background-position:4px center;background-repeat:no-repeat;background-size:48px 36px;}
   .rrp-track-head[data-rr-desktop-logo="finger-lakes"] {background-image:url('/assets/approved/track-logos/finger-lakes.webp');}
@@ -65,30 +70,68 @@
   .rr-dashboard-page .rr-dash-win-percent {font-size:23px;}
   .rr-dashboard-page .rr-dash-win-fair {font-size:13px;border:0;padding:0;}
   /* Pick Tickets: source order, unchanged buttons and builder; desktop grid only. */
-  .rr-pt-page #rr-pt-app:not([hidden]) {display:grid;grid-template-columns:minmax(220px,260px) minmax(0,1fr);grid-template-rows:auto auto 1fr;gap:0 16px;align-items:start;}
-  .rr-pt-page #rr-pt-updated {grid-area:1/1/2/-1;margin:0 0 10px;}
-  .rr-pt-page .rr-pt-product-nav {grid-area:2/1/3/2;margin:0 0 10px;padding:11px;border:1px solid #d6c8ad;border-radius:8px;background:#fffdf8;}
+  .rr-pt-page #rr-pt-app:not([hidden]) {display:grid;grid-template-columns:minmax(220px,260px) minmax(0,1fr);grid-template-rows:auto 1fr;gap:0 16px;align-items:start;}
+  .rr-pt-page #rr-pt-updated {display:none;}
+  .rr-pt-page .rr-pt-product-nav {grid-area:1/1/2/2;margin:0 0 8px;padding:11px;border:1px solid #d6c8ad;border-radius:8px;background:#fffdf8;}
   .rr-pt-page .rr-pt-types {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;}
   .rr-pt-page .rr-pt-types .rr-pt-type {min-width:0;min-height:36px;padding:5px 3px;font-size:12px;}
-  .rr-pt-page .rr-pt-sequence-nav {grid-area:3/1/4/2;margin:0;padding:11px;border:1px solid #d6c8ad;border-radius:8px;background:#fffdf8;}
+  .rr-pt-page .rr-pt-sequence-nav {grid-area:2/1/3/2;margin:0;padding:11px;border:1px solid #d6c8ad;border-radius:8px;background:#fffdf8;}
   .rr-pt-page .rr-pt-sequences {display:flex;flex-direction:column;gap:6px;overflow:visible;scroll-snap-type:none;padding:0;}
   .rr-pt-page .rr-pt-sequence-tab {min-width:0;min-height:44px;flex-direction:row;justify-content:space-between;align-items:center;gap:5px;padding:8px;}
   .rr-pt-page .rr-pt-sequence-tab[aria-pressed="true"] {box-shadow:inset 3px 0 0 var(--gold);}
   .rr-pt-page .rr-pt-seq-range {font-size:12px;}
   .rr-pt-page .rr-pt-sequence-tab .rr-pt-state {font-size:9px;gap:4px;}
-  .rr-pt-page #rr-pt-current {grid-area:2/2/4/3;min-width:0;align-self:start;}
+  .rr-pt-page #rr-pt-current {grid-area:1/2/3/3;min-width:0;align-self:start;}
   .rr-pt-page .rr-pt-ticket-screen {width:100%;max-width:none;}
   .rr-pt-page .rr-pt-ticket-stats {grid-template-columns:repeat(4,minmax(0,1fr));}
+  /* Keep all five standard legs and bottom statistics in the desktop viewport
+     at normal laptop/desktop heights. Natural overflow remains for long tickets,
+     wrapped chips, extra stakes information and the interactive builder. */
+  .rr-pt-page .rr-desktop-title {margin-bottom:10px!important;}
+  .rr-pt-page .rr-pt-toolbar {padding:6px 10px;margin-bottom:8px;gap:10px;}
+  .rr-pt-page .rr-pt-toolbar select {min-height:34px;}
+  .rr-pt-page .rr-pt-product-nav,.rr-pt-page .rr-pt-sequence-nav {padding:8px;}
+  .rr-pt-page .rr-pt-section-label {margin-bottom:5px;}
+  .rr-pt-page .rr-pt-sequence-tab {min-height:35px;padding:6px 8px;}
+  .rr-pt-page .rr-pt-sequences {gap:4px;}
+  .rr-pt-page .rr-pt-ticket-screen:has(> .rr-pt-race-rows):not(:has(> .rr-pt-race-rows > .rr-pt-race-row:nth-of-type(7))) > .rr-pt-ticket-header {padding:7px 12px;}
+  .rr-pt-page .rr-pt-ticket-screen:has(> .rr-pt-race-rows) .rr-pt-ticket-title h2 {margin-top:2px;font-size:18px;}
+  .rr-pt-page .rr-pt-ticket-screen:has(> .rr-pt-race-rows) .rr-pt-sequence-post {margin-top:3px;}
+  .rr-pt-page .rr-pt-ticket-screen:has(> .rr-pt-race-rows) > .rr-pt-mode-tabs {padding:5px 10px;gap:5px;}
+  .rr-pt-page .rr-pt-ticket-screen:has(> .rr-pt-race-rows) .rr-pt-mode-button {min-height:32px;padding:5px 8px;}
+  .rr-pt-page .rr-pt-wager-meta {padding:5px 11px;}
+  .rr-pt-page .rr-pt-pwin-heading {padding:1px 8px 2px;}
+  .rr-pt-page .rr-pt-race-rows {padding:0 10px 4px;}
+  .rr-pt-page .rr-pt-race-row {min-height:40px;padding:3px 8px;gap:8px;}
+  .rr-pt-page .rr-pt-race-row .rr-pt-chip,.rr-pt-page .rr-pt-race-row .rr-pt-chip-fallback {width:31px;height:31px;}
+  .rr-pt-page .rr-pt-race-row .rr-pt-pwin-cell {gap:3px;padding:1px 0;}
+  .rr-pt-page .rr-pt-race-row .rr-pt-pwin-value {font-size:18px;}
+  .rr-pt-page .rr-pt-race-row .rr-pt-pwin-track {height:5px;}
+  .rr-pt-page .rr-pt-ticket-stats {padding:6px 10px;gap:6px;}
+  .rr-pt-page .rr-pt-stat {gap:3px;}
+  .rr-pt-page .rr-pt-stat strong {font-size:21px;}
+  .rr-pt-page .rr-pt-tier-tabs {padding:4px 10px;}
+  .rr-pt-page .rr-pt-tier {min-height:30px;padding:4px 8px;}
+  .rr-pt-page .rr-pt-pass-note {padding:5px 10px;}
+  .rr-pt-page .rr-pt-stakes-line {padding:2px 4px;gap:4px;}
+  /* Use the existing official header and title without changing their visual
+     hierarchy; save vertical space around them on shorter desktop displays. */
+  @media (max-height: 800px) {
+    html.rr-intel-document > body.rr-pt-page > main.rr-pt-main {padding-top:10px;}
+    .rr-pt-page .rr-desktop-title {margin-bottom:7px!important;}
+    .rr-pt-page .rr-desktop-title::after {margin-top:5px;}
+    .rr-pt-page .rr-pt-toolbar {margin-bottom:6px;}
+  }
   /* Radar: two-column reading order, no clamping and no new content. */
   .rr-lr-page .rr-lr-candidates {grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:stretch;}
   .rr-lr-page .rr-lr-candidates > .rr-lr-list-empty {grid-column:1/-1;}
   .rr-lr-page .rr-lr-card {display:flex;flex-direction:column;min-width:0;border-radius:9px;border-color:#c3cbd0;}
   .rr-lr-page .rr-lr-top {grid-template-columns:38px minmax(0,1fr) minmax(140px,35%);grid-template-areas:"program horse market";gap:9px;padding:12px;}
-  .rr-lr-page .rr-lr-identity strong {font-size:16px;}
+  .rr-lr-page .rr-lr-identity strong {font-size:18px;font-weight:800;}
   .rr-lr-page .rr-lr-markets {gap:5px;}
   .rr-lr-page .rr-lr-market + .rr-lr-market {border-left:1px solid #e4dfd6;}
   .rr-lr-page .rr-lr-inline-analysis {flex:1 0 auto;padding:12px 14px;}
-  .rr-lr-page .rr-lr-inline-analysis .rr-lr-case {font-size:14px;line-height:1.52;}
+  .rr-lr-page .rr-lr-inline-analysis .rr-lr-case {font-size:16px;font-weight:600;line-height:1.5;}
   /* Target List: two horses compared horizontally; optional third stays visible. */
   .rr-target-page .rr-target-list {gap:12px;}
   .rr-target-page .rr-target-card {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch;border-radius:9px;}
@@ -97,9 +140,11 @@
   .rr-target-page .rr-target-card > .rr-target-horse-row:not(.rr-target-attack) {border-right:1px solid #e0e6ea;}
   .rr-target-page .rr-target-card > .rr-target-horse-row:nth-of-type(3) {grid-column:1/-1;}
   .rr-target-page .rr-target-card .rr-target-runner-info {grid-template-columns:minmax(0,1fr);gap:5px;}
-  .rr-target-page .rr-target-card .rr-target-horse-name {font-size:16px;}
+  .rr-target-page .rr-target-card .rr-target-horse-name {font-size:18px;font-weight:800;}
   .rr-target-page .rr-target-card .rr-target-horse-connections {padding-left:0;}
-  .rr-target-page .rr-target-card .rr-target-analysis-text {padding:12px 15px;font-size:14px;line-height:1.52;}
+  .rr-target-page .rr-target-card .rr-target-analysis-text {padding:12px 15px;font-size:16px;font-weight:600;line-height:1.5;}
+  .rr-target-page .rr-target-card .rr-target-stat-win .rr-target-stat-value,.rr-lr-page .rr-lr-market.rr-lr-model strong {font-size:28px;}
+  .rr-target-page .rr-target-card .rr-target-stat-fair .rr-target-stat-value,.rr-lr-page .rr-lr-market.rr-lr-fair strong {font-size:24px;}
   .rr-lr-page .rr-research-racebar,.rr-target-page .rr-research-racebar {padding:9px 12px;}
   .rr-lr-page .rr-research-racebar__track,.rr-target-page .rr-research-racebar__track {font-size:16px;}
   .rr-lr-page .rr-research-racebar__facts,.rr-target-page .rr-research-racebar__facts {font-size:13px;}
