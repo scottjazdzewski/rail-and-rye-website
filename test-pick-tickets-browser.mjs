@@ -97,8 +97,8 @@ try{
   assert.equal(await page.locator(".rr-pt-ticket-stats strong").first().innerText(),"—","mock predictions are never fabricated");
   assert.equal(await page.locator(".rr-pt-brand-rail").count(),0,"No duplicate Pick Tickets masthead.");
    assert.equal(await page.locator(".rr-intel-header__nav a").count(),5,"Five unified product links.");
-  const logo=await page.locator("#rr-pt-track-logo").evaluate(n=>({src:n.getAttribute("src"),loaded:n.complete&&n.naturalWidth>0}));
-  assert.equal(logo.loaded,true,"original track graphic must load");
+  assert.equal(await page.locator("#rr-pt-track-logo,.rr-pt-track-mark").count(),0,
+ "Track badge no longer reserves space in the mobile header.");
   const headerHeight=await page.locator(".rr-intel-header").evaluate(n=>n.getBoundingClientRect().height);
    assert.ok(headerHeight>=64&&headerHeight<=100,"Unified masthead stays compact at "+width);
    if(width<=1080){
@@ -186,7 +186,8 @@ try{
   await page.selectOption("#rr-pt-track","Zia Park");
   assert.equal(await page.locator(".rr-pt-sequence-tab").count(),3);
   assert.equal(await page.locator("#rr-pt-current .rr-pt-race-row").count(),3,"new track updates the active ticket, not hidden dialog history");
-  assert.match(await page.locator("#rr-pt-track-logo").getAttribute("src"),/zia-park.webp$/);
+  assert.equal(await page.locator("#rr-pt-track").inputValue(),"Zia Park",
+ "Track selection still works correctly without its logo.");
   await page.close();
  }
 
