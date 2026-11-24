@@ -535,8 +535,8 @@ export async function handleMembershipApi(request,env,url){
     if(p==="/api/membership/projections-f4"&&request.method==="GET")return await memberCertifiedF4(request,env,url);
     if(p==="/api/membership/cancel")return await cancelAtPeriodEnd(request,env);
     if(p==="/api/membership/billing-portal")return await billingPortal(request,env);
-    if(/^\/api\/membership\/view\/[0-9a-f-]{36}$/i.test(p))return await memberDownload(request,env,url,true);
-    if(/^\/api\/membership\/download\/[0-9a-f-]{36}$/i.test(p))return await memberDownload(request,env,url,false);
+    if(/^\/api\/membership\/view\/[0-9a-f-]{36}$/i.test(p))return error("Membership access is now provided through Racing Tabs.",410);
+    if(/^\/api\/membership\/download\/[0-9a-f-]{36}$/i.test(p))return error("Membership access is now provided through Racing Tabs.",410);
     return error("Not found.",404);
   }catch(e){
     console.error("Membership request failed",String(e).slice(0,180));
