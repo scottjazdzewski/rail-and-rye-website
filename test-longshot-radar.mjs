@@ -31,6 +31,7 @@ bad(x=>x.candidates[0].fair_odds_display="11/2",/whole-number/);
 bad(x=>x.candidates[0].source_causal_evidence="",/authenticated source-causal/);
 bad(x=>x.candidates[0].counterargument_checked="",/checked counterargument/);
 bad(x=>x.candidates[0].betting_case="",/betting case/);
+bad(x=>x.candidates[0].betting_case="A Timeform figure makes this runner playable.",/restricted source-provider/);
 bad(x=>x.receipts.release_status="HOLD",/Release receipt/);
 bad(x=>x.receipts.model_sha256="fake",/SHA-256/);
 bad(x=>x.candidates.push({...x.candidates[0]}),/Duplicate/);
@@ -195,9 +196,16 @@ assert.ok(!html.includes("/assets/projections-dashboard.css"),"Radar must never 
 assert.ok(!html.includes("Race details")&&!html.includes('id="rr-lr-dialog"'));
 assert.ok(!html.includes("rr-lr-import")&&!html.includes("rr-lr-file")&&!html.includes("rr-lr-upload-form"),"No user-supplied JSON form");
 assert.ok(html.includes("id=\"rr-lr-retry\""),"A failed R2 load must permit retry");
-assert.ok(html.includes("longshot-radar.js?v=auto-private-dates-20261124"),"Render date-aware private Radar without a stale cache");
+assert.ok(html.includes("longshot-radar.js?v=one-line-20261124"),"Publish the PDF-style one-sentence Radar reader without stale browser cache");
 assert.ok(!html.includes("longshot-hero.jpg")&&!html.includes("longshot-mark.png"));
 assert.ok(ui.includes('make("div","rr-lr-inline-analysis")'));
+assert.ok(ui.includes('make("p","rr-lr-case",item.betting_case)'),"Display the exact approved one-sentence PDF betting case");
+assert.ok(!ui.includes("item.source_causal_evidence")&&!ui.includes("item.counterargument_checked"),
+ "Internal QA evidence and counterarguments must never produce extra public card paragraphs");
+assert.ok(!ui.includes('make("strong","","Evidence")')&&!ui.includes('make("strong","","Counterargument")'),
+ "Never display internal QA section labels in the daily Radar");
+assert.ok(!/\btimeform(?:us)?\b/i.test(ui+html),"Customer-facing Radar assets cannot mention the source vendor");
+
 assert.ok(!ui.includes('make("button","","Race details")'));
 
 checks++;
@@ -223,7 +231,7 @@ assert.ok(!ui.includes("edition.candidates.length!==10"),"No fixed horse quota i
 assert.ok(ui.includes("AbortController")&&ui.includes("retry?.addEventListener"),"Show a recoverable error rather than a permanent loading spinner");
 
 assert.ok(html.includes("longshot-radar.css?v=reader-parity-v3-20261123"),"Load uncached shared V1 Radar stylesheet");
-assert.ok(html.includes("longshot-radar.js?v=auto-private-dates-20261124"),"Load daily date-aware private Radar without stale browser cache");
+assert.ok(html.includes("longshot-radar.js?v=one-line-20261124"),"Load daily date-aware private Radar without stale browser cache");
 assert.ok(!html.includes('id="rr-lr-stage"')&&!html.includes('id="rr-lr-date-title"')&&!html.includes('id="rr-lr-updated"'),"No duplicate date/status/product summaries");
 assert.ok(ui.includes('make("span","rr-lr-ml-inline","ML "+tote(item.original_morning_line))'),"Morning line must sit by horse identity, not a third stat cell");
 assert.ok(!ui.includes('market("ML ODDS"'),"WIN and FAIR are the only two right-side metrics");
@@ -241,6 +249,7 @@ checks++;
 
 assert.ok(!ui.includes("rr-lr-upload-form")&&!ui.includes("visualSample"),"Only server-provided horse data may be displayed");
 assert.ok(!ui.includes('make("button","","Race details")'),"Horse explanation must display inline");
+assert.ok(!ui.includes("rr-lr-evidence"),"One approved sentence only; no research-detail panels");
 checks++;
 
 assert.ok(html.includes("rr-race-titles.js?v=2")&&html.includes("rr-stakes-inline.css?v=1"),
