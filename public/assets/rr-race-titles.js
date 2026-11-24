@@ -97,7 +97,8 @@
   const conflict=specificGrade&&printedGrade&&specificGrade!==printedGrade;
   const grade=conflict?null:(specificGrade||printedGrade);
   const hasStakesSignal=Boolean(grade||race?.is_stakes===true||
-   candidates.some(value=>/\bStakes?\b|\bStks?\.?\b|\bS\.$/i.test(value))||
+   candidates.some(value=>/\bStakes?\b|\bStks?\.?\b|\bS\.$/i.test(value)||
+    /\b(?:S|Stk|Stks)\.?\s*\(?\s*(?:G[123]|GI{1,3}|Grade\s+[123])\b/i.test(value))||
    (race?.stakes_name&&clean(race.stakes_name)));
   let title=dropGrade(removeSponsor(raw,race?.sponsor||race?.sponsor_name));
   title=expandStakesTitle(title,hasStakesSignal);
