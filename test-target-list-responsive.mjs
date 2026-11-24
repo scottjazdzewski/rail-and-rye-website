@@ -124,8 +124,8 @@ try{
 
   const readable=await page.evaluate(()=>{
     const target=document.querySelector(".rr-target-card");
-    const header=target.querySelector(".rr-target-racebar");
-    const meta=header.querySelector(".rr-target-race-facts");
+    const header=target.querySelector(".rr-research-racebar");
+    const meta=header.querySelector(".rr-research-racebar__facts");
     const name=target.querySelector(".rr-target-horse-name");
     const odds=target.querySelector(".rr-target-stat-win .rr-target-stat-value");
     const fair=target.querySelector(".rr-target-stat-fair .rr-target-stat-value");
@@ -134,21 +134,21 @@ try{
     return {
       header:parseFloat(getComputedStyle(header.querySelector("h3")).fontSize),
       distance:parseFloat(getComputedStyle(meta).fontSize),
-      raceFacts:meta.textContent, condition:target.querySelector(".rr-target-race-facts")?.textContent,
+      raceFacts:meta.textContent, condition:target.querySelector(".rr-research-racebar__facts")?.textContent,
       name:parseFloat(getComputedStyle(name).fontSize), 
       win:parseFloat(getComputedStyle(odds).fontSize), fair:parseFloat(getComputedStyle(fair).fontSize),
       role:parseFloat(getComputedStyle(role).fontSize),ml:parseFloat(getComputedStyle(ml).fontSize),
-      factsInNavy:header.contains(meta), factsOutside:[...target.children].some(child=>child.classList.contains("rr-target-race-facts"))
+      factsInNavy:header.contains(meta), factsOutside:[...target.children].some(child=>child.classList.contains("rr-research-racebar__facts"))
     };
   });
   assert.ok(readable.factsInNavy&&!readable.factsOutside,"Entire race description should live in the navy race banner at "+width+": "+JSON.stringify(readable));
   assert.equal(readable.raceFacts,"7 furlongs · Dirt · Allowance / Optional Claiming");
 
   const banner=await page.evaluate(()=>{
-    const header=document.querySelector(".rr-target-card .rr-target-racebar");
-    const first=header.querySelector(".rr-target-racebar-main");
-    const facts=header.querySelector(".rr-target-race-facts");
-    const time=first.querySelector(".rr-target-post");
+    const header=document.querySelector(".rr-target-card .rr-research-racebar");
+    const first=header.querySelector(".rr-research-racebar__main");
+    const facts=header.querySelector(".rr-research-racebar__facts");
+    const time=first.querySelector(".rr-research-racebar__post");
     const rect=node=>node.getBoundingClientRect();
     return {
       firstBottom:rect(first).bottom,
@@ -171,10 +171,10 @@ try{
   assert.equal(banner.fullText,"7 furlongs · Dirt · Allowance / Optional Claiming");
   assert.equal(banner.font,14,"Race conditions retain the Radar 14px font rather than shrinking.");
 
-  const rightAligned=await page.locator(".rr-target-card .rr-target-racebar-main").first().evaluate(row=>{
-    const group=row.querySelector(".rr-target-race-identifiers");
-    const race=group?.querySelector(".rr-target-race-number");
-    const post=group?.querySelector(".rr-target-post");
+  const rightAligned=await page.locator(".rr-target-card .rr-research-racebar__main").first().evaluate(row=>{
+    const group=row.querySelector(".rr-research-racebar__identifiers");
+    const race=group?.querySelector(".rr-research-racebar__number");
+    const post=group?.querySelector(".rr-research-racebar__post");
     const box=el=>el.getBoundingClientRect();
     const header=box(row),right=box(group),raceBox=box(race),postBox=box(post),track=box(row.querySelector("h3"));
     return {
@@ -185,7 +185,7 @@ try{
       groupMinHeight:right.height,
       raceFont:parseFloat(getComputedStyle(race).fontSize),
       postFont:parseFloat(getComputedStyle(post).fontSize),
-      conditionsSecondLine:document.querySelector(".rr-target-card .rr-target-race-facts").getBoundingClientRect().top>=header.bottom-1,
+      conditionsSecondLine:document.querySelector(".rr-target-card .rr-research-racebar__facts").getBoundingClientRect().top>=header.bottom-1,
       fullWidth:document.documentElement.scrollWidth
     };
   });
@@ -199,12 +199,12 @@ try{
   assert.equal(rightAligned.postFont,13);
 
   assert.ok(readable.header>=16,"Track name must be easy to read at "+width+": "+JSON.stringify(readable));
-  const typeMatch=await page.locator(".rr-target-card .rr-target-racebar").first().evaluate(header=>{
-    const el=header.querySelector(".rr-target-racebar-main");
+  const typeMatch=await page.locator(".rr-target-card .rr-research-racebar").first().evaluate(header=>{
+    const el=header.querySelector(".rr-research-racebar__main");
     const track=getComputedStyle(el.querySelector("h3"));
-    const facts=getComputedStyle(header.querySelector(".rr-target-race-facts"));
-    const race=getComputedStyle(el.querySelector(".rr-target-race-number"));
-    const post=getComputedStyle(el.querySelector(".rr-target-post"));
+    const facts=getComputedStyle(header.querySelector(".rr-research-racebar__facts"));
+    const race=getComputedStyle(el.querySelector(".rr-research-racebar__number"));
+    const post=getComputedStyle(el.querySelector(".rr-research-racebar__post"));
     return {trackSize:parseFloat(track.fontSize),trackWeight:track.fontWeight,transform:track.textTransform,
       factsSize:parseFloat(facts.fontSize),factsWeight:facts.fontWeight,raceSize:parseFloat(race.fontSize),
       postSize:parseFloat(post.fontSize)};
@@ -226,14 +226,14 @@ try{
   assert.equal(compact.reviewNotices,0,"No internal review-window notice belongs above the feed at "+width);
 
   // Verify chronological post-time order vs independent A–Z track grouping.
-  const initialTimes=await page.locator(".rr-target-post").allTextContents();
+  const initialTimes=await page.locator(".rr-research-racebar__post").allTextContents();
   assert.deepEqual(initialTimes,["1:12 PM ET","2:20 PM ET","3:14 PM ET","3:26 PM ET","4:15 PM ET","8:40 PM ET","9:30 PM ET","9:55 PM ET"],"Post-time sort must ignore original rank at "+width);
   await page.locator("#rr-target-sort").selectOption("track");
   assert.equal(await page.locator("#rr-target-context").innerText(),"Track order","Summary reflects track sorting.");
-  const grouped=await page.locator(".rr-target-racebar h3").allTextContents();
+  const grouped=await page.locator(".rr-research-racebar h3").allTextContents();
   assert.deepEqual(grouped,["Synthetic Downs","Synthetic Downs","Synthetic Downs","Synthetic Downs","Synthetic Park","Synthetic Park","Synthetic Park","Synthetic Park"],"Track ordering must group A–Z at "+width);
   await page.locator("#rr-target-sort").selectOption("post-time");
-  assert.deepEqual(await page.locator(".rr-target-post").allTextContents(),initialTimes,"Chronological order must be independently restored at "+width);
+  assert.deepEqual(await page.locator(".rr-research-racebar__post").allTextContents(),initialTimes,"Chronological order must be independently restored at "+width);
   await page.screenshot({path:"target-list-viewport-screenshots/card-"+width+".png",fullPage:false});
   await page.getByRole("button",{name:/view .* details for/i}).first().click();
   await page.locator("#rr-target-dialog[open]").waitFor();

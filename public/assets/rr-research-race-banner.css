@@ -1,0 +1,43 @@
+/* RAIL & RYE — CANONICAL RACE HEADER V1
+   One styling authority, loaded LAST on both private reader pages.
+   No product-specific race-banner classes, no legacy renderer. */
+.rr-research-racebar{
+ display:block;min-height:0;margin:0;padding:9px 12px 10px;
+ background:#102d53;border-top:3px solid #c99831;color:#fff;
+}
+.rr-research-racebar__main{
+ display:grid;grid-template-columns:minmax(0,1fr) max-content;
+ align-items:start;gap:5px 10px;min-width:0;
+}
+.rr-research-racebar__track{
+ min-width:0;margin:0;color:#fff;text-align:left;text-transform:uppercase;
+ font:800 17px/1.23 Inter,Arial,system-ui,sans-serif;
+ letter-spacing:.01em;overflow-wrap:anywhere;white-space:normal;
+}
+.rr-research-racebar__identifiers{
+ display:flex;flex-wrap:nowrap;align-items:baseline;justify-content:flex-end;
+ justify-self:end;gap:10px;min-width:0;text-align:right;white-space:nowrap;
+}
+.rr-research-racebar__number,.rr-research-racebar__post{
+ margin:0;padding:0;border:0;color:#f4f0e6;text-align:right;
+ font:700 13px/1.3 Inter,Arial,system-ui,sans-serif;
+ white-space:nowrap;font-variant-numeric:tabular-nums;
+}
+.rr-research-racebar__facts{
+ display:block;width:100%;max-width:100%;margin:6px 0 0;padding:0;
+ color:#e9f0f7;font:500 14px/1.35 Inter,Arial,system-ui,sans-serif;
+ overflow-wrap:anywhere;white-space:normal;
+}
+.rr-research-racebar__facts .rr-ed-stakes-title{
+ font-weight:750;letter-spacing:0;color:#fff;overflow-wrap:anywhere;
+}
+.rr-research-racebar__facts .rr-ed-grade-trophy{
+ margin-top:2px;margin-bottom:2px;
+}
+@media(max-width:430px){
+ .rr-research-racebar{padding:9px 10px 10px}
+}
+@media(max-width:359px){
+ .rr-research-racebar__main{grid-template-columns:minmax(0,1fr);row-gap:3px}
+ .rr-research-racebar__identifiers{grid-column:1;justify-self:end}
+}

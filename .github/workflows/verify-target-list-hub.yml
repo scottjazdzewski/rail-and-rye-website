@@ -5,6 +5,9 @@ on:
     paths:
       - 'public/admin/target-list-preview.html'
       - 'public/assets/target-list-dashboard.*'
+      - 'public/assets/rr-research-race-banner.*'
+      - 'public/assets/longshot-radar.*'
+      - 'test-shared-research-race-banner.mjs'
       - 'test-target-list-hub.mjs'
       - 'test-target-list-responsive.mjs'
       - 'test-target-list-private-review.mjs'
@@ -17,6 +20,9 @@ on:
       - 'src/index.js'
       - 'public/admin/target-list-preview.html'
       - 'public/assets/target-list-dashboard.*'
+      - 'public/assets/rr-research-race-banner.*'
+      - 'public/assets/longshot-radar.*'
+      - 'test-shared-research-race-banner.mjs'
       - 'public/assets/rr-race-titles.js'
       - 'public/assets/rr-stakes-inline.css'
       - 'test-target-list-hub.mjs'
@@ -38,6 +44,8 @@ jobs:
           node-version: '22'
       - name: Private edition, integrity, and UI regression
         run: |
+          node --check public/assets/rr-research-race-banner.js
+          node test-shared-research-race-banner.mjs
           node test-target-list-hub.mjs
           node test-rr-race-titles.mjs
           node test-target-list-private-review.mjs

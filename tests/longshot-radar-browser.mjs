@@ -71,7 +71,7 @@ try{
   await page.goto(base+"/admin/longshot-radar/",{waitUntil:"domcontentloaded"});
   await page.locator(".rr-lr-card").first().waitFor({timeout:15000});
   const graded=page.locator(".rr-lr-card").nth(1);
-  const title=await graded.locator(".rr-lr-race-facts").innerText();
+  const title=await graded.locator(".rr-research-racebar__facts").innerText();
   if(!title.includes("First Lady Stakes")||title.includes("Venue Sponsor")||title.includes("FIRST LADY S."))
    throw Error("Radar must publish full sponsor-free stakes title at "+width+": "+title);
   const trophy=graded.locator(".rr-ed-grade-trophy--g1");
@@ -112,9 +112,9 @@ try{
       title:styles(".rr-dash-heading .rr-member-title"),kicker:styles(".rr-member-kicker"),
       intro:styles(".rr-dash-intro"),notice:styles(".rr-dash-private-banner"),
       toolbar:styles(".rr-lr-toolbar"),select:styles(".rr-lr-toolbar select"),label:styles(".rr-lr-toolbar label"),
-      count:styles("#rr-lr-count"),race:styles(".rr-lr-racebar"),track:styles(".rr-lr-racebar h3"),
-      raceNumber:styles(".rr-lr-race-number"),post:styles(".rr-lr-post"),
-      firstFacts:styles(".rr-lr-race-facts"),card:styles(".rr-lr-card"),
+      count:styles("#rr-lr-count"),race:styles(".rr-research-racebar"),track:styles(".rr-research-racebar h3"),
+      raceNumber:styles(".rr-research-racebar__number"),post:styles(".rr-research-racebar__post"),
+      firstFacts:styles(".rr-research-racebar__facts"),card:styles(".rr-lr-card"),
       chip:styles(".rr-lr-program img"),horse:styles(".rr-lr-identity strong"),
       ml:styles(".rr-lr-ml-inline"),win:styles(".rr-lr-model strong"),
       fair:styles(".rr-lr-fair strong"),numericLabel:styles(".rr-lr-market span"),
@@ -162,9 +162,9 @@ try{
     throw Error("Main left/right mobile padding must be 10–12px at "+width);
   if(visual.bodyWidth>width+1||visual.htmlWidth>width+1)
     throw Error("Shared V1 horizontal overflow outside swipe nav at "+width);
-  if(await page.locator(".rr-lr-card .rr-lr-race-facts").count()!==2)
+  if(await page.locator(".rr-lr-card .rr-research-racebar__facts").count()!==2)
     throw Error("Only the TWO source-supplied race descriptions should appear, never invented filler at "+width);
-  const raceFacts=await page.locator(".rr-lr-card .rr-lr-race-facts").first().evaluate(el=>{
+  const raceFacts=await page.locator(".rr-lr-card .rr-research-racebar__facts").first().evaluate(el=>{
     const cs=getComputedStyle(el),r=el.getBoundingClientRect();
     return {text:el.textContent,font:parseFloat(cs.fontSize),
       line:parseFloat(cs.lineHeight),height:r.height,
@@ -181,11 +181,11 @@ try{
   const raceAlignment=await page.locator(".rr-lr-card").first().evaluate(card=>{
     const rect=sel=>{const r=card.querySelector(sel).getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height};};
     const font=sel=>parseFloat(getComputedStyle(card.querySelector(sel)).fontSize);
-    return {main:rect(".rr-lr-racebar-main"),track:rect(".rr-lr-racebar h3"),
-      group:rect(".rr-lr-race-meta"),race:rect(".rr-lr-race-number"),
-      post:rect(".rr-lr-post"),facts:rect(".rr-lr-race-facts"),
-      raceFont:font(".rr-lr-race-number"),postFont:font(".rr-lr-post"),
-      trackFont:font(".rr-lr-racebar h3")};
+    return {main:rect(".rr-research-racebar__main"),track:rect(".rr-research-racebar h3"),
+      group:rect(".rr-research-racebar__identifiers"),race:rect(".rr-research-racebar__number"),
+      post:rect(".rr-research-racebar__post"),facts:rect(".rr-research-racebar__facts"),
+      raceFont:font(".rr-research-racebar__number"),postFont:font(".rr-research-racebar__post"),
+      trackFont:font(".rr-research-racebar h3")};
   });
   if(Math.abs(raceAlignment.group.right-raceAlignment.main.right)>1.2||
      raceAlignment.race.right>=raceAlignment.post.left||
@@ -242,7 +242,7 @@ try{
     window.RRRaceTitles=undefined;
     document.querySelector("#rr-lr-sort").dispatchEvent(new Event("change",{bubbles:true}));
    });
-   const full=await page.locator(".rr-lr-card").nth(1).locator(".rr-lr-race-facts").innerText();
+   const full=await page.locator(".rr-lr-card").nth(1).locator(".rr-research-racebar__facts").innerText();
    if(!full.includes("First Lady Stakes")||full.includes("Venue Sponsor"))
     throw Error("Fallback must keep sponsor-free full stakes title without helper");
    if(await page.locator(".rr-lr-card").nth(1).locator(".rr-ed-grade-trophy").count())

@@ -2,6 +2,8 @@
 (()=>{
 "use strict";
 const q=selector=>document.querySelector(selector);
+const raceBanner=globalThis.RRResearchRaceBanner;
+if(!raceBanner?.render)throw Error("Canonical research race banner must load before Radar.");
 const state={editions:[],date:"",sort:"post-time"};
 const status=q("#rr-lr-loading"),app=q("#rr-lr-app"),empty=q("#rr-lr-empty");
 const make=(tag,cls,content)=>{
@@ -79,50 +81,9 @@ function market(label,value,cls){
 }
 // Both research readers use the SAME canonical sponsor-free presentation
 // as Projections. Never infer a grade from purse, class or runner ranking.
-function sourceRaceTitle(item){
- const raw=item.stakes_name||item.race_name||item.conditions;
- if(typeof raw!=="string"||!raw.trim())return null;
- const official=globalThis.RRRaceTitles?.describe?.(item);
- if(official?.title)return official;
- // Fail closed on grade if the shared source-sensitive helper cannot load.
- // Preserve readable stakes words rather than leaking e.g. FIRST LADY S.
- let fallback=raw.replace(/\s*(?:presented|sponsored|powered)\s+by\b.*$/i,"")
-  .replace(/\s*\(\s*(?:G(?:rade)?\.?|Gr\.?)\s*[-:]?\s*(?:III|II|I|[123])\s*\)\s*$/i,"").trim();
- // Read the source title's casing AFTER removing mixed-case sponsor copy,
- // and BEFORE expanding S. into Stakes.
- const allCaps=/[A-Z]/.test(fallback)&&!/[a-z]/.test(fallback);
- fallback=fallback.replace(/\b(?:S|Stk|Stks)\.?$/i,"Stakes").trim();
- if(allCaps)fallback=fallback.toLowerCase().replace(/\b[a-z]/g,x=>x.toUpperCase());
- return {title:fallback,grade:null};
-}
-function appendGradeTrophy(parent,grade){
- if(!Number.isInteger(grade)||grade<1||grade>3)return;
- const badge=make("span","rr-ed-grade-trophy rr-ed-grade-trophy--g"+grade);
- badge.setAttribute("aria-label","Grade "+grade+" stakes trophy");
- badge.title="Grade "+grade+" Stakes";
- badge.append(make("span","rr-ed-grade-trophy-icon","🏆"),make("strong","rr-ed-grade-trophy-label","G"+grade));
- parent.append(badge);
-}
 function makeCard(item){
- const card=make("article","rr-lr-card"),racebar=make("div","rr-lr-racebar");
- const racehead=make("div","rr-lr-racebar-main");
- const raceMeta=make("div","rr-lr-race-meta");
- raceMeta.append(make("span","rr-lr-race-number","RACE "+item.race_number));
- if(item.post_time_et)raceMeta.append(make("span","rr-lr-post",item.post_time_et));
- racehead.append(make("h3","",item.track),raceMeta);
- racebar.append(racehead);
- // Only show race facts if the approved production source actually supplies them.
- const facts=[item.distance,item.surface].filter(value=>typeof value==="string"&&value.trim());
- const title=sourceRaceTitle(item);
- if(facts.length||title){
-  const line=make("p","rr-lr-race-facts",facts.join(" · "));
-  if(title){
-   if(facts.length)line.append(make("span","rr-ed-race-separator"," · "));
-   line.append(make("span","rr-ed-stakes-title",title.title));
-   appendGradeTrophy(line,title.grade);
-  }
-  racebar.append(line);
- }
+ const card=make("article","rr-lr-card");
+ const racebar=raceBanner.render(item);
  const top=make("div","rr-lr-top"),identity=make("div","rr-lr-identity");
  identity.append(make("strong","",item.horse_name),make("span","rr-lr-ml-inline","ML "+tote(item.original_morning_line)));
  if(item.trainer||item.jockey){

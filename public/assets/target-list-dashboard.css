@@ -21,12 +21,6 @@
 .rr-target-summary>span{font-size:11px;color:var(--rrh-muted);font-weight:700;text-align:right}
 .rr-target-list{display:grid;grid-template-columns:minmax(0,1fr);align-items:start;gap:9px}
 .rr-target-card{min-width:0;border:1px solid #b7c3ca;border-radius:7px;background:#fff;overflow:hidden}
-.rr-target-racebar{display:flex;flex-wrap:wrap;align-items:center;gap:7px 12px;min-height:39px;padding:8px 12px;border-top:3px solid var(--rrh-gold);background:var(--rrh-navy);color:#fff}
-.rr-target-racebar h3{margin:0;font:850 14px/1.2 Inter,Arial,system-ui,sans-serif;letter-spacing:.035em;overflow-wrap:anywhere}
-.rr-target-race-number,.rr-target-post{font:750 11px/1.3 Inter,Arial,system-ui,sans-serif;color:#f4f0e6}
-.rr-target-race-number{padding-left:11px;border-left:1px solid #b3c2d255}
-.rr-target-post{margin-left:auto;font-variant-numeric:tabular-nums}
-.rr-target-race-facts{margin:0;padding:6px 12px 4px;color:#52697d;font-size:11px;line-height:1.3;overflow-wrap:anywhere}
 .rr-target-horse-row{display:grid;grid-template-columns:105px minmax(0,1fr) 310px;align-items:center;gap:8px;padding-left:12px;padding-right:12px}
 
 .rr-target-horse-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:center;gap:7px;text-align:center;min-width:0}
@@ -85,9 +79,6 @@
 @media(max-width:620px){
  .rr-target-titlebar{flex-direction:column;gap:8px}
  .rr-target-toolbar label:first-child,.rr-target-toolbar label:nth-child(2){flex:1 1 140px}
- .rr-target-racebar{gap:6px 9px;padding:7px 10px}
- .rr-target-racebar h3{font-size:13px}
- .rr-target-race-facts{padding:6px 10px 4px}
 
  .rr-target-horse-row{grid-template-columns:90px minmax(0,1fr);grid-template-areas:"role horse" "stats stats" "conn conn";gap:4px 8px;padding:7px 10px}
  .rr-target-horse-role{grid-area:role;font-size:10px}
@@ -103,8 +94,6 @@
  .rr-target-analysis-text{padding:8px 10px 3px;font-size:12px}
  .rr-target-card-bottom{padding:2px 10px 8px}
  .rr-target-scratches{padding:5px 10px}
- .rr-target-race-number{padding-left:8px}
- .rr-target-post{margin-left:0}
 }
 @media(max-width:430px){
  .rr-target-main{padding:9px 9px 28px}
@@ -119,7 +108,6 @@
  .rr-target-horse-role{font-size:9px}
  .rr-target-horse-identity{gap:4px}
  .rr-target-horse-name{font-size:12px}
- .rr-target-racebar h3{font-size:12px}
  .rr-target-titlebar h1{font-size:25px}
  .rr-target-toolbar label:first-child,.rr-target-toolbar label:nth-child(2){flex-basis:100%}
 }
@@ -188,13 +176,6 @@ border:1px solid #becbd5;
 box-shadow:none;
 background:#fff;
 }
-
-
-.rr-target-page .rr-target-race-number,.rr-target-page .rr-target-post{
-letter-spacing:.01em;
-}
-
-.rr-target-page .rr-target-race-facts{margin:0;padding:4px 10px 3px;color:#5d7182;font:600 10px/1.3 Inter,Arial,system-ui,sans-serif}
 .rr-target-page .rr-target-horse-row{
 display:grid;
 grid-template-columns:minmax(0,1fr) 290px;
@@ -287,11 +268,6 @@ margin:0;
  .rr-target-page .rr-target-titlebar h1{font-size:26px}
  .rr-target-page .rr-target-titlebar p{display:none}
  .rr-target-page .rr-target-toolbar label:first-child,.rr-target-page .rr-target-toolbar label:nth-child(2){flex:1 1 135px}
- 
- 
- 
- 
- .rr-target-page .rr-target-race-facts{padding:4px 9px 2px;font-size:10px}
 
  .rr-target-page .rr-target-horse-row{
 grid-template-areas:none;
@@ -359,36 +335,6 @@ overflow-wrap:break-word;
     line-height:1.56;
   }
 }
-@media(max-width:359px){
-  
-}
-
-
-/* Target List v5 — legibility-first mobile race reading.
-   Applies only inside Target List; original model/PWIN and source text unchanged. */
-.rr-target-page .rr-target-racebar{
-flex-direction:column;
-align-items:stretch;
-justify-content:center;
-}
-.rr-target-page .rr-target-racebar-main{
-min-width:0;
-}
-
-.rr-target-page .rr-target-race-number,
-.rr-target-page .rr-target-post{
-color:#f7f2e9;
-letter-spacing:.015em;
-}
-.rr-target-page .rr-target-race-number{padding-left:10px}
-
-.rr-target-page .rr-target-racebar .rr-target-race-facts{
-display:block;
-width:100%;
-max-width:100%;
-padding:0;
-letter-spacing:0;
-}
 .rr-target-page .rr-target-horse-row{
 gap:9px;
 }
@@ -435,10 +381,6 @@ font-size:15px;
  }
 }
 @media(max-width:800px){
- .rr-target-page .rr-target-racebar{padding:9px 11px 10px;gap:4px}
- .rr-target-page .rr-target-racebar h3{font-size:17px}
- .rr-target-page .rr-target-race-number,.rr-target-page .rr-target-post{font-size:13px}
- .rr-target-page .rr-target-racebar .rr-target-race-facts{font-size:14px}
  .rr-target-page .rr-target-horse-row{
    grid-template-columns:minmax(0,1fr) minmax(130px,37%);
    padding:10px 11px;
@@ -473,10 +415,6 @@ font-size:15px;
  }
 }
 @media(max-width:620px){
- .rr-target-page .rr-target-racebar{min-height:0;gap:4px;padding:9px 10px 10px}
- .rr-target-page .rr-target-racebar h3{font-size:17px}
- .rr-target-page .rr-target-race-number,.rr-target-page .rr-target-post{font-size:13px}
- .rr-target-page .rr-target-racebar .rr-target-race-facts{font-size:14px}
  .rr-target-page .rr-target-horse-row{
    grid-template-columns:minmax(0,1fr) minmax(126px,38%);
    min-height:85px;
@@ -511,11 +449,6 @@ padding:10px 8px;
  .rr-target-page .rr-target-saddle,.rr-target-page .rr-target-saddle img{width:30px;height:30px}
  .rr-target-page .rr-target-saddle{flex:0 0 30px}
  .rr-target-page .rr-target-stat-label{font-size:10px}
- 
- 
- 
- .rr-target-page .rr-target-racebar .rr-target-race-facts{font-size:13px}
- .rr-target-page .rr-target-race-number,.rr-target-page .rr-target-post{font-size:12px}
  .rr-target-page .rr-target-analysis-text{
 padding:12px 11px 14px;
 }
@@ -583,14 +516,6 @@ padding:12px 11px 14px;
 }
 .rr-target-page .rr-target-list{gap:8px}
 .rr-target-page .rr-target-card{border-radius:7px;border-color:#b7c3ca}
-.rr-target-page .rr-target-racebar{
-gap:3px;
-}
-
-.rr-target-page .rr-target-race-number,
-.rr-target-page .rr-target-post{
-  font:750 13px/1.3 Inter,Arial,system-ui,sans-serif;
-}
 
 .rr-target-page .rr-target-horse-row{
   min-height:78px;
@@ -663,79 +588,7 @@ gap:3px;
   .rr-target-page .rr-target-horse-role{font-size:12px}
   .rr-target-page .rr-target-stat-win .rr-target-stat-value{font-size:23px}
   .rr-target-page .rr-target-stat-fair .rr-target-stat-value{font-size:21px}
-  .rr-target-page .rr-target-racebar h3{font-size:16px}
   .rr-target-page .rr-target-analysis-text{font-size:17px;line-height:1.5}
   .rr-target-page .rr-target-toolbar label:first-child,
   .rr-target-page .rr-target-toolbar label:nth-child(2){flex:1 1 125px}
-}
-
-/* Target List — canonical Longshot Radar race header (source-aligned).
-   Single final header authority replaces obsolete V9/V10 flex patches.
-   The selectors and measurements below mirror longshot-radar.css. */
-.rr-target-page .rr-target-racebar{
-  display:block;min-height:0;margin:0;padding:9px 12px 10px;
-  background:#102d53;border-top:3px solid #c99831;color:#fff;
-}
-.rr-target-page .rr-target-racebar-main{
-flex-wrap:wrap;
-}
-.rr-target-page .rr-target-racebar h3{
-  text-transform:uppercase;
-  margin:0;color:#fff;
-  font:800 17px/1.23 Inter,Arial,system-ui,sans-serif;
-  letter-spacing:.01em;overflow-wrap:anywhere;
-}
-.rr-target-page .rr-target-race-number,.rr-target-page .rr-target-post{
-  margin:0;padding:0;border:0;color:#f4f0e6;
-  font:700 13px/1.3 Inter,Arial,system-ui,sans-serif;
-  white-space:nowrap;font-variant-numeric:tabular-nums;
-}
-.rr-target-page .rr-target-post{margin-left:0}
-.rr-target-page .rr-target-racebar .rr-target-race-facts{
-  margin:6px 0 0;color:#e9f0f7;
-  font:500 14px/1.35 Inter,Arial,system-ui,sans-serif;
-  overflow-wrap:anywhere;white-space:normal;
-}
-/* Race header alignment — preserve V1's original type scale and full race
-   description beneath. The race number and post time form one right-aligned
-   group opposite the left-aligned track name. */
-.rr-target-page .rr-target-racebar-main{
-  display:grid;
-  grid-template-columns:minmax(0,1fr) max-content;
-  align-items:start;
-  gap:5px 10px;
-}
-.rr-target-page .rr-target-racebar-main h3{
-  min-width:0;
-  text-align:left;
-}
-.rr-target-page .rr-target-race-identifiers{
-  display:flex;
-  flex-wrap:nowrap;
-  align-items:baseline;
-  justify-content:flex-end;
-  justify-self:end;
-  gap:10px;
-  text-align:right;
-  white-space:nowrap;
-  min-width:0;
-}
-.rr-target-page .rr-target-race-identifiers .rr-target-race-number,
-.rr-target-page .rr-target-race-identifiers .rr-target-post{
-  font:700 13px/1.3 Inter,Arial,system-ui,sans-serif;
-  white-space:nowrap;
-  text-align:right;
-}
-@media(max-width:359px){
-  .rr-target-page .rr-target-racebar-main{
-    grid-template-columns:minmax(0,1fr);
-    row-gap:3px;
-  }
-  .rr-target-page .rr-target-race-identifiers{
-    grid-column:1;
-    justify-self:end;
-  }
-}
-@media(max-width:430px){
- .rr-target-page .rr-target-racebar{padding:9px 10px 10px}
 }

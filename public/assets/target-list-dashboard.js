@@ -4,6 +4,8 @@
 "use strict";
 const get=id=>document.getElementById(id);
 const state={edition:null,dates:[],uploadedAt:null,lastFocus:null,reviewOnly:false};
+const raceBanner=globalThis.RRResearchRaceBanner;
+if(!raceBanner?.render)throw Error("Canonical research race banner must load before Target List.");
 const dateSelect=get("rr-target-date"),sortSelect=get("rr-target-sort");
 const status=get("rr-target-status"),app=get("rr-target-app"),empty=get("rr-target-empty");
 const list=get("rr-target-list"),dialog=get("rr-target-dialog");
@@ -92,32 +94,8 @@ function horseRow(role,runner,entry){
 }
 // Shared production title authority with Projections and Longshot Radar.
 // This changes presentation only — never the underlying Target List model.
-function sourceRaceTitle(entry){
- const raw=entry.stakes_name||entry.race_name||entry.conditions;
- if(typeof raw!=="string"||!raw.trim())return null;
- const official=globalThis.RRRaceTitles?.describe?.(entry);
- if(official?.title)return official;
- // Defensive display fallback: do not infer grade if canonical utility
- // is unavailable; still expand a terminal stakes suffix for readability.
- let fallback=raw.replace(/\s*(?:presented|sponsored|powered)\s+by\b.*$/i,"")
-  .replace(/\s*\(\s*(?:G(?:rade)?\.?|Gr\.?)\s*[-:]?\s*(?:III|II|I|[123])\s*\)\s*$/i,"").trim();
- // Read the source title's casing AFTER removing mixed-case sponsor copy,
- // and BEFORE expanding S. into Stakes.
- const allCaps=/[A-Z]/.test(fallback)&&!/[a-z]/.test(fallback);
- fallback=fallback.replace(/\b(?:S|Stk|Stks)\.?$/i,"Stakes").trim();
- if(allCaps)fallback=fallback.toLowerCase().replace(/\b[a-z]/g,x=>x.toUpperCase());
- return {title:fallback,grade:null};
-}
-function appendGradeTrophy(parent,grade){
- if(!Number.isInteger(grade)||grade<1||grade>3)return;
- const badge=node("span","rr-ed-grade-trophy rr-ed-grade-trophy--g"+grade);
- badge.setAttribute("aria-label","Grade "+grade+" stakes trophy");
- badge.title="Grade "+grade+" Stakes";
- add(badge,node("span","rr-ed-grade-trophy-icon","🏆"),node("strong","rr-ed-grade-trophy-label","G"+grade));
- parent.append(badge);
-}
 function raceMeta(entry){
- const title=sourceRaceTitle(entry);
+ const title=raceBanner.describe(entry);
  return [entry.distance,entry.surface,title?.title].filter(Boolean).join(" · ");
 }
 function scratchList(entry){
@@ -136,7 +114,7 @@ function openAnalysis(entry,trigger){
  dialogTitle.textContent=entry.track+" · Race "+entry.race_number;
  content.replaceChildren();
  const context=node("p","rr-target-drawer-meta",[entry.post_time_et,raceMeta(entry)].filter(Boolean).join(" · "));
- appendGradeTrophy(context,sourceRaceTitle(entry)?.grade);
+ raceBanner.appendGradeTrophy(context,raceBanner.describe(entry)?.grade);
  add(content,context,horseRow("ML FAVORITE",entry.favorite),horseRow("ATTACK",entry.attack));
  if(entry.also_live)content.append(horseRow("ALSO LIVE",entry.also_live));
  const analysis=node("section","rr-target-drawer-analysis");
@@ -148,28 +126,7 @@ function openAnalysis(entry,trigger){
 }
 function targetCard(entry){
  const card=node("article","rr-target-card");
- const head=node("div","rr-target-racebar");
- const titleRow=node("div","rr-target-racebar-main");
- const identifiers=node("div","rr-target-race-identifiers");
- identifiers.append(node("span","rr-target-race-number","RACE "+entry.race_number));
- if(entry.post_time_et)identifiers.append(node("span","rr-target-post",entry.post_time_et));
- add(titleRow,node("h3","",entry.track),identifiers);
- head.append(titleRow);
-
-  // Mirror Radar's sourced facts and named-stakes presentation.
-  // Track, race and post time stay above the separate navy facts row.
-  const parts=[entry.distance,entry.surface].filter(value=>typeof value==="string"&&value.trim());
-  const title=sourceRaceTitle(entry);
-  if(parts.length||title){
-   const facts=node("p","rr-target-race-facts",parts.join(" · "));
-   if(title){
-    if(parts.length)facts.append(node("span","rr-ed-race-separator"," · "));
-    facts.append(node("span","rr-ed-stakes-title",title.title));
-    appendGradeTrophy(facts,title.grade);
-   }
-   head.append(facts);
-  }
- add(card,head);
+ card.append(raceBanner.render(entry));
  add(card,horseRow("ML FAVORITE",entry.favorite,entry),horseRow("ATTACK",entry.attack,entry));
  if(entry.also_live)card.append(horseRow("ALSO LIVE",entry.also_live,entry));
  card.append(node("p","rr-target-analysis-text",entry.analysis));

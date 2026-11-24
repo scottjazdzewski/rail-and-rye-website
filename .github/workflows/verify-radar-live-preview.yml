@@ -6,6 +6,10 @@ on:
       - 'public/longshot-radar-preview/**'
       - 'public/assets/longshot-radar.js'
       - 'public/assets/longshot-radar.css'
+      - 'public/assets/rr-research-race-banner.js'
+      - 'public/assets/rr-research-race-banner.css'
+      - 'public/assets/rr-stakes-inline.css'
+      - 'public/assets/target-list-dashboard.js'
       - 'public/assets/rr-hub-header.css'
       - 'tests/longshot-radar-browser.mjs'
       - 'test-racing-intelligence-header.mjs'
@@ -52,9 +56,15 @@ jobs:
             curl -fsSL --max-time 20 "https://railandryeracing.com/assets/longshot-radar.js?rev=${token}" -o /tmp/radar.js || true
             curl -fsSL --max-time 20 "https://railandryeracing.com/assets/longshot-radar.css?rev=${token}" -o /tmp/radar.css || true
             curl -fsSL --max-time 20 "https://railandryeracing.com/assets/target-list-dashboard.css?rev=${token}" -o /tmp/target.css || true
+            curl -fsSL --max-time 20 "https://railandryeracing.com/assets/target-list-dashboard.js?rev=${token}" -o /tmp/target.js || true
+            curl -fsSL --max-time 20 "https://railandryeracing.com/assets/rr-research-race-banner.js?rev=${token}" -o /tmp/shared-banner.js || true
+            curl -fsSL --max-time 20 "https://railandryeracing.com/assets/rr-research-race-banner.css?rev=${token}" -o /tmp/shared-banner.css || true
             if cmp -s public/assets/longshot-radar.js /tmp/radar.js &&
                cmp -s public/assets/longshot-radar.css /tmp/radar.css &&
-               cmp -s public/assets/target-list-dashboard.css /tmp/target.css; then
+               cmp -s public/assets/target-list-dashboard.js /tmp/target.js &&
+               cmp -s public/assets/target-list-dashboard.css /tmp/target.css &&
+               cmp -s public/assets/rr-research-race-banner.js /tmp/shared-banner.js &&
+               cmp -s public/assets/rr-research-race-banner.css /tmp/shared-banner.css; then
               echo "PASS: Cloudflare serves exact merged Radar and Target stylesheet bytes"
               break
             fi
@@ -66,7 +76,15 @@ jobs:
           done
           grep -Fq 'rr-lr-inline-analysis' /tmp/radar.js
           grep -Fq 'rr-lr-ml-inline' /tmp/radar.js
-          grep -Fq 'rr-lr-racebar-main' /tmp/radar.js
+          grep -Fq 'raceBanner.render(item)' /tmp/radar.js
+          grep -Fq 'raceBanner.render(entry)' /tmp/target.js
+          grep -Fq 'RRResearchRaceBanner=Object.freeze' /tmp/shared-banner.js
+          grep -Fq 'rr-research-racebar__facts' /tmp/shared-banner.js
+          grep -Fq 'grid-template-columns:minmax(0,1fr) max-content' /tmp/shared-banner.css
+          ! grep -Fq 'rr-lr-racebar' /tmp/radar.js
+          ! grep -Fq 'rr-target-racebar' /tmp/target.js
+          ! grep -Fq '.rr-lr-racebar' /tmp/radar.css
+          ! grep -Fq '.rr-target-racebar' /tmp/target.css
           grep -Fq '/api/admin/longshot-radar-editorial' /tmp/radar.js
           grep -Fq 'async function loadAvailableEditions()' /tmp/radar.js
           grep -Fq 'retry?.addEventListener("click",initialize)' /tmp/radar.js

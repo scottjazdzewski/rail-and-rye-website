@@ -15,17 +15,15 @@
 .rr-ed-grade-trophy--g3{background:#ebcbae;border-color:#be8b5d;color:#5b391d}
 .rr-ed-grade-trophy-icon{font-size:14px;line-height:1}
 .rr-ed-grade-trophy-label{font:800 11px/1 Inter,Arial,system-ui,sans-serif}
-.rr-lr-race-facts .rr-ed-stakes-title,
-.rr-target-race-facts .rr-ed-stakes-title,
+.rr-research-racebar__facts .rr-ed-stakes-title,
 .rr-target-drawer-meta .rr-ed-stakes-title{
  font-weight:750;letter-spacing:0;overflow-wrap:anywhere
 }
-.rr-lr-race-facts .rr-ed-grade-trophy,
-.rr-target-race-facts .rr-ed-grade-trophy{
+.rr-research-racebar__facts .rr-ed-grade-trophy{
  margin-top:2px;margin-bottom:2px
 }
 .rr-target-drawer-meta .rr-ed-grade-trophy{vertical-align:baseline}
 @media(max-width:430px){
  .rr-ed-grade-trophy{min-height:23px;padding:3px 6px;margin-left:6px}
- .rr-lr-race-facts,.rr-target-race-facts{overflow-wrap:anywhere;white-space:normal}
+ .rr-research-racebar__facts{overflow-wrap:anywhere;white-space:normal}
 }
