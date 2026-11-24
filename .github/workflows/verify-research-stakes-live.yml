@@ -10,6 +10,12 @@ on:
       - 'public/assets/rr-research-race-banner.css'
       - 'public/assets/rr-hub-header.css'
       - 'test-longshot-radar.mjs'
+      - 'test-rr-race-titles.mjs'
+      - 'test-shared-research-race-banner.mjs'
+      - 'test-projection-race-information.mjs'
+      - 'src/projection-race-information.js'
+      - 'src/longshot-radar.js'
+      - 'src/target-list.js'
       - 'test-racing-intelligence-header.mjs'
       - 'public/assets/target-list-dashboard.js'
       - 'public/admin/longshot-radar.html'
@@ -32,6 +38,7 @@ jobs:
           node test-rr-race-titles.mjs
           node test-longshot-radar.mjs
           node test-target-list-hub.mjs
+          node test-projection-race-information.mjs
       - name: Confirm Cloudflare serves exact source-controlled research readers
         shell: bash
         run: |
