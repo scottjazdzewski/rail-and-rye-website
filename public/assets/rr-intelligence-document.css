@@ -1,0 +1,19 @@
+/* Intelligence Hub document flow — official footer is the last visible block.
+   Never fix the document to one screen or clip actual racing content. */
+html.rr-intel-document{overscroll-behavior-y:none;min-height:100%}
+html.rr-intel-document>body.rr-member-page{
+ display:flex;flex-direction:column;min-height:100vh;min-height:100svh;
+ height:auto;max-height:none;margin:0;overscroll-behavior-y:none;
+}
+html.rr-intel-document>body.rr-member-page>header{flex:0 0 auto}
+html.rr-intel-document>body.rr-member-page>main{
+ flex:1 0 auto;width:100%;min-width:0;margin-inline:auto;
+ padding-bottom:clamp(16px,2vw,28px);
+}
+html.rr-intel-document>body.rr-member-page>footer.heritage-footer{
+ flex:0 0 auto;width:100%;margin:0;position:static;
+ font-family:var(--heritage-sans);
+}
+html.rr-intel-document>body.rr-member-page>dialog:not([open]),
+html.rr-intel-document>body.rr-member-page>[hidden]{display:none!important}
+/* Footer uses the shared core/component styling. No reader-specific restyling. */
