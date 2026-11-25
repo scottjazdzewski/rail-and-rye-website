@@ -54,6 +54,11 @@ for label,key in [("target_review","racing-intelligence/target-list-review/"+D+"
  report["other_products"].append({"name":label,"found":bool(obj),"meta":obj.get("Metadata") if obj else None})
 for rr in report["candidate_races"]:
  print("PRIVATE_CANDIDATE",json.dumps(rr,ensure_ascii=False,separators=(",",":")),flush=True)
+for t in manifest["tracks"]:
+ obj=fetch("projections/dashboard/"+D+"/"+t["slug"]+".json"); card=json.loads(obj["Body"].read())
+ for r in card["races"]:
+  if not any(q["track"]==t["name"] and q["race_number"]==r["race_number"] for q in report["candidate_races"]):continue
+  print("PRIVATE_FAIR_FIELD",t["name"],r["race_number"],[(x["program_number"],str(x.get("fair_odds"))[:45]) for x in r["entries"] if x["program_number"] in [q["favorite"]["program"] for q in report["candidate_races"] if q["track"]==t["name"] and q["race_number"]==r["race_number"]]+[c["program"] for q in report["candidate_races"] if q["track"]==t["name"] and q["race_number"]==r["race_number"] for c in q["candidates"]]],flush=True)
 print("PRIVATE_SCREENING_COUNTS",json.dumps({"races":report["races"],"horses":report["horses"],"qualifying_races":len(report["candidate_races"]),"ml_missing":report["missing_morning_line"],"other_products":report["other_products"]},separators=(",",":")),flush=True)
 encoded=base64.b64encode(SealedBox(PUB).encrypt(json.dumps(report,separators=(",",":"),ensure_ascii=False).encode())).decode()
 print("RR_TARGET_1125_SEALED_START")
