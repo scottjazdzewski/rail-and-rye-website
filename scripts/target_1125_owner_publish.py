@@ -28,9 +28,20 @@ def price(s):
  m=re.fullmatch(r'(\d{1,3})[-/](\d{1,2})',t)
  if not m or int(m[2])==0:return None
  return int(m[1])/int(m[2])
+# The frozen projection stores *precise decimal* net fair odds (e.g. 1.94/1).
+# The approved Target List displays conventional US tote fractions, not false precision.
+US_TOTE=[(1,5),(2,5),(1,2),(3,5),(4,5),(1,1),(6,5),(7,5),(3,2),(8,5),(9,5),(2,1),(5,2),(3,1),(7,2),(4,1),(9,2),(5,1),(6,1),(7,1),(8,1),(9,1),(10,1),(12,1),(15,1),(20,1),(25,1),(30,1),(40,1),(50,1),(60,1),(80,1),(100,1)]
+def display_fair(leg):
+ exact=float(leg['win_probability_exact']);need(exact>0,'Scored runner with no probability')
+ net=100/exact-1
+ m=re.fullmatch(r'(\d+(?:\.\d+)?)[-/](\d+(?:\.\d+)?)',str(leg.get('fair_odds','')).replace(' ',''))
+ need(m is not None and float(m[2])>0,'Missing source model decimal fair odds')
+ source_net=float(m[1])/float(m[2]);need(abs(source_net-net)<=.015,'Source fair odds disagree with frozen PWIN')
+ u,v=min(US_TOTE,key=lambda x:(abs(x[0]/x[1]-net),x[0]/x[1]))
+ return str(u)+'/'+str(v)
 def source_runner(leg):
  return dict(program_number=str(leg['program_number']),horse_name=leg['horse_name'],morning_line=leg['morning_line'],
-   win_probability=float(leg['win_probability']),fair_odds=leg['fair_odds'],trainer=leg['trainer'],jockey=leg['jockey'])
+   win_probability=float(leg['win_probability']),fair_odds=display_fair(leg),trainer=leg['trainer'],jockey=leg['jockey'])
 
 def main():
  need(os.environ.get('GITHUB_REPOSITORY')==REPO,'Authorized repository only')
@@ -89,7 +100,7 @@ def main():
   fair=100/p-1;need(price(attack['morning_line'])>fair,'No valid price advantage')
   need(fav['jockey']!='Not assigned' and attack['jockey']!='Not assigned','Unresolved jockey in selected pairing')
   for horse in (fav,attack):
-   need(horse.get('fair_odds') and price(horse['fair_odds']) is not None,'Source fair odds unavailable')
+   need(horse.get('fair_odds'),'Source fair odds unavailable');display_fair(horse)
    need(round(float(horse['win_probability_exact']),1)==float(horse['win_probability']),'Displayed PWIN differs from exact frozen field')
   prose=item['analysis'];words=prose.split();need(30<=len(words)<=58,'Unapproved analysis length')
   need(item['attack_name'].casefold() in prose.casefold() and item['favorite_name'].casefold() in prose.casefold(),'Copy must cover both horses')
