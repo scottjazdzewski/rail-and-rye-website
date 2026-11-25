@@ -158,7 +158,7 @@ function validateGPTReleasedTargetList(input){
   status:input.status,publication_mode:"owner-approved-gpt",
   source:{editorial_sha256:input.source.editorial_sha256.toLowerCase()},targets};
 }
-async function storeGPTReleasedTargetList(env,input){
+export async function storeGPTReleasedTargetList(env,input){
  const edition=validateGPTReleasedTargetList(input),raceDate=edition.race_date;
  const certified=await findRevisions(env,raceDate);
  if(certified[0]&&certified[0].revision>=edition.revision)
