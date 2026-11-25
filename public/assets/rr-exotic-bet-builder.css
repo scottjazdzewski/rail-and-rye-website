@@ -193,3 +193,10 @@
 @media(prefers-reduced-motion:reduce){
  .rr-bet-dialog,.rr-bet-summary{scroll-behavior:auto}
 }
+
+
+/* Daily Double adds an explicit race-pair control inside the existing builder. */
+.rr-bet-pair-selector{display:grid;gap:6px;padding:9px 10px;border:1px solid #dfd5c1;border-radius:9px;background:#fffcf4}
+.rr-bet-pair-selector label{font:750 12px/1.2 Inter,Arial,system-ui,sans-serif;color:#304b69}
+.rr-bet-pair-selector select{width:100%;min-height:42px;padding:8px 10px;border:1px solid #baab8d;border-radius:7px;background:#fff;color:#123358;font:700 16px/1 Inter,Arial,system-ui,sans-serif}
+.rr-bet-no-pairs{margin:0;padding:10px;border:1px solid #dfd5c1;border-radius:9px;background:#fffcf4;color:#425b75;font:600 12px/1.45 Inter,Arial,system-ui,sans-serif}
