@@ -248,10 +248,10 @@ assert.match(script,/dialog\.scrollTop=previousScroll/,
  "Re-render must preserve mobile drawer position");
 
 
-// The Daily Double tab is hidden unless an official, date-matched pool is supplied.
-const dd1={race_number:1,entries:[row("1","Leg One Favorite",40),row("2","Leg One Other",60)]};
+// The Daily Double tab is hidden unless Timeform WAGERS evidence is supplied.
+const dd1={race_number:1,timeform_wagers:"WAGERS: Daily Double Races 1-2",entries:[row("1","Leg One Favorite",40),row("2","Leg One Other",60)]};
 const dd2={race_number:2,entries:[row("3","Leg Two Other",25),row("4","Leg Two Favorite",75)]};
-const dd3={race_number:3,entries:[row("5","Third Race A",50),row("6","Third Race B",50)]};
+const dd3={race_number:3,timeform_wagers:"WAGERS: Double Wagers",entries:[row("5","Third Race A",50),row("6","Third Race B",50)]};
 const dd4={race_number:4,entries:[row("7","Fourth Race A",50),row("8","Fourth Race B",50)]};
 const ddRaces=[dd1,dd2,dd3,dd4];
 app.open({race:dd1,card:{race_date:"2026-11-25",races:ddRaces},track:"Tampa Bay Downs",date:"2026-11-25"});
@@ -259,12 +259,12 @@ assert.equal(walk(body).some(node=>node.tagName==="BUTTON"&&node.textContent==="
  "Adjacent races alone never imply Daily Double eligibility");
 
 const ddCard={race_date:"2026-11-25",races:ddRaces,daily_double_pools:[
- {first_race_number:1,second_race_number:2,source_url:"https://www.equibase.com/static/entry/TAM112526USA1-EQB.html"},
- {first_race_number:3,second_race_number:4,source_url:"https://www.equibase.com/static/entry/TAM112526USA3-EQB.html"}
+ {first_race_number:1,second_race_number:2,source:"timeform_wagers",wager_text:"WAGERS: Daily Double Races 1-2"},
+ {first_race_number:3,second_race_number:4,source:"timeform_wagers",wager_text:"WAGERS: Double Wagers"}
 ]};
 app.open({race:dd1,card:ddCard,track:"Tampa Bay Downs",date:"2026-11-25"});
 const doubleTab=walk(body).find(node=>node.tagName==="BUTTON"&&node.textContent==="Daily Double");
-assert.ok(doubleTab?.listeners.click,"An officially listed DD has a dedicated builder tab");
+assert.ok(doubleTab?.listeners.click,"A Timeform-listed DD has a dedicated builder tab");
 doubleTab.listeners.click();
 assert.match(readable(body),/Races 1–2/,"Default pair starts with an eligible pair attached to the selected race");
 assert.ok(selectedChoice("0:1")?.listeners.click);
