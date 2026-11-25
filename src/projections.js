@@ -89,8 +89,8 @@ function normalizeDailyDoublePools(value,races,raceDate){
  if(value==null)return [];
  if(!Array.isArray(value)||value.length>19)throw Error("Daily Double pools must be an array of up to 19 official race pairs.");
  const raceNumbers=new Set(races.map(race=>race.race_number)),seen=new Set();
- const [,month,day,year]=raceDate.match(/^(\d{4})-(\d{2})-(\d{2})$/)||[];
- const dateCode=month+day+year.slice(-2);
+ const dateMatch=raceDate.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+ const dateCode=dateMatch[2]+dateMatch[3]+dateMatch[1].slice(-2);
  return value.map((pool,index)=>{
   if(!isObject(pool))throw Error("Daily Double pool "+(index+1)+" is invalid.");
   const first=Number(pool.first_race_number),second=Number(pool.second_race_number);
