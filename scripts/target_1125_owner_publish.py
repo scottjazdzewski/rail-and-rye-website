@@ -30,6 +30,7 @@ def price(s):
  return int(m[1])/int(m[2])
 # The frozen projection stores *precise decimal* net fair odds (e.g. 1.94/1).
 # The approved Target List displays conventional US tote fractions, not false precision.
+# Editorial fair lines are rounded once, after validating the full-field source odds.
 US_TOTE=[(1,5),(2,5),(1,2),(3,5),(4,5),(1,1),(6,5),(7,5),(3,2),(8,5),(9,5),(2,1),(5,2),(3,1),(7,2),(4,1),(9,2),(5,1),(6,1),(7,1),(8,1),(9,1),(10,1),(12,1),(15,1),(20,1),(25,1),(30,1),(40,1),(50,1),(60,1),(80,1),(100,1)]
 def display_fair(leg):
  exact=float(leg['win_probability_exact']);need(exact>0,'Scored runner with no probability')
