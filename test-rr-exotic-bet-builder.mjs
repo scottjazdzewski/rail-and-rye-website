@@ -305,3 +305,6 @@ if(process.env.RR_DD_PRIVATE_EDITION){
  assert.equal(visible,63);assert.equal(hidden,13);
  console.log("LIVE_EDITION_DD_RENDER_PASS visible="+visible+" hidden="+hidden);
 }
+
+assert.match(css,/\.rr-bet-summary > :is\(\.rr-bet-summary-note,\.rr-bet-summary-key,\.rr-bet-summary-assumption,\.rr-bet-summary-caveat\)\s*\{[^}]*padding:9px 12px 10px;[^}]*overflow-wrap:anywhere;/s,"Every ticket explanation must have real padding and wrap inside the summary");
+assert.match(css,/@media\(max-width:800px\)\{\s*\.rr-bet-summary > :is\([^)]*summary-assumption[^)]*\)\{\s*padding:8px 10px 9px;/s,"Mobile explanations retain side and bottom insets");

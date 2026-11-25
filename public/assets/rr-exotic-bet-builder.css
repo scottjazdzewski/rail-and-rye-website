@@ -207,3 +207,23 @@
 .rr-bet-launch-dd::before{content:none}
 .rr-bet-launch-dd:hover{background:#f2e5bd}
 @media(max-width:600px){.rr-bet-launch-actions{max-width:100%}.rr-bet-launch-actions .rr-bet-launch{font-size:11px;min-height:40px;padding:6px 8px}.rr-bet-launch-actions .rr-bet-launch::before{display:none}.rr-dash-mobile-list-heading:has(.rr-bet-launch-actions){flex-wrap:wrap;gap:5px}.rr-bet-launch-actions{margin-left:auto}}
+
+/* All ticket-summary explanations share one inset, readable wrapping rule.
+   Natural height is required: no clipping or shrinking to fit a fixed box. */
+.rr-bet-summary > :is(.rr-bet-summary-note,.rr-bet-summary-key,.rr-bet-summary-assumption,.rr-bet-summary-caveat){
+ display:block;box-sizing:border-box;min-width:0;max-width:100%;
+ margin:0;padding:9px 12px 10px;border-top:1px solid #ebe2d3;
+ background:#faf7ef;color:#4c6177;
+ font:600 12px/1.45 Inter,Arial,system-ui,sans-serif;
+ white-space:normal;overflow-wrap:anywhere;word-break:normal;
+ text-wrap:pretty;
+}
+.rr-bet-summary > :is(.rr-bet-summary-key,.rr-bet-summary-caveat){
+ color:#213d5d;font-weight:750;
+}
+.rr-bet-summary > .rr-bet-summary-caveat{background:#fff2d4}
+@media(max-width:800px){
+ .rr-bet-summary > :is(.rr-bet-summary-note,.rr-bet-summary-key,.rr-bet-summary-assumption,.rr-bet-summary-caveat){
+  padding:8px 10px 9px;font-size:12px;line-height:1.45;
+ }
+}

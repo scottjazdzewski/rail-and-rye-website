@@ -39,3 +39,16 @@ html.rr-intel-document > body.rr-member-page > main > .rr-desktop-title > span{
  }
  html.rr-intel-document > body.rr-dashboard-page:not(.rr-lr-page) > main.rr-dashboard-main > .rr-dash-visually-hidden{display:none!important}
 }
+
+/* All-screen explanatory copy containment lock. Existing analysis and note
+   padding/typography remain authoritative; long text must wrap, never clip. */
+html.rr-intel-document .rr-member-page :is(
+ .rr-bet-summary-note,.rr-bet-summary-key,.rr-bet-summary-assumption,.rr-bet-summary-caveat,
+ .rr-bet-disclaimer,.rr-bet-coverage-note,.rr-bet-no-pairs,.rr-bet-help p,
+ .rr-pt-pass-note,.rr-pt-builder-disclaimer,.rr-pt-builder-error,
+ .rr-dash-sheet-notes,.rr-target-analysis-text,.rr-target-drawer-analysis p,
+ .rr-lr-inline-analysis .rr-lr-case
+){
+ box-sizing:border-box;min-width:0;max-width:100%;
+ overflow-wrap:anywhere;word-break:normal;
+}
