@@ -10,7 +10,7 @@ ROOT="pick-tickets/staging/2026-11-25/"
 CUSTOMER="racing-intelligence/product-tabs/pick-tickets/2026-11-25/"
 PREFIX="RR_PICK_SCRATCH_1125_R1"
 PARENT="b130d7fbafab9819b62390df38deaae4c647bd92792fa68ef7d1b69386965180"
-SPECS={"Finger Lakes":("f082a81b042fbf167cad9cb3eac113ab6abb1ca45ca6762ef5b7a821c70ccceb","2026-11-25T16:01:00Z"),"Mahoning Valley":("a9d1455b5a99c3a17181077df6dad6959dfc4a7d121fe2d2ddfe3891186bfb89","2026-11-25T15:09:00Z"),"Parx Racing":("92f52c198fe4968701062718935d2b0a9a9e788e999e5617fb44a99a0169ab25","2026-11-25T15:17:00Z"),"Tampa Bay Downs":("9231c73d7717c1a3b7b2a6b44261364df8384006db80b97a2befb24c9e06404f","2026-11-25T15:41:00Z"),"Charles Town":("7bb01eaffeec700b085a07c568d80a89a1fb681fb619d92945198ef11033fcb3","2026-11-25T15:51:00Z")}
+SPECS={"Churchill Downs":("640185058d4ae6d0abe77ee582c68bb102b73b665adf3202643b75fa1b174ba8","2026-11-25T16:43:00Z"),"Finger Lakes":("f082a81b042fbf167cad9cb3eac113ab6abb1ca45ca6762ef5b7a821c70ccceb","2026-11-25T16:01:00Z"),"Mahoning Valley":("a9d1455b5a99c3a17181077df6dad6959dfc4a7d121fe2d2ddfe3891186bfb89","2026-11-25T15:09:00Z"),"Parx Racing":("92f52c198fe4968701062718935d2b0a9a9e788e999e5617fb44a99a0169ab25","2026-11-25T15:17:00Z"),"Tampa Bay Downs":("9231c73d7717c1a3b7b2a6b44261364df8384006db80b97a2befb24c9e06404f","2026-11-25T15:41:00Z"),"Charles Town":("7bb01eaffeec700b085a07c568d80a89a1fb681fb619d92945198ef11033fcb3","2026-11-25T15:51:00Z")}
 def req(x,m):
  if not x:raise ValueError(m)
 def sha(b):return hashlib.sha256(b).hexdigest()
