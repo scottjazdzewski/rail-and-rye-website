@@ -248,16 +248,25 @@ assert.match(script,/dialog\.scrollTop=previousScroll/,
  "Re-render must preserve mobile drawer position");
 
 
-// The Daily Double tab uses the two races' exact PWIN marginals and keeps
-// ticket probability separate from actual tote payout data.
+// The Daily Double tab is hidden unless an official, date-matched pool is supplied.
 const dd1={race_number:1,entries:[row("1","Leg One Favorite",40),row("2","Leg One Other",60)]};
 const dd2={race_number:2,entries:[row("3","Leg Two Other",25),row("4","Leg Two Favorite",75)]};
 const dd3={race_number:3,entries:[row("5","Third Race A",50),row("6","Third Race B",50)]};
-app.open({race:dd1,card:{races:[dd1,dd2,dd3]},track:"Tampa Bay Downs",date:"2026-11-25"});
+const dd4={race_number:4,entries:[row("7","Fourth Race A",50),row("8","Fourth Race B",50)]};
+const ddRaces=[dd1,dd2,dd3,dd4];
+app.open({race:dd1,card:{race_date:"2026-11-25",races:ddRaces},track:"Tampa Bay Downs",date:"2026-11-25"});
+assert.equal(walk(body).some(node=>node.tagName==="BUTTON"&&node.textContent==="Daily Double"),false,
+ "Adjacent races alone never imply Daily Double eligibility");
+
+const ddCard={race_date:"2026-11-25",races:ddRaces,daily_double_pools:[
+ {first_race_number:1,second_race_number:2,source_url:"https://www.equibase.com/static/entry/TAM112526USA1-EQB.html"},
+ {first_race_number:3,second_race_number:4,source_url:"https://www.equibase.com/static/entry/TAM112526USA3-EQB.html"}
+]};
+app.open({race:dd1,card:ddCard,track:"Tampa Bay Downs",date:"2026-11-25"});
 const doubleTab=walk(body).find(node=>node.tagName==="BUTTON"&&node.textContent==="Daily Double");
-assert.ok(doubleTab?.listeners.click,"Daily Double has a dedicated builder tab");
+assert.ok(doubleTab?.listeners.click,"An officially listed DD has a dedicated builder tab");
 doubleTab.listeners.click();
-assert.match(readable(body),/Races 1–2/,"Default pair starts with the selected race and its next race");
+assert.match(readable(body),/Races 1–2/,"Default pair starts with an eligible pair attached to the selected race");
 assert.ok(selectedChoice("0:1")?.listeners.click);
 selectedChoice("0:1").listeners.click();
 assert.ok(selectedChoice("1:4")?.listeners.click);
@@ -272,9 +281,10 @@ assert.match(readable(summary()),/BREAK-EVEN GROSS PAYOUT/,"Display break-even g
 assert.match(readable(summary()),/Ticket cost \$1\.00/,"Display DD ticket cost");
 assert.match(readable(summary()),/independent race outcomes/,"State the cross-race probability assumption");
 const pairSelect=walk(body).find(node=>node.tagName==="SELECT"&&node.id==="rr-bet-pair");
-assert.ok(pairSelect?.listeners.change,"Users can switch Daily Double pairs");
-pairSelect.value="2-3";pairSelect.listeners.change();
-assert.match(readable(body),/Races 2–3/,"Pair selector updates both leg groups");
+assert.ok(pairSelect?.listeners.change,"Users can switch between official Daily Double pairs");
+assert.deepEqual(pairSelect.children.map(option=>option.value),["1-2","3-4"],
+ "Only the source-listed pairs appear; the adjacent but unlisted 2-3 pair stays hidden");
+pairSelect.value="3-4";pairSelect.listeners.change();
+assert.match(readable(body),/Races 3–4/,"Pair selector updates both leg groups");
 assert.equal(app._calculate().combos.length,0,"Changing pairs clears stale selections");
-
 console.log("PASS: exact approved horse chip art, coupled entry, valid combinations/cost, F4 gated probabilities, no tote integration");
