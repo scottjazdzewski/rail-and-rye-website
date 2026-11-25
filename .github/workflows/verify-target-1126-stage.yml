@@ -77,8 +77,18 @@ jobs:
             if not race or len(race['entries'])!=len(row['runners']):
               different+=1;continue
             pairs={str(p['program_number']):p for p in race['entries']}
-            if any(str(q['program_number']) not in pairs or abs(pairs[str(q['program_number'])]['win_probability_exact']-q['win_probability_exact'])>1e-8 for q in row['runners']):
-              different+=1;continue
+            for q in row['runners']:
+              p=pairs.get(str(q['program_number']))
+              if p is None or abs(p['win_probability_exact']-q['win_probability_exact'])>1e-8:
+                print('TARGET_1126_SOURCE_DIFFERENCE',row['track'],'Race',row['race'],'Program',q['program_number'],
+                  'model_pct',round(q['win_probability_exact'],8),'site_pct',None if p is None else round(p['win_probability_exact'],8),
+                  'horse_match',p is not None and p['horse_name'].casefold()==q['horse_name'].casefold(),
+                  'ml_match',p is not None and p['morning_line']==q['morning_line'],flush=True)
+                different+=1
+                break
+            else:
+              matching+=1
+            continue
             matching+=1
           print('TARGET_1126_SELECTED_RACE_PROJECTION_PARITY matched='+str(matching)+' missing='+str(missing)+' different='+str(different),flush=True)
           if different:raise AssertionError('Selected site race PWIN differs; hold scheduled customer publication')
