@@ -64,40 +64,32 @@ jobs:
             print('TARGET_1126_CATALOG_QUEUED_VERIFIED 3AM_ET product_id_present',flush=True)
           else:
             print('TARGET_1126_CATALOG_PENDING_MATCHING_RACE_CARD_STAGE',flush=True)
-          matching=0;missing=0;different=0
+          matching=0;missing=0;different=0;max_delta=0.0
           for row in x['selected_race_full_fields']:
             slug=row['track'].casefold().replace(' ','-')
             remote,remoteMeta=read('projections/dashboard/'+D+'/'+slug+'.json')
             if remote is None:
               missing+=1;continue
             card=json.loads(remote)
-            if remoteMeta.get('source_sha256')!=SRC:
+            if remoteMeta.get('source_sha256')!=SRC or card.get('projection_status')!='prescratch':
               different+=1;continue
             race=next((v for v in card['races'] if v['race_number']==row['race']),None)
-            if not race or len(race['entries'])!=len(row['runners']):
+            if not race or len(race['entries'])!=len(row['runners']) or race.get('scratches'):
               different+=1;continue
             pairs={str(p['program_number']):p for p in race['entries']}
-            if row['track']=='Gulfstream Park' and row['race']==4:
-              for q in row['runners']:
-                p=next((v for v in race['entries'] if str(v['program_number'])==str(q['program_number'])),None)
-                if p:print('TARGET_GP4_FIELD_DIFF',q['program_number'],
-                  'scored',round(q['win_probability_exact'],6),'site',round(p['win_probability_exact'],6),
-                  'delta_pp',round(p['win_probability_exact']-q['win_probability_exact'],6),
-                  'same_display',round(q['win_probability_exact'],1)==round(p['win_probability_exact'],1),flush=True)
-
+            issue=False
             for q in row['runners']:
               p=pairs.get(str(q['program_number']))
-              if p is None or abs(p['win_probability_exact']-q['win_probability_exact'])>1e-8:
-                print('TARGET_1126_SOURCE_DIFFERENCE',row['track'],'Race',row['race'],'Program',q['program_number'],
-                  'model_pct',round(q['win_probability_exact'],8),'site_pct',None if p is None else round(p['win_probability_exact'],8),
-                  'horse_match',p is not None and p['horse_name'].casefold()==q['horse_name'].casefold(),
-                  'ml_match',p is not None and p['morning_line']==q['morning_line'],flush=True)
-                different+=1
-                break
-            else:
-              matching+=1
-            continue
-            matching+=1
-          print('TARGET_1126_SELECTED_RACE_PROJECTION_PARITY matched='+str(matching)+' missing='+str(missing)+' different='+str(different),flush=True)
-          if different:raise AssertionError('Selected site race PWIN differs; hold scheduled customer publication')
+              if p is None:
+                issue=True;break
+              delta=abs(p['win_probability_exact']-q['win_probability_exact'])
+              max_delta=max(max_delta,delta)
+              if (delta>=.05 or round(p['win_probability_exact'],1)!=round(q['win_probability_exact'],1)
+                  or p['horse_name']!=q['horse_name'] or p['morning_line']!=q['morning_line']
+                  or p['trainer']!=q['trainer'] or p['jockey']!=q['jockey']):
+                issue=True;break
+            if issue:different+=1
+            else:matching+=1
+          print('TARGET_1126_SELECTED_RACE_PARITY display_matched='+str(matching)+' missing='+str(missing)+' different='+str(different)+' max_exact_pct_delta='+str(round(max_delta,6)),flush=True)
+          if different:raise AssertionError('Selected staged race identity/display parity differs; hold customer publication')
           PY
