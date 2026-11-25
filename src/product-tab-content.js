@@ -11,8 +11,9 @@ const num=value=>value==null||value===''?null:(Number.isFinite(Number(value))?Nu
 function publicProjection(card){
  return {race_date:card.race_date,track_name:card.track_name,projection_status:card.projection_status,
   ...(card.model_receipts?{model_receipts:Object.fromEntries(["tri_sha256","f4_sha256","prescratch_parent_sha256","official_changes_sha256"].filter(k=>/^[a-f0-9]{64}$/i.test(String(card.model_receipts[k]||""))).map(k=>[k,card.model_receipts[k]]))}:{}),
+  daily_double_pools:(card.daily_double_pools||[]).map(pool=>({first_race_number:pool.first_race_number,second_race_number:pool.second_race_number,source:pool.source,wager_text:text(pool.wager_text,500)})),
   races:(card.races||[]).map(race=>({
-   race_number:race.race_number,post_time_et:race.post_time_et,distance:race.distance,
+   race_number:race.race_number,post_time_et:race.post_time_et,timeform_wagers:text(race.timeform_wagers,500),distance:race.distance,
    surface:race.surface,pace:race.pace,conditions:race.conditions,race_name:race.race_name,display_race_class:race.display_race_class,
    stakes_name:race.stakes_name,stakes_grade:race.stakes_grade,is_stakes:race.is_stakes===true,
    purse:race.purse,scratch_count:race.scratch_count,

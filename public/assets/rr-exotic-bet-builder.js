@@ -44,7 +44,7 @@
  function hasTimeformDailyDoubleEvidence(pool){
   const wagers=String(pool?.wager_text||"");
   return pool?.source==="timeform_wagers"&&
-   /\b(?:daily\s+double|double\s+wagers?)\b/i.test(wagers)&&
+   /\b(?:daily\s+double|double\s+wagers?)\b|(?:^|[/*:])\s*double\b/i.test(wagers)&&
    !/\b(?:2nd|second)\s+half\b/i.test(wagers);
  }
  function dailyDoublePairs(){
@@ -55,7 +55,7 @@
   const seen=new Set(),pairs=[];
   for(const pool of state.card.daily_double_pools){
    const firstNumber=Number(pool?.first_race_number),secondNumber=Number(pool?.second_race_number);
-   if(!Number.isInteger(firstNumber)||secondNumber!==firstNumber+1||seen.has(firstNumber)||
+   if(firstNumber!==Number(state.race?.race_number)||!Number.isInteger(firstNumber)||secondNumber!==firstNumber+1||seen.has(firstNumber)||
       !hasTimeformDailyDoubleEvidence(pool))continue;
    const first=byNumber.get(firstNumber),second=byNumber.get(secondNumber);
    if(!first||!second||first.timeform_wagers!==pool.wager_text||usableEntries(first).length<2||usableEntries(second).length<2)continue;

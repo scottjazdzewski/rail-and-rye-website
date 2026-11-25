@@ -21,3 +21,6 @@ November 24 corrective metadata: official entry indexes above verify all 12 maid
 ## Distance presentation lock
 
 All displayed race distances use the shared RRRaceTitles.formatDistance formatter in Race Cards, Longshot Radar and Target List. Raw model furlong decimals are converted for display only (8.31818 F = 1M 70Y; 8 F = 1M; 8.5 F = 1 1/16 M; 6.5 F = 6 1/2 F). Preserve source-supplied mile/yard labels, other units and approximate markers. Never change model inputs, receipts, probabilities or ticket calculations. No new race distance label on Pick Tickets.
+
+### Daily Double production rule
+- Retain source Timeform WAGERS evidence and verified consecutive pools in each authorized Race Cards response. Accept explicit Daily Double and standalone Double labels, exclude second-half-only entries. The builder tab appears only on the selected starting race when both active fields are usable. Never infer eligibility merely from consecutive race numbers. November 25, 2026: recover the 63 source-verified pools from exact date/track/full-card identity at read time, with source ZIP checksum recorded in `src/daily-double-eligibility.js`; never rewrite scored records. Future cards must carry their own Timeform WAGERS evidence.

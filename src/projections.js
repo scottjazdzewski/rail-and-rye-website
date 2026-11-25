@@ -1,3 +1,4 @@
+import {hasTimeformDailyDouble,restoreVerifiedDailyDoubleMetadata} from "./daily-double-eligibility.js";
 import {publishGPTProductCatalogEntry} from "./gpt-product-catalog.js";
 import {enrichRaceInformation,requireProductionPurses,requireProductionStakesNames,sourceMaidenClass} from "./projection-race-information.js";
 import {verifyCertifiedScratchFinalTrack} from "./f4-exotics.js";
@@ -34,7 +35,7 @@ async function readDashboardCards(env,products=[],onlyCurrent=false){
   try{
    const file=await env.CARDS_BUCKET.get(object.key);
    if(!file)return null;
-   const card=enrichRaceInformation(normalizeCard(JSON.parse(await file.text())));
+   const card=enrichRaceInformation(normalizeCard(restoreVerifiedDailyDoubleMetadata(JSON.parse(await file.text()))));
    if(onlyCurrent&&!currentProjection(card))return null;
    const matched=productForCard(card,products);
    return {product_id:matched?.id||null,title:matched?.title||card.track_name,track:matched?.track||card.track_name,race_date:card.race_date,pdf_expires_at:matched?.pdf_expires_at||null,uploaded_at:file.customMetadata?.uploaded_at||null,card};
@@ -84,11 +85,6 @@ function normalizeF4(value){
  if(Math.abs(result.exact_p1+result.exact_p2+result.exact_p3+result.exact_p4+result.exact_p5+result.p6_plus-1)>0.0000001)throw Error("F4 place probabilities must total 100%.");
  if(Math.abs(result.top2-(result.exact_p1+result.exact_p2))>0.0000001||Math.abs(result.top3-(result.top2+result.exact_p3))>0.0000001||Math.abs(result.top4-(result.top3+result.exact_p4))>0.0000001)throw Error("F4 cumulative probabilities disagree with place probabilities.");
  return result;
-}
-function hasTimeformDailyDouble(wagers){
- return typeof wagers==="string"&&
-  /\b(?:daily\s+double|double\s+wagers?)\b/i.test(wagers)&&
-  !/\b(?:2nd|second)\s+half\b/i.test(wagers);
 }
 function normalizeDailyDoublePools(declared,races){
  const byNumber=new Map(races.map(race=>[race.race_number,race]));
@@ -402,7 +398,7 @@ async function readProjectionCards(env,products,onlyCurrent=false){
   try{
    const file=await env.CARDS_BUCKET.get(projectionKey(item.id));
    if(!file)return null;
-   const card=enrichRaceInformation(normalizeCard(JSON.parse(await file.text())));
+   const card=enrichRaceInformation(normalizeCard(restoreVerifiedDailyDoubleMetadata(JSON.parse(await file.text()))));
    if(onlyCurrent&&!currentProjection(card))return null;
    return {product_id:item.id,title:item.title,track:item.track||card.track_name,race_date:item.race_date||card.race_date,pdf_expires_at:item.pdf_expires_at,uploaded_at:file.customMetadata?.uploaded_at||null,card};
   }catch(e){

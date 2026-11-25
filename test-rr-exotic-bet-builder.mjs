@@ -280,11 +280,11 @@ assert.match(readable(summary()),/30\.00%/,"Display the model-estimated DD hit c
 assert.match(readable(summary()),/BREAK-EVEN GROSS PAYOUT/,"Display break-even gross payout");
 assert.match(readable(summary()),/Ticket cost \$1\.00/,"Display DD ticket cost");
 assert.match(readable(summary()),/independent race outcomes/,"State the cross-race probability assumption");
-const pairSelect=walk(body).find(node=>node.tagName==="SELECT"&&node.id==="rr-bet-pair");
-assert.ok(pairSelect?.listeners.change,"Users can switch between official Daily Double pairs");
-assert.deepEqual(pairSelect.children.map(option=>option.value),["1-2","3-4"],
- "Only the source-listed pairs appear; the adjacent but unlisted 2-3 pair stays hidden");
-pairSelect.value="3-4";pairSelect.listeners.change();
-assert.match(readable(body),/Races 3–4/,"Pair selector updates both leg groups");
-assert.equal(app._calculate().combos.length,0,"Changing pairs clears stale selections");
-console.log("PASS: exact approved horse chip art, coupled entry, valid combinations/cost, F4 gated probabilities, no tote integration");
+// A double is available only from its starting race, not the entire track.
+for(const race of [dd2,dd4]){
+ app.open({race,card:ddCard,track:"Tampa Bay Downs",date:"2026-11-25"});
+ assert.equal(walk(body).some(node=>node.tagName==="BUTTON"&&node.textContent==="Daily Double"),false,"Second legs are not starting races");
+}
+app.open({race:dd3,card:ddCard,track:"Tampa Bay Downs",date:"2026-11-25"});
+assert.ok(walk(body).some(node=>node.tagName==="BUTTON"&&node.textContent==="Daily Double"));
+console.log("PASS: Daily Double starting-race eligibility");
