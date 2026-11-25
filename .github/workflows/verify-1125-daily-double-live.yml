@@ -1,0 +1,30 @@
+name: Verify Nov25 Daily Double customer release
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/verify-1125-daily-double-live.yml'
+      - 'scripts/verify_1125_dd_*'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node test-daily-double-eligibility.mjs
+      - run: pip install boto3
+      - name: Verify live scratch fields and customer Daily Double builder
+        env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+        run: python scripts/verify_1125_dd_live.py

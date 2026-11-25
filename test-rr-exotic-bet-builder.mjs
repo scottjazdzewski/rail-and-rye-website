@@ -288,3 +288,20 @@ for(const race of [dd2,dd4]){
 app.open({race:dd3,card:ddCard,track:"Tampa Bay Downs",date:"2026-11-25"});
 assert.ok(walk(body).some(node=>node.tagName==="BUTTON"&&node.textContent==="Daily Double"));
 console.log("PASS: Daily Double starting-race eligibility");
+
+if(process.env.RR_DD_PRIVATE_EDITION){
+ const edition=JSON.parse(readFileSync(process.env.RR_DD_PRIVATE_EDITION,"utf8"));
+ let visible=0,hidden=0;
+ for(const item of edition.cards){
+  const card=item.card;
+  for(const race of card.races){
+   app.open({race,card,track:card.track_name,date:card.race_date,projection_status:card.projection_status,model_receipts:card.model_receipts});
+   const expected=card.daily_double_pools.some(pool=>pool.first_race_number===race.race_number);
+   const button=walk(body).find(n=>n.tagName==="BUTTON"&&n.textContent==="Daily Double");
+   assert.equal(Boolean(button),expected,card.track_name+" R"+race.race_number);
+   if(expected)visible++;else hidden++;
+  }
+ }
+ assert.equal(visible,63);assert.equal(hidden,13);
+ console.log("LIVE_EDITION_DD_RENDER_PASS visible="+visible+" hidden="+hidden);
+}
