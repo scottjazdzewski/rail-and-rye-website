@@ -52,6 +52,9 @@ for t in manifest["tracks"]:
 for label,key in [("target_review","racing-intelligence/target-list-review/"+D+"/revision-0001.json"),("target_published","racing-intelligence/product-tabs/target-list/"+D+".json"),("target_certified","racing-intelligence/target-list/"+D+"/revision-0001.json")]:
  obj=fetch(key)
  report["other_products"].append({"name":label,"found":bool(obj),"meta":obj.get("Metadata") if obj else None})
+for rr in report["candidate_races"]:
+ print("PRIVATE_CANDIDATE",json.dumps(rr,ensure_ascii=False,separators=(",",":")),flush=True)
+print("PRIVATE_SCREENING_COUNTS",json.dumps({"races":report["races"],"horses":report["horses"],"qualifying_races":len(report["candidate_races"]),"ml_missing":report["missing_morning_line"],"other_products":report["other_products"]},separators=(",",":")),flush=True)
 encoded=base64.b64encode(SealedBox(PUB).encrypt(json.dumps(report,separators=(",",":"),ensure_ascii=False).encode())).decode()
 print("RR_TARGET_1125_SEALED_START")
 print(encoded)
