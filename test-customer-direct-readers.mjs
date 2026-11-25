@@ -15,7 +15,7 @@ for(const [slug,item] of Object.entries(CUSTOMER_READERS)){
  assert.doesNotMatch(html,/href="\/admin\//);
  assert.match(html,/href="\/store\/\?date=2026-11-24"/);
  assert.match(html,/aria-current="page"/);
- const helper=html.indexOf("rr-customer-reader.js?v=1");
+ const helper=html.indexOf("rr-customer-reader.js?v=2");
  assert.ok(helper>=0&&helper<html.search(/(?:projections-dashboard|pick-tickets-dashboard|longshot-radar|target-list-dashboard)\.js/),slug+" helper precedes reader");
 }
 assert.equal(customerReaderPath("Unknown",date),null);

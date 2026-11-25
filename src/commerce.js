@@ -474,7 +474,8 @@ async function recover(request,env,ctx){
   return neutral();
 }
 
-export async function listProducts(env){
+// Readers validate only the requested edition after entitlement; storefront readiness is unchanged.
+export async function listProducts(env,readerScope=null){
   if(!env.STORE_DB)return error('Catalog temporarily unavailable',503);
   await ensureReleaseSchedule(env);
   await ensureRacePdfExpirySchema(env);
@@ -483,14 +484,15 @@ export async function listProducts(env){
     AND NOT EXISTS(SELECT 1 FROM product_release_schedule s WHERE s.product_id=products.id AND s.release_at>CURRENT_TIMESTAMP)
     AND NOT EXISTS(SELECT 1 FROM bundle_only_assets a WHERE a.product_id=products.id)
     ORDER BY race_date DESC,created_at DESC LIMIT 150`).all();
-  const recordsList=records.results||[];
-  const readyProductIds=await readyProductTabProductIds(env,recordsList.filter(p=>p.pdf_key!==BUNDLE_KEY));
+  const matchesReader=p=>!readerScope||(p.category===readerScope.category&&p.race_date===readerScope.raceDate);
+  const recordsList=(records.results||[]).filter(p=>p.pdf_key===BUNDLE_KEY||matchesReader(p));
+  const readyProductIds=readerScope?new Set():await readyProductTabProductIds(env,recordsList.filter(p=>p.pdf_key!==BUNDLE_KEY));
   const products=[];
   for(const p of recordsList){
     const {pdf_key,...publicFields}=p;
     if(pdf_key!==BUNDLE_KEY){
       if(racePdfExpired(p.pdf_expires_at))continue;
-      if(!readyProductIds.has(p.id))continue;
+      if(!readerScope&&!readyProductIds.has(p.id))continue;
       products.push({...publicFields,kind:'single',delivery_mode:'tab',categories:[p.category]});continue;
     }
     // Fail closed: every published bundle must contain 2–24 available tab editions.
@@ -504,12 +506,13 @@ export async function listProducts(env){
     if(items.length<2||items.length>100||items.some(c=>c.pdf_key===BUNDLE_KEY||c.expired||c.pending_release||c.category==='Stable Notes'||!(c.status==='published'||c.status==='draft')))continue;
     // Published children were already checked together above. Only read tab
     // sources again for draft children, and memoize those results across bundles.
-    const unverified=items.filter(item=>!readyProductIds.has(item.id));
+    if(readerScope&&!items.some(matchesReader))continue;
+    const unverified=readerScope?[]:items.filter(item=>!readyProductIds.has(item.id));
     if(unverified.length){
       const tabReady=await readyProductTabProductIds(env,unverified);
       for(const id of tabReady)readyProductIds.add(id);
     }
-    if(items.some(item=>!readyProductIds.has(item.id)))continue;
+    if(!readerScope&&items.some(item=>!readyProductIds.has(item.id)))continue;
     // A bundle unlocks each included category/date in the customer tabs.
     const categories=[...new Set([p.category,...items.map(x=>x.category)].filter(Boolean))];
     products.push({...publicFields,kind:'bundle',delivery_mode:'tab',categories,bundle_count:items.length,included_titles:items.map(x=>x.title),

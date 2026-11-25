@@ -75,8 +75,8 @@ async function accessCookie(request,env){
  const verified=(await Promise.all(tokens.map(token=>verifiedOrderToken(token,env)))).filter(item=>item.scopes.length);
  return {scopes:verified.flatMap(item=>item.scopes),expires_at:Math.max(0,...verified.map(item=>item.expires_at)),tokens:verified.map(item=>item.token)};
 }
-async function productCatalog(env){
- const result=await listProducts(env);
+async function productCatalog(env,readerScope=null){
+ const result=await listProducts(env,readerScope);
  if(!result.ok)throw Error('Product catalog unavailable');
  const body=await result.json();
  if(!Array.isArray(body.products))throw Error('Product catalog unavailable');
@@ -138,7 +138,7 @@ async function library(request,env){
 async function edition(request,env,url){
  const category=url.searchParams.get('category')||'',raceDate=url.searchParams.get('date')||'';
  if(!PRODUCT_TAB_CATEGORIES.includes(category)||!/^\d{4}-\d{2}-\d{2}$/.test(raceDate))return error('Choose a published category and race date.',400);
- const [catalog,access]=await Promise.all([productCatalog(env),currentAccess(request,env)]);
+ const [catalog,access]=await Promise.all([productCatalog(env,{category,raceDate}),currentAccess(request,env)]);
  const matching=catalog.products.filter(product=>product.category===category&&product.race_date===raceDate);
  if(!matching.length)return error('No published tab exists for that category and racing date.',404);
  const eligible=entitledProducts(matching,access);
