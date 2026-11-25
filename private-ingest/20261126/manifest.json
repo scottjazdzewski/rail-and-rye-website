@@ -1,0 +1,56 @@
+{
+  "date": "2026-11-26",
+  "release_at": "2026-11-26T08:00:00Z",
+  "source_sha256": "20a001e4bbf88afb2701d6408e2cbfae63abb508cf18661d484e74d7f8ab0fc7",
+  "badge_evaluator_sha256": "26d720690875a06cef9cf0bb3db4a699e7ca56aa5ed1ca4997717f3c2bfeadac",
+  "tracks": [
+    {
+      "slug": "churchill-downs",
+      "name": "Churchill Downs",
+      "races": 12,
+      "runners": 112,
+      "raw_sha256": "eba2c06b320c0c942c8d23c3bffd7fb4a503ff88f67d7c1a769891029ba2cc46",
+      "cipher_sha256": "35a325a83e5420f5ff009d169600fd1f070cdff8b17557d0664b0f630e9361f9"
+    },
+    {
+      "slug": "del-mar",
+      "name": "Del Mar",
+      "races": 8,
+      "runners": 58,
+      "raw_sha256": "35d11e3f9f657c4796e16bcba6e13f865863265310294361ca7534e053e55f9e",
+      "cipher_sha256": "cfdcd43724e3c0bab3450be4dbbc973baa1064d0469ee6d395c9346e56495da8"
+    },
+    {
+      "slug": "fair-grounds",
+      "name": "Fair Grounds",
+      "races": 10,
+      "runners": 95,
+      "raw_sha256": "f4f7c04fc7832a56fc4f797d4d9ccf20296fdbd7a1fee6e0221681a967ae983e",
+      "cipher_sha256": "7e3440a4555e7f6e8715af8ad4e6926a3bbcb84b23bc0785975bef1cf4984382"
+    },
+    {
+      "slug": "gulfstream-park",
+      "name": "Gulfstream Park",
+      "races": 9,
+      "runners": 74,
+      "raw_sha256": "7e65bbf57fc2231d6bc520815fe6ec1d1755f06e954a64293c3ceb146bfd41bb",
+      "cipher_sha256": "7f4d303e7190c8fb0c25027489e0fc0b8cc09718b7df947f8f4e5d38c234aff9"
+    },
+    {
+      "slug": "laurel-park",
+      "name": "Laurel Park",
+      "races": 9,
+      "runners": 77,
+      "raw_sha256": "003207a5ac4f4d7e273adeee96ff1327701470415b146c5dda4b092dac54c0c0",
+      "cipher_sha256": "8cfc6abf1faa44b9f73d21924d7a3a052023bde94c71883810b7df33c4319786"
+    },
+    {
+      "slug": "woodbine",
+      "name": "Woodbine",
+      "races": 8,
+      "runners": 66,
+      "raw_sha256": "e032475d09fd92cc2702e1512001935d31b8e15bb87e38b4dcff088e5540e556",
+      "cipher_sha256": "791ca2883273e43f5963abdffb0e5dbae77819e748ba9b110253a24fcde20351"
+    }
+  ]
+}

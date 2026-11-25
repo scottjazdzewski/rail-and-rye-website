@@ -44,7 +44,7 @@
  function hasTimeformDailyDoubleEvidence(pool){
   const wagers=String(pool?.wager_text||"");
   return pool?.source==="timeform_wagers"&&
-   /\b(?:daily\s+double|double\s+wagers?)\b|(?:^|[/*:])\s*double\b/i.test(wagers)&&
+   /\b(?:(?:daily|rolling|late)\s+double|double\s+wagers?)\b|(?:^|[/*:])\s*double\b/i.test(wagers)&&
    !/\b(?:2nd|second)\s+half\b/i.test(wagers);
  }
  function dailyDoublePairs(card=state.card,race=state.race,date=state.date){

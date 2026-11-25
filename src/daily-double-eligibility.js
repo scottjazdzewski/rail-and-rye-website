@@ -15,7 +15,7 @@ const verified1125={
 };
 export function hasTimeformDailyDouble(wagers){
  return typeof wagers==="string"&&
-  /\b(?:daily\s+double|double\s+wagers?)\b|(?:^|[/*:])\s*double\b/i.test(wagers)&&
+  /\b(?:(?:daily|rolling|late)\s+double|double\s+wagers?)\b|(?:^|[/*:])\s*double\b/i.test(wagers)&&
   !/\b(?:2nd|second)\s+half\b/i.test(wagers);
 }
 export function restoreVerifiedDailyDoubleMetadata(card){

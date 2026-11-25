@@ -20,3 +20,6 @@ const api=readFileSync("src/product-tab-content.js","utf8");
 assert.match(api,/daily_double_pools:\(card\.daily_double_pools/);
 assert.match(api,/timeform_wagers:text\(race\.timeform_wagers/);
 console.log("PASS: 63 source-verified Daily Double pools; date/track/full-card scope and customer metadata");
+
+for(const line of ["Wagers: Rolling Double / Exacta","Wagers: $2 Rolling Double / Trifecta","Wagers: $5 Players Late Double","Wagers: $5 Late Double / Exacta"])assert.ok(hasTimeformDailyDouble(line),line);
+assert.equal(hasTimeformDailyDouble("Wagers: 2nd Half Rolling Double"),false);
