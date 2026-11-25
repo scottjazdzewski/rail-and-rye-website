@@ -41,14 +41,14 @@
    seen.add(number);return true;
   });
  }
- function officialDailyDoubleSource(sourceUrl,firstRaceNumber){
-  const match=state.date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if(!match||typeof sourceUrl!=="string"||sourceUrl.length>500)return false;
-  const dateCode=match[2]+match[3]+match[1].slice(-2);
-  const pattern=new RegExp("^https://(?:[a-z0-9-]+\\.)*equibase\\.com/static/entry/[a-z0-9_-]*"+dateCode+"usa"+firstRaceNumber+"-eqb\\.html(?:[?#].*)?$","i");
-  return pattern.test(sourceUrl);
+ function hasTimeformDailyDoubleEvidence(pool){
+  const wagers=String(pool?.wager_text||"");
+  return pool?.source==="timeform_wagers"&&
+   /\b(?:daily\s+double|double\s+wagers?)\b/i.test(wagers)&&
+   !/\b(?:2nd|second)\s+half\b/i.test(wagers);
  }
  function dailyDoublePairs(){
+  if(state.card?.race_date!==state.date)return [];
   const byNumber=new Map((state.card?.races||[]).filter(r=>Number.isInteger(Number(r?.race_number)))
    .map(r=>[Number(r.race_number),r]));
   if(!Array.isArray(state.card?.daily_double_pools))return [];
@@ -56,9 +56,9 @@
   for(const pool of state.card.daily_double_pools){
    const firstNumber=Number(pool?.first_race_number),secondNumber=Number(pool?.second_race_number);
    if(!Number.isInteger(firstNumber)||secondNumber!==firstNumber+1||seen.has(firstNumber)||
-      !officialDailyDoubleSource(pool?.source_url,firstNumber))continue;
+      !hasTimeformDailyDoubleEvidence(pool))continue;
    const first=byNumber.get(firstNumber),second=byNumber.get(secondNumber);
-   if(!first||!second||usableEntries(first).length<2||usableEntries(second).length<2)continue;
+   if(!first||!second||first.timeform_wagers!==pool.wager_text||usableEntries(first).length<2||usableEntries(second).length<2)continue;
    seen.add(firstNumber);pairs.push({first,second});
   }
   return pairs;

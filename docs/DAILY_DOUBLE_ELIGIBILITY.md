@@ -1,21 +1,24 @@
 # Daily Double eligibility
 
-Daily Double bet building appears only when a published race card includes an explicit `daily_double_pools` list. Consecutive race numbers by themselves never create a pool.
+Daily Double bet building is derived from each race's Timeform WAGERS line. Adjacent race numbers alone never create a pool.
 
-Each listed pool must identify two consecutive races present on the card and include a matching HTTPS Equibase static entry URL for the card date and first race. Cards without this metadata remain valid, but the Daily Double builder stays hidden. The UI also checks the pair against the races on the current card and the date selected in the dashboard.
+The card uploader preserves the Timeform line in `timeform_wagers`. When that line lists a Daily Double or Double Wagers and a following race exists on the same card, the normalized card records that first-leg-to-next-race pool. A “2nd Half” line does not start a new pool. Any supplied `daily_double_pools` list must exactly match the pools derived from Timeform.
 
 Example:
 
 ```json
 {
-  "daily_double_pools": [
+  "races": [
     {
-      "first_race_number": 1,
-      "second_race_number": 2,
-      "source_url": "https://www.equibase.com/static/entry/TAM112526USA1-EQB.html"
+      "race_number": 1,
+      "timeform_wagers": "WAGERS: Exacta, Trifecta, Double Wagers."
+    },
+    {
+      "race_number": 2,
+      "timeform_wagers": "WAGERS: Exacta, Trifecta."
     }
   ]
 }
 ```
 
-The Equibase entry menu is the provenance for the pool list. The card publisher must include only pairs where that menu lists a Daily Double wager. Do not infer eligibility from adjacent races. Legacy cards do not acquire Daily Double pools retroactively.
+Cards without a Timeform WAGERS indication remain valid, but the Daily Double builder stays hidden. The builder also confirms that pool metadata matches the card date and races displayed.

@@ -120,28 +120,36 @@ response=await upload(finalized);
 assert.equal(response.status,409,"Reject future scratch updates if their F4 receipt no longer matches");
 console.log("PASS: scratch-final cards publish only with identical, source-verified F4 joint probabilities for all races");
 
-// Official wagering-menu metadata is validated, normalized and retained on cards.
+// Timeform WAGERS is the source of truth for available Daily Double pools.
 const dailyDoubleCard=structuredClone(card);
 dailyDoubleCard.race_date="2026-11-24";
 dailyDoubleCard.track_name="Synthetic Daily Double Track";
 dailyDoubleCard.races=[structuredClone(card.races[0]),{...structuredClone(card.races[0]),race_number:2}];
-dailyDoubleCard.daily_double_pools=[{
- first_race_number:1,second_race_number:2,
- source_url:"https://www.equibase.com/static/entry/SYN112426USA1-EQB.html"
-}];
+dailyDoubleCard.races[0].timeform_wagers="WAGERS: Exacta, Trifecta, Double Wagers.";
 response=await upload(dailyDoubleCard);
 assert.equal(response.status,200,await response.clone().text());
 const doubleRead=await readAdminProjectionCards(env);
 const doubleSaved=(await doubleRead.json()).cards.find(item=>item.card.track_name==="Synthetic Daily Double Track")?.card;
-assert.deepEqual(doubleSaved?.daily_double_pools,dailyDoubleCard.daily_double_pools,
- "Validated pool metadata survives card publication and reads.");
-for(const invalidPools of [
- [{first_race_number:1,second_race_number:3,source_url:"https://www.equibase.com/static/entry/SYN112426USA1-EQB.html"}],
- [{first_race_number:1,second_race_number:2,source_url:"https://example.com/static/entry/SYN112426USA1-EQB.html"}],
- [{first_race_number:1,second_race_number:2,source_url:"https://www.equibase.com/static/entry/SYN112526USA1-EQB.html"}]
-]){
- const invalid=structuredClone(dailyDoubleCard);invalid.daily_double_pools=invalidPools;
- const rejected=await upload(invalid);
- assert.equal(rejected.status,400,"Invalid DD eligibility must fail closed.");
-}
-console.log("PASS: official DD pool metadata is source-bound and retained; missing or invalid eligibility is rejected");
+assert.deepEqual(doubleSaved?.daily_double_pools,[{
+ first_race_number:1,second_race_number:2,source:"timeform_wagers",
+ wager_text:"WAGERS: Exacta, Trifecta, Double Wagers."
+}],"Timeform WAGERS on the first leg creates one eligible next-race pool.");
+
+const forgedCard=structuredClone(dailyDoubleCard);
+forgedCard.race_date="2026-11-25";forgedCard.track_name="Forged Daily Double Track";
+forgedCard.daily_double_pools=[{first_race_number:1,second_race_number:3,source:"timeform_wagers",
+ wager_text:"WAGERS: Exacta, Trifecta, Double Wagers."}];
+const forged=await upload(forgedCard);
+assert.equal(forged.status,400,"Declared pool pairs must match Timeform WAGERS-derived pairs.");
+
+const secondHalfCard=structuredClone(card);
+secondHalfCard.race_date="2026-11-25";secondHalfCard.track_name="Second Half Daily Double Track";
+secondHalfCard.races=[structuredClone(card.races[0]),{...structuredClone(card.races[0]),race_number:2}];
+secondHalfCard.races[0].timeform_wagers="WAGERS: 2nd Half Daily Double.";
+response=await upload(secondHalfCard);
+assert.equal(response.status,200,await response.clone().text());
+const secondHalfRead=await readAdminProjectionCards(env);
+const secondHalfSaved=(await secondHalfRead.json()).cards.find(item=>item.card.track_name==="Second Half Daily Double Track")?.card;
+assert.equal(secondHalfSaved?.daily_double_pools,undefined,"A second-half menu line does not start another pool.");
+
+console.log("PASS: Timeform WAGERS creates eligible pools; unsupported and second-half entries fail closed");

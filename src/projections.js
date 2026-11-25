@@ -85,27 +85,39 @@ function normalizeF4(value){
  if(Math.abs(result.top2-(result.exact_p1+result.exact_p2))>0.0000001||Math.abs(result.top3-(result.top2+result.exact_p3))>0.0000001||Math.abs(result.top4-(result.top3+result.exact_p4))>0.0000001)throw Error("F4 cumulative probabilities disagree with place probabilities.");
  return result;
 }
-function normalizeDailyDoublePools(value,races,raceDate){
- if(value==null)return [];
- if(!Array.isArray(value)||value.length>19)throw Error("Daily Double pools must be an array of up to 19 official race pairs.");
- const raceNumbers=new Set(races.map(race=>race.race_number)),seen=new Set();
- const dateMatch=raceDate.match(/^(\d{4})-(\d{2})-(\d{2})$/);
- const dateCode=dateMatch[2]+dateMatch[3]+dateMatch[1].slice(-2);
- return value.map((pool,index)=>{
-  if(!isObject(pool))throw Error("Daily Double pool "+(index+1)+" is invalid.");
-  const first=Number(pool.first_race_number),second=Number(pool.second_race_number);
-  if(!Number.isInteger(first)||!Number.isInteger(second)||first<1||second>20||
-     second!==first+1||!raceNumbers.has(first)||!raceNumbers.has(second))
-   throw Error("Daily Double pools must name consecutive races present on this card.");
-  if(seen.has(first))throw Error("A race pair can only appear once in the Daily Double pool list.");
-  const source=text(pool.source_url,"Daily Double source URL",500,true);
-  const sourcePattern=new RegExp("^https://(?:[a-z0-9-]+\\.)*equibase\\.com/static/entry/[a-z0-9_-]*"+dateCode+"usa"+first+"-eqb\\.html(?:[?#].*)?$","i");
-  if(!sourcePattern.test(source))throw Error("Each Daily Double pool requires its matching official Equibase entry page.");
-  seen.add(first);
-  return {first_race_number:first,second_race_number:second,source_url:source};
- });
+function hasTimeformDailyDouble(wagers){
+ return typeof wagers==="string"&&
+  /\b(?:daily\s+double|double\s+wagers?)\b/i.test(wagers)&&
+  !/\b(?:2nd|second)\s+half\b/i.test(wagers);
 }
-
+function normalizeDailyDoublePools(declared,races){
+ const byNumber=new Map(races.map(race=>[race.race_number,race]));
+ const pools=[];
+ for(const race of races){
+  const first=race.race_number,second=first+1;
+  if(!hasTimeformDailyDouble(race.timeform_wagers)||!byNumber.has(second))continue;
+  pools.push({first_race_number:first,second_race_number:second,
+   source:"timeform_wagers",wager_text:race.timeform_wagers});
+ }
+ if(declared!=null){
+  if(!Array.isArray(declared)||declared.length>19)throw Error("Daily Double pools must be derived from up to 19 Timeform WAGERS entries.");
+  const expected=new Map(pools.map(pool=>[pool.first_race_number,pool]));
+  const seen=new Set();
+  for(const [index,pool] of declared.entries()){
+   if(!isObject(pool))throw Error("Daily Double pool "+(index+1)+" is invalid.");
+   const first=Number(pool.first_race_number),second=Number(pool.second_race_number);
+   const source=text(pool.source,"Daily Double source",40,true);
+   const wagerText=text(pool.wager_text,"Timeform WAGERS evidence",500,true);
+   const match=expected.get(first);
+   if(!Number.isInteger(first)||!Number.isInteger(second)||second!==first+1||
+      !match||seen.has(first)||source!=="timeform_wagers"||wagerText!==match.wager_text)
+    throw Error("Daily Double pools must match the starting race's Timeform WAGERS line.");
+   seen.add(first);
+  }
+  if(seen.size!==pools.length)throw Error("Every Timeform Daily Double WAGERS entry must be retained.");
+ }
+ return pools;
+}
 function normalizeCard(input){
  if(!isObject(input)||input.schema_version!==1)throw Error("This file must use projection schema version 1.");
  const raceDate=input.race_date;
@@ -193,7 +205,7 @@ function normalizeCard(input){
    throw Error("Stakes grade must be Grade 1, Grade 2 or Grade 3.");
   if(race.is_stakes!=null&&typeof race.is_stakes!=="boolean")
    throw Error("Stakes classification must be a boolean.");
-  return {race_number:number,post_time_et:text(race.post_time_et,"Post time",40),
+  return {race_number:number,post_time_et:text(race.post_time_et,"Post time",40),timeform_wagers:text(race.timeform_wagers,"Timeform WAGERS",500),
    surface:text(race.surface,"Surface",50),distance:text(race.distance,"Distance",60),
    conditions:text(race.conditions,"Race conditions",240),
    ...(sourceMaidenClass(race)?{display_race_class:sourceMaidenClass(race)}:{}),
@@ -204,7 +216,7 @@ function normalizeCard(input){
    purse:text(race.purse,"Purse",50),pace:text(race.pace,"Pace",50),
    scratch_count:scratchCount,scratches,summary:text(race.summary,"Race summary",1000),entries};
  });
- const dailyDoublePools=normalizeDailyDoublePools(input.daily_double_pools,races,raceDate);
+ const dailyDoublePools=normalizeDailyDoublePools(input.daily_double_pools,races);
  return {schema_version:1,race_date:raceDate,track_name:trackName,projection_status:projectionStatus,model_name:modelName,fair_odds_basis:fairOddsBasis,factor_basis:factorBasis,model_receipts:modelReceipts?Object.fromEntries((projectionStatus==="scratch_final"?
  ["tri_sha256","f4_sha256","prescratch_parent_sha256","official_changes_sha256"]:
  ["tri_sha256","f4_sha256"]).map(key=>[key,modelReceipts[key]])):null,...(dailyDoublePools.length?{daily_double_pools:dailyDoublePools}:{}),races};
