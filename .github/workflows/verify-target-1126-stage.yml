@@ -16,6 +16,17 @@ jobs:
         with:
           node-version: '22'
       - run: node --check src/target-list-staging.js && node --check src/target-list.js && node --check src/index.js
+      - name: Confirm scheduled Target List module imports and fail-closed missing-stage behavior
+        run: |
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          import {prepareScheduledTargetStages} from './src/target-list-staging.js';
+          const env={CARDS_BUCKET:{get:async()=>null},STORE_DB:{}};
+          const result=await prepareScheduledTargetStages(env,Date.UTC(2026,10,25,23,0,0));
+          assert.deepEqual(result,{prepared:0,deferred:0});
+          console.log('TARGET_1126_SCHEDULER_MODULE_VALIDATED');
+          JS
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
