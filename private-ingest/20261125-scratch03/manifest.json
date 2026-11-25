@@ -1,0 +1,23 @@
+{
+  "date": "2026-11-25",
+  "tracks": [
+    [
+      "penn-national",
+      "Penn National",
+      61,
+      48,
+      13,
+      "a9cf7dd9b53434f8f330f6eacaa08ec79279e8708358ce97fa68f39c3e0319ce",
+      "425319433b2d1f8dc12e5648d068815ff39acc0b3e660959f5af8ddaa72142e7"
+    ],
+    [
+      "delta-downs",
+      "Delta Downs",
+      67,
+      61,
+      6,
+      "27e9bd7f080575441ffa3e325b0248ade605917640bd41f6b631c0abc86b7749",
+      "ee421301b600c251a997c63876797116bc7ebe17514f75f50c4b51395699830b"
+    ]
+  ]
+}
