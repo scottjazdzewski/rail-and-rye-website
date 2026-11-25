@@ -5,7 +5,7 @@
  "use strict";
  const ROOT="/assets/approved/saddlecloths/";
  const F4_MODEL="TRI_F4_ORDERING_MODEL_V2_RANK_OFFSET";
- const TYPES=["exacta","trifecta"];
+ const TYPES=["exacta","trifecta","daily-double"];
  const MODES=["straight","box","key","wheel"];
  const CASH=(value)=>"$"+Number(value).toFixed(2);
  const el=(tag,cls,txt)=>{
@@ -14,8 +14,9 @@
   if(txt!==undefined)node.textContent=String(txt);
   return node;
  };
- const state={race:null,track:"",date:"",type:"exacta",mode:"wheel",
-              base:1,positions:[new Set(),new Set(),new Set()],box:new Set(),loading:false,modelError:"",requestId:0};
+ const state={race:null,card:null,track:"",date:"",type:"exacta",mode:"wheel",
+              base:1,positions:[new Set(),new Set(),new Set()],box:new Set(),
+              ddPair:null,ddSelections:[new Set(),new Set()],loading:false,modelError:"",requestId:0};
  let dialog=null;
  function horseChip(program){
   const value=String(program||"").toUpperCase();
@@ -40,12 +41,51 @@
    seen.add(number);return true;
   });
  }
+ function dailyDoublePairs(){
+  const races=(state.card?.races||[]).filter(r=>Number.isInteger(Number(r?.race_number)))
+   .slice().sort((a,b)=>Number(a.race_number)-Number(b.race_number));
+  const pairs=[];
+  for(let i=0;i<races.length-1;i++){
+   const first=races[i],second=races[i+1];
+   if(Number(second.race_number)!==Number(first.race_number)+1)continue;
+   if(usableEntries(first).length<2||usableEntries(second).length<2)continue;
+   pairs.push({first,second});
+  }
+  return pairs;
+ }
+ function doublePairKey(pair){
+  return pair?String(pair.first.race_number)+"-"+String(pair.second.race_number):"";
+ }
+ function ensureDailyDoublePair(pairs){
+  const currentKey=doublePairKey(state.ddPair);
+  const existing=pairs.find(pair=>doublePairKey(pair)===currentKey);
+  if(existing){state.ddPair=existing;return;}
+  const active=Number(state.race?.race_number);
+  state.ddPair=pairs.find(pair=>Number(pair.first.race_number)===active)||
+   pairs.find(pair=>Number(pair.second.race_number)===active)||pairs[0]||null;
+ }
+ function verifiedWinProbabilities(race){
+  const entries=usableEntries(race);
+  if(entries.length<2)return null;
+  const probabilities=new Map();let total=0;
+  for(const entry of entries){
+   const percent=Number(entry.win_probability_exact),chance=percent/100;
+   if(!Number.isFinite(percent)||percent<=0||percent>=100)return null;
+   probabilities.set(String(entry.program_number),chance);total+=chance;
+  }
+  return Math.abs(total-1)<=1e-8?{entries,probabilities}:null;
+ }
  function positionLists(){
+  if(state.type==="daily-double")return [];
   const n=state.type==="exacta"?2:3;
   if(state.mode==="box")return Array.from({length:n},()=>[...state.box]);
   return state.positions.slice(0,n).map(x=>[...x]);
  }
  function combinations(){
+  if(state.type==="daily-double"){
+   const first=[...state.ddSelections[0]],second=[...state.ddSelections[1]];
+   return first.flatMap(a=>second.map(b=>[a,b]));
+  }
   const lists=positionLists();
   if(lists.some(list=>!list.length))return [];
   let rows=[[]];
@@ -60,6 +100,11 @@
   return [...distinct.values()];
  }
  function selectHorse(program,leg){
+  if(state.type==="daily-double"){
+   const target=state.ddSelections[leg];
+   if(target.has(program))target.delete(program);else target.add(program);
+   render();return;
+  }
   const target=state.mode==="box"?state.box:state.positions[leg];
   if(target.has(program))target.delete(program);
   else{
@@ -72,13 +117,13 @@
   if(!TYPES.includes(value))return;
   state.type=value;
   state.positions=[new Set(),new Set(),new Set()];
-  state.box.clear();render();
+  state.box.clear();state.ddSelections=[new Set(),new Set()];render();
  }
  function setMode(value){
-  if(!MODES.includes(value))return;
+  if(state.type==="daily-double"||!MODES.includes(value))return;
   state.mode=value;
   state.positions=[new Set(),new Set(),new Set()];
-  state.box.clear();render();
+  state.box.clear();state.ddSelections=[new Set(),new Set()];render();
  }
  // The published frozen F4 conditional law is mathematically identical
  // to the signed full ordered-prefix CSV. The Worker validates the source
@@ -146,7 +191,29 @@
   if(!fullFieldCoverage&&chance>=0.99995)return ">99.99%";
   return (chance*100).toFixed(2)+"%";
  }
+ function calculateDailyDouble(){
+  const combos=combinations(),cost=Number((combos.length*state.base).toFixed(2));
+  const first=state.ddPair?verifiedWinProbabilities(state.ddPair.first):null;
+  const second=state.ddPair?verifiedWinProbabilities(state.ddPair.second):null;
+  const complete=!!first&&!!second&&combos.length>0;
+  const probabilities=new Map();
+  if(first&&second){
+   for(const [a,p1] of first.probabilities)for(const [b,p2] of second.probabilities)
+    probabilities.set(a+"|"+b,p1*p2);
+  }
+  const fullTicket=complete&&combos.every(combo=>probabilities.has(combo.join("|")));
+  const rawChance=fullTicket?combos.reduce((sum,combo)=>sum+probabilities.get(combo.join("|")),0):null;
+  const chance=rawChance===null?null:Math.min(1,Math.max(0,rawChance));
+  const allOutcomesCovered=complete&&state.ddSelections[0].size===first.entries.length&&
+   state.ddSelections[1].size===second.entries.length;
+  const threshold=chance!==null&&chance>0?cost/chance:null;
+  const fair=threshold!==null&&Number.isFinite(threshold)?
+   Math.ceil(threshold*100-1e-9)/100:null;
+  return {combos,cost,chance,fair,probabilities:fullTicket?probabilities:null,
+   modelAvailable:!!first&&!!second,allOutcomesCovered,firstPlaceKey:false,leadHorse:null};
+ }
  function calculate(entries){
+  if(state.type==="daily-double")return calculateDailyDouble();
   const combos=combinations(),cost=Number((combos.length*state.base).toFixed(2));
   const probabilities=verifiedDistribution(entries,state.type);
   const complete=probabilities!==null&&combos.length>0&&
@@ -209,20 +276,43 @@
   const title=el("div","rr-bet-heading");
   const context=el("div","rr-bet-context");
   context.append(el("strong","","Rail & Rye · Bet Builder"));
-  context.append(el("span","",state.track+" · Race "+state.race.race_number+
-    (state.date?" · "+state.date:"")));
+  const raceContext=state.type==="daily-double"&&state.ddPair?
+   "Daily Double · Races "+state.ddPair.first.race_number+"–"+state.ddPair.second.race_number:
+   "Race "+state.race.race_number;
+  context.append(el("span","",state.track+" · "+raceContext+(state.date?" · "+state.date:"")));
   const close=el("button","rr-bet-close","Close");
   close.type="button";close.setAttribute("aria-label","Close Bet Builder");
   close.addEventListener("click",()=>dialog.close());
   title.append(context,close);body.append(title);
   const types=el("div","rr-bet-types");
   types.setAttribute("role","group");types.setAttribute("aria-label","Wager type");
-  for(const type of TYPES)types.append(button(type==="exacta"?"Exacta":"Trifecta",state.type===type,()=>setType(type)));
+  const typeLabels={exacta:"Exacta",trifecta:"Trifecta","daily-double":"Daily Double"};
+  for(const type of TYPES)types.append(button(typeLabels[type],state.type===type,()=>setType(type)));
   body.append(types);
-  const constructions=el("div","rr-bet-constructions");
-  constructions.setAttribute("role","group");constructions.setAttribute("aria-label","Ticket construction");
-  for(const mode of MODES)constructions.append(button(mode==="straight"?"Straight":mode==="box"?"Box":mode==="key"?"1st-Place Key":"Part-Wheel",state.mode===mode,()=>setMode(mode)));
-  body.append(constructions);
+  if(state.type==="daily-double"){
+   const pairs=dailyDoublePairs();ensureDailyDoublePair(pairs);
+   if(pairs.length){
+    const pairWrap=el("div","rr-bet-pair-selector");
+    const pairLabel=el("label","","Daily Double race pair");pairLabel.htmlFor="rr-bet-pair";
+    const pairSelect=el("select","");pairSelect.id="rr-bet-pair";
+    pairSelect.setAttribute("aria-label","Daily Double race pair");
+    for(const pair of pairs){
+     const option=el("option","","Races "+pair.first.race_number+"–"+pair.second.race_number);
+     option.value=doublePairKey(pair);pairSelect.append(option);
+    }
+    pairSelect.value=doublePairKey(state.ddPair);
+    pairSelect.addEventListener("change",()=>{
+     state.ddPair=pairs.find(pair=>doublePairKey(pair)===pairSelect.value)||null;
+     state.ddSelections=[new Set(),new Set()];render();
+    });
+    pairWrap.append(pairLabel,pairSelect);body.append(pairWrap);
+   }else body.append(el("p","rr-bet-no-pairs","No Daily Double race pairs are available on this card."));
+  }else{
+   const constructions=el("div","rr-bet-constructions");
+   constructions.setAttribute("role","group");constructions.setAttribute("aria-label","Ticket construction");
+   for(const mode of MODES)constructions.append(button(mode==="straight"?"Straight":mode==="box"?"Box":mode==="key"?"1st-Place Key":"Part-Wheel",state.mode===mode,()=>setMode(mode)));
+   body.append(constructions);
+  }
   const denom=el("div","rr-bet-denomination");
   const money=el("label","","Base wager");
   money.htmlFor="rr-bet-base";
@@ -258,7 +348,10 @@
   summary.append(secondary);
   if(result.firstPlaceKey)summary.append(el("span","rr-bet-summary-key",
    "Full key: #"+result.leadHorse.program_number+" must WIN"));
-  if(result.combos.length>1&&result.modelAvailable)
+  if(state.type==="daily-double"&&result.modelAvailable)
+   summary.append(el("small","rr-bet-summary-assumption",
+    "Model estimate combines both legs’ win chances and assumes independent race outcomes."));
+  else if(result.combos.length>1&&result.modelAvailable)
    summary.append(el("small","rr-bet-summary-assumption",
     "Break-even assumes equal gross payouts; actual tote payouts vary."));
   if(result.allOutcomesCovered)
@@ -270,8 +363,14 @@
     summary.setAttribute("aria-label","Your exotic ticket; no hit probability available");
    
   body.append(summary);
-  if(state.mode==="box")body.append(group("BOX HORSES · any finishing order",entries,0,state.box));
-  else{
+  if(state.type==="daily-double"&&state.ddPair){
+   body.append(group("LEG 1 · RACE "+state.ddPair.first.race_number,
+    usableEntries(state.ddPair.first),0,state.ddSelections[0]));
+   body.append(group("LEG 2 · RACE "+state.ddPair.second.race_number,
+    usableEntries(state.ddPair.second),1,state.ddSelections[1]));
+  }else if(state.type!=="daily-double"&&state.mode==="box")
+   body.append(group("BOX HORSES · any finishing order",entries,0,state.box));
+  else if(state.type!=="daily-double"){
    const positions=state.type==="exacta"?2:3;
    const labels=["1ST PLACE","2ND PLACE","3RD PLACE"];
    for(let i=0;i<positions;i++)body.append(group(labels[i],entries,i,state.positions[i]));
@@ -286,9 +385,11 @@
    line.append(strip);
    if(result.probabilities){
     const probability=result.probabilities.get(combo.join("|"));
-    line.append(el("span","rr-bet-combo-prob",
-      (probability*100).toFixed(3)+"% · break-even gross "+
-      (probability>0?CASH(Math.ceil((state.base/probability)*100-1e-9)/100):"—")));
+    const detail=state.type==="daily-double"?
+     (probability*100).toFixed(3)+"% projected hit chance":
+     (probability*100).toFixed(3)+"% · break-even gross "+
+      (probability>0?CASH(Math.ceil((state.base/probability)*100-1e-9)/100):"—");
+    line.append(el("span","rr-bet-combo-prob",detail));
    }
    list.append(line);
   }
@@ -329,8 +430,10 @@
  function open(options){
   const race=options?.race;
   if(!race||!Array.isArray(race.entries)||race.entries.length<2)return;
-  state.race=race;state.track=String(options.track||"");state.date=String(options.date||"");
+  state.race=race;state.card=options.card&&Array.isArray(options.card.races)?options.card:null;
+  state.track=String(options.track||"");state.date=String(options.date||"");
   state.type="exacta";state.mode="wheel";state.base=1;state.loading=true;state.modelError="";
+  state.ddPair=null;state.ddSelections=[new Set(),new Set()];
    state.snapshotStatus=options.projection_status==="scratch_final"?"scratch_final":"prescratch";
    state.modelReceipts=options.model_receipts||null;
   state.positions=[new Set(),new Set(),new Set()];state.box=new Set();

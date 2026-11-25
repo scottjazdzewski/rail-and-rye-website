@@ -247,4 +247,34 @@ assert.match(css,/\.rr-bet-position-heading\{/,
 assert.match(script,/dialog\.scrollTop=previousScroll/,
  "Re-render must preserve mobile drawer position");
 
+
+// The Daily Double tab uses the two races' exact PWIN marginals and keeps
+// ticket probability separate from actual tote payout data.
+const dd1={race_number:1,entries:[row("1","Leg One Favorite",40),row("2","Leg One Other",60)]};
+const dd2={race_number:2,entries:[row("3","Leg Two Other",25),row("4","Leg Two Favorite",75)]};
+const dd3={race_number:3,entries:[row("5","Third Race A",50),row("6","Third Race B",50)]};
+app.open({race:dd1,card:{races:[dd1,dd2,dd3]},track:"Tampa Bay Downs",date:"2026-11-25"});
+const doubleTab=walk(body).find(node=>node.tagName==="BUTTON"&&node.textContent==="Daily Double");
+assert.ok(doubleTab?.listeners.click,"Daily Double has a dedicated builder tab");
+doubleTab.listeners.click();
+assert.match(readable(body),/Races 1–2/,"Default pair starts with the selected race and its next race");
+assert.ok(selectedChoice("0:1")?.listeners.click);
+selectedChoice("0:1").listeners.click();
+assert.ok(selectedChoice("1:4")?.listeners.click);
+selectedChoice("1:4").listeners.click();
+result=app._calculate();
+assert.equal(result.combos.length,1);
+assert.ok(Math.abs(result.chance-.30)<1e-12,"DD chance multiplies the selected runners' exact PWINs");
+assert.equal(result.cost,1);
+assert.equal(result.fair,3.34,"DD break-even gross payout rounds up to cents");
+assert.match(readable(summary()),/30\.00%/,"Display the model-estimated DD hit chance");
+assert.match(readable(summary()),/BREAK-EVEN GROSS PAYOUT/,"Display break-even gross payout");
+assert.match(readable(summary()),/Ticket cost \$1\.00/,"Display DD ticket cost");
+assert.match(readable(summary()),/independent race outcomes/,"State the cross-race probability assumption");
+const pairSelect=walk(body).find(node=>node.tagName==="SELECT"&&node.id==="rr-bet-pair");
+assert.ok(pairSelect?.listeners.change,"Users can switch Daily Double pairs");
+pairSelect.value="2-3";pairSelect.listeners.change();
+assert.match(readable(body),/Races 2–3/,"Pair selector updates both leg groups");
+assert.equal(app._calculate().combos.length,0,"Changing pairs clears stale selections");
+
 console.log("PASS: exact approved horse chip art, coupled entry, valid combinations/cost, F4 gated probabilities, no tote integration");
