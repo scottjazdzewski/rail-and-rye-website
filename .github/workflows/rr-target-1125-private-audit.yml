@@ -2,7 +2,7 @@ name: November 25 Target List private source audit
 on:
   push:
     branches: [main]
-    paths: ['.github/workflows/rr-target-1125-private-audit.yml']
+    paths: ['.github/workflows/rr-target-1125-private-audit.yml', 'scripts/rr_target_1125_private_audit.py']
   workflow_dispatch:
 permissions:
   contents: read
