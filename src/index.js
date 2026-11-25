@@ -10,6 +10,7 @@ import {handleAdminBundles,BUNDLE_KEY} from './bundles.js';
 import {syncDailyBundles,ensureUpcomingProductReleaseSchedules} from './daily-bundles.js';
 import {syncStagedRaceCardCatalog} from './staged-race-card-catalog.js';
 import {prepareScheduledRadarStages} from './longshot-radar-staging.js';
+import {prepareScheduledTargetStages} from './target-list-staging.js';
 import {handleAdminGPTProductCatalog} from './gpt-product-catalog.js';
 import {syncExistingGPTProductCatalog} from './gpt-product-catalog-sync.js';
 import {handleAdminBundleAssets} from './bundle-assets.js';
@@ -448,6 +449,10 @@ export default {
     ctx.waitUntil(prepareScheduledRadarStages(env).then(result=>{
       if(result.prepared)console.info('Dated Radar prepared for scheduled release',result.prepared);
     }).catch(e=>console.warn('Scheduled Radar preparation deferred',String(e.message||e).slice(0,140))));
+    ctx.waitUntil(prepareScheduledTargetStages(env).then(result=>{
+      if(result.prepared)console.info('Dated Target List queued for 3AM Eastern release',result.prepared);
+      if(result.deferred)console.info('Target List awaits matching source projections',result.deferred);
+    }).catch(e=>console.warn('Target List stage reconciliation deferred',String(e.message||e).slice(0,140))));
     ctx.waitUntil(syncExistingGPTProductCatalog(env,'sync_existing').then(result=>{
       if(result.synced_count)console.info('Published GPT product tabs reconciled with catalog',result.synced_count);
     }).catch(e=>console.warn('GPT product catalog reconciliation deferred',String(e.message||e).slice(0,140))));
