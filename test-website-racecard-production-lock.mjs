@@ -30,3 +30,25 @@ const admin=assetRefs("public/admin/projections-preview.html");
 assert.equal(admin.length,6);
 assert.deepEqual(admin,assetRefs("public/membership/dashboard/index.html"));
 console.log("Approved mobile racecard contract and renderer parity PASS");
+
+const tileStart=js.indexOf("function raceFactDisplayValue(");
+const tileEnd=js.indexOf("function makeMetricGroup(",tileStart);
+assert.ok(tileStart>=0&&tileEnd>tileStart);
+const node=(tag,cls,value)=>({tag,cls,value,dataset:{},attributes:{},children:[],setAttribute(k,v){this.attributes[k]=v},append(...children){this.children.push(...children)}});
+const tile=vm.runInNewContext(js.slice(tileStart,tileEnd)+"\nmakeTile",{makeNode:node,iconNode:(art,cls)=>({art,cls})});
+for(const value of [undefined,null,"","—","N/A","Insufficient evidence","Not enough data available to make a Pace Projection for this race."]){
+ const rendered=tile("Pace",value);
+ assert.equal(rendered.children[0].art,"fact_pace_moderate");
+ assert.equal(rendered.children[2].value,"Moderate");
+}
+for(const [value,art] of [["Weak","fact_pace_weak"],["Moderate","fact_pace_moderate"],["Strong","fact_pace_strong"]]){
+ const rendered=tile("Pace",value);
+ assert.equal(rendered.children[0].art,art);
+ assert.equal(rendered.children[2].value,value);
+}
+assert.equal(tile("Surface","").children[2].value,"—");
+assert.equal(tile("Distance","").children[2].value,"—");
+const race={pace:"",entries:[{metrics:[{label:"Pace Fit",value:"gray"}]}]};
+tile("Pace",race.pace);
+assert.deepEqual(race,{pace:"",entries:[{metrics:[{label:"Pace Fit",value:"gray"}]}]});
+console.log("PDF parity: neutral race pace display fallback PASS");

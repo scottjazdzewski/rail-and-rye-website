@@ -229,8 +229,16 @@ function iconNode(name,className,state){
  const image=document.createElement("img");image.src="/assets/approved/factor-badges/"+name+(state?"_"+state:"")+(name==="fact_pace_strong"? "_forest.svg":".png");image.alt="";image.loading="lazy";image.decoding="async";
  node.append(image);return node;
 }
+// PDF parity: an unavailable race-level pace projection displays the neutral
+// Moderate badge. This is presentation only; leave source pace and runner
+// Pace Fit ratings unchanged.
+function raceFactDisplayValue(label,value){
+ const raw=String(value??"").trim();
+ if(label==="Pace"&&(/^(?:[-—–]+|n\/?a|none|unknown|unavailable|not available|not listed|no projection|no pace projection|insufficient(?: pace)? (?:data|evidence)|not enough data(?: available)?(?: to make a pace projection(?: for this race)?)?\.?)$/i.test(raw)||!raw))return "Moderate";
+ return raw;
+}
 function makeTile(label,value){
- const tile=makeNode("div","rr-dash-race-tile"),raw=String(value||"").trim();
+ const tile=makeNode("div","rr-dash-race-tile"),raw=raceFactDisplayValue(label,value);
  const key=raw.toLowerCase().replace(/[^a-z]+/g," ").trim();
  const art=label==="Pace"?({weak:"fact_pace_weak",moderate:"fact_pace_moderate",strong:"fact_pace_strong"}[key]||""):
   label==="Surface"?({dirt:"fact_surface_dirt",turf:"fact_surface_turf",synthetic:"fact_surface_synthetic","all weather":"fact_surface_synthetic"}[key]||""):
