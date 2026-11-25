@@ -1,0 +1,55 @@
+{
+  "date": "2026-11-25",
+  "tracks": [
+    [
+      "finger-lakes",
+      "Finger Lakes",
+      8,
+      61,
+      57,
+      4,
+      "cb8f7336c04420514d75f2b310abdb9d34a456bc06199f89c579ecb76af87ce1",
+      "c38f9d62557c15b4698f2a179230d5ed9a10badb91c762c0fdb6508879a8d6ed"
+    ],
+    [
+      "mahoning-valley",
+      "Mahoning Valley",
+      8,
+      64,
+      55,
+      9,
+      "892040da2a7b6a77bc9c1d7a4570671684f3e33d8b5a45bfc1c42064462e8eea",
+      "568cdd6c161b1efcfc12d75609b5f0e78fe4cd81b2cb8c8058e2f423a4bf77b6"
+    ],
+    [
+      "parx-racing",
+      "Parx Racing",
+      9,
+      72,
+      62,
+      10,
+      "d53ab655e981365236b5274f8df192cc5e60f6c9060c44ab54f1c0251e854502",
+      "150ff33654e2383d591cbcb36c2e0ff8de51e34e396eed15ecff0e78e59291e8"
+    ],
+    [
+      "tampa-bay-downs",
+      "Tampa Bay Downs",
+      9,
+      74,
+      60,
+      14,
+      "7171cbff4dc5e632a61c113e8202eeee34ee3db5627b78d741ff2dc28d15a2c7",
+      "bfd62f52321b25f47a2e96c7a7fa6511f84163e23e1e0c9e9a91cf1708f7a1be"
+    ],
+    [
+      "charles-town",
+      "Charles Town",
+      8,
+      68,
+      63,
+      5,
+      "9952a3b120a203dc83e7ae01e3af540f551352bda2826f8ec11fc21b5c4a68fc",
+      "5d82f54d04fd0f387f91f3edbd0189de1613bf5192c890ce816313b0b3f96998"
+    ]
+  ]
+}
