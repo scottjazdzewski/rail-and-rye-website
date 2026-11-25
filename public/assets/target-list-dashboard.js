@@ -43,7 +43,7 @@ function saddle(program){
 }
 // Presentation-only: preserve stored fractional odds while using the approved
 // American tote display (9-5, 3-1); no pricing or probability recalculation.
-const tote=value=>String(value??"").replace(/^(\d+)\s*\/\s*(\d+)$/,"$1-$2");
+const tote=value=>globalThis.RRRaceTitles.formatToteOdds(value);
 function stat(label,value,kind){
  const el=node("div","rr-target-stat rr-target-stat-"+kind);
  add(el,node("span","rr-target-stat-label",label),node("strong","rr-target-stat-value",value));

@@ -146,3 +146,10 @@ check({race_number:5,conditions:"Maiden",display_race_class:"Maiden Special Weig
 
 const formatDistance=ctx.RRRaceTitles.formatDistance;
 for(const [raw,expected] of [["8.31818 F","1M 70Y"],["8.18182 F","1M 40Y"],["8 F","1M"],["8.5 F","1 1/16 M"],["9 F","1 1/8 M"],["10 F","1 1/4 M"],["6 F","6 F"],["6.5 F","6 1/2 F"],["1M 70Y","1M 70Y"],["About 8.31818 F","About 1M 70Y"],["1200 Meters","1200 Meters"],["",""]])assert.equal(formatDistance(raw),expected,raw);
+
+// Permanent North American tote display contract, independent of scoring.
+const tote=ctx.RRRaceTitles.formatToteOdds, fair=ctx.RRRaceTitles.formatFairOdds;
+for(const [raw,expected] of [["7-10","4-5"],["3-10","2-5"],["9-10","1-1"],["1-20","1-9"],["1-4","1-5"],["6/5","6-5"],["9/2","9-2"],["11/2","6-1"],["12-1","12-1"],["EVEN","1-1"],["","—"],["invalid","—"]])assert.equal(tote(raw),expected,raw);
+for(const label of ["1-9","1-5","2-5","1-2","3-5","4-5","1-1","6-5","7-5","3-2","8-5","9-5","2-1","5-2","3-1","7-2","4-1","9-2","5-1","99-1"])assert.equal(tote(label),label,label);
+const wildVine={win_probability_exact:57.6,fair_odds:"7-10",morning_line:"6-5"};assert.equal(fair(wildVine),"4-5");assert.equal(wildVine.fair_odds,"7-10");assert.equal(wildVine.win_probability_exact,57.6);
+console.log("PASS: canonical North American tote odds across the shared display helper");

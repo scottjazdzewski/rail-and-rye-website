@@ -197,31 +197,9 @@ function factBadge(kind,value){
  if(kind==="distance")return "fact_distance";
  return "";
 }
-// Tote-style US fractional odds are DISPLAY ONLY. The frozen TRI model net
-// price and unrounded PWIN remain unchanged for all calculations / thresholds.
-const SHORT_TOTE_PRICES=[
- [0.05,"1-20"],[0.1,"1-10"],[0.2,"1-5"],[0.25,"1-4"],[0.3,"3-10"],
- [0.4,"2-5"],[0.5,"1-2"],[0.6,"3-5"],[0.7,"7-10"],[0.8,"4-5"],
- [0.9,"9-10"],[1,"1-1"],[1.2,"6-5"],[1.4,"7-5"],[1.5,"3-2"],
- [1.6,"8-5"],[1.8,"9-5"],[2,"2-1"],[2.5,"5-2"],[3,"3-1"],
- [3.5,"7-2"],[4,"4-1"],[4.5,"9-2"]
-];
-function fairOdds(entry){
- let p=Number(entry.win_probability_exact);
- if(!(Number.isFinite(p)&&p>0&&p<=100))p=Number(entry.win_probability);
- let net=(Number.isFinite(p)&&p>0&&p<=100)?100/p-1:NaN;
- if(!Number.isFinite(net)||net<0){
-  const raw=String(entry.fair_odds||"").trim(),match=raw.match(/^(\d+(?:\.\d+)?)\s*[-/]\s*(\d+(?:\.\d+)?)$/);
-  if(!match||Number(match[2])<=0)return "—";
-  net=Number(match[1])/Number(match[2]);
- }
- if(net<5){
-  return SHORT_TOTE_PRICES.reduce((best,candidate)=>
-   Math.abs(candidate[0]-net)<Math.abs(best[0]-net)?candidate:best
-  )[1];
- }
- return Math.max(5,Math.round(net))+"-1";
-}
+// All displays use the shared, source-neutral North American tote scale.
+function fairOdds(entry){return globalThis.RRRaceTitles.formatFairOdds(entry);}
+function tote(value){return globalThis.RRRaceTitles.formatToteOdds(value);}
 function makeNode(tag,className,text){const node=document.createElement(tag);if(className)node.className=className;if(text!==undefined)node.textContent=String(text);return node;}
 function iconNode(name,className,state){
  if(!name)return null;
@@ -273,7 +251,7 @@ function showHorse(entry){
  setText(title,(entry.program_number?"#"+entry.program_number+"  ":"")+entry.horse_name);
  detail.replaceChildren();
  const grid=document.createElement("dl");grid.className="rr-dash-detail-grid";
- const fields=[["Win probability",entry.win_probability==null?null:String(entry.win_probability)+"%"],["Morning line",entry.morning_line],["Fair odds",fairOdds(entry)],["Trainer",entry.trainer],["Jockey",entry.jockey]];
+ const fields=[["Win probability",entry.win_probability==null?null:String(entry.win_probability)+"%"],["Morning line",tote(entry.morning_line)],["Fair odds",fairOdds(entry)],["Trainer",entry.trainer],["Jockey",entry.jockey]];
  for(const [label,value] of fields){if(value==null||value==="")continue;const item=makeNode("div","rr-dash-detail-value"),dt=makeNode("dt","",label),dd=makeNode("dd","",value);item.append(dt,dd);grid.append(item);}
  for(const metric of entry.metrics||[]){
   const item=makeNode("div","rr-dash-detail-value"),dt=makeNode("dt","",metric.label),dd=makeNode("dd","");
@@ -295,7 +273,7 @@ function showHorse(entry){
  market.append(makeNode("span","rr-dash-sheet-kicker","WIN PROJECTION"));
  market.append(makeNode("strong","rr-dash-sheet-win",entry.win_probability==null?"—":String(entry.win_probability)+"%"));
  market.append(makeNode("span","rr-dash-sheet-fair","FAIR "+(fairOdds(entry)||"—")));
- const ml=makeNode("div","rr-dash-sheet-ml","M/L "+(entry.morning_line||"—"));
+ const ml=makeNode("div","rr-dash-sheet-ml","M/L "+(tote(entry.morning_line)));
  summary.append(chipFrame,ml,market);mobile.append(summary);
  const connections=[["TRAINER",entry.trainer],["JOCKEY",entry.jockey]].filter(([,value])=>value);
  if(connections.length){
@@ -470,7 +448,7 @@ function renderCard(){
   const horseButton=makeNode("button","rr-dash-horse-open");horseButton.type="button";horseButton.setAttribute("aria-label","Open projection details for "+entry.horse_name);
   const horseHeading=makeNode("span","rr-dash-horse-heading");
   horseHeading.append(makeNode("span","rr-dash-horse-name",entry.horse_name));
-  horseHeading.append(makeNode("span","rr-dash-horse-ml","M/L "+(entry.morning_line||"—")));
+  horseHeading.append(makeNode("span","rr-dash-horse-ml","M/L "+(tote(entry.morning_line))));
   horseButton.append(horseHeading);
   const connections=[entry.trainer||"",entry.jockey||""].filter(Boolean).join(" | ");
   if(connections)horseButton.append(makeNode("span","rr-dash-horse-connections",connections));

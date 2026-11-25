@@ -52,7 +52,7 @@ function renderDates(){
  const dates=state.editions.map(item=>[item.race_date,dateLabel(item.race_date)]);
  state.date=options(q("#rr-lr-date"),dates,state.date);
 }
-const tote=value=>String(value??"").replace(/^(\d+)\s*\/\s*(\d+)$/,"$1-$2");
+const tote=value=>globalThis.RRRaceTitles.formatToteOdds(value);
 function market(label,value,cls){
  const item=make("div","rr-lr-market "+(cls||""));
  item.append(make("span","",label),make("strong","",value));

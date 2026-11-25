@@ -183,5 +183,36 @@
   const whole=Math.floor(nearest/unit),remainder=nearest%unit;
   return (prefix||approximate)+(whole?whole+(f>=8?"M":"F")+(remainder?" ":""):"")+(remainder?remainder+"Y":"");
  }
- root.RRRaceTitles=Object.freeze({describe,numericGrade,genericStakes,maidenClass,maidenPresentation,formatDistance});
+ // Rail & Rye display lock: conventional North American tote rungs only.
+ // Preserve exact source prices and model probabilities in the data layer.
+ const TOTE_SHORT=Object.freeze([[1/9,"1-9"],[1/5,"1-5"],[2/5,"2-5"],[1/2,"1-2"],[3/5,"3-5"],[4/5,"4-5"],[1,"1-1"],[6/5,"6-5"],[7/5,"7-5"],[3/2,"3-2"],[8/5,"8-5"],[9/5,"9-5"],[2,"2-1"],[5/2,"5-2"],[3,"3-1"],[7/2,"7-2"],[4,"4-1"],[9/2,"9-2"],[5,"5-1"]]);
+ function formatToteNet(net){
+  if(typeof net!=="number"||!Number.isFinite(net)||net<0)return "—";
+  if(net>=5)return Math.round(net)+"-1";
+  let best=TOTE_SHORT[0];
+  for(const candidate of TOTE_SHORT.slice(1)){
+   // Nearest conventional rung; exact midpoint goes to the longer price.
+   if(Math.abs(candidate[0]-net)<=Math.abs(best[0]-net)+1e-12)best=candidate;
+  }
+  return best[1];
+ }
+ function formatToteOdds(value){
+  const raw=String(value??"").trim();
+  if(/^(?:evens?|even\s+money)$/i.test(raw))return "1-1";
+  const m=raw.match(/^(\d+(?:\.\d+)?)\s*[-/:]\s*(\d+(?:\.\d+)?)$/);
+  if(m&&Number(m[2])>0)return formatToteNet(Number(m[1])/Number(m[2]));
+  // A whole-number tote price has an implied denominator of one.
+  if(/^\d+$/.test(raw))return formatToteNet(Number(raw));
+  return "—";
+ }
+ function formatFairOdds(entry){
+  const exact=entry?.win_probability_exact,display=entry?.win_probability;
+  for(const value of [exact,display]){
+   if(value==null||value===""||typeof value==="boolean")continue;
+   const p=Number(value);
+   if(Number.isFinite(p)&&p>0&&p<=100)return formatToteNet(100/p-1);
+  }
+  return formatToteOdds(entry?.fair_odds);
+ }
+ root.RRRaceTitles=Object.freeze({describe,numericGrade,genericStakes,maidenClass,maidenPresentation,formatDistance,formatToteNet,formatToteOdds,formatFairOdds});
 })(globalThis);

@@ -217,7 +217,7 @@ assert.match(css,/@media\(max-width:360px\)/,
  "Narrow screens must reduce only secondary sizes to prevent name clipping");
 console.log("PASS: compact Projections controls, readable runners, fair odds and five factors");
 
-for(const [probability,american] of [[39.7,"3-2"],[31.4,"2-1"],[13.6,"6-1"],[10.2,"9-1"],[5.3,"18-1"],[4.1,"23-1"]]){
+for(const [probability,american] of [[57.6,"4-5"],[39.7,"3-2"],[31.4,"2-1"],[13.6,"6-1"],[10.2,"9-1"],[5.3,"18-1"],[4.1,"23-1"]]){
  assert.equal(context.__testToteOdds({win_probability_exact:probability,fair_odds:"1.52/1"}),american,
   "Always convert exact TRI fair net prices to conventional American tote-style fractions");
 }
