@@ -2,7 +2,7 @@ name: Publish source-verified Nov25 Target List privately
 on:
   push:
     branches: [main]
-    paths: ['private-ingest/20261125/target.enc']
+    paths: ['private-ingest/20261125/target.enc', 'scripts/target_1125_owner_publish.py']
 permissions:
   contents: read
 concurrency:
