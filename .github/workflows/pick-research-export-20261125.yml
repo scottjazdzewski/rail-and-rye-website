@@ -1,0 +1,107 @@
+name: Read-only encrypted November 25 Pick Ticket research export
+on:
+  push:
+    branches: [research/pick-ticket-export-20261125]
+    paths: ['.github/workflows/pick-research-export-20261125.yml']
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pynacl==1.5.0 boto3==1.40.36
+      - name: Read dated Pick Ticket objects only and seal export
+        env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+        run: |
+          python - <<'PY'
+          import os,io,json,hashlib,base64,zipfile,math,boto3
+          from datetime import datetime,timezone
+          from pathlib import Path,PurePosixPath
+          from nacl.public import SealedBox,PublicKey
+          day="2026-11-25"
+          bucket="rail-and-rye-private-cards"
+          published=f"racing-intelligence/product-tabs/pick-tickets/{day}/"
+          prefixes=[published]+[f"pick-tickets/{p}/{day}/" for p in ("staging","scratch-revisions","customer-revisions","revisions","scorer-audit","field-audit","dashboard","interim")]
+          expected={"charles-town":11,"churchill-downs":15,"delta-downs":10,"finger-lakes":7,"mahoning-valley":10,"mountaineer":5,"parx-racing":12,"penn-national":9,"tampa-bay-downs":13}
+          client=boto3.client("s3",endpoint_url="https://"+os.environ["TRI_CLOUDFLARE_ACCOUNT_ID"].strip()+".r2.cloudflarestorage.com",region_name="auto",aws_access_key_id=os.environ["TRI_R2_ACCESS_KEY_ID"].strip(),aws_secret_access_key=os.environ["TRI_R2_SECRET_ACCESS_KEY"].strip())
+          keys=set()
+          for prefix in prefixes:
+              for page in client.get_paginator("list_objects_v2").paginate(Bucket=bucket,Prefix=prefix):
+                  keys.update(x["Key"] for x in page.get("Contents",[]) if x["Key"].endswith(".json"))
+          def digest(b):return hashlib.sha256(b).hexdigest()
+          manifest={"exported_at_utc":datetime.now(timezone.utc).isoformat(),"bucket":bucket,"date":day,"scope_prefixes":prefixes,"read_only":True,"raw_objects_unmodified":True,"actual_race_outcomes_requested":False,"objects":[],"validation_issues":[]}
+          archive=io.BytesIO()
+          inventory={}
+          # Only dated, known Pick Ticket source/archive prefixes are accessed. No results endpoints or actual race data.
+          forbidden={"actual_results","actual_race_results","actual_finish_order","official_finish_order","winning_combination","actual_payoff","actual_payout","actual_payouts","race_results","actual_final_odds","realized_profit"}
+          def has_outcome(o):
+              if isinstance(o,dict):return any(k.lower() in forbidden or has_outcome(v) for k,v in o.items())
+              if isinstance(o,list):return any(has_outcome(v) for v in o)
+              return False
+          with zipfile.ZipFile(archive,"w",compression=zipfile.ZIP_DEFLATED,compresslevel=6) as z:
+              for key in sorted(keys):
+                  if ".." in PurePosixPath(key).parts:raise ValueError("Unsafe object path")
+                  o=client.get_object(Bucket=bucket,Key=key)
+                  raw=o["Body"].read()
+                  d=json.loads(raw); sha=digest(raw); m=o.get("Metadata",{})
+                  if has_outcome(d):
+                      manifest["validation_issues"].append({"key":key,"issue":"Excluded object with actual-outcome field"});continue
+                  path=("published/"+key[len(published):]) if key.startswith(published) else ("archived/"+key)
+                  record={"key":key,"archive_path":path,"bytes":len(raw),"sha256":sha,"last_modified_utc":o["LastModified"].isoformat(),"etag":o.get("ETag"),"content_type":o.get("ContentType"),"custom_metadata":m}
+                  if m.get("content_sha256") and m["content_sha256"]!=sha:manifest["validation_issues"].append({"key":key,"issue":"Stored content_sha256 differs from computed hash"})
+                  if key.startswith(published):
+                      track=PurePosixPath(key).stem
+                      issues=[]
+                      if d.get("date")!=day:issues.append("Wrong date")
+                      if d.get("formula_version")!="V3.4-TRI-ONLY-LENGTH-SENSITIVE-TRIAL-A":issues.append("Unexpected constructor version")
+                      if m.get("customer_publish_approved")!="true":issues.append("Missing publication approval")
+                      seq=d.get("sequences",[])
+                      if len(seq)!=expected.get(track):issues.append("Unexpected sequence count")
+                      count=0; fields={}
+                      for s in seq:
+                          prob=s.get("review_probabilities",{}); fs=s.get("race_fields",[])
+                          if not fs or set(prob)!=set(str(f["race_number"]) for f in fs):issues.append("Missing probability map");continue
+                          complete=True
+                          for f in fs:
+                              r=str(f["race_number"]); p=prob[r]
+                              if set(p)!=set(f["programs"]) or any(not isinstance(v,(float,int)) or not math.isfinite(v) or not 0<=v<=100 for v in p.values()) or abs(sum(p.values())-100)>1e-5:complete=False
+                              if r in fields and fields[r]!=p:issues.append("Inconsistent repeated race probabilities")
+                              fields[r]=p
+                          if not complete:issues.append("Invalid probability mass");continue
+                          for t in s.get("tickets",[]):
+                              n=math.prod(len(l["programs"]) for l in t["legs"])
+                              h=100*math.prod(sum(prob[str(l["race_number"])][p] for p in l["programs"])/100 for l in t["legs"])
+                              if n!=t["combinations"] or n*t["unit_cents"]!=t["total_cents"]:issues.append("Ticket cost mismatch")
+                              if abs(h-float(t["hit_rate_display"].rstrip("%")))>.0500001:issues.append("Displayed hit mismatch")
+                          count+=1
+                      record.update(track=d.get("track"),revision=d.get("revision"),status=d.get("status"),sequences=len(seq),complete_pwin_sequences=count,runner_entries=sum(len(v) for v in fields.values()),formula_version=d.get("formula_version"),source_input_sha256=d.get("source_input_sha256"),source_receipt=d.get("source_receipt"),model_receipts=d.get("model_receipts"),scratch_verified_at=d.get("scratch_verified_at"))
+                      inventory[track]={"sequences":len(seq),"complete_pwin":count,"status":d.get("status"),"revision":d.get("revision"),"issues":sorted(set(issues))}
+                      for issue in sorted(set(issues)):manifest["validation_issues"].append({"key":key,"issue":issue})
+                  z.writestr(path,raw)
+                  manifest["objects"].append(record)
+              manifest["published_inventory"]=inventory
+              manifest["missing_published_tracks"]=sorted(set(expected)-set(inventory))
+              manifest["unexpected_published_tracks"]=sorted(set(inventory)-set(expected))
+              z.writestr("MANIFEST.json",json.dumps(manifest,indent=2,ensure_ascii=False))
+              z.writestr("README.txt","Read-only research export. published/ contains exact current R2 JSON bytes; archived/ preserves original R2 key hierarchy, including prescratch staging, scratch source and parent objects, and publication receipts where available. MANIFEST.json records original R2 timestamps, custom metadata, SHA-256 and QA. Receipt hashes are not substitutes for full receipt files if the latter were never stored. No scoring was rerun. No result or payoff source was accessed.\n")
+          b=archive.getvalue()
+          with zipfile.ZipFile(io.BytesIO(b)) as z:
+              assert z.testzip() is None
+              for r in manifest["objects"]:assert digest(z.read(r["archive_path"]))==r["sha256"]
+          sealed=SealedBox(PublicKey(base64.b64decode("eENNGPV8vky5j3UYhCks6yrXH60kNFyQ3ONTAxEWvW0="))).encrypt(b)
+          Path("rr-pick-research-20261125.sealed").write_bytes(sealed)
+          print("EXPORT_SUMMARY",json.dumps({"published_tracks":len(inventory),"sequences":sum(x["sequences"] for x in inventory.values()),"complete_pwin":sum(x["complete_pwin"] for x in inventory.values()),"archived_objects":len(manifest["objects"])-len(inventory),"validation_issues":len(manifest["validation_issues"]),"missing_tracks":len(manifest["missing_published_tracks"]),"sealed_sha256":digest(sealed)}))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: encrypted-pick-research-20261125
+          path: rr-pick-research-20261125.sealed
+          retention-days: 1
+          if-no-files-found: error
