@@ -41,15 +41,25 @@
    seen.add(number);return true;
   });
  }
+ function officialDailyDoubleSource(sourceUrl,firstRaceNumber){
+  const match=state.date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(!match||typeof sourceUrl!=="string"||sourceUrl.length>500)return false;
+  const dateCode=match[2]+match[3]+match[1].slice(-2);
+  const pattern=new RegExp("^https://(?:[a-z0-9-]+\\.)*equibase\\.com/static/entry/[a-z0-9_-]*"+dateCode+"usa"+firstRaceNumber+"-eqb\\.html(?:[?#].*)?$","i");
+  return pattern.test(sourceUrl);
+ }
  function dailyDoublePairs(){
-  const races=(state.card?.races||[]).filter(r=>Number.isInteger(Number(r?.race_number)))
-   .slice().sort((a,b)=>Number(a.race_number)-Number(b.race_number));
-  const pairs=[];
-  for(let i=0;i<races.length-1;i++){
-   const first=races[i],second=races[i+1];
-   if(Number(second.race_number)!==Number(first.race_number)+1)continue;
-   if(usableEntries(first).length<2||usableEntries(second).length<2)continue;
-   pairs.push({first,second});
+  const byNumber=new Map((state.card?.races||[]).filter(r=>Number.isInteger(Number(r?.race_number)))
+   .map(r=>[Number(r.race_number),r]));
+  if(!Array.isArray(state.card?.daily_double_pools))return [];
+  const seen=new Set(),pairs=[];
+  for(const pool of state.card.daily_double_pools){
+   const firstNumber=Number(pool?.first_race_number),secondNumber=Number(pool?.second_race_number);
+   if(!Number.isInteger(firstNumber)||secondNumber!==firstNumber+1||seen.has(firstNumber)||
+      !officialDailyDoubleSource(pool?.source_url,firstNumber))continue;
+   const first=byNumber.get(firstNumber),second=byNumber.get(secondNumber);
+   if(!first||!second||usableEntries(first).length<2||usableEntries(second).length<2)continue;
+   seen.add(firstNumber);pairs.push({first,second});
   }
   return pairs;
  }
@@ -114,7 +124,7 @@
   render();
  }
  function setType(value){
-  if(!TYPES.includes(value))return;
+  if(!TYPES.includes(value)||(value==="daily-double"&&!dailyDoublePairs().length))return;
   state.type=value;
   state.positions=[new Set(),new Set(),new Set()];
   state.box.clear();state.ddSelections=[new Set(),new Set()];render();
@@ -287,7 +297,9 @@
   const types=el("div","rr-bet-types");
   types.setAttribute("role","group");types.setAttribute("aria-label","Wager type");
   const typeLabels={exacta:"Exacta",trifecta:"Trifecta","daily-double":"Daily Double"};
-  for(const type of TYPES)types.append(button(typeLabels[type],state.type===type,()=>setType(type)));
+  const availableTypes=TYPES.filter(type=>type!=="daily-double"||dailyDoublePairs().length>0);
+  if(state.type==="daily-double"&&!availableTypes.includes("daily-double"))state.type="exacta";
+  for(const type of availableTypes)types.append(button(typeLabels[type],state.type===type,()=>setType(type)));
   body.append(types);
   if(state.type==="daily-double"){
    const pairs=dailyDoublePairs();ensureDailyDoublePair(pairs);

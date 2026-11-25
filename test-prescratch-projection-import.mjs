@@ -38,6 +38,7 @@ assert.equal(saved.races[0].scratch_count,null,"Do not misrepresent unverified s
 assert.equal(saved.races[0].entries[0].win_probability_exact,65);
 assert.equal(saved.races[0].entries[0].f4_probabilities.top4,.98);
 assert.equal(saved.races[0].entries[1].f4_probabilities.p6_plus,.10);
+assert.equal(saved.daily_double_pools,undefined,"Legacy cards without pool metadata never imply DD eligibility.");
 
 async function rejects(mutate,message){
  const copy=structuredClone(card);mutate(copy);
@@ -118,3 +119,29 @@ stored.set(modelKey,{value:JSON.stringify(badModel),customMetadata:{}});
 response=await upload(finalized);
 assert.equal(response.status,409,"Reject future scratch updates if their F4 receipt no longer matches");
 console.log("PASS: scratch-final cards publish only with identical, source-verified F4 joint probabilities for all races");
+
+// Official wagering-menu metadata is validated, normalized and retained on cards.
+const dailyDoubleCard=structuredClone(card);
+dailyDoubleCard.race_date="2026-11-24";
+dailyDoubleCard.track_name="Synthetic Daily Double Track";
+dailyDoubleCard.races=[structuredClone(card.races[0]),{...structuredClone(card.races[0]),race_number:2}];
+dailyDoubleCard.daily_double_pools=[{
+ first_race_number:1,second_race_number:2,
+ source_url:"https://www.equibase.com/static/entry/SYN112426USA1-EQB.html"
+}];
+response=await upload(dailyDoubleCard);
+assert.equal(response.status,200,await response.clone().text());
+const doubleRead=await readAdminProjectionCards(env);
+const doubleSaved=(await doubleRead.json()).cards.find(item=>item.card.track_name==="Synthetic Daily Double Track")?.card;
+assert.deepEqual(doubleSaved?.daily_double_pools,dailyDoubleCard.daily_double_pools,
+ "Validated pool metadata survives card publication and reads.");
+for(const invalidPools of [
+ [{first_race_number:1,second_race_number:3,source_url:"https://www.equibase.com/static/entry/SYN112426USA1-EQB.html"}],
+ [{first_race_number:1,second_race_number:2,source_url:"https://example.com/static/entry/SYN112426USA1-EQB.html"}],
+ [{first_race_number:1,second_race_number:2,source_url:"https://www.equibase.com/static/entry/SYN112526USA1-EQB.html"}]
+]){
+ const invalid=structuredClone(dailyDoubleCard);invalid.daily_double_pools=invalidPools;
+ const rejected=await upload(invalid);
+ assert.equal(rejected.status,400,"Invalid DD eligibility must fail closed.");
+}
+console.log("PASS: official DD pool metadata is source-bound and retained; missing or invalid eligibility is rejected");
