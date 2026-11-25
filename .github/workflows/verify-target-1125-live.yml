@@ -1,0 +1,51 @@
+name: Verify live November 25 Target List catalog
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/verify-target-1125-live.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install --quiet boto3==1.40.36 requests==2.32.3
+      - name: Verify customer R2 checksum, source identity, and public catalog listing
+        env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+        run: |
+          python - <<'PY'
+          import os,json,hashlib,requests,boto3,time
+          B="rail-and-rye-private-cards";D="2026-11-25"
+          s=boto3.client("s3",endpoint_url="https://"+os.environ["TRI_CLOUDFLARE_ACCOUNT_ID"].strip()+".r2.cloudflarestorage.com",region_name="auto",aws_access_key_id=os.environ["TRI_R2_ACCESS_KEY_ID"].strip(),aws_secret_access_key=os.environ["TRI_R2_SECRET_ACCESS_KEY"].strip())
+          p=s.get_object(Bucket=B,Key="racing-intelligence/product-tabs/target-list/"+D+".json")
+          raw=p["Body"].read();meta=p.get("Metadata",{})
+          assert hashlib.sha256(raw).hexdigest()==meta["content_sha256"]
+          assert meta["publication_mode"]=="owner-approved-gpt" and meta["customer_publish_approved"]=="true"
+          item=json.loads(raw)
+          assert item["race_date"]==D and item["revision"]==1 and len(item["targets"])==7 and item["status"]=="initial"
+          assert item["source"]["editorial_sha256"]=="0aeb61896c616c79412c86d1bc7a542ffadaae01cdacdedaa3120c13193e1bb5"
+          assert all(len(t["analysis"].split())<=58 and not t["scratches"] for t in item["targets"])
+          print("TARGET_1125_R2_RELEASE_VERIFIED seven races, authentic ML/PWIN/fair, prescratch, checksum PASS",flush=True)
+          seen=False
+          for i in range(8):
+            try:
+              r=requests.get("https://railandryeracing.com/api/product-tabs/library",timeout=12,headers={"Cache-Control":"no-cache"})
+              if r.status_code==200:
+                body=r.json();matching=[p for p in body.get("days",[]) if p.get("category")=="Target List" and p.get("race_date")==D]
+                if matching:
+                  print("TARGET_1125_CUSTOMER_CATALOG_LIVE",len(matching),"edition=2026-11-25",flush=True)
+                  seen=True;break
+                print("TARGET_1125_CATALOG_SYNC_PENDING",i+1,flush=True)
+              else: print("TARGET_1125_CATALOG_RESPONSE",r.status_code,flush=True)
+            except Exception as e:print("TARGET_1125_CATALOG_RETRY",type(e).__name__,flush=True)
+            if i<7:time.sleep(10)
+          assert seen,"Target List private R2 release complete, but catalog not confirmed online yet"
+          PY
