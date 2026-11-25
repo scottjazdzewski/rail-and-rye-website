@@ -5,6 +5,7 @@ import {chooseV34,PICK_V34_ENGINE} from "../src/pick-tickets-v34.js";
 import {sequenceQuality} from "../src/pick-tickets-sqr.js";
 const {parent,corrected,customers,batch}=JSON.parse(fs.readFileSync("/tmp/rr-pick-scratch-1125-input.json","utf8"));
 const specs={
+ "Churchill Downs":{code:"CD",n:10,before:97,after:88,sequences:15,scr:{"3":["1"],"4":["4","7"],"5":["4"],"8":["13"],"9":["3"],"10":["2","14","15"]}},
  "Finger Lakes":{code:"FL",n:8,before:61,after:57,sequences:7,scr:{"1":["7"],"2":["2"],"4":["3"],"7":["6"]}},
  "Mahoning Valley":{code:"MVR",n:8,before:64,after:55,sequences:10,scr:{"1":["5"],"2":["5"],"3":["9"],"5":["1"],"6":["1","7","8"],"7":["4"],"8":["6"]}},
  "Parx Racing":{code:"PRX",n:9,before:72,after:62,sequences:12,scr:{"1":["3"],"2":["4","6"],"3":["3"],"4":["4"],"5":["4"],"6":["2","9","10"],"8":["3"]}},
@@ -53,6 +54,10 @@ for(const row of batch.tracks){
   for(const p of f.programs)maxReplay=Math.max(maxReplay,Math.abs(seq.review_probabilities[String(f.race_number)][p]/100-v[p]));
  }
  assert.ok(maxReplay<1e-9,"Frozen parent replay differs from original staged scores: "+maxReplay);
+ if(s.code==="CD"){
+  for(const n of [4,7,10])eq(row.final_state["20261125|CD|"+n].temporary_rail_feet,24);
+  assert.ok(Object.hasOwn(by.get(10),"13"),"Eligible #13 Statutory must be included after #2 scratches");
+ }
  if(s.code==="TAM"){
   for(const n of [5,7,9]){const a=row.final_state["20261125|TAM|"+n];eq(a.surface_family,"dirt");assert.ok(Math.abs(a.target_dist_f-(8+40/220))<1e-10);eq(a.track_condition,"GOOD");}
   for(const [n,ps] of [[5,["6","10"]],[7,["11","12"]],[9,["10"]]])for(const p of ps)assert.ok(Object.hasOwn(by.get(n),p),"MTO/conditional activation missing");
