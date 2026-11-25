@@ -448,6 +448,9 @@ export default {
     ctx.waitUntil(prepareScheduledRadarStages(env).then(result=>{
       if(result.prepared)console.info('Dated Radar prepared for scheduled release',result.prepared);
     }).catch(e=>console.warn('Scheduled Radar preparation deferred',String(e.message||e).slice(0,140))));
+    ctx.waitUntil(syncExistingGPTProductCatalog(env,'sync_existing').then(result=>{
+      if(result.synced_count)console.info('Published GPT product tabs reconciled with catalog',result.synced_count);
+    }).catch(e=>console.warn('GPT product catalog reconciliation deferred',String(e.message||e).slice(0,140))));
     ctx.waitUntil(syncStagedRaceCardCatalog(env).then(()=>syncDailyBundles(env)).then(result=>{
       if(result.created||result.updated)console.info("Daily product bundles synchronized",result);
     }).catch(e=>console.warn("Daily bundles sync deferred",String(e).slice(0,160))));
