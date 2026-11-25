@@ -17,3 +17,25 @@ html.rr-intel-document>body.rr-member-page>footer.heritage-footer{
 html.rr-intel-document>body.rr-member-page>dialog:not([open]),
 html.rr-intel-document>body.rr-member-page>[hidden]{display:none!important}
 /* Footer uses the shared core/component styling. No reader-specific restyling. */
+
+/* Owner-approved product title lock, November 25. Applies at all widths.
+   Scope strictly to page-heading kickers, never ticket or race labels. */
+html.rr-intel-document > body.rr-member-page > main > :is(.rr-pt-heading,.rr-dash-heading,.rr-target-titlebar) :is(.rr-pt-kicker,.rr-member-kicker,.rr-target-kicker),
+html.rr-intel-document > body.rr-member-page > main > .rr-desktop-title > span{
+ color:#a87933;
+ text-transform:uppercase;
+}
+/* Race Cards previously had no visible mobile page heading. Use its existing
+   title markup, matching the other product readers, without moving controls. */
+@media (width < 1100px){
+ html.rr-intel-document > body.rr-dashboard-page:not(.rr-lr-page) > main.rr-dashboard-main > .rr-desktop-title{
+  display:block!important;margin:0 0 10px;padding:0;
+ }
+ html.rr-intel-document > body.rr-dashboard-page:not(.rr-lr-page) > main.rr-dashboard-main > .rr-desktop-title > span{
+  display:block;font:800 11px/1.35 Inter,Arial,system-ui,sans-serif;letter-spacing:.075em;
+ }
+ html.rr-intel-document > body.rr-dashboard-page:not(.rr-lr-page) > main.rr-dashboard-main > .rr-desktop-title > h1{
+  margin:2px 0 3px;color:#102d53;font:800 28px/1.12 Inter,Arial,system-ui,sans-serif;letter-spacing:-.025em;
+ }
+ html.rr-intel-document > body.rr-dashboard-page:not(.rr-lr-page) > main.rr-dashboard-main > .rr-dash-visually-hidden{display:none!important}
+}
