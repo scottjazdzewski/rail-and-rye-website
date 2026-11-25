@@ -77,6 +77,14 @@ jobs:
             if not race or len(race['entries'])!=len(row['runners']):
               different+=1;continue
             pairs={str(p['program_number']):p for p in race['entries']}
+            if row['track']=='Gulfstream Park' and row['race']==4:
+              for q in row['runners']:
+                p=next((v for v in race['entries'] if str(v['program_number'])==str(q['program_number'])),None)
+                if p:print('TARGET_GP4_FIELD_DIFF',q['program_number'],
+                  'scored',round(q['win_probability_exact'],6),'site',round(p['win_probability_exact'],6),
+                  'delta_pp',round(p['win_probability_exact']-q['win_probability_exact'],6),
+                  'same_display',round(q['win_probability_exact'],1)==round(p['win_probability_exact'],1),flush=True)
+
             for q in row['runners']:
               p=pairs.get(str(q['program_number']))
               if p is None or abs(p['win_probability_exact']-q['win_probability_exact'])>1e-8:
