@@ -5,6 +5,7 @@ import {chooseV34,PICK_V34_ENGINE} from "../src/pick-tickets-v34.js";
 import {sequenceQuality} from "../src/pick-tickets-sqr.js";
 const {parent,corrected,customers,batch}=JSON.parse(fs.readFileSync("/tmp/rr-pick-scratch-1125-input.json","utf8"));
 const specs={
+ "Delta Downs":{code:"DED",n:8,before:67,after:61,sequences:10,scr:{"2":["3","7"],"4":["6"],"6":["4"],"8":["11","12"]}},
  "Penn National":{code:"PEN",n:8,before:61,after:48,sequences:9,scr:{"1":["1","2"],"2":["3","6"],"3":["2","4","5","6","7"],"4":["8"],"5":["2"],"7":["5","6"]}},
  "Churchill Downs":{code:"CD",n:10,before:97,after:88,sequences:15,scr:{"3":["1"],"4":["4","7"],"5":["4"],"8":["13"],"9":["3"],"10":["2","14","15"]}},
  "Finger Lakes":{code:"FL",n:8,before:61,after:57,sequences:7,scr:{"1":["7"],"2":["2"],"4":["3"],"7":["6"]}},
