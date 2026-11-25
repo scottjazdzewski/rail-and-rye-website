@@ -200,3 +200,10 @@
 .rr-bet-pair-selector label{font:750 12px/1.2 Inter,Arial,system-ui,sans-serif;color:#304b69}
 .rr-bet-pair-selector select{width:100%;min-height:42px;padding:8px 10px;border:1px solid #baab8d;border-radius:7px;background:#fff;color:#123358;font:700 16px/1 Inter,Arial,system-ui,sans-serif}
 .rr-bet-no-pairs{margin:0;padding:10px;border:1px solid #dfd5c1;border-radius:9px;background:#fffcf4;color:#425b75;font:600 12px/1.45 Inter,Arial,system-ui,sans-serif}
+
+/* A compact direct route into the existing builder, only for verified DD starts. */
+.rr-bet-launch-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:5px;min-width:0}
+.rr-bet-launch-dd{background:#fff9e9;color:#102d53;min-height:42px}
+.rr-bet-launch-dd::before{content:none}
+.rr-bet-launch-dd:hover{background:#f2e5bd}
+@media(max-width:600px){.rr-bet-launch-actions{max-width:100%}.rr-bet-launch-actions .rr-bet-launch{font-size:11px;min-height:40px;padding:6px 8px}.rr-bet-launch-actions .rr-bet-launch::before{display:none}.rr-dash-mobile-list-heading:has(.rr-bet-launch-actions){flex-wrap:wrap;gap:5px}.rr-bet-launch-actions{margin-left:auto}}

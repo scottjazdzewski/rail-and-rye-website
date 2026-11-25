@@ -26,10 +26,10 @@ def get(path):
  with urllib.request.urlopen(req,timeout=20) as r:return r.read()
 for i in range(20):
  try:
-  html=get("/intelligence/race-cards/?date="+date+"&qa=dd5-"+str(i))
-  builder=get("/assets/rr-exotic-bet-builder.js?v=customer-dd-eligibility-5")
-  dashboard=get("/assets/projections-dashboard.js?v=customer-direct-3")
-  if b"rr-exotic-bet-builder.js?v=customer-dd-eligibility-5" in html and builder==pathlib.Path("public/assets/rr-exotic-bet-builder.js").read_bytes() and dashboard==pathlib.Path("public/assets/projections-dashboard.js").read_bytes():
+  html=get("/intelligence/race-cards/?date="+date+"&qa=dd6-"+str(i))
+  builder=get("/assets/rr-exotic-bet-builder.js?v=customer-dd-eligibility-6")
+  dashboard=get("/assets/projections-dashboard.js?v=customer-dd-launch-6")
+  if b"rr-exotic-bet-builder.js?v=customer-dd-eligibility-6" in html and builder==pathlib.Path("public/assets/rr-exotic-bet-builder.js").read_bytes() and dashboard==pathlib.Path("public/assets/projections-dashboard.js").read_bytes():
    print("DD_LIVE_CUSTOMER_SHELL_AND_ASSETS_PASS",flush=True);break
  except Exception as e:print("Live shell retry",i,type(e).__name__,flush=True)
  time.sleep(8)

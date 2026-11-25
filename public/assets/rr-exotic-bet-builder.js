@@ -47,15 +47,15 @@
    /\b(?:daily\s+double|double\s+wagers?)\b|(?:^|[/*:])\s*double\b/i.test(wagers)&&
    !/\b(?:2nd|second)\s+half\b/i.test(wagers);
  }
- function dailyDoublePairs(){
-  if(state.card?.race_date!==state.date)return [];
-  const byNumber=new Map((state.card?.races||[]).filter(r=>Number.isInteger(Number(r?.race_number)))
+ function dailyDoublePairs(card=state.card,race=state.race,date=state.date){
+  if(card?.race_date!==date)return [];
+  const byNumber=new Map((card?.races||[]).filter(r=>Number.isInteger(Number(r?.race_number)))
    .map(r=>[Number(r.race_number),r]));
-  if(!Array.isArray(state.card?.daily_double_pools))return [];
+  if(!Array.isArray(card?.daily_double_pools))return [];
   const seen=new Set(),pairs=[];
-  for(const pool of state.card.daily_double_pools){
+  for(const pool of card.daily_double_pools){
    const firstNumber=Number(pool?.first_race_number),secondNumber=Number(pool?.second_race_number);
-   if(firstNumber!==Number(state.race?.race_number)||!Number.isInteger(firstNumber)||secondNumber!==firstNumber+1||seen.has(firstNumber)||
+   if(firstNumber!==Number(race?.race_number)||!Number.isInteger(firstNumber)||secondNumber!==firstNumber+1||seen.has(firstNumber)||
       !hasTimeformDailyDoubleEvidence(pool))continue;
    const first=byNumber.get(firstNumber),second=byNumber.get(secondNumber);
    if(!first||!second||first.timeform_wagers!==pool.wager_text||usableEntries(first).length<2||usableEntries(second).length<2)continue;
@@ -446,6 +446,7 @@
   state.track=String(options.track||"");state.date=String(options.date||"");
   state.type="exacta";state.mode="wheel";state.base=1;state.loading=true;state.modelError="";
   state.ddPair=null;state.ddSelections=[new Set(),new Set()];
+  if(options.initialType==="daily-double"&&dailyDoublePairs().length)state.type="daily-double";
    state.snapshotStatus=options.projection_status==="scratch_final"?"scratch_final":"prescratch";
    state.modelReceipts=options.model_receipts||null;
   state.positions=[new Set(),new Set(),new Set()];state.box=new Set();
@@ -462,6 +463,7 @@
   loadCertifiedF4(options,request);
  }
  window.RRBetBuilder=Object.freeze({open,
+   canOpenDailyDouble:({card,race,date})=>dailyDoublePairs(card,race,date).length>0,
    // Narrow testing hooks. Pure calculation never uses live market data.
    _calculate:()=>calculate(usableEntries(state.race)),
    _formatChance:formatChance,

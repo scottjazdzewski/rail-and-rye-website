@@ -11,7 +11,7 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 7
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -28,3 +28,7 @@ jobs:
           TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
           TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
         run: python scripts/verify_1125_dd_live.py
+      - run: npm install --no-save playwright
+      - run: npx playwright install --with-deps chromium webkit
+      - name: Exercise actual deployed Daily Double launcher in mobile browsers
+        run: node scripts/verify_1125_dd_browser.mjs

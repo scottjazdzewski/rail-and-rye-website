@@ -22,3 +22,5 @@ Example:
 ```
 
 Cards without a Timeform WAGERS indication remain valid, but the Daily Double builder stays hidden. The builder also confirms that pool metadata matches the card date and races displayed.
+
+The existing Bet Builder exposes a direct Daily Double launch on eligible starting races only. It uses the same eligibility function as the dialog tab and opens the same dialog with Daily Double selected. Both legs remain user-selected; no ineligible race receives a launch control.

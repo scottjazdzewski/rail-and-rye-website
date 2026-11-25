@@ -490,13 +490,19 @@ function renderCard(){
  const builder=makeNode("button","rr-bet-launch","Build Exotic Ticket");
  builder.type="button";
  builder.setAttribute("aria-label","Open Bet Builder for "+(activeCard.track||activeCard.card.track_name)+" Race "+race.race_number);
- builder.addEventListener("click",()=>{
-  if(globalThis.RRBetBuilder?.open)globalThis.RRBetBuilder.open({
-   race,card:activeCard.card,track:activeCard.track||activeCard.card.track_name,date:activeCard.race_date,preview:previewMode,customer:!!globalThis.RRCustomerReader,
-   projection_status:activeCard.card.projection_status,model_receipts:activeCard.card.model_receipts
-  });
- });
- heading.append(builder);
+ const builderOptions={
+  race,card:activeCard.card,track:activeCard.track||activeCard.card.track_name,date:activeCard.race_date,preview:previewMode,customer:!!globalThis.RRCustomerReader,
+  projection_status:activeCard.card.projection_status,model_receipts:activeCard.card.model_receipts
+ };
+ builder.addEventListener("click",()=>globalThis.RRBetBuilder?.open?.(builderOptions));
+ if(globalThis.RRBetBuilder?.canOpenDailyDouble?.(builderOptions)){
+  const actions=makeNode("div","rr-bet-launch-actions");
+  const dd=makeNode("button","rr-bet-launch rr-bet-launch-dd","Daily Double");
+  dd.type="button";
+  dd.setAttribute("aria-label","Open Daily Double Bet Builder for "+builderOptions.track+" Races "+race.race_number+" and "+(Number(race.race_number)+1));
+  dd.addEventListener("click",()=>globalThis.RRBetBuilder?.open?.({...builderOptions,initialType:"daily-double"}));
+  actions.append(builder,dd);heading.append(actions);
+ }else heading.append(builder);
  q("#rr-dash-horses").replaceChildren(heading,table);
  // Digital-first dashboard: no redundant PDF actions or downloads in the race view.
  setText(q("#rr-dash-update"),activeCard.uploaded_at?"Projection updated "+new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}).format(new Date(activeCard.uploaded_at))+" ET":"");
