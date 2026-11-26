@@ -38,6 +38,14 @@ function compareRaces(previous,current){
   const removed=new Set(current.scratches.map(s=>clean(s.program_number,8).toUpperCase()));
   if(removed.size!==current.scratches.length||[...removed].some(p=>!before.has(p)||after.has(p)))return null;
   if([...after.keys()].some(p=>!before.has(p))||[...before.keys()].some(p=>!removed.has(p)&&!after.has(p)))return null;
+  // Names matter for customer-facing chip identity. Suppress any race where
+  // scorer/card source identity drifted, rather than printing the wrong horse.
+  if([...after].some(([program,runner])=>runner.horse.toLocaleLowerCase('en')!==before.get(program)?.horse.toLocaleLowerCase('en')))return null;
+  if(current.scratches.some(x=>{
+    const program=clean(x.program_number,8).toUpperCase(),previous=before.get(program);
+    return !previous||!previous.horse||!clean(x.horse_name,95)||
+      clean(x.horse_name,95).toLocaleLowerCase('en')!==previous.horse.toLocaleLowerCase('en');
+  }))return null;
   if([before,after].some(m=>Math.abs([...m.values()].reduce((s,r)=>s+r.win,0)-100)>0.00001))return null;
   return {before,after};
 }
