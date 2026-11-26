@@ -136,6 +136,13 @@ assert.equal(feed.items.length,1);
 assert.equal(feed.items[0].kind,'NEW_FAVORITE');
 assert.ok(!JSON.stringify(feed).includes('model_receipts'),'Never expose private scoring receipts');
 assert.ok(!JSON.stringify(feed).includes('f4_probabilities'),'Never expose full F4 vectors');
+const disabledResponse=await pulse.handlePulseApi(new Request('https://railandryeracing.com/api/race-day-pulse'),env);
+const disabledData=await disabledResponse.json();
+assert.equal(disabledData.status,'disabled','Public feed must remain hidden before owner release');
+assert.equal(disabledData.items.length,0,'Disabled public API cannot expose source-backed prelaunch findings');
+const unpublished=await pulse.handlePulsePage(new Request('https://railandryeracing.com/pulse/2026-11-26/churchill-downs-race-6'),
+ env,[null,'2026-11-26','churchill-downs-race-6']);
+assert.equal(unpublished.status,404,'Share URLs must be hidden until explicit owner publication approval');
 const historical=await env.CARDS_BUCKET.get('race-day-pulse/public/2026-11-26.json');
 assert.ok(historical,'Share-safe public archive exists for selected published insights');
 assert.equal(historical.customMetadata.public_safe_derived,'true');
@@ -197,6 +204,7 @@ await env.CARDS_BUCKET.put('projections/dashboard/2026-11-27/churchill-downs.jso
 assert.equal((await pulse.readRaceDayPulse(env,Date.parse('2026-11-27T07:59:00Z'))).date,'2026-11-26');
 assert.equal((await pulse.readRaceDayPulse(env,Date.parse('2026-11-27T08:01:00Z'))).date,'2026-11-27');
 assert.equal((await pulse.readRaceDayPulse(env,Date.parse('2026-11-27T08:01:00Z'))).items.length,1);
+env.PULSE_PUBLICATION_ENABLED='true';
 // Public page displays specific source-backed fact and escapes untrusted text.
 feed=await pulse.readRaceDayPulse(env,Date.parse('2026-11-27T08:01:00Z'));
 const originalNow=Date.now;Date.now=()=>Date.parse('2026-11-26T18:00:00Z');
