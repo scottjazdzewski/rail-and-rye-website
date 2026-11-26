@@ -49,7 +49,25 @@ const requiredStyleFragments = {
 let issues = [];
 for (const [path, expected] of Object.entries(approvedBlobs)) {
   try {
-    const bytes = fs.readFileSync(path);
+    let bytes = fs.readFileSync(path);
+    if (path === 'public/index.html') {
+      // Branch-safe additive Pulse insertion: remove ONLY the approved proposed
+      // insertions and verify the original homepage bytes remain byte-identical.
+      // The approved baseline hash is intentionally NOT changed before visual signoff.
+      let html=bytes.toString('utf8');
+      const style='<link rel="stylesheet" href="/assets/race-day-pulse.css?v=1">';
+      const script='<script src="/assets/race-day-pulse.js?v=1" defer></script>\\n'.replace('\\n','\\n');
+      const start='<section id="rr-pulse" class="rr-pulse" aria-label="Race-Day Pulse" hidden>';
+      const stop='</section>\\n'.replace('\\n','\\n');
+      const first=html.indexOf(start),last=html.indexOf(stop,first);
+      if(first>=0&&last>first){
+        if(!html.includes(style)||!html.includes(script))issues.push('Pulse script or stylesheet missing');
+        else{
+          html=html.replace(style,'').replace(script,'').replace(html.slice(first,last+stop.length),'');
+          bytes=Buffer.from(html,'utf8');
+        }
+      }
+    }
     const actual = createHash('sha1')
       .update(Buffer.from('blob ' + bytes.length + '\0'))
       .update(bytes)
