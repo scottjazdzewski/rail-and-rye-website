@@ -129,3 +129,17 @@ Churchill Races 1,3,4,10,11 below provisional gates. Race 8 HOLD because final f
 Owner-only sanitized presentation fixture research/pulse/2026-11-26-candidate-preview.json contains just these three public-style headlines, affected horse chips and actual verified before/after values, confirmed scratched-horse names and gated reader links. Screenshots generated locally through the existing homepage Pulse frontend in test-pulse-source-preview-browser.mjs and .github/workflows/pulse-three-example-preview.yml; preview must NOT be copied into public/ or into live Worker feed. Official saddlecloths are loaded from the exact approved assets, with opaque white backing, no blend/filter, 2 displayed named scratches with +N more to preserve compact height.
 
 ALL three remain editorial/provisional examples ONLY until owner reviews voice/visual, source/condition policy and historical threshold calibration. The public Pulse release kill switch PULSE_PUBLICATION_ENABLED is OFF, automated external scratch feed OFF, and PR #245 remains draft.
+
+
+## NOVEMBER 26 — TITLE CAPITALIZATION LOCK
+Owner specifically requested capitalization of ALL words in Race-Day Pulse titles (including short words like "The", "In", "After"). Use Full Title Case, while leaving horse proper names, track names, and narrative sentences untouched. Approved example alert headings:
+- "Course Change Reshapes The Race"
+- "New Projected Favorite"
+- "New Leader After Favorite Scratched"
+- "Scratch-Driven Projection Shift"
+- "Underneath Outlook Changes"
+The three real Churchill sample titles now read:
+- "Course Change Reshapes The Race" — Race 12, Sweet Reward
+- "Dirt Switch Strengthens The Leader" — Race 5, Multiplication
+- "A Measurable Move In The Ninth" — Race 9, Destino d'Oro
+The Intelligence Hub scroller's final CTA heading uses "More Than A Single Insight." Heading capitalization is enforced at the source and at presentation time in the scroller, saved image, and standalone page metadata, including previously archived public headlines. This does NOT Title Case the handicapping narratives. Development PR #245 remains draft, default-off, not deployed.
