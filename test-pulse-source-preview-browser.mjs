@@ -56,8 +56,9 @@ try{
       await page.locator('.rr-pulse-item').nth(i).screenshot({path:'pulse-source-preview/mobile-race-'+data.items[i].race_number+'.png'});
     }
   }
-  await page.locator('#rr-pulse-rail').evaluate(el=>el.scrollLeft=0);
-  await page.waitForTimeout(250);
+  // Reset to the first verified insight before capturing the full scroller.
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.locator('.rr-pulse-item').first().waitFor({timeout:12000});
   await page.locator('#rr-pulse').screenshot({path:'pulse-source-preview/rail-'+width+'.png'});
   if(width===390){
     await page.locator('.rr-pulse-tool').first().click();
