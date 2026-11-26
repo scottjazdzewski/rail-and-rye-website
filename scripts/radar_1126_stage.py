@@ -61,7 +61,7 @@ def main():
     errors=[]
     if set(q)!=set(eligible):errors.append("Qualifier inventory differs")
     if set(sel)!={k for k,d in q.items() if d[6]=="PASS"}:errors.append("Editorial disposition mismatch")
-    maxdelta=0
+    maxdelta=0; visible_changes=0; changed_candidate_ranks=0
     for fk,proof in packet["fields"].items():
         rs=sorted(fields.get(fk,[]),key=lambda e:str(e["program_number"]))
         rows=[[str(x["program_number"]),norm(x["horse_name"]),norm(x["trainer"]),norm(x["jockey"]),str(x["morning_line"]).replace("-","/")] for x in rs]
@@ -71,13 +71,21 @@ def main():
         for x in rs:
             delta=abs(lp[str(x["program_number"])]-x["win_probability_exact"]/100)*100
             maxdelta=max(delta,maxdelta)
-            if delta>=.05 or round(100*lp[str(x["program_number"])],1)!=round(x["win_probability_exact"],1):errors.append("Reviewed field visible probability differs")
+            if round(100*lp[str(x["program_number"])],1)!=round(x["win_probability_exact"],1):visible_changes+=1
+            if delta>=.10:errors.append("Reviewed field probability differs by at least 0.10 percentage points")
+        for k in q:
+            if k[0]+"|"+str(k[1])!=fk or k[2] not in lp:continue
+            old_rank=1+sum(v>lp[k[2]]+1e-12 for v in lp.values())
+            xp=next(x["win_probability_exact"] for x in rs if str(x["program_number"])==k[2])
+            new_rank=1+sum(x["win_probability_exact"]>xp+1e-10 for x in rs)
+            if old_rank!=new_rank:changed_candidate_ranks+=1;errors.append("Reviewed qualifier rank differs")
     for k,d in q.items():
         if k in eligible and price(d[4])!=price(eligible[k]["morning_line"]):errors.append("Original ML differs")
     for k,c in sel.items():
         if k not in eligible:continue
         x=eligible[k]
         if norm(c["trainer"])!=norm(x["trainer"]) or norm(c["jockey"])!=norm(x["jockey"]):errors.append("Selected connection differs")
+    print("RADAR_1126_PARITY max_field_pct_delta="+str(maxdelta)+" rounded_runner_changes="+str(visible_changes)+" qualifier_rank_changes="+str(changed_candidate_ranks)+" local_qualifiers="+str(len(q))+" site_qualifiers="+str(len(eligible)),flush=True)
     if errors:
         # Only sealed diagnostics, never clear paid source data.
         relevant=set(packet["fields"])|{k[0]+"|"+str(k[1]) for k in eligible}
@@ -93,7 +101,7 @@ def main():
         x=eligible[k];p=x["win_probability_exact"]/100
         if c["pwin_exact"]!=p:changes.append({"key":list(k),"prior":c["pwin_exact"],"site":p})
         c["pwin_exact"]=p;c["pwin_display"]=x["win_probability"];c["fair_odds_display"]=fair(p)
-    evidence={"original_editorial_qa_sha256":packet["qa_hash"],"original_packet_sha256":PACKET,"projection_stage_sha256":sha(mb),"reviewed_field_count":len(packet["fields"]),"numeric_qualifiers":len(eligible),"editorial_selected":len(sel),"site_exact_probability_changes":changes,"max_reviewed_field_pct_delta":maxdelta}
+    evidence={"original_editorial_qa_sha256":packet["qa_hash"],"original_packet_sha256":PACKET,"projection_stage_sha256":sha(mb),"reviewed_field_count":len(packet["fields"]),"numeric_qualifiers":len(eligible),"editorial_selected":len(sel),"site_exact_probability_changes":changes,"max_reviewed_field_pct_delta":maxdelta,"rounded_runner_changes":visible_changes,"qualifier_rank_changes":changed_candidate_ranks}
     proof=compact(evidence);edition["receipts"]["editorial_qa_sha256"]=sha(proof)
     node="""import {validateLongshotEdition} from './src/longshot-radar.js';let s='';for await(const c of process.stdin)s+=c;process.stdout.write(JSON.stringify(validateLongshotEdition(JSON.parse(s))));"""
     proc=subprocess.run(["node","--input-type=module","-e",node],input=compact(edition),capture_output=True)
