@@ -55,7 +55,15 @@ function lead(race){
   if(s.length===2)return 'After #'+clean(s[0].program_number,8)+' and #'+clean(s[1].program_number,8)+' scratched, ';
   return 'Following '+s.length+' confirmed scratches, ';
 }
-export function insightForRace(date,track,initial,revised,updatedAt){
+function revisionToken(source){
+  // Public-safe short label of a certified revision's source fingerprint.
+  // Do not reveal raw internal hash, model coefficients or score receipts.
+  if(!source)return '';
+  let value=2166136261;
+  for(const ch of String(source))value=Math.imul(value^ch.charCodeAt(0),16777619);
+  return '-rev-'+(value>>>0).toString(16).padStart(8,'0');
+}
+export function insightForRace(date,track,initial,revised,updatedAt,sourceVersion=''){
   const pair=compareRaces(initial,revised);
   if(!pair)return null;
   const {before,after}=pair,oldLead=winner(before),newLead=winner(after);
@@ -65,7 +73,8 @@ export function insightForRace(date,track,initial,revised,updatedAt){
   }));
   // Publish only the confirmed scratch identities and the explicitly selected
   // active horse. Never leak the complete runner field or private score vector.
-  const common={id:slug(track)+'-race-'+revised.race_number,date,track:clean(track,90),race_number:revised.race_number,
+  const common={id:slug(track)+'-race-'+revised.race_number+revisionToken(sourceVersion),
+    date,track:clean(track,90),race_number:revised.race_number,
     updated_at:updatedAt,post_time_et:clean(revised.post_time_et,38),
     hub_url:'/intelligence/race-cards/?date='+encodeURIComponent(date)+
       '&track='+encodeURIComponent(track)+'&race='+encodeURIComponent(String(revised.race_number)),
@@ -200,7 +209,8 @@ export async function readRaceDayPulse(env,now=Date.now()){
     const earlier=new Map(original.races.map(r=>[r.race_number,r]));
     const updatedAt=object.customMetadata?.uploaded_at||reference.uploaded?.toISOString?.()||null;
     for(const race of current.races){
-      const post=insightForRace(date,current.track_name,earlier.get(race.race_number),race,updatedAt);
+      const revision=current.model_receipts.f4_sha256+'|'+current.model_receipts.official_changes_sha256;
+      const post=insightForRace(date,current.track_name,earlier.get(race.race_number),race,updatedAt,revision);
       if(post)items.push(post);
     }
   }
@@ -229,9 +239,9 @@ async function preservePublicPulseArchive(env,date,items){
   let changed=!old;
   for(const item of items){
     const older=existing.get(item.id);
-    if(!older||JSON.stringify(older)!==JSON.stringify(item)){
-      changed=true;existing.set(item.id,item);
-    }
+    // An already-shared revision is immutable. If the same certified race
+    // later receives different source evidence it gets a new revisionToken.
+    if(!older){changed=true;existing.set(item.id,item);}
   }
   if(changed)await env.CARDS_BUCKET.put(key,JSON.stringify({schema_version:1,date,items:[...existing.values()].slice(-120)}),{
     httpMetadata:{contentType:'application/json; charset=utf-8',cacheControl:'private, no-store'},
