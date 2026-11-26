@@ -34,6 +34,16 @@ try{
   assert.deepEqual(errors,[]);
   const panel=await page.locator('#rr-pulse').boundingBox();
   const hero=await page.locator('.heritage-hero').boundingBox();
+  const dimensions=await page.locator('#rr-pulse').evaluate(el=>Object.fromEntries(
+    ['.rr-pulse-heading','.rr-pulse-item','.rr-pulse-item-layout','.rr-pulse-track',
+     '.rr-pulse-headline','.rr-pulse-affected','.rr-pulse-message',
+     '.rr-pulse-scratch-list','.rr-pulse-item-footer'].map(sel=>[
+       sel,Math.round(el.querySelector(sel)?.getBoundingClientRect().height||0)
+     ])
+  ));
+  console.log('PULSE_VIEWPORT_GEOMETRY',JSON.stringify({width,panel,hero,dimensions}));
+  await page.screenshot({path:'pulse-source-preview/homepage-'+width+'.png'});
+  await page.locator('#rr-pulse').screenshot({path:'pulse-source-preview/rail-'+width+'.png'});
   if(width>=1121){
     assert.ok(panel.x>hero.x+hero.width/2&&panel.y>=hero.y&&panel.y+panel.height<=hero.y+hero.height+2,
       'Desktop Pulse must use right-hand hero space without extending the original hero: '+JSON.stringify({width,panel,hero}));
