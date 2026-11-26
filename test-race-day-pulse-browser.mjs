@@ -12,7 +12,7 @@ const make=(i)=>({
  kind:i%2?'WIN_SHIFT':'NEW_FAVORITE',
  chip:String((i%12)+1),horse:'Sample Runner '+i,
  scratches:[{program:'3',horse:'Scratch Three'},{program:'12A',horse:'Scratch Twelve A'}],
- headline:i%2?'Scratch-driven projection shift':'New projected favorite',
+ headline:i%2?'Scratch-Driven Projection Shift':'New Projected Favorite',
  message:i%2?('With #3 scratched, #'+(i+1)+' Sample Runner '+i+' has risen from 18.2% to 25.3% in TRI updated win projections.'):
  ('With #3 scratched, #'+(i+1)+' Sample Runner '+i+' is TRI new projected favorite at 31.2%, up from 22.2% before the scratches.'),
  scratches:[{program:'3',horse:'Sample Scratched Horse 3'},{program:'11A',horse:'Also Scratched Runner 11A'}],
