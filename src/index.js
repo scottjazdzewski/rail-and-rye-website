@@ -1,6 +1,7 @@
 import {prepareScheduledPickStages} from "./pick-tickets-staging.js";
 import {handleAdminProjectionUpload,handleAdminProjectionBatchUpload,readAdminProjectionCards} from './projections.js';
 import {readCertifiedF4Exotics} from './f4-exotics.js';
+import {handlePulseApi,handlePulsePage} from './race-day-pulse.js';
 import {handleAdminLongshotRadar,handleAdminLongshotEditorialPreview,publishLongshotRadarTab} from './longshot-radar.js';
 import {handleAdminPickTickets} from './pick-tickets.js';
 import {handleAdminTargetList,readAdminTargetListReview} from './target-list.js';
@@ -432,6 +433,9 @@ export default {
         const response=await serveProductDocument(original,{product});
         return request.method==='HEAD'?new Response(null,{status:response.status,headers:response.headers}):response;
       }
+      if(path==="/api/race-day-pulse")return handlePulseApi(request,env);
+      const pulseRoute=path.match(/^\/pulse\/(\d{4}-\d{2}-\d{2})\/([a-z0-9-]+)\/?$/);
+      if(pulseRoute)return handlePulsePage(request,env,pulseRoute);
       if(path==="/api/racing-wire")return handleRacingWire(request,env);
       if(path.startsWith("/api/product-tabs/"))return handleProductTabs(request,env,url);
       if(path.startsWith("/api/race-card-alerts/"))return handleRaceCardAlerts(request,env,url);
