@@ -28,6 +28,15 @@ class R2 {
   async get(k){const v=this.items.get(k);if(!v)return null;return {...v,async json(){return JSON.parse(v.data)}}}
   async list({prefix}){return {objects:[...this.items.entries()].filter(([k])=>k.startsWith(prefix)).map(([key,metadata])=>({key,uploaded:metadata.uploaded}))}}
 }
+const fixtureAlerts=[
+ ...Array.from({length:6},(_,i)=>({id:'a'+i,date:'2026-11-26',track:'Same Track',priority:100-i})),
+ ...Array.from({length:4},(_,i)=>({id:'b'+i,date:'2026-11-26',track:'Other Track',priority:80-i}))
+];
+const diversified=pulse.choosePulseInsights(fixtureAlerts);
+assert.equal(diversified.length,6);
+assert.equal(diversified.filter(x=>x.track==='Other Track').length,4,'Do not starve other tracks');
+assert.equal(pulse.choosePulseInsights(fixtureAlerts.slice(0,6)).length,6,'Do not suppress a single track with six genuine stories');
+assert.equal(pulse.choosePulseInsights(fixtureAlerts.slice(0,1)).length,1,'Never force six stories');
 const env={CARDS_BUCKET:new R2()};
 const before=prescratch(),after=final();
 const event=pulse.insightForRace(before.race_date,before.track_name,before.races[0],after.races[0],'2026-11-26T13:00:00Z');
