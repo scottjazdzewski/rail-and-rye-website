@@ -63,6 +63,12 @@
       if(badge){try{await badge.decode();c.drawImage(badge,67,241,104,104);}catch{}}
       c.font='26px system-ui,sans-serif';c.fillStyle='#eef1f4';
       wrap(c,item.message,195,272,925,40,6);
+      c.fillStyle='#15354d';c.fillRect(64,397,1072,119);
+      c.fillStyle='#d2ac6e';c.fillRect(64,397,7,119);
+      c.fillStyle='#f5f1e9';c.font='700 29px Georgia,serif';
+      c.fillText('SEE THE COMPLETE RACE CARD',94,444);
+      c.fillStyle='#c7d5e2';c.font='22px system-ui,sans-serif';
+      c.fillText('Full-field analysis  ·  Win probabilities  ·  F4 finish projections',94,484);
       c.fillStyle='#c49b59';c.fillRect(64,557,1072,2);
       c.font='23px system-ui,sans-serif';c.fillText('railandryeracing.com',64,606);
       c.fillStyle='#9caec2';c.font='19px system-ui,sans-serif';c.fillText('Model projections · Not guarantees',758,606);
