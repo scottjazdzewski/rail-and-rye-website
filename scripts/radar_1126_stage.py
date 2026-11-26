@@ -33,6 +33,22 @@ def main():
     need(dec.eof and not dec.unused_data and len(raw)<=200000 and sha(raw)==PACKET,"Encrypted packet hash mismatch")
     packet=json.loads(raw);edition=packet["edition"];decisions=packet["decisions"]
     need(edition["race_date"]==D and edition["revision"]==1 and edition["status"]=="prescratch" and edition["receipts"]["source_sha256"]==SRC and edition["receipts"]["model_sha256"]==MODEL and edition["receipts"]["editorial_qa_sha256"]==packet["qa_hash"],"Source/editorial receipt mismatch")
+    correction_path=Path("private-ingest/20261126/radar-correction.enc")
+    correction=None; approved_patch_hash=None; prior_local_fields={}
+    if correction_path.exists():
+        dc=zlib.decompressobj(); cb=dc.decompress(SealedBox(private_key()).decrypt(base64.b64decode(correction_path.read_bytes(),validate=True)),20001)
+        approved_patch_hash=sha(cb)
+        need(dc.eof and not dc.unused_data and len(cb)<=20000 and approved_patch_hash=="876ed3b7f109003b1e7de59acff8d6dc817279c603a47da3fa91de48fb8a5074","Reconciliation packet hash mismatch")
+        correction=json.loads(cb)
+        need(correction["original_packet_sha256"]==PACKET and correction["original_qa_sha256"]==packet["qa_hash"] and re.fullmatch("[a-f0-9]{64}",correction["authenticated_report_sha256"]),"Reconciliation provenance mismatch")
+        need(set(correction["field_probability_corrections"])=={"gulfstream park|4","gulfstream park|5","del mar|2"} and all(correction["editorial_recheck"].get(k) for k in correction["field_probability_corrections"]),"Missing field-specific editorial review")
+        for fk,updates in correction["field_probability_corrections"].items():
+            proof=packet["fields"][fk]; lp=dict(proof["probabilities"]); prior_local_fields[fk]=dict(lp)
+            need(len(dict(updates))==len(updates) and set(dict(updates))<=set(lp),"Invalid reviewed correction roster")
+            for program,p in updates:
+                need(0<p<1 and math.isfinite(p),"Invalid exact corrected source probability")
+                lp[program]=p
+            proof["probabilities"]=list(lp.items())
     s=boto3.client("s3",region_name="auto",endpoint_url="https://"+os.environ["TRI_CLOUDFLARE_ACCOUNT_ID"].strip()+".r2.cloudflarestorage.com",aws_access_key_id=os.environ["TRI_R2_ACCESS_KEY_ID"].strip(),aws_secret_access_key=os.environ["TRI_R2_SECRET_ACCESS_KEY"].strip())
     def get(k):
         try:
@@ -72,10 +88,10 @@ def main():
             delta=abs(lp[str(x["program_number"])]-x["win_probability_exact"]/100)*100
             maxdelta=max(delta,maxdelta)
             if round(100*lp[str(x["program_number"])],1)!=round(x["win_probability_exact"],1):visible_changes+=1
-            if delta>=.10:errors.append("Reviewed field probability differs by at least 0.10 percentage points")
+            if delta>1e-8:errors.append("Reviewed exact probability does not match certified site value")
         for k in q:
             if k[0]+"|"+str(k[1])!=fk or k[2] not in lp:continue
-            old_rank=1+sum(v>lp[k[2]]+1e-12 for v in lp.values())
+            original=prior_local_fields.get(fk,lp); old_rank=1+sum(v>original[k[2]]+1e-12 for v in original.values())
             xp=next(x["win_probability_exact"] for x in rs if str(x["program_number"])==k[2])
             new_rank=1+sum(x["win_probability_exact"]>xp+1e-10 for x in rs)
             if old_rank!=new_rank:changed_candidate_ranks+=1;errors.append("Reviewed qualifier rank differs")
@@ -101,7 +117,7 @@ def main():
         x=eligible[k];p=x["win_probability_exact"]/100
         if c["pwin_exact"]!=p:changes.append({"key":list(k),"prior":c["pwin_exact"],"site":p})
         c["pwin_exact"]=p;c["pwin_display"]=x["win_probability"];c["fair_odds_display"]=fair(p)
-    evidence={"original_editorial_qa_sha256":packet["qa_hash"],"original_packet_sha256":PACKET,"projection_stage_sha256":sha(mb),"reviewed_field_count":len(packet["fields"]),"numeric_qualifiers":len(eligible),"editorial_selected":len(sel),"site_exact_probability_changes":changes,"max_reviewed_field_pct_delta":maxdelta,"rounded_runner_changes":visible_changes,"qualifier_rank_changes":changed_candidate_ranks}
+    evidence={"original_editorial_qa_sha256":packet["qa_hash"],"original_packet_sha256":PACKET,"projection_stage_sha256":sha(mb),"reviewed_field_count":len(packet["fields"]),"numeric_qualifiers":len(eligible),"editorial_selected":len(sel),"site_exact_probability_changes":changes,"max_reviewed_field_pct_delta":maxdelta,"rounded_runner_changes":visible_changes,"qualifier_rank_changes":changed_candidate_ranks,"reconciliation_patch_sha256":approved_patch_hash,"authenticated_report_sha256":correction["authenticated_report_sha256"] if correction else None,"editorial_recheck":correction["editorial_recheck"] if correction else None}
     proof=compact(evidence);edition["receipts"]["editorial_qa_sha256"]=sha(proof)
     node="""import {validateLongshotEdition} from './src/longshot-radar.js';let s='';for await(const c of process.stdin)s+=c;process.stdout.write(JSON.stringify(validateLongshotEdition(JSON.parse(s))));"""
     proc=subprocess.run(["node","--input-type=module","-e",node],input=compact(edition),capture_output=True)
