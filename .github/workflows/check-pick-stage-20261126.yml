@@ -52,4 +52,32 @@ jobs:
           today={p.get("track") for p in rows if p.get("category")=="Pick Tickets" and p.get("race_date")=="2026-11-25" and p.get("track")}
           assert len(today)==9
           print("PICK_QUEUE_FINAL_PASS tracks=6 sequences=78 current_tracks=9 release_at="+due,flush=True)
+          import urllib.request
+          root="pick-tickets/staging/2026-11-26/"
+          def get(k):
+              o=s.get_object(Bucket=b,Key=k);raw=o["Body"].read();return json.loads(raw),o.get("Metadata",{}),hashlib.sha256(raw).hexdigest()
+          stage,m,digest=get(root+"revision-0001.json")
+          assert m.get("sha256")==digest and m.get("stage_only")=="true" and stage.get("release_at")=="2026-11-26T08:00:00Z"
+          print("PICK_1126_STAGE_VERIFIED",json.dumps({"sha256":digest,"tracks":len(stage["tracks"]),"races":sum(r["races"] for r in stage["tracks"]),"runners":sum(r["runners"] for r in stage["tracks"]),"sequences":sum(len(r["card"]["sequences"]) for r in stage["tracks"]),"canonical_snapshot_rows":sum(bool(r.get("canonical_source")) for r in stage["tracks"])}))
+          from botocore.exceptions import ClientError
+          try:
+              q,_,_=get(root+"prepared-0001.json")
+          except ClientError as e:
+              if e.response.get("Error",{}).get("Code") not in ("NoSuchKey","404","NotFound"):raise
+              print("PICK_1126_CATALOG_NOT_PREPARED")
+          else:
+              assert q["sha256"]==digest and q["release_at"]==stage["release_at"] and len(q["tracks"])==6
+              assert all(t["release_at"]=="2026-11-26 08:00:00" and t["product_id"] for t in q["tracks"])
+              for t in q["tracks"]:
+                  slug=t["track"].lower().replace(" ","-")
+                  c,cm,ch=get("racing-intelligence/product-tabs/pick-tickets/2026-11-26/"+slug+".json")
+                  assert cm["content_sha256"]==ch and cm["customer_publish_approved"]=="true" and len(c["sequences"])==t["sequence_count"] and all(x.get("review_probabilities") for x in c["sequences"])
+              print("PICK_1126_CATALOG_VERIFIED",json.dumps({"tracks":len(q["tracks"]),"sequences":sum(t["sequence_count"] for t in q["tracks"]),"release_at":q["release_at"],"prepared_at":q["prepared_at"]}))
+          req=urllib.request.Request("https://railandryeracing.com/api/products?qa=pick-stage-1126",headers={"Cache-Control":"no-cache","User-Agent":"RailRyeReleaseQA/1"})
+          with urllib.request.urlopen(req,timeout=20) as response: ps=json.load(response)["products"]
+          rows=ps+[i for p in ps for i in p.get("included_products",[])]
+          today={p.get("track") for p in rows if p.get("category")=="Pick Tickets" and p.get("race_date")=="2026-11-25" and p.get("track")}
+          tomorrow={p.get("track") for p in rows if p.get("category")=="Pick Tickets" and p.get("race_date")=="2026-11-26" and p.get("track")}
+          print("PICK_1126_PUBLIC_CUTOFF",json.dumps({"today_tracks":len(today),"tomorrow_visible":len(tomorrow)}))
+          assert len(today)==9 and not tomorrow
           PY
