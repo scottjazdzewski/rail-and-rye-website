@@ -125,6 +125,39 @@ def main():
         raise RuntimeError("Private prescratch archive unavailable (no fallback to current scratch-final): "+type(e).__name__)
     original=json.loads(out["Body"].read(1_100_000))
     totals=audit(original,data,grouped,"PRIVATE_IMMUTABLE_PRESCRATCH")
+    # Additional read-only current publication check. Presence of a private
+    # prescratch source does NOT authorize scoring or issuing a live teaser.
+    current_response=client.get_object(Bucket=BUCKET,Key=DASH)
+    current=json.loads(current_response["Body"].read(1_100_000))
+    require(current.get("race_date")==DAY and current.get("track_name")=="Churchill Downs",
+            "Current dashboard track/date identity mismatch")
+    state=current.get("projection_status")
+    if state=="scratch_final":
+        race_lookup={int(r["race_number"]):r for r in current.get("races",[])}
+        active_reconciled=0
+        conditions_ok=True
+        for n,changes in grouped.items():
+            race=race_lookup.get(n)
+            if not race:
+                conditions_ok=False
+                continue
+            listed={(program(x["program_number"]),clean(x.get("horse_name")))
+                    for x in race.get("scratches",[])}
+            for x in changes:
+                if x["reason"]=="Also-Eligible":continue
+                if (program(x["program_number"]),clean(x["horse_name"])) in listed:
+                    active_reconciled+=1
+                else:
+                    conditions_ok=False
+        for n in (5,12):
+            if clean(race_lookup.get(n,{}).get("surface")) not in ("dirt","main"):
+                conditions_ok=False
+        print("CHURCHILL_CURRENT_DASHBOARD status=scratch_final submitted_active_scratches_seen={}/22 course_changes_verified={} research_only=true".format(
+            active_reconciled,conditions_ok))
+    elif state=="prescratch":
+        print("CHURCHILL_CURRENT_DASHBOARD status=prescratch new_user_supplied_changes_NOT_YET_SCORED=true research_only=true")
+    else:
+        print("CHURCHILL_CURRENT_DASHBOARD status={} held=true research_only=true".format(re.sub('[^A-Za-z_-]','',str(state))[:30]))
     if totals["missing_other"] or totals["name_mismatches"]:
         print("CHURCHILL_AUDIT_STATUS=REVIEW_REQUIRED no_publishing=true")
     else:
