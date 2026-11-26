@@ -330,6 +330,7 @@ export async function handlePulseApi(request,env){
 }
 const escape=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const titleCaseWords=s=>String(s||'').replace(/(^|[\s-])([a-z])/gi,(_,separator,letter)=>separator+letter.toUpperCase());
+const ordinalRace=n=>{const v=Number(n);return Number.isInteger(v)&&v>0?String(v)+(v%100>=11&&v%100<=13?'th':({1:'st',2:'nd',3:'rd'}[v%10]||'th')):'Race '+String(n);};
 export async function handlePulsePage(request,env,route){
   if(request.method!=='GET'&&request.method!=='HEAD')return new Response('Method not allowed',{status:405});
   if(env?.PULSE_PUBLICATION_ENABLED!=='true')
@@ -346,7 +347,7 @@ export async function handlePulsePage(request,env,route){
   const actionURL=historical?'/store/':item.hub_url;
   const actionText=historical?'Explore Today’s Intelligence Hub':'View the Complete Race Card';
   const headlineTitle=titleCaseWords(item.headline);
-  const title=item.track+' Race '+item.race_number+' | '+headlineTitle+' | Race-Day Pulse';
+  const title=item.track+' '+ordinalRace(item.race_number)+' | '+headlineTitle+' | Race-Day Pulse';
   const desc=item.message;
   const canonical='https://railandryeracing.com/pulse/'+date+'/'+id;
   const sharedChip=(program,scratched=false)=>{
@@ -361,8 +362,7 @@ export async function handlePulsePage(request,env,route){
   };
   const scratchLine=Array.isArray(item.scratches)&&item.scratches.length?
     '<div class="rr-pulse-share-scratches"><span class="rr-pulse-scratch-label">SCRATCHED</span>'+
-    item.scratches.map(x=>'<span class="rr-pulse-scratch-identity">'+
-      sharedChip(x.program,true)+'<span class="rr-pulse-scratch-name">'+escape(x.horse)+'</span></span>').join('')+
+    item.scratches.map(x=>'<span class="rr-pulse-scratch-identity">'+sharedChip(x.program,true)+'</span>').join('')+
     '</div>':'';
   const html='<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'+
     '<title>'+escape(title)+'</title><meta name="description" content="'+escape(desc)+'">'+
@@ -371,10 +371,10 @@ export async function handlePulsePage(request,env,route){
     '<meta property="og:image" content="https://railandryeracing.com/assets/approved/home/hero-dust-charged-finish.jpg">'+
     '<meta name="twitter:card" content="summary_large_image"><link rel="canonical" href="'+escape(canonical)+'">'+
     '<link rel="stylesheet" href="/assets/rail-rye-core.css"><link rel="stylesheet" href="/assets/race-day-pulse.css">'+
-    '</head><body class="rr-pulse-standalone"><main class="rr-pulse-share-page"><a class="rr-pulse-home-link" href="/">RAIL &amp; RYE RACING</a>'+
+    '</head><body class="rr-pulse-standalone"><main class="rr-pulse-share-page"><a class="rr-pulse-home-link" href="/"><img src="/assets/approved/brand/rail-rye-ivory-logo.png" alt="" width="32" height="32">RAIL &amp; RYE RACING</a>'+
     '<article class="rr-pulse-story"><p class="rr-pulse-eyebrow">RACE-DAY PULSE · '+escape(date)+'</p>'+
     '<div class="rr-pulse-story-content">'+sharedChip(item.chip)+
-    '<div><h1>'+escape(item.track)+' · Race '+item.race_number+'</h1><h2>'+escape(headlineTitle)+'</h2>'+
+    '<div><h1>'+escape(item.track)+' · '+escape(ordinalRace(item.race_number))+'</h1><h2>'+escape(headlineTitle)+'</h2>'+
     '<p class="rr-pulse-affected">'+escape(item.horse||'')+'</p><p>'+escape(desc)+'</p></div></div>'+scratchLine+
     '<p class="rr-pulse-foot">Updated after source-verified scratch processing. Projections are estimates, not guarantees.</p>'+
     '<a class="rr-pulse-primary" href="'+escape(actionURL)+'">'+escape(actionText)+'</a>'+
