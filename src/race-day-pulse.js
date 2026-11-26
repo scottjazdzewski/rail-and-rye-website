@@ -235,7 +235,21 @@ export async function handlePulsePage(request,env,route){
   const title=item.track+' Race '+item.race_number+' | Race-Day Pulse';
   const desc=item.message;
   const canonical='https://railandryeracing.com/pulse/'+date+'/'+id;
-  const chip=/^(?:[1-9]|1[0-9]|20)$/.test(item.chip)?item.chip:null;
+  const sharedChip=(program,scratched=false)=>{
+    const text=clean(program,8).toUpperCase(),parsed=/^(\d{1,2})([A-Z]?)$/.exec(text);
+    const number=parsed?Number(parsed[1]):0;
+    const className=scratched?'rr-pulse-saddle rr-pulse-saddle--scratch':'rr-pulse-saddle';
+    if(number>=1&&number<=20)
+      return '<span class="'+className+'"><img src="/assets/approved/saddlecloths/'+number+
+        '.png" width="32" height="32" alt="Saddlecloth '+escape(text)+'">'+
+        (parsed[2]?'<span class="rr-pulse-suffix">'+escape(parsed[2])+'</span>':'')+'</span>';
+    return '<span class="'+className+' rr-pulse-saddle-fallback">'+escape(text)+'</span>';
+  };
+  const scratchLine=Array.isArray(item.scratches)&&item.scratches.length?
+    '<div class="rr-pulse-share-scratches"><span class="rr-pulse-scratch-label">SCRATCHED</span>'+
+    item.scratches.map(x=>'<span class="rr-pulse-scratch-identity">'+
+      sharedChip(x.program,true)+'<span class="rr-pulse-scratch-name">'+escape(x.horse)+'</span></span>').join('')+
+    '</div>':'';
   const html='<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'+
     '<title>'+escape(title)+'</title><meta name="description" content="'+escape(desc)+'">'+
     '<meta property="og:type" content="article"><meta property="og:title" content="'+escape(title)+'">'+
@@ -245,8 +259,9 @@ export async function handlePulsePage(request,env,route){
     '<link rel="stylesheet" href="/assets/rail-rye-core.css"><link rel="stylesheet" href="/assets/race-day-pulse.css">'+
     '</head><body class="rr-pulse-standalone"><main class="rr-pulse-share-page"><a class="rr-pulse-home-link" href="/">RAIL &amp; RYE RACING</a>'+
     '<article class="rr-pulse-story"><p class="rr-pulse-eyebrow">RACE-DAY PULSE · '+escape(date)+'</p>'+
-    '<div class="rr-pulse-story-content">'+(chip?'<img class="rr-pulse-chip" src="/assets/approved/saddlecloths/'+chip+'.png" width="68" height="68" alt="Saddlecloth '+chip+'">':'')+
-    '<div><h1>'+escape(item.track)+' · Race '+item.race_number+'</h1><h2>'+escape(item.headline)+'</h2><p>'+escape(desc)+'</p></div></div>'+
+    '<div class="rr-pulse-story-content">'+sharedChip(item.chip)+
+    '<div><h1>'+escape(item.track)+' · Race '+item.race_number+'</h1><h2>'+escape(item.headline)+'</h2>'+
+    '<p class="rr-pulse-affected">'+escape(item.horse||'')+'</p><p>'+escape(desc)+'</p></div></div>'+scratchLine+
     '<p class="rr-pulse-foot">Updated after source-verified scratch processing. Projections are estimates, not guarantees.</p>'+
     '<a class="rr-pulse-primary" href="'+escape(item.hub_url)+'">Explore the Intelligence Hub</a>'+
     '<a class="rr-pulse-secondary" href="/">See today’s Race-Day Pulse</a></article></main></body></html>';
