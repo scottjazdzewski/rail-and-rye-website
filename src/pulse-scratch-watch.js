@@ -66,9 +66,13 @@ export async function pulseDayLastPost(env,date){
     try{card=await object.json();}catch{continue;}
     if(card?.race_date!==date||!Array.isArray(card.races))continue;
     for(const race of card.races){
-      if(race?.cancelled||race?.status==='cancelled')continue;
+      const status=String(race?.status||'').trim().toLowerCase();
+      if(race?.cancelled||['cancelled','canceled','abandoned'].includes(status))continue;
       const m=parsePulseEasternPost(race?.post_time_et);
-      if(m!==null&&m>=9*60)latest=Math.max(latest??0,m);
+      // Unknown active-race post time means the final clock cannot be proven.
+      // Do not silently guess that an earlier race is the final post.
+      if(m===null)return null;
+      if(m>=9*60)latest=Math.max(latest??0,m);
     }
   }
   return latest;
