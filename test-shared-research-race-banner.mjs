@@ -17,7 +17,7 @@ for(const [product,js,styles] of [["Radar",radar,radarCSS],["Target List",target
 for(const page of ["public/admin/longshot-radar.html","public/admin/target-list-preview.html"]){
  const h=read(page);
  assert.match(h,/rr-research-race-banner\.css\?v=locked-v1-20261124/);
- assert.match(h,/rr-research-race-banner\.js\?v=locked-v4-20261124/);
+ assert.match(h,/rr-research-race-banner\.js\?v=locked-v7-20261124/);
  const helper=h.indexOf("rr-research-race-banner.js"),app=h.indexOf(page.includes("longshot")?"longshot-radar.js":"target-list-dashboard.js");
  assert.ok(helper>=0&&helper<app,"Canonical banner script must execute before "+page);
 }
