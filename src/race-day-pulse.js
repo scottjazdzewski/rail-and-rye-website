@@ -177,8 +177,25 @@ async function archivedPulse(env,date,id){
 }
 export async function handlePulseApi(request,env){
   if(request.method!=='GET'&&request.method!=='HEAD')return result({error:'Method not allowed'},405);
-  const data=await readRaceDayPulse(env);
-  return request.method==='HEAD'?new Response(null,{headers:HEADERS}):result(data);
+  // Cache sanitized, public-only output at the Cloudflare edge, not private R2
+  // documents. ET date in the cache key prevents yesterday's feed surviving a
+  // 3AM rollover. A 45-second TTL bounds refresh latency after certified writes.
+  const cache=globalThis.caches?.default;
+  const cacheUrl=new URL('/api/race-day-pulse',request.url);
+  cacheUrl.searchParams.set('et_date',newYorkCutoff(Date.now()));
+  const cacheRequest=new Request(cacheUrl.toString(),{method:'GET'});
+  if(cache){
+    try{
+      const cached=await cache.match(cacheRequest);
+      if(cached)return request.method==='HEAD'?new Response(null,{headers:HEADERS}):cached;
+    }catch(error){console.warn('Pulse cache lookup deferred',String(error).slice(0,100));}
+  }
+  const data=await readRaceDayPulse(env),response=result(data);
+  if(cache&&data.status==='ok'){
+    try{await cache.put(cacheRequest,response.clone());}
+    catch(error){console.warn('Pulse cache store deferred',String(error).slice(0,100));}
+  }
+  return request.method==='HEAD'?new Response(null,{headers:HEADERS}):response;
 }
 const escape=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export async function handlePulsePage(request,env,route){
