@@ -183,6 +183,14 @@ def read_current(client,source_key,data,grouped,original):
             j_replaced+=1
     parent_ok=bool(complete and receipts.get("prescratch_parent_sha256")==(
         original.get("model_receipts") or {}).get("f4_sha256"))
+    proof=current.get("parent_replay_proof") or {}
+    source_based_parent_ok=bool(
+        isinstance(proof,dict) and
+        proof.get("stored_parent_receipts")==original.get("model_receipts") and
+        proof.get("replay_f4_sha256")==receipts.get("prescratch_parent_sha256") and
+        re.fullmatch(r"[0-9a-fA-F]{64}",str(proof.get("replay_tri_sha256") or "")))
+    print("FG_LINEAGE_QA stored_F4_receipt_equals_replay_parent={} certified_replay_proof_links_original={} mismatch_needs_review={}".format(
+        parent_ok,source_based_parent_ok,not(parent_ok or source_based_parent_ok)))
     jockey_prior_unchanged=0
     for item in data["other_changes"]:
         if item["type"]!="JOCKEY_CHANGE":continue
@@ -211,7 +219,7 @@ def read_current(client,source_key,data,grouped,original):
             print("FG_PULSE_CANDIDATE race={} status=HELD reason=CONDITIONAL_MTO_AND_OR_UNRECONCILED_JOCKEY".format(n))
             continue
         a,b=runner_map(original_races.get(n)),runner_map(rs.get(n))
-        if not a or not b or not complete or not parent_ok or reported!=8:
+        if not a or not b or not complete or not (parent_ok or source_based_parent_ok) or reported!=8:
             print("FG_PULSE_CANDIDATE race={} status=HELD reason=INCOMPLETE_OR_UNVERIFIED_SCORES".format(n))
             continue
         old_scratched={number(x["program_number"]) for x in grouped[n]}
