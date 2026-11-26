@@ -303,6 +303,11 @@ async function archivedPulse(env,date,id){
 }
 export async function handlePulseApi(request,env){
   if(request.method!=='GET'&&request.method!=='HEAD')return result({error:'Method not allowed'},405);
+  // Explicit owner release only. A future merge/staging build must not turn
+  // uncalibrated research results into live public posts by accident.
+  if(env?.PULSE_PUBLICATION_ENABLED!=='true')
+    return new Response(JSON.stringify({date:newYorkCutoff(Date.now()),items:[],status:'disabled'}),{
+      headers:{...HEADERS,'Cache-Control':'no-store'}});
   // Cache sanitized, public-only output at the Cloudflare edge, not private R2
   // documents. ET date in the cache key prevents yesterday's feed surviving a
   // 3AM rollover. A 45-second TTL bounds refresh latency after certified writes.
@@ -326,6 +331,9 @@ export async function handlePulseApi(request,env){
 const escape=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export async function handlePulsePage(request,env,route){
   if(request.method!=='GET'&&request.method!=='HEAD')return new Response('Method not allowed',{status:405});
+  if(env?.PULSE_PUBLICATION_ENABLED!=='true')
+    return new Response('Race-Day Pulse is not published.',{status:404,
+      headers:{'Cache-Control':'no-store','X-Robots-Tag':'noindex, nofollow'}});
   const [,date,id]=route;
   const today=newYorkCutoff(Date.now());
   // Historical shares use the small public-only archive without expensive
