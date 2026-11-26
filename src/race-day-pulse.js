@@ -299,6 +299,9 @@ export async function handlePulsePage(request,env,route){
   const feed=date===today?await readRaceDayPulse(env):null;
   const item=(feed?.items.find(x=>x.id===id))||await archivedPulse(env,date,id);
   if(!item)return new Response('This race-day insight is not available.',{status:404,headers:{'Cache-Control':'no-store'}});
+  const historical=date!==today;
+  const actionURL=historical?'/store/':item.hub_url;
+  const actionText=historical?'Explore Today’s Intelligence Hub':'View the Complete Race Card';
   const title=item.track+' Race '+item.race_number+' | Race-Day Pulse';
   const desc=item.message;
   const canonical='https://railandryeracing.com/pulse/'+date+'/'+id;
@@ -330,7 +333,7 @@ export async function handlePulsePage(request,env,route){
     '<div><h1>'+escape(item.track)+' · Race '+item.race_number+'</h1><h2>'+escape(item.headline)+'</h2>'+
     '<p class="rr-pulse-affected">'+escape(item.horse||'')+'</p><p>'+escape(desc)+'</p></div></div>'+scratchLine+
     '<p class="rr-pulse-foot">Updated after source-verified scratch processing. Projections are estimates, not guarantees.</p>'+
-    '<a class="rr-pulse-primary" href="'+escape(item.hub_url)+'">View the Complete Race Card</a>'+
+    '<a class="rr-pulse-primary" href="'+escape(actionURL)+'">'+escape(actionText)+'</a>'+
     '<a class="rr-pulse-secondary" href="/">See today’s Race-Day Pulse</a></article></main></body></html>';
   return new Response(request.method==='HEAD'?null:html,{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'public, max-age=45, must-revalidate','X-Content-Type-Options':'nosniff'}});
 }
