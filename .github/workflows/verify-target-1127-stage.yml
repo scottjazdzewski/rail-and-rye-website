@@ -1,0 +1,107 @@
+name: Verify November 27 Target List private stage and release queue
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/verify-target-1127-stage.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check src/target-list-staging.js && node --check src/target-list.js && node --check src/index.js
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install --quiet boto3==1.40.36
+      - name: Verify source-scored stage, immutable receipts, existing customer day and incomplete site dependencies
+        env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+        run: |
+          python - <<'PY'
+          import os,hashlib,json,boto3
+          from botocore.exceptions import ClientError
+          d='2026-11-27';due='2026-11-27T08:00:00Z';b='rail-and-rye-private-cards'
+          source='c4f7b36d1b72f03ee8bcff3b022cd4740d4dbf0f190e218bc89cf9bf18504e06'
+          s=boto3.client('s3',endpoint_url='https://'+os.environ['TRI_CLOUDFLARE_ACCOUNT_ID'].strip()+'.r2.cloudflarestorage.com',region_name='auto',aws_access_key_id=os.environ['TRI_R2_ACCESS_KEY_ID'].strip(),aws_secret_access_key=os.environ['TRI_R2_SECRET_ACCESS_KEY'].strip())
+          def get(k):
+            try:
+              obj=s.get_object(Bucket=b,Key=k);return obj['Body'].read(),obj.get('Metadata',{})
+            except ClientError as e:
+              if e.response.get('Error',{}).get('Code') in ('404','NotFound','NoSuchKey'):return None,{}
+              raise
+          root='intelligence/target-list/staging/'+d+'/'
+          stage,meta=get(root+'revision-0001.json')
+          assert stage and meta['stage_only']=='true' and meta['release_at']==due and meta['source_sha256']==source
+          h=hashlib.sha256(stage).hexdigest();assert h==meta['sha256']
+          obj=json.loads(stage);assert obj['race_date']==d and obj['source_zip_sha256']==source and obj['release_at']==due
+          assert obj['source_track_count']==len(obj['source_receipts'])==15
+          assert obj['source_race_count']==sum(z['races'] for z in obj['source_receipts'])==134
+          assert obj['source_listed_runners']==sum(z['runners'] for z in obj['source_receipts'])==1156
+          assert len(obj['targets'])==len(obj['selected_race_full_fields'])==len(obj['customer_edition']['targets'])==13
+          for z in obj['source_receipts']:
+            assert z['receipt_status']=='PASS_TRI_TJ_V4_PERMANENT_FORWARD_RUNTIME' and z['tj_role_receipt']['exact_consumed_model_matrix_verified']
+          for field in obj['selected_race_full_fields']:
+            assert field['field_count']==len(field['runners'])
+            assert abs(sum(z['win_probability_exact'] for z in field['runners'])-100)<1e-6
+          receipt,rm=get(root+'qa-0001.json')
+          assert receipt and rm['release_at']==due and json.loads(receipt)['stage_sha256']==h
+          print('TARGET_1127_R2_STAGE_READBACK_PASS tracks=15 races=134 runners=1156 targets=13 release=08UTC sha='+h,flush=True)
+          prev,pm=get('racing-intelligence/product-tabs/target-list/2026-11-26.json')
+          assert prev and pm.get('customer_publish_approved')=='true'
+          print('TARGET_1126_CUSTOMER_EDITION_PRESERVED',flush=True)
+          available=set()
+          for field in obj['selected_race_full_fields']:
+            slug=field['track'].casefold().replace(' ','-')
+            raw,pmeta=get('projections/dashboard/'+d+'/'+slug+'.json')
+            if not raw:continue
+            if pmeta.get('source_sha256')!=source:raise AssertionError('Source SHA mismatch for selected site projection '+slug)
+            card=json.loads(raw)
+            if card['race_date']!=d or card['track_name'].casefold()!=field['track'].casefold():raise AssertionError('Source track mismatch '+slug)
+            r=next((x for x in card['races'] if x['race_number']==field['race']),None)
+            if not r:continue
+            if len(r['entries'])!=field['field_count']:raise AssertionError('Roster mismatch '+slug+' '+str(field['race']))
+            existing={str(x['program_number']):x for x in r['entries']}
+            for x in field['runners']:
+              y=existing.get(str(x['program_number']))
+              if y is None:raise AssertionError('Missing saddlecloth '+slug+' '+str(field['race']))
+              if y['horse_name']!=x['horse_name'] or y['trainer']!=x['trainer'] or y['jockey']!=x['jockey']:raise AssertionError('Horse/connection mismatch '+slug+' '+str(field['race']))
+              if abs(y['win_probability_exact']-x['win_probability_exact'])>=0.05:raise AssertionError('Score difference '+slug+' '+str(field['race']))
+            available.add((field['track'],field['race']))
+          print('TARGET_1127_SOURCE_SITE_PARITY currently_matched='+str(len(available))+' selected_total='+str(len(obj['targets']))+' missing_source_races='+str(len(obj['targets'])-len(available)),flush=True)
+          prepared,pmeta=get(root+'prepared-0001.json')
+          if prepared:
+            proof=json.loads(prepared)
+            assert proof['sha256']==h and proof['release_at']==due and proof['targets']==13 and proof.get('product_id') and proof.get('catalog_release_at')=='2026-11-27 08:00:00'
+            print('TARGET_1127_CATALOG_QUEUE_VERIFIED release=08UTC',flush=True)
+          else:print('TARGET_1127_CATALOG_NOT_YET_QUEUED awaiting complete matching Projections and scheduler',flush=True)
+          actual,am=get('racing-intelligence/product-tabs/target-list/'+d+'.json')
+          if actual:assert am.get('customer_publish_approved')=='true' and hashlib.sha256(actual).hexdigest()==am.get('content_sha256')
+          print('TARGET_1127_PRIVATE_PUBLICATION_CHECK_COMPLETE customer_content_present='+str(bool(actual)),flush=True)
+          with open('/tmp/target-1127-private-stage.json','wb') as f:f.write(stage)
+          PY
+      - name: Exercise real Worker scheduler fail-closed behavior before all Projections exist
+        run: |
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          import {readFileSync} from 'node:fs';
+          import {createHash,webcrypto} from 'node:crypto';
+          import {prepareScheduledTargetStages} from './src/target-list-staging.js';
+          globalThis.crypto??=webcrypto;
+          const raw=readFileSync('/tmp/target-1127-private-stage.json','utf8'), p=JSON.parse(raw);
+          const sha=createHash('sha256').update(raw).digest('hex');
+          const key='intelligence/target-list/staging/2026-11-27/revision-0001.json';
+          const env={STORE_DB:{},CARDS_BUCKET:{
+            async get(path){return path===key?{customMetadata:{stage_only:'true',release_at:'2026-11-27T08:00:00Z',sha256:sha,source_sha256:p.source_zip_sha256,editorial_sha256:p.editorial_sha256},text:async()=>raw}:null;}
+          }};
+          const result=await prepareScheduledTargetStages(env,Date.UTC(2026,10,26,19,0,0));
+          assert.deepEqual(result,{prepared:0,deferred:1});
+          console.log('TARGET_1127_WORKER_STAGE_GATE_VALIDATED 15_tracks 134_races missing_site_hold_without_publication');
+          JS
