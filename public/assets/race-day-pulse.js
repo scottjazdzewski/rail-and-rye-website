@@ -181,7 +181,7 @@
   function buildCTA(){
     const item=$('div','rr-pulse-item rr-pulse-cta');
     item.append($('p','rr-pulse-track','THE COMPLETE PICTURE'),
-      $('h3','rr-pulse-headline','More than a single insight.'),
+      $('h3','rr-pulse-headline','More Than A Single Insight.'),
       $('p','rr-pulse-message','Explore today’s complete race projections, Pick Tickets, Longshot Radar and Target List.'));
     const a=$('a','rr-pulse-cta-link','Explore Intelligence Hub');a.href='/store/';
     item.append(a);return item;
