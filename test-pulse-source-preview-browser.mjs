@@ -24,7 +24,7 @@ mkdirSync('pulse-source-preview',{recursive:true});
 let browser;
 try{
  browser=await chromium.launch({headless:true});
- for(const width of [390,1280]){
+ for(const width of [320,390,768,1280,1440]){
   const page=await browser.newPage({viewport:{width,height:900},acceptDownloads:true});
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.route(/fonts\.googleapis\.com|fonts\.gstatic\.com/,r=>r.abort());
@@ -32,6 +32,24 @@ try{
   await page.locator('.rr-pulse-item').first().waitFor({timeout:12000});
   assert.equal(await page.locator('.rr-pulse-item').count(),4,'Three real candidates plus Hub link, no synthetic extras');
   assert.deepEqual(errors,[]);
+  const panel=await page.locator('#rr-pulse').boundingBox();
+  const hero=await page.locator('.heritage-hero').boundingBox();
+  if(width>=1121){
+    assert.ok(panel.x>hero.x+hero.width/2&&panel.y>=hero.y&&panel.y+panel.height<=hero.y+hero.height+2,
+      'Desktop Pulse must use right-hand hero space without extending the original hero: '+JSON.stringify({width,panel,hero}));
+  }else{
+    assert.ok(panel.y>=hero.y+hero.height-1,'Mobile/tablet Pulse belongs below established hero');
+    if(width<=390)assert.ok(panel.height<220,'Mobile Pulse must be a shallow teaser: '+JSON.stringify({width,panel}));
+  }
+  assert.match(await page.locator('.rr-pulse-track').first().innerText(),/12TH/);
+  assert.equal(await page.locator('.rr-pulse-scratch-name').count(),0,'No names in scratch chip row');
+  assert.equal(await page.locator('.rr-pulse-scratch-identity').count(),8+5+1,
+    'Show every original program chip across three source-backed stories');
+  assert.equal(await page.locator('.rr-pulse-logo').count(),1);
+  if(width===390||width===1280){
+    await page.screenshot({path:'pulse-source-preview/homepage-'+width+'.png'});
+    await page.screenshot({path:'pulse-source-preview/full-homepage-'+width+'.png',fullPage:true});
+  }
   const imgs=page.locator('.rr-pulse-item:first-child .rr-pulse-saddle img');
   await imgs.first().evaluate(img=>img.decode());
   const style=await page.locator('.rr-pulse-item:first-child .rr-pulse-saddle').first().evaluate(el=>{
