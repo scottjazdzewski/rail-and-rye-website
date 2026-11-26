@@ -61,13 +61,19 @@ const dual={
     {post_time_et:'9:45 PM ET'},{post_time_et:'11:15 PM ET',status:'cancelled'},
     {post_time_et:'10:05 PM ET'}]},
   'beta-track.json':{race_date:moreDate,races:[
-    {post_time_et:'12:10 AM ET'},{post_time_et:'garbage'}]}
+    {post_time_et:'12:10 AM ET'},{post_time_et:'10:20 PM ET'}]}
 };
 const multi={CARDS_BUCKET:{
   async list({prefix:p}){assert.equal(p,prefix);return {objects:Object.keys(dual).map(f=>({key:prefix+f})),truncated:false};},
   async get(key){const d=dual[key.replace(prefix,'')];return d?{async json(){return d;}}:null;}
 }};
 assert.equal(await lib.pulseDayLastPost(multi,moreDate),1450,'Latest post must cross midnight ET and skip cancelled card');
+dual['beta-track.json'].races.push({post_time_et:'garbage'});
+assert.equal(await lib.pulseDayLastPost(multi,moreDate),null,'Unknown active-race post time must fail closed');
+dual['beta-track.json'].races.pop();
+dual['beta-track.json'].races.push({status:'CANCELED',post_time_et:'2:45 AM ET'});
+assert.equal(await lib.pulseDayLastPost(multi,moreDate),1450,'Canceled later race does not extend the poll window');
+dual['beta-track.json'].races.pop();
 assert.equal((await lib.pulseDayLastPost({CARDS_BUCKET:{
   async list(){return {objects:[{key:prefix+'alpha-track.json'}],truncated:true};}
 }},moreDate)),null,'Incomplete R2 listing fails closed');
