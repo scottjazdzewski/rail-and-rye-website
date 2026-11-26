@@ -183,13 +183,16 @@ class TestPrescratchSync(unittest.TestCase):
         self.assertEqual(client.writes, 0)
         self.assertEqual(sync_cards(cards, result["sha256"], client=client), (1, 0))
         self.assertEqual(sync_cards(cards, result["sha256"], client=client), (0, 1))
-        self.assertEqual(client.writes, 1)
+        self.assertEqual(client.writes, 2, "Private Pulse baseline + original dashboard must be written")
         key = target_key(cards[0])
+        backup = key.replace("projections/dashboard/", "race-day-pulse/prescratch/", 1)
+        self.assertIn(backup, client.saved)
+        self.assertEqual(json.loads(client.saved[backup]["Body"])["projection_status"], "prescratch")
         self.assertEqual(json.loads(client.saved[key]["Body"])["projection_status"], "prescratch")
         client.saved[key]["Body"] = dump({"schema_version": 1, "projection_status": "post-scratch"})
         with self.assertRaisesRegex(Hold, "scratch-updated"):
             sync_cards(cards, result["sha256"], client=client)
-        self.assertEqual(client.writes, 1, "A newer post-scratch card must remain untouched")
+        self.assertEqual(client.writes, 2, "A newer post-scratch card and original Pulse baseline remain untouched")
 
 
     def test_original_badges_are_reused_without_rescoring(self):
