@@ -1,0 +1,60 @@
+name: Check November 26 Target List queued release in R2
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/check-1126-target-queue-now.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install --quiet boto3==1.40.36 requests==2.32.3
+      - name: Read-only check source, stage, prepared catalog and current edition
+        env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          TRI_CLOUDFLARE_API_TOKEN: ${{ secrets.TRI_CLOUDFLARE_API_TOKEN }}
+        run: |
+          python - <<'PY'
+          import os,json,hashlib,boto3
+          from botocore.exceptions import ClientError
+          b='rail-and-rye-private-cards'
+          s=boto3.client('s3',endpoint_url='https://'+os.environ['TRI_CLOUDFLARE_ACCOUNT_ID'].strip()+'.r2.cloudflarestorage.com',region_name='auto',aws_access_key_id=os.environ['TRI_R2_ACCESS_KEY_ID'].strip(),aws_secret_access_key=os.environ['TRI_R2_SECRET_ACCESS_KEY'].strip())
+          def load(key):
+            try:
+              o=s.get_object(Bucket=b,Key=key);r=o['Body'].read()
+              return r,o.get('Metadata',{})
+            except ClientError as e:
+              if e.response.get('Error',{}).get('Code') in ('404','NoSuchKey','NotFound'):return None,{}
+              raise
+          root='intelligence/target-list/staging/2026-11-26/'
+          stage,meta=load(root+'revision-0001.json')
+          assert stage and meta.get('stage_only')=='true'
+          packet=json.loads(stage)
+          assert packet['release_at']=='2026-11-26T08:00:00Z'
+          assert hashlib.sha256(stage).hexdigest()==meta['sha256']
+          print('TARGET_STAGE VERIFIED date=2026-11-26 selections='+str(len(packet['targets']))+' source_qa='+str(len(packet['source_receipts']))+' release='+packet['release_at'],flush=True)
+          prepared,_=load(root+'prepared-0001.json')
+          if prepared:
+            p=json.loads(prepared)
+            print('TARGET_QUEUE',json.dumps({'status':'QUEUED','release_at':p.get('release_at'),'catalog_release_at':p.get('catalog_release_at'),'targets':p.get('targets'),'sha_ok':p.get('sha256')==meta['sha256'],'product_id_present':bool(p.get('product_id'))}),flush=True)
+          else:print('TARGET_QUEUE NOT_PREPARED',flush=True)
+          future,fm=load('racing-intelligence/product-tabs/target-list/2026-11-26.json')
+          if future:
+            print('TARGET_FUTURE_CUSTOMER_CONTENT',json.dumps({'present':True,'customer_publish_approved':fm.get('customer_publish_approved'),'sha_ok':hashlib.sha256(future).hexdigest()==fm.get('content_sha256'),'targets':len(json.loads(future).get('targets',[]))}),flush=True)
+          else:print('TARGET_FUTURE_CUSTOMER_CONTENT MISSING',flush=True)
+          current,cm=load('racing-intelligence/product-tabs/target-list/2026-11-25.json')
+          assert current and cm.get('customer_publish_approved')=='true'
+          print('CURRENT_TARGET preserved 2026-11-25',flush=True)
+          for k in ('CLOUDFLARE_API_TOKEN','CF_API_TOKEN','TRI_CLOUDFLARE_API_TOKEN'):
+            print('CF_DEPLOY_CREDENTIAL',k,'present' if os.environ.get(k) else 'absent',flush=True)
+          PY
