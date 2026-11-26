@@ -53,6 +53,31 @@ assert.equal(open.last_post_minutes,21*60+55);
 assert.equal((await lib.evaluatePulseWatch(env,instant('2026-11-27T03:00:00Z'))).status,'after_final_post');
 assert.equal(writes,0,'Watch may not create certified evidence or alter scores');
 assert.equal(external,0,'No scrape, fetch or licensed feed connector exists yet');
+// Separate, independent racetracks: latest *eligible* post controls shutdown.
+const moreDate='2026-11-27';
+const prefix='projections/dashboard/'+moreDate+'/';
+const dual={
+  'alpha-track.json':{race_date:moreDate,races:[
+    {post_time_et:'9:45 PM ET'},{post_time_et:'11:15 PM ET',status:'cancelled'},
+    {post_time_et:'10:05 PM ET'}]},
+  'beta-track.json':{race_date:moreDate,races:[
+    {post_time_et:'12:10 AM ET'},{post_time_et:'garbage'}]}
+};
+const multi={CARDS_BUCKET:{
+  async list({prefix:p}){assert.equal(p,prefix);return {objects:Object.keys(dual).map(f=>({key:prefix+f})),truncated:false};},
+  async get(key){const d=dual[key.replace(prefix,'')];return d?{async json(){return d;}}:null;}
+}};
+assert.equal(await lib.pulseDayLastPost(multi,moreDate),1450,'Latest post must cross midnight ET and skip cancelled card');
+assert.equal((await lib.pulseDayLastPost({CARDS_BUCKET:{
+  async list(){return {objects:[{key:prefix+'alpha-track.json'}],truncated:true};}
+}},moreDate)),null,'Incomplete R2 listing fails closed');
+assert.equal((await lib.pulseDayLastPost({CARDS_BUCKET:{
+  async list(){return {objects:[],truncated:false};}
+}},moreDate)),null,'Missing date-specific cards fail closed');
+assert.equal(lib.pulseWatchDecision(instant('2026-11-28T05:00:00Z'),1450).active,true,
+ 'Cross-midnight 12:00 AM ET check is still part of prior racing date');
+assert.equal(lib.pulseWatchDecision(instant('2026-11-28T05:15:00Z'),1450).reason,'after_final_post',
+ 'Stop at the first check after a final 12:10 AM ET race post time');
 const schema=fs.readFileSync('wrangler.jsonc','utf8');
 const crons=JSON.parse(schema).triggers.crons;
 assert.deepEqual(crons,['*/10 * * * *','*/15 0-7,13-23 * * *'],'Existing 10-minute tasks must remain scheduled');
