@@ -151,7 +151,7 @@ def inspect(original,data,grouped):
         counter["matched"],counter["missing_mto"],counter["missing_other"],counter["wrong_names"],
         counter["other_identity_mismatch"],counter["prior_input_mismatch"]))
     return counter
-def read_current(client,source_key,data,grouped):
+def read_current(client,source_key,data,grouped,original):
     current_key=source_key.replace(ORIGINAL_PREFIX,DASH_PREFIX,1)
     c=client.get_object(Bucket=BUCKET,Key=current_key)
     current=json.loads(c["Body"].read(MAX_BYTES))
@@ -181,8 +181,59 @@ def read_current(client,source_key,data,grouped):
         if (runner and norm(runner.get("horse_name"))==norm(item["horse_name"]) and
                 norm(runner.get("jockey"))==norm(item["jockey_after"])):
             j_replaced+=1
-    print("FG_CURRENT_DASHBOARD status=scratch_final complete_model_receipts={} user_scratches_found={}/8 jockey_effective_updated={}/2 MTO_eligibility_requires_review=true weight_input_not_in_dashboard=true research_only=true".format(
-        bool(complete),reported,j_replaced))
+    parent_ok=bool(complete and receipts.get("prescratch_parent_sha256")==(
+        original.get("model_receipts") or {}).get("f4_sha256"))
+    jockey_prior_unchanged=0
+    for item in data["other_changes"]:
+        if item["type"]!="JOCKEY_CHANGE":continue
+        o=next((e for e in next(r for r in original["races"] if int(r["race_number"])==item["race_number"])["entries"]
+                if number(e.get("program_number"))==number(item["program_number"])),None)
+        c=next((e for e in rs.get(item["race_number"],{}).get("entries",[])
+                if number(e.get("program_number"))==number(item["program_number"])),None)
+        if o and c and norm(o.get("jockey"))==norm(c.get("jockey")):
+            jockey_prior_unchanged+=1
+    print("FG_CURRENT_DASHBOARD status=scratch_final complete_model_receipts={} parent_f4_matches_original={} user_scratches_found={}/8 jockey_effective_updated={}/2 jockey_prescratch_unchanged={}/2 MTO_eligibility_requires_review=true weight_input_not_in_dashboard=true research_only=true".format(
+        bool(complete),parent_ok,reported,j_replaced,jockey_prior_unchanged))
+    # Pulse only for original-field scratches that meet score movement gates.
+    # Only race 5/7/10 currently have no reported MTO or jockey update;
+    # the others must await conditional eligibility / rider source QA.
+    def runner_map(race):
+        if not race:return None
+        try:
+            rows={number(e["program_number"]):e for e in race["entries"]}
+            mass=sum(float(e["win_probability_exact"]) for e in rows.values())
+            if len(rows)!=len(race["entries"]) or abs(mass-100)>1e-6:return None
+            return rows
+        except (KeyError,ValueError,TypeError):return None
+    original_races={int(r["race_number"]):r for r in original.get("races",[])}
+    for n in sorted(grouped):
+        if n in (2,6):
+            print("FG_PULSE_CANDIDATE race={} status=HELD reason=CONDITIONAL_MTO_AND_OR_UNRECONCILED_JOCKEY".format(n))
+            continue
+        a,b=runner_map(original_races.get(n)),runner_map(rs.get(n))
+        if not a or not b or not complete or not parent_ok or reported!=8:
+            print("FG_PULSE_CANDIDATE race={} status=HELD reason=INCOMPLETE_OR_UNVERIFIED_SCORES".format(n))
+            continue
+        old_scratched={number(x["program_number"]) for x in grouped[n]}
+        if set(b)!=set(a)-old_scratched or any(norm(b[k].get("horse_name"))!=norm(a[k].get("horse_name")) for k in b):
+            print("FG_PULSE_CANDIDATE race={} status=HELD reason=FIELD_IDENTITY_OR_SCRATCH_MISMATCH".format(n))
+            continue
+        oldlead=max(a,key=lambda k:float(a[k]["win_probability_exact"]))
+        newlead=max(b,key=lambda k:float(b[k]["win_probability_exact"]))
+        delta=max(abs(float(b[k]["win_probability_exact"])-float(a[k]["win_probability_exact"])) for k in b)
+        f4_change=0.0
+        try:
+            for k in b:
+                p=sum(float(b[k]["f4_probabilities"]["exact_p"+str(i)]) for i in (2,3))
+                before=sum(float(a[k]["f4_probabilities"]["exact_p"+str(i)]) for i in (2,3))
+                f4_change=max(f4_change,abs((p-before)*100))
+        except (KeyError,ValueError,TypeError):
+            print("FG_PULSE_CANDIDATE race={} status=HELD reason=F4_SOURCE_MISSING".format(n))
+            continue
+        qualifies=(oldlead!=newlead or delta>=4 or f4_change>=7)
+        print("FG_PULSE_CANDIDATE race={} status={} favorite_changed={} win_shift_gate_4={} F4_underneath_gate_7={} quantitative_values=PRIVATE".format(
+            n,"PROVISIONAL_ELIGIBLE_FOR_EDITORIAL_QA" if qualifies else "BELOW_ALERT_THRESHOLD",
+            oldlead!=newlead,delta>=4,f4_change>=7))
 def main():
     parser=argparse.ArgumentParser()
     parser.add_argument("--fixture-only",action="store_true")
@@ -196,7 +247,7 @@ def main():
         aws_secret_access_key=os.environ["TRI_R2_SECRET_ACCESS_KEY"])
     key,original=list_approved_original(client)
     counts=inspect(original,data,grouped)
-    read_current(client,key,data,grouped)
+    read_current(client,key,data,grouped,original)
     if any(counts[k] for k in ("missing_other","wrong_names","other_identity_mismatch","prior_input_mismatch")):
         print("FG_SOURCE_QA_STATUS=HOLD unresolved_original_identity_or_input_mismatch=true no_publishing=true")
     else:
