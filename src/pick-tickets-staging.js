@@ -1,7 +1,7 @@
 // Owner-approved dated staging; all content remains in private R2.
 import {normalizePickTickets,requireCustomerPickPwin} from "./pick-tickets.js";
-import {chooseV34,PICK_V34_ENGINE} from "./pick-tickets-v34.js";
-import {sequenceQuality} from "./pick-tickets-sqr.js";
+import {PICK_V34_ENGINE} from "./pick-tickets-v34.js";
+import {approvedPrivateAdditions,validateLockedSelection} from "./pick-tickets-output-validation.js";
 import {releaseAt3amEastern,pdfExpiryFromRaceDate,racePdfExpired} from "./publication-schedule.js";
 import {publishGPTProductCatalogEntry} from "./gpt-product-catalog.js";
 const prefix="pick-tickets/staging/", customerPrefix="racing-intelligence/product-tabs/pick-tickets/";
@@ -35,12 +35,12 @@ export function validateStagedPickBatch(batch){
   }
   const card=requireCustomerPickPwin(normalizePickTickets(raw));
   const races=new Map();
-  for(const s of card.sequences){
+  const approved=approvedPrivateAdditions(row,batch.source_archive_sha256);
+  for(const [sequenceIndex,s] of card.sequences.entries()){
    check(s.tickets.length===1&&s.tickets[0].role==="BEST_POSSIBLE","Expected one complete ticket, including PASS");
    const legs=s.race_fields.map(f=>({race_number:f.race_number,entries:f.programs.map(program=>({program_number:program,pwin:s.review_probabilities[String(f.race_number)][program]/100}))}));
    for(const l of legs){const canonical=l.entries.map(e=>[e.program_number,e.pwin]).sort((a,b)=>a[0].localeCompare(b[0]));if(races.has(l.race_number))check(equal(races.get(l.race_number),canonical),"Repeated race has different PWIN");else races.set(l.race_number,canonical)}
-   const t=s.tickets[0],x=chooseV34(legs,t.unit_cents),q=sequenceQuality(legs,x);
-   check(equal(x.picks,t.legs.map(l=>l.programs))&&x.combinations===t.combinations&&x.total_cents===t.total_cents&&(100*x.hit_probability).toFixed(1)+"%"===t.hit_rate_display&&s.play_status===q.classification,"Locked constructor/SQR mismatch");
+   validateLockedSelection(legs,s,approved.get(sequenceIndex));
   }
   // Coupled wagering interests are one selectable program but may contain multiple scored runners.
   // Require the complete receipt-linked runner vector for any coupled race; verify exact summed mass.
