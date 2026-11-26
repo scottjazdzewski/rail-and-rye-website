@@ -1,0 +1,52 @@
+name: Verify private V3.5 offsite integration against actual staged Pick Tickets
+on:
+  issue_comment:
+    types: [created]
+permissions:
+  contents: read
+jobs:
+  verify:
+    if: github.event.issue.number == 183 && github.event.comment.user.login == 'scottjazdzewski' && startsWith(github.event.comment.body, 'RR_PICK_V35_READONLY_QA_V1')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: pip install pynacl==1.5.0 boto3==1.40.36
+      - name: Read actual queued source and verify sealed private integration fixture
+        env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+        run: |
+          PYTHONPATH=scripts python - <<'PY'
+          import os,json,hashlib,base64,zlib,boto3,re
+          from pathlib import Path
+          from nacl.public import SealedBox
+          from pick_private_score_bridge import private_key,REPO,OWNER,ISSUE
+          ev=json.loads(Path(os.environ["GITHUB_EVENT_PATH"]).read_text());c=ev["comment"]
+          assert ev["repository"]["full_name"]==REPO and ev["issue"]["number"]==ISSUE and c["user"]["login"]==OWNER
+          prefix="RR_PICK_V35_READONLY_QA_V1\n";body=c["body"];assert body.startswith(prefix)
+          e=body[len(prefix):].strip();assert len(e)<60000 and re.fullmatch(r"[A-Za-z0-9+/=]+",e)
+          dec=zlib.decompressobj();raw=dec.decompress(SealedBox(private_key()).decrypt(base64.b64decode(e,validate=True)),200001)
+          assert dec.eof and not dec.unused_data and len(raw)<=200000 and hashlib.sha256(raw).hexdigest()=="4429d1b8735734b834c0831de8557ae5ef04ff3fa9d81906e1d048f4b5807e57"
+          d=json.loads(raw);assert d["schema"]=="RR_PICK_V35_READONLY_QA_V1" and d["date"]=="2026-11-26"
+          s=boto3.client("s3",endpoint_url="https://"+os.environ["TRI_CLOUDFLARE_ACCOUNT_ID"].strip()+".r2.cloudflarestorage.com",region_name="auto",aws_access_key_id=os.environ["TRI_R2_ACCESS_KEY_ID"].strip(),aws_secret_access_key=os.environ["TRI_R2_SECRET_ACCESS_KEY"].strip())
+          b="rail-and-rye-private-cards";key="pick-tickets/staging/2026-11-26/"
+          obj=s.get_object(Bucket=b,Key=key+"revision-0001.json");raw=obj["Body"].read();digest=hashlib.sha256(raw).hexdigest()
+          assert digest==d["parent_sha256"]==obj["Metadata"]["sha256"] and obj["Metadata"]["stage_only"]=="true"
+          q=json.loads(s.get_object(Bucket=b,Key=key+"prepared-0001.json")["Body"].read())
+          assert q["sha256"]==digest and q["release_at"]=="2026-11-26T08:00:00Z" and len(q["tracks"])==6 and sum(t["sequence_count"] for t in q["tracks"])==78
+          assert all(t.get("product_id") and t.get("release_at")=="2026-11-26 08:00:00" for t in q["tracks"])
+          Path("/tmp/rr-v35-qa.json").write_text(json.dumps({"baseline":json.loads(raw),"delta":d},separators=(",",":")))
+          print("V34_NEXT_RELEASE_INTACT tracks=6 sequences=78 release_at="+q["release_at"])
+          PY
+          node scripts/verify_pick_v35_private.mjs /tmp/rr-v35-qa.json
+          node --test test-pick-tickets-v34.mjs test-pick-tickets-sqr.mjs test-pick-tickets-customer-pwin.mjs test-scheduled-publications.mjs
+      - if: always()
+        run: rm -f /tmp/rr-v35-qa.json
