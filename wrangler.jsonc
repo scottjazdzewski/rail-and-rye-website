@@ -12,6 +12,7 @@
       "/membership/dashboard*",
       "/preview/*",
       "/api/*",
+      "/pulse/*",
       "/media/*",
       "/journal/*",
       "/store/",
