@@ -68,7 +68,7 @@
       const badge=chip(item.chip).querySelector('img');
       if(badge){try{await badge.decode();c.drawImage(badge,67,241,104,104);}catch{}}
       c.font='26px system-ui,sans-serif';c.fillStyle='#eef1f4';
-      wrap(c,item.message,195,272,925,36,3);
+      wrap(c,item.message,195,254,925,33,3);
       const scratches=Array.isArray(item.scratches)?item.scratches:[];
       if(scratches.length){
         c.fillStyle='#ddb5b5';c.font='700 18px system-ui,sans-serif';
