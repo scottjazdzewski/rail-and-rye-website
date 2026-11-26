@@ -65,14 +65,35 @@
       const badge=chip(item.chip).querySelector('img');
       if(badge){try{await badge.decode();c.drawImage(badge,67,241,104,104);}catch{}}
       c.font='26px system-ui,sans-serif';c.fillStyle='#eef1f4';
-      wrap(c,item.message,195,272,925,40,6);
-      c.fillStyle='#15354d';c.fillRect(64,397,1072,119);
-      c.fillStyle='#d2ac6e';c.fillRect(64,397,7,119);
+      wrap(c,item.message,195,272,925,36,3);
+      const scratches=Array.isArray(item.scratches)?item.scratches:[];
+      if(scratches.length){
+        c.fillStyle='#ddb5b5';c.font='700 18px system-ui,sans-serif';
+        c.fillText('SCRATCHED',64,376);
+        let sx=187;
+        for(const scratch of scratches.slice(0,3)){
+          c.fillStyle='#fff';c.fillRect(sx,350,31,31);
+          const scratchArt=chip(scratch.program,true).querySelector('img');
+          if(scratchArt){
+            try{await scratchArt.decode();c.drawImage(scratchArt,sx,350,31,31);}catch{}
+          }
+          c.fillStyle='#eef1f4';c.font='16px system-ui,sans-serif';
+          const printed=String(scratch.horse||'#'+scratch.program).slice(0,17);
+          c.fillText(printed,sx+38,372,220);
+          sx+=310;
+        }
+        if(scratches.length>3){
+          c.fillStyle='#ddb5b5';c.font='14px system-ui,sans-serif';
+          c.fillText('+'+(scratches.length-3)+' additional scratches',900,394);
+        }
+      }
+      c.fillStyle='#15354d';c.fillRect(64,410,1072,119);
+      c.fillStyle='#d2ac6e';c.fillRect(64,410,7,119);
       c.fillStyle='#f5f1e9';c.font='700 29px Georgia,serif';
-      c.fillText('SEE THE COMPLETE RACE CARD',94,444);
+      c.fillText('SEE THE COMPLETE RACE CARD',94,458);
       c.fillStyle='#c7d5e2';c.font='22px system-ui,sans-serif';
-      c.fillText('Full-field analysis  ·  Win probabilities  ·  F4 finish projections',94,484);
-      c.fillStyle='#c49b59';c.fillRect(64,557,1072,2);
+      c.fillText('Full-field analysis  ·  Win probabilities  ·  F4 finish projections',94,500);
+      c.fillStyle='#c49b59';c.fillRect(64,562,1072,2);
       c.font='23px system-ui,sans-serif';c.fillText('railandryeracing.com',64,606);
       c.fillStyle='#9caec2';c.font='19px system-ui,sans-serif';c.fillText('Model projections · Not guarantees',758,606);
       const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
