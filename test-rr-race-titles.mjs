@@ -72,7 +72,7 @@ const cssVersion=html=>/projections-dashboard\.css\?v=(\d+)/.exec(html)?.[1];
 assert.ok(cssVersion(admin),"Approved dashboard CSS needs an explicit version.");
 assert.equal(cssVersion(admin),cssVersion(member),"Admin and member must load the same current dashboard CSS.");
 for(const html of [admin,member]){
- assert.match(html,/rr-race-titles\.js\?v=8/,"Load shared race presentation helper before dashboard");
+ assert.match(html,/rr-race-titles\.js\?v=10/,"Load shared race presentation helper before dashboard");
  assert.match(html,/projections-dashboard\.js\?v=\d+/,"Use verified stakes heading dashboard revision");
  assert.match(html,/rr-projections-race-header\.css\?v=4/,"Load the sole graded-trophy and race-header stylesheet");
 }
@@ -109,12 +109,12 @@ assert.match(css,/\.rrp-race-head__scratch-bar\{[\s\S]*?justify-content:center/,
  "Centered scratch row is part of the canonical layout");
 for(const page of ["public/admin/longshot-radar.html","public/admin/target-list-preview.html"]){
  const html=readFileSync(page,"utf8");
- assert.match(html,/rr-race-titles\.js\?v=8/,"All readers use the same current title authority.");
+ assert.match(html,/rr-race-titles\.js\?v=10/,"All readers use the same current title authority.");
  assert.match(html,/rr-research-race-banner\.js\?v=locked-v7-20261124/,
   "All research readers use the same banner and trophy presentation.");
 }
 const pickPage=readFileSync("public/admin/pick-tickets-preview.html","utf8");
-assert.match(pickPage,/rr-race-titles\.js\?v=8/,"Pick Tickets uses the same title parser.");
+assert.match(pickPage,/rr-race-titles\.js\?v=10/,"Pick Tickets uses the same title parser.");
 const pickRenderer=readFileSync("public/assets/pick-tickets-dashboard.js","utf8");
 assert.match(pickRenderer,/RRRaceTitles\?\.describe/,"Ticket legs use full canonical stakes names.");
 assert.match(pickRenderer,/rr-ed-grade-trophy--g/,"Ticket legs show correct G1 G2 G3 trophies.");
