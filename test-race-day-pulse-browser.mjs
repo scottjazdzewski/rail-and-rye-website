@@ -1,0 +1,83 @@
+// Race-Day Pulse synthetic browser/release QA. No private cards, customer info,
+// race outcomes or paid selections are exposed. Run with Playwright Chromium.
+import assert from 'node:assert/strict';
+import {createServer} from 'node:http';
+import {readFileSync,mkdirSync} from 'node:fs';
+import {resolve,extname} from 'node:path';
+import {chromium} from 'playwright';
+const date='2026-11-26';
+const make=(i)=>({
+ id:'synthetic-downs-race-'+(i+1),date,track:'Synthetic Downs',
+ race_number:i+1,updated_at:'2026-11-26T13:00:00Z',
+ kind:i%2?'WIN_SHIFT':'NEW_FAVORITE',
+ chip:String((i%12)+1),horse:'Sample Runner '+i,
+ headline:i%2?'Scratch-driven projection shift':'New projected favorite',
+ message:i%2?('With #3 scratched, #'+(i+1)+' Sample Runner '+i+' has risen from 18.2% to 25.3% in TRI updated win projections.'):
+ ('With #3 scratched, #'+(i+1)+' Sample Runner '+i+' is TRI new projected favorite at 31.2%, up from 22.2% before the scratches.'),
+ hub_url:'/store/?date='+date
+});
+let mode='six';const fixture=()=>({date,status:'ok',items:mode==='empty'?[]:(mode==='one'?[make(0)]:Array.from({length:6},(_,i)=>make(i)))});
+const dir=resolve('public');
+const mime={'.html':'text/html;charset=utf-8','.js':'text/javascript;charset=utf-8','.css':'text/css;charset=utf-8','.png':'image/png','.webp':'image/webp','.ico':'image/x-icon','.jpg':'image/jpeg'};
+const server=createServer((req,res)=>{
+ const {pathname}=new URL(req.url,'http://localhost');
+ if(pathname==='/api/race-day-pulse'){
+  res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify(fixture()));return;
+ }
+ if(pathname==='/api/products'){res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({products:[]}));return;}
+ let target=pathname==='/'?'/index.html':pathname;
+ const file=resolve(dir,'.'+target);
+ if(!file.startsWith(dir+'/')){res.writeHead(403);res.end();return;}
+ try{res.writeHead(200,{'Content-Type':mime[extname(file)]||'application/octet-stream'});res.end(readFileSync(file))}
+ catch(e){res.writeHead(404);res.end()}
+});
+await new Promise(r=>server.listen(0,'127.0.0.1',r));
+let browser;
+try{
+ browser=await chromium.launch({headless:true});
+ const origin='http://127.0.0.1:'+server.address().port;
+ mkdirSync('pulse-preview-screenshots',{recursive:true});
+ for(const width of [320,375,390,430,768,1280]){
+  const page=await browser.newPage({viewport:{width,height:850},deviceScaleFactor:1});
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.route(/fonts\.googleapis\.com|fonts\.gstatic\.com/,route=>route.abort());
+  await page.goto(origin+'/',{waitUntil:'domcontentloaded'});
+  await page.locator('.rr-pulse-item').first().waitFor({timeout:12000});
+  const layout=await page.evaluate(()=>({
+   pageWidth:document.documentElement.scrollWidth,viewport:document.documentElement.clientWidth,
+   pulse:document.getElementById('rr-pulse').getBoundingClientRect().width,
+   cards:[...document.querySelectorAll('#rr-pulse-rail>.rr-pulse-item')].length,
+   imgs:[...document.querySelectorAll('.rr-pulse-saddle img')].map(el=>el.naturalWidth),
+   headline:getComputedStyle(document.querySelector('.rr-pulse-headline')).fontSize,
+   railScrollable:document.getElementById('rr-pulse-rail').scrollWidth>document.getElementById('rr-pulse-rail').clientWidth
+  }));
+  assert.deepEqual(errors,[],'No runtime errors width '+width);
+  assert.ok(layout.pageWidth<=layout.viewport+1,'No horizontal page overflow: '+JSON.stringify({width,layout}));
+  assert.equal(layout.cards,7,'Six actual insights and one Intelligence Hub CTA');
+  assert.ok(layout.imgs.every(n=>n>0),'Approved saddlecloth images load');
+  assert.ok(layout.railScrollable,'Scroller should overflow inside its own boundary');
+  await page.screenshot({path:'pulse-preview-screenshots/pulse-'+width+'.png'});
+  // A click opens manual share menu; never posts to X without the user.
+  await page.locator('.rr-pulse-tool').first().click();
+  assert.ok(await page.locator('.rr-pulse-menu').first().isVisible(),'Share control shows manual actions');
+  const href=await page.locator('.rr-pulse-menu a').first().getAttribute('href');
+  assert.match(href,/^https:\/\/x\.com\/intent\/tweet\?text=/);
+  assert.ok(href.includes('pulse%2F'),'Share posts link to specific alert');
+  await page.locator('#rr-pulse-next').click();
+  assert.ok(!await page.locator('#rr-pulse-prev').isDisabled(),'Scroller arrows work');
+  await page.close();
+ }
+ mode='empty';
+ const empty=await browser.newPage();
+ await empty.goto(origin+'/',{waitUntil:'domcontentloaded'});
+ await empty.waitForTimeout(800);
+ assert.ok(await empty.locator('#rr-pulse').isHidden(),'No qualified updates means no scroller');
+ await empty.close();
+ mode='one';
+ const one=await browser.newPage();
+ await one.goto(origin+'/',{waitUntil:'domcontentloaded'});
+ await one.locator('.rr-pulse-item').first().waitFor({timeout:12000});
+ assert.equal(await one.locator('.rr-pulse-item').count(),2,'One qualifying item plus CTA, no forced six');
+ await one.close();
+ console.log('RACE-DAY PULSE BROWSER QA PASS — six viewports, images, carousel, sharing, empty/one/six');
+}finally{if(browser)await browser.close();await new Promise(r=>server.close(r))}
