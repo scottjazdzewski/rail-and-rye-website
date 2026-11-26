@@ -184,11 +184,11 @@ const escape=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>'
 export async function handlePulsePage(request,env,route){
   if(request.method!=='GET'&&request.method!=='HEAD')return new Response('Method not allowed',{status:405});
   const [,date,id]=route;
-  const feed=await readRaceDayPulse(env);
-  // The current feed is a moving shortlist. Read the persisted PUBLIC-ONLY
-  // archive when an older shared item no longer appears in today's top six.
-  const item=(feed.date===date?feed.items.find(x=>x.id===id):null)||
-    await archivedPulse(env,date,id);
+  const today=newYorkCutoff(Date.now());
+  // Historical shares use the small public-only archive without expensive
+  // current-day dashboard reads. Current shares use the verified moving feed.
+  const feed=date===today?await readRaceDayPulse(env):null;
+  const item=(feed?.items.find(x=>x.id===id))||await archivedPulse(env,date,id);
   if(!item)return new Response('This race-day insight is not available.',{status:404,headers:{'Cache-Control':'no-store'}});
   const title=item.track+' Race '+item.race_number+' | Race-Day Pulse';
   const desc=item.message;
