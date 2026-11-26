@@ -88,8 +88,10 @@
  .rr-pulse-heading{align-items:center;margin-bottom:5px}
  .rr-pulse-title{font-size:15px}
  .rr-pulse-logo{width:23px;height:23px}
- .rr-pulse-eyebrow{font-size:8px;letter-spacing:.05em}
- .rr-pulse-count{font-size:9px}
+ /* The logo and title carry brand identity on narrow screens.
+    Avoid repeating the kicker, insight count and named horse already in Analysis. */
+ .rr-pulse-eyebrow,.rr-pulse-count,.rr-pulse-affected{display:none}
+ .rr-pulse-brandhead{gap:6px}
  .rr-pulse-item{flex-basis:calc(100% - 1px);width:calc(100% - 1px);padding:8px 10px;gap:3px}
  .rr-pulse-item-layout{gap:7px}
  .rr-pulse-headline{font-size:14px;margin-bottom:2px}
