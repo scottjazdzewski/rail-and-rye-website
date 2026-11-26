@@ -85,7 +85,10 @@ assert.equal(lib.pulseWatchDecision(instant('2026-11-28T05:00:00Z'),1450).active
 assert.equal(lib.pulseWatchDecision(instant('2026-11-28T05:15:00Z'),1450).reason,'after_final_post',
  'Stop at the first check after a final 12:10 AM ET race post time');
 const schema=fs.readFileSync('wrangler.jsonc','utf8');
-const crons=JSON.parse(schema).triggers.crons;
+const config=JSON.parse(schema);
+assert.ok(config.assets.run_worker_first.includes('/pulse/*'),
+  'Dynamic Pulse social share pages must route through Worker before static assets');
+const crons=config.triggers.crons;
 assert.deepEqual(crons,['*/10 * * * *','*/15 0-7,13-23 * * *'],'Existing 10-minute tasks must remain scheduled');
 const index=fs.readFileSync('src/index.js','utf8');
 assert.ok(index.includes("controller.cron==='*/15 0-7,13-23 * * *'"),'Route only quarter-hour cron to Pulse handler');
