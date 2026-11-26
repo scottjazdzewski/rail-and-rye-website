@@ -62,3 +62,4 @@ jobs:
         run: |
           python -m pip install --quiet boto3
           python scripts/race_day_pulse_replay_audit.py
+          python scripts/race_day_pulse_schedule_audit.py
