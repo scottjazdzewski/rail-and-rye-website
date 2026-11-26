@@ -25,6 +25,7 @@ jobs:
           node --check src/race-day-pulse.js
           node --check public/assets/race-day-pulse.js
           node test-race-day-pulse.mjs
+          node test-pulse-scratch-watch.mjs
           node test-homepage-lock.mjs
       - name: Install browser tooling
         run: |
