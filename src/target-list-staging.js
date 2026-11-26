@@ -41,7 +41,23 @@ export async function prepareScheduledTargetStages(env,now=Date.now()){
   let approved=packet.customer_edition;
   assert(approved?.race_date===date&&approved?.revision===1&&approved?.status==='initial'&&approved?.targets?.length===packet.targets.length,'Customer-ready stage mismatch');
   assert(approved.source.editorial_sha256===packet.editorial_sha256&&approved.publication_mode==='owner-approved-gpt','Customer release has no owner approval');
-  assert(packet.source_receipts?.length===6&&packet.source_receipts.reduce((a,x)=>a+x.races,0)===56&&packet.source_receipts.reduce((a,x)=>a+x.runners,0)===488,'Six-track source-score receipt mismatch');
+  const expected=packet.source_track_count!=null&&packet.source_race_count!=null&&packet.source_listed_runners!=null
+    ?[packet.source_track_count,packet.source_race_count,packet.source_listed_runners]
+    :(date==='2026-11-26'?[6,56,488]:null); // compatibility with the immutable Nov26 stage
+  assert(expected&&expected.every(x=>Number.isInteger(x)&&x>0),'A newly dated Target List requires independently certified whole-source counts');
+  const receipts=packet.source_receipts||[];
+  assert(receipts.length===expected[0]&&new Set(receipts.map(x=>x.track_code)).size===expected[0]
+    &&receipts.reduce((a,x)=>a+x.races,0)===expected[1]
+    &&receipts.reduce((a,x)=>a+x.runners,0)===expected[2],
+    'Whole-day source/score receipt mismatch; cannot queue Target List');
+  for(const receipt of receipts){
+    assert(receipt.receipt_status==='PASS_TRI_TJ_V4_PERMANENT_FORWARD_RUNTIME'
+      &&receipt.tj_role_receipt?.permanent_tj_v4_policy_id==='TRI_TJ_NEUTRAL_MEAN_V4_ALWAYS_ON'
+      &&receipt.tj_role_receipt?.permanent_v4_both_roles_before_pwin===true
+      &&receipt.tj_role_receipt?.exact_consumed_model_matrix_verified===true
+      &&Number.isFinite(receipt.max_mass_error)&&receipt.max_mass_error<1e-9,
+      'One source track failed its frozen scoring or trainer/jockey model-input gate');
+  }
   // The site Projection source can arrive from its own race-card production window.
   // Never release this product until every selected race matches that independent stage.
   let sourceMissing=false,maxSourceDelta=0;
@@ -70,8 +86,9 @@ export async function prepareScheduledTargetStages(env,now=Date.now()){
    canonicalSite.set(norm(selected.track)+'|'+selected.race,{race:r,programs:byProg});
   }
   if(sourceMissing){deferred++;continue;}
-  // The independent site scorer differs in GP4 by <.025 percentage points,
-  // while every displayed tenth, horse identity, ML and trainer/jockey matches.
+  // A previous November 26 scorer differed slightly on one race. Allow such
+  // differences ONLY below 0.05 percentage points with identical display and
+  // exact same horses, connections, morning lines, and 100% field mass.
   // Re-source the final odds/PWIN from the actual staged site score, never from a
   // second manually typed estimate. Larger or visibly different scores HOLD.
   const synced=approved.targets.map(t=>{
