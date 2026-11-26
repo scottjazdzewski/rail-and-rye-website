@@ -1,4 +1,4 @@
-name: Read-only check November 26 Pick Tickets stage
+name: Read-only verify November 26 Pick Tickets release queue
 on:
   push:
     branches: [research/pick-stage-check-20261126]
@@ -6,7 +6,7 @@ on:
 permissions:
   contents: read
 jobs:
-  check:
+  verify:
     runs-on: ubuntu-latest
     timeout-minutes: 4
     steps:
@@ -14,22 +14,42 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install boto3==1.40.36
-      - name: Inspect dated Pick Tickets queue without writes
+      - name: Verify scheduled receipt, customer checksums, and public cutoff
         env:
           TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
           TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
           TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
         run: |
           python - <<'PY'
-          import os,json,hashlib,boto3
+          import os,json,hashlib,boto3,time,re,urllib.request
+          from botocore.exceptions import ClientError
           s=boto3.client("s3",endpoint_url="https://"+os.environ["TRI_CLOUDFLARE_ACCOUNT_ID"].strip()+".r2.cloudflarestorage.com",region_name="auto",aws_access_key_id=os.environ["TRI_R2_ACCESS_KEY_ID"].strip(),aws_secret_access_key=os.environ["TRI_R2_SECRET_ACCESS_KEY"].strip())
-          b="rail-and-rye-private-cards"
-          for p in ("pick-tickets/staging/2026-11-26/","racing-intelligence/product-tabs/pick-tickets/2026-11-26/"):
-              rows=[]
-              for page in s.get_paginator("list_objects_v2").paginate(Bucket=b,Prefix=p):
-                  for x in page.get("Contents",[]):
-                      if not x["Key"].endswith(".json"):continue
-                      o=s.get_object(Bucket=b,Key=x["Key"]);raw=o["Body"].read();d=json.loads(raw);m=o.get("Metadata",{})
-                      rows.append({"name":x["Key"].split("/")[-1],"last_modified":o["LastModified"].isoformat(),"release_at":d.get("release_at") or m.get("staged_release_at") or m.get("release_at"),"date":d.get("date"),"tracks":len(d.get("tracks",[])),"sequences":len(d.get("sequences",[])) or sum(len(t.get("card",{}).get("sequences",[])) or t.get("sequence_count",0) for t in d.get("tracks",[])),"approval":m.get("customer_publish_approved"),"stage_only":m.get("stage_only"),"sha_match":(m.get("sha256") or m.get("content_sha256"))==hashlib.sha256(raw).hexdigest(),"pwin_complete":all(bool(q.get("review_probabilities")) for q in d.get("sequences",[]))})
-              print("PICK_STAGE_STATUS",p,json.dumps(rows))
+          b="rail-and-rye-private-cards";d="2026-11-26";root=f"pick-tickets/staging/{d}/";due="2026-11-26T08:00:00Z";expected="93c7c84ab1f40496d5101f6f1b7f3a7129b21c6bb26d7944011e73c67d24af05"
+          def get(k):
+              o=s.get_object(Bucket=b,Key=k);return o["Body"].read(),o.get("Metadata",{})
+          sha=lambda x:hashlib.sha256(x).hexdigest()
+          raw,m=get(root+"revision-0001.json");assert sha(raw)==expected==m["sha256"] and m["stage_only"]=="true"
+          stage=json.loads(raw);assert stage["release_at"]==due and len(stage["tracks"])==6
+          for i in range(18):
+              try:q=json.loads(get(root+"prepared-0001.json")[0]);break
+              except ClientError as e:
+                  if e.response.get("Error",{}).get("Code") not in ("NoSuchKey","404","NotFound"):raise
+                  print("WAITING_FOR_PREPARED_RECEIPT",i,flush=True);time.sleep(5)
+          else:raise RuntimeError("Prepared receipt not yet present")
+          assert q["sha256"]==expected and q["release_at"]==due and len(q["tracks"])==6
+          assert all(t.get("product_id") and t.get("release_at")=="2026-11-26 08:00:00" for t in q["tracks"])
+          total=0
+          for t in q["tracks"]:
+              tr=t["track"];slug=re.sub("[^a-z0-9]+","-",tr.lower()).strip("-")
+              raw,m=get(f"racing-intelligence/product-tabs/pick-tickets/{d}/{slug}.json");card=json.loads(raw)
+              assert card["track"]==tr and card["date"]==d and m["customer_publish_approved"]=="true" and m["staged_release_at"]==due and sha(raw)==m["content_sha256"]
+              assert len(card["sequences"])==t["sequence_count"] and all(s["review_probabilities"] and len(s["race_fields"])==len(s["review_probabilities"]) for s in card["sequences"])
+              total+=len(card["sequences"]);print("PICK_QUEUE_TRACK_PASS",tr,len(card["sequences"]),flush=True)
+          assert total==78
+          with urllib.request.urlopen(urllib.request.Request("https://railandryeracing.com/api/products?qa=pick-nov26-stage",headers={"Cache-Control":"no-cache","User-Agent":"RailRyeReleaseQA/1"}),timeout=20) as response:products=json.load(response)["products"]
+          rows=products+[x for p in products for x in p.get("included_products",[])]
+          assert not any(p.get("race_date")==d for p in rows)
+          today={p.get("track") for p in rows if p.get("category")=="Pick Tickets" and p.get("race_date")=="2026-11-25" and p.get("track")}
+          assert len(today)==9
+          print("PICK_QUEUE_FINAL_PASS tracks=6 sequences=78 current_tracks=9 release_at="+due,flush=True)
           PY
