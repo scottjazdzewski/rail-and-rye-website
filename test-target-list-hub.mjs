@@ -204,12 +204,12 @@ assert.ok(tree(card,el=>el.className==="rr-target-analysis-text"&&el.textContent
 assert.ok(tree(card,el=>el.className==="rr-target-horse-row rr-target-attack"),"ATTACK appears in its own compact race row.");
 const racebar=tree(card,el=>el.className==="rr-research-racebar");
 assert.ok(racebar,"Race has integrated navy header.");
-assert.equal(textOf(tree(racebar,el=>el.className==="rr-research-racebar__facts")),"6 furlongs · Dirt","Race facts sit fully within the banner.");
+assert.equal(textOf(tree(racebar,el=>el.className==="rr-research-racebar__facts")),"6 F · Dirt","Race facts sit fully within the banner.");
 const namedCard=elements.get("rr-target-list").children.find(entry=>
  tree(entry,el=>el.tagName==="H3")?.textContent==="Synthetic Test Track");
 assert.ok(namedCard,"Stakes fixture must be rendered");
 const namedFacts=tree(namedCard,el=>el.className==="rr-research-racebar__facts");
-assert.ok(textOf(namedFacts).startsWith("6 furlongs · Dirt · First Lady Stakes"),
+assert.ok(textOf(namedFacts).startsWith("6 F · Dirt · First Lady Stakes"),
  "Full name replaces sponsored abbreviation and keeps surface and distance");
 const grade=tree(namedFacts,el=>el.className==="rr-ed-grade-trophy rr-ed-grade-trophy--g1");
 assert.ok(grade,"Source-verified Grade 1 gets gold trophy in race header");
