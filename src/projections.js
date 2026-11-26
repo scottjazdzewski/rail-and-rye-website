@@ -2,6 +2,7 @@ import {hasTimeformDailyDouble,restoreVerifiedDailyDoubleMetadata} from "./daily
 import {publishGPTProductCatalogEntry} from "./gpt-product-catalog.js";
 import {enrichRaceInformation,requireProductionPurses,requireProductionStakesNames,sourceMaidenClass} from "./projection-race-information.js";
 import {verifyCertifiedScratchFinalTrack} from "./f4-exotics.js";
+import {captureInitialPulseSnapshot} from "./race-day-pulse.js";
 import {auditV33FieldUpload,pickUploadAuditKey,isPickV33Field}
  from "./pick-tickets-field-audit.js";
 const JSON_HEADERS={"Content-Type":"application/json; charset=utf-8","Cache-Control":"private, no-store","X-Content-Type-Options":"nosniff"};
@@ -266,6 +267,15 @@ export async function handleAdminProjectionUpload(request,env){
  }
  const uploadedAt=new Date().toISOString();
  try{
+  // Best effort only: preserve the untouched first scored field before the
+  // scratch-final edition replaces it. Never let a teaser block a Race Card.
+  try{
+   if(card.projection_status==="prescratch")await captureInitialPulseSnapshot(env,card);
+   else if(card.projection_status==="scratch_final"){
+    const prior=await env.CARDS_BUCKET.get(dashboardKey(card));
+    if(prior){const original=JSON.parse(await prior.text());await captureInitialPulseSnapshot(env,original);}
+   }
+  }catch(error){console.warn("Pulse original-field snapshot deferred",String(error).slice(0,120));}
   if(product)await env.CARDS_BUCKET.put(projectionKey(product.id),JSON.stringify(card),{
    httpMetadata:{contentType:"application/json; charset=utf-8",cacheControl:"private, no-store"},
    customMetadata:{product_id:product.id,uploaded_at:uploadedAt}});
@@ -352,6 +362,14 @@ export async function handleAdminProjectionBatchUpload(request,env){
  const uploadedAt=new Date().toISOString();
  const results=await Promise.allSettled(cards.map(async card=>{
   const product=productForCard(card,products);
+  // Snapshot once, privately, before any certified scratch-final replacement.
+  try{
+   if(card.projection_status==="prescratch")await captureInitialPulseSnapshot(env,card);
+   else if(card.projection_status==="scratch_final"){
+    const prior=await env.CARDS_BUCKET.get(dashboardKey(card));
+    if(prior){const original=JSON.parse(await prior.text());await captureInitialPulseSnapshot(env,original);}
+   }
+  }catch(error){console.warn("Pulse original-field snapshot deferred",String(error).slice(0,120));}
   await env.CARDS_BUCKET.put(dashboardKey(card),JSON.stringify(card),{
    httpMetadata:{contentType:"application/json; charset=utf-8",cacheControl:"private, no-store"},
    customMetadata:{...(product?.id?{product_id:product.id}:{}),customer_publish_approved:"true",uploaded_at:uploadedAt}
