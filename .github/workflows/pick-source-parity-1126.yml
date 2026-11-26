@@ -1,0 +1,41 @@
+name: Private read-only source parity diagnostics November 26
+on:
+  push:
+    branches: [research/pick-stage-source-parity-20261126]
+    paths: ['.github/workflows/pick-source-parity-1126.yml']
+permissions:
+  contents: read
+jobs:
+  read:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install boto3==1.40.36 pynacl==1.5.0
+      - env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+        run: |
+          python - <<'PY'
+          import os,json,base64,zlib,boto3
+          from pathlib import Path
+          from nacl.public import SealedBox,PublicKey
+          s=boto3.client("s3",endpoint_url="https://"+os.environ["TRI_CLOUDFLARE_ACCOUNT_ID"].strip()+".r2.cloudflarestorage.com",region_name="auto",aws_access_key_id=os.environ["TRI_R2_ACCESS_KEY_ID"].strip(),aws_secret_access_key=os.environ["TRI_R2_SECRET_ACCESS_KEY"].strip())
+          bucket="rail-and-rye-private-cards";date="2026-11-26"
+          def get(k):return json.loads(s.get_object(Bucket=bucket,Key=k)["Body"].read())
+          m=get("projections/qa/"+date+"/staged-release.json");rows=[]
+          for t in m["tracks"]:
+              d=get("projections/dashboard/"+date+"/"+t["slug"]+".json")
+              rows.append(d)
+          b=zlib.compress(json.dumps(rows,separators=(",",":")).encode(),9)
+          Path("pick-parity.sealed").write_bytes(SealedBox(PublicKey(base64.b64decode("NG+93gNISHA/NAT2lVNEJXzseEAw9PixH1ztV7BlK1I="))).encrypt(b))
+          print("READ_ONLY_SOURCE_DIAGNOSTICS_OK",len(rows))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: encrypted-private-pick-parity
+          path: pick-parity.sealed
+          retention-days: 1
