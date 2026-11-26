@@ -49,6 +49,14 @@ assert.equal(feed.items.length,1);
 assert.equal(feed.items[0].kind,'NEW_FAVORITE');
 assert.ok(!JSON.stringify(feed).includes('model_receipts'),'Never expose private scoring receipts');
 assert.ok(!JSON.stringify(feed).includes('f4_probabilities'),'Never expose full F4 vectors');
+const historical=await env.CARDS_BUCKET.get('race-day-pulse/public/2026-11-26.json');
+assert.ok(historical,'Share-safe public archive exists for selected published insights');
+assert.equal(historical.customMetadata.public_safe_derived,'true');
+const historicalBody=await historical.json();
+assert.equal(historicalBody.items.length,1);
+assert.ok(!JSON.stringify(historicalBody).includes('model_receipts'),'Historical share never stores model receipts');
+assert.ok(!JSON.stringify(historicalBody).includes('f4_probabilities'),'Historical share never stores full F4');
+
 // Existing private direct-R2 scratch publishers set uppercase SCRATCH_FINAL metadata.
 await env.CARDS_BUCKET.put('projections/dashboard/2026-11-26/churchill-downs.json',JSON.stringify(after),
   {customMetadata:{stage:'SCRATCH_FINAL',uploaded_at:'2026-11-26T13:00:00Z'}});
@@ -92,6 +100,16 @@ try{
  const page=await pulse.handlePulsePage(new Request('https://railandryeracing.com/pulse/2026-11-27/'+feed.items[0].id),env,[null,'2026-11-27',feed.items[0].id]);
  assert.equal(page.status,404,'Share pages cannot expose tomorrow before scheduled release');
 }finally{Date.now=originalNow;}
+const originalClock=Date.now;
+Date.now=()=>Date.parse('2026-11-27T16:00:00Z');
+try{
+ const preserved=await pulse.handlePulsePage(new Request('https://railandryeracing.com/pulse/2026-11-26/'+historicalBody.items[0].id),env,[null,'2026-11-26',historicalBody.items[0].id]);
+ assert.equal(preserved.status,200,'Prior racing-day share URL survives 3AM rollover');
+ const html=await preserved.text();
+ assert.match(html,/New projected favorite/);
+ assert.match(html,/Horse 2/);
+ assert.ok(!html.includes('model_receipts'));
+}finally{Date.now=originalClock;}
 assert.ok(fs.readFileSync('public/index.html','utf8').includes('id="rr-pulse"'));
 assert.ok(fs.readFileSync('public/assets/race-day-pulse.js','utf8').includes('navigator.share'));
 assert.ok(fs.readFileSync('public/assets/race-day-pulse.js','utf8').includes('Save image'));
