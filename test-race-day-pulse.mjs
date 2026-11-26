@@ -37,6 +37,39 @@ assert.equal(diversified.length,6);
 assert.ok(diversified.filter(x=>x.track==='Other Track').length>=2,'Other tracks receive at least two slots in the first selection pass');
 assert.equal(pulse.choosePulseInsights(fixtureAlerts.slice(0,6)).length,6,'Do not suppress a single track with six genuine stories');
 assert.equal(pulse.choosePulseInsights(fixtureAlerts.slice(0,1)).length,1,'Never force six stories');
+// Direct-to-R2 production paths sometimes bypass the API prescratch hook.
+// The opt-in scheduled safety net may only preserve certified initial fields.
+const gateEnv={CARDS_BUCKET:new R2()};
+const clock=Date.parse('2026-11-26T08:10:00Z'); // 3:10 AM Eastern on Thanksgiving
+assert.equal((await pulse.capturePublishedPulseBaselines(gateEnv,clock)).status,'disabled');
+gateEnv.PULSE_CAPTURE_BASELINES_ENABLED='true';
+assert.equal((await pulse.capturePublishedPulseBaselines(gateEnv,clock-600000)).status,'outside_snapshot_window');
+const initial=prescratch();
+initial.model_receipts={tri_sha256:fingerprint,f4_sha256:fingerprint};
+await gateEnv.CARDS_BUCKET.put('projections/dashboard/2026-11-26/churchill-downs.json',
+ JSON.stringify(initial),{customMetadata:{stage:'prescratch'}});
+let captured=await pulse.capturePublishedPulseBaselines(gateEnv,clock);
+assert.equal(captured.status,'checked');
+assert.equal(captured.captured,1,'Official prescratch model is privately captured once');
+assert.equal((await pulse.capturePublishedPulseBaselines(gateEnv,clock)).existing,1,'Existing baseline is immutable');
+const stored=await gateEnv.CARDS_BUCKET.get('race-day-pulse/prescratch/2026-11-26/churchill-downs.json');
+assert.equal((await stored.json()).projection_status,'prescratch');
+const finals=final();
+await gateEnv.CARDS_BUCKET.put('projections/dashboard/2026-11-26/churchill-downs.json',
+ JSON.stringify(finals),{customMetadata:{stage:'SCRATCH_FINAL'}});
+assert.equal((await pulse.capturePublishedPulseBaselines(gateEnv,Date.parse('2026-11-26T13:50:00Z'))).captured,0,
+ 'Never manufacture an original from a scratch-final field');
+assert.equal((await stored.json()).projection_status,'prescratch');
+const staleEnv={CARDS_BUCKET:new R2(),PULSE_CAPTURE_BASELINES_ENABLED:'true'};
+await staleEnv.CARDS_BUCKET.put('projections/dashboard/2026-11-26/churchill-downs.json',
+ JSON.stringify(initial),{customMetadata:{stage:'prescratch',release_at:'2026-11-27T08:00:00Z'}});
+assert.equal((await pulse.capturePublishedPulseBaselines(staleEnv,clock)).captured,0,
+ 'Never snapshot a future-staged card');
+const noReceipts={...initial,model_receipts:{}};
+await staleEnv.CARDS_BUCKET.put('projections/dashboard/2026-11-26/churchill-downs.json',
+ JSON.stringify(noReceipts),{customMetadata:{stage:'prescratch'}});
+assert.equal((await pulse.capturePublishedPulseBaselines(staleEnv,clock)).captured,0,
+ 'Missing certified model receipts suppress baseline safety net');
 const env={CARDS_BUCKET:new R2()};
 const before=prescratch(),after=final();
 const event=pulse.insightForRace(before.race_date,before.track_name,before.races[0],after.races[0],'2026-11-26T13:00:00Z');
