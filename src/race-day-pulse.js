@@ -2,6 +2,7 @@
 // prescratch / scratch-final TRI + F4 cards. NO scoring engine or private API.
 const BASE_PREFIX='race-day-pulse/prescratch/';
 const DASH_PREFIX='projections/dashboard/';
+const PUBLIC_ARCHIVE_PREFIX='race-day-pulse/public/';
 const HEADERS={'Content-Type':'application/json; charset=utf-8','Cache-Control':'public, max-age=45, must-revalidate','X-Content-Type-Options':'nosniff'};
 const DATE=/^\d{4}-\d{2}-\d{2}$/;
 const HASH=/^[a-f0-9]{64}$/i;
@@ -12,6 +13,7 @@ const cardValid=c=>c&&c.schema_version===1&&DATE.test(c.race_date||'')&&typeof c
 const verifiedFinal=c=>cardValid(c)&&c.projection_status==='scratch_final'&&c.factor_basis==='verified_scratch_final'&&['tri_sha256','f4_sha256','prescratch_parent_sha256','official_changes_sha256'].every(k=>HASH.test(c.model_receipts?.[k]||''));
 const baseKey=c=>BASE_PREFIX+c.race_date+'/'+slug(c.track_name)+'.json';
 const trackKey=c=>DASH_PREFIX+c.race_date+'/'+slug(c.track_name)+'.json';
+const archiveKey=date=>PUBLIC_ARCHIVE_PREFIX+date+'.json';
 const pct=n=>n.toFixed(1)+'%';
 function newYorkCutoff(now){
   const parts=Object.fromEntries(new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',hourCycle:'h23'}).formatToParts(new Date(now)).filter(p=>p.type!=='literal').map(p=>[p.type,p.value]));
@@ -129,7 +131,49 @@ export async function readRaceDayPulse(env,now=Date.now()){
     }
   }
   items.sort((a,b)=>b.priority-a.priority||a.track.localeCompare(b.track)||a.race_number-b.race_number);
-  return {date,items:items.slice(0,6).map(({priority,...rest})=>rest),status:'ok'};
+  const publicItems=items.slice(0,6).map(({priority,...rest})=>rest);
+  // Save only facts we ALREADY exposed through this approved public API. This
+  // lets old shared links remain useful after 3AM rollover or source pruning.
+  // Never archive the private cards, runner matrices or F4 receipts.
+  if(publicItems.length) {
+    try{await preservePublicPulseArchive(env,date,publicItems);}
+    catch(error){console.warn('Pulse public-archive preservation deferred',String(error).slice(0,120));}
+  }
+  return {date,items:publicItems,status:'ok'};
+}
+async function preservePublicPulseArchive(env,date,items){
+  const key=archiveKey(date);
+  const old=await env.CARDS_BUCKET.get(key);
+  let history={schema_version:1,date,items:[]};
+  if(old){
+    const candidate=await old.json();
+    if(candidate?.schema_version!==1||candidate.date!==date||!Array.isArray(candidate.items))
+      throw Error('Existing public Pulse archive disagrees with date/schema');
+    history=candidate;
+  }
+  const existing=new Map(history.items.filter(x=>x?.id&&x.date===date).map(x=>[x.id,x]));
+  let changed=!old;
+  for(const item of items){
+    const older=existing.get(item.id);
+    if(!older||JSON.stringify(older)!==JSON.stringify(item)){
+      changed=true;existing.set(item.id,item);
+    }
+  }
+  if(changed)await env.CARDS_BUCKET.put(key,JSON.stringify({schema_version:1,date,items:[...existing.values()].slice(-120)}),{
+    httpMetadata:{contentType:'application/json; charset=utf-8',cacheControl:'private, no-store'},
+    customMetadata:{public_safe_derived:'true',last_updated:new Date().toISOString()}
+  });
+}
+async function archivedPulse(env,date,id){
+  if(!DATE.test(date)||!env?.CARDS_BUCKET)return null;
+  const o=await env.CARDS_BUCKET.get(archiveKey(date));
+  if(!o||o.customMetadata?.public_safe_derived!=='true')return null;
+  const data=await o.json();
+  if(data?.schema_version!==1||data.date!==date||!Array.isArray(data.items))return null;
+  const item=data.items.find(x=>x?.date===date&&x.id===id);
+  if(!item||!/^[-a-z0-9]{2,120}$/.test(String(item.id))||
+     !['NEW_FAVORITE','FAVORITE_SCRATCHED','WIN_SHIFT','F4_SHIFT'].includes(item.kind))return null;
+  return item;
 }
 export async function handlePulseApi(request,env){
   if(request.method!=='GET'&&request.method!=='HEAD')return result({error:'Method not allowed'},405);
@@ -141,8 +185,10 @@ export async function handlePulsePage(request,env,route){
   if(request.method!=='GET'&&request.method!=='HEAD')return new Response('Method not allowed',{status:405});
   const [,date,id]=route;
   const feed=await readRaceDayPulse(env);
-  if(feed.date!==date)return new Response('This race-day insight is no longer available.',{status:404,headers:{'Cache-Control':'no-store'}});
-  const item=feed.items.find(x=>x.id===id);
+  // The current feed is a moving shortlist. Read the persisted PUBLIC-ONLY
+  // archive when an older shared item no longer appears in today's top six.
+  const item=(feed.date===date?feed.items.find(x=>x.id===id):null)||
+    await archivedPulse(env,date,id);
   if(!item)return new Response('This race-day insight is not available.',{status:404,headers:{'Cache-Control':'no-store'}});
   const title=item.track+' Race '+item.race_number+' | Race-Day Pulse';
   const desc=item.message;
