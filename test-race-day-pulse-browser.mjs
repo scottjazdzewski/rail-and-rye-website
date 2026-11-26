@@ -11,6 +11,7 @@ const make=(i)=>({
  race_number:i+1,updated_at:'2026-11-26T13:00:00Z',
  kind:i%2?'WIN_SHIFT':'NEW_FAVORITE',
  chip:String((i%12)+1),horse:'Sample Runner '+i,
+ scratches:[{program:'3',horse:'Scratch Three'},{program:'12A',horse:'Scratch Twelve A'}],
  headline:i%2?'Scratch-driven projection shift':'New projected favorite',
  message:i%2?('With #3 scratched, #'+(i+1)+' Sample Runner '+i+' has risen from 18.2% to 25.3% in TRI updated win projections.'):
  ('With #3 scratched, #'+(i+1)+' Sample Runner '+i+' is TRI new projected favorite at 31.2%, up from 22.2% before the scratches.'),
@@ -56,6 +57,19 @@ try{
   assert.ok(layout.pageWidth<=layout.viewport+1,'No horizontal page overflow: '+JSON.stringify({width,layout}));
   assert.equal(layout.cards,7,'Six actual insights and one Intelligence Hub CTA');
   assert.ok(layout.imgs[0]>0,'Visible approved saddlecloth image loads; off-screen images may be lazy-loaded');
+  const chips=await page.locator('.rr-pulse-scratch-identity').first().locator('.rr-pulse-saddle').count();
+  assert.equal(chips,1,'Named scratch has approved saddle chip');
+  const appearance=await page.locator('.rr-pulse-saddle--scratch').first().evaluate(el=>{
+    const box=getComputedStyle(el),img=getComputedStyle(el.querySelector('img'));
+    return {background:box.backgroundColor,opacity:box.opacity,imgBackground:img.backgroundColor,
+      imgOpacity:img.opacity,blend:img.mixBlendMode,filter:img.filter};
+  });
+  assert.equal(appearance.background,'rgb(255, 255, 255)','Opaque white scratch backing mirrors current live fix');
+  assert.equal(appearance.imgOpacity,'1');
+  assert.equal(appearance.blend,'normal');
+  assert.equal(appearance.filter,'none');
+  assert.ok(await page.locator('.rr-pulse-scratch-name').first().isVisible(),'Show actual scratched horse name');
+  assert.ok(await page.locator('.rr-pulse-affected').first().isVisible(),'Show selected horse name');
   assert.ok(layout.railScrollable,'Scroller should overflow inside its own boundary');
   await page.screenshot({path:'pulse-preview-screenshots/pulse-'+width+'.png'});
   // A click opens manual share menu; never posts to X without the user.
