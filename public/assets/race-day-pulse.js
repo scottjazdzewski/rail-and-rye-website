@@ -80,9 +80,17 @@
           if(scratchArt){
             try{await scratchArt.decode();c.drawImage(scratchArt,sx,350,31,31);}catch{}
           }
-          c.fillStyle='#eef1f4';c.font='16px system-ui,sans-serif';
-          const printed=String(scratch.horse||'#'+scratch.program).slice(0,17);
-          c.fillText(printed,sx+38,372,220);
+          // Preserve the complete horse name; fit it within its own column.
+          // Lettered entries use the same suffix treatment as the homepage.
+          const suffix=/^\d{1,2}([A-Z])$/.exec(String(scratch.program||'').toUpperCase());
+          if(suffix){
+            c.fillStyle='#102d53';c.fillRect(sx+20,369,12,12);
+            c.fillStyle='#ffffff';c.font='800 10px system-ui,sans-serif';
+            c.fillText(suffix[1],sx+22,379);
+          }
+          c.fillStyle='#eef1f4';c.font='15px system-ui,sans-serif';
+          const printed=String(scratch.horse||'#'+scratch.program);
+          c.fillText(printed,sx+38,372,245);
           sx+=310;
         }
         if(scratches.length>3){
