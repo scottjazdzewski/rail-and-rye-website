@@ -6,6 +6,9 @@ on:
     paths:
       - 'research/pulse/2026-11-26-candidate-preview.json'
       - 'test-pulse-source-preview-browser.mjs'
+      - 'public/index.html'
+      - 'public/assets/race-day-pulse.css'
+      - 'public/assets/race-day-pulse.js'
       - '.github/workflows/pulse-three-example-preview.yml'
 permissions:
   contents: read
