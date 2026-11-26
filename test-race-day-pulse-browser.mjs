@@ -91,7 +91,12 @@ try{
   assert.match(await page.locator('.rr-pulse-track').first().innerText(),/1ST/,'Use ordinal race labels');
   assert.ok((await page.locator('.rr-pulse-headline').first().innerText()).includes('New Projected Favorite'));
   assert.equal(await page.locator('.rr-pulse-logo').count(),1,'Approved brand mark appears in Pulse');
-  assert.ok(await page.locator('.rr-pulse-affected').first().isVisible(),'Show selected horse name');
+  if(width<=640){
+    assert.ok(await page.locator('.rr-pulse-affected').first().isHidden(),'Mobile repeats no redundant named-horse line');
+    assert.match(await page.locator('.rr-pulse-message').first().innerText(),/Sample Runner 0/,
+      'Mobile Analysis still names its affected horse');
+  }else assert.ok(await page.locator('.rr-pulse-affected').first().isVisible(),
+    'Desktop keeps the named featured horse line');
   assert.ok(layout.railScrollable,'Scroller should overflow inside its own boundary');
   const geometry=await page.evaluate(()=>{
     const rail=document.querySelector('.rr-pulse-rail'),
