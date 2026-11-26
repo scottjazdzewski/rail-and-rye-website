@@ -110,6 +110,8 @@ export async function readRaceDayPulse(env,now=Date.now()){
     if(!old)continue;
     try{original=await old.json();}catch{continue;}
     if(!cardValid(original)||original.race_date!==date||original.projection_status!=='prescratch'||slug(original.track_name)!==slug(current.track_name))continue;
+    // Certified parent F4 ancestry must agree when that receipt exists.
+    if(HASH.test(original.model_receipts?.f4_sha256||'')&&original.model_receipts.f4_sha256!==current.model_receipts.prescratch_parent_sha256)continue;
     const earlier=new Map(original.races.map(r=>[r.race_number,r]));
     const updatedAt=object.customMetadata?.uploaded_at||reference.uploaded?.toISOString?.()||null;
     for(const race of current.races){
