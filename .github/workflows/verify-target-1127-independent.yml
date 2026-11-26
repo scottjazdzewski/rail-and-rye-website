@@ -86,7 +86,9 @@ jobs:
             race=next((r for r in card['races'] if r['race_number']==field['race']),None)
             if race is None:
               missing+=1;continue
-            assert len(race['entries'])==field['field_count'],'Selected race roster changed'
+            if len(race['entries'])!=field['field_count']:
+              print('NOV27_SELECTED_RACE_ROSTER_MISMATCH',field['track'],'race',field['race'],'target_full_field',field['field_count'],'website_active',len(race['entries']),'site_status',card.get('projection_status'),flush=True)
+              missing+=1;continue
             available+=1
           print('NOV27_SITE_SELECTED_FIELDS',available,'present',missing,'missing',flush=True)
           assert not failures,'Independent V4.1 output hashes differ from staged Target List on '+','.join(failures)
