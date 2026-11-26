@@ -1,0 +1,45 @@
+name: Audit dated Pick Ticket denominations and arithmetic
+on:
+  push:
+    branches: [research/pick-denomination-audit-20261125-26]
+    paths: ['.github/workflows/audit-pick-denominations-1125-26.yml']
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install boto3==1.40.36
+      - name: Read approved R2 customer cards, output menu metadata only
+        env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+        run: |
+          python - <<'PY'
+          import os,json,math,hashlib,boto3
+          s=boto3.client("s3",endpoint_url="https://"+os.environ["TRI_CLOUDFLARE_ACCOUNT_ID"].strip()+".r2.cloudflarestorage.com",region_name="auto",aws_access_key_id=os.environ["TRI_R2_ACCESS_KEY_ID"].strip(),aws_secret_access_key=os.environ["TRI_R2_SECRET_ACCESS_KEY"].strip())
+          b="rail-and-rye-private-cards"
+          for date in ["2026-11-25","2026-11-26"]:
+              prefix="racing-intelligence/product-tabs/pick-tickets/"+date+"/"
+              total=0;tracks=0;errors=[]
+              for page in s.get_paginator("list_objects_v2").paginate(Bucket=b,Prefix=prefix):
+                  for x in page.get("Contents",[]):
+                      if not x["Key"].endswith(".json"):continue
+                      o=s.get_object(Bucket=b,Key=x["Key"]);raw=o["Body"].read();c=json.loads(raw);m=o["Metadata"]
+                      assert c["date"]==date and m["customer_publish_approved"]=="true" and hashlib.sha256(raw).hexdigest()==m["content_sha256"]
+                      menu=[]
+                      for q in c["sequences"]:
+                          for t in q["tickets"]:
+                              n=math.prod(len(l["programs"]) for l in t["legs"])
+                              if n!=t["combinations"] or n*t["unit_cents"]!=t["total_cents"]:errors.append([c["track"],q["start_race"],q["end_race"]])
+                              menu.append([q["name"],q["start_race"],q["end_race"],t["unit_cents"],t["total_cents"]>=200,t["total_cents"]>=100])
+                          total+=1
+                      tracks+=1
+                      print("DENOM_MENU",date,c["track"],json.dumps(menu,separators=(",",":")),flush=True)
+              print("DENOM_ARITHMETIC",date,json.dumps({"tracks":tracks,"sequences":total,"errors":errors}),flush=True)
+          PY
