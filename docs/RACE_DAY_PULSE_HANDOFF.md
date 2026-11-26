@@ -103,3 +103,7 @@ Pulse featured-race CTA now uses the existing entitlement-gated /intelligence/ra
 A certified official scratch list can include also-eligible horses not present in the initial active field. Those entries are not credited with changing the pace or PWIN of the original field. Pulse may analyze actual original-runner removals and omit excluded AEs from the teaser, with source-certified name/chip identity required for each credited original-field scratch. Additional tests cover both legitimate race-change alerts with a separately scratched excluded AE and source-only AE scratching, which must produce no alert. Do not force pace explanations without verified pace evidence.
 
 Release remains blocked on full real paired calibration + owner visual approval + authorized source connector for automatic checks. Draft PR #245 is not live.
+
+
+## NOVEMBER 26 — SHARE REVISIONS AND ARCHIVE CONVERSION
+Each certified scratch-final F4/revision gets a distinct short nonsecret ID in a Pulse share URL; older shared public-only stories remain immutable so a later scratch update cannot silently change an earlier customer screenshot. This does not disclose raw model receipts or score vectors. Current-day Pulse CTA points to the exact entitlement-gated date/track/race; on the next racing date old archived share pages remain readable but their CTA redirects to /store/ for TODAY'S published intelligence rather than an expired race edition. Regression asserts no private data leakage and correct post-rollover CTA. No X API or automated posts.
