@@ -218,7 +218,7 @@ try{
  const preserved=await pulse.handlePulsePage(new Request('https://railandryeracing.com/pulse/2026-11-26/'+historicalBody.items[0].id),env,[null,'2026-11-26',historicalBody.items[0].id]);
  assert.equal(preserved.status,200,'Prior racing-day share URL survives 3AM rollover');
  const html=await preserved.text();
- assert.match(html,/New projected favorite/);
+ assert.match(html,/New Projected Favorite/);
  assert.match(html,/Horse 2/);
  assert.match(html,/Explore Today’s Intelligence Hub/,'Expired old race links should route to current Hub');
  assert.match(html,/href="\/store\/"/);
