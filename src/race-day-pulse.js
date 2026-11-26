@@ -75,6 +75,13 @@ export function insightForRace(date,track,initial,revised,updatedAt,sourceVersio
   const pair=compareRaces(initial,revised);
   if(!pair)return null;
   const {before,after,activeScratches}=pair,oldLead=winner(before),newLead=winner(after);
+  const initialSurface=clean(initial?.surface,28),finalSurface=clean(revised?.surface,28);
+  const surfaceChanged=!!initialSurface&&!!finalSurface&&
+    initialSurface.toLowerCase()!==finalSurface.toLowerCase();
+  const context=surfaceChanged?
+    'With Race '+revised.race_number+' moved from '+initialSurface+' to '+finalSurface+
+      ' and '+activeScratches.length+' confirmed active-field scratch'+(activeScratches.length===1?'':'es')+', ':
+    lead({scratches:activeScratches});
   const scratches=activeScratches.map(x=>({
     program:clean(x.program_number,8).toUpperCase(),
     horse:clean(x.horse_name||before.get(clean(x.program_number,8).toUpperCase())?.horse,95)
@@ -87,6 +94,20 @@ export function insightForRace(date,track,initial,revised,updatedAt,sourceVersio
     hub_url:'/intelligence/race-cards/?date='+encodeURIComponent(date)+
       '&track='+encodeURIComponent(track)+'&race='+encodeURIComponent(String(revised.race_number)),
     chip:newLead.program,scratches};
+  // Course switch is part of the CERTIFIED new racing condition, not a
+  // scratch-only causal claim. Give it distinct editorial treatment when
+  // materially different TRI projections support a real public insight.
+  if(surfaceChanged){
+    const earlier=before.get(newLead.program),delta=earlier?newLead.win-earlier.win:0;
+    if(oldLead.program!==newLead.program||Math.abs(delta)>=4){
+      return {...common,kind:'SURFACE_SWITCH',headline:'Course change reshapes the race',
+        chip:newLead.program,horse:newLead.horse,
+        priority:110+Math.abs(delta),
+        message:context+'#'+newLead.program+' '+newLead.horse+
+          (oldLead.program!==newLead.program?' becomes TRI’s new projected favorite':' leads TRI’s revised win projections')+
+          ' at '+pct(newLead.win)+', versus '+pct(earlier.win)+' in the original field.'};
+    }
+  }
   if(oldLead.program!==newLead.program){
     const earlier=before.get(newLead.program);
     const stayed=after.has(oldLead.program);
@@ -99,7 +120,7 @@ export function insightForRace(date,track,initial,revised,updatedAt,sourceVersio
         headline:stayed?'New projected favorite':'New leader after favorite scratched',
         chip:newLead.program,horse:newLead.horse,
         priority:(stayed?100:42)+Math.max(0,moved),
-        message:lead({scratches:activeScratches})+'#'+newLead.program+' '+newLead.horse+' is TRI’s new projected favorite at '+pct(newLead.win)+
+        message:context+'#'+newLead.program+' '+newLead.horse+' is TRI’s new projected favorite at '+pct(newLead.win)+
           (earlier?', up from '+pct(earlier.win)+' before the scratches.':'.')};
     }
   }
@@ -109,7 +130,7 @@ export function insightForRace(date,track,initial,revised,updatedAt,sourceVersio
     const x=changed[0];
     return {...common,kind:'WIN_SHIFT',headline:'Scratch-driven projection shift',chip:x.h.program,horse:x.h.horse,
       priority:50+Math.abs(x.delta),
-      message:lead({scratches:activeScratches})+'#'+x.h.program+' '+x.h.horse+' has '+(x.delta>0?'risen':'fallen')+' from '+
+      message:context+'#'+x.h.program+' '+x.h.horse+' has '+(x.delta>0?'risen':'fallen')+' from '+
         pct(x.old.win)+' to '+pct(x.h.win)+' in TRI’s updated win projections.'};
   }
   const underneath=[...after.values()].map(h=>{
@@ -122,7 +143,7 @@ export function insightForRace(date,track,initial,revised,updatedAt,sourceVersio
     const x=underneath[0];
     return {...common,kind:'F4_SHIFT',headline:'Underneath outlook changes',chip:x.h.program,horse:x.h.horse,
       priority:20+Math.abs(x.delta),
-      message:lead({scratches:activeScratches})+'#'+x.h.program+' '+x.h.horse+' now carries a combined '+
+      message:context+'#'+x.h.program+' '+x.h.horse+' now carries a combined '+
         pct(x.a*100)+' chance of finishing second or third, versus '+pct(x.b*100)+' before the scratches.'};
   }
   return null; // No forced posts, no unverified pace-causality claims.
@@ -264,7 +285,7 @@ async function archivedPulse(env,date,id){
   if(data?.schema_version!==1||data.date!==date||!Array.isArray(data.items))return null;
   const item=data.items.find(x=>x?.date===date&&x.id===id);
   if(!item||!/^[-a-z0-9]{2,120}$/.test(String(item.id))||
-     !['NEW_FAVORITE','FAVORITE_SCRATCHED','WIN_SHIFT','F4_SHIFT'].includes(item.kind))return null;
+     !['NEW_FAVORITE','FAVORITE_SCRATCHED','WIN_SHIFT','F4_SHIFT','SURFACE_SWITCH'].includes(item.kind))return null;
   return item;
 }
 export async function handlePulseApi(request,env){
