@@ -64,6 +64,13 @@ try{
   const href=await page.locator('.rr-pulse-menu a').first().getAttribute('href');
   assert.match(href,/^https:\/\/x\.com\/intent\/tweet\?text=/);
   assert.ok(href.includes('pulse%2F'),'Share posts link to specific alert');
+  if(width===390){
+    const downloadEvent=page.waitForEvent('download',{timeout:12000});
+    await page.locator('.rr-pulse-menu button').filter({hasText:'Save image'}).first().click();
+    const download=await downloadEvent;
+    assert.match(download.suggestedFilename(),/^rail-rye-.*\.png$/,'Branded image is a downloadable PNG');
+    await download.saveAs('pulse-preview-screenshots/share-image.png');
+  }
   await page.locator('#rr-pulse-next').click();
   assert.ok(!await page.locator('#rr-pulse-prev').isDisabled(),'Scroller arrows work');
   await page.close();
