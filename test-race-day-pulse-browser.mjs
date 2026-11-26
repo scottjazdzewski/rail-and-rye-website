@@ -89,15 +89,26 @@ try{
   assert.ok(await page.locator('.rr-pulse-affected').first().isVisible(),'Show selected horse name');
   assert.ok(layout.railScrollable,'Scroller should overflow inside its own boundary');
   const geometry=await page.evaluate(()=>{
-    const card=document.querySelector('.rr-pulse-item'),share=card.querySelector('.rr-pulse-tool'),
+    const rail=document.querySelector('.rr-pulse-rail'),
+      card=document.querySelector('.rr-pulse-item'),share=card.querySelector('.rr-pulse-tool'),
       body=card.querySelector('.rr-pulse-message'),footer=card.querySelector('.rr-pulse-item-footer');
     const cb=card.getBoundingClientRect(),sb=share.getBoundingClientRect(),
-      bb=body.getBoundingClientRect(),fb=footer.getBoundingClientRect(),style=getComputedStyle(body);
-    return {cardLeft:cb.left,cardRight:cb.right,shareLeft:sb.left,shareRight:sb.right,
-      shareTop:sb.top,shareBottom:sb.bottom,footerTop:fb.top,footerBottom:fb.bottom,
+      bb=body.getBoundingClientRect(),fb=footer.getBoundingClientRect(),style=getComputedStyle(body),
+      rb=rail.getBoundingClientRect();
+    return {railLeft:rb.left,railRight:rb.right,railWidth:rail.clientWidth,
+      cardLeft:cb.left,cardRight:cb.right,cardWidth:card.clientWidth,
+      shareLeft:sb.left,shareRight:sb.right,shareTop:sb.top,shareBottom:sb.bottom,
+      footerTop:fb.top,footerBottom:fb.bottom,
+      messageLeft:bb.left,messageRight:bb.right,
       messageWidth:body.clientWidth,messageScroll:body.scrollWidth,messageHeight:bb.height,
       whiteSpace:style.whiteSpace,lineHeight:style.lineHeight};
   });
+  assert.ok(geometry.cardRight<=geometry.railRight+2,
+    'Compact Pulse card must not be clipped by its own scrolling viewport: '+JSON.stringify({width,geometry}));
+  assert.ok(geometry.messageRight<=geometry.railRight+2,
+    'Narrative text must fit the visible viewport: '+JSON.stringify({width,geometry}));
+  assert.ok(geometry.shareRight<=geometry.railRight+2,
+    'Share button must be on-screen: '+JSON.stringify({width,geometry}));
   assert.ok(geometry.shareRight<=geometry.cardRight+2&&geometry.shareLeft>=geometry.cardLeft-2,
     'Share must fit inside compact Pulse card: '+JSON.stringify({width,geometry}));
   assert.ok(geometry.shareBottom<=geometry.footerBottom+2,
