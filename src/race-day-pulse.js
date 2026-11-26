@@ -136,6 +136,45 @@ export function choosePulseInsights(sortedCandidates,limit=6){
   }
   return chosen;
 }
+export async function capturePublishedPulseBaselines(env,now=Date.now()){
+  // Guarded private archive only. No public exposure and no private scorer.
+  // Twice daily at 03:10 and 08:50 ET, as a safety net for direct-to-R2
+  // publishers that bypass the website's prescratch upload hook.
+  if(env?.PULSE_CAPTURE_BASELINES_ENABLED!=='true')return {status:'disabled',captured:0};
+  const parts=Object.fromEntries(new Intl.DateTimeFormat('en-US',{
+    timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit',
+    hour:'2-digit',minute:'2-digit',hourCycle:'h23'
+  }).formatToParts(new Date(now)).filter(p=>p.type!=='literal').map(p=>[p.type,p.value]));
+  const hour=Number(parts.hour),minute=Number(parts.minute);
+  if(!((hour===3&&minute===10)||(hour===8&&minute===50)))
+    return {status:'outside_snapshot_window',captured:0};
+  const date=parts.year+'-'+parts.month+'-'+parts.day;
+  if(!env.CARDS_BUCKET)return {status:'missing_private_storage',captured:0};
+  const prefix=DASH_PREFIX+date+'/';
+  const listing=await env.CARDS_BUCKET.list({prefix,limit:100});
+  if(listing.truncated)return {status:'incomplete_dashboard_listing',captured:0};
+  let captured=0,existing=0,unverified=0;
+  for(const entry of listing.objects||[]){
+    if(!entry.key.startsWith(prefix)||!/^[a-z0-9-]+\.json$/.test(entry.key.slice(prefix.length)))continue;
+    const source=await env.CARDS_BUCKET.get(entry.key);
+    if(!source)continue;
+    let card;
+    try{card=await source.json();}catch{unverified++;continue;}
+    if(!cardValid(card)||card.race_date!==date||card.projection_status!=='prescratch'){
+      unverified++;continue;
+    }
+    const validReceipts=HASH.test(card.model_receipts?.tri_sha256||'')&&
+      HASH.test(card.model_receipts?.f4_sha256||'');
+    const release=source.customMetadata?.release_at;
+    const approved=['PRESCRATCH','PRESCRATCH_FINAL'].includes(String(source.customMetadata?.stage||'').toUpperCase())||
+      source.customMetadata?.customer_publish_approved==='true';
+    if(!validReceipts||!approved||(release&&(!Number.isFinite(Date.parse(release))||Date.parse(release)>now))){
+      unverified++;continue;
+    }
+    if(await captureInitialPulseSnapshot(env,card))captured++;else existing++;
+  }
+  return {status:'checked',date,captured,existing,unverified};
+}
 export async function readRaceDayPulse(env,now=Date.now()){
   const date=newYorkCutoff(now),items=[];
   if(!env?.CARDS_BUCKET)return {date,items,status:'unavailable'};
