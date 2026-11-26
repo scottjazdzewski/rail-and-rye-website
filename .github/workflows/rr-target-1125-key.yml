@@ -1,4 +1,4 @@
-name: Private Target List transfer public key for Nov25
+name: Private Target List transfer public key for Nov27
 on:
   push:
     branches: [main]
