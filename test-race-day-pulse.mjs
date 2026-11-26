@@ -74,8 +74,11 @@ assert.equal((await pulse.readRaceDayPulse(env,Date.parse('2026-11-27T08:01:00Z'
 assert.equal((await pulse.readRaceDayPulse(env,Date.parse('2026-11-27T08:01:00Z'))).items.length,1);
 // Public page displays specific source-backed fact and escapes untrusted text.
 feed=await pulse.readRaceDayPulse(env,Date.parse('2026-11-27T08:01:00Z'));
-const page=await pulse.handlePulsePage(new Request('https://railandryeracing.com/pulse/2026-11-27/'+feed.items[0].id),env,[null,'2026-11-27',feed.items[0].id]);
-assert.equal(page.status,404,'Share pages never expose future race feeds via wall clock mock');
+const originalNow=Date.now;Date.now=()=>Date.parse('2026-11-26T18:00:00Z');
+try{
+ const page=await pulse.handlePulsePage(new Request('https://railandryeracing.com/pulse/2026-11-27/'+feed.items[0].id),env,[null,'2026-11-27',feed.items[0].id]);
+ assert.equal(page.status,404,'Share pages cannot expose tomorrow before scheduled release');
+}finally{Date.now=originalNow;}
 assert.ok(fs.readFileSync('public/index.html','utf8').includes('id="rr-pulse"'));
 assert.ok(fs.readFileSync('public/assets/race-day-pulse.js','utf8').includes('navigator.share'));
 assert.ok(fs.readFileSync('public/assets/race-day-pulse.js','utf8').includes('Save image'));
