@@ -11,6 +11,7 @@ function run(n,pwin,extra={}){
 }
 function prescratch(date='2026-11-26'){
   return {schema_version:1,race_date:date,track_name:'Churchill Downs',projection_status:'prescratch',
+    model_receipts:{tri_sha256:fingerprint,f4_sha256:fingerprint},
     races:[{race_number:6,post_time_et:'3:20 PM ET',scratch_count:null,scratches:[],
       entries:[run(1,45),run(2,35),run(3,20)]}]};
 }
