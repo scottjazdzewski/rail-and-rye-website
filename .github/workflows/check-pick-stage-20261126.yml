@@ -1,0 +1,35 @@
+name: Read-only check November 26 Pick Tickets stage
+on:
+  push:
+    branches: [research/pick-stage-check-20261126]
+    paths: ['.github/workflows/check-pick-stage-20261126.yml']
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install boto3==1.40.36
+      - name: Inspect dated Pick Tickets queue without writes
+        env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+        run: |
+          python - <<'PY'
+          import os,json,hashlib,boto3
+          s=boto3.client("s3",endpoint_url="https://"+os.environ["TRI_CLOUDFLARE_ACCOUNT_ID"].strip()+".r2.cloudflarestorage.com",region_name="auto",aws_access_key_id=os.environ["TRI_R2_ACCESS_KEY_ID"].strip(),aws_secret_access_key=os.environ["TRI_R2_SECRET_ACCESS_KEY"].strip())
+          b="rail-and-rye-private-cards"
+          for p in ("pick-tickets/staging/2026-11-26/","racing-intelligence/product-tabs/pick-tickets/2026-11-26/"):
+              rows=[]
+              for page in s.get_paginator("list_objects_v2").paginate(Bucket=b,Prefix=p):
+                  for x in page.get("Contents",[]):
+                      if not x["Key"].endswith(".json"):continue
+                      o=s.get_object(Bucket=b,Key=x["Key"]);raw=o["Body"].read();d=json.loads(raw);m=o.get("Metadata",{})
+                      rows.append({"name":x["Key"].split("/")[-1],"last_modified":o["LastModified"].isoformat(),"release_at":d.get("release_at") or m.get("staged_release_at") or m.get("release_at"),"date":d.get("date"),"tracks":len(d.get("tracks",[])),"sequences":len(d.get("sequences",[])) or sum(len(t.get("card",{}).get("sequences",[])) or t.get("sequence_count",0) for t in d.get("tracks",[])),"approval":m.get("customer_publish_approved"),"stage_only":m.get("stage_only"),"sha_match":(m.get("sha256") or m.get("content_sha256"))==hashlib.sha256(raw).hexdigest(),"pwin_complete":all(bool(q.get("review_probabilities")) for q in d.get("sequences",[]))})
+              print("PICK_STAGE_STATUS",p,json.dumps(rows))
+          PY
