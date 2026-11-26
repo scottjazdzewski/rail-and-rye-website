@@ -135,12 +135,23 @@ def inspect(original,data,grouped):
             number_of_race,item["type"],status,old_value_status))
         if not match:counter["other_identity_mismatch"]+=1
         if "DIFFERS" in old_value_status:counter["prior_input_mismatch"]+=1
+    # MTO runners included in the original TURF dashboard may have been
+    # conditionally eligible only on a main-track switch. Their removal
+    # cannot automatically be described as a newly changed pace setup.
+    for n in (2,6):
+        race=races[n]
+        mto=[x for x in grouped[n] if x["reason"]=="Main-Track-Only"]
+        programs={number(x.get("program_number")) for x in race.get("entries",[])}
+        turf=norm(race.get("surface"))=="turf"
+        conditional=sum(number(x["program_number"]) in programs for x in mto)
+        print("FG_MTO_ELIGIBILITY race={} original_turf={} original_included_conditional_MTO={} pulse_pace_attribution=HOLD".format(
+            n,turf,conditional))
     print("FG_ENTRY_RAIL races=2,4,6,8 rail=14_ft event=REPORTED_AT_ENTRY_TIME not_new_scratches=true")
     print("FG_ORIGINAL_AUDIT_SUMMARY matched={} mto_outside_field={} missing_non_mto={} wrong_names={} other_identity_mismatch={} prior_input_mismatch={} writes=0".format(
         counter["matched"],counter["missing_mto"],counter["missing_other"],counter["wrong_names"],
         counter["other_identity_mismatch"],counter["prior_input_mismatch"]))
     return counter
-def read_current(client,source_key):
+def read_current(client,source_key,data,grouped):
     current_key=source_key.replace(ORIGINAL_PREFIX,DASH_PREFIX,1)
     c=client.get_object(Bucket=BUCKET,Key=current_key)
     current=json.loads(c["Body"].read(MAX_BYTES))
@@ -155,7 +166,23 @@ def read_current(client,source_key):
     receipts=current.get("model_receipts") or {}
     complete=all(re.fullmatch(r"[a-fA-F0-9]{64}",str(receipts.get(k,"")))
                  for k in ("tri_sha256","f4_sha256","prescratch_parent_sha256","official_changes_sha256"))
-    print("FG_CURRENT_DASHBOARD status=scratch_final complete_model_receipts={} needs_detailed_scratch_jockey_weight_reconciliation=true no_publishing=true".format(bool(complete)))
+    rs={int(x["race_number"]):x for x in current.get("races",[])}
+    reported=0
+    for n,items in grouped.items():
+        r=rs.get(n)
+        if not r:continue
+        published={(number(x.get("program_number")),norm(x.get("horse_name"))) for x in r.get("scratches",[])}
+        reported+=sum((number(x["program_number"]),norm(x["horse_name"])) in published for x in items)
+    j_replaced=0
+    for item in data.get("other_changes",[]):
+        if item.get("type")!="JOCKEY_CHANGE":continue
+        r=rs.get(int(item["race_number"]),{})
+        runner=next((e for e in r.get("entries",[]) if number(e.get("program_number"))==number(item["program_number"])),None)
+        if (runner and norm(runner.get("horse_name"))==norm(item["horse_name"]) and
+                norm(runner.get("jockey"))==norm(item["jockey_after"])):
+            j_replaced+=1
+    print("FG_CURRENT_DASHBOARD status=scratch_final complete_model_receipts={} user_scratches_found={}/8 jockey_effective_updated={}/2 MTO_eligibility_requires_review=true weight_input_not_in_dashboard=true research_only=true".format(
+        bool(complete),reported,j_replaced))
 def main():
     parser=argparse.ArgumentParser()
     parser.add_argument("--fixture-only",action="store_true")
@@ -169,7 +196,7 @@ def main():
         aws_secret_access_key=os.environ["TRI_R2_SECRET_ACCESS_KEY"])
     key,original=list_approved_original(client)
     counts=inspect(original,data,grouped)
-    read_current(client,key)
+    read_current(client,key,data,grouped)
     if any(counts[k] for k in ("missing_other","wrong_names","other_identity_mismatch","prior_input_mismatch")):
         print("FG_SOURCE_QA_STATUS=HOLD unresolved_original_identity_or_input_mismatch=true no_publishing=true")
     else:
