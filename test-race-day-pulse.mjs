@@ -49,6 +49,12 @@ assert.ok(!event.message.includes('pace'),'Never invent unverified pace explanat
 assert.equal(event.hub_url,'/store/?date=2026-11-26');
 assert.equal(pulse.insightForRace(before.race_date,before.track_name,before.races[0],
   {...after.races[0],scratch_count:0},null),null,'Reject scratch count mismatch');
+assert.equal(pulse.insightForRace(before.race_date,before.track_name,before.races[0],
+  {...after.races[0],scratches:[{program_number:'3',horse_name:'WRONG HORSE'}]},null),null,
+  'Never show a saddle chip with mismatched scratch horse identity');
+assert.equal(pulse.insightForRace(before.race_date,before.track_name,before.races[0],
+  {...after.races[0],entries:[run(1,35),{...run(2,65),horse_name:'WRONG RUNNER'}]},null),null,
+  'Never show affected saddle chip for a mismatched active horse');
 assert.equal(await pulse.captureInitialPulseSnapshot(env,before),true);
 assert.equal(await pulse.captureInitialPulseSnapshot(env,before),false,'Immutable prescratch first-write wins');
 await env.CARDS_BUCKET.put('projections/dashboard/2026-11-26/churchill-downs.json',JSON.stringify(after),
