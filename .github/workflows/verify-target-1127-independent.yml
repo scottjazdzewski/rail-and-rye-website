@@ -1,0 +1,93 @@
+name: Independently reconcile Nov27 Target List scoring and queue
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/verify-target-1127-independent.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install --quiet boto3==1.40.36
+      - name: Cross-check independent 15-track TRI outputs, source parity, and 3AM catalog queue
+        env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+        run: |
+          python - <<'PY'
+          import os,json,hashlib,boto3
+          from botocore.exceptions import ClientError
+          B='rail-and-rye-private-cards';D='2026-11-27'
+          expected={
+          'BEL':'d0aff4dcdd0fcb9c860b6c7f900ce4f195edf92d549703368141c0302221d0aa',
+          'CD':'0f7c2534407d20a269dad1d56cac7545d0f282ca487929d46ad43680a7d922e4',
+          'CT':'03110d6dab2a7b16554d0495689a26aa018140fe51b0d85169f9881629096caf',
+          'DED':'9617bee86982adab14addae368cb6ec0d4776cceb08ef0c2cd52446b9711774e',
+          'DMR':'34cb6ef41b16391485120334f32b106b98d5b79996af0d6c85e349cdb88e57a0',
+          'FG':'6f16a2cf533f1db79c0d84f37fb79e8b2be2322d985ccc25be6e0e0502c1f5bc',
+          'GP':'6cdb4f6d34449d0869eaaedadb9eba837caa190809ec42b09ec62ebed65b3876',
+          'LRL':'df3283b6c320a88ab8dd8918b5927c66b35f6d159cea651b86398ae054f3a30a',
+          'OP':'7fd79d253d7ff9016985362cccc4c85dc0611cdd40dd52c8cb9483278ff24709',
+          'PRX':'9555049bed5be8907a9d06562b9c250a90105aca97939bd4213d661be5201fd4',
+          'RP':'18dfe9e059a7a187010a1e44c0ef1cfd87f0edcdb8c9385233cbc0afbab3680c',
+          'TAM':'3dcb03338c75549b974843d1177671ec349d80929adc9eb8f42bdede08c5b9b2',
+          'TUP':'af13e55c48c490e48bc40a02567aa5e0020d204e47b9b2fb94bed08909a6fb0a',
+          'WO':'09356619640a82ca3a62cd2fbe435134047d2f65386215d93b2d9434a046e7ae',
+          'ZIA':'96d5c370ebb83d2708bb9e5f4a1fb454d0bb5650b5b9d89b760a592e0d6f449f'
+          }
+          source='c4f7b36d1b72f03ee8bcff3b022cd4740d4dbf0f190e218bc89cf9bf18504e06'
+          s=boto3.client('s3',endpoint_url='https://'+os.environ['TRI_CLOUDFLARE_ACCOUNT_ID'].strip()+'.r2.cloudflarestorage.com',region_name='auto',aws_access_key_id=os.environ['TRI_R2_ACCESS_KEY_ID'].strip(),aws_secret_access_key=os.environ['TRI_R2_SECRET_ACCESS_KEY'].strip())
+          def get(key):
+            try:
+              o=s.get_object(Bucket=B,Key=key)
+              return o['Body'].read(),o.get('Metadata',{})
+            except ClientError as e:
+              if e.response.get('Error',{}).get('Code') in ('404','NoSuchKey','NotFound'):return None,{}
+              raise
+          root='intelligence/target-list/staging/'+D+'/'
+          raw,meta=get(root+'revision-0001.json')
+          assert raw and hashlib.sha256(raw).hexdigest()==meta['sha256'] and meta['source_sha256']==source
+          p=json.loads(raw);assert p['race_date']==D and p['release_at']=='2026-11-27T08:00:00Z'
+          receipts={r['track_code']:r for r in p['source_receipts']}
+          assert set(receipts)==set(expected) and len(p['targets'])==13 and len(p['selected_race_full_fields'])==13
+          failures=[]
+          for code,digest in expected.items():
+            same=receipts[code]['score_sha256']==digest
+            print('NOV27_INDEPENDENT_SCORE',code,'MATCH' if same else 'DIFFERENT',flush=True)
+            if not same:failures.append(code)
+          print('NOV27_SCORE_HASH_RECONCILED',len(expected)-len(failures),'of',len(expected),flush=True)
+          prepared,proofmeta=get(root+'prepared-0001.json')
+          if prepared:
+            proof=json.loads(prepared)
+            assert proof['sha256']==meta['sha256'] and proof['targets']==13 and proof['release_at']=='2026-11-27T08:00:00Z' and proof.get('product_id')
+            print('NOV27_TARGET_QUEUE_CONFIRMED',proof['catalog_release_at'],flush=True)
+          else:print('NOV27_TARGET_QUEUE_PENDING',flush=True)
+          future,fm=get('racing-intelligence/product-tabs/target-list/'+D+'.json')
+          print('NOV27_CUSTOMER_FUTURE_OBJECT',bool(future),flush=True)
+          current,cm=get('racing-intelligence/product-tabs/target-list/2026-11-26.json')
+          assert current and cm.get('customer_publish_approved')=='true'
+          print('NOV26_CURRENT_PRESERVED',flush=True)
+          available=0;missing=0;delta=[]
+          for field in p['selected_race_full_fields']:
+            slug=field['track'].casefold().replace(' ','-')
+            c,cm=get('projections/dashboard/'+D+'/'+slug+'.json')
+            if not c:
+              missing+=1;continue
+            card=json.loads(c)
+            assert cm['source_sha256']==source and card['race_date']==D
+            race=next((r for r in card['races'] if r['race_number']==field['race']),None)
+            if race is None:
+              missing+=1;continue
+            assert len(race['entries'])==field['field_count'],'Selected race roster changed'
+            available+=1
+          print('NOV27_SITE_SELECTED_FIELDS',available,'present',missing,'missing',flush=True)
+          assert not failures,'Independent V4.1 output hashes differ from staged Target List on '+','.join(failures)
+          PY
