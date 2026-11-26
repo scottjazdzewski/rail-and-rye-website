@@ -79,6 +79,19 @@ const secondRevision=pulse.insightForRace(before.race_date,before.track_name,bef
  after.races[0],'2026-11-26T13:15:00Z','b'.repeat(64)+'|'+fingerprint);
 assert.notEqual(firstRevision.id,secondRevision.id,'A newly certified revision gets a fresh, share-stable URL');
 assert.match(firstRevision.id,/race-6-rev-[0-9a-f]{8}$/,'Opaque public revision marker, no raw 64-digit receipt');
+const withExcludedAE={...after.races[0],scratch_count:2,
+ scratches:[...after.races[0].scratches,{program_number:'13',horse_name:'Excluded Also Eligible'}]};
+const aeFinding=pulse.insightForRace(before.race_date,before.track_name,before.races[0],
+ withExcludedAE,'2026-11-26T13:00:00Z');
+assert.equal(aeFinding.kind,'NEW_FAVORITE','Legitimate scratch analysis survives separate also-eligible listing');
+assert.equal(aeFinding.scratches.length,1,'Only active-field removals are publicly credited');
+assert.equal(aeFinding.scratches[0].program,'3');
+assert.ok(!aeFinding.message.includes('#13'),'Excluded also-eligible is never described as a pace driver');
+const onlyExcluded={...before.races[0],scratch_count:1,
+ scratches:[{program_number:'13',horse_name:'Excluded Also Eligible'}]};
+assert.equal(pulse.insightForRace(before.race_date,before.track_name,before.races[0],
+ onlyExcluded,'2026-11-26T13:00:00Z'),null,
+ 'An also-eligible scratched outside the active field alone cannot create an insight');
 assert.equal(event.kind,'NEW_FAVORITE');
 assert.equal(event.chip,'2');
 assert.match(event.message,/#3 scratched/);
