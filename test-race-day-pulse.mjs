@@ -46,7 +46,15 @@ assert.match(event.message,/#3 scratched/);
 assert.match(event.message,/#2 Horse 2/);
 assert.match(event.message,/65\.0%/);
 assert.ok(!event.message.includes('pace'),'Never invent unverified pace explanations');
-assert.equal(event.hub_url,'/store/?date=2026-11-26');
+assert.equal(event.hub_url,'/intelligence/race-cards/?date=2026-11-26&track=Churchill%20Downs&race=6',
+  'Pulse directs prospective buyer to the actual entitled race and fallback store flow');
+const reader=fs.readFileSync('public/assets/projections-dashboard.js','utf8');
+assert.ok(reader.includes('requestedTrack=links.get("track")'),
+  'Entitlement-gated reader honors the featured exact track');
+assert.ok(reader.includes('requestedRace=Number(links.get("race"))'),
+  'Entitlement-gated reader honors the featured exact race');
+assert.ok(fs.readFileSync('public/assets/rr-customer-reader.js','utf8').includes('location.replace("/store/?"+query)'),
+  'Non-entitled visitors still use purchase flow rather than viewing private projections');
 assert.equal(pulse.insightForRace(before.race_date,before.track_name,before.races[0],
   {...after.races[0],scratch_count:0},null),null,'Reject scratch count mismatch');
 assert.equal(pulse.insightForRace(before.race_date,before.track_name,before.races[0],
