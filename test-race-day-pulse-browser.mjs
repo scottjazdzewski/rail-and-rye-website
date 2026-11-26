@@ -71,31 +71,26 @@ try{
     x.blend==='normal'&&x.imgOpacity==='1'&&x.imgBlend==='normal'&&
     x.imgBackground==='rgb(255, 255, 255)'),
     'All featured and scratched saddlecloth art must follow live opaque-white alpha fix: '+JSON.stringify(saddleStyle));
-  assert.ok((await page.locator('.rr-pulse-scratch-name').first().innerText()).includes('Scratched Horse'),
-    'The scratch chip includes the real horse name');
-
-  const chips=await page.locator('.rr-pulse-scratch-identity').first().locator('.rr-pulse-saddle').count();
-  assert.equal(chips,1,'Named scratch has approved saddle chip');
+  // Scratch row is chips ONLY; the affected horse remains named in Analysis.
+  assert.equal(await page.locator('.rr-pulse-scratch-name').count(),0,
+    'Do not list scratched horses names in the compact Pulse scratch row');
+  const identities=page.locator('.rr-pulse-item').first().locator('.rr-pulse-scratch-identity');
+  assert.equal(await identities.count(),2,'Show all numbered scratch chips');
+  assert.equal(await identities.first().locator('.rr-pulse-saddle').count(),1);
   const appearance=await page.locator('.rr-pulse-saddle--scratch').first().evaluate(el=>{
     const box=getComputedStyle(el),img=getComputedStyle(el.querySelector('img'));
     return {background:box.backgroundColor,opacity:box.opacity,imgBackground:img.backgroundColor,
       imgOpacity:img.opacity,blend:img.mixBlendMode,filter:img.filter};
   });
-  assert.equal(appearance.background,'rgb(255, 255, 255)','Opaque white scratch backing mirrors current live fix');
+  assert.equal(appearance.background,'rgb(255, 255, 255)','Opaque white scratch backing mirrors approved live fix');
   assert.equal(appearance.imgOpacity,'1');
   assert.equal(appearance.blend,'normal');
   assert.equal(appearance.filter,'none');
-  assert.ok(await page.locator('.rr-pulse-scratch-name').first().isVisible(),'Show actual scratched horse name');
-  const names=await page.locator('.rr-pulse-item').first().locator('.rr-pulse-scratch-name').allTextContents();
-  assert.deepEqual(names,['Sample Scratched Horse 3','Also Scratched Runner 11A'],'No scratch name truncation in DOM');
-  const clipping=await page.locator('.rr-pulse-item').first().locator('.rr-pulse-scratch-name').evaluateAll(nodes=>{
-    const card=nodes[0]?.closest('.rr-pulse-item')?.getBoundingClientRect();
-    return nodes.map(n=>{
-      const r=n.getBoundingClientRect();
-      return {text:n.textContent,overflows:r.right>(card?.right||0)-6,overscroll:n.scrollWidth>n.clientWidth+1};
-    });
-  });
-  assert.ok(clipping.every(x=>!x.overflows&&!x.overscroll),'All scratched horse names stay readable in compact viewport: '+JSON.stringify(clipping));
+  assert.ok(await page.locator('.rr-pulse-scratch-list').first().evaluate(el=>parseFloat(getComputedStyle(el).paddingTop)>=5),
+    'Scratch chips have deliberate breathing room');
+  assert.match(await page.locator('.rr-pulse-track').first().innerText(),/1ST/,'Use ordinal race labels');
+  assert.ok((await page.locator('.rr-pulse-headline').first().innerText()).includes('New Projected Favorite'));
+  assert.equal(await page.locator('.rr-pulse-logo').count(),1,'Approved brand mark appears in Pulse');
   assert.ok(await page.locator('.rr-pulse-affected').first().isVisible(),'Show selected horse name');
   assert.ok(layout.railScrollable,'Scroller should overflow inside its own boundary');
   const geometry=await page.evaluate(()=>{
@@ -126,9 +121,28 @@ try{
   assert.ok(geometry.messageScroll<=geometry.messageWidth+2,
     'No cropped handicapper sentence: '+JSON.stringify({width,geometry}));
   assert.notEqual(geometry.whiteSpace,'nowrap','Message must wrap naturally');
-  if(width<=430)assert.ok(geometry.messageHeight>22,'Mobile insight must wrap onto multiple readable lines');
+  if(width<=430){
+    assert.ok(geometry.messageHeight>=27&&geometry.messageHeight<=37,
+      'Mobile analysis teaser should take only two lines, with full story linked: '+JSON.stringify(geometry));
+    assert.ok(await page.locator('#rr-pulse').evaluate(el=>el.getBoundingClientRect().height)<220,
+      'Pulse should not dominate the mobile homepage');
+    assert.ok(await page.evaluate(()=>document.querySelector('.heritage-hero').nextElementSibling?.id==='rr-pulse'),
+      'On mobile Pulse belongs immediately below the original hero');
+  }else if(width>=1121){
+    assert.ok(await page.evaluate(()=>document.querySelector('.heritage-hero').contains(document.querySelector('#rr-pulse'))),
+      'On desktop Pulse occupies right side of established homepage hero');
+    const placement=await page.locator('#rr-pulse').evaluate(el=>{
+      const r=el.getBoundingClientRect(),h=document.querySelector('.heritage-hero').getBoundingClientRect();
+      return {left:r.left,right:r.right,heroCenter:h.left+h.width/2,heroBottom:h.bottom,pulseBottom:r.bottom};
+    });
+    assert.ok(placement.left>placement.heroCenter&&placement.pulseBottom<=placement.heroBottom+1,
+      'Desktop Pulse must fit within open right hero without exceeding its bounds: '+JSON.stringify(placement));
+  }
 
   await page.screenshot({path:'pulse-preview-screenshots/pulse-'+width+'.png'});
+  if(width===390||width===1280)await page.screenshot({
+    path:'pulse-preview-screenshots/full-homepage-'+width+'.png',fullPage:true
+  });
   // A click opens manual share menu; never posts to X without the user.
   await page.locator('.rr-pulse-tool').first().click();
   assert.ok(await page.locator('.rr-pulse-menu').first().isVisible(),'Share control shows manual actions');
