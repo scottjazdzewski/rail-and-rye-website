@@ -67,7 +67,9 @@ export function insightForRace(date,track,initial,revised,updatedAt){
   // active horse. Never leak the complete runner field or private score vector.
   const common={id:slug(track)+'-race-'+revised.race_number,date,track:clean(track,90),race_number:revised.race_number,
     updated_at:updatedAt,post_time_et:clean(revised.post_time_et,38),
-    hub_url:'/store/?date='+encodeURIComponent(date),chip:newLead.program,scratches};
+    hub_url:'/intelligence/race-cards/?date='+encodeURIComponent(date)+
+      '&track='+encodeURIComponent(track)+'&race='+encodeURIComponent(String(revised.race_number)),
+    chip:newLead.program,scratches};
   if(oldLead.program!==newLead.program){
     const earlier=before.get(newLead.program);
     const stayed=after.has(oldLead.program);
@@ -271,7 +273,7 @@ export async function handlePulsePage(request,env,route){
     '<div><h1>'+escape(item.track)+' · Race '+item.race_number+'</h1><h2>'+escape(item.headline)+'</h2>'+
     '<p class="rr-pulse-affected">'+escape(item.horse||'')+'</p><p>'+escape(desc)+'</p></div></div>'+scratchLine+
     '<p class="rr-pulse-foot">Updated after source-verified scratch processing. Projections are estimates, not guarantees.</p>'+
-    '<a class="rr-pulse-primary" href="'+escape(item.hub_url)+'">Explore the Intelligence Hub</a>'+
+    '<a class="rr-pulse-primary" href="'+escape(item.hub_url)+'">View the Complete Race Card</a>'+
     '<a class="rr-pulse-secondary" href="/">See today’s Race-Day Pulse</a></article></main></body></html>';
   return new Response(request.method==='HEAD'?null:html,{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'public, max-age=45, must-revalidate','X-Content-Type-Options':'nosniff'}});
 }
