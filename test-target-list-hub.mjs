@@ -123,7 +123,7 @@ assert.match(js,/Post-time order/,"Summary uses the current display order, not a
 assert.match(css,/font-size:18px;/,"On-phone editorial body grows to 18px.");
 assert.match(css,/font-size:25px/,"On-phone win percentage remains prominent.");
 assert.match(js,/raceBanner\.render\(entry\)/,"All Target List cards use the shared banner renderer.");
-assert.match(html,/rr-research-race-banner\.js\?v=locked-v4-20261124/,"One shared right-aligned race-header renderer is mandatory.");
+assert.match(html,/rr-research-race-banner\.js\?v=locked-v7-20261124/,"One shared right-aligned race-header renderer is mandatory.");
 assert.doesNotMatch(js,/rr-research-racebar|rr-target-race-identifiers|rr-research-racebar__facts/,"Legacy Target List banner builder is retired.");
 assert.match(readFileSync("public/assets/rr-research-race-banner.css","utf8"),/\.rr-research-racebar__identifiers\{/,"Right-aligned header group uses one canonical stylesheet.");
 assert.match(readFileSync("public/assets/rr-research-race-banner.css","utf8"),/grid-template-columns:minmax\(0,1fr\) max-content/,"Canonical header uses the same left-track/right-identifiers grid.");
