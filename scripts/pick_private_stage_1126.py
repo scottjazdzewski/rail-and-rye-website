@@ -8,7 +8,7 @@ from pick_private_score_bridge import private_key,BUCKET,REPO,OWNER,ISSUE
 import boto3
 from botocore.exceptions import ClientError
 DATE="2026-11-26";RELEASE="2026-11-26T08:00:00Z";PREFIX="RR_PICK_STAGE_1126_V1"
-EXPECTED="943f86f261cd8f4341d1c281f012b47428b3595586f5c83e276eacb14e2b3636"
+EXPECTED="93c7c84ab1f40496d5101f6f1b7f3a7129b21c6bb26d7944011e73c67d24af05"
 KEY="pick-tickets/staging/"+DATE+"/revision-0001.json"
 COUNTS={"Churchill Downs":(12,112,19),"Del Mar":(8,58,11),"Fair Grounds":(10,95,14),"Gulfstream Park":(9,74,12),"Laurel Park":(9,77,13),"Woodbine":(8,66,9)}
 EXCLUSIONS={"Churchill Downs":{"8":["13","14","15","16"]},"Laurel Park":{"6":["13","14"]}}
