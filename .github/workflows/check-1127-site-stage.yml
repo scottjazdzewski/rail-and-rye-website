@@ -1,0 +1,40 @@
+name: Read-only November 27 Rail & Rye site stage preflight
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/check-1127-site-stage.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install --quiet boto3==1.40.36
+      - name: List date-specific private objects and existing schedule receipts without revealing picks
+        env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+        run: |
+          python - <<'PY'
+          import os,boto3,json,hashlib
+          from botocore.exceptions import ClientError
+          c=boto3.client('s3',endpoint_url='https://'+os.environ['TRI_CLOUDFLARE_ACCOUNT_ID'].strip()+'.r2.cloudflarestorage.com',region_name='auto',aws_access_key_id=os.environ['TRI_R2_ACCESS_KEY_ID'].strip(),aws_secret_access_key=os.environ['TRI_R2_SECRET_ACCESS_KEY'].strip())
+          b='rail-and-rye-private-cards';d='2026-11-27'
+          for label,prefix in [('race_card_projections','projections/dashboard/'+d+'/'),('f4','projections/f4-ordered/'+d+'/'),('race_card_receipts','projections/qa/'+d+'/'),('pick_tickets','pick-tickets/staging/'+d+'/'),('radar','intelligence/longshot-radar/staging/'+d+'/'),('target','intelligence/target-list/staging/'+d+'/')]:
+            page=c.list_objects_v2(Bucket=b,Prefix=prefix,MaxKeys=200)
+            names=[x['Key'].removeprefix(prefix) for x in page.get('Contents',[])]
+            print('NOV27_OBJECT_SET',label,'count',len(names),'names',','.join(names[:30]),flush=True)
+          for label,key in [('current_target','racing-intelligence/product-tabs/target-list/2026-11-26.json'),('future_target','racing-intelligence/product-tabs/target-list/'+d+'.json'),('future_target_prepared','intelligence/target-list/staging/'+d+'/prepared-0001.json'),('future_racecard_manifest','projections/qa/'+d+'/staged-release.json')]:
+            try:
+              obj=c.get_object(Bucket=b,Key=key);raw=obj['Body'].read()
+              print('NOV27_RECEIPT',label,'exists',True,'bytes',len(raw),'sha',hashlib.sha256(raw).hexdigest(),'metadata',json.dumps({k:v for k,v in (obj.get('Metadata') or {}).items() if k in ('release_at','stage_only','customer_publish_approved','sha256','content_sha256')}),flush=True)
+            except ClientError as e:
+              if e.response.get('Error',{}).get('Code') not in ('404','NotFound','NoSuchKey'):raise
+              print('NOV27_RECEIPT',label,'exists',False,flush=True)
+          PY
