@@ -28,6 +28,7 @@
     }
     return el;
   }
+  const titleCaseWords=value=>String(value||'').replace(/(^|[\s-])([a-z])/gi,(_,separator,letter)=>separator+letter.toUpperCase());
   const pulseUrl=item=>'/pulse/'+encodeURIComponent(item.date)+'/'+encodeURIComponent(item.id);
   const textForShare=item=>'Rail & Rye Race-Day Pulse: '+item.track+' Race '+item.race_number+'. '+item.message;
   async function copyLink(item,notice){
@@ -61,7 +62,7 @@
       try{await logo.decode();c.drawImage(logo,64,21,60,60);}catch{}
       c.fillStyle='#e0b66b';c.font='700 24px Georgia,serif';c.fillText('RAIL & RYE   /   RACE-DAY PULSE',141,60);
       c.fillStyle='#ffffff';c.font='700 39px Georgia,serif';c.fillText(item.track+' · Race '+item.race_number,64,148);
-      c.font='700 33px system-ui,sans-serif';c.fillText(item.headline,64,204);
+      c.font='700 33px system-ui,sans-serif';c.fillText(titleCaseWords(item.headline),64,204);
       // Live-site chip alpha fix applies to the shared graphic too.
       // Original PNG is drawn on a solid opaque white plate, never over navy.
       c.fillStyle='#fff';c.fillRect(67,241,104,104);
@@ -149,7 +150,7 @@
     content.append(chip(item.chip));
     const body=$('div','rr-pulse-copy');
     body.append($('p','rr-pulse-track',item.track.toUpperCase()+' · RACE '+item.race_number),
-      $('h3','rr-pulse-headline',item.headline));
+      $('h3','rr-pulse-headline',titleCaseWords(item.headline)));
     if(item.horse)body.append($('p','rr-pulse-affected',item.horse+' · #'+item.chip));
     body.append($('p','rr-pulse-message',item.message));
     content.append(body);article.append(content);
