@@ -4,6 +4,16 @@
   const shell=document.getElementById('rr-pulse');
   const rail=document.getElementById('rr-pulse-rail');
   const status=document.getElementById('rr-pulse-count');
+  // Use the unused right side of the established desktop hero, but never
+  // let Pulse add a tall full-width bar or displace the mobile hero.
+  const homepageHero=document.querySelector('.heritage-hero');
+  const desktopMedia=matchMedia('(min-width:1121px)');
+  function placePulse(){
+    if(!homepageHero)return;
+    if(desktopMedia.matches){if(shell.parentElement!==homepageHero)homepageHero.append(shell);}
+    else if(shell.previousElementSibling!==homepageHero)homepageHero.after(shell);
+  }
+  placePulse();desktopMedia.addEventListener?.('change',placePulse);
   const prev=document.getElementById('rr-pulse-prev'),next=document.getElementById('rr-pulse-next');
   if(!shell||!rail||!prev||!next)return;
   let selected=0,events=[],paused=false,revision='',pending=false;
@@ -29,8 +39,10 @@
     return el;
   }
   const titleCaseWords=value=>String(value||'').replace(/(^|[\s-])([a-z])/gi,(_,separator,letter)=>separator+letter.toUpperCase());
+  const ordinal=n=>{const x=Number(n);if(!Number.isInteger(x)||x<1)return 'Race '+String(n);return x+(x%100>=11&&x%100<=13?'th':({1:'st',2:'nd',3:'rd'}[x%10]||'th'));};
+  const raceLabel=item=>item.track+' · '+ordinal(item.race_number);
   const pulseUrl=item=>'/pulse/'+encodeURIComponent(item.date)+'/'+encodeURIComponent(item.id);
-  const textForShare=item=>'Rail & Rye Race-Day Pulse: '+item.track+' Race '+item.race_number+'. '+item.message;
+  const textForShare=item=>'Rail & Rye Race-Day Pulse: '+raceLabel(item)+'. '+item.message;
   async function copyLink(item,notice){
     try{await navigator.clipboard.writeText(location.origin+pulseUrl(item));notice.textContent='Link copied';}
     catch{notice.textContent='Copy unavailable; select the link in your browser';}
@@ -61,7 +73,7 @@
       const logo=new Image();logo.src='/assets/approved/brand/rail-rye-ivory-logo.png';
       try{await logo.decode();c.drawImage(logo,64,21,60,60);}catch{}
       c.fillStyle='#e0b66b';c.font='700 24px Georgia,serif';c.fillText('RAIL & RYE   /   RACE-DAY PULSE',141,60);
-      c.fillStyle='#ffffff';c.font='700 39px Georgia,serif';c.fillText(item.track+' · Race '+item.race_number,64,148);
+      c.fillStyle='#ffffff';c.font='700 39px Georgia,serif';c.fillText(raceLabel(item),64,148);
       c.font='700 33px system-ui,sans-serif';c.fillText(titleCaseWords(item.headline),64,204);
       // Live-site chip alpha fix applies to the shared graphic too.
       // Original PNG is drawn on a solid opaque white plate, never over navy.
@@ -75,28 +87,23 @@
         c.fillStyle='#ddb5b5';c.font='700 18px system-ui,sans-serif';
         c.fillText('SCRATCHED',64,376);
         let sx=187;
-        for(const scratch of scratches.slice(0,3)){
+        for(const scratch of scratches){
+          if(sx+31>1135)break;
           c.fillStyle='#fff';c.fillRect(sx,350,31,31);
           const scratchArt=chip(scratch.program,true).querySelector('img');
-          if(scratchArt){
-            try{await scratchArt.decode();c.drawImage(scratchArt,sx,350,31,31);}catch{}
-          }
-          // Preserve the complete horse name; fit it within its own column.
-          // Lettered entries use the same suffix treatment as the homepage.
+          if(scratchArt){try{await scratchArt.decode();c.drawImage(scratchArt,sx,350,31,31);}catch{}}
           const suffix=/^\d{1,2}([A-Z])$/.exec(String(scratch.program||'').toUpperCase());
           if(suffix){
             c.fillStyle='#102d53';c.fillRect(sx+20,369,12,12);
             c.fillStyle='#ffffff';c.font='800 10px system-ui,sans-serif';
             c.fillText(suffix[1],sx+22,379);
           }
-          c.fillStyle='#eef1f4';c.font='15px system-ui,sans-serif';
-          const printed=String(scratch.horse||'#'+scratch.program);
-          c.fillText(printed,sx+38,372,245);
-          sx+=310;
+          sx+=46;
         }
-        if(scratches.length>3){
+        const visible=Math.min(scratches.length,Math.floor((1135-187)/46));
+        if(scratches.length>visible){
           c.fillStyle='#ddb5b5';c.font='14px system-ui,sans-serif';
-          c.fillText('+'+(scratches.length-3)+' additional scratches',900,394);
+          c.fillText('+'+(scratches.length-visible)+' More',1030,394);
         }
       }
       c.fillStyle='#15354d';c.fillRect(64,410,1072,119);
@@ -104,7 +111,7 @@
       c.fillStyle='#f5f1e9';c.font='700 29px Georgia,serif';
       c.fillText('SEE THE COMPLETE RACE CARD',94,458);
       c.fillStyle='#c7d5e2';c.font='22px system-ui,sans-serif';
-      c.fillText('Full-field analysis  ·  Win probabilities  ·  F4 finish projections',94,500);
+      c.fillText('Full-Field Analysis  ·  Win Probabilities  ·  Full Finishing Order Projections',94,500);
       c.fillStyle='#c49b59';c.fillRect(64,562,1072,2);
       c.font='23px system-ui,sans-serif';c.fillText('railandryeracing.com',64,606);
       c.fillStyle='#9caec2';c.font='19px system-ui,sans-serif';c.fillText('Model projections · Not guarantees',758,606);
@@ -122,7 +129,7 @@
   function shareTools(item){
     const group=$('div','rr-pulse-share-group');
     const share=$('button','rr-pulse-tool','Share');
-    share.type='button';share.setAttribute('aria-label','Share '+item.track+' Race '+item.race_number);
+    share.type='button';share.setAttribute('aria-label','Share '+raceLabel(item));
     const menu=$('div','rr-pulse-menu');menu.hidden=true;
     const copy=$('button','','Copy link');copy.type='button';
     const post=$('a','','Share to X');post.href='https://x.com/intent/tweet?text='+encodeURIComponent(textForShare(item))+'&url='+encodeURIComponent(location.origin+pulseUrl(item));post.target='_blank';post.rel='noopener noreferrer';
@@ -133,7 +140,7 @@
     menu.append(copy,post,image,notice);
     share.addEventListener('click',async()=>{
       if(navigator.share){
-        try{await navigator.share({title:item.track+' Race '+item.race_number,text:textForShare(item),url:location.origin+pulseUrl(item)});return;}
+        try{await navigator.share({title:raceLabel(item),text:textForShare(item),url:location.origin+pulseUrl(item)});return;}
         catch(e){if(e.name==='AbortError')return;}
       }
       menu.hidden=!menu.hidden;share.setAttribute('aria-expanded',String(!menu.hidden));
@@ -145,11 +152,11 @@
   function buildCard(item){
     const article=$('article','rr-pulse-item');
     article.id='rr-pulse-'+item.id;
-    article.setAttribute('aria-label',item.track+', Race '+item.race_number);
+    article.setAttribute('aria-label',raceLabel(item));
     const content=$('div','rr-pulse-item-layout');
     content.append(chip(item.chip));
     const body=$('div','rr-pulse-copy');
-    body.append($('p','rr-pulse-track',item.track.toUpperCase()+' · RACE '+item.race_number),
+    body.append($('p','rr-pulse-track',item.track.toUpperCase()+' · '+ordinal(item.race_number).toUpperCase()),
       $('h3','rr-pulse-headline',titleCaseWords(item.headline)));
     if(item.horse)body.append($('p','rr-pulse-affected',item.horse+' · #'+item.chip));
     body.append($('p','rr-pulse-message',item.message));
@@ -157,24 +164,20 @@
     if(Array.isArray(item.scratches)&&item.scratches.length){
       const row=$('div','rr-pulse-scratch-list');
       row.append($('span','rr-pulse-scratch-label','SCRATCHED'));
-      for(const scratch of item.scratches.slice(0,2)){
+      // A complete, readable run of chips; no horse names in this compact
+      // scratch line. The analysis above still uses meaningful horse names.
+      for(const scratch of item.scratches){
         const identity=$('span','rr-pulse-scratch-identity');
-        const name=$('span','rr-pulse-scratch-name',scratch.horse||'#'+scratch.program);
-        name.title=scratch.horse||'#'+scratch.program;
-        identity.append(chip(scratch.program,true),name);
-        row.append(identity);
-      }
-      if(item.scratches.length>2){
-        const more=$('a','rr-pulse-scratch-more','+'+(item.scratches.length-2)+' more');
-        more.href=pulseUrl(item);more.title='See all confirmed scratches and names';
-        row.append(more);
+        const icon=chip(scratch.program,true);
+        icon.title='Scratched #'+scratch.program;
+        identity.append(icon);row.append(identity);
       }
       article.append(row);
     }
     const footer=$('div','rr-pulse-item-footer');
     const links=$('div','rr-pulse-links');
     const original=$('a','rr-pulse-story-link','Open insight');original.href=pulseUrl(item);
-    const paid=$('a','rr-pulse-paid-link','Full Race Card');paid.href=item.hub_url;
+    const paid=$('a','rr-pulse-paid-link','Full-Field Analysis');paid.href=item.hub_url;
     links.append(original,paid);footer.append(links,shareTools(item));article.append(footer);
     return article;
   }
@@ -182,7 +185,7 @@
     const item=$('div','rr-pulse-item rr-pulse-cta');
     item.append($('p','rr-pulse-track','THE COMPLETE PICTURE'),
       $('h3','rr-pulse-headline','More Than A Single Insight.'),
-      $('p','rr-pulse-message','Explore today’s complete race projections, Pick Tickets, Longshot Radar and Target List.'));
+      $('p','rr-pulse-message','Full-Field Analysis, Win Probabilities and Full Finishing Order Projections—all in the Intelligence Hub.'));
     const a=$('a','rr-pulse-cta-link','Explore Intelligence Hub');a.href='/store/';
     item.append(a);return item;
   }
