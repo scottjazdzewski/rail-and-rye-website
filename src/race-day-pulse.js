@@ -100,7 +100,7 @@ export function insightForRace(date,track,initial,revised,updatedAt,sourceVersio
   if(surfaceChanged){
     const earlier=before.get(newLead.program),delta=earlier?newLead.win-earlier.win:0;
     if(oldLead.program!==newLead.program||Math.abs(delta)>=4){
-      return {...common,kind:'SURFACE_SWITCH',headline:'Course change reshapes the race',
+      return {...common,kind:'SURFACE_SWITCH',headline:'Course Change Reshapes The Race',
         chip:newLead.program,horse:newLead.horse,
         priority:110+Math.abs(delta),
         message:context+'#'+newLead.program+' '+newLead.horse+
@@ -117,7 +117,7 @@ export function insightForRace(date,track,initial,revised,updatedAt,sourceVersio
     // Do not force publication of trivial elimination effects.
     if(stayed||moved>=4){
       return {...common,kind:stayed?'NEW_FAVORITE':'FAVORITE_SCRATCHED',
-        headline:stayed?'New projected favorite':'New leader after favorite scratched',
+        headline:stayed?'New Projected Favorite':'New Leader After Favorite Scratched',
         chip:newLead.program,horse:newLead.horse,
         priority:(stayed?100:42)+Math.max(0,moved),
         message:context+'#'+newLead.program+' '+newLead.horse+' is TRI’s new projected favorite at '+pct(newLead.win)+
@@ -128,7 +128,7 @@ export function insightForRace(date,track,initial,revised,updatedAt,sourceVersio
     .sort((a,b)=>Math.abs(b.delta)-Math.abs(a.delta));
   if(changed[0]&&Math.abs(changed[0].delta)>=4){
     const x=changed[0];
-    return {...common,kind:'WIN_SHIFT',headline:'Scratch-driven projection shift',chip:x.h.program,horse:x.h.horse,
+    return {...common,kind:'WIN_SHIFT',headline:'Scratch-Driven Projection Shift',chip:x.h.program,horse:x.h.horse,
       priority:50+Math.abs(x.delta),
       message:context+'#'+x.h.program+' '+x.h.horse+' has '+(x.delta>0?'risen':'fallen')+' from '+
         pct(x.old.win)+' to '+pct(x.h.win)+' in TRI’s updated win projections.'};
@@ -141,7 +141,7 @@ export function insightForRace(date,track,initial,revised,updatedAt,sourceVersio
     .sort((a,b)=>Math.abs(b.delta)-Math.abs(a.delta));
   if(underneath[0]&&Math.abs(underneath[0].delta)>=7){
     const x=underneath[0];
-    return {...common,kind:'F4_SHIFT',headline:'Underneath outlook changes',chip:x.h.program,horse:x.h.horse,
+    return {...common,kind:'F4_SHIFT',headline:'Underneath Outlook Changes',chip:x.h.program,horse:x.h.horse,
       priority:20+Math.abs(x.delta),
       message:context+'#'+x.h.program+' '+x.h.horse+' now carries a combined '+
         pct(x.a*100)+' chance of finishing second or third, versus '+pct(x.b*100)+' before the scratches.'};
@@ -329,6 +329,7 @@ export async function handlePulseApi(request,env){
   return request.method==='HEAD'?new Response(null,{headers:HEADERS}):response;
 }
 const escape=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const titleCaseWords=s=>String(s||'').replace(/(^|[\s-])([a-z])/gi,(_,separator,letter)=>separator+letter.toUpperCase());
 export async function handlePulsePage(request,env,route){
   if(request.method!=='GET'&&request.method!=='HEAD')return new Response('Method not allowed',{status:405});
   if(env?.PULSE_PUBLICATION_ENABLED!=='true')
@@ -344,7 +345,8 @@ export async function handlePulsePage(request,env,route){
   const historical=date!==today;
   const actionURL=historical?'/store/':item.hub_url;
   const actionText=historical?'Explore Today’s Intelligence Hub':'View the Complete Race Card';
-  const title=item.track+' Race '+item.race_number+' | Race-Day Pulse';
+  const headlineTitle=titleCaseWords(item.headline);
+  const title=item.track+' Race '+item.race_number+' | '+headlineTitle+' | Race-Day Pulse';
   const desc=item.message;
   const canonical='https://railandryeracing.com/pulse/'+date+'/'+id;
   const sharedChip=(program,scratched=false)=>{
@@ -372,7 +374,7 @@ export async function handlePulsePage(request,env,route){
     '</head><body class="rr-pulse-standalone"><main class="rr-pulse-share-page"><a class="rr-pulse-home-link" href="/">RAIL &amp; RYE RACING</a>'+
     '<article class="rr-pulse-story"><p class="rr-pulse-eyebrow">RACE-DAY PULSE · '+escape(date)+'</p>'+
     '<div class="rr-pulse-story-content">'+sharedChip(item.chip)+
-    '<div><h1>'+escape(item.track)+' · Race '+item.race_number+'</h1><h2>'+escape(item.headline)+'</h2>'+
+    '<div><h1>'+escape(item.track)+' · Race '+item.race_number+'</h1><h2>'+escape(headlineTitle)+'</h2>'+
     '<p class="rr-pulse-affected">'+escape(item.horse||'')+'</p><p>'+escape(desc)+'</p></div></div>'+scratchLine+
     '<p class="rr-pulse-foot">Updated after source-verified scratch processing. Projections are estimates, not guarantees.</p>'+
     '<a class="rr-pulse-primary" href="'+escape(actionURL)+'">'+escape(actionText)+'</a>'+
