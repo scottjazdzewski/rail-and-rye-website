@@ -54,10 +54,19 @@ export function insightForRace(date,track,initial,revised,updatedAt){
     hub_url:'/store/?date='+encodeURIComponent(date),chip:newLead.program};
   if(oldLead.program!==newLead.program){
     const earlier=before.get(newLead.program);
-    return {...common,kind:'NEW_FAVORITE',headline:'New projected favorite',chip:newLead.program,horse:newLead.horse,
-      priority:100+(earlier?newLead.win-earlier.win:0),
-      message:lead(revised)+'#'+newLead.program+' '+newLead.horse+' is TRI’s new projected favorite at '+pct(newLead.win)+
-        (earlier?', up from '+pct(earlier.win)+' before the scratches.':'.')};
+    const stayed=after.has(oldLead.program);
+    const moved=earlier?newLead.win-earlier.win:0;
+    // A scratched top choice creates an obvious new favorite by elimination.
+    // Rank that routine change below genuine survivor-vs-survivor reversals.
+    // Do not force publication of trivial elimination effects.
+    if(stayed||moved>=4){
+      return {...common,kind:stayed?'NEW_FAVORITE':'FAVORITE_SCRATCHED',
+        headline:stayed?'New projected favorite':'New leader after favorite scratched',
+        chip:newLead.program,horse:newLead.horse,
+        priority:(stayed?100:42)+Math.max(0,moved),
+        message:lead(revised)+'#'+newLead.program+' '+newLead.horse+' is TRI’s new projected favorite at '+pct(newLead.win)+
+          (earlier?', up from '+pct(earlier.win)+' before the scratches.':'.')};
+    }
   }
   const changed=[...after.values()].map(h=>({h,old:before.get(h.program),delta:h.win-before.get(h.program).win}))
     .sort((a,b)=>Math.abs(b.delta)-Math.abs(a.delta));
