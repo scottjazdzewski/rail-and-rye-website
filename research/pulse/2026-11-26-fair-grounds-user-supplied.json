@@ -1,0 +1,118 @@
+{
+  "schema_version": 1,
+  "race_date": "2026-11-26",
+  "track": "Fair Grounds",
+  "track_code": "FG",
+  "source_type": "USER_SUPPLIED_LATE_CHANGES_TABLE",
+  "source_url": "https://www.equibase.com/static/latechanges/html/latechangesByTimeFG-USA.html",
+  "source_is_automatically_polled": false,
+  "source_observation": "User-provided late-changes transcription; no automatic Equibase retrieval or licensed source feed",
+  "latest_item_posted_et": "11:03",
+  "scratches": [
+    {
+      "race_number": 2,
+      "program_number": "6",
+      "horse_name": "Kavod",
+      "reason": "Veterinarian",
+      "posted_et": "10:57"
+    },
+    {
+      "race_number": 2,
+      "program_number": "8",
+      "horse_name": "Gavel",
+      "reason": "Main-Track-Only",
+      "posted_et": "10:59"
+    },
+    {
+      "race_number": 5,
+      "program_number": "8",
+      "horse_name": "Dirty Straight Up",
+      "reason": "Veterinarian",
+      "posted_et": "10:57"
+    },
+    {
+      "race_number": 6,
+      "program_number": "5",
+      "horse_name": "Bearamour",
+      "reason": "Stewards",
+      "posted_et": "10:58"
+    },
+    {
+      "race_number": 6,
+      "program_number": "6",
+      "horse_name": "Midnight Bullet",
+      "reason": "Veterinarian",
+      "posted_et": "10:58"
+    },
+    {
+      "race_number": 6,
+      "program_number": "9",
+      "horse_name": "Streak Sense",
+      "reason": "Main-Track-Only",
+      "posted_et": "10:58"
+    },
+    {
+      "race_number": 7,
+      "program_number": "4",
+      "horse_name": "Flying Mitole",
+      "reason": "Trainer",
+      "posted_et": "11:01"
+    },
+    {
+      "race_number": 10,
+      "program_number": "7",
+      "horse_name": "Deal With It Daddy",
+      "reason": "Veterinarian",
+      "posted_et": "11:03"
+    }
+  ],
+  "other_changes": [
+    {
+      "race_number": 1,
+      "type": "JOCKEY_CHANGE",
+      "program_number": "4",
+      "horse_name": "Azteca Storm",
+      "jockey_before": "Rey Williams",
+      "jockey_after": "Alex Birzer",
+      "posted_et": "10:57"
+    },
+    {
+      "race_number": 6,
+      "type": "JOCKEY_CHANGE",
+      "program_number": "1",
+      "horse_name": "Sono Abscato",
+      "jockey_before": "Rey Williams",
+      "jockey_after": "Gabriel Saez",
+      "posted_et": "11:02"
+    },
+    {
+      "race_number": 9,
+      "type": "WEIGHT_CHANGE",
+      "program_number": "11",
+      "horse_name": "Tap Me a Song",
+      "weight_before_lbs": 122,
+      "weight_after_lbs": 120,
+      "posted_et": "11:02"
+    },
+    {
+      "race_number": 2,
+      "type": "TEMP_RAIL_14_FT",
+      "posted_et": "REPORTED_AT_ENTRY_TIME"
+    },
+    {
+      "race_number": 4,
+      "type": "TEMP_RAIL_14_FT",
+      "posted_et": "REPORTED_AT_ENTRY_TIME"
+    },
+    {
+      "race_number": 6,
+      "type": "TEMP_RAIL_14_FT",
+      "posted_et": "REPORTED_AT_ENTRY_TIME"
+    },
+    {
+      "race_number": 8,
+      "type": "TEMP_RAIL_14_FT",
+      "posted_et": "REPORTED_AT_ENTRY_TIME"
+    }
+  ]
+}
