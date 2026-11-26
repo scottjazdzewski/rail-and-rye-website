@@ -9,8 +9,8 @@ P=Path("private-ingest/20261126-scratch01")
 DATE="2026-11-26"
 SOURCE="20a001e4bbf88afb2701d6408e2cbfae63abb508cf18661d484e74d7f8ab0fc7"
 SCR={"churchill-downs":{1:["4"],3:["6"],4:["3"],5:["2","5","6","10","12"],8:["1","7","13","16"],9:["5"],10:["2","6"],11:["4"],12:["1","2","3","6","7","10","11","12"]},"gulfstream-park":{1:["8","10"],2:["1"],5:["7"],6:["1","3"],7:["1","4","5"],8:["6"],9:["7"]},"laurel-park":{2:["1"],3:["1","3","4","8","10"],4:["2","6"],5:["3","4","8"],6:["2","3","4","6","8","9","11","12","14"],7:["1A","6"]}}
-AE={"churchill-downs":{8:{"13":"Modifly","16":"Waawaatesi"}},"gulfstream-park":{},"laurel-park":{6:{"12":"War Humor","14":"World On Fire"}}}
-DRAW={"churchill-downs":{8:{"14":"New to Me","15":"Finally No Drama"}},"gulfstream-park":{},"laurel-park":{}}
+AE={"churchill-downs":{8:{"13":"Modifly","16":"Waawaatesi"}},"gulfstream-park":{},"laurel-park":{6:{"14":"World On Fire"}}}
+DRAW={"churchill-downs":{8:{"14":"New to Me","15":"Finally No Drama"}},"gulfstream-park":{},"laurel-park":{6:{"13":"Tiz No Clown"}}}
 CHANGE={"churchill-downs":{5:{"surface":"Dirt","temporary_rail_feet":24},6:{"gelding_notice_programs":["5"]},9:{"temporary_rail_feet":24},12:{"surface":"Dirt","temporary_rail_feet":24}},"gulfstream-park":{1:{"surface":"Synthetic","temporary_rail_feet":38},5:{"surface":"Synthetic","distance":"1 Mile 70 Yards","temporary_rail_feet":38},7:{"surface":"Synthetic","distance":"1 Mile 70 Yards","temporary_rail_feet":38},9:{"surface":"Synthetic","distance":"1 Mile 70 Yards","temporary_rail_feet":38}},"laurel-park":{3:{"surface":"Dirt","temporary_rail_feet":35},6:{"surface":"Dirt","temporary_rail_feet":87},7:{"uncoupled_programs":["1"],"gelding_notice_programs":["2"]}}}
 def sha(b):return hashlib.sha256(b).hexdigest()
 def compact(o):return json.dumps(o,separators=(",",":"),ensure_ascii=False,allow_nan=False).encode()
