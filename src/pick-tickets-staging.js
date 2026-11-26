@@ -20,8 +20,19 @@ export function validateStagedPickBatch(batch){
   const p=row.proof,r=row.receipt,raw=row.card;
   check(raw.date===date&&!seen.has(raw.track)&&raw.status==="initial_current"&&raw.formula_version===PICK_V34_ENGINE,"Wrong or duplicate staged edition");seen.add(raw.track);
   check(p?.permanent_policy_id==="TRI_TJ_NEUTRAL_MEAN_V4_ALWAYS_ON"&&p.pre_score_v4_policy==="FROZEN_MODEL_FEATURE_MEANS_UNIVERSAL_V4"&&p.all_roles_complete===true&&p.exact_consumed_model_matrix_verified===true&&p.trainer_jockey_roles_proven===2*row.runners&&p.complete_active_runner_count===row.runners,"Incomplete trainer/jockey proof");
+  if(row.canonical_source){
+   const c=row.canonical_source;
+   // Independent local scoring proof above establishes roster/role coverage only.
+   // The actual probabilities and receipt identities are those of the previously
+   // approved common upstream projection snapshot, not that independent run.
+   check(c.kind==="APPROVED_PROJECTION_SNAPSHOT_V1"&&c.key==="projections/dashboard/"+date+"/"+slug(raw.track)+".json"&&hash(c.sha256)&&hash(c.tri_sha256)&&hash(c.f4_sha256)&&c.source_archive_sha256===batch.source_archive_sha256,"Invalid canonical upstream source");
+   check(raw.model_receipts?.tri_sha256===c.tri_sha256&&raw.model_receipts?.f4_sha256===c.f4_sha256&&raw.source_input_sha256===c.sha256&&raw.source_receipt?.sha256===c.f4_sha256,"Canonical receipt identity mismatch");
+   check(r?.tri_status==="PASS_TRI_TJ_V4_PERMANENT_FORWARD_RUNTIME"&&r.f4_status==="PASS"&&r.unresolved_fields===0&&r.scratch_state==="PRESCRATCH"&&r.f4_p1_equals_tri===true&&["tri_sha256","f4_sha256","pwin_sha256","source_pdf_sha256"].every(k=>hash(r[k])),"Independent local audit incomplete");
+   check(Array.isArray(row.runner_pwin?.["1"])&&Object.keys(row.runner_pwin).length===row.races&&Object.values(row.runner_pwin).reduce((n,f)=>n+f.length,0)===row.runners,"Canonical runner audit incomplete");
+  }else{
   check(r?.tri_status==="PASS_TRI_TJ_V4_PERMANENT_FORWARD_RUNTIME"&&r.f4_status==="PASS"&&r.unresolved_fields===0&&r.scratch_state==="PRESCRATCH"&&r.f4_p1_equals_tri===true&&["tri_sha256","f4_sha256","pwin_sha256","source_pdf_sha256"].every(k=>hash(r[k])),"Scoring receipt missing or unresolved");
   check(raw.model_receipts?.tri_sha256===r.tri_sha256&&raw.model_receipts?.f4_sha256===r.f4_sha256&&raw.source_input_sha256===r.pwin_sha256&&raw.source_receipt?.sha256===r.f4_sha256,"Receipt identity mismatch");
+  }
   const card=requireCustomerPickPwin(normalizePickTickets(raw));
   const races=new Map();
   for(const s of card.sequences){
@@ -78,6 +89,37 @@ export async function prepareScheduledPickStages(env,now=Date.now()){
   if(done){const d=JSON.parse(await done.text());if(d.sha256===digest)continue;}
   const batch=JSON.parse(raw);check(batch.date===date,"Staging date/key mismatch");
   const cards=validateStagedPickBatch(batch);
+  // Before any write, independently verify the exact immutable approved
+  // upstream snapshot and its staging manifest. No alternate score is accepted.
+  if(batch.tracks.some(r=>r.canonical_source)){
+   const mf=await env.CARDS_BUCKET.get("projections/qa/"+date+"/staged-release.json");
+   check(mf,"Canonical stage manifest absent");
+   const manifest=JSON.parse(await mf.text());
+   check(manifest.status==="VERIFIED_STAGED"&&manifest.race_date===date&&manifest.release_at===batch.release_at&&manifest.source_sha256===batch.source_archive_sha256,"Canonical manifest mismatch");
+   for(const row of batch.tracks){
+    const c=row.canonical_source;if(!c)continue;
+    const mt=manifest.tracks.find(t=>t.name===row.card.track);
+    check(mt&&mt.dashboard_sha256===c.sha256&&mt.races===row.races&&mt.runners===row.runners,"Canonical manifest track mismatch");
+    const obj=await env.CARDS_BUCKET.get(c.key);
+    check(obj&&obj.customMetadata?.customer_publish_approved==="true"&&obj.customMetadata?.release_at===batch.release_at,"Canonical source not approved");
+    const txt=await obj.text();check(await sha(txt)===c.sha256,"Canonical source hash mismatch");
+    const projection=JSON.parse(txt);
+    check(projection.race_date===date&&projection.track_name===row.card.track&&projection.projection_status==="prescratch"&&projection.model_receipts?.tri_sha256===c.tri_sha256&&projection.model_receipts?.f4_sha256===c.f4_sha256,"Canonical source identity mismatch");
+    const fields=new Map();
+    for(const race of projection.races){
+     const rp=String(race.race_number),rs=row.runner_pwin[rp],entries=race.entries;
+     check(Array.isArray(rs)&&rs.length===entries.length,"Canonical runner count mismatch");
+     const by=new Map(entries.map(e=>[String(e.program_number),e]));
+     check(by.size===rs.length&&new Set(rs.map(e=>e[0])).size===rs.length,"Canonical duplicate runner");
+     const p=new Map();
+     for(const e of rs){const v=by.get(e[0]);check(v&&Math.abs(v.win_probability_exact-100*e[2])<1e-9&&Math.abs(v.f4_probabilities?.exact_p1-e[3])<1e-12&&Math.abs(e[2]-e[3])<1e-12,"Canonical exact PWIN/F4 mismatch");p.set(e[0],100*e[2]);}
+     check(Math.abs([...p.values()].reduce((a,b)=>a+b,0)-100)<1e-5,"Canonical PWIN mass");
+     for(const g of row.coupled_interests?.[rp]||[]){let mass=0;for(const member of g.members){check(p.has(member.program)&&Math.abs(p.get(member.program)-100*member.pwin)<1e-9,"Canonical coupling mismatch");mass+=p.get(member.program);p.delete(member.program);}p.set(g.program,mass);}
+     fields.set(rp,p);
+    }
+    for(const q of row.card.sequences)for(const f of q.race_fields){const p=fields.get(String(f.race_number)),v=q.review_probabilities[String(f.race_number)];check(p&&p.size===f.programs.length&&f.programs.every(k=>p.has(k)&&Math.abs(p.get(k)-v[k])<1e-9),"Canonical ticket field mismatch");}
+   }
+  }
   const results=[];
   for(const card of cards){
    const target=customerPrefix+date+"/"+slug(card.track)+".json";
