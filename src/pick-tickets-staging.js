@@ -31,7 +31,29 @@ export function validateStagedPickBatch(batch){
    const t=s.tickets[0],x=chooseV34(legs,t.unit_cents),q=sequenceQuality(legs,x);
    check(equal(x.picks,t.legs.map(l=>l.programs))&&x.combinations===t.combinations&&x.total_cents===t.total_cents&&(100*x.hit_probability).toFixed(1)+"%"===t.hit_rate_display&&s.play_status===q.classification,"Locked constructor/SQR mismatch");
   }
-  check(races.size===row.races&&[...races.values()].reduce((n,f)=>n+f.length,0)===row.runners,"Incomplete field inventory");
+  // Coupled wagering interests are one selectable program but may contain multiple scored runners.
+  // Require the complete receipt-linked runner vector for any coupled race; verify exact summed mass.
+  let coupledExtra=0;
+  if(row.coupled_interests!==undefined){
+   check(row.coupled_interests&&typeof row.coupled_interests==="object"&&!Array.isArray(row.coupled_interests),"Invalid coupled-interest evidence");
+   for(const [race,groups] of Object.entries(row.coupled_interests)){
+    const field=races.get(Number(race));
+    check(field&&Array.isArray(groups)&&groups.length>0,"Coupled race missing");
+    const fieldMap=new Map(field),used=new Set();
+    for(const group of groups){
+     check(typeof group.program==="string"&&fieldMap.has(group.program)&&Array.isArray(group.members)&&group.members.length>=2&&typeof group.source_evidence==="string"&&group.source_evidence.length>10,"Invalid coupled group");
+     let mass=0;
+     for(const member of group.members){
+      check(typeof member.program==="string"&&new RegExp("^"+group.program+"[A-Z]?$").test(member.program)&&!used.has(member.program)&&typeof member.pwin==="number"&&Number.isFinite(member.pwin)&&member.pwin>=0&&member.pwin<=1,"Invalid coupled runner");
+      check(member.program===group.program||!fieldMap.has(member.program),"Coupled runner listed separately");
+      used.add(member.program);mass+=member.pwin;
+     }
+     check(group.members.some(m=>m.program===group.program)&&Math.abs(mass-fieldMap.get(group.program))<=1e-10,"Coupled PWIN sum mismatch");
+     coupledExtra+=group.members.length-1;
+    }
+   }
+  }
+  check(races.size===row.races&&[...races.values()].reduce((n,f)=>n+f.length,0)+coupledExtra===row.runners,"Incomplete field inventory");
   check([...races.keys()].every(n=>card.post_times_by_race?.[n]),"Scheduled post times missing");
   return card;
  });
