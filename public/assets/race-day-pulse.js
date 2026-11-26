@@ -62,6 +62,9 @@
       c.fillStyle='#e0b66b';c.font='700 24px Georgia,serif';c.fillText('RAIL & RYE   /   RACE-DAY PULSE',141,60);
       c.fillStyle='#ffffff';c.font='700 39px Georgia,serif';c.fillText(item.track+' · Race '+item.race_number,64,148);
       c.font='700 33px system-ui,sans-serif';c.fillText(item.headline,64,204);
+      // Live-site chip alpha fix applies to the shared graphic too.
+      // Original PNG is drawn on a solid opaque white plate, never over navy.
+      c.fillStyle='#fff';c.fillRect(67,241,104,104);
       const badge=chip(item.chip).querySelector('img');
       if(badge){try{await badge.decode();c.drawImage(badge,67,241,104,104);}catch{}}
       c.font='26px system-ui,sans-serif';c.fillStyle='#eef1f4';
