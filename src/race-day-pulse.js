@@ -101,6 +101,25 @@ export async function captureInitialPulseSnapshot(env,initial){
   await env.CARDS_BUCKET.put(key,JSON.stringify(initial),{httpMetadata:{contentType:'application/json; charset=utf-8',cacheControl:'private, no-store'}});
   return true;
 }
+export function choosePulseInsights(sortedCandidates,limit=6){
+  // Encourage coverage across multiple tracks without manufacturing content.
+  // When only one track has genuine alerts, it may still fill the scroller.
+  const chosen=[],chosenIds=new Set(),trackCounts=new Map();
+  for(const item of sortedCandidates){
+    if(chosen.length>=limit)break;
+    const key=slug(item.track);
+    if((trackCounts.get(key)||0)>=2||chosenIds.has(item.id+'|'+item.date))continue;
+    chosen.push(item);chosenIds.add(item.id+'|'+item.date);
+    trackCounts.set(key,(trackCounts.get(key)||0)+1);
+  }
+  for(const item of sortedCandidates){
+    if(chosen.length>=limit)break;
+    const id=item.id+'|'+item.date;
+    if(chosenIds.has(id))continue;
+    chosen.push(item);chosenIds.add(id);
+  }
+  return chosen;
+}
 export async function readRaceDayPulse(env,now=Date.now()){
   const date=newYorkCutoff(now),items=[];
   if(!env?.CARDS_BUCKET)return {date,items,status:'unavailable'};
@@ -131,7 +150,7 @@ export async function readRaceDayPulse(env,now=Date.now()){
     }
   }
   items.sort((a,b)=>b.priority-a.priority||a.track.localeCompare(b.track)||a.race_number-b.race_number);
-  const publicItems=items.slice(0,6).map(({priority,...rest})=>rest);
+  const publicItems=choosePulseInsights(items).map(({priority,...rest})=>rest);
   // Save only facts we ALREADY exposed through this approved public API. This
   // lets old shared links remain useful after 3AM rollover or source pruning.
   // Never archive the private cards, runner matrices or F4 receipts.
