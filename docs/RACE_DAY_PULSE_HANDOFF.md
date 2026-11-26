@@ -48,5 +48,14 @@ test-race-day-pulse.mjs — source integrity, metadata release, prescratch immut
 9. User-approved visual release required. This is not permission to push unfinished feature to public site.
 10. After successful launch, keep authoritative handoff and tests updated with exact deployed SHA, readback receipt and Rollback path.
 
+## NOVEMBER 26 QA AND CALIBRATION CHECKPOINT
+Detailed gate: docs/RACE_DAY_PULSE_CALIBRATION.md (feature branch).
+Dedicated GitHub Actions real-browser screenshots were generated successfully for 320, 375, 390, 430, 768 and 1280 px; the manual Share/X intent and downloadable 1200×675 branded PNG also passed Chromium QA. These images are synthetic test data only.
+The source QA includes direct-R2 and Worker publication snapshots, scratch-certified source checks, provisional new favorite/shift/F4 selection, stable public-only archive links after the following 3AM ET, 45-second ET-scoped edge cache, no paid service, and no raw private data in the public feed.
+IMPORTANT real-data calibration result: read-only R2 audit covered Nov 24 (6 dashboards), Nov 25 (9), Nov 26 (6), 21 total, but ZERO authentic original prescratch Pulse snapshot pairs. Thus thresholds (4 PWIN percentage points, 7 F4 place2+place3 percentage points) are provisional and NOT historically calibrated. Do not invent old scores; use future verified prospective paired runs or authentic original production archives. This is a pre-live calibration HOLD.
+Top stories are sorted by severity, diversity-limited to two per track on first pass, then remaining slots filled from genuine alerts only; routine scratch of the original favorite is downranked.
+The owner requires a pre-live visual review and no merge to main until source replay and release gates pass. Older site CI tests have existing unrelated failures; dedicated Pulse tests pass. No automatic tweets.
+The complete GitHub branch and Google Drive engineering handoff remain authoritative. Do not assume current main has this code.
+
 ## NEW-WINDOW INSTRUCTION
 Continue from feature/race-day-pulse-v1. READ THIS FILE, inspect the latest PR/code/check results, repair remaining defects, test and get visual approval. Do not brainstorm from scratch or infer that staging means live. Do not ask user to upload new JSON, Equibase PDFs or API secrets. Do not run private TRI/F4 code in Cloudflare. Keep main untouched pending visual review.
