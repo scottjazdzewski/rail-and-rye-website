@@ -450,7 +450,7 @@ export default {
   async scheduled(controller,env,ctx){
     // Pulse is an INDEPENDENT quarter-hour trigger. Do not accelerate or
     // interfere with the approved 10-minute production/commerce jobs.
-    if(controller.cron==='*/15 * * * *'){
+    if(controller.cron==='*/15 0-7,13-23 * * *'){
       ctx.waitUntil(evaluatePulseWatch(env,controller.scheduledTime).then(out=>{
         if(out.status==='awaiting_approved_source_connector')
           console.info('Race-Day Pulse watch window open; source remains disconnected',out.date);
