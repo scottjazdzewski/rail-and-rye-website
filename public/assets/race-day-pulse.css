@@ -94,6 +94,10 @@
 .rr-pulse-tool{font-size:11px;padding:6px 9px}
 .rr-pulse-cta .rr-pulse-headline{font-size:19px}
 /* The separate share page can show all scratch chips and full horse names. */
+.rr-pulse-share-scratches{display:flex;align-items:center;flex-wrap:wrap;gap:7px 12px;padding:11px 0;border-top:1px solid #41566b}
+.rr-pulse-share-scratches .rr-pulse-scratch-identity{max-width:none}
+.rr-pulse-share-scratches .rr-pulse-scratch-name{max-width:none;white-space:normal;overflow:visible;color:#e1e5ec}
+.rr-pulse-share-page .rr-pulse-story-content>.rr-pulse-saddle{width:52px;height:52px;flex-basis:52px}
 .rr-pulse-share-runners{display:flex;flex-wrap:wrap;gap:7px 12px;align-items:center;margin:9px 0 16px}
 .rr-pulse-share-caption{color:#d8b879;font:800 10px/1.2 system-ui,sans-serif;letter-spacing:.07em}
 .rr-pulse-share-runner{display:inline-flex;align-items:center;gap:6px}
