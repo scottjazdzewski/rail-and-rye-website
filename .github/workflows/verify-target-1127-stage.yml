@@ -79,7 +79,12 @@ jobs:
           prepared,pmeta=get(root+'prepared-0001.json')
           if prepared:
             proof=json.loads(prepared)
-            assert proof['sha256']==h and proof['release_at']==due and proof['targets']==13 and proof.get('product_id') and proof.get('catalog_release_at')=='2026-11-27 08:00:00'
+            assert proof['sha256']==h and proof['release_at']==due and proof.get('product_id') and proof.get('catalog_release_at')=='2026-11-27 08:00:00'
+            held=proof.get('heldSelections',[])
+            if held:
+              assert held==[{'track':'Fair Grounds','race':7,'reason':'ORIGINAL_14_VS_SITE_ACTIVE_11'}] and proof['original_targets']==13 and proof['targets']==12
+              print('TARGET_1127_RECONCILED_HOLD Fair Grounds race 7 excluded; 12 approved selections queued',flush=True)
+            else:assert proof['targets']==13
             print('TARGET_1127_CATALOG_QUEUE_VERIFIED release=08UTC',flush=True)
           else:print('TARGET_1127_CATALOG_NOT_YET_QUEUED awaiting complete matching Projections and scheduler',flush=True)
           actual,am=get('racing-intelligence/product-tabs/target-list/'+d+'.json')
