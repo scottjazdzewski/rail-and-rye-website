@@ -37,10 +37,10 @@
 .rr-pulse .rr-pulse-saddle--scratch img,.rr-pulse-share-page .rr-pulse-saddle--scratch img{width:100%;height:100%;background:#fff!important;opacity:1!important;mix-blend-mode:normal!important;filter:none!important}
 .rr-pulse-saddle-fallback{font:900 12px/1 system-ui,sans-serif;color:#0a2744!important}
 .rr-pulse-suffix{position:absolute;right:0;bottom:0;padding:0 2px;background:#102d53;color:#fff;border:1px solid #647482;border-radius:2px;font:900 8px/1.1 system-ui,sans-serif}
-.rr-pulse-scratch-list{display:flex;align-items:center;gap:6px;min-width:0;max-width:100%;overflow-x:auto;white-space:nowrap;scrollbar-width:thin;scrollbar-color:#746143 transparent;padding:1px 0 3px}
+.rr-pulse-scratch-list{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px;min-width:0;max-width:100%;overflow:visible;white-space:normal;padding:1px 0 3px}
 .rr-pulse-scratch-label{flex:none;color:#c8bda9;letter-spacing:.05em;font:800 9px/1.2 system-ui,sans-serif}
-.rr-pulse-scratch-identity{display:inline-flex;align-items:center;gap:5px;flex:none}
-.rr-pulse-scratch-name{color:#f7efea;font:650 11px/1.2 system-ui,sans-serif}
+.rr-pulse-scratch-identity{display:inline-flex;align-items:center;gap:5px;flex:0 1 auto;min-width:0;max-width:100%}
+.rr-pulse-scratch-name{color:#f7efea;font:650 11px/1.2 system-ui,sans-serif;white-space:normal;overflow-wrap:anywhere}
 .rr-pulse-cta{background:#1a3550;align-items:flex-start;justify-content:center}
 .rr-pulse-cta .rr-pulse-headline{font-size:19px}
 .rr-pulse-cta-link{font-size:14px;padding:10px 13px;border:1px solid #b78c51;border-radius:6px;margin-top:7px}
