@@ -88,6 +88,25 @@ try{
   assert.ok(await page.locator('.rr-pulse-scratch-name').first().isVisible(),'Show actual scratched horse name');
   assert.ok(await page.locator('.rr-pulse-affected').first().isVisible(),'Show selected horse name');
   assert.ok(layout.railScrollable,'Scroller should overflow inside its own boundary');
+  const geometry=await page.evaluate(()=>{
+    const card=document.querySelector('.rr-pulse-item'),share=card.querySelector('.rr-pulse-tool'),
+      body=card.querySelector('.rr-pulse-message'),footer=card.querySelector('.rr-pulse-item-footer');
+    const cb=card.getBoundingClientRect(),sb=share.getBoundingClientRect(),
+      bb=body.getBoundingClientRect(),fb=footer.getBoundingClientRect(),style=getComputedStyle(body);
+    return {cardLeft:cb.left,cardRight:cb.right,shareLeft:sb.left,shareRight:sb.right,
+      shareTop:sb.top,shareBottom:sb.bottom,footerTop:fb.top,footerBottom:fb.bottom,
+      messageWidth:body.clientWidth,messageScroll:body.scrollWidth,messageHeight:bb.height,
+      whiteSpace:style.whiteSpace,lineHeight:style.lineHeight};
+  });
+  assert.ok(geometry.shareRight<=geometry.cardRight+2&&geometry.shareLeft>=geometry.cardLeft-2,
+    'Share must fit inside compact Pulse card: '+JSON.stringify({width,geometry}));
+  assert.ok(geometry.shareBottom<=geometry.footerBottom+2,
+    'Share must be visible in footer: '+JSON.stringify({width,geometry}));
+  assert.ok(geometry.messageScroll<=geometry.messageWidth+2,
+    'No cropped handicapper sentence: '+JSON.stringify({width,geometry}));
+  assert.notEqual(geometry.whiteSpace,'nowrap','Message must wrap naturally');
+  if(width<=430)assert.ok(geometry.messageHeight>22,'Mobile insight must wrap onto multiple readable lines');
+
   await page.screenshot({path:'pulse-preview-screenshots/pulse-'+width+'.png'});
   // A click opens manual share menu; never posts to X without the user.
   await page.locator('.rr-pulse-tool').first().click();
