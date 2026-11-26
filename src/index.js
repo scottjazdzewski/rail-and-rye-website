@@ -1,7 +1,7 @@
 import {prepareScheduledPickStages} from "./pick-tickets-staging.js";
 import {handleAdminProjectionUpload,handleAdminProjectionBatchUpload,readAdminProjectionCards} from './projections.js';
 import {readCertifiedF4Exotics} from './f4-exotics.js';
-import {handlePulseApi,handlePulsePage} from './race-day-pulse.js';
+import {handlePulseApi,handlePulsePage,capturePublishedPulseBaselines} from './race-day-pulse.js';
 import {evaluatePulseWatch} from './pulse-scratch-watch.js';
 import {handleAdminLongshotRadar,handleAdminLongshotEditorialPreview,publishLongshotRadarTab} from './longshot-radar.js';
 import {handleAdminPickTickets} from './pick-tickets.js';
@@ -457,6 +457,9 @@ export default {
       }).catch(error=>console.warn('Pulse scratch watch gate deferred',String(error).slice(0,130))));
       return;
     }
+    ctx.waitUntil(capturePublishedPulseBaselines(env,controller.scheduledTime).then(out=>{
+      if(out.captured)console.info('Private Pulse original-field snapshots preserved',out.captured);
+    }).catch(e=>console.warn('Pulse baseline safety net deferred',String(e).slice(0,130))));
     ctx.waitUntil(prepareScheduledPickStages(env).then(result=>{
       if(result.prepared)console.info("Dated Pick Tickets prepared for scheduled release",result.prepared);
     }).catch(e=>console.warn("Scheduled Pick Tickets preparation deferred",String(e.message||e).slice(0,140))));
