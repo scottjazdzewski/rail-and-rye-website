@@ -49,6 +49,19 @@ assert.equal(feed.items.length,1);
 assert.equal(feed.items[0].kind,'NEW_FAVORITE');
 assert.ok(!JSON.stringify(feed).includes('model_receipts'),'Never expose private scoring receipts');
 assert.ok(!JSON.stringify(feed).includes('f4_probabilities'),'Never expose full F4 vectors');
+// Existing private direct-R2 scratch publishers set uppercase SCRATCH_FINAL metadata.
+await env.CARDS_BUCKET.put('projections/dashboard/2026-11-26/churchill-downs.json',JSON.stringify(after),
+  {customMetadata:{stage:'SCRATCH_FINAL',uploaded_at:'2026-11-26T13:00:00Z'}});
+assert.equal((await pulse.readRaceDayPulse(env,Date.parse('2026-11-26T18:00:00Z'))).items.length,1,
+  'Certified direct-R2 scratch-final stage must publish Pulse without a website API upload');
+const mismatchedParent=prescratch();
+mismatchedParent.model_receipts={f4_sha256:'b'.repeat(64)};
+const falseSource={CARDS_BUCKET:new R2()};
+await pulse.captureInitialPulseSnapshot(falseSource,mismatchedParent);
+await falseSource.CARDS_BUCKET.put('projections/dashboard/2026-11-26/churchill-downs.json',JSON.stringify(after),
+  {customMetadata:{stage:'SCRATCH_FINAL'}});
+assert.equal((await pulse.readRaceDayPulse(falseSource,Date.parse('2026-11-26T18:00:00Z'))).items.length,0,
+  'Do not publish a snapshot with conflicting certified parent F4 receipt');
 // Published dashboard alone is insufficient.
 const unapproved={CARDS_BUCKET:new R2()};
 await pulse.captureInitialPulseSnapshot(unapproved,before);
