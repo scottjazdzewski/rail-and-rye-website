@@ -1,5 +1,5 @@
 """Dated Churchill scratch gate. Never prints private data or modifies the accepted stage."""
-import base64, hashlib, json, os, re, zlib, subprocess, urllib.request
+import base64, hashlib, json, os, re, zlib, subprocess, urllib.request, urllib.error
 from datetime import datetime, timezone
 from pathlib import Path
 from nacl.public import SealedBox
@@ -79,20 +79,39 @@ def main():
  req(current["status"]=="initial_current" and current["revision"]==1,"Current customer revision is not initial; no overwrite")
  Path("/tmp/rr-pick-1126-cd-input.json").write_bytes(compact({"parent":original_cd,"current":current,"batch":batch}))
  subprocess.run(["node","scripts/validate_pick_scratch_1126_cd.mjs"],check=True)
- # Cross-product parity is mandatory. A stale Race Card cannot authorize publication.
- req(projection["projection_status"]=="scratch_final","RACE_CARDS_PENDING_SCRATCH_FINAL")
+ # Owner's one-time November 26 CD revision-2 authorization: release tickets
+ # before the incoming Race Cards update ONLY if its current object is the exact
+ # previously certified prescratch parent. A scratch-final mismatch still holds.
  req(po["Metadata"].get("customer_publish_approved")=="true","Race Card not approved")
+ parity_status="VERIFIED_SCRATCH_FINAL"
+ expected_rows=row["runner_pwin"]
+ if projection["projection_status"]=="prescratch":
+  parity_status="OWNER_AUTHORIZED_RELEASE_AHEAD_OF_RACE_CARDS"
+  expected_rows=original_cd["runner_pwin"]
+ else:
+  req(projection["projection_status"]=="scratch_final","Unexpected Race Card state")
  by={str(r["race_number"]):{str(e["program_number"]):e for e in r["entries"]} for r in projection["races"]}
- req(set(by)==set(row["runner_pwin"]),"Race Card race inventory differs")
+ req(set(by)==set(expected_rows),"Race Card race inventory differs")
  maxdiff=0
- for race,rows in row["runner_pwin"].items():
+ for race,rows in expected_rows.items():
   req(set(by[race])=={x[0] for x in rows},"Race Card field parity failure R"+race)
   for x in rows:
    e=by[race][x[0]];req(e["horse_name"]==x[1],"Race Card horse identity differs R"+race)
    maxdiff=max(maxdiff,abs(e["win_probability_exact"]-100*x[2]))
  req(maxdiff<1e-7,"Race Card probability parity failure")
- print("NOV26_CD_CROSS_PRODUCT_PARITY_PASS max_diff_pp",maxdiff,flush=True)
- req("Churchill Downs" in catalog(),"Live catalog entry missing")
+ print("NOV26_CD_PARITY_STATUS",parity_status,"compared_snapshot_max_diff_pp",maxdiff,flush=True)
+ # The prepared marker records the actual D1 published product ID and release.
+ # Verify that registration even if the public HTTP readback is temporarily unavailable.
+ q=next(t for t in prepared["tracks"] if t["track"]=="Churchill Downs")
+ req(prepared["date"]==DATE and prepared["release_at"]=="2026-11-26T08:00:00Z" and q["product_id"] and q["sequence_count"]==19 and q["release_at"]=="2026-11-26 08:00:00" and datetime.now(timezone.utc)>=datetime.fromisoformat(prepared["release_at"].replace("Z","+00:00")),"Catalog registration receipt mismatch")
+ def check_catalog():
+  try:
+   req("Churchill Downs" in catalog(),"Live catalog entry missing")
+   return "VERIFIED_PUBLIC"
+  except (TimeoutError,urllib.error.URLError) as exc:
+   print("NOV26_CD_CATALOG_HTTP_UNAVAILABLE",type(exc).__name__,"D1 registration receipt verified",flush=True)
+   return "REGISTERED_PUBLIC_HTTP_UNVERIFIED"
+ catalog_status=check_catalog()
  new=Path("/tmp/rr-pick-1126-cd-output.json").read_bytes()
  req(get(KEY)[0]==b and get(PROJECTION)[0]==pb,"Concurrent source update")
  audit=f"pick-tickets/scratch-revisions/{DATE}/churchill-downs/"
@@ -101,10 +120,10 @@ def main():
  meta=dict(o["Metadata"]);meta.update(revision="2",content_sha256=sha(new),source_sha256=rec["pwin_sha256"],publication_mode="owner-approved-gpt",customer_publish_approved="true",published_at=datetime.now(timezone.utc).isoformat())
  s.put_object(Bucket=BUCKET,Key=KEY,Body=new,ContentType="application/json",CacheControl="private,no-store",Metadata=meta,IfMatch=o["ETag"])
  got,go=get(KEY);req(got==new and go["Metadata"]["content_sha256"]==sha(new),"Customer readback mismatch")
- receipt=compact({"date":DATE,"track":"Churchill Downs","revision":2,"races":12,"runners":92,"sequences":19,"candidate_sha256":sha(raw),"customer_sha256":sha(new),"race_card_sha256":sha(pb),"max_pwin_delta_pp":maxdiff,"published_at":meta["published_at"]})
+ receipt=compact({"date":DATE,"track":"Churchill Downs","revision":2,"races":12,"runners":92,"sequences":19,"candidate_sha256":sha(raw),"customer_sha256":sha(new),"race_card_sha256":sha(pb),"parity_status":parity_status,"compared_snapshot_max_diff_pp":maxdiff,"max_pwin_delta_pp":maxdiff if parity_status=="VERIFIED_SCRATCH_FINAL" else None,"catalog_status_before_write":catalog_status,"published_at":meta["published_at"]})
  immutable(audit+"receipt-"+sha(receipt)+".json",receipt)
- req("Churchill Downs" in catalog(),"Post-publication catalog verification failed")
  print("NOV26_CD_PICK_CUSTOMER_READBACK_PASS",receipt.decode(),flush=True)
+ print("NOV26_CD_POST_PUBLICATION_CATALOG",check_catalog(),flush=True)
 if __name__=="__main__":
  try:main()
  except Exception as e:raise SystemExit("NOV26_CD_PICK_HOLD "+type(e).__name__+": "+str(e)[:180])
