@@ -16,7 +16,7 @@
   function chip(number,scratched=false){
     const el=$('span','rr-pulse-saddle'+(scratched?' rr-pulse-saddle--scratch':''));
     const n=String(number||'').trim().toUpperCase();
-    const parsed=/^(\\d{1,2})([A-Z]?)$/.exec(n);
+    const parsed=/^(\d{1,2})([A-Z]?)$/.exec(n);
     const value=parsed?Number(parsed[1]):0;
     if(value>=1&&value<=20){
       const img=$('img');img.src='/assets/approved/saddlecloths/'+value+'.png';
