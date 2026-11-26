@@ -1,0 +1,30 @@
+name: Fair Grounds Pulse original-field reconciliation (read only)
+on:
+  push:
+    branches:
+      - feature/race-day-pulse-v1
+    paths:
+      - 'research/pulse/2026-11-26-fair-grounds-user-supplied.json'
+      - 'scripts/race_day_pulse_fair_grounds_source_audit.py'
+      - '.github/workflows/verify-pulse-fair-grounds.yml'
+permissions:
+  contents: read
+jobs:
+  reconcile:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Check complete user-source transcription and unique race identities
+        run: python scripts/race_day_pulse_fair_grounds_source_audit.py --fixture-only
+      - name: Read-only compare to immutable private Fair Grounds original
+        env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+        run: |
+          python -m pip install --quiet boto3
+          python scripts/race_day_pulse_fair_grounds_source_audit.py
