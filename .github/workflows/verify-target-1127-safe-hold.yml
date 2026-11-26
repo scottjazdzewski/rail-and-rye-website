@@ -1,0 +1,94 @@
+name: Verify November 27 Target List 12-race safe release fallback
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/verify-target-1127-safe-hold.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: pip install --quiet boto3==1.40.36
+      - name: Load sealed stage and certified active Fair Grounds source into ephemeral test runner
+        env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+        run: |
+          python - <<'PY'
+          import os,boto3
+          c=boto3.client('s3',endpoint_url='https://'+os.environ['TRI_CLOUDFLARE_ACCOUNT_ID'].strip()+'.r2.cloudflarestorage.com',region_name='auto',aws_access_key_id=os.environ['TRI_R2_ACCESS_KEY_ID'].strip(),aws_secret_access_key=os.environ['TRI_R2_SECRET_ACCESS_KEY'].strip())
+          for key,out in [('intelligence/target-list/staging/2026-11-27/revision-0001.json','/tmp/target-stage.json'),('projections/dashboard/2026-11-27/fair-grounds.json','/tmp/fair-grounds.json')]:
+            with open(out,'wb') as f:f.write(c.get_object(Bucket='rail-and-rye-private-cards',Key=key)['Body'].read())
+          print('PRIVATE_SAFE_HOLD_FIXTURE_LOADED',flush=True)
+          PY
+      - name: Exercise real Worker staging code with in-memory R2 and D1, no production mutations
+        run: |
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          import {readFileSync} from 'node:fs';
+          import {createHash,webcrypto} from 'node:crypto';
+          import {prepareScheduledTargetStages} from './src/target-list-staging.js';
+          globalThis.crypto??=webcrypto;
+          const stage=readFileSync('/tmp/target-stage.json','utf8'),packet=JSON.parse(stage);
+          const fg=JSON.parse(readFileSync('/tmp/fair-grounds.json','utf8'));
+          const digest=createHash('sha256').update(stage).digest('hex');
+          const t='2026-11-27',root='intelligence/target-list/staging/'+t+'/';
+          const stageKey=root+'revision-0001.json',preparedKey=root+'prepared-0001.json';
+          const store=new Map([[stageKey,{raw:stage,metadata:{stage_only:'true',release_at:'2026-11-27T08:00:00Z',sha256:digest,source_sha256:packet.source_zip_sha256,editorial_sha256:packet.editorial_sha256}}]]);
+          for(const field of packet.selected_race_full_fields){
+            const slug=field.track.toLowerCase().replaceAll(' ','-');
+            const key='projections/dashboard/'+t+'/'+slug+'.json';
+            let card;
+            if(slug==='fair-grounds')card=fg;
+            else card={race_date:t,track_name:field.track,projection_status:'prescratch',races:[{race_number:field.race,entries:field.runners.map(r=>({...r})),scratches:[]}]};
+            if(store.has(key)){
+              const existing=JSON.parse(store.get(key).raw);
+              for(const row of card.races)if(!existing.races.some(r=>r.race_number===row.race_number))existing.races.push(row);
+              card=existing;
+            }
+            store.set(key,{raw:JSON.stringify(card),metadata:{source_sha256:packet.source_zip_sha256}});
+          }
+          const bucket={
+            async get(key){const entry=store.get(key);return entry?{customMetadata:entry.metadata,text:async()=>entry.raw,json:async()=>JSON.parse(entry.raw)}:null;},
+            async put(key,raw,opts){store.set(key,{raw,metadata:opts?.customMetadata||{}});},
+            async list(){return {objects:[],truncated:false};}
+          };
+          let catalogId='a4a4e4e4-1234-5678-aaaa-90b8d84aeccc';
+          const db={
+            prepare(sql){
+              let args=[];
+              return {
+                bind(...values){args=values;return this;},
+                async first(){
+                  if(sql.includes('SELECT p.id,p.status,s.release_at FROM products p JOIN product_release_schedule'))return{id:args[0],status:'published',release_at:'2026-11-27 08:00:00'};
+                  if(sql.includes('SELECT id FROM products WHERE id=?'))return null;
+                  return null;
+                },
+                async all(){return {results:[]};},
+                async run(){return {success:true,meta:{changes:0}}}
+              };
+            },
+            async batch(ops){return ops.map(()=>({success:true,meta:{changes:1}}));}
+          };
+          const result=await prepareScheduledTargetStages({CARDS_BUCKET:bucket,STORE_DB:db},Date.UTC(2026,10,26,19,0,0));
+          assert.deepEqual(result,{prepared:1,deferred:0});
+          const receipt=JSON.parse(store.get(preparedKey).raw);
+          const published=JSON.parse(store.get('racing-intelligence/product-tabs/target-list/'+t+'.json').raw);
+          assert.equal(receipt.targets,12);
+          assert.equal(receipt.original_targets,13);
+          assert.deepEqual(receipt.heldSelections,[{track:'Fair Grounds',race:7,reason:'ORIGINAL_14_VS_SITE_ACTIVE_11'}]);
+          assert.equal(published.targets.length,12);
+          assert.equal(receipt.catalog_release_at,'2026-11-27 08:00:00');
+          console.log('TARGET_1127_SAFE_HOLD_PASS original=13 published=12 held=FG7 prepared=08UTC in_memory_only');
+          JS
