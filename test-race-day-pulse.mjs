@@ -183,6 +183,8 @@ try{
  const html=await preserved.text();
  assert.match(html,/New projected favorite/);
  assert.match(html,/Horse 2/);
+ assert.match(html,/Explore Today’s Intelligence Hub/,'Expired old race links should route to current Hub');
+ assert.match(html,/href="\/store\/"/);
  assert.ok(!html.includes('model_receipts'));
 }finally{Date.now=originalClock;}
 assert.ok(fs.readFileSync('public/index.html','utf8').includes('id="rr-pulse"'));
