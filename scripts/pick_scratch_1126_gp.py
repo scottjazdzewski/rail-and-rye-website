@@ -80,17 +80,30 @@ def main():
  req(current["status"]=="initial_current" and current["revision"]==1,"Current customer revision is not initial; no overwrite")
  Path("/tmp/rr-pick-1126-gp-input.json").write_bytes(compact({"parent":original_gp,"current":current,"batch":batch}))
  subprocess.run(["node","scripts/validate_pick_scratch_1126_gp.mjs"],check=True)
- # Owner's one-time November 26 GP revision-2 authorization: release tickets
- # before the incoming Race Cards update ONLY if its current object is the exact
- # previously certified prescratch parent. A scratch-final mismatch still holds.
+ # For this exact GP R2 candidate the upstream first scratch revision
+ # preceded R4 #1/#3's 12:43/12:47 withdrawals. Allow an ordered release only
+ # against the immutable scratch01 receipt and the exact earlier R4 field.
  req(po["Metadata"].get("customer_publish_approved")=="true","Race Card not approved")
  parity_status="VERIFIED_SCRATCH_FINAL"
- expected_rows=row["runner_pwin"]
+ expected_rows=dict(row["runner_pwin"])
  if projection["projection_status"]=="prescratch":
   parity_status="OWNER_AUTHORIZED_RELEASE_AHEAD_OF_RACE_CARDS"
   expected_rows=original_gp["runner_pwin"]
  else:
   req(projection["projection_status"]=="scratch_final","Unexpected Race Card state")
+  r4=next(r for r in projection["races"] if r["race_number"]==4)
+  current4={str(e["program_number"]) for e in r4["entries"]}
+  original4={x[0] for x in original_gp["runner_pwin"]["4"]}
+  target4={x[0] for x in row["runner_pwin"]["4"]}
+  if current4!=target4:
+   req(current4==original4 and original4-target4=={"1","3"},"Unexpected R4 delta")
+   prior=json.loads(get("projections/qa/"+DATE+"/scratch01-release.json")[0])
+   gp=next(t for t in prior["tracks"] if t["track"]=="Gulfstream Park")
+   req(prior["date"]==DATE and prior["batch"]=="scratch01" and gp["dashboard_sha256"]==sha(pb) and gp["runners"]==63 and gp["scratches"]==11,"Earlier verified Race Cards receipt mismatch")
+   stamp=projection.get("official_snapshot_utc")
+   req(stamp and datetime.fromisoformat(stamp.replace("Z","+00:00"))<datetime.fromisoformat(card["scratch_verified_at"].replace("Z","+00:00")),"Earlier Race Card snapshot not proven")
+   expected_rows["4"]=original_gp["runner_pwin"]["4"]
+   parity_status="OWNER_AUTHORIZED_R4_ONLY_AHEAD_OF_VERIFIED_SCRATCH01"
  by={str(r["race_number"]):{str(e["program_number"]):e for e in r["entries"]} for r in projection["races"]}
  req(set(by)==set(expected_rows),"Race Card race inventory differs")
  maxdiff=0
