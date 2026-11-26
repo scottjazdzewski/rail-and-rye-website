@@ -233,8 +233,21 @@ export async function readRaceDayPulse(env,now=Date.now()){
     if(!old)continue;
     try{original=await old.json();}catch{continue;}
     if(!cardValid(original)||original.race_date!==date||original.projection_status!=='prescratch'||slug(original.track_name)!==slug(current.track_name))continue;
-    // Certified parent F4 ancestry must agree when that receipt exists.
-    if(HASH.test(original.model_receipts?.f4_sha256||'')&&original.model_receipts.f4_sha256!==current.model_receipts.prescratch_parent_sha256)continue;
+    // A certified replay can legitimately have a DIFFERENT F4 hash from
+    // the original stored receipt, while independently proving byte-equivalent
+    // original runner inputs and its own replay ancestry. Production scratch
+    // publishers write this provenance in parent_replay_proof; never mistake
+    // different hash domains for a failed lineage check.
+    const parent=current.parent_replay_proof||{},stored=parent.stored_parent_receipts;
+    const originalReceipts=original.model_receipts||{};
+    const directParent=HASH.test(originalReceipts.f4_sha256||'')&&
+      originalReceipts.f4_sha256===current.model_receipts.prescratch_parent_sha256;
+    const storedMatches=stored&&typeof stored==='object'&&!Array.isArray(stored)&&
+      Object.keys(stored).length===Object.keys(originalReceipts).length&&
+      Object.entries(originalReceipts).every(([key,value])=>stored[key]===value);
+    const certifiedReplay=!!storedMatches&&HASH.test(parent.replay_tri_sha256||'')&&
+      parent.replay_f4_sha256===current.model_receipts.prescratch_parent_sha256;
+    if(!directParent&&!certifiedReplay)continue;
     const earlier=new Map(original.races.map(r=>[r.race_number,r]));
     const updatedAt=object.customMetadata?.uploaded_at||reference.uploaded?.toISOString?.()||null;
     for(const race of current.races){
