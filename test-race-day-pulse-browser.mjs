@@ -86,6 +86,16 @@ try{
   assert.equal(appearance.blend,'normal');
   assert.equal(appearance.filter,'none');
   assert.ok(await page.locator('.rr-pulse-scratch-name').first().isVisible(),'Show actual scratched horse name');
+  const names=await page.locator('.rr-pulse-item').first().locator('.rr-pulse-scratch-name').allTextContents();
+  assert.deepEqual(names,['Sample Scratched Horse 3','Also Scratched Runner Eleven'],'No scratch name truncation in DOM');
+  const clipping=await page.locator('.rr-pulse-item').first().locator('.rr-pulse-scratch-name').evaluateAll(nodes=>{
+    const card=nodes[0]?.closest('.rr-pulse-item')?.getBoundingClientRect();
+    return nodes.map(n=>{
+      const r=n.getBoundingClientRect();
+      return {text:n.textContent,overflows:r.right>(card?.right||0)-6,overscroll:n.scrollWidth>n.clientWidth+1};
+    });
+  });
+  assert.ok(clipping.every(x=>!x.overflows&&!x.overscroll),'All scratched horse names stay readable in compact viewport: '+JSON.stringify(clipping));
   assert.ok(await page.locator('.rr-pulse-affected').first().isVisible(),'Show selected horse name');
   assert.ok(layout.railScrollable,'Scroller should overflow inside its own boundary');
   const geometry=await page.evaluate(()=>{
