@@ -101,6 +101,30 @@ def start():
             dashboards=set(iter_keys(client,dashboard_prefix))
             pairs=sorted(k for k in dashboards if k.replace(dashboard_prefix,baseline_prefix,1) in baselines)
             rows=[]
+            # Read-only readiness audit: identify whether the guarded 03:10
+            # prescratch safety net could safely preserve current published
+            # source cards. Never backfill from scratch-final revisions.
+            ready,already_final,unverified_initial=0,0,0
+            for key in sorted(dashboards):
+                if key.replace(dashboard_prefix,baseline_prefix,1) in baselines:continue
+                response=client.get_object(Bucket=BUCKET,Key=key)
+                card=json.loads(response["Body"].read())
+                meta=response.get("Metadata") or {}
+                if card.get("projection_status")=="scratch_final":
+                    already_final+=1
+                    continue
+                receipts=card.get("model_receipts") or {}
+                valid=all(re.fullmatch(r"[a-fA-F0-9]{64}",str(receipts.get(k,"")))
+                          for k in ("tri_sha256","f4_sha256"))
+                stage=str(meta.get("stage","")).upper()
+                if card.get("projection_status")=="prescratch" and valid and (
+                      stage in ("PRESCRATCH","PRESCRATCH_FINAL") or
+                      meta.get("customer_publish_approved")=="true"):
+                    ready+=1
+                else:unverified_initial+=1
+            totals["safe_initials"]+=ready
+            totals["already_final"]+=already_final
+            totals["unverified_initials"]+=unverified_initial
             for key in pairs:
                 original=json.loads(client.get_object(Bucket=BUCKET,Key=key.replace(dashboard_prefix,baseline_prefix,1))["Body"].read())
                 current=json.loads(client.get_object(Bucket=BUCKET,Key=key)["Body"].read())
@@ -114,10 +138,14 @@ def start():
             totals["pairs"]+=len(pairs)
             print("PULSE_REPLAY_DAY date={} dashboards={} prescratch_baselines={} matched_pairs={} comparable_races={}".format(
                 date,len(dashboards),len(baselines),len(pairs),len(rows)))
+            print("PULSE_BASELINE_READINESS date={} safe_prescratch_candidates={} already_scratch_final={} unverified_initials={}".format(
+                date,ready,already_final,unverified_initial))
         except Exception as exc:
             print("PULSE_REPLAY_DAY date={} status=UNAVAILABLE reason_type={}".format(date,type(exc).__name__))
     print("PULSE_REPLAY_COVERAGE dashboards={} baselines={} pairs={} comparable_races={} mismatched_pairs={}".format(
         totals["dashboards"],totals["baselines"],totals["pairs"],len(runs),totals["unverified_pair"]))
+    print("PULSE_BASELINE_READINESS_TOTAL safe_prescratch_candidates={} already_scratch_final={} unverified_initials={}".format(
+        totals["safe_initials"],totals["already_final"],totals["unverified_initials"]))
     if not runs:
         print("PULSE_CALIBRATION_STATUS=INSUFFICIENT_COMPARABLE_HISTORICAL_DATA")
         return
