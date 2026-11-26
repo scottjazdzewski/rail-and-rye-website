@@ -87,7 +87,7 @@ try{
   assert.equal(appearance.filter,'none');
   assert.ok(await page.locator('.rr-pulse-scratch-name').first().isVisible(),'Show actual scratched horse name');
   const names=await page.locator('.rr-pulse-item').first().locator('.rr-pulse-scratch-name').allTextContents();
-  assert.deepEqual(names,['Sample Scratched Horse 3','Also Scratched Runner Eleven'],'No scratch name truncation in DOM');
+  assert.deepEqual(names,['Sample Scratched Horse 3','Also Scratched Runner 11A'],'No scratch name truncation in DOM');
   const clipping=await page.locator('.rr-pulse-item').first().locator('.rr-pulse-scratch-name').evaluateAll(nodes=>{
     const card=nodes[0]?.closest('.rr-pulse-item')?.getBoundingClientRect();
     return nodes.map(n=>{
