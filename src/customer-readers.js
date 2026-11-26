@@ -37,10 +37,8 @@ export async function serveCustomerReader(request,env,url){
  html=html.replace(/<a href="\/admin\/">Publisher[’']s Desk<\/a>/g,'<a href="/store/?date='+date+'">Intelligence Hub</a>');
  html=html.replace(/<a([^>]*href="\/intelligence\/race-cards\/[^"]*"[^>]*)>Projections<\/a>/g,"<a$1>Race Cards</a>");
  html=html.replaceAll('href="/membership/account/"','href="/store/?date='+date+'"').replaceAll('Go to member sign in','Return to Intelligence Hub').replaceAll('Open member library','Return to Intelligence Hub');
- html=html.replace(/(src="\/assets\/(?:projections-dashboard|pick-tickets-dashboard|longshot-radar|target-list-dashboard|rr-exotic-bet-builder)\.js)\?[^"]*"/g,'$1?v=customer-tote-lock-4"');
- html=html.replace(/(src="\/assets\/rr-exotic-bet-builder\.js)\?[^"]*"/g,'$1?v=customer-dd-eligibility-7"');
- html=html.replace(/(src="\/assets\/projections-dashboard\.js)\?[^"]*"/g,'$1?v=customer-dd-launch-6"');
- html=html.replace(/(src="\/assets\/pick-tickets-dashboard\.js)\?[^"]*"/g,'$1?v=customer-pick-pwin-lock-4"');
+ // Preserve every versioned asset URL from its canonical shell. Never rewrite a
+ // newer dashboard to an older cached customer script.
  html=html.replace("</head>",'<script defer src="/assets/rr-customer-reader.js?v=2"></script></head>');
  // Reader helper must execute before deferred dashboard scripts.
  html=html.replace('<script defer src="/assets/rr-customer-reader.js?v=2"></script></head>',"</head>").replace(/(<script\b[^>]*src="\/assets\/[^"]+"[^>]*>)/,'<script defer src="/assets/rr-customer-reader.js?v=2"></script>$1');

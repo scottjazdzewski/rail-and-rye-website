@@ -1,0 +1,62 @@
+name: Verify live North American tote display and reader asset versions
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/verify-tote-reader-live.yml'
+      - 'public/assets/rr-race-titles.js'
+      - 'src/customer-readers.js'
+      - 'public/_headers'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: |
+          node test-customer-direct-readers.mjs
+          node test-rr-race-titles.mjs
+      - name: Verify exact public reader script URLs and deployed odds formatter
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          import vm from 'node:vm';
+          import assert from 'node:assert/strict';
+          const root='https://railandryeracing.com';
+          const pages=[['race-cards','projections-preview'],['pick-tickets','pick-tickets-preview'],['longshot-radar','longshot-radar'],['target-list','target-list-preview']];
+          const scripts=s=>[...s.matchAll(/src="(\/assets\/[^"]+\.js\?v=[^"]+)"/g)].map(m=>m[1]).filter(p=>!p.includes('rr-customer-reader.js'));
+          let last;
+          for(let attempt=0;attempt<15;attempt++){
+            try{
+              for(const [slug,source] of pages){
+                const expected=scripts(fs.readFileSync('public/admin/'+source+'.html','utf8'));
+                const reply=await fetch(root+'/intelligence/'+slug+'/?date=2026-11-25&proof='+process.env.GITHUB_SHA+'-'+attempt,{cache:'no-store',signal:AbortSignal.timeout(12000)});
+                assert.equal(reply.status,200);
+                const actual=scripts(await reply.text());
+                assert.deepEqual(actual,expected,slug+' asset version mismatch');
+                for(const path of actual.filter(x=>/rr-race-titles\.js|projections-dashboard\.js|longshot-radar\.js|target-list-dashboard\.js/.test(x))){
+                  const asset=await fetch(root+path,{cache:'no-cache',signal:AbortSignal.timeout(12000)});
+                  assert.equal(asset.status,200,path);
+                  const body=await asset.text();
+                  assert.equal(body,fs.readFileSync('public'+path.split('?')[0],'utf8'),path+' stale source');
+                  if(path.includes('rr-race-titles.js')){
+                    const ctx={};vm.runInNewContext(body,ctx);
+                    for(const p of [52.8,57.6])assert.equal(ctx.RRRaceTitles.formatFairOdds({win_probability_exact:p}),'4-5');
+                    assert.equal(ctx.RRRaceTitles.formatToteOdds('9-10'),'1-1');
+                    assert.equal(ctx.RRRaceTitles.formatToteOdds('7-10'),'4-5');
+                  }
+                }
+                console.log('LIVE_TOTE_READER_PASS',slug);
+              }
+              console.log('ALL_FOUR_LIVE_READER_SHELLS_AND_ODDS_ASSETS_PASS');
+              process.exit(0);
+            }catch(e){last=e;console.log('Retry',attempt+1,String(e).slice(0,200));await new Promise(r=>setTimeout(r,8000))}
+          }
+          throw last;
+          JS

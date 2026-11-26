@@ -15,6 +15,10 @@ for(const [slug,item] of Object.entries(CUSTOMER_READERS)){
  assert.doesNotMatch(html,/href="\/admin\//);
  assert.match(html,/href="\/store\/\?date=2026-11-24"/);
  assert.match(html,/aria-current="page"/);
+ // A customer shell must retain the exact asset URLs of its admin shell.
+ const source=readFileSync("public"+item.asset,"utf8");
+ const scripts=s=>[...s.matchAll(/src="(\/assets\/[^"]+\.js\?v=[^"]+)"/g)].map(m=>m[1]).filter(p=>!p.includes("rr-customer-reader.js"));
+ assert.deepEqual(scripts(html),scripts(source),slug+" must retain canonical asset versions");
  const helper=html.indexOf("rr-customer-reader.js?v=2");
  assert.ok(helper>=0&&helper<html.search(/(?:projections-dashboard|pick-tickets-dashboard|longshot-radar|target-list-dashboard)\.js/),slug+" helper precedes reader");
 }

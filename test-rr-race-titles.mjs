@@ -153,3 +153,5 @@ for(const [raw,expected] of [["7-10","4-5"],["3-10","2-5"],["9-10","1-1"],["1-20
 for(const label of ["1-9","1-5","2-5","1-2","3-5","4-5","1-1","6-5","7-5","3-2","8-5","9-5","2-1","5-2","3-1","7-2","4-1","9-2","5-1","99-1"])assert.equal(tote(label),label,label);
 const wildVine={win_probability_exact:57.6,fair_odds:"7-10",morning_line:"6-5"};assert.equal(fair(wildVine),"4-5");assert.equal(wildVine.fair_odds,"7-10");assert.equal(wildVine.win_probability_exact,57.6);
 console.log("PASS: canonical North American tote odds across the shared display helper");
+
+assert.equal(ctx.RRRaceTitles.formatFairOdds({win_probability_exact:52.8,fair_odds:"9-10"}),"4-5","Velveteen regression");

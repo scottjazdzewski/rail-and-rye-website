@@ -17,3 +17,27 @@
   Cache-Control: no-store
   Referrer-Policy: no-referrer
   X-Robots-Tag: noindex, nofollow
+
+# Data-display code must be revalidated on navigation, not cached for a day.
+# Canonical reader shells also carry a release-specific version query.
+/assets/rr-race-titles.js
+  ! Cache-Control
+  Cache-Control: no-cache, max-age=0, must-revalidate
+/assets/projections-dashboard.js
+  ! Cache-Control
+  Cache-Control: no-cache, max-age=0, must-revalidate
+/assets/longshot-radar.js
+  ! Cache-Control
+  Cache-Control: no-cache, max-age=0, must-revalidate
+/assets/target-list-dashboard.js
+  ! Cache-Control
+  Cache-Control: no-cache, max-age=0, must-revalidate
+/assets/pick-tickets-dashboard.js
+  ! Cache-Control
+  Cache-Control: no-cache, max-age=0, must-revalidate
+/assets/rr-exotic-bet-builder.js
+  ! Cache-Control
+  Cache-Control: no-cache, max-age=0, must-revalidate
+/assets/rr-customer-reader.js
+  ! Cache-Control
+  Cache-Control: no-cache, max-age=0, must-revalidate
