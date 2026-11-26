@@ -1,0 +1,36 @@
+{
+  "date": "2026-11-26",
+  "tracks": [
+    [
+      "churchill-downs",
+      "Churchill Downs",
+      12,
+      112,
+      92,
+      24,
+      "1792f46eb2bef5ec81cca51eb1a6b3af44e7740237ce1bfebee32af74c6dab98",
+      "78bed59cde3a85edb1c9b6b2b94fb0ce797918e0a72e5f7abbb8c4bcc3cb1170"
+    ],
+    [
+      "gulfstream-park",
+      "Gulfstream Park",
+      9,
+      74,
+      63,
+      11,
+      "7844b6e2740ff7ef5bbb28ae173ea1bc4fc19f26b67339b3f0e58e17b1817f83",
+      "78e658d604ebbf9d21ae396fff0dbcd1e742bae7b78c5145e0d06d5fa02cff61"
+    ],
+    [
+      "laurel-park",
+      "Laurel Park",
+      9,
+      77,
+      57,
+      22,
+      "0376a76bd0a46cf5d7a122aa3a0046ebb8f20bdc3571c882840d6580124f97f5",
+      "b14c7ece431395a234189981358be1739ea712146c7a7401dabd8a2ca0374e1a"
+    ]
+  ],
+  "public_key": "jjxUgQwkjBuzNDPAGiSs1Rnp3vqC6/1V7kBtJJDELDk="
+}
