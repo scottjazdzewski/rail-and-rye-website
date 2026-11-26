@@ -1,0 +1,105 @@
+{
+  "date": "2026-11-26",
+  "status": "ok",
+  "source_status": "PRIVATE_SOURCE_VERIFIED_READ_ONLY",
+  "items": [
+    {
+      "id": "preview-churchill-r12-source-verified",
+      "date": "2026-11-26",
+      "track": "Churchill Downs",
+      "race_number": 12,
+      "kind": "SURFACE_SWITCH",
+      "chip": "9",
+      "horse": "Sweet Reward",
+      "headline": "Course change reshapes the race",
+      "message": "Churchill's twelfth is off the turf, with eight runners scratched. #9 Sweet Reward is the new projected favorite at 33.9%, up from 10.5% on the original turf card.",
+      "scratches": [
+        {
+          "program": "1",
+          "horse": "Parisinthespring"
+        },
+        {
+          "program": "2",
+          "horse": "Silbury Hill"
+        },
+        {
+          "program": "3",
+          "horse": "Great Kerry Lee"
+        },
+        {
+          "program": "6",
+          "horse": "Kristi's Spirit"
+        },
+        {
+          "program": "7",
+          "horse": "Miso Speedy"
+        },
+        {
+          "program": "10",
+          "horse": "Halfway to Omaha"
+        },
+        {
+          "program": "11",
+          "horse": "Very Valentino"
+        },
+        {
+          "program": "12",
+          "horse": "Musical Delight"
+        }
+      ],
+      "hub_url": "/intelligence/race-cards/?date=2026-11-26&track=Churchill%20Downs&race=12"
+    },
+    {
+      "id": "preview-churchill-r5-source-verified",
+      "date": "2026-11-26",
+      "track": "Churchill Downs",
+      "race_number": 5,
+      "kind": "SURFACE_SWITCH",
+      "chip": "9",
+      "horse": "Multiplication",
+      "headline": "Dirt switch strengthens the leader",
+      "message": "Race 5 has moved from turf to dirt, with five horses scratched. #9 Multiplication remains TRI's top choice, but the win projection has risen from 29.4% to 46.1%.",
+      "scratches": [
+        {
+          "program": "2",
+          "horse": "Inflammabelle"
+        },
+        {
+          "program": "5",
+          "horse": "Spotty Showers"
+        },
+        {
+          "program": "6",
+          "horse": "Jill Jitterbug"
+        },
+        {
+          "program": "10",
+          "horse": "Mo Town Renee"
+        },
+        {
+          "program": "12",
+          "horse": "Dream On Stormy"
+        }
+      ],
+      "hub_url": "/intelligence/race-cards/?date=2026-11-26&track=Churchill%20Downs&race=5"
+    },
+    {
+      "id": "preview-churchill-r9-source-verified",
+      "date": "2026-11-26",
+      "track": "Churchill Downs",
+      "race_number": 9,
+      "kind": "WIN_SHIFT",
+      "chip": "7",
+      "horse": "Destino d'Oro",
+      "headline": "A measurable move in the ninth",
+      "message": "With #5 Gallant Greta scratched from Churchill's ninth, #7 Destino d'Oro still leads the TRI projections. The win chance moves from 33.1% to 37.5%.",
+      "scratches": [
+        {
+          "program": "5",
+          "horse": "Gallant Greta"
+        }
+      ],
+      "hub_url": "/intelligence/race-cards/?date=2026-11-26&track=Churchill%20Downs&race=9"
+    }
+  ]
+}
