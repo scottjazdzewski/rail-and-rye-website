@@ -92,6 +92,17 @@ const onlyExcluded={...before.races[0],scratch_count:1,
 assert.equal(pulse.insightForRace(before.race_date,before.track_name,before.races[0],
  onlyExcluded,'2026-11-26T13:00:00Z'),null,
  'An also-eligible scratched outside the active field alone cannot create an insight');
+const originalTurf={...before.races[0],surface:'Turf'};
+const updatedDirt={...after.races[0],surface:'Dirt'};
+const courseAlert=pulse.insightForRace(before.race_date,before.track_name,originalTurf,
+ updatedDirt,'2026-11-26T15:00:00Z');
+assert.equal(courseAlert.kind,'SURFACE_SWITCH','Certified course changes cannot be described as scratch-only changes');
+assert.match(courseAlert.message,/moved from Turf to Dirt/);
+assert.match(courseAlert.message,/confirmed active-field scratch/);
+assert.ok(!courseAlert.message.includes('pace'),'Do not invent pace causation from a turf-to-dirt change');
+const nonMaterial={...updatedDirt,entries:[run(1,45),run(2,55)]};
+assert.equal(pulse.insightForRace(before.race_date,before.track_name,originalTurf,
+ nonMaterial,'2026-11-26T15:00:00Z')?.kind,'SURFACE_SWITCH');
 assert.equal(event.kind,'NEW_FAVORITE');
 assert.equal(event.chip,'2');
 assert.match(event.message,/#3 scratched/);
