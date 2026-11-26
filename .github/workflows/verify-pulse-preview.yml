@@ -3,6 +3,10 @@ on:
   pull_request:
     paths:
       - 'src/race-day-pulse.js'
+      - 'src/pulse-scratch-watch.js'
+      - 'src/index.js'
+      - 'wrangler.jsonc'
+      - 'test-pulse-scratch-watch.mjs'
       - 'src/projections.js'
       - 'public/index.html'
       - 'public/assets/race-day-pulse.*'
