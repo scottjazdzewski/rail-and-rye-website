@@ -149,13 +149,30 @@ await env.CARDS_BUCKET.put('projections/dashboard/2026-11-26/churchill-downs.jso
 assert.equal((await pulse.readRaceDayPulse(env,Date.parse('2026-11-26T18:00:00Z'))).items.length,1,
   'Certified direct-R2 scratch-final stage must publish Pulse without a website API upload');
 const mismatchedParent=prescratch();
-mismatchedParent.model_receipts={f4_sha256:'b'.repeat(64)};
+mismatchedParent.model_receipts={tri_sha256:'c'.repeat(64),f4_sha256:'b'.repeat(64)};
 const falseSource={CARDS_BUCKET:new R2()};
 await pulse.captureInitialPulseSnapshot(falseSource,mismatchedParent);
 await falseSource.CARDS_BUCKET.put('projections/dashboard/2026-11-26/churchill-downs.json',JSON.stringify(after),
   {customMetadata:{stage:'SCRATCH_FINAL'}});
 assert.equal((await pulse.readRaceDayPulse(falseSource,Date.parse('2026-11-26T18:00:00Z'))).items.length,0,
   'Do not publish a snapshot with conflicting certified parent F4 receipt');
+const validReplay={...after,parent_replay_proof:{
+  stored_parent_receipts:{...mismatchedParent.model_receipts},
+  replay_tri_sha256:'d'.repeat(64),
+  replay_f4_sha256:after.model_receipts.prescratch_parent_sha256
+}};
+await falseSource.CARDS_BUCKET.put('projections/dashboard/2026-11-26/churchill-downs.json',
+ JSON.stringify(validReplay),{customMetadata:{stage:'SCRATCH_FINAL'}});
+assert.equal((await pulse.readRaceDayPulse(falseSource,Date.parse('2026-11-26T18:00:00Z'))).items.length,1,
+  'Certified source-linked replay lineage may validly differ from stored original F4 receipt');
+const forgedReplay={...validReplay,parent_replay_proof:{
+ ...validReplay.parent_replay_proof,
+ stored_parent_receipts:{...mismatchedParent.model_receipts,f4_sha256:'e'.repeat(64)}
+}};
+await falseSource.CARDS_BUCKET.put('projections/dashboard/2026-11-26/churchill-downs.json',
+ JSON.stringify(forgedReplay),{customMetadata:{stage:'SCRATCH_FINAL'}});
+assert.equal((await pulse.readRaceDayPulse(falseSource,Date.parse('2026-11-26T18:00:00Z'))).items.length,0,
+  'Forged replay link cannot authorize customer-facing Pulse insight');
 // Published dashboard alone is insufficient.
 const unapproved={CARDS_BUCKET:new R2()};
 await pulse.captureInitialPulseSnapshot(unapproved,before);
