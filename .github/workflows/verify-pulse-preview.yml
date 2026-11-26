@@ -39,3 +39,21 @@ jobs:
           name: pulse-preview-six-viewports
           path: pulse-preview-screenshots/*.png
           if-no-files-found: ignore
+
+  historical-replay:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Read-only R2 historical availability and threshold audit
+        env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+          PULSE_CALIBRATION_DATES: '2026-11-24,2026-11-25,2026-11-26'
+        run: |
+          python -m pip install --quiet boto3
+          python scripts/race_day_pulse_replay_audit.py
