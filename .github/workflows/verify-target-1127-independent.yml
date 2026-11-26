@@ -87,7 +87,19 @@ jobs:
             if race is None:
               missing+=1;continue
             if len(race['entries'])!=field['field_count']:
-              print('NOV27_SELECTED_RACE_ROSTER_MISMATCH',field['track'],'race',field['race'],'target_full_field',field['field_count'],'website_active',len(race['entries']),'site_status',card.get('projection_status'),flush=True)
+              selected=next((t for t in p['customer_edition']['targets'] if t['track']==field['track'] and t['race_number']==field['race']),None)
+              actual={str(x['program_number']):x for x in race['entries']}
+              fav=actual.get(str(selected['favorite']['program_number'])) if selected else None
+              attack=actual.get(str(selected['attack']['program_number'])) if selected else None
+              def price(v):
+                a,b=v.replace('/','-').split('-');return int(a)/int(b)
+              qualifies=False
+              if fav and attack:
+                qualifies=(attack['win_probability_exact']-fav['win_probability_exact']>=10 and price(attack['morning_line'])>price(fav['morning_line'])
+                    and price(attack['morning_line'])>100/attack['win_probability_exact']-1)
+              missing_program_count=len(set(str(q['program_number']) for q in field['runners'])-set(actual))
+              print('NOV27_SELECTED_RACE_ROSTER_MISMATCH',field['track'],'race',field['race'],'target_full_field',field['field_count'],'website_active',len(race['entries']),
+                  'missing_programs',missing_program_count,'favorite_present',bool(fav),'attack_present',bool(attack),'site_qualifies',qualifies,'site_status',card.get('projection_status'),flush=True)
               missing+=1;continue
             available+=1
           print('NOV27_SITE_SELECTED_FIELDS',available,'present',missing,'missing',flush=True)
