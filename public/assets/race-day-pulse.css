@@ -75,9 +75,11 @@
    background:rgba(7,26,44,.94);box-shadow:0 15px 42px rgba(0,0,0,.43);
    backdrop-filter:blur(7px);
  }
- .heritage-hero>.rr-pulse .rr-pulse-shell{padding:11px 12px 12px}
+ .heritage-hero>.rr-pulse .rr-pulse-shell{padding:9px 12px}
  .heritage-hero>.rr-pulse .rr-pulse-item{width:100%;min-width:100%;max-width:100%;flex-basis:100%}
- .heritage-hero>.rr-pulse .rr-pulse-message{font-size:12px}
+ .heritage-hero>.rr-pulse .rr-pulse-eyebrow,
+ .heritage-hero>.rr-pulse .rr-pulse-count{display:none}
+ .heritage-hero>.rr-pulse .rr-pulse-message{font-size:12px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
  .heritage-hero>.rr-pulse .rr-pulse-title{font-size:18px}
  .heritage-hero>.rr-pulse .rr-pulse-scratch-list{gap:6px}
 }
