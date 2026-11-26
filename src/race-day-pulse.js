@@ -51,9 +51,15 @@ export function insightForRace(date,track,initial,revised,updatedAt){
   const pair=compareRaces(initial,revised);
   if(!pair)return null;
   const {before,after}=pair,oldLead=winner(before),newLead=winner(after);
+  const scratches=revised.scratches.map(x=>({
+    program:clean(x.program_number,8).toUpperCase(),
+    horse:clean(x.horse_name||before.get(clean(x.program_number,8).toUpperCase())?.horse,95)
+  }));
+  // Publish only the confirmed scratch identities and the explicitly selected
+  // active horse. Never leak the complete runner field or private score vector.
   const common={id:slug(track)+'-race-'+revised.race_number,date,track:clean(track,90),race_number:revised.race_number,
     updated_at:updatedAt,post_time_et:clean(revised.post_time_et,38),
-    hub_url:'/store/?date='+encodeURIComponent(date),chip:newLead.program};
+    hub_url:'/store/?date='+encodeURIComponent(date),chip:newLead.program,scratches};
   if(oldLead.program!==newLead.program){
     const earlier=before.get(newLead.program);
     const stayed=after.has(oldLead.program);
