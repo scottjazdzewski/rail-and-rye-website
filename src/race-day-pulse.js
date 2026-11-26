@@ -102,7 +102,7 @@ export async function readRaceDayPulse(env,now=Date.now()){
     const release=object.customMetadata?.release_at;
     if(release && (!Number.isFinite(Date.parse(release))||Date.parse(release)>now))continue;
     // No premature public exposure of unpublished / owner-review-only data.
-    if(object.customMetadata?.customer_publish_approved!=='true'&&object.customMetadata?.stage!=='scratch_final')continue;
+    if(object.customMetadata?.customer_publish_approved!=='true'&&String(object.customMetadata?.stage||'').toUpperCase()!=='SCRATCH_FINAL')continue;
     let current,original;
     try{current=await object.json();}catch{continue;}
     if(!verifiedFinal(current)||current.race_date!==date)continue;
