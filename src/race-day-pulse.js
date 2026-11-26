@@ -165,7 +165,7 @@ async function preservePublicPulseArchive(env,date,items){
   });
 }
 async function archivedPulse(env,date,id){
-  if(!DATE.test(date)||!env?.CARDS_BUCKET)return null;
+  if(!DATE.test(date)||date>newYorkCutoff(Date.now())||!env?.CARDS_BUCKET)return null;
   const o=await env.CARDS_BUCKET.get(archiveKey(date));
   if(!o||o.customMetadata?.public_safe_derived!=='true')return null;
   const data=await o.json();
