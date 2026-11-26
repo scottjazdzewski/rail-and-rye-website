@@ -73,6 +73,12 @@ assert.equal((await pulse.capturePublishedPulseBaselines(staleEnv,clock)).captur
 const env={CARDS_BUCKET:new R2()};
 const before=prescratch(),after=final();
 const event=pulse.insightForRace(before.race_date,before.track_name,before.races[0],after.races[0],'2026-11-26T13:00:00Z');
+const firstRevision=pulse.insightForRace(before.race_date,before.track_name,before.races[0],
+ after.races[0],'2026-11-26T13:00:00Z',fingerprint+'|'+fingerprint);
+const secondRevision=pulse.insightForRace(before.race_date,before.track_name,before.races[0],
+ after.races[0],'2026-11-26T13:15:00Z','b'.repeat(64)+'|'+fingerprint);
+assert.notEqual(firstRevision.id,secondRevision.id,'A newly certified revision gets a fresh, share-stable URL');
+assert.match(firstRevision.id,/race-6-rev-[0-9a-f]{8}$/,'Opaque public revision marker, no raw 64-digit receipt');
 assert.equal(event.kind,'NEW_FAVORITE');
 assert.equal(event.chip,'2');
 assert.match(event.message,/#3 scratched/);
