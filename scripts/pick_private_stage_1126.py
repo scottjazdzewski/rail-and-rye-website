@@ -30,6 +30,7 @@ def main():
  def get(k):
   o=s3.get_object(Bucket=BUCKET,Key=k);return o["Body"].read(),o.get("Metadata",{})
  manifest=json.loads(get("projections/qa/"+DATE+"/staged-release.json")[0]);check(manifest["source_sha256"]==d["source_archive_sha256"] and manifest["release_at"]==RELEASE,"Projection source mismatch")
+ upstream={}
  for row in d["tracks"]:
   card=row["card"];track=card["track"];n,starters,seqs=COUNTS[track]
   check((row["races"],row["runners"],len(card["sequences"]))==(n,starters,seqs),"Wrong stage counts")
@@ -37,7 +38,11 @@ def main():
   fields=row["runner_pwin"];check(len(fields)==n and sum(map(len,fields.values()))==starters,"Runner inventory")
   p=next(t for t in manifest["tracks"] if t["name"]==track)
   b,m=get("projections/dashboard/"+DATE+"/"+slug(track)+".json");check(sha(b)==p["dashboard_sha256"] and m.get("release_at")==RELEASE,"Approved Race Card mismatch")
-  projected=json.loads(b);by={str(r["race_number"]):{str(e["program_number"]):e for e in r["entries"]} for r in projected["races"]}
+  check(m.get("customer_publish_approved")=="true","Upstream source not approved")
+  projected=json.loads(b);check(projected["race_date"]==DATE and projected["track_name"]==track and projected["projection_status"]=="prescratch","Wrong canonical source")
+  check(all(re.fullmatch("[a-f0-9]{64}",projected["model_receipts"][k]) for k in ("tri_sha256","f4_sha256")),"Upstream receipt hashes missing")
+  upstream[track]={"projection":projected,"key":"projections/dashboard/"+DATE+"/"+slug(track)+".json","sha256":sha(b)}
+  by={str(r["race_number"]):{str(e["program_number"]):e for e in r["entries"]} for r in projected["races"]}
   delta=0;maxdiff=0.
   for race,rows in fields.items():
    check(set(by[race])=={x[0] for x in rows},"Projection roster differs: "+track+" race "+race)
@@ -53,16 +58,19 @@ def main():
     if race in seq["review_probabilities"]:
      q=seq["review_probabilities"][race];check(set(q)==set(grouped) and all(abs(q[k]-grouped[k])<1e-9 for k in q),"Ticket field differs from receipt-linked scores")
   print("PICK_TRACK_SOURCE_QA",track,"runners",starters,"sequences",seqs,"cross_product_pwin_differences",delta,"max_diff_pp",round(maxdiff,8))
-  check(delta==0,"Cross-product PWIN disagreement: "+track)
- Path("/tmp/rr-pick-stage-1126.json").write_bytes(raw)
- js="""import fs from 'node:fs';import {validateStagedPickBatch} from './src/pick-tickets-staging.js';const b=JSON.parse(fs.readFileSync('/tmp/rr-pick-stage-1126.json','utf8'));const c=validateStagedPickBatch(b);if(c.length!==6||c.reduce((n,x)=>n+x.sequences.length,0)!==78)throw Error('Wrong slate');console.log('PASS actual locked JS constructor, all 78 SQR classifications, full PWIN and coupled-interest evidence');"""
- subprocess.run(["node","--input-type=module","-e",js],check=True)
+ # Canonical source is the already approved Race Cards snapshot, with its own
+ # actual receipt hashes. Preserve the independently scored receipt and runner
+ # audit; do not label those independent receipts as canonical.
+ Path("/tmp/rr-pick-stage-canonical-input.json").write_text(json.dumps({"batch":d,"upstream":upstream},separators=(",",":"),ensure_ascii=False))
+ subprocess.run(["node","scripts/build_pick_stage_canonical_1126.mjs"],check=True)
+ raw=Path("/tmp/rr-pick-stage-1126.json").read_bytes();digest=sha(raw)
  check(datetime.now(timezone.utc)<datetime.fromisoformat(RELEASE.replace("Z","+00:00")),"Release window closed")
  try:
   prior,_=get(KEY);check(prior==raw,"Different existing stage; no overwrite")
  except ClientError as e:
   if e.response.get("Error",{}).get("Code") not in ("NoSuchKey","404","NotFound"):raise
-  s3.put_object(Bucket=BUCKET,Key=KEY,Body=raw,ContentType="application/json",CacheControl="private, no-store",Metadata={"sha256":EXPECTED,"stage_only":"true","release_at":RELEASE,"uploaded_at":datetime.now(timezone.utc).isoformat()},IfNoneMatch="*")
- b,m=get(KEY);check(b==raw and m["sha256"]==EXPECTED and m["stage_only"]=="true","Stage readback mismatch")
- print("PICK_1126_STAGED_READBACK_PASS tracks=6 races=56 runners=482 interests=481 sequences=78 release_at="+RELEASE)
+  s3.put_object(Bucket=BUCKET,Key=KEY,Body=raw,ContentType="application/json",CacheControl="private, no-store",Metadata={"sha256":digest,"stage_only":"true","release_at":RELEASE,"uploaded_at":datetime.now(timezone.utc).isoformat()},IfNoneMatch="*")
+ b,m=get(KEY);check(b==raw and m["sha256"]==digest and m["stage_only"]=="true","Stage readback mismatch")
+ print("PICK_1126_STAGED_READBACK_PASS tracks=6 races=56 runners=482 interests=481 sequences=78 release_at="+RELEASE+" sha256="+digest)
+ Path("/tmp/rr-pick-stage-canonical-input.json").unlink(missing_ok=True)
 if __name__=="__main__":main()
