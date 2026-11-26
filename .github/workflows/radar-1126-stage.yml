@@ -2,7 +2,7 @@ name: Stage November 26 exact-source Longshot Radar
 on:
   push:
     branches: [main]
-    paths: ['private-ingest/20261126/radar.enc','scripts/radar_1126_stage.py']
+    paths: ['private-ingest/20261126/radar.enc','private-ingest/20261126/radar-correction.enc']
 permissions:
   contents: read
 concurrency:
