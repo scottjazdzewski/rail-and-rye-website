@@ -145,10 +145,17 @@
     if(Array.isArray(item.scratches)&&item.scratches.length){
       const row=$('div','rr-pulse-scratch-list');
       row.append($('span','rr-pulse-scratch-label','SCRATCHED'));
-      for(const scratch of item.scratches){
+      for(const scratch of item.scratches.slice(0,2)){
         const identity=$('span','rr-pulse-scratch-identity');
-        identity.append(chip(scratch.program,true),$('span','rr-pulse-scratch-name',scratch.horse||'#'+scratch.program));
+        const name=$('span','rr-pulse-scratch-name',scratch.horse||'#'+scratch.program);
+        name.title=scratch.horse||'#'+scratch.program;
+        identity.append(chip(scratch.program,true),name);
         row.append(identity);
+      }
+      if(item.scratches.length>2){
+        const more=$('a','rr-pulse-scratch-more','+'+(item.scratches.length-2)+' more');
+        more.href=pulseUrl(item);more.title='See all confirmed scratches and names';
+        row.append(more);
       }
       article.append(row);
     }
