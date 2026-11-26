@@ -50,3 +50,6 @@ python scripts/race_day_pulse_replay_audit.py  # read-only, requires private R2 
 
 ## CUSTOMER ACQUISITION FOCUS
 A share should expose a specific true finding, horse and credible before/after TRI number, with a credible call to action. Do not publish generic text or AI handicapping prose. Screenshot-friendly PNG uses official Rail & Rye branding and saddlecloth art, no paid service.
+
+## Owner-approved compact chip treatment — 2026-11-26
+The key constraint is the PREVIOUSLY FIXED live-site scratch-chip transparency bug. Match the current Target List fix exactly: each saddlecloth image retains its original artwork on an opaque white backing, CSS opacity is 1, no filters, no transparency blending. Always show scratch saddle chips and names, and show the affected horse's chip and name. Include matching chips and names in the shared insight page and downloadable image. The homepage Pulse band should be short and unobtrusive; do not inflate card height. Tests must explicitly assert computed white background, opacity and normal blend at all six mobile/desktop widths. Threshold calibration remains on HOLD until verified real prescratch/postscratch pairs exist; do not describe the synthetic viewport test as historical calibration.
