@@ -1,37 +1,37 @@
 /* Additive, namespaced Race-Day Pulse component; legacy homepage visuals unchanged. */
 .rr-pulse[hidden]{display:none!important}
 .rr-pulse{background:#071a2c;color:#f6f0e5;border-top:2px solid #b18a49;border-bottom:2px solid #b18a49}
-.rr-pulse-shell{max-width:1240px;margin:auto;padding:18px 22px 20px}
-.rr-pulse-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
-.rr-pulse-title{font-family:Georgia,serif;font-size:clamp(19px,2vw,26px);font-weight:700;margin:0;color:#fff}
-.rr-pulse-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.15em;color:#dbb772;font-weight:700;margin:0 0 5px}
+.rr-pulse-shell{max-width:1240px;margin:auto;padding:9px 20px 11px}
+.rr-pulse-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:7px}
+.rr-pulse-title{font-family:Georgia,serif;font-size:clamp(17px,2vw,21px);font-weight:700;margin:0;color:#fff}
+.rr-pulse-eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:.13em;color:#dbb772;font-weight:700;margin:0 0 2px}
 .rr-pulse-count{font-size:12px;color:#d9d3c7}
 .rr-pulse-nav{display:flex;gap:8px}
 .rr-pulse-arrow{width:34px;height:34px;border:1px solid #957b55;border-radius:50%;background:transparent;color:#f3e5ca;cursor:pointer;font-size:23px;line-height:1}
 .rr-pulse-arrow:disabled{opacity:.3;cursor:default}
-.rr-pulse-rail{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:thin;scrollbar-color:#745e3a transparent;scroll-behavior:smooth;padding-bottom:5px}
-.rr-pulse-item{box-sizing:border-box;flex:0 0 min(490px,calc(100% - 1px));scroll-snap-align:start;position:relative;border-radius:12px;border:1px solid #4e5a68;background:#112c43;padding:17px;min-height:200px;display:flex;flex-direction:column;justify-content:space-between;gap:12px}
-.rr-pulse-item-layout{display:flex;gap:12px;align-items:flex-start;min-width:0}
-.rr-pulse-saddle{display:flex;align-items:center;justify-content:center;flex:none;width:52px;height:52px}
-.rr-pulse-saddle img{display:block;width:52px;height:52px;object-fit:contain}
+.rr-pulse-rail{display:flex;gap:9px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:thin;scrollbar-color:#745e3a transparent;scroll-behavior:smooth;padding-bottom:2px}
+.rr-pulse-item{box-sizing:border-box;flex:0 0 min(530px,calc(100% - 1px));scroll-snap-align:start;position:relative;border-radius:8px;border:1px solid #4e5a68;background:#112c43;padding:10px 12px;min-height:160px;display:flex;flex-direction:column;justify-content:space-between;gap:5px}
+.rr-pulse-item-layout{display:flex;gap:8px;align-items:flex-start;min-width:0}
+.rr-pulse-saddle{display:inline-flex;position:relative;align-items:center;justify-content:center;flex:none;width:35px;height:35px;background:transparent;opacity:1;isolation:isolate}
+.rr-pulse-saddle img{display:block;width:35px;height:35px;object-fit:contain;opacity:1!important;filter:none!important;mix-blend-mode:normal!important}
 .rr-pulse-saddle-fallback{border-radius:5px;background:#d4aa63;color:#071a2c;font-weight:700}
 .rr-pulse-copy{min-width:0}
-.rr-pulse-track{color:#dfbd79;letter-spacing:.09em;font-weight:800;font-size:11px;margin:0 0 6px}
-.rr-pulse-headline{font-size:19px;font-family:Georgia,serif;font-weight:700;line-height:1.15;color:#fff;margin:0 0 6px}
-.rr-pulse-message{font-size:14px;line-height:1.48;color:#eef0f3;margin:0}
-.rr-pulse-item-footer{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-top:auto}
-.rr-pulse-links{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+.rr-pulse-track{color:#dfbd79;letter-spacing:.09em;font-weight:800;font-size:10px;margin:0 0 2px}
+.rr-pulse-headline{font-size:16px;font-family:Georgia,serif;font-weight:700;line-height:1.15;color:#fff;margin:0 0 2px}
+.rr-pulse-message{font-size:12px;line-height:1.34;color:#eef0f3;margin:0}
+.rr-pulse-item-footer{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-top:auto}
+.rr-pulse-links{display:flex;flex-wrap:wrap;align-items:center;gap:9px}
 .rr-pulse-story-link,.rr-pulse-paid-link,.rr-pulse-cta-link{color:#f4d290;text-decoration:underline;font-size:13px;font-weight:700;text-underline-offset:3px}
 .rr-pulse-paid-link{color:#fff}
 .rr-pulse-share-group{position:relative}
-.rr-pulse-tool{background:#f2d59a;color:#071a2c;border:0;border-radius:6px;font-size:12px;font-weight:800;padding:8px 11px;cursor:pointer}
+.rr-pulse-tool{background:#f2d59a;color:#071a2c;border:0;border-radius:5px;font-size:11px;font-weight:800;padding:5px 9px;cursor:pointer}
 .rr-pulse-menu{position:absolute;bottom:calc(100% + 9px);right:0;background:#fff;color:#0b283c;border:1px solid #bead8b;border-radius:8px;padding:8px;z-index:10;box-shadow:0 10px 27px #0008;width:160px}
 .rr-pulse-menu[hidden]{display:none}
 .rr-pulse-menu button,.rr-pulse-menu a{display:block;box-sizing:border-box;width:100%;text-align:left;border:0;color:#102b43;background:transparent;padding:8px;border-radius:3px;font-size:13px;text-decoration:none;cursor:pointer}
 .rr-pulse-menu button:hover,.rr-pulse-menu a:hover{background:#ebedf0}
 .rr-pulse-menu-status{display:block;color:#41556a;font-size:11px;padding:3px}
 .rr-pulse-cta{background:#1a3550;align-items:flex-start;justify-content:center}
-.rr-pulse-cta .rr-pulse-headline{font-size:25px}
+.rr-pulse-cta .rr-pulse-headline{font-size:19px}
 .rr-pulse-cta-link{font-size:14px;padding:10px 13px;border:1px solid #b78c51;border-radius:6px;margin-top:7px}
 .rr-pulse-share-page{background:#071a2c;min-height:100vh;color:#fff;padding:30px 20px;box-sizing:border-box}
 .rr-pulse-share-page a{color:#e5c184}
@@ -45,5 +45,17 @@
 .rr-pulse-foot{color:#b9c6cf;font:13px/1.4 system-ui,sans-serif;margin:28px 0}
 .rr-pulse-primary{display:inline-block;border:1px solid #cfaa6b;border-radius:6px;padding:13px 18px;margin-right:12px;font-weight:700}
 .rr-pulse-secondary{display:inline-block;padding:13px 0}
-@media(max-width:640px){.rr-pulse-shell{padding:13px 14px 17px}.rr-pulse-heading{align-items:flex-start}.rr-pulse-item{min-height:235px;padding:13px;flex-basis:calc(100% - 1px)}.rr-pulse-headline{font-size:18px}.rr-pulse-message{font-size:14px}.rr-pulse-saddle,.rr-pulse-saddle img{width:45px;height:45px}.rr-pulse-story-content{flex-direction:column}.rr-pulse-chip{width:55px;height:55px}}
+@media(max-width:640px){.rr-pulse-shell{padding:9px 12px 12px}.rr-pulse-heading{align-items:flex-start}.rr-pulse-item{min-height:185px;padding:10px 11px;flex-basis:calc(100% - 1px)}.rr-pulse-headline{font-size:15px}.rr-pulse-message{font-size:12px}.rr-pulse-saddle,.rr-pulse-saddle img{width:32px;height:32px}.rr-pulse-story-content{flex-direction:column}.rr-pulse-chip{width:55px;height:55px}}
 @media(prefers-reduced-motion:reduce){.rr-pulse-rail{scroll-behavior:auto}}
+
+/* Existing Target List scratch-chip transparency cure, scoped to Pulse:
+   NO translucent scratch chip or tinted background bleeding through its art. */
+.rr-pulse-saddle--scratch{width:24px;height:24px;border-radius:4px;background:#fff;overflow:hidden;isolation:isolate;opacity:1!important}
+.rr-pulse-saddle--scratch img{width:24px!important;height:24px!important;background:#fff!important;opacity:1!important;filter:none!important;mix-blend-mode:normal!important}
+.rr-pulse-suffix{position:absolute;right:0;bottom:0;padding:1px 2px;background:#fffdf7;color:#102d53;border:1px solid #647482;border-radius:3px;font:800 8px/1 Inter,Arial,sans-serif}
+.rr-pulse-affected{margin:0 0 3px;color:#f1d8a4;font:750 12px/1.15 Inter,Arial,sans-serif}
+.rr-pulse-scratch-list{display:flex;align-items:center;gap:4px 9px;overflow-x:auto;max-width:100%;white-space:nowrap;scrollbar-width:thin;scrollbar-color:#746143 transparent;padding:1px 0 3px}
+.rr-pulse-scratch-label{flex:none;color:#d7a9a9;font:800 9px/1.2 Inter,Arial,sans-serif;letter-spacing:.06em}
+.rr-pulse-scratch-identity{display:inline-flex;align-items:center;gap:4px;flex:none}
+.rr-pulse-scratch-name{font:650 11px/1.15 Inter,Arial,sans-serif;color:#f7efea}
+@media(max-width:640px){.rr-pulse-saddle--scratch,.rr-pulse-saddle--scratch img{width:22px!important;height:22px!important}.rr-pulse-scratch-name{font-size:10px}}
