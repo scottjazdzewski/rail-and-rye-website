@@ -53,8 +53,10 @@
       const canvas=document.createElement('canvas');canvas.width=1200;canvas.height=675;
       const c=canvas.getContext('2d');if(!c)throw Error('Canvas unsupported');
       c.fillStyle='#071a2c';c.fillRect(0,0,1200,675);
-      c.fillStyle='#c49b59';c.fillRect(64,80,1072,3);
-      c.fillStyle='#e0b66b';c.font='700 24px Georgia,serif';c.fillText('RAIL & RYE   /   RACE-DAY PULSE',64,60);
+      c.fillStyle='#c49b59';c.fillRect(64,90,1072,3);
+      const logo=new Image();logo.src='/assets/approved/brand/rail-rye-ivory-logo.png';
+      try{await logo.decode();c.drawImage(logo,64,21,60,60);}catch{}
+      c.fillStyle='#e0b66b';c.font='700 24px Georgia,serif';c.fillText('RAIL & RYE   /   RACE-DAY PULSE',141,60);
       c.fillStyle='#ffffff';c.font='700 39px Georgia,serif';c.fillText(item.track+' · Race '+item.race_number,64,148);
       c.font='700 33px system-ui,sans-serif';c.fillText(item.headline,64,204);
       const badge=chip(item.chip).querySelector('img');
