@@ -76,29 +76,39 @@ def main():
  req(source_change["parent_candidate_sha256"]==prior_hash and source_change["parent_customer_sha256"]==prior_customer and source_change["prior_f4_sha256"]==prior["receipt"]["f4_sha256"] and source_change["original_pdf_sha256"]==rec["source_pdf_sha256"] and source_change["derived_scoring_pdf_sha256"]==rec["derived_scoring_pdf_sha256"],"R2/R3 source linkage")
  Path("/tmp/rr-pick-1126-cd-r3-input.json").write_bytes(compact({"parent":prior,"current":current,"batch":batch}))
  subprocess.run(["node","scripts/validate_pick_scratch_1126_cd_r3.mjs"],check=True)
- # User authorized this dated release. Require exact final parity or exact older R2
- # scratch-final Race Cards snapshot. No mixed or unverified field is accepted.
+ # Use the independently certified, already-published canonical scratch04
+ # Race Cards receipt (condition and rider evidence), not mismatched local values.
  req(po["Metadata"].get("customer_publish_approved")=="true" and projection["projection_status"]=="scratch_final","Race Cards not scratch-final approved")
- by={str(r["race_number"]):{str(e["program_number"]):e for e in r["entries"]} for r in projection["races"]}
- def compare(rows):
-  if set(by)!=set(rows):return None
-  maxdiff=0.
-  for race,rs in rows.items():
-   if set(by[race])!={x[0] for x in rs}:return None
-   for x in rs:
-    e=by[race][x[0]]
-    if e["horse_name"]!=x[1]:return None
-    maxdiff=max(maxdiff,abs(e["win_probability_exact"]-100*x[2]))
-  return maxdiff if maxdiff<1e-7 else None
- parity_status="VERIFIED_SCRATCH_FINAL"
- maxdiff=compare(row["runner_pwin"])
- if maxdiff is None:
-  maxdiff=compare(prior["runner_pwin"])
-  req(maxdiff is not None,"Race Card parity differs from both verified R2 and R3")
-  stamp=projection.get("official_snapshot_utc")
-  req(stamp and datetime.fromisoformat(stamp.replace("Z","+00:00"))<datetime.fromisoformat(card["scratch_verified_at"].replace("Z","+00:00")),"Earlier R2 Race Card timestamp not proven")
-  parity_status="OWNER_AUTHORIZED_RELEASE_AHEAD_OF_EXACT_R2_RACE_CARDS"
- print("NOV26_CD_R3_PARITY_STATUS",parity_status,"compared_snapshot_max_diff_pp",maxdiff,flush=True)
+ fkey=f"projections/f4-ordered/{DATE}/churchill-downs.json"
+ fb,fo=get(fkey);model=json.loads(fb)
+ qa=json.loads(get(f"projections/qa/{DATE}/scratch04-churchill-downs-release.json")[0])
+ req(qa["date"]==DATE and qa["status"]=="VERIFIED_SCRATCH_FINAL" and qa["batch"]=="scratch04" and qa["track"]=="Churchill Downs" and qa["runners"]==91 and qa["cumulative_scratches"]==25 and qa["new_scratches"]==1 and qa["replacement_riders"]==6 and qa["dashboard_sha256"]==sha(pb) and qa["ordered_sha256"]==sha(fb) and qa["prior_release_sha256"]=="9460d775f322713eed99843ddc27b3850f4439e66df4dee72d4c846348585128","Canonical scratch04 receipt mismatch")
+ line=projection["model_receipts"]
+ req(model["date"]==DATE and model["track_name"]=="Churchill Downs" and model["source_sha256"]==SOURCE and model["scratch_state"]=="SCRATCH_FINAL" and model["dashboard_receipts"]==line and model["f4_receipt_sha256"]==line["f4_sha256"] and all(re.fullmatch("[a-f0-9]{64}",v) for v in line.values()),"Canonical model/source lineage")
+ req(projection["track_conditions"]=={"dirt":"Sloppy","turf":"Good"} and projection["prior_scratch_release_sha256"]==qa["prior_release_sha256"] and projection["official_snapshot_utc"] and datetime.fromisoformat(projection["official_snapshot_utc"].replace("Z","+00:00"))>=datetime.fromisoformat(card["scratch_verified_at"].replace("Z","+00:00")),"Canonical change snapshot not current")
+ req(projection["scratch_source_sha256"]==line["official_changes_sha256"],"Canonical official snapshot hash")
+ rs={str(r["race_number"]):r for r in projection["races"]}
+ req(set(rs)==set(row["runner_pwin"]),"Race inventory mismatch")
+ riders={"6":{"10":"Y. Correa"},"8":{"6":"F. Prat","8":"D. Cannon"},"9":{"6":"L. Saez"},"11":{"7":"W. Rodriguez","8":"L. Saez"}}
+ independent_delta=0.
+ for race,rr in rs.items():
+  by={str(e["program_number"]):e for e in rr["entries"]}
+  local={x[0]:x for x in row["runner_pwin"][race]}
+  req(set(by)==set(local) and len(by)==len(rr["entries"]),"Canonical roster mismatch R"+race)
+  req(set(map(lambda e:str(e["program_number"]),rr["scratches"]))==set(card["scratches_by_race"].get(race,[])),"Canonical scratch ledger mismatch R"+race)
+  req(rr.get("jockey_changes",{})==riders.get(race,{}),"Canonical rider change ledger mismatch R"+race)
+  req(all(by[k]["jockey"]==v for k,v in riders.get(race,{}).items()),"Canonical jockey mismatch R"+race)
+  req(all(by[k]["horse_name"]==v[1] and abs(by[k]["win_probability_exact"]/100-by[k]["f4_probabilities"]["exact_p1"])<1e-12 for k,v in local.items()),"Canonical identity or P1 mismatch R"+race)
+  req(abs(sum(e["win_probability_exact"] for e in by.values())-100)<1e-7,"Canonical PWIN mass R"+race)
+  independent_delta=max(independent_delta,max(abs(by[k]["win_probability_exact"]-100*v[2]) for k,v in local.items()))
+  if race in ("1","2","3"):
+   req(all(abs(by[k]["win_probability_exact"]-100*v[2])<1e-7 for k,v in local.items()),"Unexpected earlier race change")
+ canonical={"kind":"APPROVED_SCRATCH04_PROJECTION_SNAPSHOT","key":PROJECTION,"sha256":sha(pb),"ordered_sha256":sha(fb),"tri_sha256":line["tri_sha256"],"f4_sha256":line["f4_sha256"],"source_archive_sha256":SOURCE,"independent_candidate_sha256":sha(raw),"independent_max_delta_pp":independent_delta,"canonical_receipt":qa}
+ Path("/tmp/rr-pick-1126-cd-r3-canonical.json").write_bytes(compact({"batch":batch,"projection":projection,"model":model,"canonical":canonical}))
+ subprocess.run(["node","scripts/build_pick_canonical_1126_cd_r3.mjs"],check=True)
+ parity_status="VERIFIED_SCRATCH_FINAL_CANONICAL"
+ maxdiff=0.
+ print("NOV26_CD_R3_CANONICAL_SOURCE_PASS independent_max_delta_pp",independent_delta,flush=True)
  # The prepared marker records the actual D1 published product ID and release.
  # Verify that registration even if the public HTTP readback is temporarily unavailable.
  q=next(t for t in prepared["tracks"] if t["track"]=="Churchill Downs")
@@ -112,14 +122,16 @@ def main():
    return "REGISTERED_PUBLIC_HTTP_UNVERIFIED"
  catalog_status=check_catalog()
  new=Path("/tmp/rr-pick-1126-cd-r3-output.json").read_bytes()
- req(get(KEY)[0]==b and get(PROJECTION)[0]==pb,"Concurrent source update")
+ req(get(KEY)[0]==b and get(PROJECTION)[0]==pb and get(fkey)[0]==fb,"Concurrent source update")
  audit=f"pick-tickets/scratch-revisions/{DATE}/churchill-downs/"
  immutable(audit+"r3-source-"+sha(raw)+".json",raw)
+ canonical_audit=compact(canonical)
+ immutable(audit+"r3-canonical-"+sha(canonical_audit)+".json",canonical_audit)
  immutable(audit+"parent-"+sha(b)+".json",b)
- meta=dict(o["Metadata"]);meta.update(revision="3",content_sha256=sha(new),source_sha256=rec["pwin_sha256"],publication_mode="owner-approved-gpt",customer_publish_approved="true",published_at=datetime.now(timezone.utc).isoformat())
+ meta=dict(o["Metadata"]);meta.update(revision="3",content_sha256=sha(new),source_sha256=canonical["sha256"],publication_mode="owner-approved-gpt",customer_publish_approved="true",published_at=datetime.now(timezone.utc).isoformat())
  s.put_object(Bucket=BUCKET,Key=KEY,Body=new,ContentType="application/json",CacheControl="private,no-store",Metadata=meta,IfMatch=o["ETag"])
  got,go=get(KEY);req(got==new and go["Metadata"]["content_sha256"]==sha(new),"Customer readback mismatch")
- receipt=compact({"date":DATE,"track":"Churchill Downs","revision":3,"races":12,"runners":91,"sequences":19,"candidate_sha256":sha(raw),"customer_sha256":sha(new),"race_card_sha256":sha(pb),"parity_status":parity_status,"compared_snapshot_max_diff_pp":maxdiff,"max_pwin_delta_pp":maxdiff if parity_status=="VERIFIED_SCRATCH_FINAL" else None,"catalog_status_before_write":catalog_status,"published_at":meta["published_at"]})
+ receipt=compact({"date":DATE,"track":"Churchill Downs","revision":3,"races":12,"runners":91,"sequences":19,"candidate_sha256":sha(raw),"customer_sha256":sha(new),"race_card_sha256":sha(pb),"parity_status":parity_status,"compared_snapshot_max_diff_pp":maxdiff,"max_pwin_delta_pp":0.0,"canonical_tri_sha256":line["tri_sha256"],"canonical_f4_sha256":line["f4_sha256"],"independent_max_delta_pp":independent_delta,"catalog_status_before_write":catalog_status,"published_at":meta["published_at"]})
  immutable(audit+"receipt-"+sha(receipt)+".json",receipt)
  print("NOV26_CD_R3_PICK_CUSTOMER_READBACK_PASS",receipt.decode(),flush=True)
  print("NOV26_CD_R3_POST_PUBLICATION_CATALOG",check_catalog(),flush=True)
