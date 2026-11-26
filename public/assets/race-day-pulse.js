@@ -13,13 +13,16 @@
     if(text!==undefined)el.textContent=text;
     return el;
   };
-  function chip(number){
-    const el=$('span','rr-pulse-saddle');
-    const n=String(number||'').trim();
-    if(/^(?:[1-9]|1[0-9]|20)$/.test(n)){
-      const img=$('img');img.src='/assets/approved/saddlecloths/'+n+'.png';
-      img.alt='Saddlecloth '+n;img.width=52;img.height=52;img.loading='lazy';
+  function chip(number,scratched=false){
+    const el=$('span','rr-pulse-saddle'+(scratched?' rr-pulse-saddle--scratch':''));
+    const n=String(number||'').trim().toUpperCase();
+    const parsed=/^(\\d{1,2})([A-Z]?)$/.exec(n);
+    const value=parsed?Number(parsed[1]):0;
+    if(value>=1&&value<=20){
+      const img=$('img');img.src='/assets/approved/saddlecloths/'+value+'.png';
+      img.alt='Saddlecloth '+n;img.width=32;img.height=32;img.loading='lazy';
       el.append(img);
+      if(parsed[2])el.append($('span','rr-pulse-suffix',parsed[2]));
     }else{
       el.textContent=n||'—';el.classList.add('rr-pulse-saddle-fallback');
     }
@@ -114,8 +117,20 @@
     content.append(chip(item.chip));
     const body=$('div','rr-pulse-copy');
     body.append($('p','rr-pulse-track',item.track.toUpperCase()+' · RACE '+item.race_number),
-      $('h3','rr-pulse-headline',item.headline),$('p','rr-pulse-message',item.message));
+      $('h3','rr-pulse-headline',item.headline));
+    if(item.horse)body.append($('p','rr-pulse-affected',item.horse+' · #'+item.chip));
+    body.append($('p','rr-pulse-message',item.message));
     content.append(body);article.append(content);
+    if(Array.isArray(item.scratches)&&item.scratches.length){
+      const row=$('div','rr-pulse-scratch-list');
+      row.append($('span','rr-pulse-scratch-label','SCRATCHED'));
+      for(const scratch of item.scratches){
+        const identity=$('span','rr-pulse-scratch-identity');
+        identity.append(chip(scratch.program,true),$('span','rr-pulse-scratch-name',scratch.horse||'#'+scratch.program));
+        row.append(identity);
+      }
+      article.append(row);
+    }
     const footer=$('div','rr-pulse-item-footer');
     const links=$('div','rr-pulse-links');
     const original=$('a','rr-pulse-story-link','Open insight');original.href=pulseUrl(item);
