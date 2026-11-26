@@ -4,7 +4,7 @@ Status: DEVELOPMENT BRANCH ONLY. NOT LIVE. NO AUTOMATED X POSTS.
 Owner: Rail & Rye Racing
 Repository: https://github.com/scottjazdzewski/rail-and-rye-website
 Feature branch: feature/race-day-pulse-v1
-PR: pending (or use the latest PR opened from this branch).
+Draft PR: https://github.com/scottjazdzewski/rail-and-rye-website/pull/245 — NOT MERGED, NOT DEPLOYED.
 Parent engineering: docs/WEBSITE_RACECARD_PRODUCTION_LOCK_V1.md, docs/TRI_DASHBOARD_AUTO_SYNC.md, docs/HOMEPAGE_PRODUCTION_LOCK.md.
 
 ## USER-APPROVED PRODUCT DECISIONS
@@ -15,7 +15,7 @@ The Underneath File is a separate possible paid product based on existing frozen
 ## IMPLEMENTATION ALREADY COMMITTED IN THE FEATURE BRANCH
 src/race-day-pulse.js — Worker-side date-scoped public feed derivation. Input: immutable private prescratch snapshot and verified scratch-final dashboard. Output: at most six derived teaser objects; never raw matrix, full field, all probabilities, source receipt or engine. Types: NEW_FAVORITE, WIN_SHIFT (>=4 PWIN points), F4_SHIFT (>=7 second+third probability points). Each source-backed sentence names track, race, scratch programs, relevant horse and actual before/after values. It intentionally does NOT infer a pace cause from a scratch alone. Builds individual /pulse/YYYY-MM-DD/track-race-N pages with dynamic SEO/OG summaries and link to Hub.
 
-src/projections.js — nonblocking captureInitialPulseSnapshot() inserted in both direct single and batch uploads. Captures prescratch baseline BEFORE a verified scratch-final edition replaces it. Does not tamper with proprietary scorer, F4, scratch integrity or existing product publication. Prescratch snapshots can also be captured upon initial Worker upload. Private R2 path: race-day-pulse/prescratch/YYYY-MM-DD/track-slug.json. First writer wins. Direct-to-R2 publication paths that bypass the Worker need to preserve this same original snapshot separately.
+src/projections.js — nonblocking captureInitialPulseSnapshot() inserted in both direct single and batch uploads. Captures prescratch baseline BEFORE a verified scratch-final edition replaces it. Does not tamper with proprietary scorer, F4, scratch integrity or existing product publication. Prescratch snapshots can also be captured upon initial Worker upload. Private R2 path: race-day-pulse/prescratch/YYYY-MM-DD/track-slug.json. First writer wins. The approved direct prescratch R2 publisher, scripts/tri_dashboard_sync.py, NOW preserves the same private immutable baseline. Existing direct scratch-final scripts use uppercase SCRATCH_FINAL metadata; src/race-day-pulse.js handles both variants. Confirm future alternate direct publishers retain certified ancestry and immutable base behavior.
 
 src/index.js — public GET /api/race-day-pulse and /pulse/YYYY-MM-DD/slug routes. Existing admin/customer/commerce routing untouched otherwise.
 
@@ -37,8 +37,8 @@ test-race-day-pulse.mjs — source integrity, metadata release, prescratch immut
 * Sharing is manual and free. X Web Intent is a user click, not automated posting; no API key, cost, or social media posting bot.
 
 ## IMPORTANT OPEN QA / FUTURE WORK
-1. Run CI on draft PR. Fix test/syntax issues and verify the homepage lock. Do not merge if CI fails.
-2. Confirm source equivalence when private prescratch copies were created via the direct R2 publisher instead of the Worker API. Add a preservation hook to any approved alternate scratch-final output-only publisher; do NOT modify the scorer or original source.
+1. Verified CI checkpoint: the additive homepage lock passes; test-race-day-pulse.mjs passes (certified feed, no leak, cutoff, immutable base, direct-R2 stage); the website racecard production lock passes; the Python direct-R2 model receipt tests pass after snapshot fixture update. Broader CI still fails in unrelated preexisting tests (for example formatToteOdds in dashboard mobile regression). Diagnose independently; DO NOT suppress or mask those failures. No live merge yet.
+2. Confirm future alternate R2 publishers use the now-implemented snapshot path and complete source/lineage proof, without modifying the scorer. The original F4 receipt vs scratch parent receipt is checked when available; missing/suspect inputs suppress Pulse. Never restore snapshot from a later final card.
 3. Complete a full synthetic end-to-end Worker test verifying a real certified prescratch+scratch_final R2 path and authorized release, plus no leakage before release. Verify actual screenshot on desktop and mobile using Cloudflare preview (not live).
 4. Preview original approved homepage and inserted banner side-by-side. Owner must visually approve before merging, updating visual baseline, or deploying. Preserve gold/navy branding, existing artwork and placement.
 5. QA critical behaviors: coupled 1A/2B chip treatment, single/multiple scratches, no scratch, favorite swap, unchanged favorite, F4 movement, unusual race identifiers, cancelled races/abandoned events, timezones/DST, no items, one item, six items, all times, share URL, safe image download on iPhone, accessibility and reduced motion.
