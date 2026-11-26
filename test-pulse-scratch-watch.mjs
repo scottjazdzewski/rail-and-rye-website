@@ -55,8 +55,8 @@ assert.equal(writes,0,'Watch may not create certified evidence or alter scores')
 assert.equal(external,0,'No scrape, fetch or licensed feed connector exists yet');
 const schema=fs.readFileSync('wrangler.jsonc','utf8');
 const crons=JSON.parse(schema).triggers.crons;
-assert.deepEqual(crons,['*/10 * * * *','*/15 * * * *'],'Existing 10-minute tasks must remain scheduled');
+assert.deepEqual(crons,['*/10 * * * *','*/15 0-7,13-23 * * *'],'Existing 10-minute tasks must remain scheduled');
 const index=fs.readFileSync('src/index.js','utf8');
-assert.ok(index.includes("controller.cron==='*/15 * * * *'"),'Route only quarter-hour cron to Pulse handler');
+assert.ok(index.includes("controller.cron==='*/15 0-7,13-23 * * *'"),'Route only quarter-hour cron to Pulse handler');
 assert.match(index,/awaiting_approved_source_connector/);
 console.log('PULSE WATCH PASS — 9AM ET/15min/final scheduled post, EDT/EST, permission lock, no network writes');
