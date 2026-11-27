@@ -380,6 +380,25 @@ export async function handlePulseApi(request,env){
 const escape=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const titleCaseWords=s=>String(s||'').replace(/(^|[\s-])([a-z])/gi,(_,separator,letter)=>separator+letter.toUpperCase());
 const ordinalRace=n=>{const v=Number(n);return Number.isInteger(v)&&v>0?String(v)+(v%100>=11&&v%100<=13?'th':({1:'st',2:'nd',3:'rd'}[v%10]||'th')):'Race '+String(n);};
+// The publisher renders only archived, sanitized insights. Images are immutable
+// per revision and have no public write endpoint. Fail closed on missing bytes.
+const socialKey=(date,id)=>'race-day-pulse/social/v1/'+date+'/'+id+'.png';
+export async function handlePulseImage(request,env,route){
+  const fail=(status)=>new Response(null,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
+  if(request.method!=='GET'&&request.method!=='HEAD')return fail(405);
+  if(env?.PULSE_PUBLICATION_ENABLED!=='true')return fail(404);
+  const [,date,id]=route;
+  if(!/^[-a-z0-9]{2,120}$/.test(id)||!await archivedPulse(env,date,id))return fail(404);
+  const object=await env.CARDS_BUCKET.get(socialKey(date,id));
+  if(!object||object.size>2_000_000)return fail(404);
+  const bytes=await object.arrayBuffer();
+  if(bytes.byteLength<33||bytes.byteLength>2_000_000)return fail(404);
+  const view=new DataView(bytes);
+  if(view.getUint32(0)!==0x89504e47||view.getUint32(4)!==0x0d0a1a0a||view.getUint32(8)!==13||view.getUint32(12)!==0x49484452||view.getUint32(16)!==1200||view.getUint32(20)!==675)return fail(404);
+  return new Response(request.method==='HEAD'?null:bytes,{headers:{
+    'Content-Type':'image/png','Cache-Control':'public, max-age=86400, immutable','X-Content-Type-Options':'nosniff'
+  }});
+}
 export async function handlePulsePage(request,env,route){
   if(request.method!=='GET'&&request.method!=='HEAD')return new Response('Method not allowed',{status:405});
   if(env?.PULSE_PUBLICATION_ENABLED!=='true')
@@ -399,6 +418,8 @@ export async function handlePulsePage(request,env,route){
   const title=item.track+' '+ordinalRace(item.race_number)+' | '+headlineTitle+' | Race-Day Pulse';
   const desc=item.message;
   const canonical='https://railandryeracing.com/pulse/'+date+'/'+id;
+  const imageURL=canonical+'/card-v1.png';
+  const imageReady=!!await env.CARDS_BUCKET.head(socialKey(date,id));
   const sharedChip=(program,scratched=false)=>{
     const text=clean(program,8).toUpperCase(),parsed=/^(\d{1,2})([A-Z]?)$/.exec(text);
     const number=parsed?Number(parsed[1]):0;
@@ -427,16 +448,18 @@ export async function handlePulsePage(request,env,route){
     '<title>'+escape(title)+'</title><meta name="description" content="'+escape(desc)+'">'+
     '<meta property="og:type" content="article"><meta property="og:title" content="'+escape(title)+'">'+
     '<meta property="og:description" content="'+escape(desc)+'"><meta property="og:url" content="'+escape(canonical)+'">'+
-    '<meta property="og:image" content="https://railandryeracing.com/assets/approved/home/hero-dust-charged-finish.jpg">'+
-    '<meta name="twitter:card" content="summary_large_image"><link rel="canonical" href="'+escape(canonical)+'">'+
-    '<link rel="stylesheet" href="/assets/rail-rye-core.css"><link rel="stylesheet" href="/assets/race-day-pulse.css">'+
+    (imageReady?'<meta property="og:image" content="'+escape(imageURL)+'"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="675"><meta property="og:image:type" content="image/png"><meta property="og:image:alt" content="'+escape(title)+'"><meta name="twitter:image" content="'+escape(imageURL)+'">':'')+
+    '<meta name="twitter:card" content="'+(imageReady?'summary_large_image':'summary')+'"><meta name="twitter:title" content="'+escape(title)+'"><meta name="twitter:description" content="'+escape(desc)+'"><link rel="canonical" href="'+escape(canonical)+'">'+
+    '<link rel="stylesheet" href="/assets/rail-rye-core.css"><link rel="stylesheet" href="/assets/race-day-pulse.css?v=3">'+
     '</head><body class="rr-pulse-standalone"><main class="rr-pulse-share-page"><a class="rr-pulse-home-link" href="/"><img src="/assets/approved/brand/rail-rye-ivory-logo.png" alt="" width="32" height="32">RAIL &amp; RYE RACING</a>'+
     '<article class="rr-pulse-story"><p class="rr-pulse-eyebrow">RACE-DAY PULSE · '+escape(date)+'</p>'+
     '<div class="rr-pulse-story-content">'+sharedChip(item.chip)+
     '<div><h1>'+escape(item.track)+' · '+escape(ordinalRace(item.race_number))+'</h1><div class="rr-pulse-signal-row"><h2>'+escape(item.horse||headlineTitle)+'</h2>'+medallion+'</div>'+
     '<p>'+escape(desc)+'</p></div></div>'+scratchLine+
+    (imageReady?'<img class="rr-pulse-social-image" src="'+escape(imageURL)+'" alt="'+escape(title)+'" width="1200" height="675">':'')+
     '<p class="rr-pulse-foot">Updated after source-verified scratch processing. Projections are estimates, not guarantees.</p>'+
     '<a class="rr-pulse-primary" href="'+escape(actionURL)+'">'+escape(actionText)+'</a>'+
-    '<a class="rr-pulse-secondary" href="/">See today’s Race-Day Pulse</a></article></main></body></html>';
+    (imageReady?'<a class="rr-pulse-download" href="'+escape(imageURL)+'" download="rail-rye-pulse-'+escape(id)+'.png">Download Card</a>':'')+
+    '<a class="rr-pulse-secondary" href="/store/">Intelligence Hub</a><a class="rr-pulse-secondary" href="/">See today’s Race-Day Pulse</a></article></main></body></html>';
   return new Response(request.method==='HEAD'?null:html,{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'public, max-age=45, must-revalidate','X-Content-Type-Options':'nosniff'}});
 }
