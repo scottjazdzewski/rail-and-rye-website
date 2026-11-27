@@ -7,6 +7,17 @@ import {resolve,extname} from 'node:path';
 import {chromium} from 'playwright';
 const data=JSON.parse(readFileSync('research/pulse/2026-11-26-candidate-preview.json','utf8'));
 assert.equal(data.items.length,3);
+// These are demonstrations of the approved short Longshot Radar / Target List
+// voice: an actual race-specific observation, sourced evidence, and a stop.
+for(const item of data.items){
+  const words=item.message.trim().split(/\s+/).length;
+  assert.ok(words>=25&&words<=65,'Preview should be brief, not forced to fill space: '+item.race_number+' '+words);
+  assert.ok(!/\b(?:F4|TRI)\b|reshuffling|pecking order|critical development|the question|the test/i.test(item.message),
+    'No internal engineering jargon or canned prose in preview');
+  assert.match(item.message,/\d+\.\d%/,'Precise original/revised win figures preserved');
+}
+assert.ok(data.editorial_evidence?.['churchill-9th']?.reference,
+  'A historical race-form claim must carry independent source provenance');
 const dir=resolve('public');
 const mime={'.html':'text/html;charset=utf-8','.js':'text/javascript;charset=utf-8','.css':'text/css;charset=utf-8','.png':'image/png','.ico':'image/x-icon','.jpg':'image/jpeg'};
 const server=createServer((req,res)=>{
