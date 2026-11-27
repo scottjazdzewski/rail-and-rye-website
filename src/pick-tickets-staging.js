@@ -19,7 +19,9 @@ export function verifyStagedRaceInventory(row,races,coupledExtra,card){
  const seen=new Set();
  let excludedRunners=0;
  if(missing.length){
-  check(row.canonical_source&&row.runner_pwin&&hash(row.receipt?.source_pdf_sha256),"Nonparticipating race requires canonical source and complete original receipt");
+  const i=row.independent_source,r=row.receipt;
+  const verifiedIndependent=i?.kind==="SOURCE_VERIFIED_FROZEN_TRI_F4_V1"&&hash(i.source_archive_sha256)&&hash(i.source_pdf_sha256)&&hash(i.pwin_sha256)&&hash(i.tri_sha256)&&hash(i.f4_sha256)&&i.source_pdf_sha256===r?.source_pdf_sha256&&i.pwin_sha256===r?.pwin_sha256&&i.tri_sha256===r?.tri_sha256&&i.f4_sha256===r?.f4_sha256&&card.source_input_sha256===r?.pwin_sha256&&r?.tri_status==="PASS_TRI_TJ_V4_PERMANENT_FORWARD_RUNTIME"&&r?.f4_status==="PASS"&&r?.f4_p1_equals_tri===true&&r?.scratch_state==="PRESCRATCH"&&r?.unresolved_fields===0;
+  check((row.canonical_source||verifiedIndependent)&&row.runner_pwin&&hash(r?.source_pdf_sha256),"Nonparticipating race requires receipt-bound source and complete original receipt");
   for(const m of missing){
    const n=m?.race_number,rs=row.runner_pwin[String(n)];
    check(Number.isSafeInteger(n)&&n>0&&!races.has(n)&&!seen.has(n)&&m.reason==="NO_SUPPORTED_PICK_N_POOL"&&m.source_pdf_sha256===row.receipt.source_pdf_sha256&&Number.isSafeInteger(m.source_page)&&m.source_page>0&&typeof m.wager_text==="string"&&m.wager_text.length>0&&!/\bpick\s*(?:[3-6]|three|four|five|six)\b/i.test(m.wager_text),"Invalid nonparticipating race evidence");
@@ -29,7 +31,7 @@ export function verifyStagedRaceInventory(row,races,coupledExtra,card){
  }
  check(races.size+seen.size===row.races&&[...races.values()].reduce((n,f)=>n+f.length,0)+coupledExtra+excludedRunners===row.runners,"Incomplete field inventory");
  check([...races.keys(),...seen].every(n=>card.post_times_by_race?.[n]),"Scheduled post times missing");
- if(row.canonical_source){
+ if(row.canonical_source||row.independent_source){
   const keys=Object.keys(row.runner_pwin??{}),covered=new Set([...races.keys(),...seen].map(String));
   check(keys.length===covered.size&&keys.every(k=>covered.has(k)),"Canonical scored race partition mismatch");
  }
@@ -88,6 +90,18 @@ export function validateStagedPickBatch(batch){
      check(group.members.some(m=>m.program===group.program)&&Math.abs(mass-fieldMap.get(group.program))<=1e-10,"Coupled PWIN sum mismatch");
      coupledExtra+=group.members.length-1;
     }
+   }
+  }
+  if(row.independent_source){
+   const i=row.independent_source,r=row.receipt;
+   check(!row.canonical_source&&i.kind==="SOURCE_VERIFIED_FROZEN_TRI_F4_V1"&&i.source_archive_sha256===batch.source_archive_sha256&&i.source_pdf_sha256===r.source_pdf_sha256&&i.pwin_sha256===r.pwin_sha256&&i.tri_sha256===r.tri_sha256&&i.f4_sha256===r.f4_sha256,"Independent source receipt mismatch");
+   check(row.runner_pwin&&Object.keys(row.runner_pwin).length===row.races&&Object.values(row.runner_pwin).reduce((n,f)=>n+f.length,0)===row.runners,"Independent source runner inventory");
+   for(const [rp,rs] of Object.entries(row.runner_pwin)){
+    check(Array.isArray(rs)&&rs.length&&new Set(rs.map(e=>e[0])).size===rs.length&&rs.every(e=>Array.isArray(e)&&typeof e[0]==="string"&&typeof e[1]==="string"&&e[1]&&Number.isFinite(e[2])&&e[2]>=0&&e[2]<=1&&Number.isFinite(e[3])&&Math.abs(e[2]-e[3])<1e-12)&&Math.abs(rs.reduce((n,e)=>n+e[2],0)-1)<1e-10,"Independent TRI/F4 vector mismatch");
+    const field=races.get(Number(rp));if(!field)continue;
+    const p=new Map(rs.map(e=>[e[0],e[2]]));
+    for(const g of row.coupled_interests?.[rp]||[]){let mass=0;for(const m of g.members){check(p.has(m.program)&&Math.abs(p.get(m.program)-m.pwin)<1e-12,"Independent coupled proof mismatch");mass+=p.get(m.program);p.delete(m.program);}p.set(g.program,mass);}
+    check(p.size===field.length&&field.every(([k,v])=>p.has(k)&&Math.abs(p.get(k)-v)<1e-12),"Independent ticket/runner PWIN mismatch");
    }
   }
   verifyStagedRaceInventory(row,races,coupledExtra,card);
