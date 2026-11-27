@@ -1,7 +1,7 @@
 import {prepareScheduledPickStages} from "./pick-tickets-staging.js";
 import {handleAdminProjectionUpload,handleAdminProjectionBatchUpload,readAdminProjectionCards} from './projections.js';
 import {readCertifiedF4Exotics} from './f4-exotics.js';
-import {handlePulseApi,handlePulsePage,capturePublishedPulseBaselines} from './race-day-pulse.js';
+import {handlePulseApi,handlePulsePage,handlePulseImage,capturePublishedPulseBaselines} from './race-day-pulse.js';
 import {evaluatePulseWatch} from './pulse-scratch-watch.js';
 import {handleAdminLongshotRadar,handleAdminLongshotEditorialPreview,publishLongshotRadarTab} from './longshot-radar.js';
 import {handleAdminPickTickets} from './pick-tickets.js';
@@ -435,6 +435,8 @@ export default {
         return request.method==='HEAD'?new Response(null,{status:response.status,headers:response.headers}):response;
       }
       if(path==="/api/race-day-pulse")return handlePulseApi(request,env);
+      const pulseImage=path.match(/^\/pulse\/(\d{4}-\d{2}-\d{2})\/([a-z0-9-]+)\/card-v1\.png$/);
+      if(pulseImage)return handlePulseImage(request,env,pulseImage);
       const pulseRoute=path.match(/^\/pulse\/(\d{4}-\d{2}-\d{2})\/([a-z0-9-]+)\/?$/);
       if(pulseRoute)return handlePulsePage(request,env,pulseRoute);
       if(path==="/api/racing-wire")return handleRacingWire(request,env);
