@@ -74,7 +74,8 @@
       try{await logo.decode();c.drawImage(logo,64,21,60,60);}catch{}
       c.fillStyle='#e0b66b';c.font='700 24px Georgia,serif';c.fillText('RAIL & RYE   /   RACE-DAY PULSE',141,60);
       c.fillStyle='#ffffff';c.font='700 39px Georgia,serif';c.fillText(raceLabel(item),64,148);
-      c.font='700 33px system-ui,sans-serif';c.fillText(titleCaseWords(item.headline),64,204);
+      c.font='700 33px system-ui,sans-serif';c.fillText(item.horse||titleCaseWords(item.headline),64,204);
+      drawSignalMedallion(c,item,1040,112,82);
       // Live-site chip alpha fix applies to the shared graphic too.
       // Original PNG is drawn on a solid opaque white plate, never over navy.
       c.fillStyle='#fff';c.fillRect(67,241,104,104);
@@ -139,7 +140,7 @@
       const logo=new Image();logo.src='/assets/approved/brand/rail-rye-ivory-logo.png';try{await logo.decode();c.drawImage(logo,62,45,90,90);}catch{}
       c.fillStyle='#e0b66b';c.font='700 35px Georgia';c.fillText('RAIL & RYE RACING',180,82);c.font='26px system-ui';c.fillText('RACE DAY PULSE',180,121);
       c.font='700 30px system-ui';c.fillText(raceLabel(item).toUpperCase(),60,225);
-      const label=signal(item);c.font='700 26px system-ui';const badgeWidth=c.measureText(label).width+90;c.fillStyle='#e8ca8a';c.beginPath();c.roundRect(60,263,badgeWidth,54,14);c.fill();c.fillStyle='#071a2c';c.fillText(label,124,299);c.save();c.translate(80,275);c.scale(1.25,1.25);c.strokeStyle='#071a2c';c.lineWidth=1.8;c.lineJoin='round';c.lineCap='round';c.stroke(new Path2D(signalPaths[signalType(item)]));c.restore();
+      drawSignalMedallion(c,item,920,185,92);
       const art=chip(item.chip).querySelector('img');c.save();c.beginPath();c.roundRect(60,357,104,104,15);c.clip();c.fillStyle='#fff';c.fillRect(60,357,104,104);if(art){try{await art.decode();c.drawImage(art,60,357,104,104);}catch{}}c.restore();
       c.fillStyle='#fff';c.font='700 52px Georgia';wrap(c,item.horse||item.headline,190,408,820,60,2);
       const m=metricText(item);
@@ -182,6 +183,7 @@
   function signal(item){
     if(item.kind==='NEW_FAVORITE'||item.kind==='FAVORITE_SCRATCHED')return 'NEW FAVORITE';
     if(item.kind==='F4_SHIFT')return 'PROJECTION MOVE';
+    if(item.kind==='PACE_ADVANTAGE')return 'PACE ADVANTAGE';
     if(item.kind==='WIN_SHIFT'&&item.metric&&item.metric.after>item.metric.before)return 'WIN PROBABILITY UP';
     if(item.kind==='WIN_SHIFT'&&item.metric&&item.metric.after<item.metric.before)return 'WIN PROBABILITY DOWN';
     return 'SCRATCH IMPACT';
@@ -190,6 +192,7 @@
   function signalType(item){
     if(item.kind==='NEW_FAVORITE'||item.kind==='FAVORITE_SCRATCHED')return 'crown';
     if(item.kind==='F4_SHIFT')return 'order';
+    if(item.kind==='PACE_ADVANTAGE')return 'pace';
     if(item.kind==='WIN_SHIFT')return item.metric?.after<item.metric?.before?'down':'up';
     return 'scratch';
   }
@@ -198,6 +201,7 @@
     order:'M7 3v17 M3 7l4-4 4 4 M17 21V4 M13 17l4 4 4-4',
     up:'M3 17l6-6 4 4 8-9 M15 6h6v6',
     down:'M3 7l6 6 4-4 8 9 M15 18h6v-6',
+    pace:'M13 2L4 14h7l-1 8 10-12h-7l1-8z',
     scratch:'M5 12h14 M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18'
   };
   function signalIcon(item){
@@ -205,7 +209,13 @@
     svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('aria-hidden','true');svg.setAttribute('class','rr-pulse-category-icon');
     p.setAttribute('d',signalPaths[signalType(item)]);p.setAttribute('fill','none');p.setAttribute('stroke','currentColor');p.setAttribute('stroke-width','1.8');p.setAttribute('stroke-linecap','round');p.setAttribute('stroke-linejoin','round');svg.append(p);return svg;
   }
-  function signalBadge(item){const el=$('span','rr-pulse-signal');el.append(signalIcon(item),document.createTextNode(signal(item)));return el;}
+  function drawSignalMedallion(c,item,x,y,size){
+    c.save();c.translate(x,y);c.fillStyle='#10283d';c.strokeStyle='#d5b374';c.lineWidth=2;
+    c.beginPath();c.roundRect(0,0,size,size,size*.27);c.fill();c.stroke();
+    c.translate(size*.19,size*.19);c.scale(size*.62/24,size*.62/24);
+    const type=signalType(item);c.strokeStyle=type==='up'?'#79d4a6':type==='down'?'#f0ad9e':'#e8ca8a';c.lineWidth=1.9;c.lineCap='round';c.lineJoin='round';c.stroke(new Path2D(signalPaths[type]));c.restore();
+  }
+  function signalBadge(item){const el=$('span','rr-pulse-signal rr-pulse-signal--'+signalType(item));el.setAttribute('role','img');el.setAttribute('aria-label',signal(item));el.title=signal(item);el.append(signalIcon(item));return el;}
   function probabilityColumn(label,value,cls){
     const col=$('span','rr-pulse-prob-col '+cls),bar=$('span','rr-pulse-prob-bar'),fill=$('span','rr-pulse-prob-fill');
     fill.style.width=value+'%';bar.append(fill);
