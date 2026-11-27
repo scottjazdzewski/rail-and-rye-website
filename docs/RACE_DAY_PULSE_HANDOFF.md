@@ -198,3 +198,6 @@ Implementation on PROTECTED feature/race-day-pulse-v1:
 3. Regression tests assert bounded source-backed examples, no fabricated pace, no public-facing internal jargon, source provenance for historical form, and functional browser layout.
 4. Maintain the previously approved exact brand, full title capitalization, short mobile teaser, opaque scratch chips with no scratch names in chip line, horse names in the narrative, and entitlement-gated Full-Field Analysis route.
 Release state: PULSE_PUBLICATION_ENABLED remains OFF, automatic scraping not enabled, draft PR #245 NOT merged. Do not publish or touch production just because tests pass.
+
+## November 27 social image handoff
+The authoritative visual/share/release contract is now the November 27 section of docs/RACE_DAY_PULSE_PREMIUM_DESIGN_LOCK.md. Do not revert to a generic hero OG image, native share sheet on Download, or omit the direct Full-Field Analysis product CTA. Public publication is still held. Rendering and gated image-serving code, isolated staging generation and a guarded manual production preparation workflow are implemented on the feature branch; automated scratch-publisher integration, atomic create-only image writes, branch reconciliation, actual workflow/readback and visual/X approval remain release blockers. No TRI changes or new recurring service costs.
