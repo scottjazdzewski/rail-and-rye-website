@@ -1,0 +1,11 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';
+import {readPublishedPickTicketCards,requireCustomerPickPwin} from '../src/pick-tickets.js';
+import {readyProductTabProductIds} from '../src/product-tab-content.js';
+const snap=JSON.parse(fs.readFileSync('/tmp/rr-pick-1127-current-reader.json','utf8'));
+const env={CARDS_BUCKET:{list:async({prefix})=>({objects:Object.keys(snap).filter(k=>k.startsWith(prefix)).map(key=>({key}))}),get:async k=>snap[k]?{text:async()=>snap[k].text,customMetadata:snap[k].metadata}:null}};
+const cards=await readPublishedPickTicketCards(env,'2026-11-27');
+assert.equal(cards.length,15);assert.equal(cards.reduce((n,c)=>n+c.sequences.length,0),173);
+for(const c of cards)requireCustomerPickPwin(c);
+const products=cards.map((c,i)=>({id:String(i),category:'Pick Tickets',race_date:c.date,track:c.track,title:c.track}));
+assert.equal((await readyProductTabProductIds(env,products)).size,15);
+console.log('PICK_1127_ACTUAL_R2_REPOSITORY_READER_PASS 15 tracks 173 sequences; mock catalog readiness passed');
