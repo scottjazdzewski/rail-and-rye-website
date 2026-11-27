@@ -23,6 +23,9 @@
 /assets/rr-race-titles.js
   ! Cache-Control
   Cache-Control: no-cache, max-age=0, must-revalidate
+/assets/projections-dashboard.css
+  ! Cache-Control
+  Cache-Control: no-cache, max-age=0, must-revalidate
 /assets/projections-dashboard.js
   ! Cache-Control
   Cache-Control: no-cache, max-age=0, must-revalidate
