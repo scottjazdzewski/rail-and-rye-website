@@ -26,7 +26,7 @@ class R2 {
   constructor(){this.items=new Map()}
   async head(k){return this.items.has(k)?this.items.get(k):null}
   async put(k,value,meta={}){this.items.set(k,{data:value,customMetadata:meta.customMetadata||{},uploaded:new Date('2026-11-26T13:00:00Z')})}
-  async get(k){const v=this.items.get(k);if(!v)return null;return {...v,async json(){return JSON.parse(v.data)}}}
+  async get(k){const v=this.items.get(k);if(!v)return null;return {...v,async json(){return JSON.parse(v.data)},async arrayBuffer(){const b=Buffer.from(v.data);return b.buffer.slice(b.byteOffset,b.byteOffset+b.byteLength)}}}
   async list({prefix}){return {objects:[...this.items.entries()].filter(([k])=>k.startsWith(prefix)).map(([key,metadata])=>({key,uploaded:metadata.uploaded}))}}
 }
 const fixtureAlerts=[
@@ -239,9 +239,20 @@ try{
  assert.match(html,/Explore Today’s Intelligence Hub/,'Expired old race links should route to current Hub');
  assert.match(html,/href="\/store\/"/);
  assert.ok(!html.includes('model_receipts'));
+ assert.doesNotMatch(html,/og:image/,'No unrelated hero image when social PNG is missing');
+ const id=historicalBody.items[0].id,route=[null,'2026-11-26',id];
+ const imageURL='https://railandryeracing.com/pulse/2026-11-26/'+id+'/card-v1.png';
+ assert.equal((await pulse.handlePulseImage(new Request(imageURL),env,route)).status,404);
+ const png=Buffer.alloc(33);png.writeUInt32BE(0x89504e47,0);png.writeUInt32BE(0x0d0a1a0a,4);png.writeUInt32BE(13,8);png.writeUInt32BE(0x49484452,12);png.writeUInt32BE(1200,16);png.writeUInt32BE(675,20);
+ await env.CARDS_BUCKET.put('race-day-pulse/social/v1/2026-11-26/'+id+'.png',png);
+ const image=await pulse.handlePulseImage(new Request(imageURL),env,route);
+ assert.equal(image.status,200);assert.equal(image.headers.get('Content-Type'),'image/png');
+ const ready=await pulse.handlePulsePage(new Request(imageURL.replace('/card-v1.png','')),env,route);
+ const readyHtml=await ready.text();assert.match(readyHtml,/summary_large_image/);assert.ok(readyHtml.includes(imageURL));assert.match(readyHtml,/twitter:image/);assert.match(readyHtml,/Download Card/);
+ assert.equal((await pulse.handlePulseImage(new Request(imageURL),{...env,PULSE_PUBLICATION_ENABLED:'false'},route)).status,404);
 }finally{Date.now=originalClock;}
 assert.ok(fs.readFileSync('public/index.html','utf8').includes('id="rr-pulse"'));
-assert.ok(fs.readFileSync('public/assets/race-day-pulse.js','utf8').includes('navigator.share'));
-assert.ok(fs.readFileSync('public/assets/race-day-pulse.js','utf8').includes('Save image'));
+assert.ok(fs.readFileSync('public/assets/race-day-pulse.js','utf8').includes('x.com/intent/tweet'));
+assert.ok(fs.readFileSync('public/assets/race-day-pulse.js','utf8').includes('Download Card'));
 assert.ok(!fs.readFileSync('src/race-day-pulse.js','utf8').includes('Equibase'));
 console.log('RACE-DAY PULSE TESTS PASS: certified feed, no-leak, cutoff, share controls, immutable snapshot');
