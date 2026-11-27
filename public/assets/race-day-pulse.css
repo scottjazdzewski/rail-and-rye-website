@@ -186,3 +186,56 @@
  .rr-pulse-paid-link{padding-inline:5px}
 }
 @media(prefers-reduced-motion:reduce){.rr-pulse-rail{scroll-behavior:auto}}
+
+/* Pulse polish: a contained single card with the shared site pill language.
+   Keep every action visible; scrolling is horizontal between complete cards. */
+.rr-pulse,.rr-pulse-shell,.rr-pulse-rail{box-sizing:border-box;min-width:0;max-width:100%}
+.rr-pulse-rail{padding-bottom:8px;scroll-padding-inline:0}
+.rr-pulse-item{min-width:0;box-sizing:border-box;overflow-wrap:anywhere}
+.rr-pulse-card-header{gap:10px}
+.rr-pulse-signal{width:36px;height:36px;border-radius:9px}
+.rr-pulse-category-icon{width:24px;height:24px}
+.rr-pulse-metric-label{font-size:11px;line-height:1.2;letter-spacing:.035em}
+.rr-pulse-prob-caption{font-size:10px;line-height:1.2}
+.rr-pulse-scratch-label{font-size:11px;line-height:1.2}
+.rr-pulse-pace-label{font-size:10px}
+.rr-pulse-context{gap:6px 12px;flex-wrap:wrap}
+.rr-pulse-context-cell{white-space:normal}
+.rr-pulse-context-value{font-size:13px}
+.rr-pulse-item-footer{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;padding-top:6px;align-items:center}
+.rr-pulse-links{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px;align-items:stretch}
+.rr-pulse .rr-pulse-story-link,.rr-pulse .rr-pulse-paid-link,.rr-pulse .rr-pulse-tool{
+ display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;
+ border:1px solid rgba(226,176,89,.92);border-radius:999px;
+ min-height:36px;padding:7px 10px;font:750 11px/1.2 Inter,Arial,system-ui,sans-serif;
+ letter-spacing:0;text-decoration:none;text-align:center;white-space:normal;
+ color:#f3e5ca;background:linear-gradient(180deg,#203b50,#10283b);box-shadow:none;cursor:pointer
+}
+.rr-pulse .rr-pulse-paid-link{background:linear-gradient(180deg,#f0d7a3,#d4b278);color:#102438}
+.rr-pulse .rr-pulse-story-link:hover,.rr-pulse .rr-pulse-tool:hover{background:#28465d;color:#fff}
+.rr-pulse .rr-pulse-paid-link:hover{background:#f3d9a5;color:#102438}
+.rr-pulse-menu{z-index:2147483000;box-sizing:border-box;width:min(270px,calc(100vw - 32px));max-height:calc(100dvh - 32px);overflow-y:auto;border-radius:12px}
+.rr-pulse-menu button{min-height:42px;font-weight:650}
+.rr-pulse-menu button:disabled{opacity:.5;cursor:wait}
+.rr-pulse-menu [hidden]{display:none!important}
+.rr-pulse-share-fallback{overflow-wrap:anywhere;text-decoration:underline!important}
+.rr-pulse-menu-status{line-height:1.4}
+@media(min-width:1121px){
+ .heritage-hero>.rr-pulse .rr-pulse-item{width:100%;min-width:0;max-width:100%;flex:0 0 100%}
+ .heritage-hero>.rr-pulse .rr-pulse-item-footer{padding-top:6px}
+ .heritage-hero>.rr-pulse .rr-pulse-shell{padding:7px 9px 5px}
+}
+@media(max-width:640px){
+ .rr-pulse-signal{width:30px;height:30px}
+ .rr-pulse-category-icon{width:20px;height:20px}
+ .rr-pulse-metric-label,.rr-pulse-scratch-label{font-size:10px}
+ .rr-pulse-prob-caption,.rr-pulse-context .rr-pulse-prob-caption{font-size:9px}
+ .rr-pulse-context-value{font-size:12px}
+ .rr-pulse-context{justify-content:center}
+ .rr-pulse .rr-pulse-story-link,.rr-pulse .rr-pulse-paid-link,.rr-pulse .rr-pulse-tool{font-size:10px;min-height:36px;padding:6px 8px}
+ .rr-pulse-message{display:block;overflow:visible;-webkit-line-clamp:unset}
+}
+@media(max-width:360px){
+ .rr-pulse-item-footer,.rr-pulse-links{gap:4px}
+ .rr-pulse .rr-pulse-story-link,.rr-pulse .rr-pulse-paid-link,.rr-pulse .rr-pulse-tool{padding-inline:6px}
+}
