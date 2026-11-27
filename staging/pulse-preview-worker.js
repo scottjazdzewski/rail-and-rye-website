@@ -1,5 +1,5 @@
 // Isolated design preview. No production bindings, credentials, or engine.
-const demo = [
+export const demo = [
  {id:"demo-probability-shift",date:"2026-11-26",track:"Demo Racecourse",race_number:9,kind:"WIN_SHIFT",chip:"7",horse:"Example Runner",headline:"Example Runner Moves Up",metric:{label:"WIN",before:24,after:33},summary:{projected_rank:1,win_probability:33},short_message:"Remains the projected favorite after #5 scratched.",message:"After #5 scratched, Example Runner remains the projected favorite.",scratches:[{program:"5",horse:"Demo scratch"}]},
  {id:"demo-new-favorite",date:"2026-11-26",track:"Demo Racecourse",race_number:5,kind:"NEW_FAVORITE",chip:"4",horse:"Example Contender",headline:"New Projected Favorite",metric:{label:"WIN",before:22,after:36},summary:{projected_rank:1,win_probability:36},short_message:"Moves to the top of the projections after two scratches.",message:"Example Contender moves to the top of the revised projections.",scratches:[{program:"2",horse:"Demo scratch"},{program:"8",horse:"Demo scratch"}]},
  {id:"demo-order",date:"2026-11-26",track:"Demo Racecourse",race_number:3,kind:"F4_SHIFT",chip:"2",horse:"Example Challenger",headline:"Projected Finishing Order Changes",metric:{label:"SECOND_OR_THIRD",before:18,after:29},summary:{projected_rank:3,win_probability:19},short_message:"Second-or-third probability increases after #1 scratched.",message:"Example Challenger has a higher projected chance of finishing second or third.",scratches:[{program:"1",horse:"Demo scratch"}]},
@@ -14,7 +14,23 @@ export default {async fetch(request,env){
  if(p==="/api/race-day-pulse")return Response.json({status:"ok",preview:true,items:demo},{headers});
  if(p==="/api/products")return Response.json({products:[]},{headers});
  if(p==="/preview-hub"||p==="/store/"||p.startsWith("/intelligence/"))return html("<h1>Racing Intelligence Hub</h1><p>Preview only. No purchases, sign-ins or live data.</p><a href='/'>Return to homepage preview</a>");
- if(p.startsWith("/pulse/")){const item=demo.find(x=>p==="/pulse/"+x.date+"/"+x.id);return item?html("<h1>"+item.headline+"</h1><p>"+item.track+" · Race "+item.race_number+"</p><p>"+item.message+"</p><a href='/'>Return to homepage preview</a>"):html("<h1>Not found</h1>",404);}
+ const imageMatch=p.match(/^\/pulse\/(\d{4}-\d{2}-\d{2})\/(demo-[a-z0-9-]+)\/card-v1\.png$/);
+ if(imageMatch){
+   const item=demo.find(x=>x.date===imageMatch[1]&&x.id===imageMatch[2]);
+   if(!item)return new Response(null,{status:404,headers});
+   const image=await env.ASSETS.fetch(new Request(new URL('/assets/pulse-social/'+item.date+'/'+item.id+'.png',url),request));
+   return new Response(request.method==='HEAD'?null:image.body,{status:image.status,headers:{...headers,'Content-Type':'image/png'}});
+ }
+ if(p.startsWith("/pulse/")){
+   const item=demo.find(x=>p==="/pulse/"+x.date+"/"+x.id);
+   if(!item)return html("<h1>Not found</h1>",404);
+   const canonical=new URL(p,url).href,image=canonical+'/card-v1.png';
+   const img=await env.ASSETS.fetch(new Request(new URL('/assets/pulse-social/'+item.date+'/'+item.id+'.png',url),{method:'HEAD'}));
+   const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+   const title=esc(item.track+' · Race '+item.race_number+' | '+item.horse),desc=esc(item.short_message||item.message);
+   const meta=img.ok?'<meta property="og:image" content="'+esc(image)+'"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="675"><meta property="og:image:type" content="image/png"><meta name="twitter:image" content="'+esc(image)+'">':'';
+   return new Response('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><meta name="robots" content="noindex,nofollow"><title>'+title+'</title><meta property="og:title" content="'+title+'"><meta property="og:description" content="'+desc+'"><meta property="og:url" content="'+esc(canonical)+'"><meta name="twitter:card" content="'+(img.ok?'summary_large_image':'summary')+'"><meta name="twitter:title" content="'+title+'"><meta name="twitter:description" content="'+desc+'">'+meta+'<link rel="stylesheet" href="/assets/race-day-pulse.css?v=3"></head><body><main class="rr-pulse-share-page"><article class="rr-pulse-story"><p>DESIGN PREVIEW · FICTIONAL DATA · NOT LIVE</p><h1>'+title+'</h1><p>'+desc+'</p>'+(img.ok?'<img class="rr-pulse-social-image" src="'+esc(image)+'" alt="'+title+'"><a class="rr-pulse-download" download href="'+esc(image)+'">Download Card</a>':'')+'<a class="rr-pulse-primary" href="/preview-hub">Full-Field Analysis</a><a class="rr-pulse-secondary" href="/">Return to Race-Day Pulse</a></article></main></body></html>',{headers:{...headers,"Content-Type":"text/html;charset=utf-8"}});
+ }
  if(p==="/"||p==="/index.html"){
  const response=await env.ASSETS.fetch(new Request(new URL("/index.html",url),request));
  if(!response.ok)return response;
