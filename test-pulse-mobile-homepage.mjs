@@ -15,26 +15,28 @@ try{
  for(const [name,type] of [['chromium',chromium],['webkit',webkit]]){
   const browser=await type.launch();
   try{
-   for(const [width,height] of [[320,568],[375,667],[390,844],[430,932]]){
+   for(const [width,height] of [[320,568],[375,667],[390,700],[430,780]]){
     const page=await browser.newPage({viewport:{width,height},isMobile:true,hasTouch:true,deviceScaleFactor:1,reducedMotion:'reduce',acceptDownloads:true});
     const errors=[];page.on('pageerror',e=>errors.push(e.message));
-    await page.route(/fonts\.googleapis\.com|fonts\.gstatic\.com/,r=>r.abort());
+    // Use the actual homepage typeface for the fold check; do not force Georgia fallback.
     const base='http://127.0.0.1:'+server.address().port;
     await page.goto(base+'/');await page.locator('.rr-pulse-item').first().waitFor();
+    await page.evaluate(()=>document.fonts.ready);
     await page.locator('.rr-pulse-item').first().locator('.rr-pulse-saddle img').first().evaluate(x=>x.decode());
     const count=await page.locator('.rr-pulse-item').count();assert.equal(count,4);
     for(let i=0;i<count;i++){
      if(i)await page.locator('#rr-pulse-next').click();
      await page.waitForFunction(i=>{const rail=document.querySelector('#rr-pulse-rail'),c=rail.children[i];return Math.abs(c.getBoundingClientRect().left-rail.getBoundingClientRect().left)<3},i);
-     const g=await page.evaluate(i=>{const hero=document.querySelector('.heritage-hero'),pulse=document.querySelector('#rr-pulse'),body=document.querySelector('.heritage-body'),rail=document.querySelector('#rr-pulse-rail'),card=rail.children[i],r=rail.getBoundingClientRect(),c=card.getBoundingClientRect();return {width:innerWidth,pageWidth:document.documentElement.scrollWidth,placement:hero.nextElementSibling===pulse&&pulse.nextElementSibling===body,heroBottom:hero.getBoundingClientRect().bottom,pulseTop:pulse.getBoundingClientRect().top,pulseBottom:pulse.getBoundingClientRect().bottom,bodyTop:body.getBoundingClientRect().top,height:pulse.getBoundingClientRect().height,headerVisible:hero.querySelector('header').getBoundingClientRect().bottom<=hero.getBoundingClientRect().bottom,memberVisible:hero.querySelector('.rr-home-membership-link').getBoundingClientRect().bottom<=hero.getBoundingClientRect().bottom,cardContained:c.left>=r.left-3&&c.right<=r.right+3&&c.bottom<=r.bottom+3,actions:[...card.querySelectorAll('.rr-pulse-compact-open')].map(x=>{const b=x.getBoundingClientRect();return {height:b.height,contained:b.left>=c.left&&b.right<=c.right&&b.bottom<=c.bottom}}),badge:card.querySelector('.rr-pulse-signal').getBoundingClientRect().width}},i);
+     const g=await page.evaluate(i=>{const hero=document.querySelector('.heritage-hero'),pulse=document.querySelector('#rr-pulse'),body=document.querySelector('.heritage-body'),rail=document.querySelector('#rr-pulse-rail'),card=rail.children[i],r=rail.getBoundingClientRect(),c=card.getBoundingClientRect();return {width:innerWidth,pageWidth:document.documentElement.scrollWidth,placement:hero.nextElementSibling===pulse&&pulse.nextElementSibling===body,heroBottom:hero.getBoundingClientRect().bottom,pulseTop:pulse.getBoundingClientRect().top,pulseBottom:pulse.getBoundingClientRect().bottom,bodyTop:body.getBoundingClientRect().top,fold:innerHeight,previewBanner:document.querySelector('body>div[role="status"]')?.getBoundingClientRect().height||0,height:pulse.getBoundingClientRect().height,headerVisible:hero.querySelector('header').getBoundingClientRect().bottom<=hero.getBoundingClientRect().bottom,memberVisible:hero.querySelector('.rr-home-membership-link').getBoundingClientRect().bottom<=hero.getBoundingClientRect().bottom,cardContained:c.left>=r.left-3&&c.right<=r.right+3&&c.bottom<=r.bottom+3,actions:[...card.querySelectorAll('.rr-pulse-compact-open')].map(x=>{const b=x.getBoundingClientRect();return {height:b.height,contained:b.left>=c.left&&b.right<=c.right&&b.bottom<=c.bottom}}),badge:card.querySelector('.rr-pulse-signal').getBoundingClientRect().width}},i);
      assert.ok(g.headerVisible&&g.memberVisible&&g.placement&&g.pulseTop>=g.heroBottom-1&&g.bodyTop>=g.pulseBottom-1,JSON.stringify(g));
      assert.ok(g.pageWidth<=g.width+1&&g.cardContained,JSON.stringify(g));
      assert.ok(g.actions.length===1&&g.actions.every(a=>a.height>=44&&a.contained),JSON.stringify(g));
      assert.equal(g.badge,36);assert.ok(g.height<=275,'Compact mobile module: '+JSON.stringify(g));
+     if(width>=390)assert.ok(g.pulseBottom-g.previewBanner<=g.fold+1,'Full Pulse must fit initial mobile viewport before scrolling: '+JSON.stringify(g));
      console.log(name,width,i,JSON.stringify(g));
     }
     await page.locator('#rr-pulse-prev').click();
-    await page.locator('#rr-pulse').scrollIntoViewIfNeeded();
+    await page.evaluate(()=>window.scrollTo(0,0));
     await page.screenshot({path:'pulse-mobile-homepage/'+name+'-'+width+'-viewport.png'});
     await page.screenshot({path:'pulse-mobile-homepage/'+name+'-'+width+'-full.png',fullPage:true});
     if(width===390){
