@@ -153,6 +153,56 @@ export function insightForRace(date,track,initial,revised,updatedAt,sourceVersio
   }
   return null; // No forced posts, no unverified pace-causality claims.
 }
+// Pace Advantage is a factual change in the TRI Pace Fit output after a
+// certified scratch rerun, not an assertion that pace caused the PWIN change.
+export function paceInsightsForRace(date,track,initial,revised,updatedAt,sourceVersion=''){
+  const pair=compareRaces(initial,revised);
+  if(!pair)return [];
+  const norm=v=>String(v??'').trim().toLowerCase();
+  if(!norm(initial.surface)||norm(initial.surface)!==norm(revised.surface))return [];
+  for(const field of ['track_condition','distance','temporary_rail_feet'])if(norm(initial[field])!==norm(revised[field]))return [];
+  const oldEntries=new Map(initial.entries.map(e=>[norm(e.program_number),e]));
+  const currentEntries=new Map(revised.entries.map(e=>[norm(e.program_number),e]));
+  const levels={red:0,gray:1,green:2};
+  const names={red:'negative',gray:'neutral',green:'positive'};
+  function fit(e){
+    const a=Array.isArray(e?.metrics)?e.metrics.filter(m=>m?.label==='Pace Fit'):[];
+    return a.length===1&&Object.hasOwn(levels,a[0].value)?a[0].value:null;
+  }
+  const {before,after,activeScratches}=pair;
+  // Mixed rider/trainer changes are not a scratch-only pace comparison.
+  for(const [key] of after){
+    const a=oldEntries.get(norm(key)),b=currentEntries.get(norm(key));
+    if(['jockey','trainer'].some(f=>norm(a?.[f])!==norm(b?.[f])))return [];
+  }
+  const candidates=[];
+  for(const [key,runner] of after){
+    const prev=before.get(key),a=fit(oldEntries.get(norm(key))),b=fit(currentEntries.get(norm(key)));
+    if(a===null||b===null||levels[b]<=levels[a])continue;
+    // No arbitrary probability-point threshold or Gold dependency.
+    // Describe the actual Pace Fit change and show the actual PWIN comparison.
+    const horse=runner.horse;
+    const label='Pace Fit improves from '+names[a]+' to '+names[b]+' after the scratches.';
+    candidates.push({
+      id:slug(track)+'-race-'+revised.race_number+'-pace-'+slug(key)+revisionToken(sourceVersion),
+      date,track:clean(track,90),race_number:revised.race_number,updated_at:updatedAt,
+      post_time_et:clean(revised.post_time_et,38),
+      hub_url:'/intelligence/race-cards/?date='+encodeURIComponent(date)+'&track='+encodeURIComponent(track)+'&race='+encodeURIComponent(String(revised.race_number)),
+      kind:'PACE_ADVANTAGE',headline:'Pace Advantage',chip:key,horse,
+      metric:{label:'WIN',before:prev.win,after:runner.win},pace_fit:{before:a,after:b},
+      summary:publicSummary(runner,after),short_message:label,
+      message:contextForPace(activeScratches,horse,a,b,names),
+      scratches:activeScratches.map(x=>({program:clean(x.program_number,8).toUpperCase(),horse:clean(x.horse_name,95)})),
+      priority:60+(levels[b]-levels[a])*10+Math.max(0,runner.win-prev.win)
+    });
+  }
+  // Show the strongest pace change in each race without exposing the paid
+  // full-field factor matrix. This is a race-level finding, not a daily cap.
+  return candidates.sort((a,b)=>b.priority-a.priority||a.chip.localeCompare(b.chip)).slice(0,1);
+}
+function contextForPace(scratches,horse,a,b,names){
+  return lead(scratches)+horse+"'s revised Pace Fit changes from "+names[a]+" to "+names[b]+".";
+}
 export async function captureInitialPulseSnapshot(env,initial){
   if(!env?.CARDS_BUCKET||!cardValid(initial)||initial.projection_status!=='prescratch')return false;
   const key=baseKey(initial);
@@ -249,6 +299,10 @@ export async function readRaceDayPulse(env,now=Date.now()){
       const revision=current.model_receipts.f4_sha256+'|'+current.model_receipts.official_changes_sha256;
       const post=insightForRace(date,current.track_name,earlier.get(race.race_number),race,updatedAt,revision);
       if(post)items.push(post);
+      // Reuse the existing approved factor badge provenance from the two TRI cards.
+      if(original.badge_evaluator_version==='TBS_FACTOR_BADGE_EVALUATOR_V1_2_6_FIT_CLASS_FORM_GUARDS'&&HASH.test(original.badge_source_sha256||'')&&HASH.test(object.customMetadata?.badge_sha256||'')){
+        items.push(...paceInsightsForRace(date,current.track_name,earlier.get(race.race_number),race,updatedAt,revision));
+      }
     }
   }
   items.sort((a,b)=>b.priority-a.priority||a.track.localeCompare(b.track)||a.race_number-b.race_number);
@@ -293,7 +347,7 @@ async function archivedPulse(env,date,id){
   if(data?.schema_version!==1||data.date!==date||!Array.isArray(data.items))return null;
   const item=data.items.find(x=>x?.date===date&&x.id===id);
   if(!item||!/^[-a-z0-9]{2,120}$/.test(String(item.id))||
-     !['NEW_FAVORITE','FAVORITE_SCRATCHED','WIN_SHIFT','F4_SHIFT','SURFACE_SWITCH'].includes(item.kind))return null;
+     !['NEW_FAVORITE','FAVORITE_SCRATCHED','WIN_SHIFT','F4_SHIFT','SURFACE_SWITCH','PACE_ADVANTAGE'].includes(item.kind))return null;
   return item;
 }
 export async function handlePulseApi(request,env){
@@ -356,12 +410,13 @@ export async function handlePulsePage(request,env,route){
     return '<span class="'+className+' rr-pulse-saddle-fallback">'+escape(text)+'</span>';
   };
   const type=['NEW_FAVORITE','FAVORITE_SCRATCHED'].includes(item.kind)?'crown':
-    item.kind==='F4_SHIFT'?'order':item.kind==='WIN_SHIFT'?(item.metric?.after<item.metric?.before?'down':'up'):'scratch';
+    item.kind==='F4_SHIFT'?'order':item.kind==='PACE_ADVANTAGE'?'pace':item.kind==='WIN_SHIFT'?(item.metric?.after<item.metric?.before?'down':'up'):'scratch';
   const badges={
     crown:['New Favorite','M3 6l4 4 5-7 5 7 4-4-2 12H5L3 6z M5 21h14'],
     order:['Projection Move','M7 3v17 M3 7l4-4 4 4 M17 21V4 M13 17l4 4 4-4'],
     up:['Win Probability Up','M3 17l6-6 4 4 8-9 M15 6h6v6'],
     down:['Win Probability Down','M3 7l6 6 4-4 8 9 M15 18h6v-6'],
+    pace:['Pace Advantage','M13 2L4 14h7l-1 8 10-12h-7l1-8z'],
     scratch:['Scratch Impact','M5 12h14 M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18']};
   const badge=badges[type],medallion='<span class="rr-pulse-signal rr-pulse-signal--'+type+'" role="img" aria-label="'+escape(badge[0])+'" title="'+escape(badge[0])+'"><svg class="rr-pulse-category-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="'+badge[1]+'" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
   const scratchLine=Array.isArray(item.scratches)&&item.scratches.length?
