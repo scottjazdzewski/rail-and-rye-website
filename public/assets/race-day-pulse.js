@@ -63,123 +63,88 @@
     }
     if(line&&count<maxLines)ctx.fillText(line,x,y+lineHeight*count);
   }
-  async function saveImage(item,button){
-    const label=button.textContent;button.disabled=true;button.textContent='Preparing image…';
-    try{
-      const canvas=document.createElement('canvas');canvas.width=1200;canvas.height=675;
-      const c=canvas.getContext('2d');if(!c)throw Error('Canvas unsupported');
-      c.fillStyle='#071a2c';c.fillRect(0,0,1200,675);
-      c.fillStyle='#c49b59';c.fillRect(64,90,1072,3);
-      const logo=new Image();logo.src='/assets/approved/brand/rail-rye-ivory-logo.png';
-      try{await logo.decode();c.drawImage(logo,64,21,60,60);}catch{}
-      c.fillStyle='#e0b66b';c.font='700 24px Georgia,serif';c.fillText('RAIL & RYE   /   RACE-DAY PULSE',141,60);
-      c.fillStyle='#ffffff';c.font='700 39px Georgia,serif';c.fillText(raceLabel(item),64,148);
-      c.font='700 33px system-ui,sans-serif';c.fillText(item.horse||titleCaseWords(item.headline),64,204);
-      drawSignalMedallion(c,item,1040,112,82);
-      // Live-site chip alpha fix applies to the shared graphic too.
-      // Original PNG is drawn on a solid opaque white plate, never over navy.
-      c.fillStyle='#fff';c.fillRect(67,241,104,104);
-      const badge=chip(item.chip).querySelector('img');
-      if(badge){try{await badge.decode();c.drawImage(badge,67,241,104,104);}catch{}}
-      c.font='26px system-ui,sans-serif';c.fillStyle='#eef1f4';
-      wrap(c,item.message,195,254,925,33,3);
-      const scratches=Array.isArray(item.scratches)?item.scratches:[];
-      if(scratches.length){
-        c.fillStyle='#ddb5b5';c.font='700 18px system-ui,sans-serif';
-        c.fillText('SCRATCHED',64,376);
-        let sx=187;
-        for(const scratch of scratches){
-          if(sx+31>1135)break;
-          c.fillStyle='#fff';c.fillRect(sx,350,31,31);
-          const scratchArt=chip(scratch.program,true).querySelector('img');
-          if(scratchArt){try{await scratchArt.decode();c.drawImage(scratchArt,sx,350,31,31);}catch{}}
-          const suffix=/^\d{1,2}([A-Z])$/.exec(String(scratch.program||'').toUpperCase());
-          if(suffix){
-            c.fillStyle='#102d53';c.fillRect(sx+20,369,12,12);
-            c.fillStyle='#ffffff';c.font='800 10px system-ui,sans-serif';
-            c.fillText(suffix[1],sx+22,379);
-          }
-          sx+=46;
-        }
-        const visible=Math.min(scratches.length,Math.floor((1135-187)/46));
-        if(scratches.length>visible){
-          c.fillStyle='#ddb5b5';c.font='14px system-ui,sans-serif';
-          c.fillText('+'+(scratches.length-visible)+' More',1030,394);
-        }
-      }
-      c.fillStyle='#15354d';c.fillRect(64,410,1072,119);
-      c.fillStyle='#d2ac6e';c.fillRect(64,410,7,119);
-      c.fillStyle='#f5f1e9';c.font='700 29px Georgia,serif';
-      c.fillText('SEE THE COMPLETE RACE CARD',94,458);
-      c.fillStyle='#c7d5e2';c.font='22px system-ui,sans-serif';
-      c.fillText('Full-Field Analysis  ·  Win Probabilities  ·  Full Finishing Order Projections',94,500);
-      c.fillStyle='#c49b59';c.fillRect(64,562,1072,2);
-      c.font='23px system-ui,sans-serif';c.fillText('railandryeracing.com',64,606);
-      c.fillStyle='#9caec2';c.font='19px system-ui,sans-serif';c.fillText('Model projections · Not guarantees',758,606);
-      const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
-      if(!blob)throw Error('Image unavailable');
-      const file=new File([blob],'rail-rye-'+item.id+'.png',{type:'image/png'});
-      if(navigator.share&&navigator.canShare?.({files:[file]})){
-        try{await navigator.share({files:[file],title:'Rail & Rye Race-Day Pulse'});return;}
-        catch(e){if(e.name==='AbortError')return;}
-      }
-      downloadBlob(blob,file.name);
-    }catch(e){button.textContent='Could not save image';setTimeout(()=>button.textContent=label,1800);}
-    finally{button.disabled=false;if(button.textContent==='Preparing image…')button.textContent=label;}
-  }
-  async function saveInstagram(item,button){
-    const original=button.textContent;button.disabled=true;
-    try{
-      const canvas=document.createElement('canvas');canvas.width=1080;canvas.height=1350;
-      const c=canvas.getContext('2d');if(!c)throw Error('Canvas unsupported');
-      const bg=c.createLinearGradient(0,0,1080,1350);bg.addColorStop(0,'#1b3b52');bg.addColorStop(.43,'#10283d');bg.addColorStop(1,'#061725');c.fillStyle=bg;c.fillRect(0,0,1080,1350);
-      // Quiet engraved line texture; does not compete with the figures.
-      c.save();c.globalAlpha=.07;c.strokeStyle='#d9bc82';c.lineWidth=1;for(let i=-1350;i<1080;i+=26){c.beginPath();c.moveTo(i,0);c.lineTo(i+1350,1350);c.stroke();}c.restore();
-      c.strokeStyle='#957748';c.lineWidth=2;c.beginPath();c.roundRect(30,30,1020,1290,28);c.stroke();
-      c.fillStyle='#c49b59';c.fillRect(60,155,960,3);c.fillRect(60,1200,960,3);
-      const logo=new Image();logo.src='/assets/approved/brand/rail-rye-ivory-logo.png';try{await logo.decode();c.drawImage(logo,62,45,90,90);}catch{}
-      c.fillStyle='#e0b66b';c.font='700 35px Georgia';c.fillText('RAIL & RYE RACING',180,82);c.font='26px system-ui';c.fillText('RACE DAY PULSE',180,121);
-      c.font='700 30px system-ui';c.fillText(raceLabel(item).toUpperCase(),60,225);
-      drawSignalMedallion(c,item,920,185,92);
-      const art=chip(item.chip).querySelector('img');c.save();c.beginPath();c.roundRect(60,357,104,104,15);c.clip();c.fillStyle='#fff';c.fillRect(60,357,104,104);if(art){try{await art.decode();c.drawImage(art,60,357,104,104);}catch{}}c.restore();
-      c.fillStyle='#fff';c.font='700 52px Georgia';wrap(c,item.horse||item.headline,190,408,820,60,2);
-      const m=metricText(item);
-      if(m){c.fillStyle='#081b2b';c.beginPath();c.roundRect(50,495,980,225,20);c.fill();c.strokeStyle='#927748';c.stroke();c.fillStyle='#d8be89';c.font='700 27px system-ui';c.fillText(m.label,80,540);c.font='700 19px system-ui';c.fillText('ORIGINAL',80,574);c.fillText('REVISED',575,574);c.fillStyle='#b4c0ca';c.font='700 89px system-ui';c.fillText(m.before,60,655);c.fillStyle='#e0b66b';c.fillText('→',435,655);c.fillStyle=m.up?'#73d2a2':'#f2ab9c';c.fillText(m.after,575,655);const diff=item.metric.after-item.metric.before;c.font='700 23px system-ui';c.fillText((diff>0?'+':'')+diff.toFixed(1)+' PTS',825,540);for(const [px,val,col] of [[80,item.metric.before,'#a6b5c4'],[575,item.metric.after,m.up?'#73d2a2':'#f2ab9c']]){c.fillStyle='#354957';c.beginPath();c.roundRect(px,681,330,8,4);c.fill();if(val>0){c.fillStyle=col;c.beginPath();c.roundRect(px,681,330*val/100,8,4);c.fill();}}}
-      c.fillStyle='#f2f2f2';c.font='32px system-ui';wrap(c,item.short_message||item.message,60,755,960,44,4);
-      const context=selectedContext(item);if(context.length){c.fillStyle='#d8be89';c.font='700 25px system-ui';c.fillText(context.map(([label,value])=>label+'  '+value).join('     ·     '),60,925);}
-      const scratches=Array.isArray(item.scratches)?item.scratches:[];
-      if(scratches.length){c.fillStyle='#d8be89';c.font='700 25px system-ui';c.fillText('SCRATCHES',60,980);let px=60;for(const scratch of scratches.slice(0,20)){if(px+42>1020)break;const img=chip(scratch.program,true).querySelector('img');c.fillStyle='#fff';c.fillRect(px,1005,42,42);if(img){try{await img.decode();c.drawImage(img,px,1005,42,42);}catch{}}px+=48;}}
-      c.fillStyle='#e0b66b';c.font='700 28px system-ui';c.fillText('railandryeracing.com',60,1250);
-      c.fillStyle='#b4c0ca';c.font='24px system-ui';c.fillText(item.id.startsWith('demo-')?'DESIGN PREVIEW · FICTIONAL DATA':'Model projections · Not guarantees',60,1300);
-      const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(!blob)throw Error('Image unavailable');const file=new File([blob],'rail-rye-instagram-'+item.id+'.png',{type:'image/png'});
-      if(navigator.share&&navigator.canShare?.({files:[file]})){try{await navigator.share({files:[file],title:'Race Day Pulse'});return;}catch(e){if(e.name==='AbortError')return;}}
-      downloadBlob(blob,file.name);
-    }catch{button.textContent='Could not save image';return;}finally{button.disabled=false;}
-    button.textContent=original;
+  // One repeatable 4:5 social card; no buttons, browser chrome or premium data.
+  const shareUrl=item=>new URL(pulseUrl(item),location.origin).href;
+  function shareFilename(item){return 'rail-rye-pulse-'+item.date+'-'+item.id+'.png';}
+  async function socialImage(item){
+    const canvas=document.createElement('canvas');canvas.width=1080;canvas.height=1350;
+    const c=canvas.getContext('2d');if(!c)throw Error('Canvas unsupported');
+    const bg=c.createLinearGradient(0,0,1080,1350);bg.addColorStop(0,'#1b3b52');bg.addColorStop(.43,'#10283d');bg.addColorStop(1,'#061725');c.fillStyle=bg;c.fillRect(0,0,1080,1350);
+    c.strokeStyle='#957748';c.lineWidth=2;c.beginPath();c.roundRect(30,30,1020,1290,28);c.stroke();
+    c.fillStyle='#c49b59';c.fillRect(60,155,960,3);c.fillRect(60,1200,960,3);
+    const logo=new Image();logo.src='/assets/approved/brand/rail-rye-ivory-logo.png';try{await logo.decode();c.drawImage(logo,62,45,90,90);}catch{}
+    c.fillStyle='#e0b66b';c.font='700 35px Georgia';c.fillText('RAIL & RYE RACING',180,82);c.font='26px system-ui';c.fillText('RACE-DAY PULSE',180,121);
+    c.font='700 30px system-ui';wrap(c,raceLabel(item).toUpperCase(),60,220,830,38,2);
+    drawSignalMedallion(c,item,920,185,92);
+    async function drawChip(number,x,y,size){
+      const art=chip(number).querySelector('img');
+      c.save();c.beginPath();c.roundRect(x,y,size,size,size*.12);c.clip();c.fillStyle='#fff';c.fillRect(x,y,size,size);
+      let drawn=false;if(art){try{await art.decode();c.drawImage(art,x,y,size,size);drawn=true;}catch{}}
+      if(!drawn){c.fillStyle='#102d53';c.font='700 '+Math.round(size*.44)+'px system-ui';c.fillText(String(number||'—'),x+size*.12,y+size*.65);}
+      const suffix=/^\d{1,2}([A-Z])$/.exec(String(number||'').toUpperCase());
+      if(suffix&&drawn){c.fillStyle='#102d53';c.fillRect(x+size*.68,y+size*.66,size*.32,size*.34);c.fillStyle='#fff';c.font='700 '+Math.round(size*.24)+'px system-ui';c.fillText(suffix[1],x+size*.72,y+size*.91);}
+      c.restore();
+    }
+    await drawChip(item.chip,60,295,104);
+    c.fillStyle='#fff';c.font='700 49px Georgia';wrap(c,item.horse||item.headline,190,333,820,56,2);
+    const m=metricText(item);let messageY=455;
+    if(m){
+      c.fillStyle='#081b2b';c.beginPath();c.roundRect(50,435,980,225,20);c.fill();c.strokeStyle='#927748';c.stroke();
+      c.fillStyle='#d8be89';c.font='700 27px system-ui';c.fillText(m.label,80,480);c.font='700 21px system-ui';c.fillText('ORIGINAL',80,520);c.fillText('REVISED',575,520);
+      const diff=item.metric.after-item.metric.before, color=diff>0?'#73d2a2':diff<0?'#f2ab9c':'#dfbd79';
+      c.font='700 80px system-ui';c.fillStyle='#b4c0ca';c.fillText(m.before,80,600);c.fillStyle='#e0b66b';c.fillText('→',420,600);c.fillStyle=color;c.fillText(m.after,575,600);
+      c.font='700 25px system-ui';c.textAlign='right';c.fillText((diff>0?'+':'')+diff.toFixed(1)+' PTS',1000,480);c.textAlign='left';
+      for(const [px,val,col] of [[80,item.metric.before,'#a6b5c4'],[575,item.metric.after,color]]){c.fillStyle='#354957';c.beginPath();c.roundRect(px,625,330,10,5);c.fill();if(val>0){c.fillStyle=col;c.beginPath();c.roundRect(px,625,330*val/100,10,5);c.fill();}}
+      messageY=712;
+    }
+    c.fillStyle='#f2f2f2';c.font='30px system-ui';wrap(c,item.short_message||item.message,60,messageY,960,40,3);
+    const context=selectedContext(item);let y=messageY+140;
+    if(context.length){c.fillStyle='#d8be89';c.font='700 24px system-ui';wrap(c,context.map(([label,value])=>label+'  '+value).join('     ·     '),60,y,960,32,2);y+=70;}
+    const pace=paceComparison(item);if(pace){c.fillStyle='#d8be89';c.font='700 24px system-ui';c.fillText(pace.textContent.replace('PACE FIT','PACE FIT: '),60,y);y+=44;}
+    const scratches=Array.isArray(item.scratches)?item.scratches:[];
+    if(scratches.length){c.fillStyle='#d8be89';c.font='700 24px system-ui';c.fillText('SCRATCHED',60,y);let px=60;for(const scratch of scratches.slice(0,20)){if(px+42>1020)break;await drawChip(scratch.program,px,y+16,42);px+=48;}}
+    c.fillStyle='#e0b66b';c.font='700 28px system-ui';c.fillText('railandryeracing.com',60,1250);
+    c.fillStyle='#b4c0ca';c.font='24px system-ui';c.fillText(item.id.startsWith('demo-')?'DESIGN PREVIEW · FICTIONAL DATA':'Model projections · Not guarantees',60,1300);
+    const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(!blob)throw Error('Image unavailable');return blob;
   }
   function shareTools(item){
-    const group=$('div','rr-pulse-share-group');
-    const share=$('button','rr-pulse-tool','Share');
-    share.type='button';share.setAttribute('aria-label','Share '+raceLabel(item));
+    const group=$('div','rr-pulse-share-group'),share=$('button','rr-pulse-tool','Share');
+    share.type='button';share.setAttribute('aria-label','Share '+raceLabel(item));share.setAttribute('aria-expanded','false');
     const menu=$('div','rr-pulse-menu');menu.hidden=true;
-    const copy=$('button','','Copy link');copy.type='button';
-    const post=$('a','','Share to X');post.href='https://x.com/intent/tweet?text='+encodeURIComponent(textForShare(item))+'&url='+encodeURIComponent(location.origin+pulseUrl(item));post.target='_blank';post.rel='noopener noreferrer';
-    const image=$('button','','Save image');image.type='button';
-    const instagram=$('button','','Instagram image (4:5)');instagram.type='button';
-    instagram.addEventListener('click',()=>saveInstagram(item,instagram));
+    const social=$('button','','Share to Socials'),download=$('button','','Download Card'),copy=$('button','','Copy Link');
+    for(const button of [social,download,copy])button.type='button';
     const notice=$('span','rr-pulse-menu-status');notice.setAttribute('role','status');
-    copy.addEventListener('click',()=>copyLink(item,notice));
-    image.addEventListener('click',()=>saveImage(item,image));
-    menu.append(copy,post,image,instagram,notice);
-    if(navigator.share){
-      const native=$('button','','Share link');native.type='button';
-      native.addEventListener('click',async()=>{try{await navigator.share({title:raceLabel(item),text:textForShare(item),url:location.origin+pulseUrl(item)});}catch{}});
-      menu.prepend(native);
+    const link=$('a','rr-pulse-share-fallback','Open insight link');link.href=shareUrl(item);link.hidden=true;
+    let blob=null,preparing=null;
+    function prepare(){
+      if(blob)return Promise.resolve(blob);
+      if(preparing)return preparing;
+      social.disabled=download.disabled=true;notice.textContent='Preparing card…';
+      preparing=socialImage(item).then(value=>{blob=value;notice.textContent='';return value;}).catch(()=>{notice.textContent='Image unavailable. Close and reopen Share to retry.';return null;}).finally(()=>{social.disabled=download.disabled=!blob;preparing=null;});
+      return preparing;
     }
-    share.addEventListener('click',()=>{menu.hidden=!menu.hidden;share.setAttribute('aria-expanded',String(!menu.hidden));});
-    share.setAttribute('aria-expanded','false');
-    group.append(share,menu);
-    return group;
+    async function copyOrReveal(){
+      try{await navigator.clipboard.writeText(shareUrl(item));return true;}catch{link.hidden=false;return false;}
+    }
+    copy.addEventListener('click',async()=>{notice.textContent=await copyOrReveal()?'Link copied.':'Copy the insight link below.';});
+    download.addEventListener('click',()=>{if(blob){downloadBlob(blob,shareFilename(item));notice.textContent='Card downloaded.';}});
+    social.addEventListener('click',async()=>{
+      if(!blob)return;
+      const file=new File([blob],shareFilename(item),{type:'image/png'}),url=shareUrl(item);
+      const payload={files:[file],url};
+      // Prepare on opening the menu so native share runs in the actual click gesture.
+      if(navigator.share&&navigator.canShare?.(payload)){
+        try{await navigator.share(payload);notice.textContent='Share opened.';return;}
+        catch(error){if(error.name==='AbortError')return;}
+      }
+      const copied=copyOrReveal();downloadBlob(blob,file.name);
+      notice.textContent=await copied?'Card downloaded. Link copied — attach the image and paste the link in your post.':'Card downloaded. Copy the insight link below and attach the image to your post.';
+    });
+    menu.append(social,download,copy,notice,link);
+    function close(){menu.hidden=true;share.setAttribute('aria-expanded','false');}
+    share.addEventListener('click',()=>{if(!menu.hidden){close();return;}for(const other of document.querySelectorAll('.rr-pulse-menu:not([hidden])')){other.hidden=true;other.parentElement.querySelector('.rr-pulse-tool')?.setAttribute('aria-expanded','false');}menu.hidden=false;share.setAttribute('aria-expanded','true');prepare();});
+    group.addEventListener('keydown',e=>{if(e.key==='Escape'){close();share.focus();}});
+    group.append(share,menu);return group;
   }
   // Owner-approved four-symbol family. Shared vector geometry for DOM and canvas.
   function signalType(item){
@@ -288,15 +253,17 @@
     }
     const footer=$('div','rr-pulse-item-footer');
     const links=$('div','rr-pulse-links');
-    const original=$('a','rr-pulse-story-link','Open insight');original.href=pulseUrl(item);
+    const original=$('a','rr-pulse-story-link','Open Insight');original.href=pulseUrl(item);
     const paid=$('a','rr-pulse-paid-link','Full-Field Analysis');paid.href=item.hub_url;
     links.append(original,paid);footer.append(links,shareTools(item));article.append(footer);
     return article;
   }
+  let observedCard=null;const cardObserver=typeof ResizeObserver==='function'?new ResizeObserver(()=>fitActiveCard()):null;
   function fitActiveCard(){
     if(shell.hidden||!rail.children[selected])return;
     // A single visible card on mobile and desktop hero. Do not reserve the height of an offscreen long card.
-    if(matchMedia('(max-width:640px), (min-width:1121px)').matches){const card=rail.children[selected];rail.style.height=Math.ceil(card.getBoundingClientRect().height+5)+'px';}else rail.style.height='';
+    const card=rail.children[selected];if(observedCard!==card){cardObserver?.disconnect();cardObserver?.observe(card);observedCard=card;}
+    if(matchMedia('(max-width:640px), (min-width:1121px)').matches){const height=Math.ceil(card.getBoundingClientRect().height)+12;const value=height+'px';if(rail.style.height!==value)rail.style.height=value;}else rail.style.height='';
   }
   window.addEventListener('resize',fitActiveCard,{passive:true});
   function scrollToIndex(index,behavior='smooth'){
