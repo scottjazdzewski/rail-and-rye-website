@@ -55,7 +55,7 @@ for (const [path, expected] of Object.entries(approvedBlobs)) {
       // insertions and verify the original homepage bytes remain byte-identical.
       // The approved baseline hash is intentionally NOT changed before visual signoff.
       let html=bytes.toString('utf8');
-      const style='<link rel="stylesheet" href="/assets/race-day-pulse.css?v=4">';
+      const style='<link rel="stylesheet" href="/assets/race-day-pulse.css?v=5">';
       const script='<script src="/assets/race-day-pulse.js?v=4" defer></script>'+String.fromCharCode(10);
       const start='<section id="rr-pulse" class="rr-pulse" aria-label="Race-Day Pulse" hidden>';
       const stop='</section>'+String.fromCharCode(10);
