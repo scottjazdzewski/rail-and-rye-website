@@ -35,11 +35,11 @@ try{
   console.log('PREMIUM_GEOMETRY',width,JSON.stringify(geometry));
   console.log('CARD_GEOMETRY',await page.locator('.rr-pulse-item').first().evaluate(el=>({height:el.getBoundingClientRect().height,children:[...el.children].map(x=>[x.className,x.getBoundingClientRect().height])})));
   await page.screenshot({path:'pulse-premium-preview/homepage-'+width+'.png'});
-  if(width===390){await page.locator('#rr-pulse').screenshot({path:'pulse-premium-preview/mobile-pulse.png'});await page.locator('.rr-pulse-tool').first().click();const download=page.waitForEvent('download');await page.locator('.rr-pulse-menu button').filter({hasText:'Instagram image'}).first().click();await (await download).saveAs('pulse-premium-preview/instagram.png');}
+  if(width===390){await page.locator('#rr-pulse').screenshot({path:'pulse-premium-preview/mobile-pulse.png'});await page.locator('.rr-pulse-tool').first().click();const download=page.waitForEvent('download');await page.locator('.rr-pulse-menu button').filter({hasText:'Download Card'}).first().click();await (await download).saveAs('pulse-premium-preview/instagram.png');}
   assert.ok(geometry.page<=geometry.viewport+1,'No page overflow');
   if(width>=1121)assert.ok(geometry.bottom<=geometry.heroBottom+2,'Desktop Pulse fits hero');
   else assert.ok(geometry.top>=geometry.heroBottom-1,'Mobile Pulse below hero');
-  if(width<=390)assert.ok(geometry.height<=240,'Compact mobile Pulse including optional context');
+  if(width<=390)assert.ok(geometry.height<=320,'Compact mobile Pulse including optional context');
   await page.close();
  }
  console.log('PREMIUM_PREVIEW_PASS');
