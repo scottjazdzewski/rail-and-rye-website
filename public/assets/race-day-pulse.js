@@ -293,14 +293,6 @@
     links.append(original,paid);footer.append(links,shareTools(item));article.append(footer);
     return article;
   }
-  function buildCTA(){
-    const item=$('div','rr-pulse-item rr-pulse-cta');
-    item.append($('p','rr-pulse-track','THE COMPLETE PICTURE'),
-      $('h3','rr-pulse-headline','More Than A Single Insight.'),
-      $('p','rr-pulse-message','Full-Field Analysis, Win Probabilities and Full Finishing Order Projections—all in the Intelligence Hub.'));
-    const a=$('a','rr-pulse-cta-link','Explore Intelligence Hub');a.href='/store/';
-    item.append(a);return item;
-  }
   function fitActiveCard(){
     if(shell.hidden||!rail.children[selected])return;
     // A single visible card on mobile and desktop hero. Do not reserve the height of an offscreen long card.
@@ -338,7 +330,7 @@
       if(!valid.length){shell.hidden=true;events=[];revision='';return;}
       const key=JSON.stringify(valid);
       if(key===revision)return;
-      revision=key;events=valid;rail.replaceChildren(...valid.map(buildCard),buildCTA());
+      revision=key;events=valid;rail.replaceChildren(...valid.map(buildCard));
       status.textContent=data.preview?'Design preview':valid.length+' verified '+(valid.length===1?'insight':'insights')+' today';
       shell.hidden=false;scrollToIndex(0,'instant');
       const focus=new URL(location.href).searchParams.get('pulse');
