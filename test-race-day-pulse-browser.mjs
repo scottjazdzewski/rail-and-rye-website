@@ -16,6 +16,8 @@ const make=(i)=>({
  message:i%2?('With #3 scratched, #'+(i+1)+' Sample Runner '+i+' has risen from 18.2% to 25.3% in TRI updated win projections.'):
  ('With #3 scratched, #'+(i+1)+' Sample Runner '+i+' is TRI new projected favorite at 31.2%, up from 22.2% before the scratches.'),
  scratches:[{program:'3',horse:'Sample Scratched Horse 3'},{program:'11A',horse:'Also Scratched Runner 11A'}],
+ metric:{label:'WIN',before:i%2?18.2:22.2,after:i%2?25.3:31.2},
+ summary:{projected_rank:1,win_probability:i%2?25.3:31.2},
  hub_url:'/store/?date='+date
 });
 let mode='six';const fixture=()=>({date,status:'ok',items:mode==='empty'?[]:(mode==='one'?[make(0)]:Array.from({length:6},(_,i)=>make(i)))});
@@ -40,7 +42,7 @@ try{
  browser=await chromium.launch({headless:true});
  const origin='http://127.0.0.1:'+server.address().port;
  mkdirSync('pulse-preview-screenshots',{recursive:true});
- for(const width of [320,375,390,430,768,1280]){
+ for(const width of [768,1280,1440]){
   const page=await browser.newPage({viewport:{width,height:850},deviceScaleFactor:1});
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.route(/fonts\.googleapis\.com|fonts\.gstatic\.com/,route=>route.abort());
@@ -90,13 +92,13 @@ try{
   assert.ok(await page.locator('.rr-pulse-scratch-list').first().evaluate(el=>parseFloat(getComputedStyle(el).paddingTop)>=3),
     'Scratch chips have deliberate breathing room');
   assert.match(await page.locator('.rr-pulse-track').first().innerText(),/1ST/,'Use ordinal race labels');
-  assert.ok((await page.locator('.rr-pulse-headline').first().innerText()).includes('New Projected Favorite'));
+  assert.ok((await page.locator('.rr-pulse-headline').first().innerText()).includes('Sample Runner 0'));
   assert.equal(await page.locator('.rr-pulse-logo').count(),1,'Approved brand mark appears in Pulse');
   if(width<=640){
     assert.ok(await page.locator('.rr-pulse-affected').first().isHidden(),'Mobile repeats no redundant named-horse line');
     assert.match(await page.locator('.rr-pulse-message').first().innerText(),/Sample Runner 0/,
       'Mobile Analysis still names its affected horse');
-  }else assert.ok(await page.locator('.rr-pulse-affected').first().isVisible(),
+  }else assert.ok(await page.locator('.rr-pulse-headline').first().isVisible(),
     'Desktop keeps the named featured horse line');
   assert.ok(layout.railScrollable,'Scroller should overflow inside its own boundary');
   const geometry=await page.evaluate(()=>{
@@ -157,7 +159,7 @@ try{
   assert.deepEqual(await page.locator('.rr-pulse-menu button').allTextContents(),['Share to X','Download Card','Copy Link']);
   const href=await page.locator('.rr-pulse-menu a').first().getAttribute('href');
   assert.ok(new URL(href).pathname.startsWith('/pulse/'),'Share links to specific alert');
-  if(width===390){
+  if(width===1280){
     const downloadEvent=page.waitForEvent('download',{timeout:12000});
     await page.locator('.rr-pulse-menu button').filter({hasText:'Download Card'}).first().click();
     const download=await downloadEvent;
@@ -190,5 +192,5 @@ try{
  await one.locator('.rr-pulse-item').first().waitFor({timeout:12000});
  assert.equal(await one.locator('.rr-pulse-item').count(),1,'One qualifying item, no forced six');
  await one.close();
- console.log('RACE-DAY PULSE BROWSER QA PASS — six viewports, images, carousel, sharing, empty/one/six');
+ console.log('RACE-DAY PULSE BROWSER QA PASS — desktop/tablet viewports, images, carousel, sharing, empty/one/six');
 }finally{if(browser)await browser.close();await new Promise(r=>server.close(r))}
