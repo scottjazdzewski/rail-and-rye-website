@@ -47,16 +47,12 @@
     document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(uri),1500);
   }
   function wrap(ctx,text,x,y,maxWidth,lineHeight,maxLines){
-    const words=text.split(/\s+/);let line='',count=0;
-    for(const word of words){
-      const candidate=line?line+' '+word:word;
-      if(ctx.measureText(candidate).width>maxWidth&&line){
-        ctx.fillText(line,x,y+lineHeight*count++);
-        line=word;
-        if(count>=maxLines)return;
-      }else line=candidate;
-    }
-    if(line&&count<maxLines)ctx.fillText(line,x,y+lineHeight*count);
+    const words=String(text).split(/\s+/),lines=[];let line='';
+    for(const word of words){const candidate=line?line+' '+word:word;if(line&&ctx.measureText(candidate).width>maxWidth){lines.push(line);line=word;}else line=candidate;}
+    if(line)lines.push(line);
+    const visible=lines.slice(0,maxLines);
+    if(lines.length>maxLines){let last=visible[maxLines-1];while(last&&ctx.measureText(last+'…').width>maxWidth)last=last.slice(0,-1);visible[maxLines-1]=last.trimEnd()+'…';}
+    visible.forEach((l,i)=>ctx.fillText(l,x,y+i*lineHeight,maxWidth));
   }
   // Unified, responsive social master. All exports use actual brand assets and
   // the exact same SVG medallion as the homepage. No fabricated source fields.
@@ -135,10 +131,11 @@
     txt((diff>0?'+':'')+diff.toFixed(1)+' Percentage Points',W/2,py+ph-(portrait?30:13),portrait?37:23,col,800,B-36,'center');
     const context=selectedContext(item),cy=portrait?754:444,ch=portrait?86:42;
     if(context.length){panel(X,cy,B,ch,12);context.forEach(([k,v],i)=>{const cx=X+B*(i+.5)/context.length;txt(k+'  '+v,cx,cy+(portrait?54:28),portrait?31:20,ivory,700,B/context.length-18,'center');});}
-    const takeawayY=portrait?884:512;
-    font(portrait?31:22,500);c.fillStyle=ivory;wrap(c,item.short_message||item.message,X,takeawayY,B,portrait?37:26,2);
-    const scratches=Array.isArray(item.scratches)?item.scratches:[],sy=portrait?979:565,ss=portrait?61:34;
-    if(scratches.length){txt('SCRATCHED',X,sy+(portrait?23:14),portrait?26:18,gold,800);let sx=X+(portrait?192:134);for(const sc of scratches){if(sx+ss>R)break;await saddle(sc.program,sx,sy-(portrait?18:12),ss);sx+=ss+(portrait?10:8);}}
+    const takeawayY=portrait?876:508;
+    font(portrait?31:22,500);c.fillStyle=ivory;wrap(c,item.short_message||item.message,X,takeawayY,B,portrait?37:25,2);
+    if(item.kind==='PACE_ADVANTAGE'&&item.pace_fit){const names={red:'Negative',gray:'Neutral',green:'Positive'};const before=names[item.pace_fit.before],after=names[item.pace_fit.after];if(before&&after)txt('Pace Fit: '+before+' → '+after,X,portrait?943:553,portrait?24:17,gold,700,B);}
+    const scratches=Array.isArray(item.scratches)?item.scratches:[],sy=portrait?995:576,ss=portrait?57:29;
+    if(scratches.length){txt('SCRATCHED',X,sy+(portrait?23:14),portrait?26:18,gold,800);let sx=X+(portrait?192:134);const step=ss+(portrait?10:8),capacity=Math.floor((R-sx+step-ss)/step),show=scratches.length>capacity?Math.max(0,capacity-1):scratches.length;for(const sc of scratches.slice(0,show)){await saddle(sc.program,sx,sy-(portrait?18:12),ss);sx+=step;}if(scratches.length>show)txt('+'+(scratches.length-show),sx,sy+(portrait?23:14),portrait?22:17,gold,750,R-sx);}
     const ctaY=portrait?1066:607,ctaH=portrait?153:40;
     panel(X,ctaY,B,ctaH,portrait?18:10);
     if(portrait){
