@@ -146,6 +146,7 @@
       const m=metricText(item);
       if(m){c.fillStyle='#081b2b';c.beginPath();c.roundRect(50,495,980,225,20);c.fill();c.strokeStyle='#927748';c.stroke();c.fillStyle='#d8be89';c.font='700 27px system-ui';c.fillText(m.label,80,540);c.font='700 19px system-ui';c.fillText('ORIGINAL',80,574);c.fillText('REVISED',575,574);c.fillStyle='#b4c0ca';c.font='700 89px system-ui';c.fillText(m.before,60,655);c.fillStyle='#e0b66b';c.fillText('→',435,655);c.fillStyle=m.up?'#73d2a2':'#f2ab9c';c.fillText(m.after,575,655);const diff=item.metric.after-item.metric.before;c.font='700 23px system-ui';c.fillText((diff>0?'+':'')+diff.toFixed(1)+' PTS',825,540);for(const [px,val,col] of [[80,item.metric.before,'#a6b5c4'],[575,item.metric.after,m.up?'#73d2a2':'#f2ab9c']]){c.fillStyle='#354957';c.beginPath();c.roundRect(px,681,330,8,4);c.fill();if(val>0){c.fillStyle=col;c.beginPath();c.roundRect(px,681,330*val/100,8,4);c.fill();}}}
       c.fillStyle='#f2f2f2';c.font='32px system-ui';wrap(c,item.short_message||item.message,60,755,960,44,4);
+      const context=selectedContext(item);if(context.length){c.fillStyle='#d8be89';c.font='700 25px system-ui';c.fillText(context.map(([label,value])=>label+'  '+value).join('     ·     '),60,925);}
       const scratches=Array.isArray(item.scratches)?item.scratches:[];
       if(scratches.length){c.fillStyle='#d8be89';c.font='700 25px system-ui';c.fillText('SCRATCHES',60,980);let px=60;for(const scratch of scratches.slice(0,20)){if(px+42>1020)break;const img=chip(scratch.program,true).querySelector('img');c.fillStyle='#fff';c.fillRect(px,1005,42,42);if(img){try{await img.decode();c.drawImage(img,px,1005,42,42);}catch{}}px+=48;}}
       c.fillStyle='#e0b66b';c.font='700 28px system-ui';c.fillText('railandryeracing.com',60,1250);
@@ -232,6 +233,15 @@
     if(!m||!Number.isFinite(m.before)||!Number.isFinite(m.after)||m.before<0||m.after<0||m.before>100||m.after>100)return null;
     return {before:m.before.toFixed(1)+'%',after:m.after.toFixed(1)+'%',label:m.label==='SECOND_OR_THIRD'?'2ND OR 3RD PROBABILITY':'WIN PROBABILITY',up:m.after>m.before};
   }
+  function selectedContext(item){
+    const info=item.summary, out=[];
+    if(Number.isInteger(info?.projected_rank)&&info.projected_rank>0)out.push(['Projected Rank',ordinal(info.projected_rank)]);
+    if(Number.isFinite(info?.win_probability)&&info.win_probability>0&&globalThis.RRRaceTitles?.formatFairOdds){
+      const odds=globalThis.RRRaceTitles.formatFairOdds({win_probability_exact:info.win_probability});
+      if(odds&&odds!=='—')out.push(['Revised Fair Odds',odds]);
+    }
+    return out;
+  }
   function buildCard(item){
     const article=$('article','rr-pulse-item');
     article.id='rr-pulse-'+item.id;
@@ -251,6 +261,7 @@
       delta.append($('span','rr-pulse-prob-value',(diff>0?'+':'')+diff.toFixed(1)),$('span','rr-pulse-prob-caption','PTS'));
       numbers.append($('span','rr-pulse-metric-label',m.label),probabilityColumn('ORIGINAL',item.metric.before,'rr-pulse-before'),$('span','rr-pulse-arrow-mark','→'),probabilityColumn('REVISED',item.metric.after,movement),delta);
       body.append(numbers);
+      const context=selectedContext(item);if(context.length){const row=$('div','rr-pulse-context');for(const [label,value] of context){const cell=$('span','rr-pulse-context-cell');cell.append($('span','rr-pulse-prob-caption',label),$('strong','rr-pulse-context-value',value));row.append(cell);}body.append(row);}
       const pace=paceComparison(item);if(pace)body.append(pace);
     }else if(item.horse)body.append($('p','rr-pulse-affected',item.horse+' · #'+item.chip));
     body.append($('p','rr-pulse-message',item.short_message||item.message));
@@ -323,7 +334,8 @@
     }catch{if(!events.length)shell.hidden=true;}
     finally{pending=false;}
   }
-  load();setInterval(load,60000);
+  // Reuse the existing sitewide North American tote formatting authority.
+  import('/assets/rr-race-titles.js').catch(()=>{}).finally(()=>{load();setInterval(load,60000);});
   if(!matchMedia('(prefers-reduced-motion: reduce)').matches){
     setInterval(()=>{if(!shell.hidden&&!paused&&!document.hidden&&rail.children.length>1)scrollToIndex((selected+1)%rail.children.length);},6500);
   }
