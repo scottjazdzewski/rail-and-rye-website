@@ -90,24 +90,40 @@
 .rr-pulse-item-footer{border-top:1px solid rgba(212,167,89,.12);padding-top:7px}
 .rr-pulse-story-link,.rr-pulse-paid-link{font-size:11px}
 .rr-pulse-cta-link{font-family:var(--heritage-sans,system-ui,sans-serif)}
-/* Use the open right-hand side of the approved photograph, not a new strip
-   below it. Desktop hero height and all existing left-hand copy stay locked. */
+/* Desktop Pulse: in-flow grid prevents header overlap and clipped card controls. */
 @media(min-width:1121px){
- .heritage-hero>.rr-pulse{
-   position:absolute;z-index:4;top:clamp(92px,7.5vw,112px);
-   right:clamp(25px,3.2vw,64px);width:clamp(368px,34vw,460px);
-   border:1px solid #b18a49;border-radius:10px;
-   background:rgba(7,26,44,.94);box-shadow:0 15px 42px rgba(0,0,0,.43);
-   backdrop-filter:blur(7px);
- }
- .heritage-hero>.rr-pulse .rr-pulse-shell{padding:9px 12px}
- .heritage-hero>.rr-pulse .rr-pulse-item{width:100%;min-width:100%;max-width:100%;flex-basis:100%}
- .heritage-hero>.rr-pulse .rr-pulse-eyebrow,
- .heritage-hero>.rr-pulse .rr-pulse-count{display:none}
- .heritage-hero>.rr-pulse .rr-pulse-message{font-size:12px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+ .heritage-home>.heritage-hero:has(>.rr-pulse:not([hidden])){display:grid;grid-template-columns:minmax(0,1fr) minmax(350px,clamp(350px,35vw,460px));grid-template-rows:auto 1fr;column-gap:clamp(14px,2vw,36px);align-items:center;height:auto!important;min-height:0!important;padding-bottom:12px}
+ .heritage-hero:has(>.rr-pulse:not([hidden]))>.heritage-header{grid-column:1/-1;align-self:start;width:100%}
+ .heritage-hero:has(>.rr-pulse:not([hidden]))>.heritage-lead{grid-column:1;grid-row:2;width:100%;min-width:0;padding:clamp(12px,1.5vw,24px) 0 12px clamp(22px,3.2vw,64px);margin:0}
+ .heritage-hero:has(>.rr-pulse:not([hidden]))>.heritage-lead h1{font-size:clamp(46px,4.25vw,84px);line-height:.94;margin:12px 0 14px}
+ .heritage-hero:has(>.rr-pulse:not([hidden]))>.heritage-lead p{font-size:clamp(12px,1vw,16px);line-height:1.45;margin-top:12px}
+ .heritage-hero>.rr-pulse:not([hidden]){position:relative;grid-column:2;grid-row:2;top:auto;right:auto;width:auto;min-width:0;margin:10px clamp(22px,3.2vw,64px) 0 0;align-self:center;justify-self:stretch;z-index:4;border:1px solid #b18a49;border-radius:10px;background:rgba(7,26,44,.94);box-shadow:0 15px 42px rgba(0,0,0,.43);backdrop-filter:blur(7px)}
+ .heritage-hero>.rr-pulse .rr-pulse-shell{padding:7px 9px}
+ .heritage-hero>.rr-pulse .rr-pulse-heading{margin-bottom:4px}
+ .heritage-hero>.rr-pulse .rr-pulse-item{width:100%;min-width:100%;max-width:100%;flex-basis:100%;padding:8px 9px;gap:3px}
+ .heritage-hero>.rr-pulse .rr-pulse-eyebrow,.heritage-hero>.rr-pulse .rr-pulse-count{display:none}
  .heritage-hero>.rr-pulse .rr-pulse-title{font-size:18px}
- .heritage-hero>.rr-pulse .rr-pulse-scratch-list{gap:6px}
+ .heritage-hero>.rr-pulse .rr-pulse-numbers{padding:5px 7px;margin:2px 0 3px}
+ .heritage-hero>.rr-pulse .rr-pulse-scratch-list{padding:4px 0;gap:6px}
+ .heritage-hero>.rr-pulse .rr-pulse-item-footer{padding-top:4px}
+ .heritage-hero>.rr-pulse .rr-pulse-message{font-size:12px;display:block;overflow:visible}
 }
+@media(min-width:1121px) and (max-height:550px){
+ .heritage-home>.heritage-hero:has(>.rr-pulse:not([hidden])){padding-bottom:7px}
+ .heritage-hero>.rr-pulse:not([hidden]){margin-top:6px}
+ .heritage-hero>.rr-pulse .rr-pulse-shell{padding:5px 7px}
+ .heritage-hero>.rr-pulse .rr-pulse-logo{width:26px;height:26px}
+ .heritage-hero>.rr-pulse .rr-pulse-item{padding:6px 7px;gap:2px}
+ .heritage-hero>.rr-pulse .rr-pulse-horse-line .rr-pulse-headline{font-size:16px}
+ .heritage-hero>.rr-pulse .rr-pulse-saddle{width:28px;height:28px;flex-basis:28px}
+ .heritage-hero>.rr-pulse .rr-pulse-saddle--scratch{width:20px;height:20px;flex-basis:20px}
+ .heritage-hero>.rr-pulse .rr-pulse-numbers{font-size:23px;padding:4px 6px}
+ .heritage-hero>.rr-pulse .rr-pulse-message{font-size:11px;line-height:1.25}
+ .heritage-hero>.rr-pulse .rr-pulse-context{margin:1px 0;font-size:10px}
+ .heritage-hero>.rr-pulse .rr-pulse-scratch-list{padding:3px 0}
+ .heritage-hero>.rr-pulse .rr-pulse-item-footer{padding-top:3px}
+}
+.rr-pulse-nav:has(>.rr-pulse-arrow:disabled):not(:has(>.rr-pulse-arrow:not(:disabled))){visibility:hidden}
 /* Mobile: a shallow swipeable teaser, never a full-content card or new hero.
    Full handicapper narrative remains on the individually linked article. */
 @media(max-width:640px){
