@@ -69,7 +69,7 @@
 .rr-dash-program-fallback{display:grid;place-items:center;width:37px;height:37px;border:2px solid #c99831;border-radius:8px;background:#103c78;color:#fff8e9;font:800 14px/1 Inter,system-ui,sans-serif}
 .rr-dash-horse-open{display:block;width:100%;min-width:0;padding:5px 3px;border:0;background:transparent;color:#123567;text-align:left;cursor:pointer}
 .rr-dash-horse-heading{display:flex;align-items:baseline;justify-content:space-between;gap:8px;min-width:0;width:100%}
-.rr-dash-horse-name{flex:1 1 auto;min-width:0;overflow:hidden;font:700 17px/1.2 "Tinos","Times New Roman",serif;text-overflow:ellipsis;white-space:nowrap}
+.rr-dash-horse-name{flex:1 1 auto;min-width:0;overflow:hidden;font:700 17px/1.2 Inter,Arial,system-ui,sans-serif;text-overflow:ellipsis;white-space:nowrap}
 .rr-dash-horse-ml{flex:0 0 auto;color:#637482;font:700 17px/1.2 "Tinos","Times New Roman",serif;white-space:nowrap}
 .rr-dash-horse-connections{display:block;max-width:100%;margin-top:3px;color:#637482;font:11px/1.25 Inter,system-ui,sans-serif;white-space:normal;overflow-wrap:anywhere}
 .rr-dash-metric-value{place-items:center;min-width:0;color:#183755;font:700 14px/1.2 "Tinos","Times New Roman",serif;text-align:center}
@@ -105,7 +105,7 @@ text-transform:uppercase;
 .rr-dash-horse-dialog::backdrop{background:rgba(4,21,42,.68)}
 .rr-dash-horse-dialog-inner{padding:clamp(18px,4vw,30px)}
 .rr-dash-dialog-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:18px;padding-bottom:14px;border-bottom:2px solid #c99831}
-.rr-dash-dialog-head h2{margin:0;color:#123567;font:clamp(24px,5vw,34px)/1.15 "Tinos","Times New Roman",serif}
+.rr-dash-dialog-head h2{margin:0;color:#123567}
 .rr-dash-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .rr-dash-detail-value{padding:11px;border:1px solid #d2b574;border-radius:8px;background:#fffaf0}
 .rr-dash-detail-value dt{color:#657482;font:800 10px/1.3 Inter,system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase}
@@ -260,7 +260,7 @@ text-align:right;
  .rr-dash-horse-dialog::before{content:"";display:block;width:42px;height:5px;margin:10px auto 0;border-radius:3px;background:#c8ccd0}
  .rr-dash-horse-dialog-inner{padding:14px 17px max(22px,env(safe-area-inset-bottom))}
  .rr-dash-dialog-head{align-items:center;gap:12px;margin:0 0 12px;padding:0 0 13px;border-bottom:1px solid #ddd9d2}
- .rr-dash-dialog-head h2{font:700 21px/1.14 "Tinos","Times New Roman",serif;overflow-wrap:anywhere}
+ .rr-dash-dialog-head h2{overflow-wrap:anywhere}
  .rr-dash-dialog-head .rr-member-button{min-height:44px;padding:8px 13px;font-size:10px}
  .rr-dash-detail-grid,.rr-dash-detail-notes{display:none}
  .rr-dash-mobile-analysis{display:block}
@@ -566,8 +566,9 @@ width:13px;
 .rr-dash-horse-dialog{background:#f7f4ee}
 .rr-dash-horse-dialog-inner{padding:0 18px max(24px,env(safe-area-inset-bottom))}
 .rr-dash-dialog-head{position:sticky;top:0;z-index:3;align-items:center;background:#f7f4ee;margin:0 0 12px;padding:10px 0;border-bottom:1px solid #dcd6cb}
-.rr-dash-dialog-head h2{display:flex;align-items:center;gap:10px;min-width:0;font:750 clamp(24px,4vw,30px)/1.18 Inter,Arial,system-ui,sans-serif;letter-spacing:0;color:#123567}
-.rr-dash-dialog-head h2>span:last-child{overflow-wrap:anywhere}
+#rr-dash-horse-title{display:flex;align-items:center;gap:10px;min-width:0;font:750 clamp(18px,4.8vw,24px)/1.18 Inter,Arial,system-ui,sans-serif;letter-spacing:0;color:#123567}
+/* Reuse the real runner-name class inside the drawer, overriding layout only. */
+#rr-dash-horse-title>.rr-dash-horse-name{font-family:Inter,Arial,system-ui,sans-serif;font-weight:750;font-size:inherit;line-height:inherit;letter-spacing:0;white-space:normal;overflow:visible;overflow-wrap:anywhere;text-overflow:clip;flex:0 1 auto;min-width:0}
 .rr-dash-dialog-head .rr-dash-sheet-chip{position:relative;display:grid;place-items:center;width:42px;height:42px;flex:0 0 42px}
 .rr-dash-dialog-head .rr-dash-sheet-chip img{width:42px;height:42px;object-fit:contain}
 .rr-dash-dialog-head .rr-dash-sheet-chip-suffix{position:absolute;right:0;bottom:0;background:#102d53;color:#fff;padding:1px 3px;border-radius:3px;font:800 9px/1 Inter,Arial,system-ui,sans-serif}

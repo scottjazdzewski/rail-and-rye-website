@@ -317,7 +317,7 @@ function profileChip(entry){
 }
 function showHorse(entry){
  const dialog=q("#rr-dash-horse-dialog"),title=q("#rr-dash-horse-title"),detail=q("#rr-dash-horse-detail");
- title.replaceChildren(profileChip(entry),makeNode("span","",entry.horse_name));
+ title.replaceChildren(profileChip(entry),makeNode("span","rr-dash-horse-name",entry.horse_name));
  detail.replaceChildren();
  const mobile=makeNode("div","rr-dash-mobile-analysis rr-profile");
  const race=activeCard?.card?.races?.find(item=>item.race_number===activeRace);
