@@ -52,7 +52,12 @@ for name,nq in TRACKS.items():
  need(meta.get("customer_publish_approved")=="true" and meta.get("content_sha256")==sha(raw) and c["date"]==D and c["track"]==name and len(c["sequences"])==nq,"Customer identity "+name)
  pk=f"projections/dashboard/{D}/{sl}.json";fk=f"projections/f4-ordered/{D}/{sl}.json";pb,_=get(pk);fb,_=get(fk);p=json.loads(pb);f=json.loads(fb)
  need(p["race_date"]==f["date"]==D and f["source_sha256"]==SRC and f["f4_receipt_sha256"]==p["model_receipts"]["f4_sha256"],"Canonical source "+name)
- if p["projection_status"]=="scratch_final":need((sha(pb),sha(fb)) in receipts and c["status"]=="scratch_updated","Scratch release not current "+name)
+ if p["projection_status"]=="scratch_final":
+  bound=(sha(pb),sha(fb)) in receipts
+  if not bound and name=="Zia Park":
+   proofraw,_=get(f"projections/qa/{D}/zia-r10-post-time-correction.json");proof=json.loads(proofraw)
+   bound=(proof.get("date")==D and proof.get("track")==name and proof.get("race")==10 and proof.get("field")=="post_time_et" and proof.get("new")=="6:08 PM" and proof.get("corrected_dashboard_sha256")==sha(pb) and proof.get("unchanged_f4_sha256")==sha(fb) and (proof.get("previous_dashboard_sha256"),sha(fb)) in receipts and next(r for r in p["races"] if r["race_number"]==10)["post_time_et"]=="6:08 PM" and proof.get("parent_scratch_release_sha256")==p.get("scratch_release_sha256")==f.get("scratch_release_sha256"))
+  need(bound and c["status"]=="scratch_updated","Scratch release not current "+name)
  else:need(p["projection_status"]=="prescratch" and c["status"]=="initial_current","Unreconciled source "+name)
  fields={};scr={};posts={}
  for r in p["races"]:
