@@ -323,7 +323,7 @@
     if(shell.hidden||!rail.children[selected])return;
     // A single visible card on mobile and desktop hero. Do not reserve the height of an offscreen long card.
     const card=rail.children[selected];if(observedCard!==card){cardObserver?.disconnect();cardObserver?.observe(card);observedCard=card;}
-    if(matchMedia('(max-width:640px), (min-width:1121px)').matches){const height=Math.ceil(card.getBoundingClientRect().height)+12;const value=height+'px';if(rail.style.height!==value)rail.style.height=value;}else rail.style.height='';
+    if(matchMedia('(max-width:640px), (min-width:1121px)').matches){const compact=!detailMode&&matchMedia('(max-width:640px)').matches;const height=Math.ceil(card.getBoundingClientRect().height)+(compact?4:12);const value=height+'px';if(rail.style.height!==value)rail.style.height=value;}else rail.style.height='';
   }
   window.addEventListener('resize',fitActiveCard,{passive:true});
   function scrollToIndex(index,behavior='smooth'){
