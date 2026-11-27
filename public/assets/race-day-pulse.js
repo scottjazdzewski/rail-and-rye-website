@@ -311,6 +311,10 @@
     const original=$('a','rr-pulse-story-link','Open Insight');original.href=pulseUrl(item);
     const paid=$('a','rr-pulse-paid-link','Full-Field Analysis');paid.href=typeof item.hub_url==='string'&&item.hub_url.startsWith('/')&&!item.hub_url.startsWith('//')?item.hub_url:'/store/';
     links.append(original,paid);footer.append(links,shareTools(item));article.append(footer);
+    // Mobile homepage shows the entire essential insight; full actions live on the detail page.
+    const compact=$('a','rr-pulse-compact-open','Open Pulse');compact.href=pulseUrl(item);
+    const scratchesRow=article.querySelector('.rr-pulse-scratch-list');
+    if(scratchesRow)scratchesRow.append(compact);else {const compactRow=$('div','rr-pulse-compact-row');compactRow.append(compact);article.append(compactRow);}
     return article;
   }
   let observedCard=null;const cardObserver=typeof ResizeObserver==='function'?new ResizeObserver(()=>fitActiveCard()):null;
