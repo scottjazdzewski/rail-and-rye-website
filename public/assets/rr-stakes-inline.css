@@ -13,7 +13,7 @@
 .rr-ed-grade-trophy--g1{background:#f8dc84;border-color:#c79b35;color:#523509}
 .rr-ed-grade-trophy--g2{background:#e8edf1;border-color:#a8b6c4;color:#334c63}
 .rr-ed-grade-trophy--g3{background:#ebcbae;border-color:#be8b5d;color:#5b391d}
-.rr-ed-grade-trophy-icon{font-size:14px;line-height:1}
+.rr-ed-grade-trophy-icon{display:block;width:22px;height:22px;object-fit:contain;flex:0 0 auto}
 .rr-ed-grade-trophy-label{font:800 11px/1 Inter,Arial,system-ui,sans-serif}
 .rr-research-racebar__facts .rr-ed-stakes-title,
 .rr-target-drawer-meta .rr-ed-stakes-title{
