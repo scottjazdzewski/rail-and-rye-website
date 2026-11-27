@@ -26,10 +26,14 @@ try{
   assert.equal(await page.locator('.rr-pulse-numbers').count(),4);
   assert.equal(await page.locator('.rr-pulse-context-cell').count(),8);
   assert.equal(await page.locator('.rr-pulse-pace-comparison').count(),1);
+  assert.equal(await page.locator('.rr-pulse-paid-link[href="/preview-hub"]').count(),4,'All cards retain their product destination');
+  assert.equal((await page.request.get(base+'/preview-hub')).status(),200);
+  assert.equal((await page.request.get(base+'/pulse/2026-11-26/demo-pace')).status(),200);
   assert.ok(await page.locator('.rr-pulse-logo').evaluate(x=>x.decode().then(()=>x.naturalWidth>0)));
   assert.deepEqual(errors,[]);
   const geometry=await page.evaluate(()=>{const p=document.querySelector('#rr-pulse').getBoundingClientRect(),h=document.querySelector('.heritage-hero').getBoundingClientRect();return {height:p.height,top:p.top,bottom:p.bottom,heroBottom:h.bottom,page:document.documentElement.scrollWidth,viewport:document.documentElement.clientWidth}});
   console.log('PREMIUM_GEOMETRY',width,JSON.stringify(geometry));
+  console.log('CARD_GEOMETRY',await page.locator('.rr-pulse-item').first().evaluate(el=>({height:el.getBoundingClientRect().height,children:[...el.children].map(x=>[x.className,x.getBoundingClientRect().height])})));
   await page.screenshot({path:'pulse-premium-preview/homepage-'+width+'.png'});
   if(width===390){await page.locator('#rr-pulse').screenshot({path:'pulse-premium-preview/mobile-pulse.png'});await page.locator('.rr-pulse-tool').first().click();const download=page.waitForEvent('download');await page.locator('.rr-pulse-menu button').filter({hasText:'Instagram image'}).first().click();await (await download).saveAs('pulse-premium-preview/instagram.png');}
   assert.ok(geometry.page<=geometry.viewport+1,'No page overflow');
