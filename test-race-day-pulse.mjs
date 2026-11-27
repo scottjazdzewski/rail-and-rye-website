@@ -103,6 +103,17 @@ assert.equal(courseAlert,null,'Mixed surface and scratch changes remain on hold'
 const nonMaterial={...updatedDirt,entries:[run(1,45),run(2,55)]};
 assert.equal(pulse.insightForRace(before.race_date,before.track_name,originalTurf,
  nonMaterial,'2026-11-26T15:00:00Z'),null);
+// Pace Advantage is based on actual changed Pace Fit, not a PWIN threshold.
+const paceBefore={...before.races[0],surface:'Dirt',entries:before.races[0].entries.map(e=>({...e,metrics:[{label:'Pace Fit',value:'gray'}]}))};
+const paceAfter={...after.races[0],surface:'Dirt',entries:after.races[0].entries.map(e=>({...e,metrics:[{label:'Pace Fit',value:e.program_number==='2'?'green':'gray'}]}))};
+const pace=pulse.paceInsightsForRace(before.race_date,before.track_name,paceBefore,paceAfter,'2026-11-26T15:00:00Z',fingerprint);
+assert.equal(pace.length,1);
+assert.equal(pace[0].kind,'PACE_ADVANTAGE');
+assert.equal(pace[0].chip,'2');
+assert.deepEqual(pace[0].pace_fit,{before:'gray',after:'green'});
+assert.match(pace[0].message,/Pace Fit changes from neutral to positive/);
+assert.equal(pulse.paceInsightsForRace(before.race_date,before.track_name,paceBefore,{...paceAfter,surface:'Turf'},'2026-11-26T15:00:00Z').length,0);
+assert.equal(pulse.paceInsightsForRace(before.race_date,before.track_name,paceBefore,{...paceAfter,entries:paceAfter.entries.map(e=>({...e,metrics:[]}))},'2026-11-26T15:00:00Z').length,0);
 assert.equal(event.kind,'NEW_FAVORITE');
 assert.equal(event.chip,'2');
 assert.equal(event.metric.label,'WIN');
