@@ -7,9 +7,9 @@ from nacl.public import SealedBox
 from botocore.exceptions import ClientError
 from pick_private_score_bridge import private_key,BUCKET,REPO
 D="2026-11-27"; SRC="c4f7b36d1b72f03ee8bcff3b022cd4740d4dbf0f190e218bc89cf9bf18504e06"; PARENT="561bbbb058f15a0d674c59a24d565fcbb75bbf908ef08be165a158e34b55e3ed"
-RAW="e055109892d7874039c49a6bc6a483b3ba31fcd45cec4d50a802d6681ae04196"; CIPHER="2b450d60e0cccc75e787b6d747aa3be2f7422396a02f558e18105892c077ea86"
+RAW="7ca877d50d61588c15b548565a58e6cb82be527086c1ffa708d55c399070c82b"; CIPHER="2a5ae86e5214e1ceb062eb12ea9303feb261e2669dfd48947e45b636943f3de8"
 P=f"racing-intelligence/product-tabs/pick-tickets/{D}/"
-CONF={"Charles Town":("charles-town",8,63,11,2),"Fair Grounds":("fair-grounds",8,57,11,2),"Tampa Bay":("tampa-bay-downs",8,51,11,3),"Woodbine":("woodbine",8,55,9,2)}
+CONF={"Charles Town":("charles-town",8,63,11,2),"Fair Grounds":("fair-grounds",8,58,11,2),"Tampa Bay":("tampa-bay-downs",8,51,11,3),"Woodbine":("woodbine",8,55,9,2)}
 SCR={"Charles Town":{"1":["2"],"5":["2"],"6":["4","6"],"7":["8"],"8":["2"]},"Fair Grounds":{"5":["4","9","10","11"],"7":["1","7","12","14"]},"Tampa Bay":{"4":["3"],"5":["6"],"6":["5","7","9"],"8":["2","5","8","10"]},"Woodbine":{"4":["7"],"5":["3","7","9"],"7":["2","6"]}}
 TAM_PARENT="81a9db56a8b0a0c3a550191183437c3b5dafe64dd83bc9ef212c4f286247158f"
 def need(ok,msg):
@@ -21,10 +21,10 @@ def hex64(v):return isinstance(v,str) and bool(re.fullmatch("[a-f0-9]{64}",v))
 need(os.environ["GITHUB_REPOSITORY"]==REPO and os.environ["GITHUB_REF"]=="refs/heads/main","Unauthorized branch")
 need(datetime.now(timezone.utc).astimezone(ZoneInfo("America/New_York")).date().isoformat()==D,"Date closed")
 enc=Path("private-ingest/pick-20261127-scratch-batch2/source.enc").read_bytes()
-need(sha(enc)==CIPHER and len(enc)==17692,"Cipher checksum")
+need(sha(enc)==CIPHER and len(enc)==17736,"Cipher checksum")
 need(base64.b64encode(bytes(private_key().public_key)).decode()=="jjxUgQwkjBuzNDPAGiSs1Rnp3vqC6/1V7kBtJJDELDk=","Current bridge key mismatch")
 z=zlib.decompressobj();raw=z.decompress(SealedBox(private_key()).decrypt(base64.b64decode(enc,validate=True)),150001)
-need(z.eof and not z.unused_data and len(raw)==83793 and sha(raw)==RAW,"Exact sealed candidate checksum")
+need(z.eof and not z.unused_data and len(raw)==83986 and sha(raw)==RAW,"Exact sealed candidate checksum")
 b=json.loads(raw);need(b["date"]==D and b["source_archive_sha256"]==SRC and b["initial_stage_sha256"]==PARENT and len(b["tracks"])==4 and {x["card"]["track"] for x in b["tracks"]}==set(CONF),"Sealed slate identity")
 s=boto3.client("s3",endpoint_url="https://"+os.environ["TRI_CLOUDFLARE_ACCOUNT_ID"].strip()+".r2.cloudflarestorage.com",region_name="auto",aws_access_key_id=os.environ["TRI_R2_ACCESS_KEY_ID"].strip(),aws_secret_access_key=os.environ["TRI_R2_SECRET_ACCESS_KEY"].strip())
 def get(k):
@@ -68,7 +68,7 @@ for row in b["tracks"]:
   for k,vs in vectors.items():
    ids={v[0] for v in vs};need(len(ids)==len(vs) and all(len(v)==4 and isinstance(v[1],str) and 0<v[2]<1 and abs(v[2]-v[3])<1e-12 for v in vs) and abs(sum(v[2] for v in vs)-1)<1e-10,"TRI/F4 vector invalid")
    need(ids==set(newfields[k]) and all(abs(newfields[k][v[0]]-100*v[2])<1e-9 for v in vs),"Ticket field parity")
-   need(ids==set(oldfields[k])-set(SCR[name].get(k,[])),"Nonmonotonic active roster")
+   need(ids==(set(oldfields[k])-set(SCR[name].get(k,[])))|set(row["drawins"].get(k,{})),"Nonmonotonic active roster")
   # Check currently published upstream snapshot. If it is an earlier edition,
   # owner authorized independent product release; never label it parity-verified.
   pkey=f"projections/dashboard/{D}/{sl}.json";fkey=f"projections/f4-ordered/{D}/{sl}.json"
@@ -110,7 +110,7 @@ for row in b["tracks"]:
   subprocess.run(["node","scripts/build_pick_batch2_1127.mjs"],check=True)
   body=Path("/tmp/rr-pick-batch2-out.json").read_bytes();out=json.loads(body)
   need(out["revision"]==rev and out["track"]==name and menus(out)==menus(prev),"Customer final identity")
-  audit={"date":D,"track":name,"parent_customer_sha256":sha(old),"new_customer_sha256":sha(body),"source_packet_sha256":RAW,"source_archive_sha256":SRC,"initial_stage_sha256":PARENT,"independent_receipts":r,"proof":proof,"official_source_sha256":row["official_source_sha256"],"market_review":row["market_review"],"parity_mode":mode,"upstream_dashboard_sha256":sha(pb),"upstream_f4_sha256":sha(fb),"canonical_release_sha256":canonical["release_sha256"] if canonical else None,"revision":rev}
+  audit={"date":D,"track":name,"parent_customer_sha256":sha(old),"new_customer_sha256":sha(body),"source_packet_sha256":RAW,"source_archive_sha256":SRC,"initial_stage_sha256":PARENT,"independent_receipts":r,"proof":proof,"official_source_sha256":row["official_source_sha256"],"market_review":row["market_review"],"parity_mode":mode,"upstream_dashboard_sha256":sha(pb),"upstream_f4_sha256":sha(fb),"canonical_release_sha256":canonical["release_sha256"] if canonical else None,"output_receipt_sha256":p["model_receipts"]["f4_sha256"] if canonical else r["f4_sha256"],"revision":rev}
   ready.append((name,key,old,om,body,audit,pkey,pb,fkey,fb,row))
  except Exception as e:
   holds.append(name);print("PICK_BATCH2_HOLD",name,type(e).__name__,str(e)[:140],flush=True)
@@ -120,7 +120,7 @@ for name,key,old,om,body,audit,pkey,pb,fkey,fb,row in ready:
  immutable(prefix+f"r{rev-1}-customer-"+sha(old)+".json",old,om["Metadata"])
  a=compact(audit);immutable(prefix+f"r{rev}-source-"+sha(a)+".json",a,{"sha256":sha(a)})
  private=compact(row);immutable(prefix+f"r{rev}-independent-"+sha(private)+".json",private,{"sha256":sha(private)})
- c=json.loads(body);meta={**om["Metadata"],"revision":str(rev),"content_sha256":sha(body),"source_sha256":c["source_input_sha256"],"receipt_sha256":c["source_receipt"]["sha256"],"customer_publish_approved":"true","publication_mode":"owner-approved-gpt"}
+ c=json.loads(body);meta={**om["Metadata"],"revision":str(rev),"content_sha256":sha(body),"source_sha256":c["source_input_sha256"],"receipt_sha256":audit["output_receipt_sha256"],"customer_publish_approved":"true","publication_mode":"owner-approved-gpt"}
  s.put_object(Bucket=BUCKET,Key=key,Body=body,ContentType="application/json",CacheControl="private,no-store",Metadata=meta,IfMatch=om["ETag"])
  rb,rm=get(key);need(rb==body and rm["Metadata"].get("content_sha256")==sha(body) and rm["Metadata"].get("customer_publish_approved")=="true","Customer readback")
  print("PICK_BATCH2_READBACK_PASS",name,rev,row["runners"],len(c["sequences"]),audit["parity_mode"],sha(body),flush=True)
