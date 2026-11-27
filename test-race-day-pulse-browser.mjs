@@ -26,6 +26,7 @@ const server=createServer((req,res)=>{
  if(pathname==='/api/race-day-pulse'){
   res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify(fixture()));return;
  }
+ if(/^\/pulse\/[^/]+\/[^/]+\/card-v1\.png$/.test(pathname)){res.writeHead(200,{'Content-Type':'image/png'});res.end();return;}
  if(pathname==='/api/products'){res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({products:[]}));return;}
  let target=pathname==='/'?'/index.html':pathname;
  const file=resolve(dir,'.'+target);
@@ -153,7 +154,7 @@ try{
   // A click opens manual share menu; never posts to X without the user.
   await page.locator('.rr-pulse-tool').first().click();
   assert.ok(await page.locator('.rr-pulse-menu').first().isVisible(),'Share control shows manual actions');
-  assert.deepEqual(await page.locator('.rr-pulse-menu button').allTextContents(),['Share to Socials','Download Card','Copy Link']);
+  assert.deepEqual(await page.locator('.rr-pulse-menu button').allTextContents(),['Share to X','Download Card','Copy Link']);
   const href=await page.locator('.rr-pulse-menu a').first().getAttribute('href');
   assert.ok(new URL(href).pathname.startsWith('/pulse/'),'Share links to specific alert');
   if(width===390){
@@ -164,10 +165,13 @@ try{
     await download.saveAs('pulse-preview-screenshots/share-image.png');
     const png=readFileSync('pulse-preview-screenshots/share-image.png');
     assert.equal(png.readUInt32BE(16),1080);assert.equal(png.readUInt32BE(20),1350);
-    await page.evaluate(()=>{Object.defineProperty(navigator,'canShare',{configurable:true,value:()=>true});Object.defineProperty(navigator,'share',{configurable:true,value:async payload=>{window.__pulseShared={url:payload.url,files:payload.files.map(f=>({name:f.name,type:f.type,size:f.size}))};}});});
-    await page.getByRole('button',{name:'Share to Socials',exact:true}).click();
-    const shared=await page.evaluate(()=>window.__pulseShared);
-    assert.ok(shared.url.includes('/pulse/'));assert.equal(shared.files[0].type,'image/png');assert.ok(shared.files[0].size>0);
+    await page.evaluate(()=>{window.open=(url)=>{window.__pulseShareURL=url;return null;};});
+    await page.getByRole('button',{name:'Share to X',exact:true}).click();
+    const shared=await page.evaluate(()=>window.__pulseShareURL);
+    assert.equal(new URL(shared).origin,'https://x.com');
+    assert.ok(new URL(shared).searchParams.get('url').includes('/pulse/'));
+    assert.ok(new URL(shared).searchParams.get('text'));
+
   }
   await page.locator('.rr-pulse-tool').first().click();
   await page.locator('#rr-pulse-next').click();
