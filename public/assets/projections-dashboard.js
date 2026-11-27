@@ -271,79 +271,134 @@ function makeMetricGroup(entry){
  }
  return group;
 }
+// Horse intelligence presentation: never modify the published TRI inputs.
+function profileNumber(value){
+ if(value==null||String(value).trim()==="")return null;
+ const number=Number(value);
+ return Number.isFinite(number)?number:null;
+}
+function profileProbability(value){
+ const number=profileNumber(value);
+ return number!=null&&number>=0&&number<=1?number:null;
+}
+function profileWin(entry){
+ const number=profileNumber(entry.win_probability_exact??entry.win_probability);
+ return number!=null&&number>=0&&number<=100?number:null;
+}
+function profilePercent(value){return value==null?"—":value.toFixed(1)+"%";}
+function profileMorningLine(entry){
+ const odds=tote(entry.morning_line);
+ if(/^(?:EVEN|EVENS|EVS)$/i.test(odds))return 50;
+ const match=String(odds).match(/^(\d+(?:\.\d+)?)\s*[-/]\s*(\d+(?:\.\d+)?)$/);
+ if(!match)return null;
+ const a=Number(match[1]),b=Number(match[2]);
+ return a>=0&&b>0?100*b/(a+b):null;
+}
+function profileSection(label){
+ const section=makeNode("section","rr-dash-sheet-section");
+ section.append(makeNode("h3","",label));return section;
+}
+function profileBar(label,value,kind=""){
+ const row=makeNode("div","rr-profile-bar-row"+(kind?" rr-profile-bar-"+kind:""));
+ const track=makeNode("div","rr-profile-bar-track"),fill=makeNode("div","rr-profile-bar-fill");
+ track.setAttribute("aria-hidden","true");
+ if(value!=null)fill.style.width=Math.max(0,Math.min(100,value))+"%";
+ track.append(fill);row.append(makeNode("span","rr-profile-bar-label",label),track,makeNode("strong","rr-profile-bar-number",profilePercent(value)));
+ return row;
+}
+function profileChip(entry){
+ const chip=makeNode("span","rr-dash-sheet-chip"),program=String(entry.program_number||"");
+ const parsed=program.match(/^(\d{1,2})([A-Za-z]?)$/),number=parsed?Number(parsed[1]):NaN;
+ if(Number.isInteger(number)&&number>=1&&number<=20){
+  const image=document.createElement("img");image.src="/assets/approved/saddlecloths/"+number+".png";image.alt="Saddlecloth "+program;chip.append(image);
+  if(parsed[2])chip.append(makeNode("span","rr-dash-sheet-chip-suffix",parsed[2]));
+ }else chip.append(makeNode("strong","",program||"—"));
+ return chip;
+}
 function showHorse(entry){
  const dialog=q("#rr-dash-horse-dialog"),title=q("#rr-dash-horse-title"),detail=q("#rr-dash-horse-detail");
- setText(title,(entry.program_number?"#"+entry.program_number+"  ":"")+entry.horse_name);
+ title.replaceChildren(profileChip(entry),makeNode("span","",entry.horse_name));
  detail.replaceChildren();
- const grid=document.createElement("dl");grid.className="rr-dash-detail-grid";
- const fields=[["Win probability",entry.win_probability==null?null:String(entry.win_probability)+"%"],["Morning line",tote(entry.morning_line)],["Fair odds",fairOdds(entry)],["Trainer",entry.trainer],["Jockey",entry.jockey]];
- for(const [label,value] of fields){if(value==null||value==="")continue;const item=makeNode("div","rr-dash-detail-value"),dt=makeNode("dt","",label),dd=makeNode("dd","",value);item.append(dt,dd);grid.append(item);}
- for(const metric of entry.metrics||[]){
-  const item=makeNode("div","rr-dash-detail-value"),dt=makeNode("dt","",metric.label),dd=makeNode("dd","");
-  const state=metricState(metric.value);
-  if(state)dd.append(makeNode("span","rr-dash-state-pill rr-dash-state-"+state,state.toUpperCase()));
-  else dd.textContent=metric.value;
-  item.append(dt,dd);grid.append(item);
- }
- detail.append(grid);
- if(entry.notes)detail.append(makeNode("p","rr-dash-detail-notes",entry.notes));
- const mobile=makeNode("div","rr-dash-mobile-analysis");
- const summary=makeNode("div","rr-dash-sheet-summary"),chipFrame=makeNode("div","rr-dash-sheet-chip"),program=String(entry.program_number||"");
- const parsed=program.match(/^(\d{1,2})([A-Za-z]?)$/),chipNumber=parsed?Number(parsed[1]):NaN;
- if(Number.isInteger(chipNumber)&&chipNumber>=1&&chipNumber<=20){
-  const image=document.createElement("img");image.src="/assets/approved/saddlecloths/"+chipNumber+".png";image.alt="Saddlecloth "+program;chipFrame.append(image);
-  if(parsed[2])chipFrame.append(makeNode("span","rr-dash-sheet-chip-suffix",parsed[2]));
- }else chipFrame.append(makeNode("strong","",program||"—"));
- const market=makeNode("div","rr-dash-sheet-market");
- market.append(makeNode("span","rr-dash-sheet-kicker","WIN PROJECTION"));
- market.append(makeNode("strong","rr-dash-sheet-win",entry.win_probability==null?"—":String(entry.win_probability)+"%"));
- market.append(makeNode("span","rr-dash-sheet-fair","FAIR "+(fairOdds(entry)||"—")));
- const ml=makeNode("div","rr-dash-sheet-ml","M/L "+(tote(entry.morning_line)));
- summary.append(chipFrame,ml,market);mobile.append(summary);
- const connections=[["TRAINER",entry.trainer],["JOCKEY",entry.jockey]].filter(([,value])=>value);
- if(connections.length){
-  const section=makeNode("section","rr-dash-sheet-section");
-  section.append(makeNode("h3","","CONNECTIONS"));
-  const items=makeNode("div","rr-dash-sheet-connections");
-  for(const [label,value] of connections){
-   const item=makeNode("div","rr-dash-sheet-connection");item.append(makeNode("span","",label),makeNode("strong","",value));items.append(item);
-  }
-  section.append(items);mobile.append(section);
- }
+ const mobile=makeNode("div","rr-dash-mobile-analysis rr-profile");
  const race=activeCard?.card?.races?.find(item=>item.race_number===activeRace);
+ const win=profileWin(entry),ml=profileMorningLine(entry);
+ const summary=makeNode("div","rr-profile-panel rr-profile-summary");
+ const connections=[entry.trainer,entry.jockey].filter(Boolean);
+ if(connections.length)summary.append(makeNode("p","rr-profile-connections",[entry.trainer&&"Trainer: "+entry.trainer,entry.jockey&&"Jockey: "+entry.jockey].filter(Boolean).join(" · ")));
+ if(Number.isInteger(entry.rank)&&entry.rank>0&&race?.entries?.length>=entry.rank)
+  summary.append(makeNode("p","rr-profile-rank","Projected finish: "+entry.rank+" of "+race.entries.length));
+ const stats=makeNode("div","rr-profile-stats");
+ for(const [label,value] of [["WIN PROJECTION",profilePercent(win)],["FAIR ODDS",fairOdds(entry)||"—"],["MORNING LINE",tote(entry.morning_line)||"—"]]){
+  const cell=makeNode("div","rr-profile-stat");
+  cell.append(makeNode("span","",label),makeNode("strong","",value));stats.append(cell);
+ }
+ summary.append(stats);
+ if(win!=null&&ml!=null){
+  const comparison=makeNode("div","rr-profile-comparison");
+  comparison.append(profileBar("TRI projection",win,"tri"),profileBar("M/L implied",ml,"market"));
+  const delta=win-ml;
+  comparison.append(makeNode("p","rr-profile-delta", (delta>0?"+":"")+delta.toFixed(1)+" percentage points vs morning line"));
+  comparison.append(makeNode("p","rr-profile-caption","Morning line is an estimate, not live market odds."));
+  summary.append(comparison);
+ }
+ mobile.append(summary);
+ const factorNames=["Speed","Current form","Class","Pace compatibility","Surface & distance"];
+ const readings=CARD_METRICS.map(([label,aliases],i)=>({label:factorNames[i],value:metricValue(entry,aliases),state:metricState(metricValue(entry,aliases))}));
+ const favorable=readings.filter(x=>x.state==="green").map(x=>x.label),unfavorable=readings.filter(x=>x.state==="red").map(x=>x.label),neutral=readings.filter(x=>x.state==="gray").map(x=>x.label);
+ if(favorable.length||unfavorable.length||neutral.length){
+  const section=profileSection("TRI INTELLIGENCE");
+  const panel=makeNode("div","rr-profile-panel rr-profile-insights");
+  for(const [label,values,kind] of [["Strengths",favorable,"green"],["Vulnerabilities",unfavorable,"red"],["Neutral factors",neutral,"gray"]]){
+   if(!values.length)continue;
+   const row=makeNode("p","rr-profile-insight rr-profile-insight-"+kind);
+   row.append(makeNode("strong","",label+": "),makeNode("span","",values.join(", ")));panel.append(row);
+  }
+  if(win!=null&&ml!=null)panel.append(makeNode("p","rr-profile-caption","TRI estimates "+profilePercent(win)+" to win, versus "+profilePercent(ml)+" implied by the morning line."));
+  section.append(panel);mobile.append(section);
+ }
+ if(entry.f4_probabilities){
+  const f4=entry.f4_probabilities;
+  const exact=[1,2,3,4].map(n=>profileProbability(f4["exact_p"+n]));
+  const fifth=profileProbability(f4.exact_p5),sixth=profileProbability(f4.p6_plus),top4=profileProbability(f4.top4);
+  const tail=fifth!=null&&sixth!=null?profileProbability(fifth+sixth):top4!=null?1-top4:null;
+  const section=profileSection("PROJECTED FINISH DISTRIBUTION");
+  const rows=makeNode("div","rr-profile-panel rr-profile-distribution");
+  for(const [label,value,kind] of [["1st",exact[0],"win"],["2nd",exact[1],""],["3rd",exact[2],""],["4th",exact[3],""],["5th or later",tail,"tail"]]){
+   rows.append(profileBar(label,value==null?null:100*value,kind));
+  }
+  const totals=makeNode("div","rr-profile-totals");
+  for(const n of [2,3,4]){
+   const probability=profileProbability(f4["top"+n]),value=probability==null?null:100*probability;
+   const cell=makeNode("div","rr-profile-total"),ring=makeNode("div","rr-profile-ring");
+   ring.style.background=value==null?"#e8e4db":"conic-gradient(#b58a36 "+value+"%, #e8e4db 0)";
+   ring.append(makeNode("strong","",profilePercent(value)));
+   cell.append(ring,makeNode("span","","TOP "+n));totals.append(cell);
+  }
+  rows.append(totals);section.append(rows);mobile.append(section);
+ }
+ const factors=profileSection("PERFORMANCE PROFILE");
+ const factorList=makeNode("div","rr-profile-panel rr-profile-factors");
+ for(const {label,value,state} of readings){
+  const item=makeNode("div","rr-profile-factor");
+  const status=makeNode("span","rr-profile-factor-status rr-dash-sheet-factor-"+(state||"gray"),({green:"Favorable",gray:"Neutral",red:"Unfavorable"}[state]||value));
+  if(state){const dot=makeNode("span","rr-profile-dot rr-profile-dot-"+state);dot.setAttribute("aria-hidden","true");item.append(dot);}
+  else item.append(makeNode("span","rr-profile-dot rr-profile-dot-unknown"));
+  item.append(makeNode("strong","",label),status);factorList.append(item);
+ }
+ factors.append(factorList);mobile.append(factors);
  if(race){
-  const section=makeNode("section","rr-dash-sheet-section");section.append(makeNode("h3","","RACE CONTEXT"));
+  const section=profileSection("RACE CONTEXT");
   const facts=makeNode("div","rr-dash-race-tiles rr-dash-sheet-facts");
   facts.setAttribute("role","group");facts.setAttribute("aria-label","Race facts");
   facts.append(makeTile("Pace",race.pace),makeTile("Surface",race.surface),makeTile("Distance",globalThis.RRRaceTitles?.formatDistance?.(race.distance)??race.distance));
   section.append(facts);mobile.append(section);
  }
- if(entry.f4_probabilities){
-  const f4=entry.f4_probabilities;
-  const section=makeNode("section","rr-dash-sheet-section");section.append(makeNode("h3","","F4 FINISH PROJECTIONS"));
-  const rows=makeNode("div","rr-dash-sheet-factor-list");
-  for(const [label,key] of [["WIN","exact_p1"],["SECOND","exact_p2"],["THIRD","exact_p3"],["FOURTH","exact_p4"],["FIFTH","exact_p5"],["SIXTH OR LATER","p6_plus"],["TOP 2","top2"],["TOP 3","top3"],["TOP 4","top4"]]){
-   const cell=makeNode("div","rr-dash-sheet-factor");
-   cell.append(makeNode("strong","",label),makeNode("span","rr-dash-sheet-factor-status",(100*f4[key]).toFixed(1)+"%"));rows.append(cell);
-  }
-  section.append(rows);mobile.append(section);
- }
- const factors=makeNode("section","rr-dash-sheet-section");factors.append(makeNode("h3","","FIVE-FACTOR READOUT"));
- const factorList=makeNode("div","rr-dash-sheet-factor-list");
- for(const [label,aliases,art] of CARD_METRICS){
-  const value=metricValue(entry,aliases),state=metricState(value);
-  const item=makeNode("div","rr-dash-sheet-factor");
-  const status=makeNode("span","rr-dash-sheet-factor-status "+(state?"rr-dash-sheet-factor-"+state:""),state?state.toUpperCase():value);
-  item.append(makeNode("strong","",label),status);factorList.append(item);
- }
- factors.append(factorList);mobile.append(factors);
  if(entry.notes){
-  const notes=makeNode("section","rr-dash-sheet-section");
-  notes.append(makeNode("h3","","MODEL NOTES"),makeNode("p","rr-dash-sheet-notes",entry.notes));
+  const notes=makeNode("details","rr-profile-panel rr-profile-notes");
+  notes.append(makeNode("summary","","Additional analysis"),makeNode("p","rr-dash-sheet-notes",entry.notes));
   mobile.append(notes);
  }
- detail.append(mobile);
- dialog.showModal();
+ detail.append(mobile);dialog.scrollTop=0;dialog.showModal();
 }
 function cardHeader(card){
  const wrapper=makeNode("div","rrp-track-head");
