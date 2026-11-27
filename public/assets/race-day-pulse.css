@@ -331,3 +331,14 @@
 }
 
 .rr-pulse-detail{border:0;border-radius:12px;margin:16px 0;background:transparent}.rr-pulse-detail .rr-pulse-shell{padding:0}.rr-pulse-detail .rr-pulse-item{width:100%;max-width:100%;flex-basis:100%}.rr-pulse-detail .rr-pulse-item-footer a,.rr-pulse-detail .rr-pulse-item-footer button{min-height:44px}
+
+/* Compact overview deliberately uses a single-line takeaway; the full
+   sentence, original and revised values, and every action remain in Open Pulse. */
+@media(max-width:640px){
+ .heritage-home>.rr-pulse .rr-pulse-message{display:block;white-space:nowrap!important;text-overflow:ellipsis;overflow:hidden;margin:1px 0;font-size:11px}
+ .heritage-home>.rr-pulse .rr-pulse-context-cell{white-space:nowrap}
+ .heritage-home>.rr-pulse .rr-pulse-context .rr-pulse-prob-caption{font-size:9px}
+ .heritage-home>.rr-pulse .rr-pulse-context{gap:3px 6px}
+ .heritage-home>.rr-pulse .rr-pulse-pace-comparison{font-size:9px;gap:3px}
+ .heritage-home>.rr-pulse .rr-pulse-pace-label{font-size:9px}
+}
