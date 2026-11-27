@@ -58,90 +58,99 @@
     }
     if(line&&count<maxLines)ctx.fillText(line,x,y+lineHeight*count);
   }
-  // One repeatable 4:5 social card; no buttons, browser chrome or premium data.
+  // Unified, responsive social master. All exports use actual brand assets and
+  // the exact same SVG medallion as the homepage. No fabricated source fields.
   const shareUrl=item=>new URL(pulseUrl(item),location.origin).href;
   function shareFilename(item){return 'rail-rye-pulse-'+item.date+'-'+item.id+'.png';}
-  async function socialImage(item,format='portrait'){
-    const canvas=document.createElement('canvas');canvas.width=1080;canvas.height=1350;
-    if(format==='landscape')return landscapeImage(item);
-    const c=canvas.getContext('2d');if(!c)throw Error('Canvas unsupported');
-    const bg=c.createLinearGradient(0,0,1080,1350);bg.addColorStop(0,'#1b3b52');bg.addColorStop(.43,'#10283d');bg.addColorStop(1,'#061725');c.fillStyle=bg;c.fillRect(0,0,1080,1350);
-    c.strokeStyle='#957748';c.lineWidth=2;c.beginPath();c.roundRect(30,30,1020,1290,28);c.stroke();
-    c.fillStyle='#c49b59';c.fillRect(60,155,960,3);c.fillRect(60,1200,960,3);
-    const logo=new Image();logo.src='/assets/approved/brand/rail-rye-ivory-logo.png';try{await logo.decode();c.drawImage(logo,62,45,90,90);}catch{}
-    c.fillStyle='#e0b66b';c.font='700 35px Georgia';c.fillText('RAIL & RYE RACING',180,82);c.font='26px system-ui';c.fillText('RACE-DAY PULSE',180,121);
-    c.font='700 30px system-ui';wrap(c,raceLabel(item).toUpperCase(),60,220,830,38,2);
-    drawSignalMedallion(c,item,920,185,92);
-    async function drawChip(number,x,y,size){
-      const art=chip(number).querySelector('img');
-      c.save();c.beginPath();c.roundRect(x,y,size,size,size*.12);c.clip();c.fillStyle='#fff';c.fillRect(x,y,size,size);
-      let drawn=false;if(art){try{await art.decode();c.drawImage(art,x,y,size,size);drawn=true;}catch{}}
-      if(!drawn){c.fillStyle='#102d53';c.font='700 '+Math.round(size*.44)+'px system-ui';c.fillText(String(number||'—'),x+size*.12,y+size*.65);}
-      const suffix=/^\d{1,2}([A-Z])$/.exec(String(number||'').toUpperCase());
-      if(suffix&&drawn){c.fillStyle='#102d53';c.fillRect(x+size*.68,y+size*.66,size*.32,size*.34);c.fillStyle='#fff';c.font='700 '+Math.round(size*.24)+'px system-ui';c.fillText(suffix[1],x+size*.72,y+size*.91);}
-      c.restore();
-    }
-    await drawChip(item.chip,60,295,104);
-    c.fillStyle='#fff';c.font='700 49px Georgia';wrap(c,item.horse||item.headline,190,333,820,56,2);
-    const m=metricText(item);let messageY=455;
-    if(m){
-      c.fillStyle='#081b2b';c.beginPath();c.roundRect(50,435,980,225,20);c.fill();c.strokeStyle='#927748';c.stroke();
-      c.fillStyle='#d8be89';c.font='700 27px system-ui';c.fillText(m.label,80,480);c.font='700 21px system-ui';c.fillText('ORIGINAL',80,520);c.fillText('REVISED',575,520);
-      const diff=item.metric.after-item.metric.before, color=diff>0?'#73d2a2':diff<0?'#f2ab9c':'#dfbd79';
-      c.font='700 80px system-ui';c.fillStyle='#b4c0ca';c.fillText(m.before,80,600);c.fillStyle='#e0b66b';c.fillText('→',420,600);c.fillStyle=color;c.fillText(m.after,575,600);
-      c.font='700 25px system-ui';c.textAlign='right';c.fillText((diff>0?'+':'')+diff.toFixed(1)+' PTS',1000,480);c.textAlign='left';
-      for(const [px,val,col] of [[80,item.metric.before,'#a6b5c4'],[575,item.metric.after,color]]){c.fillStyle='#354957';c.beginPath();c.roundRect(px,625,330,10,5);c.fill();if(val>0){c.fillStyle=col;c.beginPath();c.roundRect(px,625,330*val/100,10,5);c.fill();}}
-      messageY=712;
-    }
-    c.fillStyle='#f2f2f2';c.font='30px system-ui';wrap(c,item.short_message||item.message,60,messageY,960,40,3);
-    const context=selectedContext(item);let y=messageY+140;
-    if(context.length){c.fillStyle='#d8be89';c.font='700 24px system-ui';wrap(c,context.map(([label,value])=>label+'  '+value).join('     ·     '),60,y,960,32,2);y+=70;}
-    const pace=paceComparison(item);if(pace){c.fillStyle='#d8be89';c.font='700 24px system-ui';c.fillText(pace.textContent.replace('PACE FIT','PACE FIT: '),60,y);y+=44;}
-    const scratches=Array.isArray(item.scratches)?item.scratches:[];
-    if(scratches.length){c.fillStyle='#d8be89';c.font='700 24px system-ui';c.fillText('SCRATCHED',60,y);let px=60;for(const scratch of scratches.slice(0,20)){if(px+42>1020)break;await drawChip(scratch.program,px,y+16,42);px+=48;}}
-    c.fillStyle='#e0b66b';c.font='700 28px system-ui';c.fillText('railandryeracing.com',60,1250);
-    c.fillStyle='#b4c0ca';c.font='24px system-ui';c.fillText(item.id.startsWith('demo-')?'DESIGN PREVIEW · FICTIONAL DATA':'Model projections · Not guarantees',60,1300);
-    const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(!blob)throw Error('Image unavailable');return blob;
+  async function loadArt(src){const img=new Image();img.src=src;await img.decode();return img;}
+  let logoPromise;
+  function transparentLogo(){
+    if(!logoPromise)logoPromise=(async()=>{
+      const img=await loadArt('/assets/approved/brand/rail-rye-ivory-logo.png');
+      const canvas=document.createElement('canvas');canvas.width=img.naturalWidth;canvas.height=img.naturalHeight;
+      const ctx=canvas.getContext('2d',{willReadFrequently:true});ctx.drawImage(img,0,0);
+      const image=ctx.getImageData(0,0,canvas.width,canvas.height),p=image.data;
+      // Keep existing transparency; only unmatte the opaque navy-backed ivory asset.
+      if(![p[3],p[(canvas.width-1)*4+3],p[(canvas.width*(canvas.height-1))*4+3],p[p.length-1]].some(a=>a<32)){
+        for(let i=0;i<p.length;i+=4){const y=.2126*p[i]+.7152*p[i+1]+.0722*p[i+2];const alpha=Math.max(0,Math.min(1,(y-52)/163));p[i]=244;p[i+1]=233;p[i+2]=211;p[i+3]=Math.round(p[i+3]*alpha);}
+        ctx.putImageData(image,0,0);
+      }
+      return canvas;
+    })().catch(e=>{logoPromise=null;throw e;});
+    return logoPromise;
   }
-  // Crawler-ready 1200 x 675 companion uses the same public item and approved art.
-  async function landscapeImage(item){
-    const canvas=document.createElement('canvas');canvas.width=1200;canvas.height=675;
+  async function socialImage(item,format='portrait'){
+    const portrait=format!=='landscape',W=portrait?1080:1200,H=portrait?1350:675;
+    const canvas=document.createElement('canvas');canvas.width=W;canvas.height=H;
     const c=canvas.getContext('2d');if(!c)throw Error('Canvas unsupported');
-    const gradient=c.createLinearGradient(0,0,1200,675);gradient.addColorStop(0,'#1b3b52');gradient.addColorStop(1,'#071a2c');c.fillStyle=gradient;c.fillRect(0,0,1200,675);
-    c.strokeStyle='#b18a49';c.lineWidth=2;c.beginPath();c.roundRect(20,20,1160,635,20);c.stroke();
-    async function art(src,x,y,size,backing=false){
-      const image=new Image();image.src=src;await image.decode();
-      if(backing){c.fillStyle='#fff';c.beginPath();c.roundRect(x,y,size,size,8);c.fill();}
-      c.drawImage(image,x,y,size,size);
+    if(document.fonts?.ready)await document.fonts.ready;
+    const ivory='#f5ecd9',gold='#e4bf79',muted='#b4c0ca',navy='#10283b';
+    const X=portrait?56:38, R=W-X, B=R-X;
+    const font=(size,weight=700,family='system-ui,sans-serif')=>{c.font=weight+' '+size+'px '+family;};
+    function txt(t,x,y,size,color=ivory,weight=700,maxWidth,align='left',family='system-ui,sans-serif'){
+      font(size,weight,family);c.fillStyle=color;c.textAlign=align;if(maxWidth)c.fillText(String(t),x,y,maxWidth);else c.fillText(String(t),x,y);c.textAlign='left';
     }
+    function panel(x,y,w,h,r=16,raised=false){
+      c.save();if(raised){c.shadowColor='#0006';c.shadowBlur=12;c.shadowOffsetY=5;}
+      const g=c.createLinearGradient(x,y,x+w,y+h);g.addColorStop(0,'#19364b');g.addColorStop(1,'#091c2b');
+      c.fillStyle=g;c.beginPath();c.roundRect(x,y,w,h,r);c.fill();c.restore();
+      c.strokeStyle='#a18455';c.lineWidth=1.5;c.stroke();c.save();c.strokeStyle='#f0d9a32b';c.beginPath();c.roundRect(x+2,y+2,w-4,h-4,r-2);c.stroke();c.restore();
+    }
+    function line(y){c.fillStyle='#a18455';c.fillRect(X,y,B,1.5);}
+    function bar(x,y,w,value,color,h){c.fillStyle='#435566';c.beginPath();c.roundRect(x,y,w,h,h/2);c.fill();if(value>0){c.fillStyle=color;c.beginPath();c.roundRect(x,y,w*value/100,h,Math.min(h/2,w*value/200));c.fill();}}
     async function saddle(n,x,y,size){
       const match=/^(\d{1,2})([A-Z]?)$/.exec(String(n||'').toUpperCase());
       if(!match||Number(match[1])<1||Number(match[1])>20)throw Error('Invalid program chip');
-      await art('/assets/approved/saddlecloths/'+Number(match[1])+'.png',x,y,size,true);
-      if(match[2]){c.fillStyle='#102d53';c.fillRect(x+size*.68,y+size*.66,size*.32,size*.34);c.fillStyle='#fff';c.font='700 '+Math.round(size*.24)+'px system-ui';c.fillText(match[2],x+size*.72,y+size*.91);}
+      const img=await loadArt('/assets/approved/saddlecloths/'+Number(match[1])+'.png');
+      c.save();c.beginPath();c.roundRect(x,y,size,size,size*.12);c.clip();c.fillStyle='#fff';c.fillRect(x,y,size,size);c.drawImage(img,x,y,size,size);c.restore();
+      if(match[2]){c.fillStyle='#102d53';c.fillRect(x+size*.68,y+size*.66,size*.32,size*.34);txt(match[2],x+size*.72,y+size*.91,Math.round(size*.24),'#fff');}
     }
-    await art('/assets/approved/brand/rail-rye-ivory-logo.png',45,36,64);
-    c.fillStyle='#f3e5ca';c.font='700 34px Georgia';c.fillText('Rail & Rye Racing  ·  Race-Day Pulse',130,76);
-    c.fillStyle='#c49b59';c.fillRect(45,111,1110,2);
-    c.font='700 25px system-ui';c.fillText(raceLabel(item).toUpperCase(),45,151,980);
-    drawSignalMedallion(c,item,1080,123,72);
-    await saddle(item.chip,45,174,78);
-    c.fillStyle='#fff';c.font='700 44px Georgia';c.fillText(item.horse||item.headline,140,227,900);
-    const m=metricText(item);
-    if(m){
-      c.fillStyle='#081b2b';c.beginPath();c.roundRect(45,267,1110,160,14);c.fill();c.strokeStyle='#927748';c.stroke();
-      c.fillStyle='#dfbd79';c.font='700 24px system-ui';c.fillText(m.label,65,299);c.font='700 18px system-ui';c.fillText('ORIGINAL',65,326);c.fillText('REVISED',565,326);
-      const diff=item.metric.after-item.metric.before,color=diff>0?'#73d2a2':diff<0?'#f2ab9c':'#dfbd79';
-      c.font='700 66px system-ui';c.fillStyle='#b4c0ca';c.fillText(m.before,65,391);c.fillStyle='#e0b66b';c.fillText('→',420,391);c.fillStyle=color;c.fillText(m.after,565,391);
-      c.font='700 27px system-ui';c.textAlign='right';c.fillText((diff>0?'+':'')+diff.toFixed(1)+' PTS',1129,299);c.textAlign='left';
-      for(const [x,v,col] of [[65,item.metric.before,'#a6b5c4'],[565,item.metric.after,color]]){c.fillStyle='#354957';c.fillRect(x,405,360,6);c.fillStyle=col;c.fillRect(x,405,360*v/100,6);}
+    const bg=c.createLinearGradient(0,0,W,H);bg.addColorStop(0,'#1c384d');bg.addColorStop(.55,'#10283b');bg.addColorStop(1,'#071a2c');c.fillStyle=bg;c.fillRect(0,0,W,H);
+    c.strokeStyle='#b18a49';c.lineWidth=2;c.beginPath();c.roundRect(18,18,W-36,H-36,24);c.stroke();
+    const logo=await transparentLogo(),logoSize=portrait?110:70,logoY=portrait?40:28;
+    const scale=Math.min(logoSize/logo.width,logoSize/logo.height);
+    c.drawImage(logo,X+(logoSize-logo.width*scale)/2,logoY+(logoSize-logo.height*scale)/2,logo.width*scale,logo.height*scale);
+    txt('RAIL & RYE RACING',X+logoSize+18,portrait?84:54,portrait?39:29,ivory,700,B-logoSize-30,'left','Georgia,serif');
+    txt('RACE-DAY PULSE',X+logoSize+18,portrait?125:83,portrait?27:19,gold,750);
+    line(portrait?164:105);
+    const identityY=portrait?188:118,chipSize=portrait?116:79,badgeSize=portrait?142:100;
+    txt(raceLabel(item).toUpperCase(),X,identityY+(portrait?32:24),portrait?30:23,gold,800,B-badgeSize-18);
+    await saddle(item.chip,X,identityY+(portrait?50:31),chipSize);
+    txt(item.horse||item.headline,X+chipSize+20,identityY+(portrait?121:84),portrait?53:42,ivory,700,B-chipSize-badgeSize-52,'left','Georgia,serif');
+    await drawSignalMedallion(c,item,R-badgeSize,identityY+5,badgeSize);
+    const m=metricText(item),py=portrait?376:239,ph=portrait?354:192;
+    if(!m)throw Error('Certified probability metric required for social export');
+    panel(X,py,B,ph,portrait?22:16,true);
+    txt(m.label,X+20,py+(portrait?46:31),portrait?31:23,gold,800,B-40);
+    const aX=X+(portrait?26:24),bX=X+B*.54,barW=B*(portrait?.40:.39);
+    const diff=item.metric.after-item.metric.before,col=diff>0?'#79d4a6':diff<0?'#f0ad9e':gold;
+    const captionY=py+(portrait?100:63),numberY=py+(portrait?208:132),barY=py+(portrait?228:143);
+    txt('ORIGINAL',aX,captionY,portrait?27:19,muted,750);
+    txt('REVISED',bX,captionY,portrait?27:19,gold,750);
+    txt(m.before,aX,numberY,portrait?102:67,muted,800,barW);
+    txt(m.after,bX,numberY,portrait?102:67,col,800,barW);
+    txt('→',X+B*.5,numberY-3,portrait?59:42,gold,700,55,'center');
+    bar(aX,barY,barW,item.metric.before,muted,portrait?13:7);
+    bar(bX,barY,barW,item.metric.after,col,portrait?13:7);
+    txt((diff>0?'+':'')+diff.toFixed(1)+' Percentage Points',W/2,py+ph-(portrait?30:13),portrait?37:23,col,800,B-36,'center');
+    const context=selectedContext(item),cy=portrait?754:444,ch=portrait?86:42;
+    if(context.length){panel(X,cy,B,ch,12);context.forEach(([k,v],i)=>{const cx=X+B*(i+.5)/context.length;txt(k+'  '+v,cx,cy+(portrait?54:28),portrait?31:20,ivory,700,B/context.length-18,'center');});}
+    const takeawayY=portrait?884:512;
+    font(portrait?31:22,500);c.fillStyle=ivory;wrap(c,item.short_message||item.message,X,takeawayY,B,portrait?37:26,2);
+    const scratches=Array.isArray(item.scratches)?item.scratches:[],sy=portrait?979:565,ss=portrait?61:34;
+    if(scratches.length){txt('SCRATCHED',X,sy+(portrait?23:14),portrait?26:18,gold,800);let sx=X+(portrait?192:134);for(const sc of scratches){if(sx+ss>R)break;await saddle(sc.program,sx,sy-(portrait?18:12),ss);sx+=ss+(portrait?10:8);}}
+    const ctaY=portrait?1066:607,ctaH=portrait?153:40;
+    panel(X,ctaY,B,ctaH,portrait?18:10);
+    if(portrait){
+      txt('See the Complete Race Analysis',W/2,ctaY+46,36,gold,750,B-40,'center','Georgia,serif');
+      txt('Win Probabilities · Finishing Order Projections',W/2,ctaY+81,23,ivory,550,B-40,'center');
+      txt('railandryeracing.com',W/2,ctaY+127,30,gold,800,B-40,'center');
+    }else{
+      txt('See the Complete Race Analysis',X+16,ctaY+27,22,gold,750,B*.55,'left','Georgia,serif');
+      txt('railandryeracing.com',R-16,ctaY+27,20,ivory,750,B*.41,'right');
     }
-    const context=selectedContext(item);c.fillStyle='#d8be89';c.font='700 20px system-ui';if(context.length)c.fillText(context.map(([k,v])=>k+' '+v).join('   ·   '),45,456,1110);
-    c.fillStyle='#fff';c.font='24px system-ui';wrap(c,item.short_message||item.message,45,487,1110,29,2);
-    const scratches=Array.isArray(item.scratches)?item.scratches:[];
-    if(scratches.length){c.fillStyle='#dfbd79';c.font='700 18px system-ui';c.fillText('SCRATCHED',45,564);let x=182;for(const scratch of scratches.slice(0,20)){if(x+37>1155)break;await saddle(scratch.program,x,536,37);x+=46;}}
-    c.fillStyle='#c49b59';c.fillRect(45,590,1110,2);c.font='700 22px system-ui';c.fillText('railandryeracing.com  ·  Racing Intelligence Hub',45,627,1050);
-    if(item.id.startsWith('demo-')){c.fillStyle='#fff';c.font='700 14px system-ui';c.textAlign='right';c.fillText('FICTIONAL DESIGN PREVIEW',1155,649);c.textAlign='left';}
+    if(portrait)txt(item.id.startsWith('demo-')?'DESIGN PREVIEW · FICTIONAL DATA':'Model projections · Not guarantees',W/2,1290,22,muted,500,B,'center');
+    else txt(item.id.startsWith('demo-')?'FICTIONAL DESIGN PREVIEW':'Model projections · Not guarantees',W/2,663,12,muted,500,B,'center');
     const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(!blob)throw Error('Image unavailable');return blob;
   }
   // The release renderer invokes the identical browser template, not an approximation.
@@ -224,18 +233,18 @@
       {d:'M17 14V22M14 19L17 22L20 19',stroke:'#e6b650',w:2}
     ]
   };
+  let signalSerial=0;
   function signalIcon(item){
-    const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg');
-    svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('aria-hidden','true');svg.setAttribute('class','rr-pulse-category-icon');
-    for(const part of signalArt[signalType(item)]){const p=document.createElementNS(ns,'path');p.setAttribute('d',part.d);p.setAttribute('fill',part.fill||'none');if(part.stroke){p.setAttribute('stroke',part.stroke);p.setAttribute('stroke-width',part.w);p.setAttribute('stroke-linecap','round');p.setAttribute('stroke-linejoin','round');}svg.append(p);}
-    return svg;
+    const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg'),id='pulse-metal-'+(++signalSerial);
+    svg.setAttribute('viewBox','0 0 100 100');svg.setAttribute('aria-hidden','true');svg.setAttribute('class','rr-pulse-category-icon');
+    svg.innerHTML='<defs><linearGradient id="'+id+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#38586c"/><stop offset=".55" stop-color="#173449"/><stop offset="1" stop-color="#0b2033"/></linearGradient></defs><rect x="2" y="2" width="96" height="96" rx="22" fill="url(#'+id+')" stroke="#d0ae6a" stroke-width="2"/><rect x="5" y="5" width="90" height="90" rx="19" fill="none" stroke="#efd39a" stroke-opacity=".23"/>';
+    const g=document.createElementNS(ns,'g');g.setAttribute('transform','translate(15 15) scale(2.9166667)');
+    for(const part of signalArt[signalType(item)]){const p=document.createElementNS(ns,'path');p.setAttribute('d',part.d);p.setAttribute('fill',part.fill||'none');if(part.stroke){p.setAttribute('stroke',part.stroke);p.setAttribute('stroke-width',part.w);p.setAttribute('stroke-linecap','round');p.setAttribute('stroke-linejoin','round');}g.append(p);}svg.append(g);return svg;
   }
-  function drawSignalMedallion(c,item,x,y,size){
-    c.save();c.translate(x,y);c.fillStyle='#10283d';c.strokeStyle='#d5b374';c.lineWidth=1.5;
-    c.beginPath();c.roundRect(0,0,size,size,size*.18);c.fill();c.stroke();
-    c.translate(size*.15,size*.15);c.scale(size*.70/24,size*.70/24);
-    for(const part of signalArt[signalType(item)]){const p=new Path2D(part.d);if(part.fill){c.fillStyle=part.fill;c.fill(p);}if(part.stroke){c.strokeStyle=part.stroke;c.lineWidth=part.w;c.lineCap='round';c.lineJoin='round';c.stroke(p);}}
-    c.restore();
+  async function drawSignalMedallion(c,item,x,y,size){
+    const svg=signalIcon(item);svg.setAttribute('width','100');svg.setAttribute('height','100');
+    const uri='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(new XMLSerializer().serializeToString(svg));
+    const img=await loadArt(uri);c.drawImage(img,x,y,size,size);
   }
   function signalBadge(item){const el=$('span','rr-pulse-signal rr-pulse-signal--'+signalType(item));el.setAttribute('role','img');el.setAttribute('aria-label',signal(item));el.title=signal(item);el.append(signalIcon(item));return el;}
   function probabilityColumn(label,value,cls){
@@ -354,6 +363,7 @@
     }catch{if(!events.length)shell.hidden=true;}
     finally{pending=false;}
   }
+  const liveLogo=shell.querySelector('.rr-pulse-logo');if(liveLogo)transparentLogo().then(art=>{liveLogo.src=art.toDataURL('image/png');}).catch(()=>{});
   // Reuse the existing sitewide North American tote formatting authority.
   import('/assets/rr-race-titles.js').catch(()=>{}).finally(()=>{load();setInterval(load,60000);});
   if(!matchMedia('(prefers-reduced-motion: reduce)').matches){
