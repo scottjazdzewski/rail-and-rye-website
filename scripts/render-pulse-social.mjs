@@ -12,7 +12,7 @@ const out=resolve(args.includes('--out')?arg('--out'):'public/assets/pulse-socia
 const fixture=isDemo?{preview:true,items:(await import('../staging/pulse-preview-worker.js')).demo}:JSON.parse(readFileSync(arg('--feed'),'utf8'));
 assert.ok(Array.isArray(fixture.items),'Only a public Pulse feed is accepted');
 if(!isDemo)assert.equal(fixture.status,'ok','Only a released public feed is accepted');
-const allowed=new Set(['id','date','track','race_number','updated_at','kind','chip','horse','headline','message','short_message','metric','summary','pace_fit','scratches','hub_url']);
+const allowed=new Set(['id','date','track','race_number','updated_at','post_time_et','kind','chip','horse','headline','message','short_message','metric','summary','pace_fit','scratches','hub_url']);
 for(const item of fixture.items){
  assert.match(item.id,/^[a-z0-9-]{2,120}$/);assert.match(item.date,/^\d{4}-\d{2}-\d{2}$/);
  assert.equal(item.id.startsWith('demo-'),isDemo);
