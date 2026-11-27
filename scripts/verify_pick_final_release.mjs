@@ -6,7 +6,7 @@ let raw="";for await(const c of process.stdin)raw+=c;
 const x=JSON.parse(raw),p=x.proof,b=JSON.parse(x.dashboard),f=JSON.parse(x.ordered);
 if(await digest(x.dashboard)!==p.dashboard_sha256||await digest(x.ordered)!==p.ordered_sha256)throw Error("Canonical receipt hash mismatch");
 const field=verifyFinalFieldReceipt(p,b,f);
-if(Date.now()-field.verifiedAt>30*60*1000)throw Error("Official source must be rechecked before release");
+if(Date.now()-field.oldestOfficialAt>30*60*1000)throw Error("Official source must be rechecked before release");
 if(x.card){
  const card=requireCustomerPickPwin(normalizePickTickets(x.card));
  const key=finalFieldReceiptKey(card.date,card.track);

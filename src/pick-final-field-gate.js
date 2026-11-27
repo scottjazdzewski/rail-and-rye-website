@@ -26,12 +26,13 @@ export function verifyFinalFieldReceipt(proof,base,ordered,now=Date.now()){
  need(Number.isFinite(observed)&&Number.isFinite(notice)&&observed>=notice&&observed<=now+60000&&easternDate(observed)===base.race_date,"invalid or stale notice chronology");
  need(verifyCertifiedScratchFinalTrack(base,ordered),"canonical F4 does not match TRI and active field");
  need(Array.isArray(proof.races)&&proof.races.length===base.races.length,"whole-track roster proof incomplete");
- const seen=new Set(),fields=new Map(),scratches=new Map();
+ const seen=new Set(),fields=new Map(),scratches=new Map();let oldestOfficial=observed;
  for(const r of base.races){
   const n=r.race_number,e=proof.races.find(x=>x.race_number===n);
   need(e&&!seen.has(n)&&e.race_date===base.race_date&&e.track===base.track_name&&hash(e.source_sha256),"missing race roster proof "+n);seen.add(n);
   const t=clock(e.official_retrieved_at);
   need(typeof e.official_url==="string"&&e.official_url.startsWith("https://")&&hash(e.official_evidence_sha256)&&Number.isFinite(t)&&t>=notice&&t<=observed&&easternDate(t)===base.race_date,"fresh official source required R"+n);
+  oldestOfficial=Math.min(oldestOfficial,t);
   const orig=identity(e.original),official=identity(e.official);
   need(equal(orig,official),"all original and official runners must be accounted for R"+n);
   need(e.official.every(x=>["ACTIVE","SCRATCHED","NOT_DRAWN"].includes(x.status)),"unresolved draw-in R"+n);
@@ -49,7 +50,7 @@ export function verifyFinalFieldReceipt(proof,base,ordered,now=Date.now()){
   }
   fields.set(n,probs);scratches.set(n,new Set(scr.keys()));
  }
- return {fields,scratches,verifiedAt:observed};
+ return {fields,scratches,verifiedAt:observed,oldestOfficialAt:oldestOfficial};
 }
 export function verifyPickAgainstFinalField(card,field){
  need(card.status==="scratch_updated","prescratch ticket cannot be customer-published");
@@ -77,7 +78,7 @@ export async function requireFinalPickField(env,card,{publishedAt=null,now=Date.
  need(base.race_date===card.date&&base.track_name===card.track&&await digest(bt)===proof.dashboard_sha256&&await digest(ft)===proof.ordered_sha256,"canonical source changed since official reconciliation");
  const field=verifyFinalFieldReceipt(proof,base,ordered,now);
  const released=publishedAt===null?now:clock(publishedAt);
- need(Number.isFinite(released)&&released>=field.verifiedAt&&released-field.verifiedAt<=30*60*1000&&released<=now+60000,"official field must be rechecked within 30 minutes before publication");
+ need(Number.isFinite(released)&&released>=field.verifiedAt&&released-field.oldestOfficialAt<=30*60*1000&&released<=now+60000,"official field must be rechecked within 30 minutes before publication");
  verifyPickAgainstFinalField(card,field);
  const again=await env.CARDS_BUCKET.get(key);
  need(again&&again.customMetadata?.customer_publish_approved==="true"&&await again.text()===ct,"official notice changed during gate");
