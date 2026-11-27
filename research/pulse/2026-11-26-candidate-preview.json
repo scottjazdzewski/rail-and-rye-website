@@ -101,5 +101,19 @@
       ],
       "hub_url": "/intelligence/race-cards/?date=2026-11-26&track=Churchill%20Downs&race=9"
     }
-  ]
+  ],
+  "editorial_evidence": {
+    "churchill-12th": {
+      "evidence": "Certified original and revised TRI course/field change",
+      "reference": "research/pulse/2026-11-26-churchill-user-supplied.json"
+    },
+    "churchill-5th": {
+      "evidence": "Certified original and revised TRI course/field change",
+      "reference": "research/pulse/2026-11-26-churchill-user-supplied.json"
+    },
+    "churchill-9th": {
+      "evidence": "TRI original/revised snapshots and externally verified prior graded-stakes win",
+      "reference": "https://www.thoroughbreddailynews.com/destino-doro-wins-the-photo-in-hillsborough-stakes/"
+    }
+  }
 }
