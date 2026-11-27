@@ -342,7 +342,7 @@ function showHorse(entry){
   summary.append(comparison);
  }
  mobile.append(summary);
- const factorNames=["Speed","Current form","Class","Pace compatibility","Surface & distance"];
+ const factorNames=["Speed","Current Form","Class","Pace Compatibility","Surface & Distance"];
  const readings=CARD_METRICS.map(([label,aliases],i)=>({label:factorNames[i],value:metricValue(entry,aliases),state:metricState(metricValue(entry,aliases))}));
  const favorable=readings.filter(x=>x.state==="green").map(x=>x.label),unfavorable=readings.filter(x=>x.state==="red").map(x=>x.label),neutral=readings.filter(x=>x.state==="gray").map(x=>x.label);
  if(favorable.length||unfavorable.length||neutral.length){
