@@ -262,8 +262,7 @@
       if(!response.ok)throw Error('Feed unavailable');
       const data=await response.json(),raw=Array.isArray(data.items)?data.items:[];
       const valid=raw.filter(x=>x&&typeof x.id==='string'&&/^[a-z0-9-]+$/.test(x.id)&&
-        typeof x.message==='string'&&typeof x.track==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x.date))
-        .slice(0,6);
+        typeof x.message==='string'&&typeof x.track==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x.date));
       if(!valid.length){shell.hidden=true;events=[];revision='';return;}
       const key=JSON.stringify(valid);
       if(key===revision)return;
