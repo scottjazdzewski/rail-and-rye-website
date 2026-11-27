@@ -201,3 +201,5 @@ Release state: PULSE_PUBLICATION_ENABLED remains OFF, automatic scraping not ena
 
 ## November 27 social image handoff
 The authoritative visual/share/release contract is now the November 27 section of docs/RACE_DAY_PULSE_PREMIUM_DESIGN_LOCK.md. Do not revert to a generic hero OG image, native share sheet on Download, or omit the direct Full-Field Analysis product CTA. Public publication is still held. Rendering and gated image-serving code, isolated staging generation and a guarded manual production preparation workflow are implemented on the feature branch; automated scratch-publisher integration, atomic create-only image writes, branch reconciliation, actual workflow/readback and visual/X approval remain release blockers. No TRI changes or new recurring service costs.
+
+Latest visual audit refinement: single complete medallion SVG for homepage/social, matte-free approved ivory logo rendering, one portrait/landscape social master, stronger CTA and hierarchy, exact source delta convention. See final section of PREMIUM_DESIGN_LOCK. No production release.
