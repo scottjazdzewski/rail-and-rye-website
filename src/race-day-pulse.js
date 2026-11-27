@@ -94,25 +94,8 @@ export function insightForRace(date,track,initial,revised,updatedAt,sourceVersio
     hub_url:'/intelligence/race-cards/?date='+encodeURIComponent(date)+
       '&track='+encodeURIComponent(track)+'&race='+encodeURIComponent(String(revised.race_number)),
     chip:newLead.program,scratches};
-  // Course switch is part of the CERTIFIED new racing condition, not a
-  // scratch-only causal claim. Give it distinct editorial treatment when
-  // materially different TRI projections support a real public insight.
-  if(surfaceChanged){
-    const earlier=before.get(newLead.program),delta=earlier?newLead.win-earlier.win:0;
-    if(oldLead.program!==newLead.program||Math.abs(delta)>=4){
-      return {...common,kind:'SURFACE_SWITCH',headline:'Course Change Reshapes The Race',
-        chip:newLead.program,horse:newLead.horse,
-        priority:110+Math.abs(delta),
-        message:'The '+raceName+' has moved from '+beforeSurface+' to '+afterSurface+', with '+
-          (activeScratches.length===1?'one horse':activeScratches.length+' horses')+
-          ' scratched. #'+newLead.program+' '+newLead.horse+
-          (oldLead.program!==newLead.program?
-            ' was not our first choice on '+beforeSurface+', but moves to the top of our projections on '+afterSurface+'.':
-            ' was already our top choice and stays there on '+afterSurface+'.')+
-          ' The win chance moves from '+pct(earlier.win)+' to '+pct(newLead.win)+
-          ' with a new surface and a smaller field.'};
-    }
-  }
+  // Hold mixed surface/scratch changes pending validated condition modeling.
+  if(surfaceChanged)return null;
   if(oldLead.program!==newLead.program){
     const earlier=before.get(newLead.program);
     const stayed=after.has(oldLead.program);
@@ -125,6 +108,8 @@ export function insightForRace(date,track,initial,revised,updatedAt,sourceVersio
         headline:stayed?'New Projected Favorite':'New Leader After Favorite Scratched',
         chip:newLead.program,horse:newLead.horse,
         priority:(stayed?100:42)+Math.max(0,moved),
+        metric:{label:'WIN',before:earlier.win,after:newLead.win},
+        short_message:'#'+newLead.program+' '+newLead.horse+' moves to the top of our projections.',
         message:context+'#'+newLead.program+' '+newLead.horse+
           ' moves to the top of our projections for the '+raceName+'. '+
           'The revised win chance is '+pct(newLead.win)+
@@ -137,6 +122,8 @@ export function insightForRace(date,track,initial,revised,updatedAt,sourceVersio
     const x=changed[0];
     return {...common,kind:'WIN_SHIFT',headline:'Scratch-Driven Projection Shift',chip:x.h.program,horse:x.h.horse,
       priority:50+Math.abs(x.delta),
+      metric:{label:'WIN',before:x.old.win,after:x.h.win},
+      short_message:x.h.program===newLead.program?'Remains our projected favorite after the scratches.':'Win Probability changes after the scratches.',
       message:context+'#'+x.h.program+' '+x.h.horse+
         (x.h.program===newLead.program?' remains our top choice in the '+raceName+'.':' sees a change in the '+raceName+'.')+
         ' The win chance moves from '+pct(x.old.win)+' to '+pct(x.h.win)+
@@ -152,6 +139,8 @@ export function insightForRace(date,track,initial,revised,updatedAt,sourceVersio
     const x=underneath[0];
     return {...common,kind:'F4_SHIFT',headline:'Underneath Outlook Changes',chip:x.h.program,horse:x.h.horse,
       priority:20+Math.abs(x.delta),
+      metric:{label:'SECOND_OR_THIRD',before:x.b*100,after:x.a*100},
+      short_message:'The projected chance of finishing second or third has changed.',
       message:context+'#'+x.h.program+' '+x.h.horse+
         ' has moved in our Full Finishing Order Projections for the '+raceName+
         '. The combined second-or-third chance is '+pct(x.a*100)+', compared with '+
@@ -166,24 +155,14 @@ export async function captureInitialPulseSnapshot(env,initial){
   await env.CARDS_BUCKET.put(key,JSON.stringify(initial),{httpMetadata:{contentType:'application/json; charset=utf-8',cacheControl:'private, no-store'}});
   return true;
 }
-export function choosePulseInsights(sortedCandidates,limit=6){
-  // Encourage coverage across multiple tracks without manufacturing content.
-  // When only one track has genuine alerts, it may still fill the scroller.
-  const chosen=[],chosenIds=new Set(),trackCounts=new Map();
-  for(const item of sortedCandidates){
-    if(chosen.length>=limit)break;
-    const key=slug(item.track);
-    if((trackCounts.get(key)||0)>=2||chosenIds.has(item.id+'|'+item.date))continue;
-    chosen.push(item);chosenIds.add(item.id+'|'+item.date);
-    trackCounts.set(key,(trackCounts.get(key)||0)+1);
-  }
-  for(const item of sortedCandidates){
-    if(chosen.length>=limit)break;
-    const id=item.id+'|'+item.date;
-    if(chosenIds.has(id))continue;
-    chosen.push(item);chosenIds.add(id);
-  }
-  return chosen;
+export function choosePulseInsights(sortedCandidates){
+  // All source-qualified insights, strongest first. No item quota or track quota.
+  const seen=new Set();
+  return sortedCandidates.filter(item=>{
+    const key=item.id+'|'+item.date;
+    if(seen.has(key))return false;
+    seen.add(key);return true;
+  });
 }
 export async function capturePublishedPulseBaselines(env,now=Date.now()){
   // Guarded private archive only. No public exposure and no private scorer.
@@ -296,7 +275,7 @@ async function preservePublicPulseArchive(env,date,items){
     // later receives different source evidence it gets a new revisionToken.
     if(!older){changed=true;existing.set(item.id,item);}
   }
-  if(changed)await env.CARDS_BUCKET.put(key,JSON.stringify({schema_version:1,date,items:[...existing.values()].slice(-120)}),{
+  if(changed)await env.CARDS_BUCKET.put(key,JSON.stringify({schema_version:1,date,items:[...existing.values()]}),{
     httpMetadata:{contentType:'application/json; charset=utf-8',cacheControl:'private, no-store'},
     customMetadata:{public_safe_derived:'true',last_updated:new Date().toISOString()}
   });
