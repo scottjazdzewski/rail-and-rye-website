@@ -11,6 +11,8 @@ on:
       - 'public/index.html'
       - 'public/assets/race-day-pulse.*'
       - 'test-race-day-pulse*'
+      - 'test-pulse-mobile-homepage.mjs'
+      - 'staging/pulse-preview-worker.js'
       - '.github/workflows/verify-pulse-preview.yml'
   workflow_dispatch:
 permissions:
@@ -34,9 +36,12 @@ jobs:
       - name: Install browser tooling
         run: |
           npm install --no-save --no-package-lock playwright@1.56.1
-          npx playwright install --with-deps chromium
+          npx playwright install --with-deps chromium webkit
       - name: Real viewport, share and screenshot QA
-        run: node test-race-day-pulse-browser.mjs
+        run: |
+          node test-race-day-pulse-browser.mjs
+          node test-pulse-mobile-homepage.mjs
+          node scripts/render-pulse-social.mjs --demo
       - name: Preserve screenshots for visual owner approval
         if: always()
         uses: actions/upload-artifact@v4
