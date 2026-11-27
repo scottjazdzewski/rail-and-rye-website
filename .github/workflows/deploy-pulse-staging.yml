@@ -8,6 +8,7 @@ on:
       - 'public/assets/race-day-pulse.*'
       - 'public/index.html'
       - 'scripts/render-pulse-social.mjs'
+      - 'test-pulse-mobile-homepage.mjs'
       - '.github/workflows/deploy-pulse-staging.yml'
   workflow_dispatch:
 permissions:
@@ -33,9 +34,18 @@ jobs:
       - name: Render the four fictional social preview PNGs
         run: |
           npm install --no-save --no-package-lock playwright
-          npx playwright install --with-deps chromium
+          npx playwright install --with-deps chromium webkit
           node scripts/render-pulse-social.mjs --demo
           test "$(find public/assets/pulse-social -name '*.png' | wc -l)" -eq 4
+      - name: Verify complete mobile homepage in Chromium and WebKit
+        run: node test-pulse-mobile-homepage.mjs
+      - name: Retain mobile homepage screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pulse-mobile-homepage
+          path: pulse-mobile-homepage/
+          if-no-files-found: warn
       - name: Deploy only the separate staging Worker
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
