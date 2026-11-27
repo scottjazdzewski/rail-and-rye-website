@@ -103,8 +103,9 @@ export function insightForRace(date,track,initial,revised,updatedAt,sourceVersio
       return {...common,kind:'SURFACE_SWITCH',headline:'Course Change Reshapes The Race',
         chip:newLead.program,horse:newLead.horse,
         priority:110+Math.abs(delta),
-        message:'The '+raceName+' is off the '+beforeSurface+', with '+activeScratches.length+
-          ' horses scratched. #'+newLead.program+' '+newLead.horse+
+        message:'The '+raceName+' has moved from '+beforeSurface+' to '+afterSurface+', with '+
+          (activeScratches.length===1?'one horse':activeScratches.length+' horses')+
+          ' scratched. #'+newLead.program+' '+newLead.horse+
           (oldLead.program!==newLead.program?
             ' was not our first choice on '+beforeSurface+', but moves to the top of our projections on '+afterSurface+'.':
             ' was already our top choice and stays there on '+afterSurface+'.')+
