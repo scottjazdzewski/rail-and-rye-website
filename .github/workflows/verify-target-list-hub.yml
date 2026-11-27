@@ -5,6 +5,7 @@ on:
     paths:
       - 'public/admin/target-list-preview.html'
       - 'public/assets/target-list-dashboard.*'
+      - 'public/assets/rr-intelligence-desktop.css'
       - 'public/assets/rr-research-race-banner.*'
       - 'public/assets/longshot-radar.*'
       - 'test-shared-research-race-banner.mjs'
@@ -20,6 +21,7 @@ on:
       - 'src/index.js'
       - 'public/admin/target-list-preview.html'
       - 'public/assets/target-list-dashboard.*'
+      - 'public/assets/rr-intelligence-desktop.css'
       - 'public/assets/rr-research-race-banner.*'
       - 'public/assets/longshot-radar.*'
       - 'test-shared-research-race-banner.mjs'

@@ -1,0 +1,35 @@
+name: November 26 Churchill Pick Tickets scratch gate
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/pick-scratch-1126-cd.yml'
+  issue_comment:
+    types: [created]
+permissions:
+  contents: read
+concurrency:
+  group: pick-scratch-1126-cd
+  cancel-in-progress: false
+jobs:
+  run:
+    if: github.event_name == 'push' || (github.event.issue.number == 183 && github.event.comment.user.login == 'scottjazdzewski' && startsWith(github.event.comment.body, 'RR_PICK_SCRATCH_1126_CD_R2'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: pip install pynacl==1.5.0 boto3==1.40.36
+      - name: Read verified edition or validate and publish sealed scratch revision
+        env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+        run: python scripts/pick_scratch_1126_cd.py
+      - if: always()
+        run: rm -f /tmp/rr-pick-1126-cd-{input,output}.json

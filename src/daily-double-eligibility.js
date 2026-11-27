@@ -13,10 +13,12 @@ const verified1125={
  "penn national":[8,"Daily Double",[1,2,3,4,5,6,7]],
  "tampa bay downs":[9,"Daily Double",[1,2,3,4,5,6,7,8]]
 };
-export function hasTimeformDailyDouble(wagers){
- return typeof wagers==="string"&&
-  /\b(?:(?:daily|rolling|late)\s+double|double\s+wagers?)\b|(?:^|[/*:])\s*double\b/i.test(wagers)&&
-  !/\b(?:2nd|second)\s+half\b/i.test(wagers);
+export function hasTimeformDailyDouble(wagers,first=null,second=null){
+ if(typeof wagers!=="string"||/\b(?:2nd|second)\s+half\b/i.test(wagers))return false;
+ const legs=wagers.match(/\bdouble\s*(?:\(\s*\$\d+(?:\.\d+)?\s*\)\s*)?\(\s*races?\s+(\d{1,2})\s*[-–]\s*(\d{1,2})\s*\)/i)
+  ||wagers.match(/\bdouble\s*(?:\(\s*\$\d+(?:\.\d+)?\s*\)\s*)?(\d{1,2})\s*&\s*(\d{1,2})(?!\d)/i);
+ if(legs)return Number(legs[2])===Number(legs[1])+1&&(first===null||Number(legs[1])===Number(first))&&(second===null||Number(legs[2])===Number(second));
+ return /\b(?:(?:daily|rolling|late)\s+double|double\s+wagers?)\b|(?:^|[/*:])\s*double\b/i.test(wagers);
 }
 export function restoreVerifiedDailyDoubleMetadata(card){
  if(card?.race_date!=="2026-11-25"||!Array.isArray(card.races))return card;

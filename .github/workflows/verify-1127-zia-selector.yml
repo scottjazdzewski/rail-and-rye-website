@@ -1,0 +1,62 @@
+name: Read-only November 27 Zia selector verification
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/verify-1127-zia-selector.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: pip install --quiet boto3==1.40.36
+      - name: Read-only catalog and current projection inventory
+        env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+        run: |
+          python - <<'PY'
+          import os,boto3,json,urllib.request
+          from pathlib import Path
+          s=boto3.client('s3',endpoint_url='https://'+os.environ['TRI_CLOUDFLARE_ACCOUNT_ID'].strip()+'.r2.cloudflarestorage.com',region_name='auto',aws_access_key_id=os.environ['TRI_R2_ACCESS_KEY_ID'].strip(),aws_secret_access_key=os.environ['TRI_R2_SECRET_ACCESS_KEY'].strip())
+          b='rail-and-rye-private-cards'; prefix='projections/dashboard/'; date='2026-11-27'; key=prefix+date+'/zia-park.json'
+          first=s.list_objects_v2(Bucket=b,Prefix=prefix,MaxKeys=1000)
+          keys=[o['Key'] for o in first.get('Contents',[])]
+          print('READER_FIRST_PAGE',len(keys),'truncated',first.get('IsTruncated'),'zia',key in keys,flush=True)
+          p=s.list_objects_v2(Bucket=b,Prefix=prefix+date+'/',MaxKeys=1000)
+          today=[x['Key'] for x in p.get('Contents',[])]
+          print('TODAY_KEYS',len(today),','.join(k.rsplit('/',1)[1] for k in today),flush=True)
+          objects={}
+          for k in today:
+            o=s.get_object(Bucket=b,Key=k)
+            objects[k]={'body':o['Body'].read().decode(),'metadata':o.get('Metadata',{})}
+          Path('/tmp/rr-zia-qa.json').write_text(json.dumps({'keys':keys,'objects':objects}))
+          try:
+            req=urllib.request.Request('https://railandryeracing.com/api/products?qa=zia-selector-1127',headers={'Cache-Control':'no-cache','User-Agent':'RailRyeReleaseQA/1'})
+            with urllib.request.urlopen(req,timeout=25) as res: products=json.load(res)['products']
+            rows=products+[i for p in products for i in p.get('included_products',[])]
+            tracks=sorted({p['track'] for p in rows if p.get('category')=='Race Cards' and p.get('race_date')==date and p.get('track')})
+            print('PUBLIC_RACE_CARD_CATALOG',len(tracks),','.join(tracks),flush=True)
+          except Exception as e: print('PUBLIC_CATALOG_CHECK_FAILED',type(e).__name__,str(e)[:120],flush=True)
+          PY
+          node --input-type=module - <<'JS'
+          import fs from 'node:fs';
+          import {readMemberProjectionCards} from './src/projections.js';
+          const x=JSON.parse(fs.readFileSync('/tmp/rr-zia-qa.json','utf8'));
+          const env={CARDS_BUCKET:{list:async()=>({objects:x.keys.filter(key=>x.objects[key]).map(key=>({key}))}),get:async key=>x.objects[key]?{text:async()=>x.objects[key].body,customMetadata:x.objects[key].metadata}:null}};
+          const cards=await readMemberProjectionCards(env,[]);
+          const today=cards.filter(c=>c.race_date==='2026-11-27');
+          console.log('MEMBER_READER_TRACKS',today.length,today.map(c=>c.track).join(','));
+          const z=today.find(c=>c.track==='Zia Park');
+          console.log('ZIA_READER_RESULT',z?JSON.stringify({races:z.card.races.length,runners:z.card.races.reduce((n,r)=>n+r.entries.length,0),status:z.card.projection_status}):'MISSING');
+          if(!z) process.exitCode=1;
+          JS

@@ -142,7 +142,7 @@ try{
     };
   });
   assert.ok(readable.factsInNavy&&!readable.factsOutside,"Entire race description should live in the navy race banner at "+width+": "+JSON.stringify(readable));
-  assert.equal(readable.raceFacts,"7 furlongs · Dirt · Allowance / Optional Claiming");
+  assert.equal(readable.raceFacts,"7 F · Dirt · Allowance / Optional Claiming");
 
   const banner=await page.evaluate(()=>{
     const header=document.querySelector(".rr-target-card .rr-research-racebar");
@@ -168,7 +168,7 @@ try{
     "Radar-style second line must follow track, race and time at "+width+": "+JSON.stringify(banner));
   assert.ok(banner.factsHeight>12&&banner.unclipped,
     "Complete sourced race description remains readable at "+width+": "+JSON.stringify(banner));
-  assert.equal(banner.fullText,"7 furlongs · Dirt · Allowance / Optional Claiming");
+  assert.equal(banner.fullText,"7 F · Dirt · Allowance / Optional Claiming");
   assert.equal(banner.font,14,"Race conditions retain the Radar 14px font rather than shrinking.");
 
   const rightAligned=await page.locator(".rr-target-card .rr-research-racebar__main").first().evaluate(row=>{

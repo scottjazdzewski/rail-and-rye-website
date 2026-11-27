@@ -92,7 +92,7 @@ function normalizeDailyDoublePools(declared,races){
  const pools=[];
  for(const race of races){
   const first=race.race_number,second=first+1;
-  if(!hasTimeformDailyDouble(race.timeform_wagers)||!byNumber.has(second))continue;
+  if(!hasTimeformDailyDouble(race.timeform_wagers,first,second)||!byNumber.has(second))continue;
   pools.push({first_race_number:first,second_race_number:second,
    source:"timeform_wagers",wager_text:race.timeform_wagers});
  }

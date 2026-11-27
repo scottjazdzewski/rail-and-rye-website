@@ -43,9 +43,11 @@
  }
  function hasTimeformDailyDoubleEvidence(pool){
   const wagers=String(pool?.wager_text||"");
-  return pool?.source==="timeform_wagers"&&
-   /\b(?:(?:daily|rolling|late)\s+double|double\s+wagers?)\b|(?:^|[/*:])\s*double\b/i.test(wagers)&&
-   !/\b(?:2nd|second)\s+half\b/i.test(wagers);
+  if(pool?.source!=="timeform_wagers"||/\b(?:2nd|second)\s+half\b/i.test(wagers))return false;
+  const legs=wagers.match(/\bdouble\s*(?:\(\s*\$\d+(?:\.\d+)?\s*\)\s*)?\(\s*races?\s+(\d{1,2})\s*[-–]\s*(\d{1,2})\s*\)/i)
+   ||wagers.match(/\bdouble\s*(?:\(\s*\$\d+(?:\.\d+)?\s*\)\s*)?(\d{1,2})\s*&\s*(\d{1,2})(?!\d)/i);
+  if(legs)return Number(legs[2])===Number(legs[1])+1&&Number(legs[1])===Number(pool.first_race_number)&&Number(legs[2])===Number(pool.second_race_number);
+  return /\b(?:(?:daily|rolling|late)\s+double|double\s+wagers?)\b|(?:^|[/*:])\s*double\b/i.test(wagers);
  }
  function dailyDoublePairs(card=state.card,race=state.race,date=state.date){
   if(card?.race_date!==date)return [];

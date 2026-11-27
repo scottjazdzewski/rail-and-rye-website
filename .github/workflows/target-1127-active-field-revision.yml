@@ -1,0 +1,125 @@
+name: November 27 Target List active field qualification revision
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/target-1127-active-field-revision.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: target-1127-customer-release
+  cancel-in-progress: false
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: pip install --quiet boto3==1.40.36
+      - name: Validate and release only reconciled approved selections
+        env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+        run: |
+          python - <<'PY'
+          import os,json,hashlib,boto3,math,re,unicodedata,subprocess,time,urllib.request
+          from datetime import datetime,timezone
+          from botocore.exceptions import ClientError
+          d='2026-11-27';due='2026-11-27T08:00:00Z';b='rail-and-rye-private-cards'
+          source='c4f7b36d1b72f03ee8bcff3b022cd4740d4dbf0f190e218bc89cf9bf18504e06'
+          stage_sha='843c35d325681a4d3f7fe3824e1335331cee93f95ea1b19d22df4ece67b2e793'
+          assert os.environ['GITHUB_REPOSITORY']=='scottjazdzewski/rail-and-rye-website'
+          assert datetime.fromisoformat(due.replace('Z','+00:00'))<=datetime.now(timezone.utc)<datetime.fromisoformat('2026-11-28T05:00:00+00:00'),'Outside authorized release day'
+          s=boto3.client('s3',endpoint_url='https://'+os.environ['TRI_CLOUDFLARE_ACCOUNT_ID'].strip()+'.r2.cloudflarestorage.com',region_name='auto',aws_access_key_id=os.environ['TRI_R2_ACCESS_KEY_ID'].strip(),aws_secret_access_key=os.environ['TRI_R2_SECRET_ACCESS_KEY'].strip())
+          def get(k):
+            try:
+              o=s.get_object(Bucket=b,Key=k);return o['Body'].read(),o.get('Metadata',{})
+            except ClientError as e:
+              if e.response.get('Error',{}).get('Code') in ('404','NotFound','NoSuchKey'):return None,{}
+              raise
+          def sha(raw):return hashlib.sha256(raw).hexdigest()
+          def norm(v):return re.sub(r'[^a-z0-9]+',' ',''.join(c for c in unicodedata.normalize('NFKD',str(v or '')).lower() if not unicodedata.combining(c))).strip()
+          def price(v):
+            m=re.fullmatch(r'(\d+)[-/](\d+)',str(v).strip());assert m and int(m[2])>0
+            return int(m[1])/int(m[2])
+          def tenths(v):return math.floor(float(v)*10+.5)/10
+          tote=[(1,5),(2,5),(1,2),(3,5),(4,5),(1,1),(6,5),(7,5),(3,2),(8,5),(9,5),(2,1),(5,2),(3,1),(7,2),(4,1),(9,2),(5,1),(6,1),(7,1),(8,1),(9,1),(10,1),(12,1),(15,1),(20,1),(25,1),(30,1),(40,1),(50,1),(60,1),(80,1),(100,1)]
+          def fair(p):
+            a,b=min(tote,key=lambda t:abs(t[0]/t[1]-(100/p-1)));return f'{a}/{b}'
+          root='intelligence/target-list/staging/'+d+'/'
+          raw,m=get(root+'revision-0001.json');assert raw and sha(raw)==m['sha256']==stage_sha and m['source_sha256']==source and m['release_at']==due and m['stage_only']=='true'
+          p=json.loads(raw);assert p['race_date']==d and p['release_at']==due and p['source_zip_sha256']==source and p['editorial_sha256']==m['editorial_sha256']
+          q,qm=get(root+'qa-0001.json');assert q and json.loads(q)['stage_sha256']==stage_sha
+          rr=p['source_receipts'];assert len(rr)==len(set(x['track_code'] for x in rr))==15 and sum(x['races'] for x in rr)==134 and sum(x['runners'] for x in rr)==1156
+          for x in rr:
+            tj=x['tj_role_receipt'];assert x['receipt_status']=='PASS_TRI_TJ_V4_PERMANENT_FORWARD_RUNTIME' and tj['permanent_tj_v4_policy_id']=='TRI_TJ_NEUTRAL_MEAN_V4_ALWAYS_ON' and tj['permanent_v4_both_roles_before_pwin'] and tj['exact_consumed_model_matrix_verified'] and x['max_mass_error']<1e-9
+          ed=p['customer_edition'];assert ed['race_date']==d and ed['revision']==1 and ed['status']=='initial' and ed['publication_mode']=='owner-approved-gpt' and ed['source']['editorial_sha256']==p['editorial_sha256'] and len(ed['targets'])==len(p['targets'])==len(p['selected_race_full_fields'])==13
+          manifest,mm=get('projections/qa/'+d+'/staged-release.json');assert manifest
+          man=json.loads(manifest);assert man['status']=='VERIFIED_STAGED' and man['scope']=='VERIFIED_COMPLETE_SLATE' and man['source_sha256']==source and len(man['tracks'])==15 and sum(x['races'] for x in man['tracks'])==134
+          cards={}
+          for t in man['tracks']:
+            cr,cm=get('projections/dashboard/'+d+'/'+t['slug']+'.json')
+            assert cr and sha(cr)==t['dashboard_sha256'] and cm['source_sha256']==source and cm.get('customer_publish_approved')=='true'
+            card=json.loads(cr);assert card['race_date']==d and norm(card['track_name'])==norm(t['name'])
+            cards[norm(t['name'])]=card
+          fields={(norm(x['track']),x['race']):x for x in p['selected_race_full_fields']};assert len(fields)==13
+          key='racing-intelligence/product-tabs/target-list/'+d+'.json'
+          obj=s.get_object(Bucket=b,Key=key);prior=obj['Body'].read();pm=obj['Metadata'];assert sha(prior)==pm['content_sha256'] and pm['customer_publish_approved']=='true'
+          live=json.loads(prior);assert live['race_date']==d and live['revision']==1 and len(live['targets'])==10 and live['source']['editorial_sha256']==p['editorial_sha256']
+          assert sha(prior)=='060e4ad6a22e3c4ca506088dd368aef757b3a1588892f367ed95ac9ba013b8b8'
+          existing={(norm(t['track']),t['race_number']) for t in live['targets']}
+          expected={('fair grounds',7),('oaklawn park',10),('belmont park',6)}
+          assert set(fields)-existing==expected
+          added=[];decisions=[]
+          for t in ed['targets']:
+            k=(norm(t['track']),t['race_number'])
+            if k not in expected:continue
+            card=cards[k[0]];r=next(x for x in card['races'] if x['race_number']==k[1]);old={str(x['program_number']).upper():x for x in fields[k]['runners']};new={str(x['program_number']).upper():x for x in r['entries']}
+            reason=None
+            assert len(new)==len(r['entries']) and len(new)>=3 and abs(sum(float(x['win_probability_exact']) for x in new.values())-100)<1e-6
+            assert set(new)<set(old)
+            for prog,y in new.items():
+              x=old[prog]
+              assert all(norm(x[z])==norm(y[z]) for z in ('horse_name','trainer','jockey')) and abs(price(x['morning_line'])-price(y['morning_line']))<1e-12
+              assert math.isfinite(float(y['win_probability_exact'])) and float(y['win_probability_exact'])>=0
+              assert abs(float(y['win_probability_exact'])-100*float(y['f4_probabilities']['exact_p1']))<1e-6
+            f=new.get(str(t['favorite']['program_number']).upper());a=new.get(str(t['attack']['program_number']).upper())
+            ranked=sorted(new.values(),key=lambda x:price(x['morning_line']))
+            if card.get('projection_status')!='prescratch' or r.get('scratches'):reason='NEW_SCRATCH_STATE_REQUIRES_FRESH_SCORE_RECEIPT'
+            elif not f or not a:reason='ORIGINAL_PAIR_NOT_ACTIVE'
+            elif ranked[0]!=f or price(ranked[0]['morning_line'])==price(ranked[1]['morning_line']):reason='FAVORITE_CHANGED_OR_TIED'
+            elif float(a['win_probability_exact'])-float(f['win_probability_exact'])<10:reason='EDGE_BELOW_10PP'
+            elif price(a['morning_line'])<=max(price(f['morning_line']),100/float(a['win_probability_exact'])-1):reason='NO_PRICE_ADVANTAGE'
+            elif any(norm(h['jockey']) in ('','not assigned','unknown') for h in (a,f)):reason='UNASSIGNED_JOCKEY'
+            elif any(norm(old[z]['horse_name']) in norm(t['analysis']) for z in set(old)-set(new)):reason='EDITORIAL_REFERENCES_EXCLUDED_RUNNER'
+            elif re.search(r'\b(pace|speed duel|early speed|lone speed|uncontested|pressure|field size|full field|traffic|front.end|lead|closers?|set.?up)\b',t['analysis'],re.I):reason='FIELD_DEPENDENT_EDITORIAL_REQUIRES_REVIEW'
+            else:
+              item=dict(t);item['rank']=len(live['targets'])+len(added)+1
+              for role,h in [('favorite',f),('attack',a)]:
+                v=float(h['win_probability_exact']);item[role]={**t[role],'win_probability':tenths(v),'fair_odds':fair(v)}
+              added.append(item)
+            decisions.append({'track':t['track'],'race':t['race_number'],'decision':reason or 'QUALIFIED','original_count':len(old),'active_count':len(new),'gap_pp':round(float(a['win_probability_exact'])-float(f['win_probability_exact']),3) if a and f else None})
+          for decision in decisions:print('TARGET_ACTIVE_RECHECK',json.dumps(decision),flush=True)
+          if not added:
+            print('TARGET_ACTIVE_RECHECK_COMPLETE no additions; existing ten preserved',flush=True);raise SystemExit(0)
+          revised={**live,'revision':2,'status':'editorial_update','targets':live['targets']+added}
+          js="""import {storeGPTReleasedTargetList,readTargetListEdition} from './src/target-list.js';import {webcrypto} from 'node:crypto';globalThis.crypto??=webcrypto;let raw='';for await(const c of process.stdin)raw+=c;const ed=JSON.parse(raw),saved=new Map();const env={CARDS_BUCKET:{get:async k=>saved.get(k)||null,list:async()=>({objects:[],truncated:false}),put:async(k,v,o)=>saved.set(k,{text:async()=>v,customMetadata:o.customMetadata,raw:v})}};await storeGPTReleasedTargetList(env,ed);const r=await readTargetListEdition(env,ed.race_date);if(r?.targets?.length!==ed.targets.length)throw Error('Reader failed');const v=[...saved.values()][0];process.stdout.write(JSON.stringify({raw:v.raw,meta:v.customMetadata}));"""
+          proc=subprocess.run(['node','--input-type=module','-e',js],input=json.dumps(revised).encode(),capture_output=True);assert proc.returncode==0,'Site validator failed'
+          validated=json.loads(proc.stdout);body=validated['raw'].encode();meta=validated['meta'];assert sha(body)==meta['content_sha256'] and json.loads(body)['targets'][:10]==live['targets']
+          backup=root+'customer-edition-revision-0001.json';before,_=get(backup)
+          if before:assert before==prior
+          else:s.put_object(Bucket=b,Key=backup,Body=prior,Metadata=pm,ContentType='application/json',CacheControl='private,no-store',IfNoneMatch='*')
+          assert get(backup)[0]==prior
+          s.put_object(Bucket=b,Key=key,Body=body,Metadata=meta,ContentType='application/json; charset=utf-8',CacheControl='private,no-store',IfMatch=obj['ETag'])
+          chk,cm=get(key);assert chk==body and cm['content_sha256']==sha(body) and cm['revision']=='2'
+          audit=json.dumps({'date':d,'revision':2,'previous_sha256':sha(prior),'content_sha256':sha(body),'source_sha256':source,'decisions':decisions,'total':len(revised['targets'])},sort_keys=True).encode()
+          s.put_object(Bucket=b,Key=root+'active-field-revision-0002-audit.json',Body=audit,Metadata={'sha256':sha(audit)},ContentType='application/json',CacheControl='private,no-store',IfNoneMatch='*')
+          print('TARGET_ACTIVE_REVISION_PUBLISHED added='+str(len(added))+' total='+str(len(revised['targets']))+' revision=2',flush=True)
+          PY

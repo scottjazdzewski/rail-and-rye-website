@@ -123,7 +123,7 @@ assert.match(js,/Post-time order/,"Summary uses the current display order, not a
 assert.match(css,/font-size:18px;/,"On-phone editorial body grows to 18px.");
 assert.match(css,/font-size:25px/,"On-phone win percentage remains prominent.");
 assert.match(js,/raceBanner\.render\(entry\)/,"All Target List cards use the shared banner renderer.");
-assert.match(html,/rr-research-race-banner\.js\?v=locked-v4-20261124/,"One shared right-aligned race-header renderer is mandatory.");
+assert.match(html,/rr-research-race-banner\.js\?v=locked-v7-20261124/,"One shared right-aligned race-header renderer is mandatory.");
 assert.doesNotMatch(js,/rr-research-racebar|rr-target-race-identifiers|rr-research-racebar__facts/,"Legacy Target List banner builder is retired.");
 assert.match(readFileSync("public/assets/rr-research-race-banner.css","utf8"),/\.rr-research-racebar__identifiers\{/,"Right-aligned header group uses one canonical stylesheet.");
 assert.match(readFileSync("public/assets/rr-research-race-banner.css","utf8"),/grid-template-columns:minmax\(0,1fr\) max-content/,"Canonical header uses the same left-track/right-identifiers grid.");
@@ -141,7 +141,7 @@ assert.match(css,/@media\(max-width:359px\)/);
 assert.match(css,/\.rr-target-list\{display:grid;grid-template-columns:minmax\(0,1fr\)/,"Target List reads as one compact vertical column.");
 assert.match(css,/Tinos/,"Only authoritative statistics use the card font.");
 assert.doesNotMatch(html,/id="rr-target-review-banner"/,"One concise review notice is enough.");
-assert.match(html,/target-list-dashboard\.js\?v=shared-race-order-v1-20261124/,"Load version-locked shared-banner Target List reader.");
+assert.match(html,/target-list-dashboard\.js\?v=tote-lock-2/,"Load version-locked shared-banner Target List reader.");
 assert.match(css,/Target List v3 — dense mobile-first horse-racing reader/);
 assert.match(css,/-webkit-line-clamp:unset/,"Full editorial must never be cut off at two lines.");
 assert.match(js,/function horseRow\(role,runner,entry\)/,"Horse rows themselves open the detail drawer.");
@@ -204,12 +204,12 @@ assert.ok(tree(card,el=>el.className==="rr-target-analysis-text"&&el.textContent
 assert.ok(tree(card,el=>el.className==="rr-target-horse-row rr-target-attack"),"ATTACK appears in its own compact race row.");
 const racebar=tree(card,el=>el.className==="rr-research-racebar");
 assert.ok(racebar,"Race has integrated navy header.");
-assert.equal(textOf(tree(racebar,el=>el.className==="rr-research-racebar__facts")),"6 furlongs · Dirt","Race facts sit fully within the banner.");
+assert.equal(textOf(tree(racebar,el=>el.className==="rr-research-racebar__facts")),"6 F · Dirt","Race facts sit fully within the banner.");
 const namedCard=elements.get("rr-target-list").children.find(entry=>
  tree(entry,el=>el.tagName==="H3")?.textContent==="Synthetic Test Track");
 assert.ok(namedCard,"Stakes fixture must be rendered");
 const namedFacts=tree(namedCard,el=>el.className==="rr-research-racebar__facts");
-assert.ok(textOf(namedFacts).startsWith("6 furlongs · Dirt · First Lady Stakes"),
+assert.ok(textOf(namedFacts).startsWith("6 F · Dirt · First Lady Stakes"),
  "Full name replaces sponsored abbreviation and keeps surface and distance");
 const grade=tree(namedFacts,el=>el.className==="rr-ed-grade-trophy rr-ed-grade-trophy--g1");
 assert.ok(grade,"Source-verified Grade 1 gets gold trophy in race header");
@@ -236,7 +236,7 @@ assert.ok(tree(card,el=>el.className==="rr-target-stat-value"&&el.textContent===
 assert.match(html,/id="rr-target-sort"/);
 assert.doesNotMatch(html,/rr-target-track|rr-target-search/,"Reader controls are date and independent sort only.");
 
-assert.match(html,/rr-race-titles\.js\?v=5/,"Locked canonical stakes parser is present");
+assert.match(html,/rr-race-titles\.js\?v=10/,"Locked canonical stakes parser is present");
 assert.match(html,/rr-stakes-inline\.css\?v=1/,"Locked shared graded trophy styles are present");
 assert.match(readFileSync("public/assets/rr-research-race-banner.js","utf8"),/appendGradeTrophy\(facts,title(\?\.)?grade\)/,
  "The shared renderer preserves the sourced trophy and grade rule");

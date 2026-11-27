@@ -31,16 +31,8 @@
  overflow-wrap:normal;word-break:normal;hyphens:none;
 }
 .rrp-race-head.rr-dash-race-banner--extended-title .rrp-race-head__condition{font-size:clamp(18px,2.05vw,27px)}
-.rrp-race-head__trophy{
- display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;gap:4px;
- min-height:27px;padding:4px 7px;border:1px solid #d6ab47;border-radius:7px;
- background:#f9df8f;color:#422c0a;font:800 11px/1 Inter,Arial,system-ui,sans-serif;white-space:nowrap;
-}
-.rrp-race-head__trophy--g1{background:#f9dd80;border-color:#ca9d34;color:#52370c}
-.rrp-race-head__trophy--g2{background:#edf0f2;border-color:#a5b1bd;color:#314457}
-.rrp-race-head__trophy--g3{background:#edd0b4;border-color:#bc8557;color:#60391f}
-.rrp-race-head__trophy-icon{font-size:15px;line-height:1}
-.rrp-race-head__grade{font:800 11px/1 Inter,Arial,system-ui,sans-serif}
+.rrp-race-head__trophy{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;padding:0;border:0;background:transparent;min-width:0;line-height:1}
+.rrp-race-head__trophy-icon{display:block;width:48px;height:48px;object-fit:contain;flex:0 0 auto}
 .rrp-race-head__details{
  display:grid;grid-template-columns:max-content max-content minmax(0,1fr);
  align-items:center;column-gap:clamp(12px,2.2vw,28px);min-width:0;
@@ -139,7 +131,7 @@
  .rrp-race-head__scratch-chip{width:29px;height:29px}
  .rrp-race-head__scratch-img{width:29px;height:29px}
  .rrp-race-head__scratch-fallback{min-width:29px;height:29px}
- .rrp-race-head__trophy{min-height:25px;padding:3px 6px}
+ .rrp-race-head__trophy-icon{width:40px;height:40px}
 }
 @media(max-width:370px){
  .rrp-race-head{padding:8px 9px 5px}

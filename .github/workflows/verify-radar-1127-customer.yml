@@ -1,0 +1,47 @@
+name: November 27 Radar immediate customer readback
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/verify-radar-1127-customer.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install --quiet boto3==1.40.36
+      - env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+        run: |
+          python - <<'PY'
+          import boto3,hashlib,json,os,urllib.request,urllib.error
+          from botocore.exceptions import ClientError
+          d='2026-11-27';b='rail-and-rye-private-cards';p='intelligence/longshot-radar/staging/'+d+'/'
+          s=boto3.client('s3',endpoint_url='https://'+os.environ['TRI_CLOUDFLARE_ACCOUNT_ID'].strip()+'.r2.cloudflarestorage.com',region_name='auto',aws_access_key_id=os.environ['TRI_R2_ACCESS_KEY_ID'].strip(),aws_secret_access_key=os.environ['TRI_R2_SECRET_ACCESS_KEY'].strip())
+          def get(k):
+            try:
+              o=s.get_object(Bucket=b,Key=k);return o['Body'].read(),o.get('Metadata',{})
+            except ClientError as e:
+              if e.response['Error']['Code'] in ('404','NoSuchKey','NotFound'):return None,{}
+              raise
+          raw,m=get(p+'revision-0001.json');assert raw and m['sha256']==hashlib.sha256(raw).hexdigest() and len(json.loads(raw)['candidates'])==10
+          cust,cm=get('racing-intelligence/product-tabs/longshot-radar/'+d+'.json')
+          review,rm=get('intelligence/longshot-radar/review/'+d+'.json')
+          rec,_=get(p+'prepared-0001.json')
+          print('RADAR1127_CUSTOMER_READBACK',cust==raw and cm.get('customer_publish_approved')=='true' and cm.get('content_sha256')==m['sha256'],'review',review==raw and rm.get('review_only')=='true','prepared_marker',bool(rec),flush=True)
+          if rec:
+            r=json.loads(rec);print('RADAR1127_MARKER',r.get('date'),r.get('candidates'),r.get('sha256')==m['sha256'],r.get('product_id'),flush=True)
+          req=urllib.request.Request('https://railandryeracing.com/api/products?qa=radar-1127-customer-readback',headers={'Cache-Control':'no-cache','User-Agent':'RailRyeReleaseQA/1'})
+          with urllib.request.urlopen(req,timeout=20) as response:products=json.load(response)['products']
+          rows=products+[x for p in products for x in p.get('included_products',[])]
+          live=[x for x in rows if x.get('category')=='Longshot Radar' and x.get('race_date')==d and x.get('id')]
+          print('RADAR1127_PUBLIC_CATALOG',len(live),'product_id',live[0]['id'] if live else None,flush=True)
+          assert cust==raw and cm.get('customer_publish_approved')=='true' and live,'Customer object or live listing unconfirmed'
+          PY

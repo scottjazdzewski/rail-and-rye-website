@@ -8,15 +8,32 @@ const HEAD={"Content-Type":"application/json; charset=utf-8","Cache-Control":"no
 const out=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:HEAD});
 const bad=(message,status=400)=>out({error:message},status);
 const validPrice=value=>Number.isSafeInteger(value)&&value>=50&&value<=500000;
-const DEFAULT_GPT_PRICES={"Race Cards":200,"Pick Tickets":200,"Longshot Radar":100,"Target List":100};
+const DEFAULT_GPT_PRICES={"Race Cards":100,"Pick Tickets":100,"Longshot Radar":100,"Target List":100};
+const TRACK_PRICE_CHANGE="single-track-one-dollar-20261126";
 async function ensureGPTPriceDefaults(env){
  const db=env.STORE_DB;
  await db.prepare("CREATE TABLE IF NOT EXISTS gpt_product_price_defaults (category TEXT PRIMARY KEY CHECK(category IN ('Race Cards','Pick Tickets','Longshot Radar','Target List')),price_cents INTEGER NOT NULL CHECK(price_cents BETWEEN 50 AND 500000),updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)").run();
  await db.batch(Object.entries(DEFAULT_GPT_PRICES).map(([category,price])=>
   db.prepare("INSERT OR IGNORE INTO gpt_product_price_defaults(category,price_cents) VALUES (?,?)").bind(category,price)));
 }
-async function readGPTPriceDefaults(env){
+// Apply the owner's one-time default reduction without resetting future manual prices.
+// D1 batch is transactional; each write is guarded by the durable migration marker.
+export async function applySingleTrackPriceChange(env){
+ if(!env?.STORE_DB)return {applied:false};
+ const db=env.STORE_DB;
  await ensureGPTPriceDefaults(env);
+ await db.prepare("CREATE TABLE IF NOT EXISTS gpt_price_changes (id TEXT PRIMARY KEY,applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)").run();
+ if(await db.prepare("SELECT id FROM gpt_price_changes WHERE id=?").bind(TRACK_PRICE_CHANGE).first())return {applied:false};
+ await ensureRacePdfExpirySchema(env);
+ const results=await db.batch([
+  db.prepare("UPDATE gpt_product_price_defaults SET price_cents=100,updated_at=CURRENT_TIMESTAMP WHERE category IN ('Race Cards','Pick Tickets') AND NOT EXISTS (SELECT 1 FROM gpt_price_changes WHERE id=?)").bind(TRACK_PRICE_CHANGE),
+  db.prepare("UPDATE products SET price_cents=100 WHERE category IN ('Race Cards','Pick Tickets') AND status='published' AND price_cents=200 AND pdf_key IS NULL AND TRIM(COALESCE(track,''))<>'' AND pdf_expires_at IS NOT NULL AND datetime(pdf_expires_at)>CURRENT_TIMESTAMP AND NOT EXISTS (SELECT 1 FROM bundle_only_assets WHERE product_id=products.id) AND NOT EXISTS (SELECT 1 FROM gpt_price_changes WHERE id=?)").bind(TRACK_PRICE_CHANGE),
+  db.prepare("INSERT OR IGNORE INTO gpt_price_changes(id) VALUES (?)").bind(TRACK_PRICE_CHANGE)
+ ]);
+ return {applied:Number(results[2]?.meta?.changes??results[2]?.changes??0)>0,updated_count:Number(results[1]?.meta?.changes??results[1]?.changes??0)};
+}
+async function readGPTPriceDefaults(env){
+ await applySingleTrackPriceChange(env);
  const result=await env.STORE_DB.prepare("SELECT category,price_cents FROM gpt_product_price_defaults").all();
  const prices={...DEFAULT_GPT_PRICES};
  for(const row of result.results||[])if(Object.prototype.hasOwnProperty.call(DEFAULT_GPT_PRICES,row.category)&&validPrice(row.price_cents))prices[row.category]=row.price_cents;
@@ -120,7 +137,7 @@ export async function handleAdminGPTProductCatalog(request,env,bundleHandler,syn
     Object.keys(DEFAULT_GPT_PRICES).some(category=>!validPrice(supplied[category])))
    return bad("Set a valid price for Race Cards, Pick Tickets, Longshot Radar and Target List.");
   try{
-   await ensureGPTPriceDefaults(env);
+   await applySingleTrackPriceChange(env);
    const entries=Object.entries(DEFAULT_GPT_PRICES);
    const ops=entries.map(([category])=>env.STORE_DB.prepare(
     "INSERT INTO gpt_product_price_defaults(category,price_cents,updated_at) VALUES (?,?,CURRENT_TIMESTAMP) ON CONFLICT(category) DO UPDATE SET price_cents=excluded.price_cents,updated_at=CURRENT_TIMESTAMP"

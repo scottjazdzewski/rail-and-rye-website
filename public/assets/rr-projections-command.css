@@ -12,7 +12,7 @@
  gap:10px;align-items:center;min-width:0;
 }
 .rr-dash-mode-switch{
- display:grid;grid-template-columns:1fr 1.25fr;gap:3px;
+ display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr) minmax(0,1fr);gap:3px;
  margin:0;padding:3px;border:1px solid #decfae;border-radius:8px;background:#ede8db;
 }
 .rr-dash-mode-button{
@@ -103,3 +103,15 @@
  .rr-dash-toolbar select{font-size:12px;padding-left:6px}
  .rr-dash-timeline-controls{grid-template-columns:32px minmax(0,1fr) 32px;gap:4px}
 }
+
+/* Owner-approved third navigation mode. Retain the existing race renderer. */
+.rr-dash-app[data-mode="purse"] .rr-dash-toolbar :is(.rr-dash-track-field,.rr-dash-race-time-field){display:none!important}
+.rr-dash-app[data-mode="purse"] .rr-dash-toolbar{grid-template-columns:minmax(0,1fr);max-width:420px}
+.rr-dash-purse-filters{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:end;min-width:0}
+.rr-dash-purse-filters[hidden]{display:none!important}
+.rr-dash-purse-filters label{display:grid;gap:4px;min-width:0;color:#385572;font:750 11px/1.25 Inter,Arial,system-ui,sans-serif}
+.rr-dash-purse-filters select{box-sizing:border-box;width:100%;min-width:0;min-height:40px;padding:7px 10px;border:1px solid #c6b082;border-radius:7px;background:#fff;color:#102e54;font:650 13px/1.2 Inter,Arial,system-ui,sans-serif}
+.rr-dash-purse-filters .rr-dash-stakes-check{display:flex;align-items:center;gap:6px;min-height:40px;padding:5px 8px;cursor:pointer}
+.rr-dash-stakes-check input{accent-color:#102d53;width:18px;height:18px;margin:0}
+.rr-dash-app[data-mode="purse"] #rr-dash-track-identity:empty{display:none}
+@media(min-width:801px){.rr-dash-purse-filters{max-width:420px}}

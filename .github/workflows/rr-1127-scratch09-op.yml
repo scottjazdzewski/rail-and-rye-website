@@ -1,0 +1,32 @@
+name: Publish verified Nov27 scratch run 09 Oaklawn Park
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'private-ingest/20261127-scratch09-op/manifest.json'
+      - 'scripts/rr_1127_scratch09_op.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: rr-1127-scratch09-op
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: pip install pynacl==1.5.0 boto3==1.40.36
+      - name: Publish verified scratch outputs only
+        env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+        run: python scripts/rr_1127_scratch09_op.py

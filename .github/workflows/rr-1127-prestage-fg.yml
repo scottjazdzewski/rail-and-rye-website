@@ -1,0 +1,32 @@
+name: Prestage verified November 27 Fair Grounds data only
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'private-ingest/20261127-prestage-fg/manifest.json'
+      - 'scripts/rr_1127_prestage_fg.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: rr-1127-prestage-fg
+  cancel-in-progress: false
+jobs:
+  stage:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: pip install pynacl==1.5.0 boto3==1.40.36
+      - name: Validate and stage encrypted finished race cards
+        env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+        run: python scripts/rr_1127_prestage_fg.py

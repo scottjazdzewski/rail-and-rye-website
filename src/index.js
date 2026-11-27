@@ -13,7 +13,7 @@ import {syncDailyBundles,ensureUpcomingProductReleaseSchedules} from './daily-bu
 import {syncStagedRaceCardCatalog} from './staged-race-card-catalog.js';
 import {prepareScheduledRadarStages} from './longshot-radar-staging.js';
 import {prepareScheduledTargetStages} from './target-list-staging.js';
-import {handleAdminGPTProductCatalog} from './gpt-product-catalog.js';
+import {handleAdminGPTProductCatalog,applySingleTrackPriceChange} from './gpt-product-catalog.js';
 import {syncExistingGPTProductCatalog} from './gpt-product-catalog-sync.js';
 import {handleAdminBundleAssets} from './bundle-assets.js';
 import {handleAdminJournal,handlePublicJournal,publicJournalCover,publishScheduledJournalArticles} from './journal.js';
@@ -462,6 +462,7 @@ export default {
     ctx.waitUntil(capturePublishedPulseBaselines(env,controller.scheduledTime).then(out=>{
       if(out.captured)console.info('Private Pulse original-field snapshots preserved',out.captured);
     }).catch(e=>console.warn('Pulse baseline safety net deferred',String(e).slice(0,130))));
+    ctx.waitUntil(applySingleTrackPriceChange(env).then(result=>{if(result.applied)console.info('Single-track default price updated',result.updated_count);}).catch(e=>console.warn('Single-track price update deferred',String(e.message||e).slice(0,140))));
     ctx.waitUntil(prepareScheduledPickStages(env).then(result=>{
       if(result.prepared)console.info("Dated Pick Tickets prepared for scheduled release",result.prepared);
     }).catch(e=>console.warn("Scheduled Pick Tickets preparation deferred",String(e.message||e).slice(0,140))));

@@ -72,9 +72,9 @@ const cssVersion=html=>/projections-dashboard\.css\?v=(\d+)/.exec(html)?.[1];
 assert.ok(cssVersion(admin),"Approved dashboard CSS needs an explicit version.");
 assert.equal(cssVersion(admin),cssVersion(member),"Admin and member must load the same current dashboard CSS.");
 for(const html of [admin,member]){
- assert.match(html,/rr-race-titles\.js\?v=8/,"Load shared race presentation helper before dashboard");
+ assert.match(html,/rr-race-titles\.js\?v=11/,"Load shared race presentation helper before dashboard");
  assert.match(html,/projections-dashboard\.js\?v=\d+/,"Use verified stakes heading dashboard revision");
- assert.match(html,/rr-projections-race-header\.css\?v=4/,"Load the sole graded-trophy and race-header stylesheet");
+ assert.match(html,/rr-projections-race-header\.css\?v=6/,"Load the sole graded-trophy and race-header stylesheet");
 }
 assert.match(js,/editorialRacePresentation\(race\)/,
  "Race headings use a source-proven title and defensive fallback");
@@ -88,10 +88,10 @@ assert.doesNotMatch(js,/rr-dash-track-mark-letters/,
  "Remove invented FL/PRX/MNR monogram substitutes from the live dashboard");
 
 assert.match(js,/rr-dash-graded-trophy--g/,"Graded race header must retain grade-specific trophy");
-assert.match(js,/🏆/,"Use the graded stakes trophy symbol");
-assert.match(css,/rrp-race-head__trophy--g1/);
-assert.match(css,/rrp-race-head__trophy--g2/);
-assert.match(css,/rrp-race-head__trophy--g3/);
+assert.doesNotMatch(js,/🏆/,"Never use an emoji trophy");
+assert.match(js,/graded_trophy_G/,"Use the verified original PNG");
+assert.match(css,/\.rrp-race-head__trophy\{[^}]*background:transparent/,"Standalone trophy");
+assert.doesNotMatch(css,/\.rrp-race-head__trophy--g[123]\{/,"No colored grade pills");
 assert.match(css,/text-transform:none/,"Race names are never forced uppercase");
 const chipCss=readFileSync("public/assets/rr-intelligence-chips.css","utf8");
 const trackCss=readFileSync("public/assets/rr-projections-track-identity.css","utf8");
@@ -109,12 +109,12 @@ assert.match(css,/\.rrp-race-head__scratch-bar\{[\s\S]*?justify-content:center/,
  "Centered scratch row is part of the canonical layout");
 for(const page of ["public/admin/longshot-radar.html","public/admin/target-list-preview.html"]){
  const html=readFileSync(page,"utf8");
- assert.match(html,/rr-race-titles\.js\?v=8/,"All readers use the same current title authority.");
- assert.match(html,/rr-research-race-banner\.js\?v=locked-v7-20261124/,
+ assert.match(html,/rr-race-titles\.js\?v=11/,"All readers use the same current title authority.");
+ assert.match(html,/rr-research-race-banner\.js\?v=original-trophies-2/,
   "All research readers use the same banner and trophy presentation.");
 }
 const pickPage=readFileSync("public/admin/pick-tickets-preview.html","utf8");
-assert.match(pickPage,/rr-race-titles\.js\?v=8/,"Pick Tickets uses the same title parser.");
+assert.match(pickPage,/rr-race-titles\.js\?v=11/,"Pick Tickets uses the same title parser.");
 const pickRenderer=readFileSync("public/assets/pick-tickets-dashboard.js","utf8");
 assert.match(pickRenderer,/RRRaceTitles\?\.describe/,"Ticket legs use full canonical stakes names.");
 assert.match(pickRenderer,/rr-ed-grade-trophy--g/,"Ticket legs show correct G1 G2 G3 trophies.");
@@ -155,3 +155,12 @@ const wildVine={win_probability_exact:57.6,fair_odds:"7-10",morning_line:"6-5"};
 console.log("PASS: canonical North American tote odds across the shared display helper");
 
 assert.equal(ctx.RRRaceTitles.formatFairOdds({win_probability_exact:52.8,fair_odds:"9-10"}),"4-5","Velveteen regression");
+
+check({conditions:"Gin Talking S."},"Gin Talking Stakes",null);
+check({conditions:"GIN TALKING S."},"Gin Talking Stakes",null);
+check({conditions:"Ginger Stakes"},"Ginger Stakes",null);
+check({conditions:"Giant Stakes"},"Giant Stakes",null);
+check({conditions:"GI Belmont S."},"Belmont Stakes",1);
+check({conditions:"GII Belmont S."},"Belmont Stakes",2);
+check({conditions:"Mrs. Revere S. (G2)"},"Mrs. Revere Stakes",2);
+check({conditions:"Clark S. (GII)"},"Clark Stakes",2);

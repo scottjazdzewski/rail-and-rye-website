@@ -141,7 +141,9 @@
   const line=node("div","rr-pt-stakes-line");
   line.append(node("strong","rr-pt-stakes-name",event.title));
   if(event.grade){
-   const trophy=node("span","rr-ed-grade-trophy rr-ed-grade-trophy--g"+event.grade,"🏆 G"+event.grade);
+   const trophy=node("span","rr-ed-grade-trophy rr-ed-grade-trophy--g"+event.grade);
+   const art=node("img","rr-ed-grade-trophy-icon");art.src="/assets/approved/graded-trophies/graded_trophy_G"+event.grade+".png?v=original-verified-2";art.alt="Grade "+event.grade;art.decoding="async";
+   trophy.append(art);
    trophy.setAttribute("aria-label","Grade "+event.grade+" stakes trophy");
    line.append(trophy);
   }

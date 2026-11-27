@@ -17,7 +17,7 @@ assert.match(css,/family=Tinos/,"Load the original racecard percentage font");
 assert.match(css,/\.rr-dash-win-percent\{font-family:"Tinos"/,"Match the approved Tinos Bold percentage font");
 assert.match(css,/\.rr-dash-metric-value\[data-state="gray"\] \.rr-dash-metric-bar/,"Neutral factors have an explicit gray dash color");
 assert.match(css,/min-height:114px/,"Runner cards no longer reserve a blank analysis footer");
-assert.match(js,/F4 FINISH PROJECTIONS/,"Full Analysis must include F4 outcomes");
+assert.match(js,/PROJECTED FINISH DISTRIBUTION/,"Full Analysis must include F4 outcomes in customer-facing language");
 assert.doesNotMatch(js,/rr-dash-prescratch-note|rr-dash-factor-origin-note|five-factor ratings have not been recalculated/,"No stage or recalculation commentary.");
 assert.match(js,/fact_pace_moderate|fact_pace_strong/,"Approved pace art is used.");
 assert.match(js,/fact_surface_dirt|fact_surface_turf/,"Approved surface art is used.");
@@ -51,10 +51,11 @@ class Element {
  showModal(){this.opened=true;}
  close(){}
 }
-const ids=["rr-dash-status","rr-dash-app","rr-dash-login","rr-dash-empty","rr-dash-date","rr-dash-track","rr-dash-race-time","rr-dash-races","rr-dash-track-identity","rr-dash-race","rr-dash-horses","rr-dash-open-pdf","rr-dash-download-pdf","rr-dash-update","rr-dash-horse-dialog","rr-dash-horse-title","rr-dash-horse-detail","rr-dash-horse-close","rr-dash-global-timeline","rr-dash-all-races","rr-dash-timeline-count","rr-dash-previous-race","rr-dash-next-race","rr-dash-mode-track","rr-dash-mode-all"];
+const ids=["rr-dash-status","rr-dash-app","rr-dash-login","rr-dash-empty","rr-dash-date","rr-dash-track","rr-dash-race-time","rr-dash-races","rr-dash-track-identity","rr-dash-race","rr-dash-horses","rr-dash-open-pdf","rr-dash-download-pdf","rr-dash-update","rr-dash-horse-dialog","rr-dash-horse-title","rr-dash-horse-detail","rr-dash-horse-close","rr-dash-global-timeline","rr-dash-all-races","rr-dash-timeline-count","rr-dash-previous-race","rr-dash-next-race","rr-dash-mode-track","rr-dash-mode-all","rr-dash-mode-purse","rr-dash-purse-filters","rr-dash-min-purse","rr-dash-stakes-only","rr-dash-timeline-label"];
 const els=new Map(ids.map(id=>[id,new Element(id.includes("date")||id==="rr-dash-track"||id.includes("race-time")||id==="rr-dash-all-races"||id.includes("sort")?"select":"div")]));
 const fixture={cards:[{race_date:"2026-11-22",track:"Del Mar",product_id:null,card:{track_name:"Del Mar",races:[{race_number:6,post_time_et:"6:00 PM",conditions:"Claiming $8,000",purse:"$20,000",pace:"Moderate",surface:"Dirt",distance:"5 1/2 furlongs",scratch_count:1,scratches:[{program_number:"3",horse_name:"Scratched Runner"}],entries:[{program_number:"5",horse_name:"Doo Wop Don",morning_line:"5-2",win_probability:16.6,fair_odds:"5/1",trainer:"",jockey:"",metrics:[]},{program_number:"2",horse_name:"Third Horizon",morning_line:"9-2",win_probability:20.0,fair_odds:"4/1",trainer:"",jockey:"",metrics:[]},{program_number:"12",horse_name:"Barrister Proof",morning_line:"12-1",win_probability:27.5,fair_odds:"5/2",trainer:"Brad Cox",jockey:"Jose Ortiz",metrics:[{label:"Speed",value:"green"},{label:"Form",value:"gray"},{label:"Class",value:"red"},{label:"Pace Fit",value:"green"},{label:"Surface / Distance",value:"gray"}]}]}]}}]};
 // Preserve PDF-style chips for high numbers and coupled-entry suffixes.
+fixture.cards[0].card.races[0].entries[2].f4_probabilities={exact_p1:.275,exact_p2:.15,exact_p3:.125,exact_p4:.11,exact_p5:.10,p6_plus:.24,top2:.425,top3:.55,top4:.66};
 fixture.cards[0].card.races[0].scratch_count=3;
 fixture.cards[0].card.races[0].scratches.push(
  {program_number:"13",horse_name:"High Number Scratch"},
@@ -136,12 +137,28 @@ runnerRows[0].events.click({target:null});
 assert.equal(els.get("rr-dash-horse-dialog").opened,true,"Full Analysis must open a dialog");
 const sheet=matchClass(els.get("rr-dash-horse-detail"),"rr-dash-mobile-analysis");
 assert.ok(sheet,"Full Analysis must populate the mobile sheet");
+const profileName=matchClass(els.get("rr-dash-horse-title"),"rr-dash-horse-name");
+assert.ok(profileName,"Horse Intelligence title must use the actual runner-name class");
+assert.equal(profileName.textContent,names[0]);
+assert.match(css,/#rr-dash-horse-title>\.rr-dash-horse-name\{[^}]*font-family:Inter,Arial,system-ui,sans-serif/,"Profile title explicitly uses the same sans-serif family");
+assert.doesNotMatch(css,/\.rr-dash-dialog-head h2\{[^}]*Tinos/,"Never reintroduce a serif drawer title");
 assert.match(sheet.textContent,/RACE CONTEXT/);
-assert.match(sheet.textContent,/FIVE-FACTOR READOUT/);
+assert.match(sheet.textContent,/PERFORMANCE PROFILE/);
+assert.match(sheet.textContent,/TRI INTELLIGENCE/);
+assert.match(sheet.textContent,/Favorable/);
+assert.match(sheet.textContent,/Unfavorable/);
+assert.match(sheet.textContent,/Neutral/);
+assert.match(sheet.textContent,/PROJECTED FINISH DISTRIBUTION/);
+const distribution=matchClass(sheet,"rr-profile-distribution");
+assert.deepEqual(allClass(distribution,"rr-profile-bar-label").map(el=>el.textContent),["1st","2nd","3rd","4th","5th or later"]);
+assert.equal(allClass(distribution,"rr-profile-bar-number")[4].textContent,"34.0%");
+assert.deepEqual(allClass(distribution,"rr-profile-total").map(el=>el.textContent),["42.5%TOP 2","55.0%TOP 3","66.0%TOP 4"]);
+assert.match(sheet.textContent,/7.7%/,"12-1 morning line implies 7.7%");
+assert.match(sheet.textContent,/\+19.8 percentage points/);
 assert.match(sheet.textContent,/Brad Cox/);
 assert.match(sheet.textContent,/Jose Ortiz/);
 assert.match(sheet.textContent,/27.5%/);
-assert.match(sheet.textContent,/FAIR 5-2/);
+assert.match(sheet.textContent,/FAIR ODDS5-2/);
 const lockedOrder=allClass(horses,"rr-dash-horse-name").map(el=>el.textContent);
 assert.deepEqual(lockedOrder,["Barrister Proof","Doo Wop Don","Third Horizon"],
  "Lead TRI win probability first; preserve original projected finish order of all remaining runners");
@@ -265,6 +282,7 @@ const trophy=matchClass(displayedRace,"rr-dash-graded-trophy");
 assert.ok(trophy,"A source-verified G1 stakes race must display a trophy");
 assert.match(trophy.className,/--g1/,"Grade 1 trophy must use gold distinction");
 assert.equal(trophy.getAttribute("aria-label"),"Grade 1 stakes trophy");
+assert.equal(matchClass(trophy,"rr-dash-trophy-icon").src,"/assets/approved/graded-trophies/graded_trophy_G1.png?v=original-verified-2");
 const realRaceHeaderChip=matchClass(displayedRace,"rr-race-saddle-image");
 assert.ok(realRaceHeaderChip&&realRaceHeaderChip.src.endsWith("/4.png"),
  "Race 4 header MUST show real #4 saddlecloth artwork");
@@ -319,7 +337,7 @@ console.log("PASS: true per-track chronology; text-only track identity and authe
 const chipStyles=readFileSync("public/assets/rr-intelligence-chips.css","utf8");
 for(const html of [adminHtml,memberHtml]){
  assert.match(html,/rr-intelligence-chips\.css\?v=6/,"Load cleaned shared race/horse chip identity");
- assert.match(html,/rr-projections-race-header\.css\?v=4/,"Load the single new Projections header stylesheet");
+ assert.match(html,/rr-projections-race-header\.css\?v=6/,"Load the single new Projections header stylesheet");
   assert.match(html,/rr-race-facts\.css\?v=4/,"Load the shared centered race-facts stylesheet.");
  assert.match(html,/rr-exotic-bet-builder\.css\?v=3/,"Load the responsive exotic ticket builder skin");
  assert.match(html,/rr-exotic-bet-builder\.js\?v=\d+/,"Load the source-gated no-tote Bet Builder");
@@ -380,7 +398,7 @@ assert.match(trackCss,/grid-template-columns:minmax\(0,1fr\)/,
 for(const html of [adminHtml,memberHtml]){
  assert.match(html,/class="rrp-command"/,"Mode, venue and race tabs share one navigation surface");
  assert.match(html,/id="rr-dash-track-identity"/,"Track identity is inside the navigation deck");
- assert.match(html,/rr-projections-command\.css\?v=1/,"Dedicated new command-deck stylesheet loaded");
+ assert.match(html,/rr-projections-command\.css\?v=2/,"Dedicated new command-deck stylesheet loaded");
  assert.ok(html.indexOf('id="rr-dash-track-identity"')<html.indexOf('id="rr-dash-races"'),"Venue identity before race tabs");
  assert.ok(html.indexOf('id="rr-dash-races"')<html.indexOf('id="rr-dash-race"'),"Race tabs before the projection panel");
 }
@@ -391,3 +409,45 @@ assert.doesNotMatch(js,/panel\.replaceChildren\(cardHeader\(/,"No additional tra
 assert.match(js,/context\.replaceChildren\(cardHeader\(activeCard\)\)/,"Update track identity inside shared command deck");
 assert.match(factsCss,/min-height:59px/,"The Pace/Surface/Distance band is much shorter");
 assert.match(headerCss,/grid-template-columns:max-content max-content minmax\(0,1fr\)/,"Runners, purse and post time share compact metadata row");
+
+ // Purse mode: source purse descending, post-time tie break, no stale runners.
+ const purseMode=els.get("rr-dash-mode-purse"),minimum=els.get("rr-dash-min-purse"),stakes=els.get("rr-dash-stakes-only");
+ const timelineSelect=els.get("rr-dash-all-races");
+ fixture.cards[0].card.races[0].purse="$100,000";
+ fixture.cards[0].card.races[1].purse="$250,000";
+ fixture.cards[1].card.races[0].purse="$100,000";
+ minimum.value="100000";purseMode.events.click();
+ assert.equal(els.get("rr-dash-app").dataset.mode,"purse");
+ assert.equal(timelineSelect.children.length,3);
+ assert.match(timelineSelect.children[0].textContent,/^\$250,000 · Del Mar/);
+ assert.match(timelineSelect.children[1].textContent,/Zia Park/,"Equal purses use post-time order");
+ assert.equal(timelineSelect.value,"0","Entering By Purse opens the most valuable race");
+ assert.match(timelineSelect.children[0].textContent,/G1/,"Dropdown identifies source-confirmed grade");
+ assert.ok(matchClass(race,"rr-dash-graded-trophy").className.includes("--g1"));
+ timelineSelect.value="2";timelineSelect.events.change();
+ minimum.value="25000";minimum.events.change();
+ assert.equal(timelineSelect.value,"0","Changing purse filter restarts at highest purse even when prior race still qualifies");
+ const graded=fixture.cards[0].card.races[1];
+ const originalConditions=graded.conditions;
+ for(const grade of [2,3]){
+  graded.conditions="Belmont Stakes (G"+grade+")";
+  graded.stakes_grade=grade;
+  minimum.events.change();
+  assert.match(timelineSelect.children[0].textContent,new RegExp("G"+grade));
+  assert.ok(matchClass(race,"rr-dash-graded-trophy").className.includes("--g"+grade),"Retain approved grade-specific trophy");
+ }
+ delete graded.stakes_grade;graded.conditions=originalConditions;
+ stakes.checked=true;stakes.events.change();
+ assert.equal(timelineSelect.children.length,1);
+ assert.match(timelineSelect.children[0].textContent,/Del Mar/);
+ minimum.value="1000000";minimum.events.change();
+ assert.equal(timelineSelect.children.length,0);
+ assert.equal(timelineSelect.disabled,true);
+ assert.equal(horses.textContent,"");
+ assert.match(els.get("rr-dash-timeline-count").textContent,/No races match/);
+ stakes.checked=false;minimum.value="0";minimum.events.change();
+ assert.equal(timelineSelect.children.length,3);
+ assert.ok(horses.textContent);
+ els.get("rr-dash-mode-track").events.click();
+ assert.equal(els.get("rr-dash-purse-filters").hidden,true);
+ console.log("PASS: descending purse order, highest-value reset, post-time ties, graded trophies, empty state and recovery");

@@ -41,11 +41,27 @@ export async function prepareScheduledTargetStages(env,now=Date.now()){
   let approved=packet.customer_edition;
   assert(approved?.race_date===date&&approved?.revision===1&&approved?.status==='initial'&&approved?.targets?.length===packet.targets.length,'Customer-ready stage mismatch');
   assert(approved.source.editorial_sha256===packet.editorial_sha256&&approved.publication_mode==='owner-approved-gpt','Customer release has no owner approval');
-  assert(packet.source_receipts?.length===6&&packet.source_receipts.reduce((a,x)=>a+x.races,0)===56&&packet.source_receipts.reduce((a,x)=>a+x.runners,0)===488,'Six-track source-score receipt mismatch');
+  const expected=packet.source_track_count!=null&&packet.source_race_count!=null&&packet.source_listed_runners!=null
+    ?[packet.source_track_count,packet.source_race_count,packet.source_listed_runners]
+    :(date==='2026-11-26'?[6,56,488]:null); // compatibility with the immutable Nov26 stage
+  assert(expected&&expected.every(x=>Number.isInteger(x)&&x>0),'A newly dated Target List requires independently certified whole-source counts');
+  const receipts=packet.source_receipts||[];
+  assert(receipts.length===expected[0]&&new Set(receipts.map(x=>x.track_code)).size===expected[0]
+    &&receipts.reduce((a,x)=>a+x.races,0)===expected[1]
+    &&receipts.reduce((a,x)=>a+x.runners,0)===expected[2],
+    'Whole-day source/score receipt mismatch; cannot queue Target List');
+  for(const receipt of receipts){
+    assert(receipt.receipt_status==='PASS_TRI_TJ_V4_PERMANENT_FORWARD_RUNTIME'
+      &&receipt.tj_role_receipt?.permanent_tj_v4_policy_id==='TRI_TJ_NEUTRAL_MEAN_V4_ALWAYS_ON'
+      &&receipt.tj_role_receipt?.permanent_v4_both_roles_before_pwin===true
+      &&receipt.tj_role_receipt?.exact_consumed_model_matrix_verified===true
+      &&Number.isFinite(receipt.max_mass_error)&&receipt.max_mass_error<1e-9,
+      'One source track failed its frozen scoring or trainer/jockey model-input gate');
+  }
   // The site Projection source can arrive from its own race-card production window.
   // Never release this product until every selected race matches that independent stage.
   let sourceMissing=false,maxSourceDelta=0;
-  const canonicalSite=new Map();
+  const canonicalSite=new Map(),heldSelections=[];
   for(const selected of packet.selected_race_full_fields){
    const track=norm(selected.track).replace(/ /g,'-');
    const projection=await env.CARDS_BUCKET.get('projections/dashboard/'+date+'/'+track+'.json');
@@ -54,8 +70,21 @@ export async function prepareScheduledTargetStages(env,now=Date.now()){
    assert(card.race_date===date&&norm(card.track_name)===norm(selected.track),'Target List and Projections track/date disagree');
    assert(projection.customMetadata?.source_sha256===packet.source_zip_sha256,'Target List and Projections original ZIP differ');
    const r=(card.races||[]).find(x=>x.race_number===selected.race);
-   assert(r&&Array.isArray(r.entries)&&r.entries.length===selected.runners.length,'Selected source race has a different runner roster');
+   assert(r&&Array.isArray(r.entries),'Selected source race is missing from scheduled Projections');
    assert(card.projection_status==='prescratch'&&!r.scratches?.length,'Selected site race is not prescratch; stop release until a new edition');
+   if(r.entries.length!==selected.runners.length){
+     // November 27 Fair Grounds R7 has 14 original Timeform listings but only
+     // 11 active Race Cards runners. A source-filtered PWIN cannot authenticate
+     // the original 14-runner probability field. HOLD this one selection,
+     // record its exclusion, and allow the other independently matching targets
+     // to publish instead of blocking the entire slate. Never silently rescale.
+     if(date==='2026-11-27'&&norm(selected.track)==='fair grounds'&&selected.race===7
+       &&selected.runners.length===14&&r.entries.length===11){
+       heldSelections.push({track:'Fair Grounds',race:7,reason:'ORIGINAL_14_VS_SITE_ACTIVE_11'});
+       continue;
+     }
+     throw Error('Selected source race has a different runner roster');
+   }
    const byProg=new Map(r.entries.map(e=>[String(e.program_number).toUpperCase(),e]));
    assert(byProg.size===r.entries.length,'Duplicate programs in staged projection');
    for(const e of selected.runners){
@@ -70,11 +99,14 @@ export async function prepareScheduledTargetStages(env,now=Date.now()){
    canonicalSite.set(norm(selected.track)+'|'+selected.race,{race:r,programs:byProg});
   }
   if(sourceMissing){deferred++;continue;}
-  // The independent site scorer differs in GP4 by <.025 percentage points,
-  // while every displayed tenth, horse identity, ML and trainer/jockey matches.
+  // A previous November 26 scorer differed slightly on one race. Allow such
+  // differences ONLY below 0.05 percentage points with identical display and
+  // exact same horses, connections, morning lines, and 100% field mass.
   // Re-source the final odds/PWIN from the actual staged site score, never from a
   // second manually typed estimate. Larger or visibly different scores HOLD.
-  const synced=approved.targets.map(t=>{
+  const candidates=approved.targets.filter(t=>!heldSelections.some(h=>norm(h.track)===norm(t.track)&&h.race===t.race_number));
+  assert(candidates.length>0&&candidates.length===canonicalSite.size,'No fully reconciled Target List selections remain');
+  const synced=candidates.map((t,index)=>{
    const source=canonicalSite.get(norm(t.track)+'|'+t.race_number);
    assert(source,'Missing reconciled race for selected target');
    const favorite=source.programs.get(String(t.favorite.program_number).toUpperCase());
@@ -84,7 +116,7 @@ export async function prepareScheduledTargetStages(env,now=Date.now()){
    assert(ml(all[0].morning_line)<ml(all[1].morning_line)&&all[0].program_number===favorite.program_number,'Source ML favorite differs');
    assert(attack.win_probability_exact-favorite.win_probability_exact>=10&&ml(attack.morning_line)>ml(favorite.morning_line)&&ml(attack.morning_line)>100/attack.win_probability_exact-1,'Published ATTACK no longer has 10pp price edge');
    const fromSite=(old,runner)=>({...old,win_probability:roundPercent(runner.win_probability_exact),fair_odds:toteFair(runner.win_probability_exact)});
-   return {...t,favorite:fromSite(t.favorite,favorite),attack:fromSite(t.attack,attack)};
+   return {...t,rank:index+1,favorite:fromSite(t.favorite,favorite),attack:fromSite(t.attack,attack)};
   });
   approved={...approved,targets:synced};
   // At this point, today's customer edition remains untouched. The D1 product
@@ -101,7 +133,7 @@ export async function prepareScheduledTargetStages(env,now=Date.now()){
   assert(catalog?.status==='published'&&catalog.release_at===release,'Target List catalogue does not honor the 3AM cutoff');
   const reader=await readTargetListEdition(env,date);
   assert(reader?.targets?.length===approved.targets.length,'Published Target List not readable');
-  const receipt={date,sha256:digest,release_at:meta.release_at,editorial_sha256:packet.editorial_sha256,source_sha256:packet.source_zip_sha256,product_id:published.product_id,targets:approved.targets.length,display_source_parity:true,max_scored_site_pct_delta:Math.round(maxSourceDelta*1e7)/1e7,catalog_release_at:catalog.release_at,prepared_at:new Date().toISOString()};
+  const receipt={date,sha256:digest,release_at:meta.release_at,editorial_sha256:packet.editorial_sha256,source_sha256:packet.source_zip_sha256,product_id:published.product_id,targets:approved.targets.length,original_targets:packet.targets.length,heldSelections,display_source_parity:true,max_scored_site_pct_delta:Math.round(maxSourceDelta*1e7)/1e7,catalog_release_at:catalog.release_at,prepared_at:new Date().toISOString()};
   await env.CARDS_BUCKET.put(marker,JSON.stringify(receipt),{httpMetadata:{contentType:'application/json',cacheControl:'private,no-store'},customMetadata:{sha256:await hash(JSON.stringify(receipt)),release_at:meta.release_at,stage_only:'false'}});
   prepared++;
  }

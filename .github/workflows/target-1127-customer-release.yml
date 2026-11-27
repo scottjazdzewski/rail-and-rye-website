@@ -1,0 +1,140 @@
+name: November 27 Target List verified customer release
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/target-1127-customer-release.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: target-1127-customer-release
+  cancel-in-progress: false
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: pip install --quiet boto3==1.40.36
+      - name: Validate and release only reconciled approved selections
+        env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+        run: |
+          python - <<'PY'
+          import os,json,hashlib,boto3,math,re,unicodedata,subprocess,time,urllib.request
+          from datetime import datetime,timezone
+          from botocore.exceptions import ClientError
+          d='2026-11-27';due='2026-11-27T08:00:00Z';b='rail-and-rye-private-cards'
+          source='c4f7b36d1b72f03ee8bcff3b022cd4740d4dbf0f190e218bc89cf9bf18504e06'
+          stage_sha='843c35d325681a4d3f7fe3824e1335331cee93f95ea1b19d22df4ece67b2e793'
+          assert os.environ['GITHUB_REPOSITORY']=='scottjazdzewski/rail-and-rye-website'
+          assert datetime.fromisoformat(due.replace('Z','+00:00'))<=datetime.now(timezone.utc)<datetime.fromisoformat('2026-11-28T05:00:00+00:00'),'Outside authorized release day'
+          s=boto3.client('s3',endpoint_url='https://'+os.environ['TRI_CLOUDFLARE_ACCOUNT_ID'].strip()+'.r2.cloudflarestorage.com',region_name='auto',aws_access_key_id=os.environ['TRI_R2_ACCESS_KEY_ID'].strip(),aws_secret_access_key=os.environ['TRI_R2_SECRET_ACCESS_KEY'].strip())
+          def get(k):
+            try:
+              o=s.get_object(Bucket=b,Key=k);return o['Body'].read(),o.get('Metadata',{})
+            except ClientError as e:
+              if e.response.get('Error',{}).get('Code') in ('404','NotFound','NoSuchKey'):return None,{}
+              raise
+          def sha(raw):return hashlib.sha256(raw).hexdigest()
+          def norm(v):return re.sub(r'[^a-z0-9]+',' ',''.join(c for c in unicodedata.normalize('NFKD',str(v or '')).lower() if not unicodedata.combining(c))).strip()
+          def price(v):
+            m=re.fullmatch(r'(\d+)[-/](\d+)',str(v).strip());assert m and int(m[2])>0
+            return int(m[1])/int(m[2])
+          def tenths(v):return math.floor(float(v)*10+.5)/10
+          tote=[(1,5),(2,5),(1,2),(3,5),(4,5),(1,1),(6,5),(7,5),(3,2),(8,5),(9,5),(2,1),(5,2),(3,1),(7,2),(4,1),(9,2),(5,1),(6,1),(7,1),(8,1),(9,1),(10,1),(12,1),(15,1),(20,1),(25,1),(30,1),(40,1),(50,1),(60,1),(80,1),(100,1)]
+          def fair(p):
+            a,b=min(tote,key=lambda t:abs(t[0]/t[1]-(100/p-1)));return f'{a}/{b}'
+          root='intelligence/target-list/staging/'+d+'/'
+          raw,m=get(root+'revision-0001.json');assert raw and sha(raw)==m['sha256']==stage_sha and m['source_sha256']==source and m['release_at']==due and m['stage_only']=='true'
+          p=json.loads(raw);assert p['race_date']==d and p['release_at']==due and p['source_zip_sha256']==source and p['editorial_sha256']==m['editorial_sha256']
+          q,qm=get(root+'qa-0001.json');assert q and json.loads(q)['stage_sha256']==stage_sha
+          rr=p['source_receipts'];assert len(rr)==len(set(x['track_code'] for x in rr))==15 and sum(x['races'] for x in rr)==134 and sum(x['runners'] for x in rr)==1156
+          for x in rr:
+            tj=x['tj_role_receipt'];assert x['receipt_status']=='PASS_TRI_TJ_V4_PERMANENT_FORWARD_RUNTIME' and tj['permanent_tj_v4_policy_id']=='TRI_TJ_NEUTRAL_MEAN_V4_ALWAYS_ON' and tj['permanent_v4_both_roles_before_pwin'] and tj['exact_consumed_model_matrix_verified'] and x['max_mass_error']<1e-9
+          ed=p['customer_edition'];assert ed['race_date']==d and ed['revision']==1 and ed['status']=='initial' and ed['publication_mode']=='owner-approved-gpt' and ed['source']['editorial_sha256']==p['editorial_sha256'] and len(ed['targets'])==len(p['targets'])==len(p['selected_race_full_fields'])==13
+          manifest,mm=get('projections/qa/'+d+'/staged-release.json');assert manifest
+          man=json.loads(manifest);assert man['status']=='VERIFIED_STAGED' and man['scope']=='VERIFIED_COMPLETE_SLATE' and man['source_sha256']==source and len(man['tracks'])==15 and sum(x['races'] for x in man['tracks'])==134
+          cards={}
+          for t in man['tracks']:
+            cr,cm=get('projections/dashboard/'+d+'/'+t['slug']+'.json')
+            assert cr and sha(cr)==t['dashboard_sha256'] and cm['source_sha256']==source and cm.get('customer_publish_approved')=='true'
+            card=json.loads(cr);assert card['race_date']==d and norm(card['track_name'])==norm(t['name'])
+            cards[norm(t['name'])]=card
+          fields={(norm(x['track']),x['race']):x for x in p['selected_race_full_fields']};assert len(fields)==13
+          out=[];holds=[];maxdelta=0
+          for t in ed['targets']:
+            k=(norm(t['track']),t['race_number']);field=fields[k];card=cards[k[0]]
+            r=next((x for x in card['races'] if x['race_number']==k[1]),None);assert r is not None
+            old={str(x['program_number']).upper():x for x in field['runners']};new={str(x['program_number']).upper():x for x in r['entries']}
+            assert len(old)==len(field['runners'])==field['field_count'] and len(new)==len(r['entries'])
+            assert abs(sum(float(x['win_probability_exact']) for x in old.values())-100)<1e-6 and abs(sum(float(x['win_probability_exact']) for x in new.values())-100)<1e-6
+            reason=None;delta=0
+            if card.get('projection_status')!='prescratch' or r.get('scratches'):reason='FIELD_STATE_CHANGED'
+            elif set(old)!=set(new):reason='ORIGINAL_ACTIVE_ROSTER_MISMATCH'
+            else:
+              for prog,x in old.items():
+                y=new[prog]
+                if any(norm(x[f])!=norm(y[f]) for f in ('horse_name','trainer','jockey')):reason='IDENTITY_OR_CONNECTION_MISMATCH';break
+                if abs(price(x['morning_line'])-price(y['morning_line']))>1e-12:reason='ORIGINAL_ML_MISMATCH';break
+                a=float(x['win_probability_exact']);v=float(y['win_probability_exact']);delta=max(delta,abs(a-v))
+                if abs(a-v)>=.05 or tenths(a)!=tenths(v):reason='PWIN_PARITY_MISMATCH';break
+            if not reason:
+              f=new.get(str(t['favorite']['program_number']).upper());a=new.get(str(t['attack']['program_number']).upper())
+              if not f or not a or norm(f['horse_name'])!=norm(t['favorite']['horse_name']) or norm(a['horse_name'])!=norm(t['attack']['horse_name']):reason='PAIR_IDENTITY_MISMATCH'
+              else:
+                ranked=sorted(new.values(),key=lambda x:price(x['morning_line']))
+                ap=float(a['win_probability_exact']);fp=float(f['win_probability_exact'])
+                if len(ranked)<2 or ranked[0]!=f or price(ranked[0]['morning_line'])>=price(ranked[1]['morning_line']) or ap-fp<10 or price(a['morning_line'])<=max(price(f['morning_line']),100/ap-1):reason='APPROVED_PAIR_NO_LONGER_QUALIFIES'
+                elif norm(f['jockey']) in ('','not assigned','unknown') or norm(a['jockey']) in ('','not assigned','unknown'):reason='UNASSIGNED_JOCKEY'
+            if reason:
+              holds.append(dict(track=t['track'],race=t['race_number'],reason=reason,original_count=len(old),active_count=len(new)));continue
+            item=dict(t);item['rank']=len(out)+1
+            for role,horse in [('favorite',f),('attack',a)]:
+              v=float(horse['win_probability_exact']);item[role]={**t[role],'win_probability':tenths(v),'fair_odds':fair(v)}
+            out.append(item);maxdelta=max(maxdelta,delta)
+          assert out and len(out)+len(holds)==13
+          print('TARGET_1127_PARITY_PASS accepted='+str(len(out))+' held='+str(len(holds))+' max_delta='+str(maxdelta),flush=True)
+          for h in holds:print('TARGET_1127_RACE_HOLD',json.dumps(h),flush=True)
+          ed['targets']=out
+          # Real site validator and canonical serialization; no production writes during this check.
+          js="""import {storeGPTReleasedTargetList,readTargetListEdition} from './src/target-list.js';import {webcrypto} from 'node:crypto';globalThis.crypto??=webcrypto;let raw='';for await(const c of process.stdin)raw+=c;const ed=JSON.parse(raw),saved=new Map();const env={CARDS_BUCKET:{get:async k=>saved.get(k)||null,list:async()=>({objects:[],truncated:false}),put:async(k,v,o)=>saved.set(k,{text:async()=>v,customMetadata:o.customMetadata,raw:v})}};await storeGPTReleasedTargetList(env,ed);const r=await readTargetListEdition(env,ed.race_date);if(r?.targets?.length!==ed.targets.length)throw Error('Reader failed');const v=[...saved.values()][0];process.stdout.write(JSON.stringify({raw:v.raw,meta:v.customMetadata}));"""
+          proc=subprocess.run(['node','--input-type=module','-e',js],input=json.dumps(ed).encode(),capture_output=True)
+          assert proc.returncode==0,'Target List website validator rejected release'
+          validated=json.loads(proc.stdout);body=validated['raw'].encode();meta=validated['meta'];digest=sha(body);assert meta['content_sha256']==digest
+          key='racing-intelligence/product-tabs/target-list/'+d+'.json'
+          prior,pm=get(key)
+          if prior:
+            assert prior==body and pm.get('content_sha256')==digest and pm.get('customer_publish_approved')=='true','Conflicting existing customer edition; no overwrite'
+          else:
+            assert not get(root+'prepared-0001.json')[0],'Prepared receipt exists without matching customer edition'
+            s.put_object(Bucket=b,Key=key,Body=body,ContentType='application/json; charset=utf-8',CacheControl='private, no-store',Metadata=meta,IfNoneMatch='*')
+          chk,cm=get(key);assert chk==body and cm.get('content_sha256')==digest and cm.get('customer_publish_approved')=='true'
+          print('TARGET_1127_CUSTOMER_R2_RELEASE_PASS targets='+str(len(out))+' sha='+digest,flush=True)
+          audit=dict(race_date=d,stage_sha256=stage_sha,source_sha256=source,content_sha256=digest,release_at=due,targets=len(out),held=holds,max_delta=maxdelta)
+          ar=json.dumps(audit,sort_keys=True,separators=(',',':')).encode()
+          ak=root+'customer-release-audit-0001.json';prior,_=get(ak)
+          if prior:assert prior==ar
+          else:s.put_object(Bucket=b,Key=ak,Body=ar,ContentType='application/json',CacheControl='private, no-store',Metadata={'sha256':sha(ar)},IfNoneMatch='*')
+          assert get(ak)[0]==ar
+          # Existing production cron syncs approved private GPT editions into D1.
+          for i in range(60):
+            try:
+              req=urllib.request.Request('https://railandryeracing.com/api/products?qa=target-1127-'+str(i),headers={'Cache-Control':'no-cache','User-Agent':'RailRyeReleaseQA/1'})
+              with urllib.request.urlopen(req,timeout=10) as res:products=json.load(res)['products']
+              rows=products+[x for p in products for x in p.get('included_products',[])]
+              live=[x for x in rows if x.get('category')=='Target List' and x.get('race_date')==d]
+              if live:
+                print('TARGET_1127_CUSTOMER_CATALOG_LIVE count='+str(len(out)),flush=True);break
+            except Exception:pass
+            time.sleep(5)
+          else:raise RuntimeError('Private customer content released; actual catalog still unverified')
+          PY
