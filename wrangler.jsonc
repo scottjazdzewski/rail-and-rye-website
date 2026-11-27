@@ -20,7 +20,8 @@
     ]
   },
   "vars": {
-    "PROJECTIONS_MEMBER_LAUNCH": "off"
+    "PROJECTIONS_MEMBER_LAUNCH": "off",
+    "PULSE_PUBLICATION_ENABLED": "false"
   },
   "r2_buckets": [
     {
