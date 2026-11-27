@@ -1,8 +1,8 @@
 // Isolated design preview. No production bindings, credentials, or engine.
 const demo = [
- {id:"demo-probability-shift",date:"2026-11-26",track:"Demo Racecourse",race_number:9,kind:"WIN_SHIFT",chip:"7",horse:"Example Runner",headline:"Example Runner Moves Up",message:"After a runner withdrawal, #7 Example Runner's projected Win Probability rises from 24.0% to 33.0%. These fictional figures illustrate the design only.",scratches:[{program:"5",horse:"Demo scratch"}]},
- {id:"demo-new-favorite",date:"2026-11-26",track:"Demo Racecourse",race_number:5,kind:"NEW_FAVORITE",chip:"4",horse:"Example Contender",headline:"New Projected Favorite",message:"#4 Example Contender moves to the top of the revised projections, from 22.0% to 36.0%. Fictional data for visual review only.",scratches:[{program:"2",horse:"Demo scratch"},{program:"8",horse:"Demo scratch"}]},
- {id:"demo-order",date:"2026-11-26",track:"Demo Racecourse",race_number:3,kind:"F4_SHIFT",chip:"2",horse:"Example Challenger",headline:"Projected Finishing Order Changes",message:"#2 Example Challenger moves from fourth to second in the projected finishing order. This is a fictional visual example.",scratches:[{program:"1",horse:"Demo scratch"}]}
+ {id:"demo-probability-shift",date:"2026-11-26",track:"Demo Racecourse",race_number:9,kind:"WIN_SHIFT",chip:"7",horse:"Example Runner",headline:"Example Runner Moves Up",metric:{label:"WIN",before:24,after:33},short_message:"Remains the projected favorite after #5 scratched.",message:"After #5 scratched, Example Runner remains the projected favorite.",scratches:[{program:"5",horse:"Demo scratch"}]},
+ {id:"demo-new-favorite",date:"2026-11-26",track:"Demo Racecourse",race_number:5,kind:"NEW_FAVORITE",chip:"4",horse:"Example Contender",headline:"New Projected Favorite",metric:{label:"WIN",before:22,after:36},short_message:"Moves to the top of the projections after two scratches.",message:"Example Contender moves to the top of the revised projections.",scratches:[{program:"2",horse:"Demo scratch"},{program:"8",horse:"Demo scratch"}]},
+ {id:"demo-order",date:"2026-11-26",track:"Demo Racecourse",race_number:3,kind:"F4_SHIFT",chip:"2",horse:"Example Challenger",headline:"Projected Finishing Order Changes",metric:{label:"SECOND_OR_THIRD",before:18,after:29},short_message:"Second-or-third probability increases after #1 scratched.",message:"Example Challenger has a higher projected chance of finishing second or third.",scratches:[{program:"1",horse:"Demo scratch"}]}
 ].map(x=>({...x,hub_url:"/preview-hub"}));
 const headers={"Cache-Control":"no-store","X-Robots-Tag":"noindex, nofollow"};
 function html(body,status=200){return new Response('<!doctype html><meta name="viewport" content="width=device-width"><meta name="robots" content="noindex,nofollow"><title>Rail & Rye | Design preview</title><style>body{font:16px system-ui;background:#102238;color:#fff;padding:24px;max-width:720px;margin:auto}a{color:#dfbf83}h1{color:#dfbf83}</style><p>DESIGN PREVIEW · FICTIONAL DATA · NOT LIVE</p>'+body,{status,headers:{...headers,"Content-Type":"text/html;charset=utf-8"}})}
@@ -10,7 +10,7 @@ export default {async fetch(request,env){
  const url=new URL(request.url),p=url.pathname;
  if(request.method!=="GET"&&request.method!=="HEAD")return new Response("Read-only preview",{status:405,headers});
  if(p==="/robots.txt")return new Response("User-agent: *\nDisallow: /\n",{headers});
- if(p==="/api/race-day-pulse")return Response.json({status:"ok",items:demo},{headers});
+ if(p==="/api/race-day-pulse")return Response.json({status:"ok",preview:true,items:demo},{headers});
  if(p==="/api/products")return Response.json({products:[]},{headers});
  if(p==="/preview-hub"||p==="/store/"||p.startsWith("/intelligence/"))return html("<h1>Racing Intelligence Hub</h1><p>Preview only. No purchases, sign-ins or live data.</p><a href='/'>Return to homepage preview</a>");
  if(p.startsWith("/pulse/")){const item=demo.find(x=>p==="/pulse/"+x.date+"/"+x.id);return item?html("<h1>"+item.headline+"</h1><p>"+item.track+" · Race "+item.race_number+"</p><p>"+item.message+"</p><a href='/'>Return to homepage preview</a>"):html("<h1>Not found</h1>",404);}
