@@ -90,7 +90,7 @@
    below it. Desktop hero height and all existing left-hand copy stay locked. */
 @media(min-width:1121px){
  .heritage-hero>.rr-pulse{
-   position:absolute;z-index:4;top:clamp(105px,9vw,136px);
+   position:absolute;z-index:4;top:clamp(92px,7.5vw,112px);
    right:clamp(25px,3.2vw,64px);width:clamp(368px,34vw,460px);
    border:1px solid #b18a49;border-radius:10px;
    background:rgba(7,26,44,.94);box-shadow:0 15px 42px rgba(0,0,0,.43);
@@ -100,7 +100,7 @@
  .heritage-hero>.rr-pulse .rr-pulse-item{width:100%;min-width:100%;max-width:100%;flex-basis:100%}
  .heritage-hero>.rr-pulse .rr-pulse-eyebrow,
  .heritage-hero>.rr-pulse .rr-pulse-count{display:none}
- .heritage-hero>.rr-pulse .rr-pulse-message{font-size:12px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+ .heritage-hero>.rr-pulse .rr-pulse-message{font-size:12px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
  .heritage-hero>.rr-pulse .rr-pulse-title{font-size:18px}
  .heritage-hero>.rr-pulse .rr-pulse-scratch-list{gap:6px}
 }
