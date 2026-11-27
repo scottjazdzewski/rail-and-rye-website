@@ -268,3 +268,32 @@
 .rr-pulse .rr-pulse-context-value{font-weight:800}
 .rr-pulse .rr-pulse-numbers{box-shadow:inset 0 2px 6px #0006,inset 0 -1px 0 #ffffff14}
 .rr-pulse .rr-pulse-paid-link{box-shadow:inset 0 1px 0 #ffffff65,0 2px 4px #0004}
+
+/* Mobile homepage integration: single in-flow teaser, not a second hero. */
+@media(max-width:640px){
+ .heritage-home>.rr-pulse{width:100%;margin:0;position:relative;isolation:isolate}
+ .rr-pulse-shell{padding:7px 10px 5px}
+ .rr-pulse-heading{margin-bottom:5px;min-height:44px}
+ .rr-pulse-title{font-size:19px}
+ .rr-pulse-arrow{width:44px;height:44px;display:grid;place-items:center}
+ .rr-pulse-item{width:100%;max-width:100%;flex:0 0 100%;padding:9px;gap:4px}
+ .rr-pulse-horse-line .rr-pulse-headline{font-size:18px}
+ .rr-pulse-track{font-size:11px}
+ .rr-pulse-numbers{grid-template-columns:minmax(0,1fr) 16px minmax(0,1fr) auto;padding:6px;gap:3px 5px}
+ .rr-pulse-numbers .rr-pulse-prob-col .rr-pulse-prob-value{font-size:clamp(20px,6.1vw,28px)}
+ .rr-pulse-prob-bar{height:5px}
+ .rr-pulse-message{font-size:12px;line-height:1.3}
+ .rr-pulse .rr-pulse-story-link,.rr-pulse .rr-pulse-paid-link,.rr-pulse .rr-pulse-tool{min-height:44px;font-size:11px;padding:6px 8px}
+ .rr-pulse .rr-pulse-item-footer{align-items:stretch;grid-template-columns:minmax(0,1fr) auto;gap:5px}
+ .rr-pulse-links{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:5px}
+ .rr-pulse-share-group,.rr-pulse-tool{height:100%}
+ .rr-pulse-menu{bottom:max(12px,env(safe-area-inset-bottom));right:12px;width:min(300px,calc(100vw - 24px));max-height:calc(100dvh - 24px)}
+ .rr-pulse-menu button{min-height:44px}
+}
+@media(max-width:360px){
+ .rr-pulse-shell{padding-inline:7px}
+ .rr-pulse-item{padding:7px}
+ .rr-pulse .rr-pulse-story-link,.rr-pulse .rr-pulse-paid-link,.rr-pulse .rr-pulse-tool{padding-inline:5px;font-size:10px}
+ .rr-pulse-numbers{gap:3px 4px}
+ .rr-pulse-delta{padding-left:3px}
+}
