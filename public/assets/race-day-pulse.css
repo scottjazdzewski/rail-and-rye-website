@@ -239,3 +239,23 @@
  .rr-pulse-item-footer,.rr-pulse-links{gap:4px}
  .rr-pulse .rr-pulse-story-link,.rr-pulse .rr-pulse-paid-link,.rr-pulse .rr-pulse-tool{padding-inline:6px}
 }
+
+/* Owner polish: the icon is the description badge, not decoration. */
+.rr-pulse .rr-pulse-signal,.rr-pulse-share-page .rr-pulse-signal{width:48px;height:48px;border-radius:12px;flex:0 0 48px}
+.rr-pulse .rr-pulse-category-icon,.rr-pulse-share-page .rr-pulse-category-icon{width:34px;height:34px}
+.rr-pulse-metric-label{font-size:13px;line-height:1.2}
+.rr-pulse-prob-caption{font-size:11px;line-height:1.2}
+.rr-pulse-scratch-label{font-size:12px}
+.rr-pulse .rr-pulse-item-footer{grid-template-columns:minmax(0,1fr) auto;gap:6px}
+.rr-pulse .rr-pulse-story-link,.rr-pulse .rr-pulse-paid-link,.rr-pulse .rr-pulse-tool{min-height:36px;border-radius:999px}
+.rr-pulse-menu button:disabled{cursor:not-allowed}
+.rr-pulse-share-page .rr-pulse-primary,.rr-pulse-share-page .rr-pulse-secondary,.rr-pulse-share-page .rr-pulse-download{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:8px 16px;margin:4px 6px 4px 0;border:1px solid #c4a36a;border-radius:999px;text-decoration:none;font:750 13px/1.2 Inter,Arial,system-ui,sans-serif}
+.rr-pulse-share-page .rr-pulse-primary{background:linear-gradient(180deg,#f0d7a3,#d4b278);color:#102438}
+.rr-pulse-share-page .rr-pulse-social-image{display:block;width:100%;max-width:820px;height:auto;margin:16px 0;border:1px solid #967c51;border-radius:12px;box-sizing:border-box}
+@media(max-width:640px){
+ .rr-pulse .rr-pulse-signal{width:40px;height:40px;flex-basis:40px;border-radius:10px}
+ .rr-pulse .rr-pulse-category-icon{width:28px;height:28px}
+ .rr-pulse-metric-label{font-size:11px}
+ .rr-pulse-prob-caption,.rr-pulse-context .rr-pulse-prob-caption{font-size:10px}
+ .rr-pulse-scratch-label{font-size:11px}
+}
