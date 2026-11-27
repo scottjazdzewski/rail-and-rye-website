@@ -11,8 +11,8 @@
       "kind": "SURFACE_SWITCH",
       "chip": "9",
       "horse": "Sweet Reward",
-      "headline": "Course Change Reshapes The Race",
-      "message": "Churchill's 12th is off the turf, with eight runners scratched. #9 Sweet Reward is the new projected favorite at 33.9%, up from 10.5% on the original turf card.",
+      "headline": "Sweet Reward Moves To The Top",
+      "message": "Eight horses came out when Churchill's 12th was moved from turf to dirt. #9 Sweet Reward wasn't our first choice on grass, but now heads our revised projections. The win chance rises from 10.5% to 33.9%, with both the surface and the field changed.",
       "scratches": [
         {
           "program": "1",
@@ -57,8 +57,8 @@
       "kind": "SURFACE_SWITCH",
       "chip": "9",
       "horse": "Multiplication",
-      "headline": "Dirt Switch Strengthens The Leader",
-      "message": "The 5th has moved from turf to dirt, with five horses scratched. #9 Multiplication remains TRI's top choice, but the win projection has risen from 29.4% to 46.1%.",
+      "headline": "Multiplication Strengthens Her Position",
+      "message": "#9 Multiplication was our top choice before the 5th came off the turf. Five scratches later, she's still the one we favor, with her win projection rising from 29.4% to 46.1%. The smaller field helps her position, though the switch to dirt is part of the change, too.",
       "scratches": [
         {
           "program": "2",
@@ -91,8 +91,8 @@
       "kind": "WIN_SHIFT",
       "chip": "7",
       "horse": "Destino d'Oro",
-      "headline": "A Measurable Move In The Ninth",
-      "message": "With #5 Gallant Greta scratched from Churchill's ninth, #7 Destino d'Oro still leads the TRI projections. The win chance moves from 33.1% to 37.5%.",
+      "headline": "Destino d'Oro Gets A Little More Help",
+      "message": "#7 Destino d'Oro won the Grade 2 Hillsborough Stakes at Tampa Bay Downs earlier this year. With #5 Gallant Greta scratched from Churchill's 9th, she remains our top choice. Her win projection edges up from 33.1% to 37.5%. It's a modest improvement, not a reason to rethink the whole race.",
       "scratches": [
         {
           "program": "5",
