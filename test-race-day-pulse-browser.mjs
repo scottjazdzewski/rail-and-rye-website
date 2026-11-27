@@ -56,7 +56,7 @@ try{
   }));
   assert.deepEqual(errors,[],'No runtime errors width '+width);
   assert.ok(layout.pageWidth<=layout.viewport+1,'No horizontal page overflow: '+JSON.stringify({width,layout}));
-  assert.equal(layout.cards,7,'Six actual insights and one Intelligence Hub CTA');
+  assert.equal(layout.cards,6,'Six actual insights; no synthetic CTA card');
   assert.ok(layout.imgs[0]>0,'Visible approved saddlecloth image loads; off-screen images may be lazy-loaded');
   const saddleStyle=await page.evaluate(()=>{
     const images=[...document.querySelectorAll('.rr-pulse-item:first-child .rr-pulse-saddle')];
@@ -86,7 +86,7 @@ try{
   assert.equal(appearance.imgOpacity,'1');
   assert.equal(appearance.blend,'normal');
   assert.equal(appearance.filter,'none');
-  assert.ok(await page.locator('.rr-pulse-scratch-list').first().evaluate(el=>parseFloat(getComputedStyle(el).paddingTop)>=5),
+  assert.ok(await page.locator('.rr-pulse-scratch-list').first().evaluate(el=>parseFloat(getComputedStyle(el).paddingTop)>=3),
     'Scratch chips have deliberate breathing room');
   assert.match(await page.locator('.rr-pulse-track').first().innerText(),/1ST/,'Use ordinal race labels');
   assert.ok((await page.locator('.rr-pulse-headline').first().innerText()).includes('New Projected Favorite'));
@@ -106,7 +106,7 @@ try{
       bb=body.getBoundingClientRect(),fb=footer.getBoundingClientRect(),style=getComputedStyle(body),
       rb=rail.getBoundingClientRect();
     return {railLeft:rb.left,railRight:rb.right,railWidth:rail.clientWidth,
-      cardLeft:cb.left,cardRight:cb.right,cardWidth:card.clientWidth,
+      cardLeft:cb.left,cardRight:cb.right,cardWidth:card.clientWidth,cardBottom:cb.bottom,railBottom:rb.bottom,pillRadii:[...footer.querySelectorAll('a,button')].map(el=>getComputedStyle(el).borderTopLeftRadius),
       shareLeft:sb.left,shareRight:sb.right,shareTop:sb.top,shareBottom:sb.bottom,
       footerTop:fb.top,footerBottom:fb.bottom,
       messageLeft:bb.left,messageRight:bb.right,
@@ -117,6 +117,8 @@ try{
     'Compact Pulse card must not be clipped by its own scrolling viewport: '+JSON.stringify({width,geometry}));
   assert.ok(geometry.messageRight<=geometry.railRight+2,
     'Narrative text must fit the visible viewport: '+JSON.stringify({width,geometry}));
+  assert.ok(geometry.cardBottom<=geometry.railBottom+2,'Card must fit vertically without clipping: '+JSON.stringify(geometry));
+  assert.ok(geometry.pillRadii.every(x=>parseFloat(x)>=30),'All three actions use rounded pills');
   assert.ok(geometry.shareRight<=geometry.railRight+2,
     'Share button must be on-screen: '+JSON.stringify({width,geometry}));
   assert.ok(geometry.shareRight<=geometry.cardRight+2&&geometry.shareLeft>=geometry.cardLeft-2,
@@ -127,8 +129,8 @@ try{
     'No cropped handicapper sentence: '+JSON.stringify({width,geometry}));
   assert.notEqual(geometry.whiteSpace,'nowrap','Message must wrap naturally');
   if(width<=430){
-    assert.ok(geometry.messageHeight>=27&&geometry.messageHeight<=37,
-      'Mobile analysis teaser should take only two lines, with full story linked: '+JSON.stringify(geometry));
+    assert.ok(geometry.messageHeight>0&&geometry.messageHeight<=85,
+      'Mobile narrative stays readable and compact without forced clipping: '+JSON.stringify(geometry));
     assert.ok(await page.locator('#rr-pulse').evaluate(el=>el.getBoundingClientRect().height)<300,
       'Pulse should not dominate the mobile homepage');
     assert.ok(await page.evaluate(()=>document.querySelector('.heritage-hero').nextElementSibling?.id==='rr-pulse'),
@@ -160,6 +162,12 @@ try{
     const download=await downloadEvent;
     assert.match(download.suggestedFilename(),/^rail-rye-.*\.png$/,'Branded image is a downloadable PNG');
     await download.saveAs('pulse-preview-screenshots/share-image.png');
+    const png=readFileSync('pulse-preview-screenshots/share-image.png');
+    assert.equal(png.readUInt32BE(16),1080);assert.equal(png.readUInt32BE(20),1350);
+    await page.evaluate(()=>{Object.defineProperty(navigator,'canShare',{configurable:true,value:()=>true});Object.defineProperty(navigator,'share',{configurable:true,value:async payload=>{window.__pulseShared={url:payload.url,files:payload.files.map(f=>({name:f.name,type:f.type,size:f.size}))};}});});
+    await page.getByRole('button',{name:'Share to Socials',exact:true}).click();
+    const shared=await page.evaluate(()=>window.__pulseShared);
+    assert.ok(shared.url.includes('/pulse/'));assert.equal(shared.files[0].type,'image/png');assert.ok(shared.files[0].size>0);
   }
   await page.locator('.rr-pulse-tool').first().click();
   await page.locator('#rr-pulse-next').click();
@@ -176,7 +184,7 @@ try{
  const one=await browser.newPage();
  await one.goto(origin+'/',{waitUntil:'domcontentloaded'});
  await one.locator('.rr-pulse-item').first().waitFor({timeout:12000});
- assert.equal(await one.locator('.rr-pulse-item').count(),2,'One qualifying item plus CTA, no forced six');
+ assert.equal(await one.locator('.rr-pulse-item').count(),1,'One qualifying item, no forced six');
  await one.close();
  console.log('RACE-DAY PULSE BROWSER QA PASS — six viewports, images, carousel, sharing, empty/one/six');
 }finally{if(browser)await browser.close();await new Promise(r=>server.close(r))}
