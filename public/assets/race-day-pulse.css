@@ -25,6 +25,9 @@
 .rr-pulse-prob-caption{font:700 8px/1.1 system-ui,sans-serif;color:#d8c8ab;letter-spacing:.03em}
 .rr-pulse-prob-value{white-space:nowrap;font-variant-numeric:tabular-nums;letter-spacing:-.045em}
 .rr-pulse-flat{color:#dfbd79}
+.rr-pulse-context{display:flex;align-items:center;gap:12px;justify-content:center;margin:2px 0;color:#f4ead5;font:600 11px/1.2 system-ui,sans-serif}
+.rr-pulse-context-cell{display:flex;align-items:center;gap:5px;white-space:nowrap}
+.rr-pulse-context-value{font-size:12px;color:#f4ead5}
 .rr-pulse-pace-comparison{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin:2px 0 3px;font:700 10px/1.2 system-ui,sans-serif}
 .rr-pulse-pace-label{font-size:8px;color:#dfbd79;margin-right:2px;letter-spacing:.04em}
 .rr-pulse-fit{padding:3px 7px;border-radius:5px;border:1px solid #ffffff22;color:#fff}
@@ -122,6 +125,8 @@
  .rr-pulse-horse-line{margin:0 0 2px}
  .rr-pulse-category-icon{width:16px;height:16px}
  .rr-pulse-delta{font-size:12px;padding-left:4px}
+ .rr-pulse-context{gap:7px;margin:1px 0;flex-wrap:wrap}
+ .rr-pulse-context-cell{gap:3px}
  .rr-pulse-signal{width:24px;height:24px;border-radius:7px}
  .rr-pulse-signal-row{gap:2px;margin-bottom:1px}
  .rr-pulse-metric-label{font-size:8px}
