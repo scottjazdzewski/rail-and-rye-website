@@ -10,14 +10,21 @@
 .rr-pulse-arrow{width:27px;height:27px;border:1px solid #957b55;border-radius:50%;background:transparent;color:#f3e5ca;cursor:pointer;font:22px/1 var(--heritage-sans,system-ui,sans-serif)}
 .rr-pulse-arrow:disabled{opacity:.3;cursor:default}
 .rr-pulse-rail{display:flex;gap:9px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:thin;scrollbar-color:#745e3a transparent;scroll-behavior:smooth;padding-bottom:3px}
-.rr-pulse-item{box-sizing:border-box;min-width:0;width:min(470px,calc(100% - 1px));flex:0 0 min(470px,calc(100% - 1px));max-width:calc(100% - 1px);scroll-snap-align:start;position:relative;border-radius:8px;border:1px solid #536077;background:rgba(16,41,62,.96);padding:9px 11px;min-height:0;display:flex;flex-direction:column;justify-content:space-between;gap:5px}
+.rr-pulse-item{box-sizing:border-box;min-width:0;width:min(470px,calc(100% - 1px));flex:0 0 min(470px,calc(100% - 1px));max-width:calc(100% - 1px);scroll-snap-align:start;position:relative;border-radius:14px;border:1px solid #967c51;background:linear-gradient(130deg,rgba(32,63,84,.96),rgba(9,27,43,.99) 70%),url('/assets/approved/textures/parchment.jpg') center/cover;box-shadow:inset 0 1px 0 #efd39a22,0 3px 8px #0003;padding:9px 11px;min-height:0;display:flex;flex-direction:column;justify-content:space-between;gap:5px}
 .rr-pulse-item-layout{display:flex;gap:9px;align-items:flex-start;min-width:0}
 .rr-pulse-copy{flex:1 1 0;min-width:0;max-width:100%;white-space:normal!important;overflow-wrap:anywhere}
 .rr-pulse-signal-row{display:flex;align-items:center;justify-content:space-between;gap:4px;flex-wrap:wrap;margin-bottom:3px}
-.rr-pulse-signal{display:inline-block;max-width:100%;font:800 8px/1.2 system-ui,sans-serif;letter-spacing:.02em;color:#f1d69f;border:1px solid #9c8153;border-radius:4px;padding:3px 5px;white-space:nowrap}
-.rr-pulse-numbers{display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 8px;font:800 23px/1.1 system-ui,sans-serif;font-variant-numeric:tabular-nums;margin:3px 0 4px}
-.rr-pulse-metric-label{flex-basis:100%;font:700 8px/1.1 system-ui,sans-serif;letter-spacing:.06em;color:#dfbd79}
-.rr-pulse-before{color:#adb9c6}.rr-pulse-arrow-mark{color:#dfbd79;font-size:17px}.rr-pulse-up{color:#79d4a6}.rr-pulse-down{color:#f0ad9e}
+.rr-pulse-signal{display:inline-flex;align-items:center;gap:4px;max-width:100%;font:800 8px/1.2 system-ui,sans-serif;letter-spacing:.02em;color:#f7ddb0;border:1px solid #b39761;border-radius:20px;background:linear-gradient(125deg,#57472c66,#0b2034);padding:3px 6px;white-space:nowrap}
+.rr-pulse-category-icon{width:13px;height:13px;flex:none}
+.rr-pulse-numbers{display:grid;grid-template-columns:minmax(0,1fr) 15px minmax(0,1fr) auto;align-items:center;gap:3px 7px;font:800 23px/1.1 system-ui,sans-serif;font-variant-numeric:tabular-nums;margin:3px 0 4px;padding:6px 8px;background:linear-gradient(145deg,#071a2c,#102b40);border:1px solid #ae946b47;border-radius:9px;box-shadow:inset 0 1px 5px #0004}
+.rr-pulse-metric-label{grid-column:1/-1;font:700 8px/1.1 system-ui,sans-serif;letter-spacing:.06em;color:#dfbd79}
+.rr-pulse-prob-col,.rr-pulse-delta{display:flex;flex-direction:column;gap:2px;min-width:0}
+.rr-pulse-prob-caption{font:700 8px/1.1 system-ui,sans-serif;color:#d8c8ab;letter-spacing:.03em}
+.rr-pulse-prob-value{white-space:nowrap;font-variant-numeric:tabular-nums;letter-spacing:-.045em}
+.rr-pulse-prob-bar{display:block;width:100%;height:3px;border-radius:3px;background:#405264;overflow:hidden}
+.rr-pulse-prob-fill{display:block;height:100%;border-radius:3px;background:currentColor}
+.rr-pulse-delta{font-size:13px;border-left:1px solid #a8905e44;padding-left:6px}
+.rr-pulse-before{color:#adb9c6}.rr-pulse-arrow-mark{color:#dfbd79;font-size:15px;text-align:center}.rr-pulse-up{color:#79d4a6}.rr-pulse-down{color:#f0ad9e}
 .rr-pulse-track{color:#dfbd79;letter-spacing:.08em;font:800 10px/1.3 system-ui,sans-serif;margin:0 0 3px}
 .rr-pulse-headline{font:700 16px/1.17 var(--heritage-serif,Georgia,serif);color:#fff;margin:0 0 3px}
 .rr-pulse-affected{color:#f5cf90;font:750 12px/1.2 system-ui,sans-serif;margin:0 0 3px}
@@ -27,7 +34,7 @@
 .rr-pulse-story-link,.rr-pulse-paid-link,.rr-pulse-cta-link{color:#f4d290;text-decoration:underline;text-underline-offset:3px;font:750 12px/1.2 system-ui,sans-serif}
 .rr-pulse-paid-link{color:#fff}
 .rr-pulse-share-group{position:relative;display:block;flex:0 0 auto;z-index:3}
-.rr-pulse-tool{background:#f2d59a;color:#071a2c;border:0;border-radius:5px;font:800 11px/1 system-ui,sans-serif;padding:7px 9px;cursor:pointer}
+.rr-pulse-tool{background:#f2d59a;color:#071a2c;border:0;border-radius:8px;font:800 11px/1 system-ui,sans-serif;padding:7px 9px;cursor:pointer}
 .rr-pulse-menu{position:fixed;bottom:16px;right:16px;background:#fff;color:#0b283c;border:1px solid #bead8b;border-radius:8px;padding:8px;z-index:10;box-shadow:0 10px 27px #0008;width:min(230px,calc(100vw - 32px))}
 .rr-pulse-menu[hidden]{display:none}
 .rr-pulse-menu button,.rr-pulse-menu a{display:block;box-sizing:border-box;width:100%;text-align:left;border:0;color:#102b43;background:transparent;padding:8px;border-radius:3px;font:500 13px/1.25 system-ui,sans-serif;text-decoration:none;cursor:pointer}
@@ -36,9 +43,9 @@
 /* Match the PRODUCTION Target List transparency correction, not generic PNG alpha.
    The art remains original, but opaque white backing prevents race color bleeding,
    with opacity=1 / no filter / no multiply blending for every saddlecloth. */
-.rr-pulse .rr-pulse-saddle,.rr-pulse-share-page .rr-pulse-saddle{position:relative;display:inline-grid;place-items:center;flex:0 0 34px;width:34px;height:34px;overflow:hidden;border-radius:5px;background:#fff!important;opacity:1!important;isolation:isolate;mix-blend-mode:normal!important;box-shadow:none}
+.rr-pulse .rr-pulse-saddle,.rr-pulse-share-page .rr-pulse-saddle{position:relative;display:inline-grid;place-items:center;flex:0 0 34px;width:34px;height:34px;overflow:hidden;border-radius:7px;background:#fff!important;opacity:1!important;isolation:isolate;mix-blend-mode:normal!important;box-shadow:0 1px 4px #0007}
 .rr-pulse .rr-pulse-saddle img,.rr-pulse-share-page .rr-pulse-saddle img{display:block;width:100%;height:100%;object-fit:contain;background:#fff!important;opacity:1!important;filter:none!important;mix-blend-mode:normal!important}
-.rr-pulse .rr-pulse-saddle--scratch,.rr-pulse-share-page .rr-pulse-saddle--scratch{flex-basis:22px;width:22px;height:22px;border-radius:3px;overflow:hidden;background:#fff!important;opacity:1!important}
+.rr-pulse .rr-pulse-saddle--scratch,.rr-pulse-share-page .rr-pulse-saddle--scratch{flex-basis:22px;width:22px;height:22px;border-radius:5px;overflow:hidden;background:#fff!important;opacity:1!important}
 .rr-pulse .rr-pulse-saddle--scratch img,.rr-pulse-share-page .rr-pulse-saddle--scratch img{width:100%;height:100%;background:#fff!important;opacity:1!important;mix-blend-mode:normal!important;filter:none!important}
 .rr-pulse-saddle-fallback{font:900 12px/1 system-ui,sans-serif;color:#0a2744!important}
 .rr-pulse-suffix{position:absolute;right:0;bottom:0;padding:0 2px;background:#102d53;color:#fff;border:1px solid #647482;border-radius:2px;font:900 8px/1.1 system-ui,sans-serif}
@@ -102,7 +109,9 @@
  .rr-pulse-item{flex-basis:calc(100% - 1px);width:calc(100% - 1px);padding:6px 8px;gap:2px}
  .rr-pulse-item-layout{gap:7px}
  .rr-pulse-headline{font-size:14px;margin-bottom:2px}
- .rr-pulse-numbers{font-size:21px;gap:2px 7px}
+ .rr-pulse-numbers{font-size:20px;gap:2px 5px;padding:4px 5px}
+ .rr-pulse-category-icon{width:11px;height:11px}
+ .rr-pulse-delta{font-size:12px;padding-left:4px}
  .rr-pulse-signal{font-size:8px;padding:2px 3px}
  .rr-pulse-signal-row{gap:2px;margin-bottom:1px}
  .rr-pulse-metric-label{font-size:8px}
