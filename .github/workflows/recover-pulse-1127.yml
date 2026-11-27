@@ -1,0 +1,43 @@
+name: Recover certified November 27 Pulse originals
+on:
+  push:
+    branches: [feature/race-day-pulse-v1]
+    paths:
+      - '.github/workflows/recover-pulse-1127.yml'
+      - 'scripts/recover_pulse_1127.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pulse-original-recovery-1127
+  cancel-in-progress: false
+jobs:
+  recover:
+    if: github.ref == 'refs/heads/feature/race-day-pulse-v1'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: pip install pynacl==1.5.0 boto3==1.40.36
+      - name: Preserve only exact certified original bytes in private Pulse storage
+        env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+        run: python scripts/recover_pulse_1127.py
+      - name: Verify recovered source with actual Pulse selector
+        if: always()
+        env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+          PULSE_ENGINE_AUDIT_DATES: '2026-11-27'
+        run: python scripts/audit-pulse-engine-output.py
