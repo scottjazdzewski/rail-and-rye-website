@@ -42,5 +42,5 @@ jobs:
           url=$(grep -Eo 'https://rail-and-rye-pulse-staging\.[a-zA-Z0-9.-]+\.workers\.dev' deploy-result.txt | head -1 || true)
           if [ -z "$url" ]; then echo "::error::No staging URL reported"; exit 1; fi
           curl -fsS --retry 3 "$url/" | grep -q 'DESIGN PREVIEW'
-          curl -fsS --retry 3 "$url/api/race-day-pulse" | node -e "let s='';process.stdin.on('data',d=>s+=d);process.stdin.on('end',()=>{const x=JSON.parse(s);if(x.preview!==true||x.items.length!==3||x.items.some(i=>!i.id.startsWith('demo-')))process.exit(1)})"
+          curl -fsS --retry 3 "$url/api/race-day-pulse" | node -e "let s='';process.stdin.on('data',d=>s+=d);process.stdin.on('end',()=>{const x=JSON.parse(s);if(x.preview!==true||x.items.length!==4||x.items.some(i=>!i.id.startsWith('demo-')))process.exit(1)})"
           printf 'Verified staging URL: %s\n' "$url" >> "$GITHUB_STEP_SUMMARY"
