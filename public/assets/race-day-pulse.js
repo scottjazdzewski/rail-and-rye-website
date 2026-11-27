@@ -181,40 +181,48 @@
     group.append(share,menu);
     return group;
   }
-  function signal(item){
-    if(item.kind==='NEW_FAVORITE'||item.kind==='FAVORITE_SCRATCHED')return 'NEW FAVORITE';
-    if(item.kind==='F4_SHIFT')return 'PROJECTION MOVE';
-    if(item.kind==='PACE_ADVANTAGE')return 'PACE ADVANTAGE';
-    if(item.kind==='WIN_SHIFT'&&item.metric&&item.metric.after>item.metric.before)return 'WIN PROBABILITY UP';
-    if(item.kind==='WIN_SHIFT'&&item.metric&&item.metric.after<item.metric.before)return 'WIN PROBABILITY DOWN';
-    return 'SCRATCH IMPACT';
-  }
-  // Pulse category icons share a restrained, consistent gold line-art system.
+  // Owner-approved four-symbol family. Shared vector geometry for DOM and canvas.
   function signalType(item){
-    if(item.kind==='NEW_FAVORITE'||item.kind==='FAVORITE_SCRATCHED')return 'crown';
-    if(item.kind==='F4_SHIFT')return 'order';
+    if(item.kind==='NEW_FAVORITE'||item.kind==='FAVORITE_SCRATCHED')return 'favorite';
+    if(item.kind==='F4_SHIFT')return 'rank';
     if(item.kind==='PACE_ADVANTAGE')return 'pace';
-    if(item.kind==='WIN_SHIFT')return item.metric?.after<item.metric?.before?'down':'up';
     return 'scratch';
   }
-  const signalPaths={
-    crown:'M3 6l4 4 5-7 5 7 4-4-2 12H5L3 6z M5 21h14',
-    order:'M7 3v17 M3 7l4-4 4 4 M17 21V4 M13 17l4 4 4-4',
-    up:'M3 17l6-6 4 4 8-9 M15 6h6v6',
-    down:'M3 7l6 6 4-4 8 9 M15 18h6v-6',
-    pace:'M13 2L4 14h7l-1 8 10-12h-7l1-8z',
-    scratch:'M5 12h14 M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18'
+  const signalLabels={scratch:'SCRATCH IMPACT',favorite:'NEW PROJECTED FAVORITE',pace:'PACE ADVANTAGE',rank:'RANK MOVEMENT'};
+  function signal(item){return signalLabels[signalType(item)];}
+  const signalArt={
+    scratch:[
+      {d:'M7 3H21Q23 3 22.5 5L20 19Q19.6 21 17 21H3Q1 21 1.5 19L4 5Q4.5 3 7 3Z',fill:'#ed8b27',stroke:'#f6f0e5',w:1.2},
+      {d:'M8 7L15 17M17 7L10 17',stroke:'#10283d',w:2.7}
+    ],
+    favorite:[
+      {d:'M12 1L13.8 5.4L18.6 5.7L14.9 8.8L16.1 13.3L12 10.7L7.9 13.3L9.1 8.8L5.4 5.7L10.2 5.4Z',fill:'#e6b650'},
+      {d:'M5 15H19Q20 15 20.4 16.3L22 21Q22.3 23 20 23H4Q1.7 23 2 21L3.6 16.3Q4 15 5 15Z',fill:'#f6f0e5'},
+      {d:'M10 18L12 17V21M10 21H14',stroke:'#10283d',w:1.5}
+    ],
+    pace:[
+      {d:'M2 19A10 10 0 0 1 22 19M5 12L7 14M12 9V12M19 12L17 14',stroke:'#f6f0e5',w:1.6},
+      {d:'M11 18L21 8L13.5 19.5Z',fill:'#6fd29e'},
+      {d:'M14 19A2 2 0 1 0 10 19A2 2 0 1 0 14 19Z',fill:'#6fd29e'}
+    ],
+    rank:[
+      {d:'M2 6H11M2 12H11M2 18H11',stroke:'#f6f0e5',w:2.2},
+      {d:'M17 10V2M14 5L17 2L20 5',stroke:'#6fd29e',w:2},
+      {d:'M17 14V22M14 19L17 22L20 19',stroke:'#e6b650',w:2}
+    ]
   };
   function signalIcon(item){
-    const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg'),p=document.createElementNS(ns,'path');
+    const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg');
     svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('aria-hidden','true');svg.setAttribute('class','rr-pulse-category-icon');
-    p.setAttribute('d',signalPaths[signalType(item)]);p.setAttribute('fill','none');p.setAttribute('stroke','currentColor');p.setAttribute('stroke-width','1.8');p.setAttribute('stroke-linecap','round');p.setAttribute('stroke-linejoin','round');svg.append(p);return svg;
+    for(const part of signalArt[signalType(item)]){const p=document.createElementNS(ns,'path');p.setAttribute('d',part.d);p.setAttribute('fill',part.fill||'none');if(part.stroke){p.setAttribute('stroke',part.stroke);p.setAttribute('stroke-width',part.w);p.setAttribute('stroke-linecap','round');p.setAttribute('stroke-linejoin','round');}svg.append(p);}
+    return svg;
   }
   function drawSignalMedallion(c,item,x,y,size){
-    c.save();c.translate(x,y);c.fillStyle='#10283d';c.strokeStyle='#d5b374';c.lineWidth=2;
-    c.beginPath();c.roundRect(0,0,size,size,size*.27);c.fill();c.stroke();
-    c.translate(size*.19,size*.19);c.scale(size*.62/24,size*.62/24);
-    const type=signalType(item);c.strokeStyle=type==='up'?'#79d4a6':type==='down'?'#f0ad9e':'#e8ca8a';c.lineWidth=1.9;c.lineCap='round';c.lineJoin='round';c.stroke(new Path2D(signalPaths[type]));c.restore();
+    c.save();c.translate(x,y);c.fillStyle='#10283d';c.strokeStyle='#d5b374';c.lineWidth=1.5;
+    c.beginPath();c.roundRect(0,0,size,size,size*.18);c.fill();c.stroke();
+    c.translate(size*.15,size*.15);c.scale(size*.70/24,size*.70/24);
+    for(const part of signalArt[signalType(item)]){const p=new Path2D(part.d);if(part.fill){c.fillStyle=part.fill;c.fill(p);}if(part.stroke){c.strokeStyle=part.stroke;c.lineWidth=part.w;c.lineCap='round';c.lineJoin='round';c.stroke(p);}}
+    c.restore();
   }
   function signalBadge(item){const el=$('span','rr-pulse-signal rr-pulse-signal--'+signalType(item));el.setAttribute('role','img');el.setAttribute('aria-label',signal(item));el.title=signal(item);el.append(signalIcon(item));return el;}
   function probabilityColumn(label,value,cls){
