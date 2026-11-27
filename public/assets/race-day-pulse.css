@@ -297,3 +297,35 @@
  .rr-pulse-numbers{gap:3px 4px}
  .rr-pulse-delta{padding-left:3px}
 }
+
+/* Approved mobile homepage compact layout: preserve all hero content and use
+   only its former blank space. Never overlay or hide the existing products. */
+.rr-pulse-compact-open,.rr-pulse-compact-row{display:none}
+@media(max-width:640px){
+ body.heritage-home:not(.heritage-inner-page):not(.heritage-store-page):has(>.rr-pulse:not([hidden]))>.heritage-hero{min-height:0!important;padding-bottom:14px}
+ .heritage-home>.rr-pulse .rr-pulse-shell{padding:4px 9px 3px}
+ .heritage-home>.rr-pulse .rr-pulse-heading{min-height:36px;margin:0 0 3px}
+ .heritage-home>.rr-pulse .rr-pulse-title{font-size:18px}
+ .heritage-home>.rr-pulse .rr-pulse-nav{gap:3px}
+ .heritage-home>.rr-pulse .rr-pulse-arrow{width:40px;height:40px}
+ .heritage-home>.rr-pulse .rr-pulse-item{padding:6px 8px;gap:2px}
+ .heritage-home>.rr-pulse .rr-pulse-card-header{margin-bottom:1px;gap:6px}
+ .heritage-home>.rr-pulse .rr-pulse-signal{width:36px;height:36px;flex-basis:36px}
+ .heritage-home>.rr-pulse .rr-pulse-track{font-size:10px}
+ .heritage-home>.rr-pulse .rr-pulse-numbers{padding:4px 6px;gap:2px 4px;margin:1px 0 2px}
+ .heritage-home>.rr-pulse .rr-pulse-numbers .rr-pulse-prob-col .rr-pulse-prob-value{font-size:clamp(20px,6vw,26px)}
+ .heritage-home>.rr-pulse .rr-pulse-context{gap:4px 9px;margin:1px 0}
+ .heritage-home>.rr-pulse .rr-pulse-message{font-size:11px;line-height:1.25;margin:2px 0}
+ .heritage-home>.rr-pulse .rr-pulse-item-footer{display:none}
+ .heritage-home>.rr-pulse .rr-pulse-scratch-list{padding:2px 0 0;gap:3px;align-items:center}
+ .heritage-home>.rr-pulse .rr-pulse-saddle--scratch{width:20px;height:20px;flex-basis:20px}
+ .heritage-home>.rr-pulse .rr-pulse-scratch-label{font-size:10px;padding-right:1px}
+ .heritage-home>.rr-pulse .rr-pulse-compact-row{display:flex;justify-content:flex-end}
+ .heritage-home>.rr-pulse .rr-pulse-compact-open{display:inline-flex;align-items:center;justify-content:center;margin-left:auto;min-height:44px;box-sizing:border-box;padding:5px 10px;border-radius:999px;border:1px solid #e2b059;background:linear-gradient(180deg,#f0d7a3,#d4b278);color:#102438;text-decoration:none;font:750 11px/1.1 Inter,Arial,system-ui,sans-serif;white-space:nowrap}
+ .heritage-home>.rr-pulse .rr-pulse-rail{padding-bottom:3px}
+}
+@media(max-width:360px){
+ .heritage-home>.rr-pulse .rr-pulse-shell{padding-inline:6px}
+ .heritage-home>.rr-pulse .rr-pulse-item{padding-inline:6px}
+ .heritage-home>.rr-pulse .rr-pulse-compact-open{padding-inline:6px;font-size:10px}
+}
