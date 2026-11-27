@@ -1,0 +1,39 @@
+name: Pulse Mobile Swipe And Share Demo
+on:
+  push:
+    branches:
+      - feature/race-day-pulse-v1
+    paths:
+      - 'test-pulse-mobile-action-demo.mjs'
+      - '.github/workflows/pulse-mobile-action-demo.yml'
+permissions:
+  contents: read
+jobs:
+  mobile-demo:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser and video tools
+        run: |
+          npm install --no-save --no-package-lock playwright@1.56.1
+          npx playwright install --with-deps chromium
+          command -v ffmpeg || (sudo apt-get update && sudo apt-get install -y ffmpeg)
+      - name: Record real mobile interaction with safe Churchill preview fixture
+        run: node test-pulse-mobile-action-demo.mjs
+      - name: Make small mobile-playable MP4 and looping GIF
+        if: success()
+        run: |
+          ffmpeg -hide_banner -loglevel error -y -i pulse-mobile-action-demo/rail-rye-pulse-mobile-demo.webm -c:v libx264 -crf 26 -preset fast -pix_fmt yuv420p -movflags +faststart pulse-mobile-action-demo/rail-rye-pulse-mobile-demo.mp4
+          ffmpeg -hide_banner -loglevel error -y -i pulse-mobile-action-demo/rail-rye-pulse-mobile-demo.webm -vf 'fps=7,scale=390:-1:flags=lanczos,split[a][b];[a]palettegen=stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=4' -loop 0 pulse-mobile-action-demo/rail-rye-pulse-mobile-demo.gif
+          ls -lh pulse-mobile-action-demo
+      - name: Save actual development mobile animation and key frames
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: race-day-pulse-mobile-action-demo
+          path: pulse-mobile-action-demo/*
+          if-no-files-found: error
