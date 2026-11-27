@@ -206,9 +206,10 @@ function contextForPace(scratches,horse,a,b,names){
 export async function captureInitialPulseSnapshot(env,initial){
   if(!env?.CARDS_BUCKET||!cardValid(initial)||initial.projection_status!=='prescratch')return false;
   const key=baseKey(initial);
+  if(!HASH.test(initial.model_receipts?.tri_sha256||'')||!HASH.test(initial.model_receipts?.f4_sha256||''))return false;
   if(await env.CARDS_BUCKET.head(key))return false;
-  await env.CARDS_BUCKET.put(key,JSON.stringify(initial),{httpMetadata:{contentType:'application/json; charset=utf-8',cacheControl:'private, no-store'}});
-  return true;
+  const written=await env.CARDS_BUCKET.put(key,JSON.stringify(initial),{onlyIf:{etagDoesNotMatch:'*'},httpMetadata:{contentType:'application/json; charset=utf-8',cacheControl:'private, no-store'}});
+  return written!==null;
 }
 export function choosePulseInsights(sortedCandidates){
   // All source-qualified insights, strongest first. No item quota or track quota.
@@ -261,8 +262,9 @@ export async function capturePublishedPulseBaselines(env,now=Date.now()){
 export async function readRaceDayPulse(env,now=Date.now()){
   const date=newYorkCutoff(now),items=[];
   if(!env?.CARDS_BUCKET)return {date,items,status:'unavailable'};
-  const listing=await env.CARDS_BUCKET.list({prefix:DASH_PREFIX+date+'/',limit:100});
-  for(const reference of listing.objects||[]){
+  const references=[];let cursor;
+  do{const listing=await env.CARDS_BUCKET.list({prefix:DASH_PREFIX+date+'/',limit:100,...(cursor?{cursor}:{})});references.push(...(listing.objects||[]));if(listing.truncated&&!listing.cursor)throw Error('Incomplete Pulse source listing');cursor=listing.truncated?listing.cursor:null;}while(cursor);
+  for(const reference of references){
     if(!new RegExp('^projections/dashboard/'+date+'/[a-z0-9-]+\\.json$').test(reference.key))continue;
     const object=await env.CARDS_BUCKET.get(reference.key);
     if(!object)continue;
@@ -312,32 +314,34 @@ export async function readRaceDayPulse(env,now=Date.now()){
   // Never archive the private cards, runner matrices or F4 receipts.
   if(publicItems.length) {
     try{await preservePublicPulseArchive(env,date,publicItems);}
-    catch(error){console.warn('Pulse public-archive preservation deferred',String(error).slice(0,120));}
+    catch(error){console.warn('Pulse public-archive preservation deferred',String(error).slice(0,120));return {date,items:[],status:'unavailable'};}
   }
   return {date,items:publicItems,status:'ok'};
 }
 async function preservePublicPulseArchive(env,date,items){
   const key=archiveKey(date);
-  const old=await env.CARDS_BUCKET.get(key);
-  let history={schema_version:1,date,items:[]};
-  if(old){
-    const candidate=await old.json();
-    if(candidate?.schema_version!==1||candidate.date!==date||!Array.isArray(candidate.items))
-      throw Error('Existing public Pulse archive disagrees with date/schema');
-    history=candidate;
+  // Compare-and-swap: concurrent homepage, scheduled and crawler reads must
+  // never discard an already-shared revision.
+  for(let attempt=0;attempt<5;attempt++){
+    const old=await env.CARDS_BUCKET.get(key);
+    let history={schema_version:1,date,items:[]};
+    if(old){
+      const candidate=await old.json();
+      if(candidate?.schema_version!==1||candidate.date!==date||!Array.isArray(candidate.items))throw Error('Existing public Pulse archive disagrees with date/schema');
+      history=candidate;
+    }
+    const existing=new Map(history.items.filter(x=>x?.id&&x.date===date).map(x=>[x.id,x]));
+    let changed=!old;
+    for(const item of items)if(!existing.has(item.id)){changed=true;existing.set(item.id,item);}
+    if(!changed)return;
+    const written=await env.CARDS_BUCKET.put(key,JSON.stringify({schema_version:1,date,items:[...existing.values()]}),{
+      onlyIf:old?{etagMatches:old.etag}:{etagDoesNotMatch:'*'},
+      httpMetadata:{contentType:'application/json; charset=utf-8',cacheControl:'private, no-store'},
+      customMetadata:{public_safe_derived:'true',last_updated:new Date().toISOString()}
+    });
+    if(written!==null)return;
   }
-  const existing=new Map(history.items.filter(x=>x?.id&&x.date===date).map(x=>[x.id,x]));
-  let changed=!old;
-  for(const item of items){
-    const older=existing.get(item.id);
-    // An already-shared revision is immutable. If the same certified race
-    // later receives different source evidence it gets a new revisionToken.
-    if(!older){changed=true;existing.set(item.id,item);}
-  }
-  if(changed)await env.CARDS_BUCKET.put(key,JSON.stringify({schema_version:1,date,items:[...existing.values()]}),{
-    httpMetadata:{contentType:'application/json; charset=utf-8',cacheControl:'private, no-store'},
-    customMetadata:{public_safe_derived:'true',last_updated:new Date().toISOString()}
-  });
+  throw Error('Pulse archive concurrency retry exhausted');
 }
 async function archivedPulse(env,date,id){
   if(!DATE.test(date)||date>newYorkCutoff(Date.now())||!env?.CARDS_BUCKET)return null;
