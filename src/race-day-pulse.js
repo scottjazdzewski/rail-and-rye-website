@@ -57,11 +57,12 @@ function compareRaces(previous,current){
   if([before,after].some(m=>Math.abs([...m.values()].reduce((s,r)=>s+r.win,0)-100)>0.00001))return null;
   return {before,after,activeScratches};
 }
-function lead(race){
-  const s=race.scratches;
-  if(s.length===1)return 'With #'+clean(s[0].program_number,8)+' scratched, ';
-  if(s.length===2)return 'After #'+clean(s[0].program_number,8)+' and #'+clean(s[1].program_number,8)+' scratched, ';
-  return 'Following '+s.length+' confirmed scratches, ';
+// Write only what the certified before/after cards establish. No invented
+// form, running styles, pace pressure, value claims or post-hoc performance.
+function lead(scratches){
+  if(scratches.length===1)return 'With #'+clean(scratches[0].program_number,8)+' '+clean(scratches[0].horse_name,95)+' out, ';
+  if(scratches.length===2)return 'With #'+clean(scratches[0].program_number,8)+' and #'+clean(scratches[1].program_number,8)+' out, ';
+  return 'After '+scratches.length+' scratches, ';
 }
 function revisionToken(source){
   // Public-safe short label of a certified revision's source fingerprint.
@@ -78,10 +79,9 @@ export function insightForRace(date,track,initial,revised,updatedAt,sourceVersio
   const initialSurface=clean(initial?.surface,28),finalSurface=clean(revised?.surface,28);
   const surfaceChanged=!!initialSurface&&!!finalSurface&&
     initialSurface.toLowerCase()!==finalSurface.toLowerCase();
-  const context=surfaceChanged?
-    'With Race '+revised.race_number+' moved from '+initialSurface+' to '+finalSurface+
-      ' and '+activeScratches.length+' confirmed active-field scratch'+(activeScratches.length===1?'':'es')+', ':
-    lead({scratches:activeScratches});
+  const raceName=ordinalRace(revised.race_number);
+  const context=lead(activeScratches);
+  const beforeSurface=initialSurface.toLowerCase(),afterSurface=finalSurface.toLowerCase();
   const scratches=activeScratches.map(x=>({
     program:clean(x.program_number,8).toUpperCase(),
     horse:clean(x.horse_name||before.get(clean(x.program_number,8).toUpperCase())?.horse,95)
@@ -103,9 +103,13 @@ export function insightForRace(date,track,initial,revised,updatedAt,sourceVersio
       return {...common,kind:'SURFACE_SWITCH',headline:'Course Change Reshapes The Race',
         chip:newLead.program,horse:newLead.horse,
         priority:110+Math.abs(delta),
-        message:context+'#'+newLead.program+' '+newLead.horse+
-          (oldLead.program!==newLead.program?' becomes TRI’s new projected favorite':' leads TRI’s revised win projections')+
-          ' at '+pct(newLead.win)+', versus '+pct(earlier.win)+' in the original field.'};
+        message:'The '+raceName+' is off the '+beforeSurface+', with '+activeScratches.length+
+          ' horses scratched. #'+newLead.program+' '+newLead.horse+
+          (oldLead.program!==newLead.program?
+            ' was not our first choice on '+beforeSurface+', but moves to the top of our projections on '+afterSurface+'.':
+            ' was already our top choice and stays there on '+afterSurface+'.')+
+          ' The win chance moves from '+pct(earlier.win)+' to '+pct(newLead.win)+
+          ' with a new surface and a smaller field.'};
     }
   }
   if(oldLead.program!==newLead.program){
@@ -120,8 +124,10 @@ export function insightForRace(date,track,initial,revised,updatedAt,sourceVersio
         headline:stayed?'New Projected Favorite':'New Leader After Favorite Scratched',
         chip:newLead.program,horse:newLead.horse,
         priority:(stayed?100:42)+Math.max(0,moved),
-        message:context+'#'+newLead.program+' '+newLead.horse+' is TRI’s new projected favorite at '+pct(newLead.win)+
-          (earlier?', up from '+pct(earlier.win)+' before the scratches.':'.')};
+        message:context+'#'+newLead.program+' '+newLead.horse+
+          ' moves to the top of our projections for the '+raceName+'. '+
+          'The revised win chance is '+pct(newLead.win)+
+          (earlier?', up from '+pct(earlier.win)+' on the original card.':'.')};
     }
   }
   const changed=[...after.values()].map(h=>({h,old:before.get(h.program),delta:h.win-before.get(h.program).win}))
@@ -130,8 +136,10 @@ export function insightForRace(date,track,initial,revised,updatedAt,sourceVersio
     const x=changed[0];
     return {...common,kind:'WIN_SHIFT',headline:'Scratch-Driven Projection Shift',chip:x.h.program,horse:x.h.horse,
       priority:50+Math.abs(x.delta),
-      message:context+'#'+x.h.program+' '+x.h.horse+' has '+(x.delta>0?'risen':'fallen')+' from '+
-        pct(x.old.win)+' to '+pct(x.h.win)+' in TRI’s updated win projections.'};
+      message:context+'#'+x.h.program+' '+x.h.horse+
+        (x.h.program===newLead.program?' remains our top choice in the '+raceName+'.':' sees a change in the '+raceName+'.')+
+        ' The win chance moves from '+pct(x.old.win)+' to '+pct(x.h.win)+
+        '. '+(Math.abs(x.delta)<7?'A modest change, but enough to notice.':'That is a substantial change to the original projection.')};
   }
   const underneath=[...after.values()].map(h=>{
     const prior=before.get(h.program);
@@ -143,8 +151,10 @@ export function insightForRace(date,track,initial,revised,updatedAt,sourceVersio
     const x=underneath[0];
     return {...common,kind:'F4_SHIFT',headline:'Underneath Outlook Changes',chip:x.h.program,horse:x.h.horse,
       priority:20+Math.abs(x.delta),
-      message:context+'#'+x.h.program+' '+x.h.horse+' now carries a combined '+
-        pct(x.a*100)+' chance of finishing second or third, versus '+pct(x.b*100)+' before the scratches.'};
+      message:context+'#'+x.h.program+' '+x.h.horse+
+        ' has moved in our Full Finishing Order Projections for the '+raceName+
+        '. The combined second-or-third chance is '+pct(x.a*100)+', compared with '+
+        pct(x.b*100)+' on the original card.'};
   }
   return null; // No forced posts, no unverified pace-causality claims.
 }
