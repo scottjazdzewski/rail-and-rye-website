@@ -34,8 +34,10 @@ const fixtureAlerts=[
  ...Array.from({length:4},(_,i)=>({id:'b'+i,date:'2026-11-26',track:'Other Track',priority:80-i}))
 ];
 const diversified=pulse.choosePulseInsights(fixtureAlerts);
-assert.equal(diversified.length,6);
-assert.ok(diversified.filter(x=>x.track==='Other Track').length>=2,'Other tracks receive at least two slots in the first selection pass');
+assert.equal(diversified.length,10,'All qualified stories survive selection');
+assert.deepEqual(diversified,fixtureAlerts,'Strongest-first input order remains intact');
+assert.equal(pulse.choosePulseInsights([...fixtureAlerts,fixtureAlerts[0]]).length,10,'Deduplicate identical revision IDs');
+assert.equal(diversified.filter(x=>x.track==='Other Track').length,4);
 assert.equal(pulse.choosePulseInsights(fixtureAlerts.slice(0,6)).length,6,'Do not suppress a single track with six genuine stories');
 assert.equal(pulse.choosePulseInsights(fixtureAlerts.slice(0,1)).length,1,'Never force six stories');
 // Direct-to-R2 production paths sometimes bypass the API prescratch hook.
@@ -97,15 +99,14 @@ const originalTurf={...before.races[0],surface:'Turf'};
 const updatedDirt={...after.races[0],surface:'Dirt'};
 const courseAlert=pulse.insightForRace(before.race_date,before.track_name,originalTurf,
  updatedDirt,'2026-11-26T15:00:00Z');
-assert.equal(courseAlert.kind,'SURFACE_SWITCH','Certified course changes cannot be described as scratch-only changes');
-assert.match(courseAlert.message,/moved from turf to dirt|off the turf/i);
-assert.match(courseAlert.message,/one horse scratched|horses scratched/);
-assert.ok(!courseAlert.message.includes('pace'),'Do not invent pace causation from a turf-to-dirt change');
+assert.equal(courseAlert,null,'Mixed surface and scratch changes remain on hold');
 const nonMaterial={...updatedDirt,entries:[run(1,45),run(2,55)]};
 assert.equal(pulse.insightForRace(before.race_date,before.track_name,originalTurf,
- nonMaterial,'2026-11-26T15:00:00Z')?.kind,'SURFACE_SWITCH');
+ nonMaterial,'2026-11-26T15:00:00Z'),null);
 assert.equal(event.kind,'NEW_FAVORITE');
 assert.equal(event.chip,'2');
+assert.equal(event.metric.label,'WIN');
+assert.equal(event.metric.after,65);
 assert.match(event.message,/#3 Horse 3 out/);
 assert.match(event.message,/#2 Horse 2/);
 assert.match(event.message,/65\.0%/);
