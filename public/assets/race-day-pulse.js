@@ -79,7 +79,8 @@
     const portrait=format!=='landscape',W=portrait?1080:1200,H=portrait?1350:675;
     const canvas=document.createElement('canvas');canvas.width=W;canvas.height=H;
     const c=canvas.getContext('2d');if(!c)throw Error('Canvas unsupported');
-    if(document.fonts?.ready)await document.fonts.ready;
+    const serif=getComputedStyle(document.documentElement).getPropertyValue('--heritage-serif').trim()||'Georgia,serif';
+    if(document.fonts?.load){await document.fonts.load('700 40px '+serif).catch(()=>{});await document.fonts.ready;}
     const ivory='#f5ecd9',gold='#e4bf79',muted='#b4c0ca',navy='#10283b';
     const X=portrait?56:38, R=W-X, B=R-X;
     const font=(size,weight=700,family='system-ui,sans-serif')=>{c.font=weight+' '+size+'px '+family;};
@@ -106,13 +107,13 @@
     const logo=await transparentLogo(),logoSize=portrait?110:70,logoY=portrait?40:28;
     const scale=Math.min(logoSize/logo.width,logoSize/logo.height);
     c.drawImage(logo,X+(logoSize-logo.width*scale)/2,logoY+(logoSize-logo.height*scale)/2,logo.width*scale,logo.height*scale);
-    txt('RAIL & RYE RACING',X+logoSize+18,portrait?84:54,portrait?39:29,ivory,700,B-logoSize-30,'left','Georgia,serif');
+    txt('RAIL & RYE RACING',X+logoSize+18,portrait?84:54,portrait?39:29,ivory,700,B-logoSize-30,'left',serif);
     txt('RACE-DAY PULSE',X+logoSize+18,portrait?125:83,portrait?27:19,gold,750);
     line(portrait?164:105);
-    const identityY=portrait?188:118,chipSize=portrait?116:79,badgeSize=portrait?142:100;
+    const identityY=portrait?188:118,chipSize=portrait?116:79,badgeSize=portrait?142:112;
     txt(raceLabel(item).toUpperCase(),X,identityY+(portrait?32:24),portrait?30:23,gold,800,B-badgeSize-18);
     await saddle(item.chip,X,identityY+(portrait?50:31),chipSize);
-    txt(item.horse||item.headline,X+chipSize+20,identityY+(portrait?121:84),portrait?53:42,ivory,700,B-chipSize-badgeSize-52,'left','Georgia,serif');
+    txt(item.horse||item.headline,X+chipSize+20,identityY+(portrait?121:84),portrait?53:42,ivory,700,B-chipSize-badgeSize-52,'left',serif);
     await drawSignalMedallion(c,item,R-badgeSize,identityY+5,badgeSize);
     const m=metricText(item),py=portrait?376:239,ph=portrait?354:192;
     if(!m)throw Error('Certified probability metric required for social export');
@@ -136,18 +137,18 @@
     if(item.kind==='PACE_ADVANTAGE'&&item.pace_fit){const names={red:'Negative',gray:'Neutral',green:'Positive'};const before=names[item.pace_fit.before],after=names[item.pace_fit.after];if(before&&after)txt('Pace Fit: '+before+' → '+after,X,portrait?943:553,portrait?24:17,gold,700,B);}
     const scratches=Array.isArray(item.scratches)?item.scratches:[],sy=portrait?995:576,ss=portrait?57:29;
     if(scratches.length){txt('SCRATCHED',X,sy+(portrait?23:14),portrait?26:18,gold,800);let sx=X+(portrait?192:134);const step=ss+(portrait?10:8),capacity=Math.floor((R-sx+step-ss)/step),show=scratches.length>capacity?Math.max(0,capacity-1):scratches.length;for(const sc of scratches.slice(0,show)){await saddle(sc.program,sx,sy-(portrait?18:12),ss);sx+=step;}if(scratches.length>show)txt('+'+(scratches.length-show),sx,sy+(portrait?23:14),portrait?22:17,gold,750,R-sx);}
-    const ctaY=portrait?1066:607,ctaH=portrait?153:40;
+    const ctaY=portrait?1066:603,ctaH=portrait?153:35;
     panel(X,ctaY,B,ctaH,portrait?18:10);
     if(portrait){
-      txt('See the Complete Race Analysis',W/2,ctaY+46,36,gold,750,B-40,'center','Georgia,serif');
+      txt('See the Complete Race Analysis',W/2,ctaY+46,36,gold,750,B-40,'center',serif);
       txt('Win Probabilities · Finishing Order Projections',W/2,ctaY+81,23,ivory,550,B-40,'center');
       txt('railandryeracing.com',W/2,ctaY+127,30,gold,800,B-40,'center');
     }else{
-      txt('See the Complete Race Analysis',X+16,ctaY+27,22,gold,750,B*.55,'left','Georgia,serif');
-      txt('railandryeracing.com',R-16,ctaY+27,20,ivory,750,B*.41,'right');
+      txt('See the Complete Race Analysis',X+16,ctaY+24,22,gold,750,B*.55,'left',serif);
+      txt('railandryeracing.com',R-16,ctaY+24,20,ivory,750,B*.41,'right');
     }
     if(portrait)txt(item.id.startsWith('demo-')?'DESIGN PREVIEW · FICTIONAL DATA':'Model projections · Not guarantees',W/2,1290,22,muted,500,B,'center');
-    else txt(item.id.startsWith('demo-')?'FICTIONAL DESIGN PREVIEW':'Model projections · Not guarantees',W/2,663,12,muted,500,B,'center');
+    else txt(item.id.startsWith('demo-')?'FICTIONAL DESIGN PREVIEW':'Model projections · Not guarantees',W/2,652,12,muted,500,B,'center');
     const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(!blob)throw Error('Image unavailable');return blob;
   }
   // The release renderer invokes the identical browser template, not an approximation.
