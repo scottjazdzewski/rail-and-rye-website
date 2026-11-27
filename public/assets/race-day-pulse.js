@@ -250,9 +250,8 @@
     const body=$('div','rr-pulse-copy');
     const top=$('div','rr-pulse-signal-row');
     top.append($('p','rr-pulse-track',item.track.toUpperCase()+' · '+ordinal(item.race_number).toUpperCase()),signalBadge(item));
-    body.append(top);
     const m=metricText(item);
-    const horseLine=$('div','rr-pulse-horse-line');horseLine.append(chip(item.chip),$('h3','rr-pulse-headline',m&&item.horse?item.horse:titleCaseWords(item.headline)));body.append(horseLine);
+    const horseLine=$('div','rr-pulse-horse-line');horseLine.append(chip(item.chip),$('h3','rr-pulse-headline',m&&item.horse?item.horse:titleCaseWords(item.headline)));const identity=$('div','rr-pulse-identity');identity.append(top.firstChild,horseLine);const header=$('div','rr-pulse-card-header');header.append(identity,top.lastChild);body.append(header);
     if(m){
       const numbers=$('div','rr-pulse-numbers');
       const diff=item.metric.after-item.metric.before;
@@ -294,12 +293,18 @@
     const a=$('a','rr-pulse-cta-link','Explore Intelligence Hub');a.href='/store/';
     item.append(a);return item;
   }
+  function fitActiveCard(){
+    if(shell.hidden||!rail.children[selected])return;
+    // A single visible card on mobile and desktop hero. Do not reserve the height of an offscreen long card.
+    if(matchMedia('(max-width:640px), (min-width:1121px)').matches){const card=rail.children[selected];rail.style.height=Math.ceil(card.getBoundingClientRect().height+5)+'px';}else rail.style.height='';
+  }
+  window.addEventListener('resize',fitActiveCard,{passive:true});
   function scrollToIndex(index,behavior='smooth'){
     if(!rail.children.length)return;
     selected=Math.max(0,Math.min(index,rail.children.length-1));
     const el=rail.children[selected];
     rail.scrollTo({left:el.offsetLeft-rail.offsetLeft,behavior});
-    prev.disabled=selected===0;next.disabled=selected===rail.children.length-1;
+    prev.disabled=selected===0;next.disabled=selected===rail.children.length-1;fitActiveCard();
   }
   prev.addEventListener('click',()=>scrollToIndex(selected-1));
   next.addEventListener('click',()=>scrollToIndex(selected+1));
@@ -312,7 +317,7 @@
   rail.addEventListener('scroll',()=>{
     let best=0,distance=Infinity;
     [...rail.children].forEach((el,i)=>{const x=Math.abs((el.offsetLeft-rail.offsetLeft)-rail.scrollLeft);if(x<distance){best=i;distance=x;}});
-    selected=best;prev.disabled=selected===0;next.disabled=selected===rail.children.length-1;
+    selected=best;prev.disabled=selected===0;next.disabled=selected===rail.children.length-1;fitActiveCard();
   },{passive:true});
   async function load(){
     if(pending)return;pending=true;
