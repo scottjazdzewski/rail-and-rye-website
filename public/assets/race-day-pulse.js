@@ -131,16 +131,19 @@
     try{
       const canvas=document.createElement('canvas');canvas.width=1080;canvas.height=1350;
       const c=canvas.getContext('2d');if(!c)throw Error('Canvas unsupported');
-      c.fillStyle='#071a2c';c.fillRect(0,0,1080,1350);
+      const bg=c.createLinearGradient(0,0,1080,1350);bg.addColorStop(0,'#1b3b52');bg.addColorStop(.43,'#10283d');bg.addColorStop(1,'#061725');c.fillStyle=bg;c.fillRect(0,0,1080,1350);
+      // Quiet engraved line texture; does not compete with the figures.
+      c.save();c.globalAlpha=.07;c.strokeStyle='#d9bc82';c.lineWidth=1;for(let i=-1350;i<1080;i+=26){c.beginPath();c.moveTo(i,0);c.lineTo(i+1350,1350);c.stroke();}c.restore();
+      c.strokeStyle='#957748';c.lineWidth=2;c.beginPath();c.roundRect(30,30,1020,1290,28);c.stroke();
       c.fillStyle='#c49b59';c.fillRect(60,155,960,3);c.fillRect(60,1200,960,3);
       const logo=new Image();logo.src='/assets/approved/brand/rail-rye-ivory-logo.png';try{await logo.decode();c.drawImage(logo,62,45,90,90);}catch{}
       c.fillStyle='#e0b66b';c.font='700 35px Georgia';c.fillText('RAIL & RYE RACING',180,82);c.font='26px system-ui';c.fillText('RACE DAY PULSE',180,121);
       c.font='700 30px system-ui';c.fillText(raceLabel(item).toUpperCase(),60,225);
-      const label=signal(item);c.font='700 26px system-ui';c.fillStyle='#e8ca8a';c.fillRect(60,263,c.measureText(label).width+44,54);c.fillStyle='#071a2c';c.fillText(label,82,299);
-      const art=chip(item.chip).querySelector('img');c.fillStyle='#fff';c.fillRect(60,357,104,104);if(art){try{await art.decode();c.drawImage(art,60,357,104,104);}catch{}}
+      const label=signal(item);c.font='700 26px system-ui';const badgeWidth=c.measureText(label).width+90;c.fillStyle='#e8ca8a';c.beginPath();c.roundRect(60,263,badgeWidth,54,14);c.fill();c.fillStyle='#071a2c';c.fillText(label,124,299);c.save();c.translate(80,275);c.scale(1.25,1.25);c.strokeStyle='#071a2c';c.lineWidth=1.8;c.lineJoin='round';c.lineCap='round';c.stroke(new Path2D(signalPaths[signalType(item)]));c.restore();
+      const art=chip(item.chip).querySelector('img');c.save();c.beginPath();c.roundRect(60,357,104,104,15);c.clip();c.fillStyle='#fff';c.fillRect(60,357,104,104);if(art){try{await art.decode();c.drawImage(art,60,357,104,104);}catch{}}c.restore();
       c.fillStyle='#fff';c.font='700 52px Georgia';wrap(c,item.horse||item.headline,190,408,820,60,2);
       const m=metricText(item);
-      if(m){c.fillStyle='#d8be89';c.font='700 27px system-ui';c.fillText(m.label,60,540);c.fillStyle='#b4c0ca';c.font='700 89px system-ui';c.fillText(m.before,60,655);c.fillStyle='#e0b66b';c.fillText('→',435,655);c.fillStyle=m.up?'#73d2a2':'#f2ab9c';c.fillText(m.after,575,655);}
+      if(m){c.fillStyle='#081b2b';c.beginPath();c.roundRect(50,495,980,225,20);c.fill();c.strokeStyle='#927748';c.stroke();c.fillStyle='#d8be89';c.font='700 27px system-ui';c.fillText(m.label,80,540);c.fillStyle='#b4c0ca';c.font='700 89px system-ui';c.fillText(m.before,60,655);c.fillStyle='#e0b66b';c.fillText('→',435,655);c.fillStyle=m.up?'#73d2a2':'#f2ab9c';c.fillText(m.after,575,655);for(const [px,val,col] of [[80,item.metric.before,'#a6b5c4'],[575,item.metric.after,m.up?'#73d2a2':'#f2ab9c']]){c.fillStyle='#354957';c.beginPath();c.roundRect(px,681,330,8,4);c.fill();if(val>0){c.fillStyle=col;c.beginPath();c.roundRect(px,681,330*val/100,8,4);c.fill();}}}
       c.fillStyle='#f2f2f2';c.font='32px system-ui';wrap(c,item.short_message||item.message,60,755,960,44,4);
       const scratches=Array.isArray(item.scratches)?item.scratches:[];
       if(scratches.length){c.fillStyle='#d8be89';c.font='700 25px system-ui';c.fillText('SCRATCHES',60,980);let px=60;for(const scratch of scratches.slice(0,20)){if(px+42>1020)break;const img=chip(scratch.program,true).querySelector('img');c.fillStyle='#fff';c.fillRect(px,1005,42,42);if(img){try{await img.decode();c.drawImage(img,px,1005,42,42);}catch{}}px+=48;}}
@@ -183,6 +186,31 @@
     if(item.kind==='WIN_SHIFT'&&item.metric&&item.metric.after<item.metric.before)return 'WIN PROBABILITY DOWN';
     return 'SCRATCH IMPACT';
   }
+  // Pulse category icons share a restrained, consistent gold line-art system.
+  function signalType(item){
+    if(item.kind==='NEW_FAVORITE'||item.kind==='FAVORITE_SCRATCHED')return 'crown';
+    if(item.kind==='F4_SHIFT')return 'order';
+    if(item.kind==='WIN_SHIFT')return item.metric?.after<item.metric?.before?'down':'up';
+    return 'scratch';
+  }
+  const signalPaths={
+    crown:'M3 6l4 4 5-7 5 7 4-4-2 12H5L3 6z M5 21h14',
+    order:'M7 3v17 M3 7l4-4 4 4 M17 21V4 M13 17l4 4 4-4',
+    up:'M3 17l6-6 4 4 8-9 M15 6h6v6',
+    down:'M3 7l6 6 4-4 8 9 M15 18h6v-6',
+    scratch:'M5 12h14 M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18'
+  };
+  function signalIcon(item){
+    const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg'),p=document.createElementNS(ns,'path');
+    svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('aria-hidden','true');svg.setAttribute('class','rr-pulse-category-icon');
+    p.setAttribute('d',signalPaths[signalType(item)]);p.setAttribute('fill','none');p.setAttribute('stroke','currentColor');p.setAttribute('stroke-width','1.8');p.setAttribute('stroke-linecap','round');p.setAttribute('stroke-linejoin','round');svg.append(p);return svg;
+  }
+  function signalBadge(item){const el=$('span','rr-pulse-signal');el.append(signalIcon(item),document.createTextNode(signal(item)));return el;}
+  function probabilityColumn(label,value,cls){
+    const col=$('span','rr-pulse-prob-col '+cls),bar=$('span','rr-pulse-prob-bar'),fill=$('span','rr-pulse-prob-fill');
+    fill.style.width=value+'%';bar.append(fill);
+    col.append($('span','rr-pulse-prob-caption',label),$('span','rr-pulse-prob-value',value.toFixed(1)+'%'),bar);return col;
+  }
   function metricText(item){
     const m=item.metric;
     if(!m||!Number.isFinite(m.before)||!Number.isFinite(m.after)||m.before<0||m.after<0||m.before>100||m.after>100)return null;
@@ -196,13 +224,16 @@
     content.append(chip(item.chip));
     const body=$('div','rr-pulse-copy');
     const top=$('div','rr-pulse-signal-row');
-    top.append($('p','rr-pulse-track',item.track.toUpperCase()+' · '+ordinal(item.race_number).toUpperCase()),$('span','rr-pulse-signal',signal(item)));
+    top.append($('p','rr-pulse-track',item.track.toUpperCase()+' · '+ordinal(item.race_number).toUpperCase()),signalBadge(item));
     body.append(top);
     const m=metricText(item);
     body.append($('h3','rr-pulse-headline',m&&item.horse?item.horse:titleCaseWords(item.headline)));
     if(m){
       const numbers=$('div','rr-pulse-numbers');
-      numbers.append($('span','rr-pulse-metric-label',m.label),$('span','rr-pulse-before',m.before),$('span','rr-pulse-arrow-mark','→'),$('span','rr-pulse-after '+(m.up?'rr-pulse-up':'rr-pulse-down'),m.after));
+      const diff=item.metric.after-item.metric.before;
+      const delta=$('span','rr-pulse-delta '+(m.up?'rr-pulse-up':'rr-pulse-down'));
+      delta.append($('span','rr-pulse-prob-value',(diff>0?'+':'')+diff.toFixed(1)),$('span','rr-pulse-prob-caption','PTS'));
+      numbers.append($('span','rr-pulse-metric-label',m.label),probabilityColumn('BEFORE',item.metric.before,'rr-pulse-before'),$('span','rr-pulse-arrow-mark','→'),probabilityColumn('REVISED',item.metric.after,m.up?'rr-pulse-up':'rr-pulse-down'),delta);
       body.append(numbers);
     }else if(item.horse)body.append($('p','rr-pulse-affected',item.horse+' · #'+item.chip));
     body.append($('p','rr-pulse-message',item.short_message||item.message));
