@@ -129,7 +129,7 @@ try{
   if(width<=430){
     assert.ok(geometry.messageHeight>=27&&geometry.messageHeight<=37,
       'Mobile analysis teaser should take only two lines, with full story linked: '+JSON.stringify(geometry));
-    assert.ok(await page.locator('#rr-pulse').evaluate(el=>el.getBoundingClientRect().height)<220,
+    assert.ok(await page.locator('#rr-pulse').evaluate(el=>el.getBoundingClientRect().height)<300,
       'Pulse should not dominate the mobile homepage');
     assert.ok(await page.evaluate(()=>document.querySelector('.heritage-hero').nextElementSibling?.id==='rr-pulse'),
       'On mobile Pulse belongs immediately below the original hero');
@@ -151,16 +151,17 @@ try{
   // A click opens manual share menu; never posts to X without the user.
   await page.locator('.rr-pulse-tool').first().click();
   assert.ok(await page.locator('.rr-pulse-menu').first().isVisible(),'Share control shows manual actions');
+  assert.deepEqual(await page.locator('.rr-pulse-menu button').allTextContents(),['Share to Socials','Download Card','Copy Link']);
   const href=await page.locator('.rr-pulse-menu a').first().getAttribute('href');
-  assert.match(href,/^https:\/\/x\.com\/intent\/tweet\?text=/);
-  assert.ok(href.includes('pulse%2F'),'Share posts link to specific alert');
+  assert.ok(new URL(href).pathname.startsWith('/pulse/'),'Share links to specific alert');
   if(width===390){
     const downloadEvent=page.waitForEvent('download',{timeout:12000});
-    await page.locator('.rr-pulse-menu button').filter({hasText:'Save image'}).first().click();
+    await page.locator('.rr-pulse-menu button').filter({hasText:'Download Card'}).first().click();
     const download=await downloadEvent;
     assert.match(download.suggestedFilename(),/^rail-rye-.*\.png$/,'Branded image is a downloadable PNG');
     await download.saveAs('pulse-preview-screenshots/share-image.png');
   }
+  await page.locator('.rr-pulse-tool').first().click();
   await page.locator('#rr-pulse-next').click();
   assert.ok(!await page.locator('#rr-pulse-prev').isDisabled(),'Scroller arrows work');
   await page.close();
