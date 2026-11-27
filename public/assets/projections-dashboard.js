@@ -81,7 +81,7 @@ function raceTimeline(){
  return cards.filter(card=>card.race_date===date).flatMap(card=>
   (card.card?.races||[]).map(race=>({card,race,at:postTimeMinutes(timeLabel(race))})))
  .filter(({race})=>viewMode!=="purse"||((minimum===0||(purseAmount(race.purse)??-1)>=minimum)&&(!stakesOnly||globalThis.RRRaceTitles?.describe?.(race)?.stakes===true)))
- .sort((a,b)=>a.at-b.at||
+ .sort((a,b)=>(viewMode==="purse"?((purseAmount(b.race.purse)??-1)-(purseAmount(a.race.purse)??-1)):0)||a.at-b.at||
   (a.card.track||a.card.card.track_name).localeCompare(b.card.track||b.card.card.track_name)||
   a.race.race_number-b.race.race_number);
 }
@@ -149,7 +149,7 @@ function renderTimeline(){
  const all=viewMode!=="track";
  container.hidden=!all;
  const filters=q("#rr-dash-purse-filters");if(filters)filters.hidden=viewMode!=="purse";
- setText(q("#rr-dash-timeline-label"),viewMode==="purse"?"Matching races · chronological post times (ET)":"All races · chronological post times (ET)");
+ setText(q("#rr-dash-timeline-label"),viewMode==="purse"?"Matching races · highest purse first":"All races · chronological post times (ET)");
  q("#rr-dash-races").hidden=all;
  if(!all)return;
  timeline=raceTimeline();
@@ -157,7 +157,11 @@ function renderTimeline(){
  for(let i=0;i<timeline.length;i++){
   const item=timeline[i],track=item.card.track||item.card.card.track_name;
   const purse=viewMode==="purse"&&purseAmount(item.race.purse)!==null?" · "+new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",maximumFractionDigits:0}).format(purseAmount(item.race.purse)):"";
-  option(select,String(i),timeLabel(item.race)+" · "+track+" · Race "+item.race.race_number+purse);
+  const presentation=viewMode==="purse"?editorialRacePresentation(item.race):null;
+  const grade=presentation?.grade?" · G"+presentation.grade:"";
+  const name=presentation?.stakes&&!presentation.missingStakesName?" · "+presentation.title:"";
+  const label=viewMode==="purse"?(purse?purse.slice(3):"Purse not listed")+" · "+track+" R"+item.race.race_number+grade+name+" · "+timeLabel(item.race):timeLabel(item.race)+" · "+track+" · Race "+item.race.race_number;
+  option(select,String(i),label);
  }
  let index=timeline.findIndex(item=>item.card===activeCard&&item.race.race_number===activeRace);
  if(index<0&&timeline.length){index=0;activeCard=timeline[0].card;activeRace=timeline[0].race.race_number;}
@@ -165,6 +169,9 @@ function renderTimeline(){
  else {activeCard=null;activeRace=null;}
  select.disabled=!timeline.length;
  setText(q("#rr-dash-timeline-count"),timeline.length?((index+1)+" of "+timeline.length+" races · "+new Set(timeline.map(x=>x.card.track||x.card.card.track_name)).size+" tracks"):(viewMode==="purse"?"No races match your filters.":"No races found"));
+ select.setAttribute("aria-label",viewMode==="purse"?"Choose race by descending purse":"Choose race from all tracks in post-time order");
+ q("#rr-dash-previous-race").setAttribute("aria-label",viewMode==="purse"?"Previous race in purse order":"Previous race in post-time order");
+ q("#rr-dash-next-race").setAttribute("aria-label",viewMode==="purse"?"Next race in purse order":"Next race in post-time order");
  q("#rr-dash-previous-race").disabled=index<=0;
  q("#rr-dash-next-race").disabled=index>=timeline.length-1;
 }
@@ -176,6 +183,7 @@ function selectTimeline(index){
 }
 function changeViewMode(next){
  viewMode=["all","purse"].includes(next)?next:"track";
+ if(viewMode==="purse"){activeCard=null;activeRace=null;}
  const all=viewMode!=="track";
  app.dataset.mode=viewMode;
  q("#rr-dash-mode-track").setAttribute("aria-pressed",String(!all));
@@ -512,7 +520,7 @@ function onFiltersChanged(){
  renderTracks(oldTrack);
  if(viewMode!=="track"){
   timeline=raceTimeline();
-  const selected=timeline.find(item=>item.card===activeCard&&item.race.race_number===activeRace);
+  const selected=viewMode==="purse"?null:timeline.find(item=>item.card===activeCard&&item.race.race_number===activeRace);
   if(!selected){
    activeCard=timeline[0]?.card||null;
    activeRace=timeline[0]?.race?.race_number||null;

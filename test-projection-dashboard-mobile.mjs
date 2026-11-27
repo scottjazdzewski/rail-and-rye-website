@@ -392,7 +392,7 @@ assert.match(js,/context\.replaceChildren\(cardHeader\(activeCard\)\)/,"Update t
 assert.match(factsCss,/min-height:59px/,"The Pace/Surface/Distance band is much shorter");
 assert.match(headerCss,/grid-template-columns:max-content max-content minmax\(0,1fr\)/,"Runners, purse and post time share compact metadata row");
 
- // Purse mode: uses source purse only, post-time order, and never leaves stale runners.
+ // Purse mode: source purse descending, post-time tie break, no stale runners.
  const purseMode=els.get("rr-dash-mode-purse"),minimum=els.get("rr-dash-min-purse"),stakes=els.get("rr-dash-stakes-only");
  const timelineSelect=els.get("rr-dash-all-races");
  fixture.cards[0].card.races[0].purse="$100,000";
@@ -401,7 +401,24 @@ assert.match(headerCss,/grid-template-columns:max-content max-content minmax\(0,
  minimum.value="100000";purseMode.events.click();
  assert.equal(els.get("rr-dash-app").dataset.mode,"purse");
  assert.equal(timelineSelect.children.length,3);
- assert.match(timelineSelect.children[0].textContent,/Zia Park/);
+ assert.match(timelineSelect.children[0].textContent,/^\$250,000 · Del Mar/);
+ assert.match(timelineSelect.children[1].textContent,/Zia Park/,"Equal purses use post-time order");
+ assert.equal(timelineSelect.value,"0","Entering By Purse opens the most valuable race");
+ assert.match(timelineSelect.children[0].textContent,/G1/,"Dropdown identifies source-confirmed grade");
+ assert.ok(matchClass(race,"rr-dash-graded-trophy").className.includes("--g1"));
+ timelineSelect.value="2";timelineSelect.events.change();
+ minimum.value="25000";minimum.events.change();
+ assert.equal(timelineSelect.value,"0","Changing purse filter restarts at highest purse even when prior race still qualifies");
+ const graded=fixture.cards[0].card.races[1];
+ const originalConditions=graded.conditions;
+ for(const grade of [2,3]){
+  graded.conditions="Belmont Stakes (G"+grade+")";
+  graded.stakes_grade=grade;
+  minimum.events.change();
+  assert.match(timelineSelect.children[0].textContent,new RegExp("G"+grade));
+  assert.ok(matchClass(race,"rr-dash-graded-trophy").className.includes("--g"+grade),"Retain approved grade-specific trophy");
+ }
+ delete graded.stakes_grade;graded.conditions=originalConditions;
  stakes.checked=true;stakes.events.change();
  assert.equal(timelineSelect.children.length,1);
  assert.match(timelineSelect.children[0].textContent,/Del Mar/);
@@ -415,4 +432,4 @@ assert.match(headerCss,/grid-template-columns:max-content max-content minmax\(0,
  assert.ok(horses.textContent);
  els.get("rr-dash-mode-track").events.click();
  assert.equal(els.get("rr-dash-purse-filters").hidden,true);
- console.log("PASS: purse and stakes filters, chronological order, empty state and recovery");
+ console.log("PASS: descending purse order, highest-value reset, post-time ties, graded trophies, empty state and recovery");
