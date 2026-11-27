@@ -1,0 +1,29 @@
+name: November 27 Pick Tickets full slate audit after late scratches
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/audit-pick-late-1127.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: pip install --quiet boto3==1.40.36
+      - name: Audit current 15 track customer fields and catalog
+        env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+        run: python scripts/audit_pick_late_1127.py
+      - if: always()
+        run: rm -f /tmp/rr-pick-1127-current-reader.json
