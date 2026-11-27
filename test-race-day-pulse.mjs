@@ -99,7 +99,7 @@ const courseAlert=pulse.insightForRace(before.race_date,before.track_name,origin
  updatedDirt,'2026-11-26T15:00:00Z');
 assert.equal(courseAlert.kind,'SURFACE_SWITCH','Certified course changes cannot be described as scratch-only changes');
 assert.match(courseAlert.message,/moved from turf to dirt|off the turf/i);
-assert.match(courseAlert.message,/horses scratched/);
+assert.match(courseAlert.message,/one horse scratched|horses scratched/);
 assert.ok(!courseAlert.message.includes('pace'),'Do not invent pace causation from a turf-to-dirt change');
 const nonMaterial={...updatedDirt,entries:[run(1,45),run(2,55)]};
 assert.equal(pulse.insightForRace(before.race_date,before.track_name,originalTurf,
