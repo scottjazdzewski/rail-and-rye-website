@@ -1,0 +1,29 @@
+name: Verify deployed Pick final-field gate
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/verify-pick-final-field-live.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify production API reports the exact guard version
+        run: |
+          python - <<'PY'
+          import json,time,urllib.request
+          for attempt in range(10):
+              try:
+                  req=urllib.request.Request("https://railandryeracing.com/api/products?qa=final-field-"+str(attempt),headers={"Cache-Control":"no-cache","User-Agent":"RailRyeReleaseQA/1"})
+                  with urllib.request.urlopen(req,timeout=25) as r: data=json.load(r)
+                  if data.get("pick_scratch_gate_version")=="2026-11-28-final-field-v1":
+                      print("PICK_FINAL_FIELD_LIVE_VERSION_PASS",flush=True);break
+                  print("Guard version not yet present",flush=True)
+              except Exception as e: print("Live check retry",type(e).__name__,flush=True)
+              time.sleep(5)
+          else: raise RuntimeError("New guard not verified in production")
+          PY
