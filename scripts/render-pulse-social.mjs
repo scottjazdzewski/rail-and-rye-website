@@ -22,7 +22,7 @@ for(const item of fixture.items){
 }
 const root=resolve('public');
 const types={'.js':'text/javascript','.png':'image/png','.css':'text/css','.jpg':'image/jpeg','.webp':'image/webp'};
-const html='<!doctype html><meta charset="utf-8"><section id="rr-pulse" hidden><span id="rr-pulse-count"></span><button id="rr-pulse-prev"></button><button id="rr-pulse-next"></button><div id="rr-pulse-rail"></div></section><script src="/assets/race-day-pulse.js"></script>';
+const html='<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="/assets/rail-rye-core.css"><section id="rr-pulse" hidden><span id="rr-pulse-count"></span><button id="rr-pulse-prev"></button><button id="rr-pulse-next"></button><div id="rr-pulse-rail"></div></section><script src="/assets/race-day-pulse.js"></script>';
 const server=createServer((req,res)=>{
  const p=new URL(req.url,'http://localhost').pathname;
  if(p==='/'){res.setHeader('Content-Type','text/html');res.end(html);return;}
