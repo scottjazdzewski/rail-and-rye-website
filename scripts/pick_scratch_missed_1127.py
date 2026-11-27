@@ -71,7 +71,7 @@ for sl,name,oldname,nr,ns,nsc,nq,batch,packet,pdf,stamp in CONF:
    need(all(e["horse_name"]==b[k]["horse_name"] and e["jockey"]==b[k]["jockey"] and e["trainer"]==b[k]["trainer"] and abs(e["win_probability_exact"]-b[k]["win_probability_exact"])<1e-8 and abs(e["win_probability_exact"]/100-e["f4_probabilities"]["exact_p1"])<1e-12 for k,e in a.items()),"Source runner/score mismatch")
    need({str(e["program_number"]) for e in r["scratches"]}==set(SCR[sl].get(n,[])) and not (set(a)&set(SCR[sl].get(n,[]))),"Official scratch mismatch")
    need(all(k in a and a[k]["horse_name"]==h for k,h in DRAW[sl].get(n,{}).items()),"Official draw-in mismatch")
-   need(r.get("track_condition")==("Fast" if sl=="gulfstream-park" else "Sloppy"),"Condition mismatch")
+   need(p["track_conditions"]==d["snapshot"]["track_conditions"] and r.get("track_condition")==source_rs[n].get("track_condition"),"Condition mismatch against certified source")
    if (sl=="gulfstream-park" and n in (1,5,7,9)) or (sl=="belmont-park" and n in (5,6,8,9)):need(r["surface"]=="Synthetic","Surface mismatch")
    need(all(a[k]["jockey"]==v for k,v in RIDERS[sl].get(n,{}).items()),"Replacement rider mismatch")
    for k,v in ({2:{"7":120},4:{"2":124}} if sl=="gulfstream-park" else {}).get(n,{}).items():need(a[k]["weight_carried_lbs"]==v,"Weight mismatch")
