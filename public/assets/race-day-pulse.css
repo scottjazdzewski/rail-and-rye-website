@@ -329,3 +329,5 @@
  .heritage-home>.rr-pulse .rr-pulse-item{padding-inline:6px}
  .heritage-home>.rr-pulse .rr-pulse-compact-open{padding-inline:6px;font-size:10px}
 }
+
+.rr-pulse-detail{border:0;border-radius:12px;margin:16px 0;background:transparent}.rr-pulse-detail .rr-pulse-shell{padding:0}.rr-pulse-detail .rr-pulse-item{width:100%;max-width:100%;flex-basis:100%}.rr-pulse-detail .rr-pulse-item-footer a,.rr-pulse-detail .rr-pulse-item-footer button{min-height:44px}
