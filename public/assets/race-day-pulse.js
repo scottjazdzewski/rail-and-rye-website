@@ -61,8 +61,9 @@
   // One repeatable 4:5 social card; no buttons, browser chrome or premium data.
   const shareUrl=item=>new URL(pulseUrl(item),location.origin).href;
   function shareFilename(item){return 'rail-rye-pulse-'+item.date+'-'+item.id+'.png';}
-  async function socialImage(item){
+  async function socialImage(item,format='portrait'){
     const canvas=document.createElement('canvas');canvas.width=1080;canvas.height=1350;
+    if(format==='landscape')return landscapeImage(item);
     const c=canvas.getContext('2d');if(!c)throw Error('Canvas unsupported');
     const bg=c.createLinearGradient(0,0,1080,1350);bg.addColorStop(0,'#1b3b52');bg.addColorStop(.43,'#10283d');bg.addColorStop(1,'#061725');c.fillStyle=bg;c.fillRect(0,0,1080,1350);
     c.strokeStyle='#957748';c.lineWidth=2;c.beginPath();c.roundRect(30,30,1020,1290,28);c.stroke();
@@ -102,11 +103,54 @@
     c.fillStyle='#b4c0ca';c.font='24px system-ui';c.fillText(item.id.startsWith('demo-')?'DESIGN PREVIEW · FICTIONAL DATA':'Model projections · Not guarantees',60,1300);
     const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(!blob)throw Error('Image unavailable');return blob;
   }
+  // Crawler-ready 1200 x 675 companion uses the same public item and approved art.
+  async function landscapeImage(item){
+    const canvas=document.createElement('canvas');canvas.width=1200;canvas.height=675;
+    const c=canvas.getContext('2d');if(!c)throw Error('Canvas unsupported');
+    const gradient=c.createLinearGradient(0,0,1200,675);gradient.addColorStop(0,'#1b3b52');gradient.addColorStop(1,'#071a2c');c.fillStyle=gradient;c.fillRect(0,0,1200,675);
+    c.strokeStyle='#b18a49';c.lineWidth=2;c.beginPath();c.roundRect(20,20,1160,635,20);c.stroke();
+    async function art(src,x,y,size,backing=false){
+      const image=new Image();image.src=src;await image.decode();
+      if(backing){c.fillStyle='#fff';c.beginPath();c.roundRect(x,y,size,size,8);c.fill();}
+      c.drawImage(image,x,y,size,size);
+    }
+    async function saddle(n,x,y,size){
+      const match=/^(\d{1,2})([A-Z]?)$/.exec(String(n||'').toUpperCase());
+      if(!match||Number(match[1])<1||Number(match[1])>20)throw Error('Invalid program chip');
+      await art('/assets/approved/saddlecloths/'+Number(match[1])+'.png',x,y,size,true);
+      if(match[2]){c.fillStyle='#102d53';c.fillRect(x+size*.68,y+size*.66,size*.32,size*.34);c.fillStyle='#fff';c.font='700 '+Math.round(size*.24)+'px system-ui';c.fillText(match[2],x+size*.72,y+size*.91);}
+    }
+    await art('/assets/approved/brand/rail-rye-ivory-logo.png',45,36,64);
+    c.fillStyle='#f3e5ca';c.font='700 34px Georgia';c.fillText('Rail & Rye Racing  ·  Race-Day Pulse',130,76);
+    c.fillStyle='#c49b59';c.fillRect(45,111,1110,2);
+    c.font='700 25px system-ui';c.fillText(raceLabel(item).toUpperCase(),45,151,980);
+    drawSignalMedallion(c,item,1080,123,72);
+    await saddle(item.chip,45,174,78);
+    c.fillStyle='#fff';c.font='700 44px Georgia';c.fillText(item.horse||item.headline,140,227,900);
+    const m=metricText(item);
+    if(m){
+      c.fillStyle='#081b2b';c.beginPath();c.roundRect(45,267,1110,160,14);c.fill();c.strokeStyle='#927748';c.stroke();
+      c.fillStyle='#dfbd79';c.font='700 24px system-ui';c.fillText(m.label,65,299);c.font='700 18px system-ui';c.fillText('ORIGINAL',65,326);c.fillText('REVISED',565,326);
+      const diff=item.metric.after-item.metric.before,color=diff>0?'#73d2a2':diff<0?'#f2ab9c':'#dfbd79';
+      c.font='700 66px system-ui';c.fillStyle='#b4c0ca';c.fillText(m.before,65,391);c.fillStyle='#e0b66b';c.fillText('→',420,391);c.fillStyle=color;c.fillText(m.after,565,391);
+      c.font='700 27px system-ui';c.textAlign='right';c.fillText((diff>0?'+':'')+diff.toFixed(1)+' PTS',1129,299);c.textAlign='left';
+      for(const [x,v,col] of [[65,item.metric.before,'#a6b5c4'],[565,item.metric.after,color]]){c.fillStyle='#354957';c.fillRect(x,405,360,6);c.fillStyle=col;c.fillRect(x,405,360*v/100,6);}
+    }
+    const context=selectedContext(item);c.fillStyle='#d8be89';c.font='700 20px system-ui';if(context.length)c.fillText(context.map(([k,v])=>k+' '+v).join('   ·   '),45,456,1110);
+    c.fillStyle='#fff';c.font='24px system-ui';wrap(c,item.short_message||item.message,45,487,1110,29,2);
+    const scratches=Array.isArray(item.scratches)?item.scratches:[];
+    if(scratches.length){c.fillStyle='#dfbd79';c.font='700 18px system-ui';c.fillText('SCRATCHED',45,564);let x=182;for(const scratch of scratches.slice(0,20)){if(x+37>1155)break;await saddle(scratch.program,x,536,37);x+=46;}}
+    c.fillStyle='#c49b59';c.fillRect(45,590,1110,2);c.font='700 22px system-ui';c.fillText('railandryeracing.com  ·  Racing Intelligence Hub',45,627,1050);
+    if(item.id.startsWith('demo-')){c.fillStyle='#fff';c.font='700 14px system-ui';c.textAlign='right';c.fillText('FICTIONAL DESIGN PREVIEW',1155,649);c.textAlign='left';}
+    const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(!blob)throw Error('Image unavailable');return blob;
+  }
+  // The release renderer invokes the identical browser template, not an approximation.
+  globalThis.RRPulseRenderImage=async(item,format)=>socialImage(item,format);
   function shareTools(item){
     const group=$('div','rr-pulse-share-group'),share=$('button','rr-pulse-tool','Share');
     share.type='button';share.setAttribute('aria-label','Share '+raceLabel(item));share.setAttribute('aria-expanded','false');
     const menu=$('div','rr-pulse-menu');menu.hidden=true;
-    const social=$('button','','Share to Socials'),download=$('button','','Download Card'),copy=$('button','','Copy Link');
+    const social=$('button','','Share to X'),download=$('button','','Download Card'),copy=$('button','','Copy Link');
     for(const button of [social,download,copy])button.type='button';
     const notice=$('span','rr-pulse-menu-status');notice.setAttribute('role','status');
     const link=$('a','rr-pulse-share-fallback',shareUrl(item));link.href=shareUrl(item);link.hidden=true;
@@ -114,8 +158,8 @@
     function prepare(){
       if(blob)return Promise.resolve(blob);
       if(preparing)return preparing;
-      social.disabled=download.disabled=true;notice.textContent='Preparing card…';
-      preparing=socialImage(item).then(value=>{blob=value;notice.textContent='';return value;}).catch(()=>{notice.textContent='Image unavailable. Close and reopen Share to retry.';return null;}).finally(()=>{social.disabled=download.disabled=!blob;preparing=null;});
+      download.disabled=true;notice.textContent='Preparing download…';
+      preparing=socialImage(item).then(value=>{blob=value;notice.textContent='';return value;}).catch(()=>{notice.textContent='Image unavailable. Close and reopen Share to retry.';return null;}).finally(()=>{download.disabled=!blob;preparing=null;});
       return preparing;
     }
     async function copyOrReveal(){
@@ -123,17 +167,12 @@
     }
     copy.addEventListener('click',async()=>{notice.textContent=await copyOrReveal()?'Link copied.':'Copy the insight link below.';});
     download.addEventListener('click',()=>{if(blob){downloadBlob(blob,shareFilename(item));notice.textContent='Card downloaded.';}});
-    social.addEventListener('click',async()=>{
-      if(!blob)return;
-      const file=new File([blob],shareFilename(item),{type:'image/png'}),url=shareUrl(item);
-      const payload={files:[file],url};
-      // Prepare on opening the menu so native share runs in the actual click gesture.
-      if(navigator.share&&navigator.canShare?.(payload)){
-        try{await navigator.share(payload);notice.textContent='Share opened.';return;}
-        catch(error){if(error.name==='AbortError')return;}
-      }
-      const copied=copyOrReveal();downloadBlob(blob,file.name);
-      notice.textContent=await copied?'Card downloaded. Link copied — attach the image and paste the link in your post.':'Card downloaded. Copy the insight link below and attach the image to your post.';
+    social.addEventListener('click',()=>{
+      const url=shareUrl(item),text=item.short_message||item.message;
+      // X Web Intent accepts text and URL, not binary attachments. The per-insight
+      // public PNG metadata supplies the large preview when X fetches the URL.
+      window.open('https://x.com/intent/tweet?text='+encodeURIComponent(text)+'&url='+encodeURIComponent(url),'_blank','noopener,noreferrer');
+      notice.textContent='If X does not show the preview, download the card and attach it manually.';
     });
     menu.append(social,download,copy,notice,link);
     function close(){menu.hidden=true;menu.remove();share.setAttribute('aria-expanded','false');if(closeShare===close)closeShare=null;}
@@ -255,7 +294,7 @@
     const footer=$('div','rr-pulse-item-footer');
     const links=$('div','rr-pulse-links');
     const original=$('a','rr-pulse-story-link','Open Insight');original.href=pulseUrl(item);
-    const paid=$('a','rr-pulse-paid-link','Full-Field Analysis');paid.href=item.hub_url;
+    const paid=$('a','rr-pulse-paid-link','Full-Field Analysis');paid.href=typeof item.hub_url==='string'&&item.hub_url.startsWith('/')&&!item.hub_url.startsWith('//')?item.hub_url:'/store/';
     links.append(original,paid);footer.append(links,shareTools(item));article.append(footer);
     return article;
   }
