@@ -68,3 +68,24 @@ jobs:
           python -m pip install --quiet boto3
           python scripts/race_day_pulse_replay_audit.py
           python scripts/race_day_pulse_schedule_audit.py
+
+  base-regression-triage:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Record the exact unchanged production baseline test results
+        run: |
+          for test in test-projection-dashboard-mobile.mjs test-pick-tickets.mjs test-v5.mjs test-hub-private-review.mjs test-longshot-radar.mjs; do
+            echo "::group::Base $test"
+            node --experimental-sqlite "$test" && rc=0 || rc=$?
+            echo "BASE_TEST_EXIT $test $rc"
+            echo "::endgroup::"
+          done
