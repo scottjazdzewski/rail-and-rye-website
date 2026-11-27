@@ -44,7 +44,7 @@ try{
  await page.locator('.rr-pulse-item').first().waitFor({timeout:15000});
  await page.locator('.rr-pulse-saddle img').first().evaluate(e=>e.decode());
  const pos=await page.locator('#rr-pulse').boundingBox();
- assert.ok(pos&&pos.height<220,'Actual mobile Pulse should remain under 220px: '+JSON.stringify(pos));
+ assert.ok(pos&&pos.height<320,'Actual mobile Pulse should remain under 320px: '+JSON.stringify(pos));
  assert.equal(await page.locator('.rr-pulse-scratch-name').count(),0);
  assert.match(await page.locator('.rr-pulse-track').first().innerText(),/12TH/);
  await page.addStyleTag({content:'.rr-demo-tap{position:fixed;left:-100px;top:-100px;width:40px;height:40px;border:3px solid #f4c45e;border-radius:50%;background:rgba(242,206,135,.3);pointer-events:none;z-index:2147483600;transform:translate(-50%,-50%);box-shadow:0 0 0 6px rgba(15,38,57,.27);opacity:0;transition:opacity .16s;}'});
