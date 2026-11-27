@@ -98,18 +98,22 @@ const updatedDirt={...after.races[0],surface:'Dirt'};
 const courseAlert=pulse.insightForRace(before.race_date,before.track_name,originalTurf,
  updatedDirt,'2026-11-26T15:00:00Z');
 assert.equal(courseAlert.kind,'SURFACE_SWITCH','Certified course changes cannot be described as scratch-only changes');
-assert.match(courseAlert.message,/moved from Turf to Dirt/);
-assert.match(courseAlert.message,/confirmed active-field scratch/);
+assert.match(courseAlert.message,/moved from turf to dirt|off the turf/i);
+assert.match(courseAlert.message,/horses scratched/);
 assert.ok(!courseAlert.message.includes('pace'),'Do not invent pace causation from a turf-to-dirt change');
 const nonMaterial={...updatedDirt,entries:[run(1,45),run(2,55)]};
 assert.equal(pulse.insightForRace(before.race_date,before.track_name,originalTurf,
  nonMaterial,'2026-11-26T15:00:00Z')?.kind,'SURFACE_SWITCH');
 assert.equal(event.kind,'NEW_FAVORITE');
 assert.equal(event.chip,'2');
-assert.match(event.message,/#3 scratched/);
+assert.match(event.message,/#3 Horse 3 out/);
 assert.match(event.message,/#2 Horse 2/);
 assert.match(event.message,/65\.0%/);
 assert.ok(!event.message.includes('pace'),'Never invent unverified pace explanations');
+assert.ok(!/TRI|\bF4\b|synthetic|systematic|critical development|reshuffling|pecking order/i.test(event.message),
+  'Customer copy should not sound like an internal engine explanation or padded AI prose');
+assert.ok(event.message.trim().split(/\s+/).length<=65,
+  'Automated update should explain the evidence and stop without forced length');
 assert.equal(event.hub_url,'/intelligence/race-cards/?date=2026-11-26&track=Churchill%20Downs&race=6',
   'Pulse directs prospective buyer to the actual entitled race and fallback store flow');
 const reader=fs.readFileSync('public/assets/projections-dashboard.js','utf8');
