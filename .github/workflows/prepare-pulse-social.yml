@@ -1,0 +1,58 @@
+name: Prepare approved Pulse social cards
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pulse-social-publication
+  cancel-in-progress: false
+jobs:
+  render:
+    if: github.ref == 'refs/heads/main' && vars.PULSE_SOCIAL_RELEASE_APPROVED == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Read only the released public feed and render
+        run: |
+          curl -fsS https://railandryeracing.com/api/race-day-pulse -o /tmp/pulse-feed.json
+          node -e "const x=require('/tmp/pulse-feed.json');if(x.status!=='ok'||!Array.isArray(x.items)||x.preview)process.exit(1)"
+          npm install --no-save --no-package-lock playwright
+          npx playwright install --with-deps chromium
+          mkdir -p /tmp/pulse-social
+          node scripts/render-pulse-social.mjs --feed /tmp/pulse-feed.json --out /tmp/pulse-social
+      - name: Preserve only public social PNGs
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_API_TOKEN"
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          while IFS= read -r -d '' file; do
+            relative="${file#/tmp/pulse-social/}"
+            date="${relative%/*}"
+            id="${relative##*/}"
+            id="${id%.png}"
+            [[ "$date" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]
+            [[ "$id" =~ ^[a-z0-9-]{2,120}$ ]]
+            [[ "$id" != demo-* ]]
+            page="https://railandryeracing.com/pulse/$date/$id"
+            image="$page/card-v1.png"
+            curl -fsS "$page" >/dev/null
+            code=$(curl -sS -o /dev/null -w '%{http_code}' -I "$image")
+            if [ "$code" = 200 ]; then
+              echo "Existing verified image retained: $relative"
+            elif [ "$code" = 404 ]; then
+              npx --yes wrangler@4 r2 object put "rail-and-rye-private-cards/race-day-pulse/social/v1/$relative" --remote --file "$file" --content-type image/png --cache-control 'public, max-age=86400, immutable'
+            else
+              echo "::error::Unexpected image status $code; no upload"
+              exit 1
+            fi
+            curl -fsS --retry 3 "$image" -o /tmp/pulse-readback.png
+            node -e "const b=require('node:fs').readFileSync('/tmp/pulse-readback.png');if(b.readUInt32BE(0)!==0x89504e47||b.readUInt32BE(16)!==1200||b.readUInt32BE(20)!==675)process.exit(1)"
+            curl -fsS "$page" | grep -q 'summary_large_image'
+          done < <(find /tmp/pulse-social -type f -name '*.png' -print0)
