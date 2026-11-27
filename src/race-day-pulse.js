@@ -26,9 +26,14 @@ function runners(race){
   for(const item of race.entries){
     const n=clean(item?.program_number,8).toUpperCase(),w=item?.win_probability_exact;
     if(!n||map.has(n)||w==null||!Number.isFinite(Number(w))||Number(w)<0||Number(w)>100)return null;
-    map.set(n,{program:n,horse:clean(item.horse_name,95),win:Number(w),f4:item.f4_probabilities||{}});
+    map.set(n,{program:n,horse:clean(item.horse_name,95),win:Number(w),f4:item.f4_probabilities||{},rank:Number.isInteger(item.rank)&&item.rank>0?item.rank:null});
   }
   return map.size?map:null;
+}
+function publicSummary(runner,field){
+  // Rank is optional and comes from the certified scorer, not the PWIN sort.
+  const rank=runner.rank&&runner.rank<=field.size?runner.rank:null;
+  return {projected_rank:rank,win_probability:runner.win};
 }
 function winner(map){return [...map.values()].sort((a,b)=>b.win-a.win||a.program.localeCompare(b.program))[0];}
 function compareRaces(previous,current){
@@ -108,7 +113,7 @@ export function insightForRace(date,track,initial,revised,updatedAt,sourceVersio
         headline:stayed?'New Projected Favorite':'New Leader After Favorite Scratched',
         chip:newLead.program,horse:newLead.horse,
         priority:(stayed?100:42)+Math.max(0,moved),
-        metric:{label:'WIN',before:earlier.win,after:newLead.win},
+        metric:{label:'WIN',before:earlier.win,after:newLead.win},summary:publicSummary(newLead,after),
         short_message:'#'+newLead.program+' '+newLead.horse+' moves to the top of our projections.',
         message:context+'#'+newLead.program+' '+newLead.horse+
           ' moves to the top of our projections for the '+raceName+'. '+
@@ -122,7 +127,7 @@ export function insightForRace(date,track,initial,revised,updatedAt,sourceVersio
     const x=changed[0];
     return {...common,kind:'WIN_SHIFT',headline:'Scratch-Driven Projection Shift',chip:x.h.program,horse:x.h.horse,
       priority:50+Math.abs(x.delta),
-      metric:{label:'WIN',before:x.old.win,after:x.h.win},
+      metric:{label:'WIN',before:x.old.win,after:x.h.win},summary:publicSummary(x.h,after),
       short_message:x.h.program===newLead.program?'Remains our projected favorite after the scratches.':'Win Probability changes after the scratches.',
       message:context+'#'+x.h.program+' '+x.h.horse+
         (x.h.program===newLead.program?' remains our top choice in the '+raceName+'.':' sees a change in the '+raceName+'.')+
@@ -139,7 +144,7 @@ export function insightForRace(date,track,initial,revised,updatedAt,sourceVersio
     const x=underneath[0];
     return {...common,kind:'F4_SHIFT',headline:'Underneath Outlook Changes',chip:x.h.program,horse:x.h.horse,
       priority:20+Math.abs(x.delta),
-      metric:{label:'SECOND_OR_THIRD',before:x.b*100,after:x.a*100},
+      metric:{label:'SECOND_OR_THIRD',before:x.b*100,after:x.a*100},summary:publicSummary(x.h,after),
       short_message:'The projected chance of finishing second or third has changed.',
       message:context+'#'+x.h.program+' '+x.h.horse+
         ' has moved in our Full Finishing Order Projections for the '+raceName+
