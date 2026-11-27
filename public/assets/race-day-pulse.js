@@ -126,6 +126,32 @@
     }catch(e){button.textContent='Could not save image';setTimeout(()=>button.textContent=label,1800);}
     finally{button.disabled=false;if(button.textContent==='Preparing image…')button.textContent=label;}
   }
+  async function saveInstagram(item,button){
+    const original=button.textContent;button.disabled=true;
+    try{
+      const canvas=document.createElement('canvas');canvas.width=1080;canvas.height=1350;
+      const c=canvas.getContext('2d');if(!c)throw Error('Canvas unsupported');
+      c.fillStyle='#071a2c';c.fillRect(0,0,1080,1350);
+      c.fillStyle='#c49b59';c.fillRect(60,155,960,3);c.fillRect(60,1200,960,3);
+      const logo=new Image();logo.src='/assets/approved/brand/rail-rye-ivory-logo.png';try{await logo.decode();c.drawImage(logo,62,45,90,90);}catch{}
+      c.fillStyle='#e0b66b';c.font='700 35px Georgia';c.fillText('RAIL & RYE RACING',180,82);c.font='26px system-ui';c.fillText('RACE DAY PULSE',180,121);
+      c.font='700 30px system-ui';c.fillText(raceLabel(item).toUpperCase(),60,225);
+      const label=signal(item);c.font='700 26px system-ui';c.fillStyle='#e8ca8a';c.fillRect(60,263,c.measureText(label).width+44,54);c.fillStyle='#071a2c';c.fillText(label,82,299);
+      const art=chip(item.chip).querySelector('img');c.fillStyle='#fff';c.fillRect(60,357,104,104);if(art){try{await art.decode();c.drawImage(art,60,357,104,104);}catch{}}
+      c.fillStyle='#fff';c.font='700 52px Georgia';wrap(c,item.horse||item.headline,190,408,820,60,2);
+      const m=metricText(item);
+      if(m){c.fillStyle='#d8be89';c.font='700 27px system-ui';c.fillText(m.label,60,540);c.fillStyle='#b4c0ca';c.font='700 89px system-ui';c.fillText(m.before,60,655);c.fillStyle='#e0b66b';c.fillText('→',435,655);c.fillStyle=m.up?'#73d2a2':'#f2ab9c';c.fillText(m.after,575,655);}
+      c.fillStyle='#f2f2f2';c.font='32px system-ui';wrap(c,item.short_message||item.message,60,755,960,44,4);
+      const scratches=Array.isArray(item.scratches)?item.scratches:[];
+      if(scratches.length){c.fillStyle='#d8be89';c.font='700 25px system-ui';c.fillText('SCRATCHES',60,980);let px=60;for(const scratch of scratches.slice(0,20)){if(px+42>1020)break;const img=chip(scratch.program,true).querySelector('img');c.fillStyle='#fff';c.fillRect(px,1005,42,42);if(img){try{await img.decode();c.drawImage(img,px,1005,42,42);}catch{}}px+=48;}}
+      c.fillStyle='#e0b66b';c.font='700 28px system-ui';c.fillText('railandryeracing.com',60,1250);
+      c.fillStyle='#b4c0ca';c.font='24px system-ui';c.fillText(item.id.startsWith('demo-')?'DESIGN PREVIEW · FICTIONAL DATA':'Model projections · Not guarantees',60,1300);
+      const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(!blob)throw Error('Image unavailable');const file=new File([blob],'rail-rye-instagram-'+item.id+'.png',{type:'image/png'});
+      if(navigator.share&&navigator.canShare?.({files:[file]})){try{await navigator.share({files:[file],title:'Race Day Pulse'});return;}catch(e){if(e.name==='AbortError')return;}}
+      downloadBlob(blob,file.name);
+    }catch{button.textContent='Could not save image';return;}finally{button.disabled=false;}
+    button.textContent=original;
+  }
   function shareTools(item){
     const group=$('div','rr-pulse-share-group');
     const share=$('button','rr-pulse-tool','Share');
@@ -134,20 +160,33 @@
     const copy=$('button','','Copy link');copy.type='button';
     const post=$('a','','Share to X');post.href='https://x.com/intent/tweet?text='+encodeURIComponent(textForShare(item))+'&url='+encodeURIComponent(location.origin+pulseUrl(item));post.target='_blank';post.rel='noopener noreferrer';
     const image=$('button','','Save image');image.type='button';
+    const instagram=$('button','','Instagram image (4:5)');instagram.type='button';
+    instagram.addEventListener('click',()=>saveInstagram(item,instagram));
     const notice=$('span','rr-pulse-menu-status');notice.setAttribute('role','status');
     copy.addEventListener('click',()=>copyLink(item,notice));
     image.addEventListener('click',()=>saveImage(item,image));
-    menu.append(copy,post,image,notice);
-    share.addEventListener('click',async()=>{
-      if(navigator.share){
-        try{await navigator.share({title:raceLabel(item),text:textForShare(item),url:location.origin+pulseUrl(item)});return;}
-        catch(e){if(e.name==='AbortError')return;}
-      }
-      menu.hidden=!menu.hidden;share.setAttribute('aria-expanded',String(!menu.hidden));
-    });
+    menu.append(copy,post,image,instagram,notice);
+    if(navigator.share){
+      const native=$('button','','Share link');native.type='button';
+      native.addEventListener('click',async()=>{try{await navigator.share({title:raceLabel(item),text:textForShare(item),url:location.origin+pulseUrl(item)});}catch{}});
+      menu.prepend(native);
+    }
+    share.addEventListener('click',()=>{menu.hidden=!menu.hidden;share.setAttribute('aria-expanded',String(!menu.hidden));});
     share.setAttribute('aria-expanded','false');
     group.append(share,menu);
     return group;
+  }
+  function signal(item){
+    if(item.kind==='NEW_FAVORITE'||item.kind==='FAVORITE_SCRATCHED')return 'NEW FAVORITE';
+    if(item.kind==='F4_SHIFT')return 'PROJECTION MOVE';
+    if(item.kind==='WIN_SHIFT'&&item.metric&&item.metric.after>item.metric.before)return 'WIN PROBABILITY UP';
+    if(item.kind==='WIN_SHIFT'&&item.metric&&item.metric.after<item.metric.before)return 'WIN PROBABILITY DOWN';
+    return 'SCRATCH IMPACT';
+  }
+  function metricText(item){
+    const m=item.metric;
+    if(!m||!Number.isFinite(m.before)||!Number.isFinite(m.after)||m.before<0||m.after<0||m.before>100||m.after>100)return null;
+    return {before:m.before.toFixed(1)+'%',after:m.after.toFixed(1)+'%',label:m.label==='SECOND_OR_THIRD'?'2ND OR 3RD PROBABILITY':'WIN PROBABILITY',up:m.after>m.before};
   }
   function buildCard(item){
     const article=$('article','rr-pulse-item');
@@ -156,10 +195,17 @@
     const content=$('div','rr-pulse-item-layout');
     content.append(chip(item.chip));
     const body=$('div','rr-pulse-copy');
-    body.append($('p','rr-pulse-track',item.track.toUpperCase()+' · '+ordinal(item.race_number).toUpperCase()),
-      $('h3','rr-pulse-headline',titleCaseWords(item.headline)));
-    if(item.horse)body.append($('p','rr-pulse-affected',item.horse+' · #'+item.chip));
-    body.append($('p','rr-pulse-message',item.message));
+    const top=$('div','rr-pulse-signal-row');
+    top.append($('p','rr-pulse-track',item.track.toUpperCase()+' · '+ordinal(item.race_number).toUpperCase()),$('span','rr-pulse-signal',signal(item)));
+    body.append(top);
+    const m=metricText(item);
+    body.append($('h3','rr-pulse-headline',m&&item.horse?item.horse:titleCaseWords(item.headline)));
+    if(m){
+      const numbers=$('div','rr-pulse-numbers');
+      numbers.append($('span','rr-pulse-metric-label',m.label),$('span','rr-pulse-before',m.before),$('span','rr-pulse-arrow-mark','→'),$('span','rr-pulse-after '+(m.up?'rr-pulse-up':'rr-pulse-down'),m.after));
+      body.append(numbers);
+    }else if(item.horse)body.append($('p','rr-pulse-affected',item.horse+' · #'+item.chip));
+    body.append($('p','rr-pulse-message',item.short_message||item.message));
     content.append(body);article.append(content);
     if(Array.isArray(item.scratches)&&item.scratches.length){
       const row=$('div','rr-pulse-scratch-list');
@@ -222,7 +268,7 @@
       const key=JSON.stringify(valid);
       if(key===revision)return;
       revision=key;events=valid;rail.replaceChildren(...valid.map(buildCard),buildCTA());
-      status.textContent=valid.length+' verified '+(valid.length===1?'insight':'insights')+' today';
+      status.textContent=data.preview?'Design preview':valid.length+' verified '+(valid.length===1?'insight':'insights')+' today';
       shell.hidden=false;scrollToIndex(0,'instant');
       const focus=new URL(location.href).searchParams.get('pulse');
       const idx=valid.findIndex(item=>item.id===focus);
