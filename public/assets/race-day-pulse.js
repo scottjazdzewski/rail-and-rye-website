@@ -144,7 +144,7 @@
       const art=chip(item.chip).querySelector('img');c.save();c.beginPath();c.roundRect(60,357,104,104,15);c.clip();c.fillStyle='#fff';c.fillRect(60,357,104,104);if(art){try{await art.decode();c.drawImage(art,60,357,104,104);}catch{}}c.restore();
       c.fillStyle='#fff';c.font='700 52px Georgia';wrap(c,item.horse||item.headline,190,408,820,60,2);
       const m=metricText(item);
-      if(m){c.fillStyle='#081b2b';c.beginPath();c.roundRect(50,495,980,225,20);c.fill();c.strokeStyle='#927748';c.stroke();c.fillStyle='#d8be89';c.font='700 27px system-ui';c.fillText(m.label,80,540);c.fillStyle='#b4c0ca';c.font='700 89px system-ui';c.fillText(m.before,60,655);c.fillStyle='#e0b66b';c.fillText('→',435,655);c.fillStyle=m.up?'#73d2a2':'#f2ab9c';c.fillText(m.after,575,655);for(const [px,val,col] of [[80,item.metric.before,'#a6b5c4'],[575,item.metric.after,m.up?'#73d2a2':'#f2ab9c']]){c.fillStyle='#354957';c.beginPath();c.roundRect(px,681,330,8,4);c.fill();if(val>0){c.fillStyle=col;c.beginPath();c.roundRect(px,681,330*val/100,8,4);c.fill();}}}
+      if(m){c.fillStyle='#081b2b';c.beginPath();c.roundRect(50,495,980,225,20);c.fill();c.strokeStyle='#927748';c.stroke();c.fillStyle='#d8be89';c.font='700 27px system-ui';c.fillText(m.label,80,540);c.font='700 19px system-ui';c.fillText('BEFORE',80,574);c.fillText('REVISED',575,574);c.fillStyle='#b4c0ca';c.font='700 89px system-ui';c.fillText(m.before,60,655);c.fillStyle='#e0b66b';c.fillText('→',435,655);c.fillStyle=m.up?'#73d2a2':'#f2ab9c';c.fillText(m.after,575,655);const diff=item.metric.after-item.metric.before;c.font='700 23px system-ui';c.fillText((diff>0?'+':'')+diff.toFixed(1)+' PTS',825,540);for(const [px,val,col] of [[80,item.metric.before,'#a6b5c4'],[575,item.metric.after,m.up?'#73d2a2':'#f2ab9c']]){c.fillStyle='#354957';c.beginPath();c.roundRect(px,681,330,8,4);c.fill();if(val>0){c.fillStyle=col;c.beginPath();c.roundRect(px,681,330*val/100,8,4);c.fill();}}}
       c.fillStyle='#f2f2f2';c.font='32px system-ui';wrap(c,item.short_message||item.message,60,755,960,44,4);
       const scratches=Array.isArray(item.scratches)?item.scratches:[];
       if(scratches.length){c.fillStyle='#d8be89';c.font='700 25px system-ui';c.fillText('SCRATCHES',60,980);let px=60;for(const scratch of scratches.slice(0,20)){if(px+42>1020)break;const img=chip(scratch.program,true).querySelector('img');c.fillStyle='#fff';c.fillRect(px,1005,42,42);if(img){try{await img.decode();c.drawImage(img,px,1005,42,42);}catch{}}px+=48;}}
@@ -221,6 +221,35 @@
     fill.style.width=value+'%';bar.append(fill);
     col.append($('span','rr-pulse-prob-caption',label),$('span','rr-pulse-prob-value',value.toFixed(1)+'%'),bar);return col;
   }
+  // Two measured endpoints, NOT a synthetic live trend or invented time series.
+  function comparisonGraphic(item){
+    const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg');
+    svg.setAttribute('viewBox','0 0 64 40');svg.setAttribute('aria-hidden','true');svg.setAttribute('class','rr-pulse-comparison-graphic');
+    const m=item.metric, before=34-m.before*.28, after=34-m.after*.28;
+    const node=(tag,attrs)=>{const e=document.createElementNS(ns,tag);for(const [k,v] of Object.entries(attrs))e.setAttribute(k,String(v));svg.append(e);};
+    for(const y of [6,20,34])node('path',{d:'M4 '+y+'H60',stroke:'#9aadc0','stroke-opacity':'.24','stroke-dasharray':'2 3'});
+    const color=m.after>m.before?'#79d4a6':m.after<m.before?'#f0ad9e':'#e8ca8a';
+    if(item.kind==='NEW_FAVORITE'||item.kind==='FAVORITE_SCRATCHED'){
+      node('rect',{x:10,y:before,width:16,height:34-before,rx:2,fill:'#9caebd'});
+      node('rect',{x:38,y:after,width:16,height:34-after,rx:2,fill:'#dfbd79'});
+    }else if(item.kind==='F4_SHIFT'){
+      node('rect',{x:4,y:9,width:56,height:8,rx:4,fill:'#31495b'});
+      node('rect',{x:4,y:9,width:56*m.before/100,height:8,rx:4,fill:'#9caebd'});
+      node('rect',{x:4,y:24,width:56,height:8,rx:4,fill:'#31495b'});
+      node('rect',{x:4,y:24,width:56*m.after/100,height:8,rx:4,fill:color});
+    }else{
+      node('path',{d:'M9 '+before+'L55 '+after,stroke:color,'stroke-width':2.4,'stroke-linecap':'round'});
+      node('circle',{cx:9,cy:before,r:3,fill:'#b4c1cf'});
+      node('circle',{cx:55,cy:after,r:3.5,fill:color});
+    }
+    return svg;
+  }
+  function paceComparison(item){
+    const m=item.pace_fit;
+    if(item.kind!=='PACE_ADVANTAGE'||!m||!['red','gray','green'].includes(m.before)||!['red','gray','green'].includes(m.after))return null;
+    const names={red:'Negative',gray:'Neutral',green:'Positive'},el=$('div','rr-pulse-pace-comparison');
+    el.append($('span','rr-pulse-pace-label','PACE FIT'),$('span','rr-pulse-fit rr-pulse-fit--'+m.before,names[m.before]),$('span','rr-pulse-arrow-mark','→'),$('span','rr-pulse-fit rr-pulse-fit--'+m.after,names[m.after]));return el;
+  }
   function metricText(item){
     const m=item.metric;
     if(!m||!Number.isFinite(m.before)||!Number.isFinite(m.after)||m.before<0||m.after<0||m.before>100||m.after>100)return null;
@@ -231,20 +260,21 @@
     article.id='rr-pulse-'+item.id;
     article.setAttribute('aria-label',raceLabel(item));
     const content=$('div','rr-pulse-item-layout');
-    content.append(chip(item.chip));
     const body=$('div','rr-pulse-copy');
     const top=$('div','rr-pulse-signal-row');
     top.append($('p','rr-pulse-track',item.track.toUpperCase()+' · '+ordinal(item.race_number).toUpperCase()),signalBadge(item));
     body.append(top);
     const m=metricText(item);
-    body.append($('h3','rr-pulse-headline',m&&item.horse?item.horse:titleCaseWords(item.headline)));
+    const horseLine=$('div','rr-pulse-horse-line');horseLine.append(chip(item.chip),$('h3','rr-pulse-headline',m&&item.horse?item.horse:titleCaseWords(item.headline)));body.append(horseLine);
     if(m){
       const numbers=$('div','rr-pulse-numbers');
       const diff=item.metric.after-item.metric.before;
-      const delta=$('span','rr-pulse-delta '+(m.up?'rr-pulse-up':'rr-pulse-down'));
+      const movement=diff>0?'rr-pulse-up':diff<0?'rr-pulse-down':'rr-pulse-flat';
+      const delta=$('span','rr-pulse-delta '+movement);
       delta.append($('span','rr-pulse-prob-value',(diff>0?'+':'')+diff.toFixed(1)),$('span','rr-pulse-prob-caption','PTS'));
-      numbers.append($('span','rr-pulse-metric-label',m.label),probabilityColumn('BEFORE',item.metric.before,'rr-pulse-before'),$('span','rr-pulse-arrow-mark','→'),probabilityColumn('REVISED',item.metric.after,m.up?'rr-pulse-up':'rr-pulse-down'),delta);
+      numbers.append($('span','rr-pulse-metric-label',m.label),probabilityColumn('BEFORE',item.metric.before,'rr-pulse-before'),comparisonGraphic(item),probabilityColumn('REVISED',item.metric.after,movement),delta);
       body.append(numbers);
+      const pace=paceComparison(item);if(pace)body.append(pace);
     }else if(item.horse)body.append($('p','rr-pulse-affected',item.horse+' · #'+item.chip));
     body.append($('p','rr-pulse-message',item.short_message||item.message));
     content.append(body);article.append(content);
