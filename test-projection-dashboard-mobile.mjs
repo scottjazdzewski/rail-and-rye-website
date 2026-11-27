@@ -17,7 +17,7 @@ assert.match(css,/family=Tinos/,"Load the original racecard percentage font");
 assert.match(css,/\.rr-dash-win-percent\{font-family:"Tinos"/,"Match the approved Tinos Bold percentage font");
 assert.match(css,/\.rr-dash-metric-value\[data-state="gray"\] \.rr-dash-metric-bar/,"Neutral factors have an explicit gray dash color");
 assert.match(css,/min-height:114px/,"Runner cards no longer reserve a blank analysis footer");
-assert.match(js,/F4 FINISH PROJECTIONS/,"Full Analysis must include F4 outcomes");
+assert.match(js,/PROJECTED FINISH DISTRIBUTION/,"Full Analysis must include F4 outcomes in customer-facing language");
 assert.doesNotMatch(js,/rr-dash-prescratch-note|rr-dash-factor-origin-note|five-factor ratings have not been recalculated/,"No stage or recalculation commentary.");
 assert.match(js,/fact_pace_moderate|fact_pace_strong/,"Approved pace art is used.");
 assert.match(js,/fact_surface_dirt|fact_surface_turf/,"Approved surface art is used.");
@@ -55,6 +55,7 @@ const ids=["rr-dash-status","rr-dash-app","rr-dash-login","rr-dash-empty","rr-da
 const els=new Map(ids.map(id=>[id,new Element(id.includes("date")||id==="rr-dash-track"||id.includes("race-time")||id==="rr-dash-all-races"||id.includes("sort")?"select":"div")]));
 const fixture={cards:[{race_date:"2026-11-22",track:"Del Mar",product_id:null,card:{track_name:"Del Mar",races:[{race_number:6,post_time_et:"6:00 PM",conditions:"Claiming $8,000",purse:"$20,000",pace:"Moderate",surface:"Dirt",distance:"5 1/2 furlongs",scratch_count:1,scratches:[{program_number:"3",horse_name:"Scratched Runner"}],entries:[{program_number:"5",horse_name:"Doo Wop Don",morning_line:"5-2",win_probability:16.6,fair_odds:"5/1",trainer:"",jockey:"",metrics:[]},{program_number:"2",horse_name:"Third Horizon",morning_line:"9-2",win_probability:20.0,fair_odds:"4/1",trainer:"",jockey:"",metrics:[]},{program_number:"12",horse_name:"Barrister Proof",morning_line:"12-1",win_probability:27.5,fair_odds:"5/2",trainer:"Brad Cox",jockey:"Jose Ortiz",metrics:[{label:"Speed",value:"green"},{label:"Form",value:"gray"},{label:"Class",value:"red"},{label:"Pace Fit",value:"green"},{label:"Surface / Distance",value:"gray"}]}]}]}}]};
 // Preserve PDF-style chips for high numbers and coupled-entry suffixes.
+fixture.cards[0].card.races[0].entries[2].f4_probabilities={exact_p1:.275,exact_p2:.15,exact_p3:.125,exact_p4:.11,exact_p5:.10,p6_plus:.24,top2:.425,top3:.55,top4:.66};
 fixture.cards[0].card.races[0].scratch_count=3;
 fixture.cards[0].card.races[0].scratches.push(
  {program_number:"13",horse_name:"High Number Scratch"},
@@ -137,11 +138,22 @@ assert.equal(els.get("rr-dash-horse-dialog").opened,true,"Full Analysis must ope
 const sheet=matchClass(els.get("rr-dash-horse-detail"),"rr-dash-mobile-analysis");
 assert.ok(sheet,"Full Analysis must populate the mobile sheet");
 assert.match(sheet.textContent,/RACE CONTEXT/);
-assert.match(sheet.textContent,/FIVE-FACTOR READOUT/);
+assert.match(sheet.textContent,/PERFORMANCE PROFILE/);
+assert.match(sheet.textContent,/TRI INTELLIGENCE/);
+assert.match(sheet.textContent,/Favorable/);
+assert.match(sheet.textContent,/Unfavorable/);
+assert.match(sheet.textContent,/Neutral/);
+assert.match(sheet.textContent,/PROJECTED FINISH DISTRIBUTION/);
+const distribution=matchClass(sheet,"rr-profile-distribution");
+assert.deepEqual(allClass(distribution,"rr-profile-bar-label").map(el=>el.textContent),["1st","2nd","3rd","4th","5th or later"]);
+assert.equal(allClass(distribution,"rr-profile-bar-number")[4].textContent,"34.0%");
+assert.deepEqual(allClass(distribution,"rr-profile-total").map(el=>el.textContent),["42.5%TOP 2","55.0%TOP 3","66.0%TOP 4"]);
+assert.match(sheet.textContent,/7.7%/,"12-1 morning line implies 7.7%");
+assert.match(sheet.textContent,/\+19.8 percentage points/);
 assert.match(sheet.textContent,/Brad Cox/);
 assert.match(sheet.textContent,/Jose Ortiz/);
 assert.match(sheet.textContent,/27.5%/);
-assert.match(sheet.textContent,/FAIR 5-2/);
+assert.match(sheet.textContent,/FAIR ODDS5-2/);
 const lockedOrder=allClass(horses,"rr-dash-horse-name").map(el=>el.textContent);
 assert.deepEqual(lockedOrder,["Barrister Proof","Doo Wop Don","Third Horizon"],
  "Lead TRI win probability first; preserve original projected finish order of all remaining runners");
