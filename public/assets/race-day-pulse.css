@@ -91,27 +91,30 @@
 /* Mobile: a shallow swipeable teaser, never a full-content card or new hero.
    Full handicapper narrative remains on the individually linked article. */
 @media(max-width:640px){
- .rr-pulse-shell{padding:7px 11px 8px}
- .rr-pulse-heading{align-items:center;margin-bottom:5px}
+ .rr-pulse-shell{padding:4px 9px 4px}
+ .rr-pulse-heading{align-items:center;margin-bottom:3px}
  .rr-pulse-title{font-size:15px}
  .rr-pulse-logo{width:23px;height:23px}
  /* The logo and title carry brand identity on narrow screens.
     Avoid repeating the kicker, insight count and named horse already in Analysis. */
  .rr-pulse-eyebrow,.rr-pulse-count,.rr-pulse-affected{display:none}
  .rr-pulse-brandhead{gap:6px}
- .rr-pulse-item{flex-basis:calc(100% - 1px);width:calc(100% - 1px);padding:8px 10px;gap:3px}
+ .rr-pulse-item{flex-basis:calc(100% - 1px);width:calc(100% - 1px);padding:6px 8px;gap:2px}
  .rr-pulse-item-layout{gap:7px}
  .rr-pulse-headline{font-size:14px;margin-bottom:2px}
  .rr-pulse-numbers{font-size:21px;gap:2px 7px}
- .rr-pulse-signal{font-size:8px;padding:2px 4px}
+ .rr-pulse-signal{font-size:8px;padding:2px 3px}
+ .rr-pulse-signal-row{gap:2px;margin-bottom:1px}
+ .rr-pulse-metric-label{font-size:8px}
+ .rr-pulse-numbers{margin:2px 0 2px}
  .rr-pulse-track{font-size:9px;margin-bottom:1px}
  .rr-pulse-affected{font-size:11px;margin-bottom:2px}
- .rr-pulse-message{font-size:12px;line-height:1.34;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+ .rr-pulse-message{font-size:11px;line-height:1.25;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:1;overflow:hidden}
  .rr-pulse .rr-pulse-saddle{width:30px;height:30px;flex-basis:30px}
  .rr-pulse .rr-pulse-saddle--scratch{width:20px;height:20px;flex-basis:20px}
- .rr-pulse-scratch-list{gap:4px 5px;padding:5px 0 4px}
+ .rr-pulse-scratch-list{gap:3px 4px;padding:3px 0 3px}
  .rr-pulse-scratch-label{font-size:8px}
- .rr-pulse-item-footer{padding-top:4px;gap:5px}
+ .rr-pulse-item-footer{padding-top:3px;gap:5px}
  .rr-pulse-links{gap:6px}
  .rr-pulse-story-link,.rr-pulse-paid-link{font-size:10px}
  .rr-pulse-tool{font-size:10px;padding:6px 8px}
