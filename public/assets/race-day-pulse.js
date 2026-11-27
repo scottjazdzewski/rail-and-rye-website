@@ -153,8 +153,15 @@
     const social=$('button','','Share to X'),download=$('button','','Download Card'),copy=$('button','','Copy Link');
     for(const button of [social,download,copy])button.type='button';
     const notice=$('span','rr-pulse-menu-status');notice.setAttribute('role','status');
+    const preview=$('p','rr-pulse-preview-status','Checking social preview…');preview.setAttribute('role','status');
     const link=$('a','rr-pulse-share-fallback',shareUrl(item));link.href=shareUrl(item);link.hidden=true;
-    let blob=null,preparing=null;
+    let blob=null,preparing=null,previewReady=false;
+    async function checkPreview(){
+      social.disabled=true;preview.textContent='Checking social preview…';
+      try{const response=await fetch(pulseUrl(item)+'/card-v1.png',{method:'HEAD',cache:'no-store'});previewReady=response.ok&&/^image\/png(?:;|$)/i.test(response.headers.get('content-type')||'');}
+      catch{previewReady=false;}
+      social.disabled=!previewReady;preview.textContent=previewReady?'Social preview ready.':'Social preview not published yet. Download Card is still available.';
+    }
     function prepare(){
       if(blob)return Promise.resolve(blob);
       if(preparing)return preparing;
@@ -168,18 +175,19 @@
     copy.addEventListener('click',async()=>{notice.textContent=await copyOrReveal()?'Link copied.':'Copy the insight link below.';});
     download.addEventListener('click',()=>{if(blob){downloadBlob(blob,shareFilename(item));notice.textContent='Card downloaded.';}});
     social.addEventListener('click',()=>{
+      if(!previewReady)return;
       const url=shareUrl(item),text=item.short_message||item.message;
       // X Web Intent accepts text and URL, not binary attachments. The per-insight
       // public PNG metadata supplies the large preview when X fetches the URL.
       window.open('https://x.com/intent/tweet?text='+encodeURIComponent(text)+'&url='+encodeURIComponent(url),'_blank','noopener,noreferrer');
       notice.textContent='If X does not show the preview, download the card and attach it manually.';
     });
-    menu.append(social,download,copy,notice,link);
+    menu.append(social,download,copy,preview,notice,link);
     function close(){menu.hidden=true;menu.remove();share.setAttribute('aria-expanded','false');if(closeShare===close)closeShare=null;}
     share.addEventListener('click',()=>{
       if(closeShare===close){close();return;}
       closeShare?.();closeShare=close;document.body.append(menu);
-      menu.hidden=false;share.setAttribute('aria-expanded','true');prepare();
+      menu.hidden=false;share.setAttribute('aria-expanded','true');checkPreview();prepare();
     });
     menu.addEventListener('keydown',e=>{if(e.key==='Escape'){close();share.focus();}});
     share.addEventListener('keydown',e=>{if(e.key==='Escape'){close();share.focus();}});
