@@ -4,12 +4,13 @@
   const shell=document.getElementById('rr-pulse');
   const rail=document.getElementById('rr-pulse-rail');
   const status=document.getElementById('rr-pulse-count');
+  const detailMode=!!shell?.dataset.pulseItem;
   // Use the unused right side of the established desktop hero, but never
   // let Pulse add a tall full-width bar or displace the mobile hero.
   const homepageHero=document.querySelector('.heritage-hero');
   const desktopMedia=matchMedia('(min-width:1121px)');
   function placePulse(){
-    if(!homepageHero)return;
+    if(!homepageHero||!shell||detailMode)return;
     if(desktopMedia.matches){if(shell.parentElement!==homepageHero)homepageHero.append(shell);}
     else if(shell.previousElementSibling!==homepageHero)homepageHero.after(shell);
   }
@@ -308,7 +309,7 @@
     }
     const footer=$('div','rr-pulse-item-footer');
     const links=$('div','rr-pulse-links');
-    const original=$('a','rr-pulse-story-link','Open Insight');original.href=pulseUrl(item);
+    const original=$('a','rr-pulse-story-link',detailMode?'Intelligence Hub':'Open Insight');original.href=detailMode?'/store/':pulseUrl(item);
     const paid=$('a','rr-pulse-paid-link','Full-Field Analysis');paid.href=typeof item.hub_url==='string'&&item.hub_url.startsWith('/')&&!item.hub_url.startsWith('//')?item.hub_url:'/store/';
     links.append(original,paid);footer.append(links,shareTools(item));article.append(footer);
     // Mobile homepage shows the entire essential insight; full actions live on the detail page.
@@ -367,8 +368,11 @@
   }
   const liveLogo=shell.querySelector('.rr-pulse-logo');if(liveLogo)transparentLogo().then(art=>{liveLogo.src=art.toDataURL('image/png');}).catch(()=>{});
   // Reuse the existing sitewide North American tote formatting authority.
-  import('/assets/rr-race-titles.js').catch(()=>{}).finally(()=>{load();setInterval(load,60000);});
-  if(!matchMedia('(prefers-reduced-motion: reduce)').matches){
+  import('/assets/rr-race-titles.js').catch(()=>{}).finally(()=>{
+    if(detailMode){try{const item=JSON.parse(shell.dataset.pulseItem);rail.replaceChildren(buildCard(item));shell.hidden=false;scrollToIndex(0,'instant');}catch(error){console.warn('Pulse detail unavailable',error.message);}return;}
+    load();setInterval(load,60000);
+  });
+  if(!detailMode&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
     setInterval(()=>{if(!shell.hidden&&!paused&&!closeShare&&!document.hidden&&rail.children.length>1)scrollToIndex((selected+1)%rail.children.length);},6500);
   }
 })();
