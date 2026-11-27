@@ -342,3 +342,14 @@
  .heritage-home>.rr-pulse .rr-pulse-pace-comparison{font-size:9px;gap:3px}
  .heritage-home>.rr-pulse .rr-pulse-pace-label{font-size:9px}
 }
+
+@media(max-width:640px){
+ /* Pace detail is already summarized in the one-line teaser. Its full
+    before/after factor pills remain visible on the individual insight. */
+ .heritage-home>.rr-pulse .rr-pulse-pace-comparison{display:none}
+ .heritage-home>.rr-pulse .rr-pulse-shell{padding-block:3px 2px}
+ .heritage-home>.rr-pulse .rr-pulse-heading{margin-bottom:2px}
+ .heritage-home>.rr-pulse .rr-pulse-item{padding-block:5px}
+ .heritage-home>.rr-pulse .rr-pulse-numbers{margin:0 0 1px}
+ .heritage-home>.rr-pulse .rr-pulse-context{margin:0}
+}
