@@ -372,28 +372,13 @@ def sync_cards(cards, source_hash, bucket=BUCKET_DEFAULT, dry_run=False, client=
     pending = [(target, card) for target, card, action in actions if action == "write"]
     if dry_run:
         return len(pending), len(actions) - len(pending)
-    # The website's Race-Day Pulse compares the published prescratch field to
-    # verified scratch-final reruns. Capture an IMMUTABLE private baseline even
-    # when the publisher uses direct R2 rather than the website API.
+    # Preserve the exact accepted original before the direct-to-R2 write.
+    from pulse_prescratch_archive import preserve, digest
     for target, card, action in actions:
-        snapshot = target.replace("projections/dashboard/", "race-day-pulse/prescratch/", 1)
-        exists = False
-        try:
-            existing = client.get_object(Bucket=bucket, Key=snapshot)
-            proof = json.loads(existing["Body"].read(MAX_IMPORT_SIZE + 1))
-            require(isinstance(proof, dict) and proof.get("projection_status") == "prescratch"
-                    and proof.get("race_date") == card["race_date"]
-                    and proof.get("track_name") == card["track_name"],
-                    "Existing private Pulse baseline conflicts with published race identity")
-            exists = True
-        except Exception as exc:
-            if not is_not_found(exc):
-                raise
-        if not exists:
-            client.put_object(Bucket=bucket, Key=snapshot, Body=compact_json(card),
-                              ContentType="application/json; charset=utf-8",
-                              CacheControl="private, no-store",
-                              Metadata={"source_sha256": source_hash, "stage": "PRESCRATCH_PULSE_BASE"})
+        raw=compact_json(card)
+        if isinstance(raw,str):raw=raw.encode("utf-8")
+        slug=target.rsplit("/",1)[-1].removesuffix(".json")
+        preserve(client,bucket,slug,card["race_date"],card["track_name"],raw,digest(raw))
     for target, card in pending:
         client.put_object(Bucket=bucket, Key=target, Body=compact_json(card),
                           ContentType="application/json; charset=utf-8",
