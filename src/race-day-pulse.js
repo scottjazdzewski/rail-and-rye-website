@@ -15,6 +15,10 @@ const baseKey=c=>BASE_PREFIX+c.race_date+'/'+slug(c.track_name)+'.json';
 const trackKey=c=>DASH_PREFIX+c.race_date+'/'+slug(c.track_name)+'.json';
 const archiveKey=date=>PUBLIC_ARCHIVE_PREFIX+date+'.json';
 const pct=n=>n.toFixed(1)+'%';
+// Documented incomplete historical roster: CD Nov 27 R9 omitted confirmed AE #13.
+// No later reconstruction may masquerade as a contemporaneous forecast.
+const historicalRosterHolds=new Set(['2026-11-27|churchill-downs|9']);
+const rosterHeld=(date,track,race)=>historicalRosterHolds.has(date+'|'+slug(track)+'|'+race.race_number)||race.final_field_roster_status==='UNRESOLVED'||race.retrospective===true;
 function newYorkCutoff(now){
   const parts=Object.fromEntries(new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',hourCycle:'h23'}).formatToParts(new Date(now)).filter(p=>p.type!=='literal').map(p=>[p.type,p.value]));
   const day=parts.year+'-'+parts.month+'-'+parts.day;
@@ -298,6 +302,7 @@ export async function readRaceDayPulse(env,now=Date.now()){
     const earlier=new Map(original.races.map(r=>[r.race_number,r]));
     const updatedAt=object.customMetadata?.uploaded_at||reference.uploaded?.toISOString?.()||null;
     for(const race of current.races){
+      if(rosterHeld(date,current.track_name,race))continue;
       const revision=current.model_receipts.f4_sha256+'|'+current.model_receipts.official_changes_sha256;
       const post=insightForRace(date,current.track_name,earlier.get(race.race_number),race,updatedAt,revision);
       if(post)items.push(post);
