@@ -16,7 +16,7 @@
   placePulse();desktopMedia.addEventListener?.('change',placePulse);
   const prev=document.getElementById('rr-pulse-prev'),next=document.getElementById('rr-pulse-next');
   if(!shell||!rail||!prev||!next)return;
-  let selected=0,events=[],paused=false,revision='',pending=false;
+  let selected=0,events=[],paused=false,revision='',pending=false,closeShare=null;
   const $=(tag,className,text)=>{
     const el=document.createElement(tag);
     if(className)el.className=className;
@@ -42,11 +42,6 @@
   const ordinal=n=>{const x=Number(n);if(!Number.isInteger(x)||x<1)return 'Race '+String(n);return x+(x%100>=11&&x%100<=13?'th':({1:'st',2:'nd',3:'rd'}[x%10]||'th'));};
   const raceLabel=item=>item.track+' · '+ordinal(item.race_number);
   const pulseUrl=item=>'/pulse/'+encodeURIComponent(item.date)+'/'+encodeURIComponent(item.id);
-  const textForShare=item=>'Rail & Rye Race-Day Pulse: '+raceLabel(item)+'. '+item.message;
-  async function copyLink(item,notice){
-    try{await navigator.clipboard.writeText(location.origin+pulseUrl(item));notice.textContent='Link copied';}
-    catch{notice.textContent='Copy unavailable; select the link in your browser';}
-  }
   function downloadBlob(blob,filename){
     const uri=URL.createObjectURL(blob),link=$('a');link.href=uri;link.download=filename;
     document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(uri),1500);
@@ -114,7 +109,7 @@
     const social=$('button','','Share to Socials'),download=$('button','','Download Card'),copy=$('button','','Copy Link');
     for(const button of [social,download,copy])button.type='button';
     const notice=$('span','rr-pulse-menu-status');notice.setAttribute('role','status');
-    const link=$('a','rr-pulse-share-fallback','Open insight link');link.href=shareUrl(item);link.hidden=true;
+    const link=$('a','rr-pulse-share-fallback',shareUrl(item));link.href=shareUrl(item);link.hidden=true;
     let blob=null,preparing=null;
     function prepare(){
       if(blob)return Promise.resolve(blob);
@@ -141,11 +136,17 @@
       notice.textContent=await copied?'Card downloaded. Link copied — attach the image and paste the link in your post.':'Card downloaded. Copy the insight link below and attach the image to your post.';
     });
     menu.append(social,download,copy,notice,link);
-    function close(){menu.hidden=true;share.setAttribute('aria-expanded','false');}
-    share.addEventListener('click',()=>{if(!menu.hidden){close();return;}for(const other of document.querySelectorAll('.rr-pulse-menu:not([hidden])')){other.hidden=true;other.parentElement.querySelector('.rr-pulse-tool')?.setAttribute('aria-expanded','false');}menu.hidden=false;share.setAttribute('aria-expanded','true');prepare();});
-    group.addEventListener('keydown',e=>{if(e.key==='Escape'){close();share.focus();}});
-    group.append(share,menu);return group;
+    function close(){menu.hidden=true;menu.remove();share.setAttribute('aria-expanded','false');if(closeShare===close)closeShare=null;}
+    share.addEventListener('click',()=>{
+      if(closeShare===close){close();return;}
+      closeShare?.();closeShare=close;document.body.append(menu);
+      menu.hidden=false;share.setAttribute('aria-expanded','true');prepare();
+    });
+    menu.addEventListener('keydown',e=>{if(e.key==='Escape'){close();share.focus();}});
+    share.addEventListener('keydown',e=>{if(e.key==='Escape'){close();share.focus();}});
+    group.append(share);return group;
   }
+  document.addEventListener('pointerdown',e=>{if(closeShare&&!e.target.closest?.('.rr-pulse-menu,.rr-pulse-tool'))closeShare();});
   // Owner-approved four-symbol family. Shared vector geometry for DOM and canvas.
   function signalType(item){
     if(item.kind==='NEW_FAVORITE'||item.kind==='FAVORITE_SCRATCHED')return 'favorite';
@@ -294,10 +295,10 @@
       const data=await response.json(),raw=Array.isArray(data.items)?data.items:[];
       const valid=raw.filter(x=>x&&typeof x.id==='string'&&/^[a-z0-9-]+$/.test(x.id)&&
         typeof x.message==='string'&&typeof x.track==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x.date));
-      if(!valid.length){shell.hidden=true;events=[];revision='';return;}
+      if(!valid.length){closeShare?.();shell.hidden=true;events=[];revision='';return;}
       const key=JSON.stringify(valid);
       if(key===revision)return;
-      revision=key;events=valid;rail.replaceChildren(...valid.map(buildCard));
+      closeShare?.();revision=key;events=valid;rail.replaceChildren(...valid.map(buildCard));
       status.textContent=data.preview?'Design preview':valid.length+' verified '+(valid.length===1?'insight':'insights')+' today';
       shell.hidden=false;scrollToIndex(0,'instant');
       const focus=new URL(location.href).searchParams.get('pulse');
@@ -309,6 +310,6 @@
   // Reuse the existing sitewide North American tote formatting authority.
   import('/assets/rr-race-titles.js').catch(()=>{}).finally(()=>{load();setInterval(load,60000);});
   if(!matchMedia('(prefers-reduced-motion: reduce)').matches){
-    setInterval(()=>{if(!shell.hidden&&!paused&&!document.hidden&&rail.children.length>1)scrollToIndex((selected+1)%rail.children.length);},6500);
+    setInterval(()=>{if(!shell.hidden&&!paused&&!closeShare&&!document.hidden&&rail.children.length>1)scrollToIndex((selected+1)%rail.children.length);},6500);
   }
 })();
