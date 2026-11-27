@@ -9,11 +9,11 @@
 .rr-pulse-nav{display:flex;gap:6px}
 .rr-pulse-arrow{width:27px;height:27px;border:1px solid #957b55;border-radius:50%;background:transparent;color:#f3e5ca;cursor:pointer;font:22px/1 var(--heritage-sans,system-ui,sans-serif)}
 .rr-pulse-arrow:disabled{opacity:.3;cursor:default}
-.rr-pulse-rail{display:flex;align-items:flex-start;gap:9px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:thin;scrollbar-color:#745e3a transparent;scroll-behavior:smooth;padding-bottom:3px}
+.rr-pulse-rail{display:flex;align-items:flex-start;overflow-y:hidden;gap:9px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:thin;scrollbar-color:#745e3a transparent;scroll-behavior:smooth;padding-bottom:3px}
 .rr-pulse-item{box-sizing:border-box;min-width:0;width:min(470px,calc(100% - 1px));flex:0 0 min(470px,calc(100% - 1px));max-width:calc(100% - 1px);scroll-snap-align:start;position:relative;border-radius:14px;border:1px solid #967c51;background:linear-gradient(130deg,rgba(32,63,84,.96),rgba(9,27,43,.99) 70%),url('/assets/approved/textures/parchment.jpg') center/cover;box-shadow:inset 0 1px 0 #efd39a30,0 2px 5px #0005;padding:9px 11px;min-height:0;display:flex;flex-direction:column;justify-content:space-between;gap:5px}
 .rr-pulse-item-layout{display:flex;gap:0;align-items:flex-start;min-width:0}
 .rr-pulse-copy{flex:1 1 0;min-width:0;max-width:100%;white-space:normal!important;overflow-wrap:anywhere}
-.rr-pulse-horse-line{display:flex;align-items:center;gap:7px;min-width:0;margin:0 0 3px}
+.rr-pulse-card-header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 3px}.rr-pulse-identity{min-width:0;flex:1}.rr-pulse-horse-line{display:flex;align-items:center;gap:7px;min-width:0;margin:0 0 3px}
 .rr-pulse-horse-line .rr-pulse-headline{margin:0;font-size:18px}
 .rr-pulse-signal-row{display:flex;align-items:center;justify-content:space-between;gap:4px;flex-wrap:wrap;margin-bottom:3px}
 .rr-pulse-signal{display:inline-flex;align-items:center;justify-content:center;flex:none;width:28px;height:28px;box-sizing:border-box;color:#e8ca8a;border:1px solid #b39761;border-radius:8px;background:linear-gradient(160deg,#304957,#10283b 65%,#0b2034);box-shadow:inset 0 1px 0 #efd39a35,inset 0 -1px 1px #0005,0 2px 3px #0005}
@@ -124,7 +124,10 @@
  .rr-pulse-headline{font-size:14px;margin-bottom:2px}
  .rr-pulse-numbers{font-size:22px;gap:2px 5px;padding:4px 6px;grid-template-columns:minmax(0,1fr) 15px minmax(0,1fr) auto}
  .rr-pulse-horse-line .rr-pulse-headline{font-size:16px}
- .rr-pulse-horse-line{margin:0 0 2px}
+ .rr-pulse-horse-line{margin:0}
+ .rr-pulse-card-header{margin:0 0 2px}
+ .rr-pulse-context{line-height:1.1}
+ .rr-pulse-track{line-height:1.15}
  .rr-pulse-category-icon{width:16px;height:16px}
  .rr-pulse-delta{font-size:12px;padding-left:4px}
  .rr-pulse-context{gap:7px;margin:1px 0;flex-wrap:nowrap;justify-content:space-between}
@@ -155,7 +158,11 @@
 }
 @media(max-width:360px){
  .rr-pulse-shell{padding:4px 7px}
- .rr-pulse-item{padding:6px 7px}
+ .rr-pulse-item{padding:6px 7px;gap:2px}
+ .rr-pulse-heading{margin-bottom:2px}
+ .rr-pulse-numbers{padding-block:3px}
+ .rr-pulse .rr-pulse-saddle{width:28px;height:28px;flex-basis:28px}
+ .rr-pulse .rr-pulse-saddle--scratch{width:20px;height:20px;flex-basis:20px}
  .rr-pulse-numbers{font-size:20px;gap:2px 4px}
  .rr-pulse-context{gap:5px}
  .rr-pulse-links{gap:5px}
