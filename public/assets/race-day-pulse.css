@@ -19,12 +19,11 @@
 .rr-pulse-signal{display:inline-flex;align-items:center;justify-content:center;flex:none;width:28px;height:28px;box-sizing:border-box;color:#e8ca8a;border:1px solid #b39761;border-radius:8px;background:linear-gradient(145deg,#263d4b,#0b2034);box-shadow:inset 0 1px 0 #efd39a25}
 .rr-pulse-category-icon{width:18px;height:18px;flex:none}
 .rr-pulse-signal--up{color:#79d4a6}.rr-pulse-signal--down{color:#f0ad9e}
-.rr-pulse-numbers{display:grid;grid-template-columns:minmax(0,1fr) minmax(38px,64px) minmax(0,1fr) auto;align-items:center;gap:3px 7px;font:800 25px/1.1 system-ui,sans-serif;font-variant-numeric:tabular-nums;margin:3px 0 4px;padding:6px 8px;background:repeating-linear-gradient(0deg,#ffffff03 0px,#ffffff03 1px,transparent 1px,transparent 13px),linear-gradient(145deg,#071a2c,#102b40);border:1px solid #ae946b65;border-radius:9px;box-shadow:inset 0 1px 5px #0004}
+.rr-pulse-numbers{display:grid;grid-template-columns:minmax(0,1fr) 18px minmax(0,1fr) auto;align-items:center;gap:3px 7px;font:800 25px/1.1 system-ui,sans-serif;font-variant-numeric:tabular-nums;margin:3px 0 4px;padding:6px 8px;background:linear-gradient(145deg,#0a1d2e,#152f43);border:1px solid #ae946b65;border-radius:9px;box-shadow:inset 0 1px 5px #0004}
 .rr-pulse-metric-label{grid-column:1/-1;font:700 8px/1.1 system-ui,sans-serif;letter-spacing:.06em;color:#dfbd79}
 .rr-pulse-prob-col,.rr-pulse-delta{display:flex;flex-direction:column;gap:2px;min-width:0}
 .rr-pulse-prob-caption{font:700 8px/1.1 system-ui,sans-serif;color:#d8c8ab;letter-spacing:.03em}
 .rr-pulse-prob-value{white-space:nowrap;font-variant-numeric:tabular-nums;letter-spacing:-.045em}
-.rr-pulse-comparison-graphic{display:block;width:100%;height:36px;max-width:64px;align-self:center}
 .rr-pulse-flat{color:#dfbd79}
 .rr-pulse-pace-comparison{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin:2px 0 3px;font:700 10px/1.2 system-ui,sans-serif}
 .rr-pulse-pace-label{font-size:8px;color:#dfbd79;margin-right:2px;letter-spacing:.04em}
@@ -118,8 +117,7 @@
  .rr-pulse-item{flex-basis:calc(100% - 1px);width:calc(100% - 1px);padding:6px 8px;gap:2px}
  .rr-pulse-item-layout{gap:7px}
  .rr-pulse-headline{font-size:14px;margin-bottom:2px}
- .rr-pulse-numbers{font-size:22px;gap:2px 5px;padding:4px 6px;grid-template-columns:minmax(0,1fr) minmax(32px,48px) minmax(0,1fr) auto}
- .rr-pulse-comparison-graphic{height:30px}
+ .rr-pulse-numbers{font-size:22px;gap:2px 5px;padding:4px 6px;grid-template-columns:minmax(0,1fr) 15px minmax(0,1fr) auto}
  .rr-pulse-horse-line .rr-pulse-headline{font-size:16px}
  .rr-pulse-horse-line{margin:0 0 2px}
  .rr-pulse-category-icon{width:16px;height:16px}
