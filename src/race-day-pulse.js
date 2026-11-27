@@ -350,6 +350,15 @@ export async function handlePulsePage(request,env,route){
         (parsed[2]?'<span class="rr-pulse-suffix">'+escape(parsed[2])+'</span>':'')+'</span>';
     return '<span class="'+className+' rr-pulse-saddle-fallback">'+escape(text)+'</span>';
   };
+  const type=['NEW_FAVORITE','FAVORITE_SCRATCHED'].includes(item.kind)?'crown':
+    item.kind==='F4_SHIFT'?'order':item.kind==='WIN_SHIFT'?(item.metric?.after<item.metric?.before?'down':'up'):'scratch';
+  const badges={
+    crown:['New Favorite','M3 6l4 4 5-7 5 7 4-4-2 12H5L3 6z M5 21h14'],
+    order:['Projection Move','M7 3v17 M3 7l4-4 4 4 M17 21V4 M13 17l4 4 4-4'],
+    up:['Win Probability Up','M3 17l6-6 4 4 8-9 M15 6h6v6'],
+    down:['Win Probability Down','M3 7l6 6 4-4 8 9 M15 18h6v-6'],
+    scratch:['Scratch Impact','M5 12h14 M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18']};
+  const badge=badges[type],medallion='<span class="rr-pulse-signal rr-pulse-signal--'+type+'" role="img" aria-label="'+escape(badge[0])+'" title="'+escape(badge[0])+'"><svg class="rr-pulse-category-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="'+badge[1]+'" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
   const scratchLine=Array.isArray(item.scratches)&&item.scratches.length?
     '<div class="rr-pulse-share-scratches"><span class="rr-pulse-scratch-label">SCRATCHED</span>'+
     item.scratches.map(x=>'<span class="rr-pulse-scratch-identity">'+sharedChip(x.program,true)+'</span>').join('')+
@@ -364,8 +373,8 @@ export async function handlePulsePage(request,env,route){
     '</head><body class="rr-pulse-standalone"><main class="rr-pulse-share-page"><a class="rr-pulse-home-link" href="/"><img src="/assets/approved/brand/rail-rye-ivory-logo.png" alt="" width="32" height="32">RAIL &amp; RYE RACING</a>'+
     '<article class="rr-pulse-story"><p class="rr-pulse-eyebrow">RACE-DAY PULSE · '+escape(date)+'</p>'+
     '<div class="rr-pulse-story-content">'+sharedChip(item.chip)+
-    '<div><h1>'+escape(item.track)+' · '+escape(ordinalRace(item.race_number))+'</h1><h2>'+escape(headlineTitle)+'</h2>'+
-    '<p class="rr-pulse-affected">'+escape(item.horse||'')+'</p><p>'+escape(desc)+'</p></div></div>'+scratchLine+
+    '<div><h1>'+escape(item.track)+' · '+escape(ordinalRace(item.race_number))+'</h1><div class="rr-pulse-signal-row"><h2>'+escape(item.horse||headlineTitle)+'</h2>'+medallion+'</div>'+
+    '<p>'+escape(desc)+'</p></div></div>'+scratchLine+
     '<p class="rr-pulse-foot">Updated after source-verified scratch processing. Projections are estimates, not guarantees.</p>'+
     '<a class="rr-pulse-primary" href="'+escape(actionURL)+'">'+escape(actionText)+'</a>'+
     '<a class="rr-pulse-secondary" href="/">See today’s Race-Day Pulse</a></article></main></body></html>';
