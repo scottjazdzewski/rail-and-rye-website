@@ -391,7 +391,7 @@ export async function handlePulseImage(request,env,route){
   if(!/^[-a-z0-9]{2,120}$/.test(id)||!await archivedPulse(env,date,id))return fail(404);
   const object=await env.CARDS_BUCKET.get(socialKey(date,id));
   if(!object||object.size>2_000_000)return fail(404);
-  const bytes=await object.arrayBuffer();
+  let bytes;try{bytes=await object.arrayBuffer();}catch{return fail(404);}
   if(bytes.byteLength<33||bytes.byteLength>2_000_000)return fail(404);
   const view=new DataView(bytes);
   if(view.getUint32(0)!==0x89504e47||view.getUint32(4)!==0x0d0a1a0a||view.getUint32(8)!==13||view.getUint32(12)!==0x49484452||view.getUint32(16)!==1200||view.getUint32(20)!==675)return fail(404);
@@ -419,7 +419,7 @@ export async function handlePulsePage(request,env,route){
   const desc=item.message;
   const canonical='https://railandryeracing.com/pulse/'+date+'/'+id;
   const imageURL=canonical+'/card-v1.png';
-  const imageReady=!!await env.CARDS_BUCKET.head(socialKey(date,id));
+  const imageReady=(await handlePulseImage(new Request(imageURL,{method:'HEAD'}),env,[null,date,id])).ok;
   const sharedChip=(program,scratched=false)=>{
     const text=clean(program,8).toUpperCase(),parsed=/^(\d{1,2})([A-Z]?)$/.exec(text);
     const number=parsed?Number(parsed[1]):0;
@@ -447,7 +447,7 @@ export async function handlePulsePage(request,env,route){
   const html='<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'+
     '<title>'+escape(title)+'</title><meta name="description" content="'+escape(desc)+'">'+
     '<meta property="og:type" content="article"><meta property="og:title" content="'+escape(title)+'">'+
-    '<meta property="og:description" content="'+escape(desc)+'"><meta property="og:url" content="'+escape(canonical)+'">'+
+    '<meta property="og:description" content="'+escape(desc)+'"><meta property="og:url" content="'+escape(canonical)+'"><meta property="og:site_name" content="Rail &amp; Rye Racing">'+
     (imageReady?'<meta property="og:image" content="'+escape(imageURL)+'"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="675"><meta property="og:image:type" content="image/png"><meta property="og:image:alt" content="'+escape(title)+'"><meta name="twitter:image" content="'+escape(imageURL)+'">':'')+
     '<meta name="twitter:card" content="'+(imageReady?'summary_large_image':'summary')+'"><meta name="twitter:title" content="'+escape(title)+'"><meta name="twitter:description" content="'+escape(desc)+'"><link rel="canonical" href="'+escape(canonical)+'">'+
     '<link rel="stylesheet" href="/assets/rail-rye-core.css"><link rel="stylesheet" href="/assets/race-day-pulse.css?v=3">'+
