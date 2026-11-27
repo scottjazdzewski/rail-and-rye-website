@@ -37,8 +37,8 @@ function appendGradeTrophy(parent,grade){
  badge.setAttribute("aria-label","Grade "+grade+" stakes trophy");
  badge.title="Grade "+grade+" Stakes";
  const art=make("img","rr-ed-grade-trophy-icon");
- art.src="/assets/approved/graded-trophies/graded_trophy_G"+grade+".png";art.alt="";art.decoding="async";
- badge.append(art,make("strong","rr-ed-grade-trophy-label","G"+grade));
+ art.src="/assets/approved/graded-trophies/graded_trophy_G"+grade+".png?v=original-verified-2";art.alt="Grade "+grade;art.decoding="async";
+ badge.append(art);
  parent.append(badge);
 }
 function conditionsFact(entry,title){

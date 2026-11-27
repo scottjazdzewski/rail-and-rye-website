@@ -41,3 +41,16 @@
 /assets/rr-customer-reader.js
   ! Cache-Control
   Cache-Control: no-cache, max-age=0, must-revalidate
+
+/assets/rr-research-race-banner.js
+  ! Cache-Control
+  Cache-Control: no-cache, max-age=0, must-revalidate
+/assets/rr-projections-race-header.css
+  ! Cache-Control
+  Cache-Control: no-cache, max-age=0, must-revalidate
+/assets/rr-stakes-inline.css
+  ! Cache-Control
+  Cache-Control: no-cache, max-age=0, must-revalidate
+/assets/approved/graded-trophies/*
+  ! Cache-Control
+  Cache-Control: no-cache, max-age=0, must-revalidate

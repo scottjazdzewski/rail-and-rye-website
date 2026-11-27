@@ -265,7 +265,7 @@ const trophy=matchClass(displayedRace,"rr-dash-graded-trophy");
 assert.ok(trophy,"A source-verified G1 stakes race must display a trophy");
 assert.match(trophy.className,/--g1/,"Grade 1 trophy must use gold distinction");
 assert.equal(trophy.getAttribute("aria-label"),"Grade 1 stakes trophy");
-assert.equal(matchClass(trophy,"rr-dash-trophy-icon").src,"/assets/approved/graded-trophies/graded_trophy_G1.png");
+assert.equal(matchClass(trophy,"rr-dash-trophy-icon").src,"/assets/approved/graded-trophies/graded_trophy_G1.png?v=original-verified-2");
 const realRaceHeaderChip=matchClass(displayedRace,"rr-race-saddle-image");
 assert.ok(realRaceHeaderChip&&realRaceHeaderChip.src.endsWith("/4.png"),
  "Race 4 header MUST show real #4 saddlecloth artwork");
@@ -320,7 +320,7 @@ console.log("PASS: true per-track chronology; text-only track identity and authe
 const chipStyles=readFileSync("public/assets/rr-intelligence-chips.css","utf8");
 for(const html of [adminHtml,memberHtml]){
  assert.match(html,/rr-intelligence-chips\.css\?v=6/,"Load cleaned shared race/horse chip identity");
- assert.match(html,/rr-projections-race-header\.css\?v=4/,"Load the single new Projections header stylesheet");
+ assert.match(html,/rr-projections-race-header\.css\?v=6/,"Load the single new Projections header stylesheet");
   assert.match(html,/rr-race-facts\.css\?v=4/,"Load the shared centered race-facts stylesheet.");
  assert.match(html,/rr-exotic-bet-builder\.css\?v=3/,"Load the responsive exotic ticket builder skin");
  assert.match(html,/rr-exotic-bet-builder\.js\?v=\d+/,"Load the source-gated no-tote Bet Builder");

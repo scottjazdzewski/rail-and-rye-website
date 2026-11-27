@@ -407,8 +407,8 @@ function raceBanner(race){
   trophy.setAttribute("aria-label","Grade "+presentation.grade+" stakes trophy");
   trophy.setAttribute("title","Grade "+presentation.grade+" Stakes");
   const art=makeNode("img","rrp-race-head__trophy-icon rr-dash-trophy-icon");
-  art.src="/assets/approved/graded-trophies/graded_trophy_G"+presentation.grade+".png";art.alt="";art.decoding="async";
-  trophy.append(art,makeNode("strong","rrp-race-head__grade rr-dash-grade-label","G"+presentation.grade));
+  art.src="/assets/approved/graded-trophies/graded_trophy_G"+presentation.grade+".png?v=original-verified-2";art.alt="Grade "+presentation.grade;art.decoding="async";
+  trophy.append(art);
   title.append(trophy);
  }
  titleRow.append(number,title);

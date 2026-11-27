@@ -6,8 +6,8 @@
  const clean=value=>String(value??"").replace(/\s+/g," ").trim();
  const gradeToken="(?:G(?:rade)?\\.?|Gr\\.?)(?:\\s*[-:]?\\s*)(?:III|II|I|[123])";
  const gradeDecorated=new RegExp("(?:\\(|\\[)\\s*("+gradeToken+")\\s*(?:\\)|\\])","gi");
- const gradeTrailing=new RegExp("(?:\\s*[-–—,:]?\\s*)("+gradeToken+")\\s*$","i");
- const gradeLeading=new RegExp("^\\s*("+gradeToken+")(?:\\s*[-–—,:]?\\s*)","i");
+ const gradeTrailing=new RegExp("(?:^|[\\s–—,:-]+)("+gradeToken+")\\s*$","i");
+ const gradeLeading=new RegExp("^\\s*("+gradeToken+")(?=\\s|[-–—,:]|$)(?:\\s*[-–—,:]?\\s*)","i");
  function numericGrade(value){
   const text=clean(value).toUpperCase().replace(/[().\[\]]/g,"").replace(/\s+/g,"");
   const match=text.match(/^(?:GRADE|GR|G)?(III|II|I|[123])$/);
