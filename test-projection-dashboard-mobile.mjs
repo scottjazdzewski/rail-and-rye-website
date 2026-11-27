@@ -51,7 +51,7 @@ class Element {
  showModal(){this.opened=true;}
  close(){}
 }
-const ids=["rr-dash-status","rr-dash-app","rr-dash-login","rr-dash-empty","rr-dash-date","rr-dash-track","rr-dash-race-time","rr-dash-races","rr-dash-track-identity","rr-dash-race","rr-dash-horses","rr-dash-open-pdf","rr-dash-download-pdf","rr-dash-update","rr-dash-horse-dialog","rr-dash-horse-title","rr-dash-horse-detail","rr-dash-horse-close","rr-dash-global-timeline","rr-dash-all-races","rr-dash-timeline-count","rr-dash-previous-race","rr-dash-next-race","rr-dash-mode-track","rr-dash-mode-all"];
+const ids=["rr-dash-status","rr-dash-app","rr-dash-login","rr-dash-empty","rr-dash-date","rr-dash-track","rr-dash-race-time","rr-dash-races","rr-dash-track-identity","rr-dash-race","rr-dash-horses","rr-dash-open-pdf","rr-dash-download-pdf","rr-dash-update","rr-dash-horse-dialog","rr-dash-horse-title","rr-dash-horse-detail","rr-dash-horse-close","rr-dash-global-timeline","rr-dash-all-races","rr-dash-timeline-count","rr-dash-previous-race","rr-dash-next-race","rr-dash-mode-track","rr-dash-mode-all","rr-dash-mode-purse","rr-dash-purse-filters","rr-dash-min-purse","rr-dash-stakes-only","rr-dash-timeline-label"];
 const els=new Map(ids.map(id=>[id,new Element(id.includes("date")||id==="rr-dash-track"||id.includes("race-time")||id==="rr-dash-all-races"||id.includes("sort")?"select":"div")]));
 const fixture={cards:[{race_date:"2026-11-22",track:"Del Mar",product_id:null,card:{track_name:"Del Mar",races:[{race_number:6,post_time_et:"6:00 PM",conditions:"Claiming $8,000",purse:"$20,000",pace:"Moderate",surface:"Dirt",distance:"5 1/2 furlongs",scratch_count:1,scratches:[{program_number:"3",horse_name:"Scratched Runner"}],entries:[{program_number:"5",horse_name:"Doo Wop Don",morning_line:"5-2",win_probability:16.6,fair_odds:"5/1",trainer:"",jockey:"",metrics:[]},{program_number:"2",horse_name:"Third Horizon",morning_line:"9-2",win_probability:20.0,fair_odds:"4/1",trainer:"",jockey:"",metrics:[]},{program_number:"12",horse_name:"Barrister Proof",morning_line:"12-1",win_probability:27.5,fair_odds:"5/2",trainer:"Brad Cox",jockey:"Jose Ortiz",metrics:[{label:"Speed",value:"green"},{label:"Form",value:"gray"},{label:"Class",value:"red"},{label:"Pace Fit",value:"green"},{label:"Surface / Distance",value:"gray"}]}]}]}}]};
 // Preserve PDF-style chips for high numbers and coupled-entry suffixes.
@@ -380,7 +380,7 @@ assert.match(trackCss,/grid-template-columns:minmax\(0,1fr\)/,
 for(const html of [adminHtml,memberHtml]){
  assert.match(html,/class="rrp-command"/,"Mode, venue and race tabs share one navigation surface");
  assert.match(html,/id="rr-dash-track-identity"/,"Track identity is inside the navigation deck");
- assert.match(html,/rr-projections-command\.css\?v=1/,"Dedicated new command-deck stylesheet loaded");
+ assert.match(html,/rr-projections-command\.css\?v=2/,"Dedicated new command-deck stylesheet loaded");
  assert.ok(html.indexOf('id="rr-dash-track-identity"')<html.indexOf('id="rr-dash-races"'),"Venue identity before race tabs");
  assert.ok(html.indexOf('id="rr-dash-races"')<html.indexOf('id="rr-dash-race"'),"Race tabs before the projection panel");
 }
@@ -391,3 +391,28 @@ assert.doesNotMatch(js,/panel\.replaceChildren\(cardHeader\(/,"No additional tra
 assert.match(js,/context\.replaceChildren\(cardHeader\(activeCard\)\)/,"Update track identity inside shared command deck");
 assert.match(factsCss,/min-height:59px/,"The Pace/Surface/Distance band is much shorter");
 assert.match(headerCss,/grid-template-columns:max-content max-content minmax\(0,1fr\)/,"Runners, purse and post time share compact metadata row");
+
+ // Purse mode: uses source purse only, post-time order, and never leaves stale runners.
+ const purseMode=els.get("rr-dash-mode-purse"),minimum=els.get("rr-dash-min-purse"),stakes=els.get("rr-dash-stakes-only");
+ const timelineSelect=els.get("rr-dash-all-races");
+ fixture.cards[0].card.races[0].purse="$100,000";
+ fixture.cards[0].card.races[1].purse="$250,000";
+ fixture.cards[1].card.races[0].purse="$100,000";
+ minimum.value="100000";purseMode.events.click();
+ assert.equal(els.get("rr-dash-app").dataset.mode,"purse");
+ assert.equal(timelineSelect.children.length,3);
+ assert.match(timelineSelect.children[0].textContent,/Zia Park/);
+ stakes.checked=true;stakes.events.change();
+ assert.equal(timelineSelect.children.length,1);
+ assert.match(timelineSelect.children[0].textContent,/Del Mar/);
+ minimum.value="1000000";minimum.events.change();
+ assert.equal(timelineSelect.children.length,0);
+ assert.equal(timelineSelect.disabled,true);
+ assert.equal(horses.textContent,"");
+ assert.match(els.get("rr-dash-timeline-count").textContent,/No races match/);
+ stakes.checked=false;minimum.value="0";minimum.events.change();
+ assert.equal(timelineSelect.children.length,3);
+ assert.ok(horses.textContent);
+ els.get("rr-dash-mode-track").events.click();
+ assert.equal(els.get("rr-dash-purse-filters").hidden,true);
+ console.log("PASS: purse and stakes filters, chronological order, empty state and recovery");

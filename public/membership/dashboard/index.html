@@ -14,14 +14,14 @@
 <link rel="stylesheet" href="/assets/rr-hub-header.css?v=2">
 <link rel="stylesheet" href="/assets/projections-dashboard.css?v=33">
 <link rel="stylesheet" href="/assets/rr-intelligence-chips.css?v=6">
-<link rel="stylesheet" href="/assets/rr-projections-command.css?v=1">
+<link rel="stylesheet" href="/assets/rr-projections-command.css?v=2">
 <link rel="stylesheet" href="/assets/rr-projections-track-identity.css?v=4">
 <link rel="stylesheet" href="/assets/rr-projections-race-header.css?v=4">
 <link rel="stylesheet" href="/assets/rr-race-facts.css?v=4">
 <link rel="stylesheet" href="/assets/rr-exotic-bet-builder.css?v=6">
 <script defer src="/assets/rr-exotic-bet-builder.js?v=dd-eligibility-8"></script>
 <script defer src="/assets/rr-race-titles.js?v=10"></script>
-<script defer src="/assets/projections-dashboard.js?v=52"></script>
+<script defer src="/assets/projections-dashboard.js?v=53"></script>
 <link rel="stylesheet" href="/assets/rr-intelligence-document.css?v=3">
 <link rel="stylesheet" href="/assets/rr-intelligence-desktop.css?v=2" media="(min-width: 1100px)">
 <script defer src="/assets/rr-intelligence-desktop.js?v=1"></script>
@@ -55,6 +55,7 @@
     <div class="rr-dash-mode-switch" role="group" aria-label="Race navigation mode">
      <button type="button" id="rr-dash-mode-track" class="rr-dash-mode-button" aria-pressed="true">By Track</button>
      <button type="button" id="rr-dash-mode-all" class="rr-dash-mode-button" aria-pressed="false">All Tracks · Post Time</button>
+     <button type="button" id="rr-dash-mode-purse" class="rr-dash-mode-button" aria-pressed="false">By Purse</button>
     </div>
     <div class="rr-dash-toolbar">
      <label class="rr-dash-date-field">Date<select id="rr-dash-date" aria-label="Choose race date"></select></label>
@@ -65,7 +66,13 @@
    </div>
    <div id="rr-dash-track-identity" class="rrp-command__identity"></div>
    <div id="rr-dash-global-timeline" class="rr-dash-global-timeline" hidden>
-    <label for="rr-dash-all-races">All races · chronological post times (ET)</label>
+    <div id="rr-dash-purse-filters" class="rr-dash-purse-filters" hidden>
+     <label>Minimum purse<select id="rr-dash-min-purse" aria-label="Minimum purse">
+      <option value="0">All purses</option><option value="25000">$25,000+</option><option value="50000">$50,000+</option><option value="100000">$100,000+</option><option value="250000">$250,000+</option><option value="500000">$500,000+</option><option value="1000000">$1,000,000+</option>
+     </select></label>
+     <label class="rr-dash-stakes-check"><input id="rr-dash-stakes-only" type="checkbox"> Stakes only</label>
+    </div>
+    <label id="rr-dash-timeline-label" for="rr-dash-all-races">All races · chronological post times (ET)</label>
     <div class="rr-dash-timeline-controls">
      <button type="button" id="rr-dash-previous-race" aria-label="Previous race in post-time order">‹</button>
      <select id="rr-dash-all-races" aria-label="Choose race from all tracks in post-time order"></select>

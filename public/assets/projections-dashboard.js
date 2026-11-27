@@ -66,10 +66,21 @@ function renderRaceTimeSelect(card){
  if(activeRace!=null)select.value=String(activeRace);
 }
 function timeLabel(race){return race.post_time_et||race.post_time||race.postTime||"TIME TBA";}
+// Parse only the explicit purse field; never infer from claiming price or class.
+function purseAmount(value){
+ const raw=String(value??"").trim();
+ const match=raw.match(/^(?:USD\s*)?\$?\s*((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s*([KM])?(?:\s*USD)?$/i);
+ if(!match)return null;
+ const amount=Number(match[1].replace(/,/g,""))*({K:1000,M:1000000}[String(match[2]||"").toUpperCase()]||1);
+ return Number.isFinite(amount)&&amount>0?amount:null;
+}
 function raceTimeline(){
  const date=q("#rr-dash-date").value;
+ const minimum=viewMode==="purse"?Number(q("#rr-dash-min-purse")?.value||0):0;
+ const stakesOnly=viewMode==="purse"&&!!q("#rr-dash-stakes-only")?.checked;
  return cards.filter(card=>card.race_date===date).flatMap(card=>
   (card.card?.races||[]).map(race=>({card,race,at:postTimeMinutes(timeLabel(race))})))
+ .filter(({race})=>viewMode!=="purse"||((minimum===0||(purseAmount(race.purse)??-1)>=minimum)&&(!stakesOnly||globalThis.RRRaceTitles?.describe?.(race)?.stakes===true)))
  .sort((a,b)=>a.at-b.at||
   (a.card.track||a.card.card.track_name).localeCompare(b.card.track||b.card.card.track_name)||
   a.race.race_number-b.race.race_number);
@@ -135,20 +146,25 @@ function renderRaceNav(card){
 function renderTimeline(){
  const container=q("#rr-dash-global-timeline"),select=q("#rr-dash-all-races");
  if(!container||!select)return;
- const all=viewMode==="all";
+ const all=viewMode!=="track";
  container.hidden=!all;
+ const filters=q("#rr-dash-purse-filters");if(filters)filters.hidden=viewMode!=="purse";
+ setText(q("#rr-dash-timeline-label"),viewMode==="purse"?"Matching races · chronological post times (ET)":"All races · chronological post times (ET)");
  q("#rr-dash-races").hidden=all;
  if(!all)return;
  timeline=raceTimeline();
  select.replaceChildren();
  for(let i=0;i<timeline.length;i++){
   const item=timeline[i],track=item.card.track||item.card.card.track_name;
-  option(select,String(i),timeLabel(item.race)+" · "+track+" · Race "+item.race.race_number);
+  const purse=viewMode==="purse"&&purseAmount(item.race.purse)!==null?" · "+new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",maximumFractionDigits:0}).format(purseAmount(item.race.purse)):"";
+  option(select,String(i),timeLabel(item.race)+" · "+track+" · Race "+item.race.race_number+purse);
  }
  let index=timeline.findIndex(item=>item.card===activeCard&&item.race.race_number===activeRace);
  if(index<0&&timeline.length){index=0;activeCard=timeline[0].card;activeRace=timeline[0].race.race_number;}
  if(index>=0)select.value=String(index);
- setText(q("#rr-dash-timeline-count"),timeline.length?((index+1)+" of "+timeline.length+" races · "+new Set(timeline.map(x=>x.card.track||x.card.card.track_name)).size+" tracks"):"No races found");
+ else {activeCard=null;activeRace=null;}
+ select.disabled=!timeline.length;
+ setText(q("#rr-dash-timeline-count"),timeline.length?((index+1)+" of "+timeline.length+" races · "+new Set(timeline.map(x=>x.card.track||x.card.card.track_name)).size+" tracks"):(viewMode==="purse"?"No races match your filters.":"No races found"));
  q("#rr-dash-previous-race").disabled=index<=0;
  q("#rr-dash-next-race").disabled=index>=timeline.length-1;
 }
@@ -159,11 +175,12 @@ function selectTimeline(index){
  renderCard();
 }
 function changeViewMode(next){
- viewMode=next==="all"?"all":"track";
- const all=viewMode==="all";
+ viewMode=["all","purse"].includes(next)?next:"track";
+ const all=viewMode!=="track";
  app.dataset.mode=viewMode;
  q("#rr-dash-mode-track").setAttribute("aria-pressed",String(!all));
- q("#rr-dash-mode-all").setAttribute("aria-pressed",String(all));
+ q("#rr-dash-mode-all").setAttribute("aria-pressed",String(viewMode==="all"));
+ q("#rr-dash-mode-purse")?.setAttribute("aria-pressed",String(viewMode==="purse"));
  if(!all){
   const track=activeCard?.track||activeCard?.card?.track_name;
   if(track)q("#rr-dash-track").value=track;
@@ -403,8 +420,12 @@ function raceBanner(race){
 }
 function renderCard(){
  if(viewMode==="track")activeCard=selectedCard();
- if(!activeCard)return;
- renderRaceNav(activeCard);renderRaceTimeSelect(activeCard);renderTimeline();
+ renderTimeline();
+ if(!activeCard){
+  renderRaceNav(null);renderRaceTimeSelect(null);
+  q("#rr-dash-track-identity").replaceChildren();q("#rr-dash-race").replaceChildren();q("#rr-dash-horses").replaceChildren();setText(q("#rr-dash-update"),"");return;
+ }
+ renderRaceNav(activeCard);renderRaceTimeSelect(activeCard);
  const race=activeCard.card.races.find(item=>item.race_number===activeRace);if(!race)return;
  const context=q("#rr-dash-track-identity");context.replaceChildren(cardHeader(activeCard));
  const panel=q("#rr-dash-race");panel.replaceChildren(raceBanner(race));
@@ -489,7 +510,7 @@ function renderCard(){
 function onFiltersChanged(){
  const oldTrack=q("#rr-dash-track").value;
  renderTracks(oldTrack);
- if(viewMode==="all"){
+ if(viewMode!=="track"){
   timeline=raceTimeline();
   const selected=timeline.find(item=>item.card===activeCard&&item.race.race_number===activeRace);
   if(!selected){
@@ -500,7 +521,7 @@ function onFiltersChanged(){
   activeCard=selectedCard();
   activeRace=racesByPostTime(activeCard)[0]?.race_number||null;
  }
- if(activeCard)renderCard();
+ renderCard();
 }
 async function init(){
  try{
@@ -517,6 +538,9 @@ async function init(){
   q("#rr-dash-race-time").addEventListener("change",()=>{activeRace=Number(q("#rr-dash-race-time").value);renderCard();});
   q("#rr-dash-mode-track").addEventListener("click",()=>changeViewMode("track"));
   q("#rr-dash-mode-all").addEventListener("click",()=>changeViewMode("all"));
+  q("#rr-dash-mode-purse")?.addEventListener("click",()=>changeViewMode("purse"));
+  q("#rr-dash-min-purse")?.addEventListener("change",onFiltersChanged);
+  q("#rr-dash-stakes-only")?.addEventListener("change",onFiltersChanged);
   q("#rr-dash-all-races").addEventListener("change",()=>selectTimeline(Number(q("#rr-dash-all-races").value)));
   q("#rr-dash-previous-race").addEventListener("click",()=>selectTimeline(Number(q("#rr-dash-all-races").value)-1));
   q("#rr-dash-next-race").addEventListener("click",()=>selectTimeline(Number(q("#rr-dash-all-races").value)+1));
