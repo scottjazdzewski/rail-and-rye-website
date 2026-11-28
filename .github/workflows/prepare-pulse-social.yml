@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['wrangler.jsonc']
+    paths: ['wrangler.jsonc','src/race-day-pulse.js','public/assets/race-day-pulse.js','scripts/render-pulse-social.mjs','.github/workflows/prepare-pulse-social.yml']
   schedule:
     - cron: '*/15 0-7,13-23 * * *'
 permissions:
@@ -24,6 +24,16 @@ jobs:
       - name: Check public feed for newly certified missing images
         id: feed
         run: |
+          if [ "$GITHUB_EVENT_NAME" = push ]; then
+            expected=$(sha256sum public/assets/race-day-pulse.js | cut -d' ' -f1)
+            ready=0
+            for attempt in $(seq 1 20); do
+              live=$(curl -fsS "https://railandryeracing.com/assets/race-day-pulse.js?verify=$GITHUB_SHA-$attempt" | sha256sum | cut -d' ' -f1)
+              if [ "$live" = "$expected" ]; then ready=1; break; fi
+              sleep 10
+            done
+            test "$ready" = 1
+          fi
           for attempt in $(seq 1 20); do
             if curl -fsS 'https://railandryeracing.com/api/race-day-pulse' -o /tmp/pulse-feed.json; then
               if [ "$GITHUB_EVENT_NAME" != push ] || node -e "const f=require('/tmp/pulse-feed.json');process.exit(f.status==='ok'?0:1)"; then break; fi
