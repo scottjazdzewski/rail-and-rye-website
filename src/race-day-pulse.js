@@ -88,7 +88,7 @@ function revisionToken(source){
   for(const ch of String(source))value=Math.imul(value^ch.charCodeAt(0),16777619);
   return '-rev-'+(value>>>0).toString(16).padStart(8,'0');
 }
-export function insightForRace(date,track,initial,revised,updatedAt,sourceVersion=''){
+export function insightForRace(date,track,initial,revised,updatedAt,sourceVersion='',category='PRIMARY'){
   const pair=compareRaces(initial,revised);
   if(!pair)return null;
   const {before,after,activeScratches}=pair,oldLead=winner(before),newLead=winner(after);
@@ -112,7 +112,7 @@ export function insightForRace(date,track,initial,revised,updatedAt,sourceVersio
     chip:newLead.program,scratches};
   // Hold mixed surface/scratch changes pending validated condition modeling.
   if(surfaceChanged)return null;
-  if(oldLead.program!==newLead.program){
+  if(category==='PRIMARY'&&oldLead.program!==newLead.program){
     const earlier=before.get(newLead.program);
     const stayed=after.has(oldLead.program);
     const moved=earlier?newLead.win-earlier.win:0;
@@ -134,7 +134,7 @@ export function insightForRace(date,track,initial,revised,updatedAt,sourceVersio
   }
   const changed=[...after.values()].map(h=>({h,old:before.get(h.program),delta:h.win-before.get(h.program).win}))
     .sort((a,b)=>Math.abs(b.delta)-Math.abs(a.delta));
-  if(changed[0]&&Math.abs(changed[0].delta)>=4){
+  if(category==='PRIMARY'&&changed[0]&&Math.abs(changed[0].delta)>=4){
     const x=changed[0];
     return {...common,kind:'WIN_SHIFT',headline:'Scratch-Driven Projection Shift',chip:x.h.program,horse:x.h.horse,
       priority:50+Math.abs(x.delta),
@@ -313,6 +313,14 @@ export async function readRaceDayPulse(env,now=Date.now()){
       const revision=current.model_receipts.f4_sha256+'|'+current.model_receipts.official_changes_sha256;
       const post=insightForRace(date,current.track_name,earlier.get(race.race_number),race,updatedAt,revision);
       if(post)items.push(post);
+      // Independent finishing-order finding: do not suppress a qualified F4
+      // change just because the same race already has a win/favorite insight.
+      // Keep the existing primary ID stable for shared links; only new secondary
+      // findings have a category-specific ID. All original qualification gates stay.
+      if(post?.kind!=='F4_SHIFT'){
+        const order=insightForRace(date,current.track_name,earlier.get(race.race_number),race,updatedAt,revision,'F4_ONLY');
+        if(order)items.push({...order,id:slug(current.track_name)+'-race-'+race.race_number+'-f4'+revisionToken(revision)});
+      }
       // Reuse the existing approved factor badge provenance from the two TRI cards.
       if(original.badge_evaluator_version==='TBS_FACTOR_BADGE_EVALUATOR_V1_2_6_FIT_CLASS_FORM_GUARDS'&&HASH.test(original.badge_source_sha256||'')&&HASH.test(object.customMetadata?.badge_sha256||'')){
         items.push(...paceInsightsForRace(date,current.track_name,earlier.get(race.race_number),race,updatedAt,revision));
