@@ -94,6 +94,10 @@ try{
   assert.match(await page.locator('.rr-pulse-track').first().innerText(),/1ST/,'Use ordinal race labels');
   assert.ok((await page.locator('.rr-pulse-headline').first().innerText()).includes('Sample Runner 0'));
   assert.equal(await page.locator('.rr-pulse-logo').count(),1,'Approved brand mark appears in Pulse');
+  const editorial=page.locator('.rr-pulse-message').first();
+  assert.match(await editorial.evaluate(el=>getComputedStyle(el).fontFamily),/Montserrat/);
+  assert.equal(await editorial.locator('.rr-pulse-message-horse').innerText(),'#1 Sample Runner 0');
+  assert.equal(await editorial.locator('.rr-pulse-message-horse').evaluate(el=>getComputedStyle(el).fontWeight),'700');
   if(width<=640){
     assert.ok(await page.locator('.rr-pulse-affected').first().isHidden(),'Mobile repeats no redundant named-horse line');
     assert.match(await page.locator('.rr-pulse-message').first().innerText(),/Sample Runner 0/,
