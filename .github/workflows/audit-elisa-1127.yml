@@ -1,0 +1,56 @@
+name: Audit Elisa scratch probability
+on:
+  pull_request:
+    paths: ['.github/workflows/audit-elisa-1127.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Read-only certified race comparison
+        env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+        run: |
+          python -m pip install --quiet boto3==1.40.36
+          python - <<'PY'
+          import boto3,os,json,math
+          c=boto3.client('s3',region_name='auto',endpoint_url='https://'+os.environ['TRI_CLOUDFLARE_ACCOUNT_ID']+'.r2.cloudflarestorage.com',aws_access_key_id=os.environ['TRI_R2_ACCESS_KEY_ID'],aws_secret_access_key=os.environ['TRI_R2_SECRET_ACCESS_KEY'])
+          def read(prefix):
+              o=c.get_object(Bucket='rail-and-rye-private-cards',Key=prefix+'/2026-11-27/charles-town.json')
+              return json.loads(o['Body'].read()),o.get('Metadata',{})
+          a,am=read('race-day-pulse/prescratch')
+          b,bm=read('projections/dashboard')
+          ar=next(x for x in a['races'] if x['race_number']==1)
+          br=next(x for x in b['races'] if x['race_number']==1)
+          def field(r):return {str(x['program_number']):x for x in r['entries']}
+          x,y=field(ar),field(br)
+          def w(e):return float(e['win_probability_exact'])
+          def rank(f,n):return 1+sum(w(e)>w(f[n]) for e in f.values())
+          def name(e):return e['horse_name'].strip().lower()
+          assert name(x['5'])==name(y['5'])=='elisa' and name(x['2'])=='color me pink'
+          removed=set(x)-set(y);added=set(y)-set(x)
+          assert '2' in removed
+          initial=a.get('model_receipts',{});final=b.get('model_receipts',{});proof=b.get('parent_replay_proof',{})
+          direct=bool(initial.get('f4_sha256') and initial.get('f4_sha256')==final.get('prescratch_parent_sha256'))
+          replay=bool(proof.get('stored_parent_receipts')==initial and proof.get('replay_f4_sha256')==final.get('prescratch_parent_sha256'))
+          total_removed=sum(w(x[k]) for k in removed)
+          common=set(x)&set(y)
+          metrics=lambda e:{m.get('label'):m.get('value') for m in e.get('metrics',[]) if m.get('label')=='Pace Fit'}
+          changes={k:sum(str(x[n].get(k,''))!=str(y[n].get(k,'')) for n in common) for k in ('jockey','trainer','horse_name')}
+          race_changes={k:[ar.get(k),br.get(k)] for k in ('surface','distance','track_condition','temporary_rail_feet','pace') if ar.get(k)!=br.get(k)}
+          out={'date':'2026-11-27','track':'Charles Town','race':1,'lineage_verified':direct or replay,'original_total':sum(map(w,x.values())),'final_total':sum(map(w,y.values())),'original_field_size':len(x),'final_field_size':len(y),'removed_programs':sorted(removed),'added_programs':sorted(added),'elisa_before':w(x['5']),'elisa_after':w(y['5']),'elisa_rank_before':rank(x,'5'),'elisa_rank_after':rank(y,'5'),'original_favorite_probability':w(x['2']),'all_removed_probability':total_removed,'elisa_proportional_counterfactual':100*w(x['5'])/(100-total_removed),'survivors_increased':sum(w(y[n])>w(x[n]) for n in common),'survivors_decreased':sum(w(y[n])<w(x[n]) for n in common),'connection_identity_changes':changes,'race_context_changes':race_changes,'elisa_pace_fit':[metrics(x['5']),metrics(y['5'])],'pace_meta_present':[bool(ar.get('pace_meta')),bool(br.get('pace_meta'))]}
+          def badge(e):return {m.get('label'):m.get('value') for m in e.get('metrics',[])}
+          aa,bb=badge(x['5']),badge(y['5'])
+          out['elisa_all_five_badges']={k:[aa.get(k),bb.get(k)] for k in sorted(set(aa)|set(bb))}
+          out['elisa_changed_display_fields']=[k for k in sorted(set(x['5'])|set(y['5'])) if x['5'].get(k)!=y['5'].get(k)]
+          out['displayed_pace']=[ar.get('pace'),br.get('pace')]
+          out['changed_race_fields']=[k for k in sorted(set(ar)|set(br)) if k not in ('entries','scratches') and ar.get(k)!=br.get(k)]
+          out['runner_available_fields']=sorted(set(x['5'])&set(y['5']))
+          out['non_scratch_change_count']=len(b.get('non_scratch_changes') or [])
+          print('ELISA_AUDIT '+json.dumps(out,sort_keys=True))
+          PY
