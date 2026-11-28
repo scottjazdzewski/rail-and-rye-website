@@ -1,0 +1,30 @@
+name: November 28 Target List certified active-field stage
+on:
+  push:
+    branches: [main]
+    paths: ['private-ingest/20261128/target-v41-proof.zip.b64']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: target-1128-certified-stage
+  cancel-in-progress: false
+jobs:
+  stage:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: pip install boto3==1.40.36 pynacl==1.5.0
+      - run: node --check src/target-list-staging.js && node test-scheduled-publications.mjs
+      - run: python scripts/target_1128_certified_stage.py
+        env:
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
