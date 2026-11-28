@@ -30,3 +30,6 @@ Mobile homepage: one complete card at rest, manual swipe and arrow controls only
 
 ## Editorial takeaway refinement
 Use the existing heritage sans-serif family (Montserrat with site fallbacks), warm ivory, medium weight and restrained spacing. Bold only the certified featured horse identity when it occurs in the existing takeaway. Preserve wording and program identity; no guessed explanation. Mobile homepage stays one line and the full detail remains readable. No changes to the analytical engine or social export templates.
+
+## Owner placement and inline identity decision — November 27
+Launch with Race-Day Pulse on the existing homepage only (desktop hero right, compact mobile below intro). Do not add a dedicated feed page or global navigation pill at launch. Retain individual insight permalinks for sharing/detail. Replace the literal #program prefix in a featured horse reference within the editorial takeaway with the small approved program saddlecloth, retaining the horse name and exact certified wording. Full-Field Analysis currently links to the premium Race Cards route, not an explanatory race-impact report; any change of label, destination or expanded narrative awaits owner decision. Publication remains disabled.
