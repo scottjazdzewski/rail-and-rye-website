@@ -125,6 +125,14 @@ const racePace=pulse.paceInsightsForRace(before.race_date,before.track_name,pace
 assert.equal(racePace.length,1);
 assert.deepEqual(racePace[0].race_pace,{before:'Strong',after:'Weak'});
 assert.match(racePace[0].message,/projected race pace changes from strong to weak/);
+// Owner screenshot: new leader can lose win probability when former favorite scratches.
+const legacy={kind:'FAVORITE_SCRATCHED',metric:{label:'WIN',before:22.94,after:22.27},message:'The revised win chance is 22.3%, up from 22.9% on the original card.'};
+assert.match(pulse.correctPulseNarrative(legacy).message,/22.3%, down from 22.9%/);
+assert.match(pulse.correctPulseNarrative({...legacy,metric:{label:'WIN',before:22.94,after:22.94}}).message,/unchanged/);
+const actualBefore={...before.races[0],entries:[run(1,22.94),run(2,27),run(3,20),run(4,15),run(5,10),run(6,5.06)]};
+const actualAfter={...after.races[0],scratch_count:1,scratches:[{program_number:'2',horse_name:'Horse 2'}],entries:[run(1,22.27),run(3,20),run(4,20),run(5,20),run(6,17.73)]};
+const falling=pulse.insightForRace(before.race_date,before.track_name,actualBefore,actualAfter,null);
+assert.equal(falling.kind,'FAVORITE_SCRATCHED');assert.equal(falling.chip,'1');assert.match(falling.message,/22.3%, down from 22.9%/);
 assert.equal(event.kind,'NEW_FAVORITE');
 assert.equal(event.chip,'2');
 assert.equal(event.metric.label,'WIN');
@@ -273,7 +281,7 @@ try{
  const image=await pulse.handlePulseImage(new Request(imageURL),env,route);
  assert.equal(image.status,200);assert.equal(image.headers.get('Content-Type'),'image/png');
  const ready=await pulse.handlePulsePage(new Request(imageURL.replace('/card-v1.png','')),env,route);
- const readyHtml=await ready.text();assert.match(readyHtml,/summary_large_image/);assert.ok(readyHtml.includes(imageURL));assert.match(readyHtml,/twitter:image/);assert.match(readyHtml,/Download Card/);
+ const readyHtml=await ready.text();assert.match(readyHtml,/summary_large_image/);assert.ok(readyHtml.includes(imageURL));assert.match(readyHtml,/twitter:image/);assert.doesNotMatch(readyHtml,/<img class="rr-pulse-social-image"/);assert.doesNotMatch(readyHtml,/class="rr-pulse-download"/);assert.match(readyHtml,/rr-pulse-detail-fallback/);assert.match(readyHtml,/Back to Pulse/);
  assert.equal((await pulse.handlePulseImage(new Request(imageURL),{...env,PULSE_PUBLICATION_ENABLED:'false'},route)).status,404);
 }finally{Date.now=originalClock;}
 assert.ok(fs.readFileSync('public/index.html','utf8').includes('id="rr-pulse"'));
