@@ -299,7 +299,18 @@
       const context=selectedContext(item);if(context.length){const row=$('div','rr-pulse-context');for(const [label,value] of context){const cell=$('span','rr-pulse-context-cell');cell.append($('span','rr-pulse-prob-caption',label),$('strong','rr-pulse-context-value',value));row.append(cell);}body.append(row);}
       const pace=paceComparison(item);if(pace)body.append(pace);
     }else if(item.horse)body.append($('p','rr-pulse-affected',item.horse+' · #'+item.chip));
-    body.append($('p','rr-pulse-message',item.short_message||item.message));
+    // Editorial copy: preserve certified wording and emphasize only the featured identity.
+    // Use text nodes, never HTML from a feed.
+    const message=String(item.short_message||item.message||'');
+    const editorial=$('p','rr-pulse-message');
+    const horse=String(item.horse||'').trim(),program=String(item.chip||'').trim();
+    const identityText=horse&&program?'#'+program+' '+horse:horse;
+    const phrase=identityText&&message.includes(identityText)?identityText:horse&&message.includes(horse)?horse:'';
+    if(phrase){
+      const at=message.indexOf(phrase);
+      editorial.append(document.createTextNode(message.slice(0,at)),$('strong','rr-pulse-message-horse',phrase),document.createTextNode(message.slice(at+phrase.length)));
+    }else editorial.textContent=message;
+    body.append(editorial);
     content.append(body);article.append(content);
     if(Array.isArray(item.scratches)&&item.scratches.length){
       const row=$('div','rr-pulse-scratch-list');
