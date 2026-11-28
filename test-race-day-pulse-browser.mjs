@@ -8,7 +8,7 @@ import {chromium} from 'playwright';
 const date='2026-11-26';
 const make=(i)=>({
  id:'synthetic-downs-race-'+(i+1),date,track:'Synthetic Downs',
- race_number:i+1,updated_at:'2026-11-26T13:00:00Z',
+ race_number:i+1,post_time_et:'3:15 PM ET',updated_at:'2026-11-26T13:00:00Z',
  kind:i%2?'WIN_SHIFT':'NEW_FAVORITE',
  chip:String((i%12)+1),horse:'Sample Runner '+i,
  scratches:[{program:'3',horse:'Scratch Three'},{program:'12A',horse:'Scratch Twelve A'}],
@@ -94,6 +94,8 @@ try{
   assert.match(await page.locator('.rr-pulse-track').first().innerText(),/1ST/,'Use ordinal race labels');
   assert.ok((await page.locator('.rr-pulse-headline').first().innerText()).includes('Sample Runner 0'));
   assert.equal(await page.locator('.rr-pulse-logo').count(),1,'Approved brand mark appears in Pulse');
+  assert.match(await page.locator('.rr-pulse-track').first().innerText(),/3:15 PM ET/);
+  assert.match(await page.locator('.rr-pulse-headline').first().evaluate(el=>getComputedStyle(el).fontFamily),/^Inter/);
   const editorial=page.locator('.rr-pulse-message').first();
   assert.match(await editorial.evaluate(el=>getComputedStyle(el).fontFamily),/Montserrat/);
   assert.equal((await editorial.locator('.rr-pulse-message-horse').innerText()).trim(),'Sample Runner 0');
@@ -161,6 +163,22 @@ try{
   if(width===390||width===1280)await page.screenshot({
     path:'pulse-preview-screenshots/full-homepage-'+width+'.png',fullPage:true
   });
+  // Desktop opens and returns within the original homepage module.
+  const open=page.locator('.rr-pulse-story-link').first();
+  assert.equal(await open.innerText(),'Open Pulse');
+  const beforeUrl=page.url();
+  await open.click();
+  assert.equal(page.url(),beforeUrl);
+  assert.equal(await open.innerText(),'Back to Pulse');
+  assert.equal(await open.getAttribute('aria-expanded'),'true');
+  assert.ok(await page.locator('.rr-pulse-expanded-message').first().isVisible());
+  assert.equal(await page.locator('.rr-pulse-item:visible').count(),1);
+  await page.screenshot({path:'pulse-preview-screenshots/pulse-expanded-'+width+'.png'});
+  await open.click();
+  assert.equal(page.url(),beforeUrl);
+  assert.equal(await open.innerText(),'Open Pulse');
+  assert.ok(await page.locator('.rr-pulse-expanded-message').first().isHidden());
+  assert.equal(await page.locator('.rr-pulse-item:visible').count(),6);
   // A click opens manual share menu; never posts to X without the user.
   await page.locator('.rr-pulse-tool').first().click();
   assert.ok(await page.locator('.rr-pulse-menu').first().isVisible(),'Share control shows manual actions');
