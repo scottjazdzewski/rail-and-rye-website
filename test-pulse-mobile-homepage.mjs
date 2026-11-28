@@ -52,6 +52,23 @@ try{
      await card.locator('.rr-pulse-compact-actions .rr-pulse-tool').click();
      const direct=page.locator('.rr-pulse-menu');await direct.waitFor();
      assert.equal(await direct.getByRole('button',{name:'Download Card'}).count(),1);
+     const photo=direct.getByRole('button',{name:'Save to Photos'});
+     await photo.waitFor();
+     await page.evaluate(()=>{
+       Object.defineProperty(navigator,'canShare',{configurable:true,value:({files})=>files?.[0]?.type==='image/png'});
+       Object.defineProperty(navigator,'share',{configurable:true,value:async({files})=>{const bytes=new Uint8Array(await files[0].arrayBuffer());window.__photoQA={type:files[0].type,width:new DataView(bytes.buffer).getUint32(16),height:new DataView(bytes.buffer).getUint32(20),name:files[0].name};}});
+     });
+     await photo.click();
+     await page.waitForFunction(()=>!!window.__photoQA);
+     assert.deepEqual(await page.evaluate(()=>[window.__photoQA.type,window.__photoQA.width,window.__photoQA.height]),['image/png',1080,1350]);
+     await page.evaluate(()=>Object.defineProperty(navigator,'canShare',{configurable:true,value:()=>false}));
+     await photo.click();
+     const dialog=page.locator('.rr-pulse-photo-dialog');await dialog.waitFor();
+     await dialog.locator('img').evaluate(i=>i.decode());
+     assert.equal(await dialog.locator('img').evaluate(i=>i.naturalWidth),1080);
+     await dialog.getByRole('button',{name:'Close'}).click();
+     // The outside-pointer handler closes the share menu when the fallback closes.
+     if(!await direct.isVisible())await card.locator('.rr-pulse-compact-actions .rr-pulse-tool').click();
      const directDownload=page.waitForEvent('download');await direct.getByRole('button',{name:'Download Card'}).click();assert.match((await directDownload).suggestedFilename(),/\.png$/);
      await card.locator('.rr-pulse-compact-actions .rr-pulse-tool').click();
      await card.locator('.rr-pulse-compact-open').click();
