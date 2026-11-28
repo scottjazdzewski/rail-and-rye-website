@@ -133,22 +133,29 @@
     txt((diff>0?'+':'')+diff.toFixed(1)+' Percentage Points',W/2,py+ph-(portrait?30:13),portrait?37:23,col,800,B-36,'center');
     const context=selectedContext(item),cy=portrait?754:444,ch=portrait?86:42;
     if(context.length){panel(X,cy,B,ch,12);context.forEach(([k,v],i)=>{const cx=X+B*(i+.5)/context.length;txt(k+'  '+v,cx,cy+(portrait?54:28),portrait?31:20,ivory,700,B/context.length-18,'center');});}
-    const takeawayY=portrait?876:508;
-    font(portrait?31:22,500);c.fillStyle=ivory;wrap(c,item.short_message||item.message,X,takeawayY,B,portrait?37:25,2);
+    const takeawayY=portrait?895:508;
+    const concise=()=>{
+      if(item.kind==='NEW_FAVORITE')return 'New projected favorite';
+      if(item.kind==='FAVORITE_SCRATCHED')return 'New leader after favorite scratched';
+      if(item.kind==='F4_SHIFT')return diff>0?'Second-or-third probability rises':diff<0?'Second-or-third probability falls':'Second-or-third outlook changes';
+      if(item.kind==='PACE_ADVANTAGE')return 'Pace Fit improves';
+      return diff>0?'Win probability rises':diff<0?'Win probability falls':'Projection changes';
+    };
+    if(portrait)txt(concise(),W/2,takeawayY,32,ivory,600,B-24,'center');
+    else {font(22,500);c.fillStyle=ivory;wrap(c,item.short_message||item.message,X,takeawayY,B,25,2);}
     if(item.kind==='PACE_ADVANTAGE'&&item.pace_fit){const names={red:'Negative',gray:'Neutral',green:'Positive'};const before=names[item.pace_fit.before],after=names[item.pace_fit.after];if(before&&after)txt('Pace Fit: '+before+' → '+after,X,portrait?943:553,portrait?24:17,gold,700,B);}
     const scratches=Array.isArray(item.scratches)?item.scratches:[],sy=portrait?995:576,ss=portrait?57:29;
     if(scratches.length){txt('SCRATCHED',X,sy+(portrait?23:14),portrait?26:18,gold,800);let sx=X+(portrait?192:134);const step=ss+(portrait?10:8),capacity=Math.floor((R-sx+step-ss)/step),show=scratches.length>capacity?Math.max(0,capacity-1):scratches.length;for(const sc of scratches.slice(0,show)){await saddle(sc.program,sx,sy-(portrait?18:12),ss);sx+=step;}if(scratches.length>show)txt('+'+(scratches.length-show),sx,sy+(portrait?23:14),portrait?22:17,gold,750,R-sx);}
-    const ctaY=portrait?1066:603,ctaH=portrait?153:35;
+    const ctaY=portrait?1060:603,ctaH=portrait?132:35;
     panel(X,ctaY,B,ctaH,portrait?18:10);
     if(portrait){
-      txt('See the Complete Race Analysis',W/2,ctaY+46,36,gold,750,B-40,'center',serif);
-      txt('Win Probabilities · Finishing Order Projections',W/2,ctaY+81,23,ivory,550,B-40,'center');
-      txt('railandryeracing.com',W/2,ctaY+127,30,gold,800,B-40,'center');
+      txt('Full Race Analysis',W/2,ctaY+51,43,gold,750,B-40,'center',serif);
+      txt('railandryeracing.com',W/2,ctaY+99,30,ivory,700,B-40,'center');
     }else{
       txt('See the Complete Race Analysis',X+16,ctaY+24,22,gold,750,B*.55,'left',serif);
       txt('railandryeracing.com',R-16,ctaY+24,20,ivory,750,B*.41,'right');
     }
-    if(portrait)txt(item.id.startsWith('demo-')?'DESIGN PREVIEW · FICTIONAL DATA':'Model projections · Not guarantees',W/2,1290,22,muted,500,B,'center');
+    if(portrait)txt(item.id.startsWith('demo-')?'DESIGN PREVIEW · FICTIONAL DATA':'Model projections · Not guarantees',W/2,1244,20,muted,500,B,'center');
     else txt(item.id.startsWith('demo-')?'FICTIONAL DESIGN PREVIEW':'Model projections · Not guarantees',W/2,652,12,muted,500,B,'center');
     const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(!blob)throw Error('Image unavailable');return blob;
   }
@@ -330,7 +337,7 @@
     if(!rail.children.length)return;
     selected=Math.max(0,Math.min(index,rail.children.length-1));
     const el=rail.children[selected];
-    rail.scrollTo({left:el.offsetLeft-rail.offsetLeft,behavior});
+    rail.scrollTo({left:rail.scrollLeft+el.getBoundingClientRect().left-rail.getBoundingClientRect().left,behavior});
     prev.disabled=selected===0;next.disabled=selected===rail.children.length-1;fitActiveCard();
   }
   prev.addEventListener('click',()=>scrollToIndex(selected-1));
@@ -343,7 +350,7 @@
   shell.addEventListener('touchend',()=>paused=false,{passive:true});
   rail.addEventListener('scroll',()=>{
     let best=0,distance=Infinity;
-    [...rail.children].forEach((el,i)=>{const x=Math.abs((el.offsetLeft-rail.offsetLeft)-rail.scrollLeft);if(x<distance){best=i;distance=x;}});
+    [...rail.children].forEach((el,i)=>{const x=Math.abs(el.getBoundingClientRect().left-rail.getBoundingClientRect().left);if(x<distance){best=i;distance=x;}});
     selected=best;prev.disabled=selected===0;next.disabled=selected===rail.children.length-1;fitActiveCard();
   },{passive:true});
   async function load(){
@@ -373,6 +380,6 @@
     load();setInterval(load,60000);
   });
   if(!detailMode&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
-    setInterval(()=>{if(!shell.hidden&&!paused&&!closeShare&&!document.hidden&&rail.children.length>1)scrollToIndex((selected+1)%rail.children.length);},6500);
+    setInterval(()=>{if(!matchMedia('(max-width:640px)').matches&&!shell.hidden&&!paused&&!closeShare&&!document.hidden&&rail.children.length>1)scrollToIndex((selected+1)%rail.children.length);},6500);
   }
 })();
