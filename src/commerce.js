@@ -1,3 +1,4 @@
+import {PICK_FINAL_FIELD_GATE_VERSION} from "./pick-final-field-gate.js";
 import {BUNDLE_KEY} from './bundles.js';
 import {ensureReleaseSchedule,ensureRacePdfExpirySchema,racePdfExpired} from './publication-schedule.js';
 import {processMembershipStripeEvent} from './memberships.js';
@@ -518,7 +519,7 @@ export async function listProducts(env,readerScope=null){
     products.push({...publicFields,kind:'bundle',delivery_mode:'tab',categories,bundle_count:items.length,included_titles:items.map(x=>x.title),
       included_products:items.map(x=>({id:x.id,title:x.title,category:x.category,race_date:x.race_date,track:x.track,pdf_expires_at:x.pdf_expires_at}))});
   }
-  return reply({products,checkout_ready:stripeReady(env),checkout_mode:checkoutMode(env)});
+  return reply({products,checkout_ready:stripeReady(env),checkout_mode:checkoutMode(env),pick_scratch_gate_version:PICK_FINAL_FIELD_GATE_VERSION});
 }
 export async function publicProductForShare(env,id){
   if(!env.STORE_DB||! /^[0-9a-f-]{36}$/i.test(String(id||'')))return null;

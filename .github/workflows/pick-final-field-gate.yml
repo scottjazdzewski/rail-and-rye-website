@@ -1,0 +1,24 @@
+name: Pick Tickets mandatory final field regression
+on:
+  push:
+    branches: [main]
+    paths:
+      - src/pick-final-field-gate.js
+      - src/pick-tickets.js
+      - src/pick-tickets-staging.js
+      - test-pick-final-field-gate.mjs
+      - .github/workflows/pick-final-field-gate.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node test-pick-final-field-gate.mjs
+      - run: node test-rr-f4-exotics-api.mjs
+      - run: node test-pick-tickets-customer-pwin.mjs

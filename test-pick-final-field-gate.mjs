@@ -1,0 +1,25 @@
+import assert from "node:assert/strict";
+import {verifyFinalFieldReceipt,verifyPickAgainstFinalField,requireFinalPickField,digest,finalFieldReceiptKey} from "./src/pick-final-field-gate.js";
+const h=x=>x.repeat(64),date="2026-11-28",track="Fixture",now=Date.parse(date+"T16:10:00Z"),stamp=date+"T16:05:00Z";
+const lineage={tri_sha256:h("a"),f4_sha256:h("b"),prescratch_parent_sha256:h("c"),official_changes_sha256:h("d")};
+const programs=["1","2","13"],pwin=[.4,.3,.3],weights=[1,1,1];
+// Uniform conditional second/third weights: P2=(1-P1)/2, P3 same.
+const races=[1,2,3].map(n=>({race_number:n,scratch_count:1,scratches:[{program_number:"8",horse_name:"Horse 8"}],entries:programs.map((p,i)=>({program_number:p,horse_name:"Horse "+p,win_probability_exact:pwin[i]*100,f4_probabilities:{exact_p1:pwin[i],exact_p2:(1-pwin[i])/2,exact_p3:(1-pwin[i])/2}}))}));
+const base={race_date:date,track_name:track,projection_status:"scratch_final",factor_basis:"verified_scratch_final",model_receipts:lineage,races};
+const ordered={schema_version:2,model_id:"TRI_F4_ORDERING_MODEL_V2_RANK_OFFSET",date,track_name:track,scratch_state:"SCRATCH_FINAL",f4_receipt_sha256:h("b"),prefix_file_sha256:h("e"),dashboard_receipts:lineage,races:races.map(r=>({race_number:r.race_number,programs,pwin,p2_weights:weights,p3_weights:weights}))};
+const original=[...programs,"8"].map(program=>({program,horse:"Horse "+program}));
+const proof={schema_version:1,status:"VERIFIED_FINAL_FIELD",unresolved_fields:0,race_date:date,track,dashboard_sha256:await digest(JSON.stringify(base)),ordered_sha256:await digest(JSON.stringify(ordered)),latest_notice_sha256:h("f"),official_changes_sha256:h("d"),latest_notice_received_at:date+"T16:00:00Z",verified_at:stamp,races:races.map(r=>({race_date:date,track,race_number:r.race_number,source_sha256:h("a"),official_url:"https://example.invalid/official-fixture",official_evidence_sha256:h("e"),official_retrieved_at:stamp,original,official:original.map(x=>({...x,status:x.program==="8"?"SCRATCHED":"ACTIVE"}))}))};
+const seq={start_race:1,end_race:3,race_fields:races.map(r=>({race_number:r.race_number,programs})),review_probabilities:Object.fromEntries(races.map(r=>[r.race_number,{"1":40,"2":30,"13":30}])),tickets:[{legs:races.map(r=>({race_number:r.race_number,programs:["1"]}))}]};
+const card={date,track,status:"scratch_updated",scratches_by_race:{"1":["8"],"2":["8"],"3":["8"]},sequences:[seq]};
+const key=finalFieldReceiptKey(date,track),body=x=>({text:async()=>JSON.stringify(x),customMetadata:{customer_publish_approved:"true"}});
+const env=(cert=proof,b=base,f=ordered)=>({CARDS_BUCKET:{get:async k=>k===key?(cert?body(cert):null):k.includes("/dashboard/")?body(b):body(f)}});
+await requireFinalPickField(env(),card,{now});
+await requireFinalPickField(env(),card,{now,publishedAt:date+"T16:08:00Z"});
+const missing=structuredClone(card);missing.sequences[0].race_fields[0].programs=["1","2"];missing.sequences[0].review_probabilities["1"]={"1":60,"2":40};
+const unresolved=structuredClone(proof);unresolved.races[0].official[2].status="UNRESOLVED";
+const stale=structuredClone(proof);stale.races[0].official_retrieved_at=date+"T15:00:00Z";
+const omitted=structuredClone(proof);omitted.races[0].official.pop();
+const oldFetch=structuredClone(proof);oldFetch.latest_notice_received_at=date+"T14:00:00Z";oldFetch.races[0].official_retrieved_at=date+"T15:00:00Z";
+const wrong=structuredClone(card);wrong.sequences[0].review_probabilities["1"]["13"]=29;
+for(const [e,c,options] of [[env(null),card,{now}],[env({...proof,status:"PENDING"}),card,{now}],[env(unresolved),card,{now}],[env(stale),card,{now}],[env(oldFetch),card,{now}],[env(omitted),card,{now}],[env(),missing,{now}],[env(),wrong,{now}],[env(),{...card,status:"initial_current"},{now}],[env(),{...card,scratches_by_race:{}},{now}],[env(proof,{...base,changed:true}),card,{now}],[env(),card,{now:now+3600000}],[env(),card,{now,publishedAt:date+"T16:01:00Z"}]])await assert.rejects(()=>requireFinalPickField(e,c,options),/PICK_SCRATCH_HOLD/);
+console.log("PICK_FINAL_FIELD_GATE_PASS confirmed draw-in accepted; missing, pending, stale, incomplete roster, wrong probability and prescratch rejected");

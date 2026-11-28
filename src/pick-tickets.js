@@ -1,3 +1,4 @@
+import {requireFinalPickField,requiresFinalPickField} from "./pick-final-field-gate.js";
 import {publishGPTProductCatalogEntry} from "./gpt-product-catalog.js";
 import {pickPostTimes} from "./pick-tickets-post-times.js";
 import {buildV34TrialCard,PICK_V34_ENGINE,PICK_V34_TRIAL_SCALES,usesV34,hasV34ReceiptPair} from './pick-tickets-v34.js';
@@ -303,6 +304,7 @@ export async function readPublishedPickTicketCards(env,raceDate){
    const ownerRelease=raw?.publication_mode==="owner-approved-gpt";
    if(ownerRelease!== (file.customMetadata?.publication_mode==="owner-approved-gpt"))continue;
    const card=normalizePickTickets(raw),scratches=publicScratches(raw?.scratches_by_race);
+   if(requiresFinalPickField(card.date)){if(!file.customMetadata?.published_at)throw Error("Missing final-field publication timestamp");await requireFinalPickField(env,card,{publishedAt:file.customMetadata.published_at});}
    if(card.date===match[1])cards.push({...card,...(scratches?{scratches_by_race:scratches}:{})});
   }catch(error){console.warn("Invalid published Pick Tickets edition skipped",object.key,String(error).slice(0,100));}
  }
@@ -384,6 +386,7 @@ export async function publishGPTPickTicketReviews(env){
    const prior=await env.CARDS_BUCKET.get(customerKey);
    const priorText=prior?await prior.text():null;
    const customerCard=prepareVerifiedCustomerPick(row,priorText?JSON.parse(priorText):null);
+   await requireFinalPickField(env,customerCard);
    const customerJson=JSON.stringify(customerCard),customerHash=await sha256(customerJson);
    if(prior&&priorText!==customerJson){
     const previous=JSON.parse(priorText);
@@ -643,6 +646,7 @@ export async function handleAdminPickTickets(request,env){
   const customerJson=JSON.stringify(customerCard),customerHash=await sha256(customerJson);
   const publishedAt=new Date().toISOString();
   try{
+   await requireFinalPickField(env,customerCard);
    await env.CARDS_BUCKET.put(customerKey,customerJson,{
     httpMetadata:{contentType:"application/json; charset=utf-8",cacheControl:"private, no-store"},
     customMetadata:{customer_publish_approved:"true",revision:String(customerCard.revision),
