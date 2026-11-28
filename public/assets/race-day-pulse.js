@@ -310,7 +310,7 @@
       const at=message.indexOf(phrase);
       const featured=$('strong','rr-pulse-message-horse');
       if(program&&phrase===identityText){
-        const mini=chip(program);mini.classList.add('rr-pulse-saddle--inline');featured.append(mini,document.createTextNode(' '+horse));
+        const mini=$('span','rr-pulse-saddle--inline');mini.append(chip(program));featured.append(mini,document.createTextNode(' '+horse));
       }else featured.textContent=phrase;
       editorial.append(document.createTextNode(message.slice(0,at)),featured,document.createTextNode(message.slice(at+phrase.length)));
     }else editorial.textContent=message;
