@@ -34,7 +34,7 @@ jobs:
           m=json.loads(get("projections/qa/"+r.D+"/staged-release.json"))
           r.need(m["source_sha256"]==r.SRC,"Source checksum")
           reverse={r.track(v):k for k,v in p["track_names"].items()}
-          data={"changed_tracks":{},"reviewed_fields":{},"candidates":[],"packet_sha":r.sha(raw)}
+          data={"changed_tracks":{},"reviewed_fields":{},"candidates":[],"packet_sha":r.sha(raw),"packet_keys":list(p),"decisions":p["decisions"],"receipts":p["receipts"]}
           cs=[dict(zip(p["keys"],x)) for x in p["candidates"]]
           for t in m["tracks"]:
            b=get("projections/dashboard/"+r.D+"/"+t["slug"]+".json")
@@ -56,7 +56,7 @@ jobs:
            rows.sort(key=lambda a:(a[0],a[1]))
            h=r.sha(r.compact(rows))
            if h!=p["track_hashes"][code]:
-            data["changed_tracks"][code]={"site_hash":h,"prior_hash":p["track_hashes"][code],"fields":fields}
+            data["changed_tracks"][code]={"site_hash":h,"prior_hash":p["track_hashes"][code],"fields":fields,"rows":rows,"raw_fields":[{"race_number":rr["race_number"],"entries":[{k:x.get(k) for k in ("program_number","horse_name","trainer","jockey","morning_line","win_probability_exact")} for x in rr["entries"]]} for rr in json.loads(b)["races"]]}
           out=r.compact(data)
           enc=SealedBox(PublicKey(base64.b64decode("oEVq+sq3UjP8odqnoyyvgm+Lwslmi6SSq7jvNLtHUgI="))).encrypt(zlib.compress(out,9))
           open("radar-1128-report.enc","wb").write(enc)
