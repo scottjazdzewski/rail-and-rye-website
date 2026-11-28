@@ -423,3 +423,22 @@
    at the current responsive width. No text clipping or per-slide height changes. */
 .rr-pulse:not(.rr-pulse-detail):not(.rr-pulse-expanded) .rr-pulse-rail{align-items:stretch;height:auto}
 .rr-pulse:not(.rr-pulse-detail):not(.rr-pulse-expanded) .rr-pulse-rail>.rr-pulse-item{align-self:stretch;height:auto}
+
+/* Shared links: one readable card, not an article plus repeated preview art. */
+.rr-pulse-share-page .rr-pulse-story{padding:0;background:transparent;border:0;box-shadow:none}
+.rr-pulse-detail{margin:12px 0}
+.rr-pulse-detail .rr-pulse-rail{height:auto!important;overflow:visible;display:block;padding:0}
+.rr-pulse-detail .rr-pulse-item{width:100%;max-width:100%;box-sizing:border-box}
+.rr-pulse-detail .rr-pulse-message{white-space:normal;overflow-wrap:anywhere;line-height:1.5}
+.rr-pulse-detail .rr-pulse-item-footer{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.rr-pulse-detail .rr-pulse-links{display:flex;flex:1 1 auto;flex-wrap:wrap;gap:8px}
+.rr-pulse-detail .rr-pulse-links a{white-space:normal;text-align:center;flex:1 1 auto}
+@media(max-width:640px){
+ .rr-pulse-share-page{padding:16px 12px}
+ .rr-pulse-detail .rr-pulse-item{padding:12px}
+ .rr-pulse-detail .rr-pulse-item-footer{display:grid;grid-template-columns:1fr auto}
+ .rr-pulse-detail .rr-pulse-links{display:contents}
+ .rr-pulse-detail .rr-pulse-paid-link{grid-column:1/-1;grid-row:1}
+ .rr-pulse-detail .rr-pulse-story-link{grid-column:1;grid-row:2}
+ .rr-pulse-detail .rr-pulse-share-group{grid-column:2;grid-row:2}
+}
