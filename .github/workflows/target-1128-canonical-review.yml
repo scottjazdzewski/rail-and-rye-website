@@ -1,0 +1,94 @@
+name: Target List November 28 canonical field review
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/target-1128-canonical-review.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  review:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install boto3==1.40.36 pynacl==1.5.0
+      - name: Read and validate complete dated canonical stage; encrypt review data
+        env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+        run: |
+          python - <<'PY'
+          import json,os,hashlib,math,re,time,zlib
+          import boto3
+          from botocore.exceptions import ClientError
+          from nacl.public import PublicKey,SealedBox
+          day='2026-11-28'
+          source='d8d4fed7fe0c4dc7ed90687e8c5d11a5419c057c4717f5e064bb61a25e217780'
+          release='2026-11-28T08:00:00Z'
+          s=boto3.client('s3',endpoint_url='https://'+os.environ['TRI_CLOUDFLARE_ACCOUNT_ID']+'.r2.cloudflarestorage.com',region_name='auto',aws_access_key_id=os.environ['TRI_R2_ACCESS_KEY_ID'],aws_secret_access_key=os.environ['TRI_R2_SECRET_ACCESS_KEY'])
+          def get(k):
+            o=s.get_object(Bucket='rail-and-rye-private-cards',Key=k)
+            return o['Body'].read(),o['Metadata']
+          def sha(b):return hashlib.sha256(b).hexdigest()
+          for attempt in range(12):
+            try: mb,_=get('projections/qa/'+day+'/staged-release.json');break
+            except ClientError as e:
+              if e.response.get('Error',{}).get('Code') not in ('404','NoSuchKey','NotFound'):raise
+              time.sleep(10)
+          else:raise RuntimeError('Canonical manifest not yet present')
+          m=json.loads(mb)
+          assert m['source_sha256']==source and m['release_at']==release and m['status']=='VERIFIED_STAGED' and m['scope']=='VERIFIED_COMPLETE_SLATE'
+          assert len(m['tracks'])==12 and sum(x['races'] for x in m['tracks'])==113 and sum(x['runners'] for x in m['tracks'])==981
+          def ml(v):
+            s=str(v).strip()
+            m=re.fullmatch(r'(\d+)\s*[-/]\s*(\d+)',s)
+            return int(m[1])/int(m[2]) if m and int(m[2]) else None
+          cards=[]; decisions=[]; candidates=[]; conditional=[]
+          for t in m['tracks']:
+            slug=t['slug']
+            raw,meta=get('projections/dashboard/'+day+'/'+slug+'.json')
+            assert sha(raw)==t['dashboard_sha256'] and meta.get('source_sha256')==source and meta.get('release_at')==release
+            fraw,_=get('projections/f4-ordered/'+day+'/'+slug+'.json')
+            assert sha(fraw)==t['ordered_sha256']
+            rr,_=get('projections/qa/'+day+'/conditional-roster/'+slug+'.json')
+            rj=json.loads(rr)
+            conditional.extend([dict(x,track=t['name']) for x in rj['conditional_roster']])
+            c=json.loads(raw)
+            assert c['race_date']==day and c['track_name']==t['name'] and c['projection_status']=='prescratch'
+            assert len(c['races'])==t['races'] and sum(len(r['entries']) for r in c['races'])==t['runners']
+            cards.append(dict(track=t['name'],slug=slug,receipts=c['model_receipts'],races=[]))
+            for r in c['races']:
+              es=r['entries']; assert len({e['program_number'] for e in es})==len(es)
+              assert abs(sum(e['win_probability_exact'] for e in es)-100)<1e-6
+              assert all(abs(e['win_probability_exact']-100*e['f4_probabilities']['exact_p1'])<1e-6 for e in es)
+              odds=[(ml(e.get('morning_line')),e) for e in es]
+              fields=[dict(program_number=e['program_number'],horse_name=e['horse_name'],trainer=e['trainer'],jockey=e['jockey'],morning_line=e.get('morning_line'),win_probability_exact=e['win_probability_exact'],rank=e.get('rank'),metrics=e.get('metrics')) for e in es]
+              cards[-1]['races'].append(dict(race_number=r['race_number'],entries=fields))
+              if any(v is None for v,e in odds): status='MISSING_ML'
+              else:
+                lo=min(v for v,e in odds);favs=[e for v,e in odds if v==lo]
+                if len(favs)!=1: status='TIED_FAVORITE'
+                else:
+                  f=favs[0]; fp=f['win_probability_exact']
+                  a=[e for v,e in odds if v>lo and e['win_probability_exact']-fp>=10-1e-9 and v>100/e['win_probability_exact']-1]
+                  status='NUMERIC_QUALIFIER' if a else 'PASS_NUMERIC'
+                  if a:
+                    candidates.append(dict(track=t['name'],slug=slug,race_number=r['race_number'],race={k:v for k,v in r.items() if k!='entries'},favorite=f['program_number'],attacks=[e['program_number'] for e in a],entries=fields))
+              decisions.append(dict(track=t['name'],race_number=r['race_number'],status=status))
+          assert len(decisions)==113 and len(conditional)==39
+          out=dict(manifest=m,manifest_sha256=sha(mb),cards=cards,decisions=decisions,candidates=candidates,conditional=conditional)
+          raw=json.dumps(out,separators=(',',':'),ensure_ascii=False,allow_nan=False).encode()
+          key=PublicKey(bytes.fromhex('853c573b745ca9e52954270f36838f9e68b6a4909f8a5740ab4ca3de5b533135'))
+          open('target-review.enc','wb').write(SealedBox(key).encrypt(zlib.compress(raw,9)))
+          from collections import Counter
+          print('TARGET_1128_CANONICAL_REVIEW_PASS',len(cards),len(decisions),981,len(conditional),dict(Counter(x['status'] for x in decisions)),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: target-1128-encrypted-review
+          path: target-review.enc
+          retention-days: 1

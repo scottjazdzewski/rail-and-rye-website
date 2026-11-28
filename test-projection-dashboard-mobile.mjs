@@ -144,7 +144,8 @@ assert.match(css,/#rr-dash-horse-title>\.rr-dash-horse-name\{[^}]*font-family:In
 assert.doesNotMatch(css,/\.rr-dash-dialog-head h2\{[^}]*Tinos/,"Never reintroduce a serif drawer title");
 assert.match(sheet.textContent,/RACE CONTEXT/);
 assert.match(sheet.textContent,/PERFORMANCE PROFILE/);
-assert.match(sheet.textContent,/TRI INTELLIGENCE/);
+assert.doesNotMatch(sheet.textContent,/TRI INTELLIGENCE/,"Do not duplicate the performance profile");
+assert.doesNotMatch(sheet.textContent,/TRI estimates/,"Do not duplicate the probability comparison");
 assert.match(sheet.textContent,/Favorable/);
 assert.match(sheet.textContent,/Unfavorable/);
 assert.match(sheet.textContent,/Neutral/);
