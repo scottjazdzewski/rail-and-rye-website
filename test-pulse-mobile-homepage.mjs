@@ -38,6 +38,10 @@ try{
      if(width>=390)assert.ok(g.pulseBottom-g.previewBanner<=g.fold+1,'Full Pulse must fit initial mobile viewport before scrolling: '+JSON.stringify(g));
      console.log(name,width,i,JSON.stringify(g));
     }
+    // Wrap from the final insight to the first, and back, on both mobile engines.
+    const at=async i=>page.waitForFunction(i=>{const rail=document.querySelector('#rr-pulse-rail');return Math.abs(rail.children[i].getBoundingClientRect().left-rail.getBoundingClientRect().left)<3&&document.querySelector('.rr-pulse-position').textContent===(i+1)+'/'+rail.children.length},i);
+    await page.locator('#rr-pulse-next').click();await at(0);
+    await page.locator('#rr-pulse-prev').click();await at(count-1);
     await page.locator('#rr-pulse-prev').click();
     await page.waitForFunction(i=>{const rail=document.querySelector('#rr-pulse-rail');return Math.abs(rail.children[i].getBoundingClientRect().left-rail.getBoundingClientRect().left)<1.5},count-2);
     await page.evaluate(()=>window.scrollTo(0,0));
@@ -48,6 +52,23 @@ try{
      await card.locator('.rr-pulse-compact-actions .rr-pulse-tool').click();
      const direct=page.locator('.rr-pulse-menu');await direct.waitFor();
      assert.equal(await direct.getByRole('button',{name:'Download Card'}).count(),1);
+     const photo=direct.getByRole('button',{name:'Save to Photos'});
+     await photo.waitFor();
+     await page.evaluate(()=>{
+       Object.defineProperty(navigator,'canShare',{configurable:true,value:({files})=>files?.[0]?.type==='image/png'});
+       Object.defineProperty(navigator,'share',{configurable:true,value:async({files})=>{const bytes=new Uint8Array(await files[0].arrayBuffer());window.__photoQA={type:files[0].type,width:new DataView(bytes.buffer).getUint32(16),height:new DataView(bytes.buffer).getUint32(20),name:files[0].name};}});
+     });
+     await photo.click();
+     await page.waitForFunction(()=>!!window.__photoQA);
+     assert.deepEqual(await page.evaluate(()=>[window.__photoQA.type,window.__photoQA.width,window.__photoQA.height]),['image/png',1080,1350]);
+     await page.evaluate(()=>Object.defineProperty(navigator,'canShare',{configurable:true,value:()=>false}));
+     await photo.click();
+     const dialog=page.locator('.rr-pulse-photo-dialog');await dialog.waitFor();
+     await dialog.locator('img').evaluate(i=>i.decode());
+     assert.equal(await dialog.locator('img').evaluate(i=>i.naturalWidth),1080);
+     await dialog.getByRole('button',{name:'Close'}).click();
+     // The outside-pointer handler closes the share menu when the fallback closes.
+     if(!await direct.isVisible())await card.locator('.rr-pulse-compact-actions .rr-pulse-tool').click();
      const directDownload=page.waitForEvent('download');await direct.getByRole('button',{name:'Download Card'}).click();assert.match((await directDownload).suggestedFilename(),/\.png$/);
      await card.locator('.rr-pulse-compact-actions .rr-pulse-tool').click();
      await card.locator('.rr-pulse-compact-open').click();

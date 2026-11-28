@@ -403,3 +403,18 @@
  .heritage-home>.rr-pulse .rr-pulse-compact-actions .rr-pulse-compact-open{margin:0;padding-inline:7px}
  .heritage-home>.rr-pulse .rr-pulse-compact-actions .rr-pulse-tool{min-height:44px;padding-inline:7px;font-size:10px}
 }
+
+/* Tablet rails preview the next card. Give the final real card enough trailing
+   scroll room to reach the same leading snap position; no duplicate story. */
+@media(min-width:641px) and (max-width:1120px){
+ .rr-pulse:not(.rr-pulse-expanded) .rr-pulse-rail:has(>.rr-pulse-item:nth-child(2))::after{content:"";flex:0 0 max(0px,calc(100% - 470px - 9px));pointer-events:none}
+}
+
+.rr-pulse-menu .rr-pulse-save-photo{display:none}
+@media(max-width:640px),(hover:none) and (pointer:coarse){
+ .rr-pulse-menu .rr-pulse-save-photo{display:block}
+}
+.rr-pulse-photo-dialog{box-sizing:border-box;width:min(94vw,480px);max-height:92dvh;overflow:auto;background:#10283b;color:#f3eadb;border:1px solid #d0ae6a;border-radius:14px;padding:12px;text-align:center}
+.rr-pulse-photo-dialog::backdrop{background:#000a}
+.rr-pulse-photo-dialog p{font:500 14px/1.4 Inter,Arial,sans-serif;margin:0 0 8px}
+.rr-pulse-photo-preview{display:block;width:auto;max-width:100%;max-height:68dvh;margin:0 auto 10px;object-fit:contain;-webkit-touch-callout:default;user-select:auto}

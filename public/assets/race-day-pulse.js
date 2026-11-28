@@ -178,8 +178,9 @@
     const group=$('div','rr-pulse-share-group'),share=$('button','rr-pulse-tool','Share');
     share.type='button';share.setAttribute('aria-label','Share '+raceLabel(item));share.setAttribute('aria-expanded','false');
     const menu=$('div','rr-pulse-menu');menu.hidden=true;
-    const social=$('button','','Share to X'),download=$('button','','Download Card'),copy=$('button','','Copy Link');
-    for(const button of [social,download,copy])button.type='button';
+    const social=$('button','','Share to X'),download=$('button','','Download Card'),copy=$('button','','Copy Link'),photo=$('button','rr-pulse-save-photo','Save to Photos');
+    for(const button of [social,download,copy,photo])button.type='button';
+    photo.disabled=true;
     const notice=$('span','rr-pulse-menu-status');notice.setAttribute('role','status');
     const preview=$('p','rr-pulse-preview-status','Checking social preview…');preview.setAttribute('role','status');
     const link=$('a','rr-pulse-share-fallback',shareUrl(item));link.href=shareUrl(item);link.hidden=true;
@@ -193,8 +194,8 @@
     function prepare(){
       if(blob)return Promise.resolve(blob);
       if(preparing)return preparing;
-      download.disabled=true;notice.textContent='Preparing download…';
-      preparing=socialImage(item).then(value=>{blob=value;notice.textContent='';return value;}).catch(()=>{notice.textContent='Image unavailable. Close and reopen Share to retry.';return null;}).finally(()=>{download.disabled=!blob;preparing=null;});
+      download.disabled=photo.disabled=true;notice.textContent='Preparing download…';
+      preparing=socialImage(item).then(value=>{blob=value;notice.textContent='';return value;}).catch(()=>{notice.textContent='Image unavailable. Close and reopen Share to retry.';return null;}).finally(()=>{download.disabled=photo.disabled=!blob;preparing=null;});
       return preparing;
     }
     async function copyOrReveal(){
@@ -202,6 +203,30 @@
     }
     copy.addEventListener('click',async()=>{notice.textContent=await copyOrReveal()?'Link copied.':'Copy the insight link below.';});
     download.addEventListener('click',()=>{if(blob){downloadBlob(blob,shareFilename(item));notice.textContent='Card downloaded.';}});
+    photo.addEventListener('click',async()=>{
+      if(!blob)return;
+      const file=new File([blob],shareFilename(item),{type:'image/png'});
+      // The PNG was prepared when Share opened. Invoke native sharing directly
+      // on the tap, while iOS still has user activation.
+      try{
+        if(navigator.share&&navigator.canShare?.({files:[file]})){
+          await navigator.share({files:[file]});
+          notice.textContent='Use Save Image in the share sheet to add it to Photos.';
+          return;
+        }
+      }catch(error){
+        if(error?.name==='AbortError')return;
+      }
+      // Unsupported browser: display an actual PNG for touch-and-hold saving.
+      const image=$('img','rr-pulse-photo-preview');
+      image.alt='Race-Day Pulse card — touch and hold to save image';
+      const url=URL.createObjectURL(blob);image.src=url;
+      const dialog=$('dialog','rr-pulse-photo-dialog'),done=$('button','rr-pulse-tool','Close');
+      done.type='button';done.addEventListener('click',()=>dialog.close());
+      dialog.append($('p','','Touch and hold the image, then choose Save Image or Save to Photos.'),image,done);
+      dialog.addEventListener('close',()=>{URL.revokeObjectURL(url);dialog.remove();share.focus();},{once:true});
+      document.body.append(dialog);dialog.showModal();
+    });
     social.addEventListener('click',()=>{
       if(!previewReady)return;
       const url=shareUrl(item),text=item.short_message||item.message;
@@ -210,7 +235,7 @@
       window.open('https://x.com/intent/tweet?text='+encodeURIComponent(text)+'&url='+encodeURIComponent(url),'_blank','noopener,noreferrer');
       notice.textContent='If X does not show the preview, download the card and attach it manually.';
     });
-    menu.append(social,download,copy,preview,notice,link);
+    menu.append(social,photo,download,copy,preview,notice,link);
     function close(){menu.hidden=true;menu.remove();share.setAttribute('aria-expanded','false');if(closeShare===close)closeShare=null;}
     share.addEventListener('click',()=>{
       if(closeShare===close){close();return;}
@@ -243,8 +268,11 @@
       {d:'M5.5 7L10 11.5L14 9L21 18M16 18H21V13',stroke:'#f0ad9e',w:2.5}
     ],
     'favorite-scratched':[
-      {d:'M12 2L14.5 7.8L21 8.5L16 12.5L17.5 19L12 15.5L6.5 19L8 12.5L3 8.5L9.5 7.8Z',stroke:'#e6b650',w:1.6},
-      {d:'M4 20L20 4',stroke:'#f0ad9e',w:2.6}
+      // A solid favorite star with a discrete removal medallion, never a
+      // crossed-out star or a close/delete X. The same vector serves social.
+      {d:'M10 1.5L12.8 7.1L19 8L14.5 12.4L15.6 18.6L10 15.7L4.4 18.6L5.5 12.4L1 8L7.2 7.1Z',fill:'#e6b650',stroke:'#f3d99b',w:.55},
+      {d:'M17.4 10.8A6 6 0 1 1 17.4 22.8A6 6 0 1 1 17.4 10.8Z',fill:'#a33f40',stroke:'#f6e8d4',w:1.3},
+      {d:'M14.7 16.8H20.1',stroke:'#fff8ed',w:2.3}
     ],
     favorite:[
       {d:'M12 1L13.8 5.4L18.6 5.7L14.9 8.8L16.1 13.3L12 10.7L7.9 13.3L9.1 8.8L5.4 5.7L10.2 5.4Z',fill:'#e6b650'},
@@ -412,10 +440,13 @@
   window.addEventListener('resize',()=>{if(expanded&&!matchMedia('(min-width:641px)').matches)collapseInsight(false);fitActiveCard();},{passive:true});
   function scrollToIndex(index,behavior='smooth'){
     if(!rail.children.length||expanded)return;
-    selected=Math.max(0,Math.min(index,rail.children.length-1));
+    const count=rail.children.length;
+    // Wrap instantly at the boundary rather than animating across the entire day.
+    if(index<0||index>=count)behavior='instant';
+    selected=((index%count)+count)%count;
     const el=rail.children[selected];
     rail.scrollTo({left:rail.scrollLeft+el.getBoundingClientRect().left-rail.getBoundingClientRect().left,behavior});
-    prev.disabled=selected===0;next.disabled=selected===rail.children.length-1;updatePosition();fitActiveCard();
+    prev.disabled=next.disabled=rail.children.length<=1;updatePosition();fitActiveCard();
   }
   prev.addEventListener('click',()=>scrollToIndex(selected-1));
   next.addEventListener('click',()=>scrollToIndex(selected+1));
@@ -429,7 +460,7 @@
     if(expanded)return;
     let best=0,distance=Infinity;
     [...rail.children].forEach((el,i)=>{const x=Math.abs(el.getBoundingClientRect().left-rail.getBoundingClientRect().left);if(x<distance){best=i;distance=x;}});
-    selected=best;prev.disabled=selected===0;next.disabled=selected===rail.children.length-1;updatePosition();fitActiveCard();
+    selected=best;prev.disabled=next.disabled=rail.children.length<=1;updatePosition();fitActiveCard();
   },{passive:true});
   async function load(){
     if(pending)return;pending=true;
@@ -458,6 +489,6 @@
     load();setInterval(load,60000);
   });
   if(!detailMode&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
-    setInterval(()=>{if(!matchMedia('(max-width:640px)').matches&&!shell.hidden&&!paused&&!expanded&&!closeShare&&!document.hidden&&rail.children.length>1)scrollToIndex((selected+1)%rail.children.length);},6500);
+    setInterval(()=>{if(!matchMedia('(max-width:640px)').matches&&!shell.hidden&&!paused&&!expanded&&!closeShare&&!document.hidden&&rail.children.length>1)scrollToIndex(selected+1);},6500);
   }
 })();
