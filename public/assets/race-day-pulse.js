@@ -41,7 +41,8 @@
   }
   const titleCaseWords=value=>String(value||'').replace(/(^|[\s-])([a-z])/gi,(_,separator,letter)=>separator+letter.toUpperCase());
   const ordinal=n=>{const x=Number(n);if(!Number.isInteger(x)||x<1)return 'Race '+String(n);return x+(x%100>=11&&x%100<=13?'th':({1:'st',2:'nd',3:'rd'}[x%10]||'th'));};
-  const raceLabel=item=>item.track+' · '+ordinal(item.race_number)+(typeof item.post_time_et==='string'&&item.post_time_et.trim()?' · '+item.post_time_et.trim():'');
+  const raceLabel=item=>item.track+' · '+ordinal(item.race_number);
+  const raceHeader=item=>raceLabel(item)+(typeof item.post_time_et==='string'&&item.post_time_et.trim()?' · '+item.post_time_et.trim():'');
   const pulseUrl=item=>'/pulse/'+encodeURIComponent(item.date)+'/'+encodeURIComponent(item.id);
   function downloadBlob(blob,filename){
     const uri=URL.createObjectURL(blob),link=$('a');link.href=uri;link.download=filename;
@@ -285,7 +286,7 @@
     const content=$('div','rr-pulse-item-layout');
     const body=$('div','rr-pulse-copy');
     const top=$('div','rr-pulse-signal-row');
-    top.append($('p','rr-pulse-track',raceLabel(item).toUpperCase()),signalBadge(item));
+    top.append($('p','rr-pulse-track',raceHeader(item).toUpperCase()),signalBadge(item));
     const m=metricText(item);
     const horseLine=$('div','rr-pulse-horse-line');horseLine.append(chip(item.chip),$('h3','rr-pulse-headline',m&&item.horse?item.horse:titleCaseWords(item.headline)));const identity=$('div','rr-pulse-identity');identity.append(top.firstChild,horseLine);const header=$('div','rr-pulse-card-header');header.append(identity,top.lastChild);body.append(header);
     if(m){
