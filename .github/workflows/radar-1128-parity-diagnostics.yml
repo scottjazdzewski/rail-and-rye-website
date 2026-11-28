@@ -1,0 +1,69 @@
+name: November 28 Radar private reconciliation diagnostics
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/radar-1128-parity-diagnostics.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  diagnostic:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install --quiet pynacl==1.5.0 boto3==1.40.36
+      - name: Read-only sealed discrepancy report
+        env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+        run: |
+          PYTHONPATH=scripts python - <<'PY'
+          import radar_1128_stage as r
+          from nacl.public import PublicKey, SealedBox
+          import base64,zlib,json,os,boto3
+          s=boto3.client("s3",region_name="auto",endpoint_url="https://"+os.environ["TRI_CLOUDFLARE_ACCOUNT_ID"].strip()+".r2.cloudflarestorage.com",aws_access_key_id=os.environ["TRI_R2_ACCESS_KEY_ID"].strip(),aws_secret_access_key=os.environ["TRI_R2_SECRET_ACCESS_KEY"].strip())
+          def get(k):return s.get_object(Bucket=r.BUCKET,Key=k)["Body"].read()
+          raw=get(r.P+"independent-qa-0001.json")
+          r.need(r.sha(raw)==r.PACKET,"Independent packet checksum")
+          p=json.loads(raw)
+          m=json.loads(get("projections/qa/"+r.D+"/staged-release.json"))
+          r.need(m["source_sha256"]==r.SRC,"Source checksum")
+          reverse={r.track(v):k for k,v in p["track_names"].items()}
+          data={"changed_tracks":{},"reviewed_fields":{},"candidates":[],"packet_sha":r.sha(raw),"packet_keys":list(p),"decisions":p["decisions"],"receipts":p["receipts"]}
+          cs=[dict(zip(p["keys"],x)) for x in p["candidates"]]
+          for t in m["tracks"]:
+           b=get("projections/dashboard/"+r.D+"/"+t["slug"]+".json")
+           r.need(r.sha(b)==t["dashboard_sha256"],"Dashboard checksum")
+           code=reverse[r.track(t["name"])]
+           rows=[];fields=[]
+           for race in json.loads(b)["races"]:
+            rn=int(race["race_number"]);rs=[]
+            for x in race["entries"]:
+             rs.append([rn,str(x["program_number"]),r.hnorm(x["horse_name"]),r.norm(x["trainer"]),r.norm(x["jockey"]),str(x["morning_line"]).replace("-","/"),format(x["win_probability_exact"]/100,".10f")])
+             for c in cs:
+              if r.track(c["track"])==r.track(t["name"]) and int(c["race_number"])==rn and str(c["program_number"])==str(x["program_number"]):
+               data["candidates"].append({"local":c,"shared":[x["horse_name"],x["trainer"],x["jockey"],x["morning_line"],x["win_probability_exact"]/100]})
+            rs.sort(key=lambda a:(a[0],a[1]));rows+=rs
+            h=r.sha(r.compact(rs));fk=code+"|"+str(rn)
+            fields.append([rn,h])
+            if fk in p["reviewed_hashes"] and h!=p["reviewed_hashes"][fk]:
+             data["reviewed_fields"][fk]={"site":rs,"prior_hash":p["reviewed_hashes"][fk],"site_hash":h}
+           rows.sort(key=lambda a:(a[0],a[1]))
+           h=r.sha(r.compact(rows))
+           if h!=p["track_hashes"][code]:
+            data["changed_tracks"][code]={"site_hash":h,"prior_hash":p["track_hashes"][code],"fields":fields,"rows":rows,"raw_fields":[{"race_number":rr["race_number"],"entries":[{k:x.get(k) for k in ("program_number","horse_name","trainer","jockey","morning_line","win_probability_exact")} for x in rr["entries"]]} for rr in json.loads(b)["races"]]}
+          out=r.compact(data)
+          enc=SealedBox(PublicKey(base64.b64decode("oEVq+sq3UjP8odqnoyyvgm+Lwslmi6SSq7jvNLtHUgI="))).encrypt(zlib.compress(out,9))
+          open("radar-1128-report.enc","wb").write(enc)
+          print("SEALED_PARITY_REPORT_READY tracks="+str(len(data["changed_tracks"]))+" fields="+str(len(data["reviewed_fields"]))+" candidates="+str(len(data["candidates"])))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: radar-1128-sealed-parity-report
+          path: radar-1128-report.enc
+          retention-days: 1

@@ -1,0 +1,47 @@
+name: Target List canonical receipt provenance check November 28
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/target-1128-provenance.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install boto3==1.40.36 pynacl==1.5.0
+      - name: Verify source receipt provenance without outputting picks
+        env:
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          python - <<'PY'
+          import json,base64,zlib,hashlib,os,re
+          from pathlib import Path
+          from nacl.public import SealedBox
+          from scripts.pick_private_score_bridge import private_key
+          import boto3
+          root=Path('private-ingest/20261128')
+          m=json.loads((root/'manifest.json').read_text())
+          print('Canonical payload keys and proof objects')
+          for t in m['tracks']:
+            enc=(root/(t['slug']+'.enc')).read_bytes()
+            assert hashlib.sha256(enc).hexdigest()==t['cipher_sha256']
+            raw=zlib.decompress(SealedBox(private_key()).decrypt(base64.b64decode(enc,validate=True)))
+            assert hashlib.sha256(raw).hexdigest()==t['raw_sha256']
+            d=json.loads(raw)
+            print(t['slug'],list(d),list(d['card']['model_receipts']),[k for k in d['model'] if 'receipt' in k or 'proof' in k],flush=True)
+          s=boto3.client('s3',endpoint_url='https://'+os.environ['TRI_CLOUDFLARE_ACCOUNT_ID']+'.r2.cloudflarestorage.com',region_name='auto',aws_access_key_id=os.environ['TRI_R2_ACCESS_KEY_ID'],aws_secret_access_key=os.environ['TRI_R2_SECRET_ACCESS_KEY'])
+          def get(k):return s.get_object(Bucket='rail-and-rye-private-cards',Key=k)['Body'].read()
+          day='2026-11-28'
+          rr=get('intelligence/longshot-radar/staging/'+day+'/independent-qa-0001.json');p=json.loads(rr)
+          print('Independent receipt schema',list(p), 'receipt rows',len(p['receipts']), 'receipt row widths',sorted(set(map(len,p['receipts']))), 'counts',p['counts'][:5])
+          print('Independent receipt coverage hashes',hashlib.sha256(rr).hexdigest(),flush=True)
+          PY
