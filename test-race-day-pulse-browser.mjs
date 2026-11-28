@@ -98,7 +98,7 @@ try{
   assert.ok((await page.locator('.rr-pulse-headline').first().innerText()).includes('Sample Runner 0'));
   assert.equal(await page.locator('.rr-pulse-logo').count(),1,'Approved brand mark appears in Pulse');
   assert.match(await page.locator('.rr-pulse-track').first().innerText(),/3:15 PM ET/);
-  assert.equal(await page.locator('.rr-pulse-item').nth(2).locator('.rr-pulse-signal--scratch').getAttribute('aria-label'),'PROJECTED FAVORITE SCRATCHED');
+  assert.equal(await page.locator('.rr-pulse-item').nth(2).locator('.rr-pulse-signal--favorite-scratched').getAttribute('aria-label'),'PROJECTED FAVORITE SCRATCHED');
   assert.equal(await page.locator('.rr-pulse-item').nth(4).locator('.rr-pulse-signal--rank').getAttribute('aria-label'),'SECOND-OR-THIRD PROBABILITY SHIFT');
   assert.match(await page.locator('.rr-pulse-headline').first().evaluate(el=>getComputedStyle(el).fontFamily),/^Inter/);
   const editorial=page.locator('.rr-pulse-message').first();
