@@ -383,3 +383,16 @@
 .rr-pulse .rr-pulse-expanded-message{font:500 13px/1.5 var(--heritage-sans,Montserrat,Arial,sans-serif);color:#f3eadb;white-space:normal;overflow-wrap:anywhere;margin:5px 0 7px}
 .rr-pulse-expanded .rr-pulse-nav{visibility:hidden}
 .rr-pulse-expanded .rr-pulse-story-link{min-width:0;white-space:normal}
+
+/* Branded navigation: solid gold buttons and crisp directional chevrons. */
+.rr-pulse .rr-pulse-nav{display:flex;align-items:center;gap:6px;flex:0 0 auto}
+.rr-pulse .rr-pulse-arrow{display:grid;place-items:center;flex:none;width:34px;height:34px;padding:0;border-radius:9px;border:1px solid #e4c187;background:linear-gradient(180deg,#f1d7a2,#c8a164);color:#122b40;box-shadow:inset 0 1px 0 #ffffff70,0 2px 4px #0005;font-size:0;line-height:1}
+.rr-pulse .rr-pulse-arrow::before{content:'';display:block;width:8px;height:8px;border-top:2.5px solid currentColor;border-right:2.5px solid currentColor;transform:rotate(45deg);margin-left:-3px}
+.rr-pulse #rr-pulse-prev::before{transform:rotate(-135deg);margin-left:3px}
+.rr-pulse .rr-pulse-arrow:hover:not(:disabled){background:#f6dfb0}
+.rr-pulse .rr-pulse-arrow:active:not(:disabled){box-shadow:inset 0 2px 5px #0004}
+.rr-pulse .rr-pulse-arrow:focus-visible{outline:2px solid #fff4da;outline-offset:2px}
+.rr-pulse .rr-pulse-arrow:disabled{opacity:1;color:#71808c;background:#132b3e;border-color:#43515c;box-shadow:none}
+.rr-pulse .rr-pulse-position{font:700 11px/1.1 Inter,Arial,system-ui,sans-serif;font-variant-numeric:tabular-nums;white-space:nowrap;color:#e8d5b0;text-align:center;min-width:28px}
+@media(max-width:640px){.heritage-home>.rr-pulse .rr-pulse-arrow{width:40px;height:40px}.heritage-home>.rr-pulse .rr-pulse-nav{gap:4px}.rr-pulse .rr-pulse-position{font-size:10px;min-width:24px}}
+@media(max-width:360px){.heritage-home>.rr-pulse .rr-pulse-nav{gap:3px}.rr-pulse .rr-pulse-position{font-size:9px}}
