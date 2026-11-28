@@ -363,16 +363,29 @@
     const original=$('a','rr-pulse-story-link',detailMode?'Intelligence Hub':'Open Pulse');original.href=detailMode?'/store/':pulseUrl(item);
     if(!detailMode){original.setAttribute('aria-expanded','false');original.addEventListener('click',e=>{if(e.ctrlKey||e.metaKey||e.shiftKey||e.altKey||!matchMedia('(min-width:641px)').matches)return;e.preventDefault();if(expanded===article)collapseInsight();else expandInsight(article);});}
     const paid=$('a','rr-pulse-paid-link','Full-Field Analysis');paid.href=typeof item.hub_url==='string'&&item.hub_url.startsWith('/')&&!item.hub_url.startsWith('//')?item.hub_url:'/store/';
-    links.append(original,paid);footer.append(links,shareTools(item));article.append(footer);
+    const share=shareTools(item);links.append(original,paid);footer.append(links,share);article.append(footer);
     // Mobile homepage shows the entire essential insight; full actions live on the detail page.
     if(detailMode)return article;
     const compact=$('a','rr-pulse-compact-open','Open Pulse');compact.href=pulseUrl(item);
     const compactActions=$('div','rr-pulse-compact-actions');
-    compactActions.append(compact,shareTools(item));
+    compactActions.append(compact);if(matchMedia('(max-width:640px)').matches)compactActions.append(share);
     const scratchesRow=article.querySelector('.rr-pulse-scratch-list');
     if(scratchesRow)scratchesRow.append(compactActions);else {const compactRow=$('div','rr-pulse-compact-row');compactRow.append(compactActions);article.append(compactRow);}
     return article;
   }
+  // Move the one real Share control across breakpoints, rather than
+  // retaining a hidden duplicate in another part of the card.
+  const compactMedia=matchMedia('(max-width:640px)');
+  compactMedia.addEventListener?.('change',()=>{
+    closeShare?.();
+    if(detailMode)return;
+    for(const card of rail.children){
+      const share=card.querySelector('.rr-pulse-share-group');
+      const target=card.querySelector(compactMedia.matches?'.rr-pulse-compact-actions':'.rr-pulse-item-footer');
+      if(share&&target)target.append(share);
+    }
+    fitActiveCard();
+  });
   function expandInsight(article){
     if(expanded)collapseInsight();
     selected=[...rail.children].indexOf(article);if(selected<0)return;
