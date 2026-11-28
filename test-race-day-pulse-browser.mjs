@@ -219,11 +219,19 @@ try{
 
   }
   await page.locator('.rr-pulse-item-footer .rr-pulse-tool').first().click();
+  const stable=await page.locator('#rr-pulse').boundingBox();
   await page.locator('#rr-pulse-next').click();
   assert.ok(!await page.locator('#rr-pulse-prev').isDisabled(),'Scroller arrows work');
   // Both arrows wrap; the final card must actually occupy the leading snap position.
   const at=async i=>page.waitForFunction(i=>{const rail=document.querySelector('#rr-pulse-rail'),card=rail.children[i];return Math.abs(card.getBoundingClientRect().left-rail.getBoundingClientRect().left)<3&&document.querySelector('.rr-pulse-position').textContent===(i+1)+'/6'},i);
   await at(1);
+  for(let i=2;i<6;i++){
+    await page.locator('#rr-pulse-next').click();await at(i);
+    const current=await page.locator('#rr-pulse').boundingBox();
+    assert.ok(Math.abs(current.height-stable.height)<1,'Carousel height must not change with selected card');
+  }
+  await page.locator('#rr-pulse-next').click();await at(0);
+  await page.locator('#rr-pulse-next').click();await at(1);
   await page.locator('#rr-pulse-prev').click();await at(0);
   await page.locator('#rr-pulse-prev').click();await at(5);
   assert.ok(await page.locator('#rr-pulse-next').isEnabled());
