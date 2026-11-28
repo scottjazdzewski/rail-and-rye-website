@@ -396,3 +396,11 @@
 .rr-pulse .rr-pulse-position{font:700 11px/1.1 Inter,Arial,system-ui,sans-serif;font-variant-numeric:tabular-nums;white-space:nowrap;color:#e8d5b0;text-align:center;min-width:28px}
 @media(max-width:640px){.heritage-home>.rr-pulse .rr-pulse-arrow{width:40px;height:40px}.heritage-home>.rr-pulse .rr-pulse-nav{gap:4px}.rr-pulse .rr-pulse-position{font-size:10px;min-width:24px}}
 @media(max-width:360px){.heritage-home>.rr-pulse .rr-pulse-nav{gap:3px}.rr-pulse .rr-pulse-position{font-size:9px}}
+
+/* Mobile: both direct actions available without leaving Pulse. */
+.rr-pulse-compact-actions{display:none}
+@media(max-width:640px){
+ .heritage-home>.rr-pulse .rr-pulse-compact-actions{display:flex;align-items:center;gap:4px;margin-left:auto;flex:0 0 auto}
+ .heritage-home>.rr-pulse .rr-pulse-compact-actions .rr-pulse-compact-open{margin:0;padding-inline:7px}
+ .heritage-home>.rr-pulse .rr-pulse-compact-actions .rr-pulse-tool{min-height:44px;padding-inline:7px;font-size:10px}
+}
