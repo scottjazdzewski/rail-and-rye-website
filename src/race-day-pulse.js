@@ -451,7 +451,7 @@ export async function handlePulsePage(request,env,route){
     '<meta property="og:description" content="'+escape(desc)+'"><meta property="og:url" content="'+escape(canonical)+'"><meta property="og:site_name" content="Rail &amp; Rye Racing">'+
     (imageReady?'<meta property="og:image" content="'+escape(imageURL)+'"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="675"><meta property="og:image:type" content="image/png"><meta property="og:image:alt" content="'+escape(title)+'"><meta name="twitter:image" content="'+escape(imageURL)+'">':'')+
     '<meta name="twitter:card" content="'+(imageReady?'summary_large_image':'summary')+'"><meta name="twitter:title" content="'+escape(title)+'"><meta name="twitter:description" content="'+escape(desc)+'"><link rel="canonical" href="'+escape(canonical)+'">'+
-    '<link rel="stylesheet" href="/assets/rail-rye-core.css"><link rel="stylesheet" href="/assets/race-day-pulse.css?v=7">'+
+    '<link rel="stylesheet" href="/assets/rail-rye-core.css"><link rel="stylesheet" href="/assets/race-day-pulse.css?v=8">'+
     '</head><body class="rr-pulse-standalone"><main class="rr-pulse-share-page"><a class="rr-pulse-home-link" href="/"><img src="/assets/approved/brand/rail-rye-ivory-logo.png" alt="" width="32" height="32">RAIL &amp; RYE RACING</a>'+
     '<article class="rr-pulse-story"><p class="rr-pulse-eyebrow">RACE-DAY PULSE · '+escape(date)+'</p>'+
     '<div class="rr-pulse-story-content">'+sharedChip(item.chip)+
@@ -461,6 +461,6 @@ export async function handlePulsePage(request,env,route){
     '<p class="rr-pulse-foot">Updated after source-verified scratch processing. Projections are estimates, not guarantees.</p>'+
     '<a class="rr-pulse-primary" href="'+escape(actionURL)+'">'+escape(actionText)+'</a>'+
     (imageReady?'<a class="rr-pulse-download" href="'+escape(imageURL)+'" download="rail-rye-pulse-'+escape(id)+'.png">Download Card</a>':'')+
-    '<a class="rr-pulse-secondary" href="/store/">Intelligence Hub</a><a class="rr-pulse-secondary" href="/">See today’s Race-Day Pulse</a></article></main><script src="/assets/race-day-pulse.js?v=7" defer></script></body></html>';
+    '<a class="rr-pulse-secondary" href="/store/">Intelligence Hub</a><a class="rr-pulse-secondary" href="/">See today’s Race-Day Pulse</a></article></main><script src="/assets/race-day-pulse.js?v=8" defer></script></body></html>';
   return new Response(request.method==='HEAD'?null:html,{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'public, max-age=45, must-revalidate','X-Content-Type-Options':'nosniff'}});
 }
