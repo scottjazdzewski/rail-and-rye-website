@@ -18,6 +18,10 @@
   const prev=document.getElementById('rr-pulse-prev'),next=document.getElementById('rr-pulse-next');
   if(!shell||!rail||!prev||!next)return;
   let selected=0,events=[],paused=false,revision='',pending=false,closeShare=null,expanded=null;
+  const position=document.createElement('span');position.className='rr-pulse-position';position.setAttribute('aria-live','off');
+  if(!detailMode)next.before(position);
+  function updatePosition(){position.textContent=(selected+1)+'/'+rail.children.length;position.setAttribute('aria-label','Insight '+(selected+1)+' of '+rail.children.length);}
+
   const $=(tag,className,text)=>{
     const el=document.createElement(tag);
     if(className)el.className=className;
@@ -378,7 +382,7 @@
     selected=Math.max(0,Math.min(index,rail.children.length-1));
     const el=rail.children[selected];
     rail.scrollTo({left:rail.scrollLeft+el.getBoundingClientRect().left-rail.getBoundingClientRect().left,behavior});
-    prev.disabled=selected===0;next.disabled=selected===rail.children.length-1;fitActiveCard();
+    prev.disabled=selected===0;next.disabled=selected===rail.children.length-1;updatePosition();fitActiveCard();
   }
   prev.addEventListener('click',()=>scrollToIndex(selected-1));
   next.addEventListener('click',()=>scrollToIndex(selected+1));
@@ -392,7 +396,7 @@
     if(expanded)return;
     let best=0,distance=Infinity;
     [...rail.children].forEach((el,i)=>{const x=Math.abs(el.getBoundingClientRect().left-rail.getBoundingClientRect().left);if(x<distance){best=i;distance=x;}});
-    selected=best;prev.disabled=selected===0;next.disabled=selected===rail.children.length-1;fitActiveCard();
+    selected=best;prev.disabled=selected===0;next.disabled=selected===rail.children.length-1;updatePosition();fitActiveCard();
   },{passive:true});
   async function load(){
     if(pending)return;pending=true;
