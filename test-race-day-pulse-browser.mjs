@@ -20,7 +20,7 @@ const make=(i)=>({
  summary:{projected_rank:1,win_probability:i%2?25.3:31.2},
  hub_url:'/store/?date='+date
 });
-let mode='six';const fixture=()=>({date,status:'ok',items:mode==='empty'?[]:(mode==='one'?[make(0)]:Array.from({length:6},(_,i)=>make(i)))});
+let mode='six';const fixture=()=>({date,status:'ok',items:mode==='empty'?[]:(mode==='one'?[make(0)]:Array.from({length:mode==='24'?24:6},(_,i)=>make(i)))});
 const dir=resolve('public');
 const mime={'.html':'text/html;charset=utf-8','.js':'text/javascript;charset=utf-8','.css':'text/css;charset=utf-8','.png':'image/png','.webp':'image/webp','.ico':'image/x-icon','.jpg':'image/jpeg'};
 const server=createServer((req,res)=>{
@@ -61,7 +61,7 @@ try{
   assert.ok(layout.pageWidth<=layout.viewport+1,'No horizontal page overflow: '+JSON.stringify({width,layout}));
   assert.equal(layout.cards,6,'Six actual insights; no synthetic CTA card');
   assert.equal(await page.locator('.rr-pulse-position').innerText(),'1/6');
-  assert.ok(await page.locator('#rr-pulse-prev').isDisabled());
+  assert.ok(await page.locator('#rr-pulse-prev').isEnabled());
   for(const id of ['#rr-pulse-prev','#rr-pulse-next']){
     const centered=await page.locator(id).evaluate(el=>{const a=el.getBoundingClientRect(),b=el.querySelector('svg').getBoundingClientRect();const p=el.querySelector('path').getBBox();return Math.abs(a.x+a.width/2-b.x-b.width/2)<.5&&Math.abs(a.y+a.height/2-b.y-b.height/2)<.5&&Math.abs(p.x+p.width/2-12)<.01&&Math.abs(p.y+p.height/2-12)<.01;});
     assert.ok(centered,'Vector chevron must be centered');
@@ -103,6 +103,10 @@ try{
   assert.equal(await page.locator('.rr-pulse-logo').count(),1,'Approved brand mark appears in Pulse');
   assert.match(await page.locator('.rr-pulse-track').first().innerText(),/3:15 PM ET/);
   assert.equal(await page.locator('.rr-pulse-item').nth(2).locator('.rr-pulse-signal--favorite-scratched').getAttribute('aria-label'),'PROJECTED FAVORITE SCRATCHED');
+  const scratchBadge=page.locator('.rr-pulse-item').nth(2).locator('.rr-pulse-category-icon');
+  assert.equal(await scratchBadge.locator('g path[fill="#e6b650"]').count(),1,'Solid favorite star');
+  assert.equal(await scratchBadge.locator('g path[fill="#a33f40"]').count(),1,'Crimson removal medallion');
+  assert.equal(await scratchBadge.locator('g path[d="M14.7 16.8H20.1"]').count(),1,'Readable removal mark');
   assert.equal(await page.locator('.rr-pulse-item').nth(4).locator('.rr-pulse-signal--rank').getAttribute('aria-label'),'SECOND-OR-THIRD PROBABILITY SHIFT');
   assert.match(await page.locator('.rr-pulse-headline').first().evaluate(el=>getComputedStyle(el).fontFamily),/^Inter/);
   const editorial=page.locator('.rr-pulse-message').first();
@@ -216,6 +220,26 @@ try{
   await page.locator('.rr-pulse-item-footer .rr-pulse-tool').first().click();
   await page.locator('#rr-pulse-next').click();
   assert.ok(!await page.locator('#rr-pulse-prev').isDisabled(),'Scroller arrows work');
+  // Both arrows wrap; the final card must actually occupy the leading snap position.
+  const at=async i=>page.waitForFunction(i=>{const rail=document.querySelector('#rr-pulse-rail'),card=rail.children[i];return Math.abs(card.getBoundingClientRect().left-rail.getBoundingClientRect().left)<3&&document.querySelector('.rr-pulse-position').textContent===(i+1)+'/6'},i);
+  await at(1);
+  await page.locator('#rr-pulse-prev').click();await at(0);
+  await page.locator('#rr-pulse-prev').click();await at(5);
+  assert.ok(await page.locator('#rr-pulse-next').isEnabled());
+  await page.locator('#rr-pulse-next').click();await at(0);
+  await page.close();
+ }
+ // Reproduce the owner's actual 24-card boundary on both mobile and desktop.
+ mode='24';
+ for(const width of [390,1280]){
+  const page=await browser.newPage({viewport:{width,height:844},reducedMotion:'reduce'});
+  await page.goto(origin+'/?pulse=synthetic-downs-race-24');
+  await page.waitForFunction(()=>document.querySelector('.rr-pulse-position')?.textContent==='24/24');
+  await page.locator('#rr-pulse-next').click();
+  await page.waitForFunction(()=>document.querySelector('.rr-pulse-position')?.textContent==='1/24');
+  await page.locator('#rr-pulse-prev').click();
+  await page.waitForFunction(()=>document.querySelector('.rr-pulse-position')?.textContent==='24/24');
+  assert.equal(await page.locator('.rr-pulse-item').count(),24,'Never clone stories to simulate a loop');
   await page.close();
  }
  mode='empty';
@@ -229,6 +253,8 @@ try{
  await one.goto(origin+'/',{waitUntil:'domcontentloaded'});
  await one.locator('.rr-pulse-item').first().waitFor({timeout:12000});
  assert.equal(await one.locator('.rr-pulse-item').count(),1,'One qualifying item, no forced six');
+ assert.ok(await one.locator('#rr-pulse-prev').isDisabled());
+ assert.ok(await one.locator('#rr-pulse-next').isDisabled());
  await one.close();
  console.log('RACE-DAY PULSE BROWSER QA PASS — desktop/tablet viewports, images, carousel, sharing, empty/one/six');
 }finally{if(browser)await browser.close();await new Promise(r=>server.close(r))}
