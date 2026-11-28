@@ -40,7 +40,7 @@ jobs:
               try:
                   bust='?release_qa='+str(time.time_ns())
                   home=get('/'+bust).decode()
-                  assert 'id="rr-pulse"' in home and 'race-day-pulse.js?v=8' in home
+                  assert 'id="rr-pulse"' in home and 'race-day-pulse.js?v=9' in home
                   live=get('/assets/race-day-pulse.js'+bust)
                   assert hashlib.sha256(live).digest()==hashlib.sha256(expected).digest()
                   f=json.loads(get('/api/race-day-pulse'+bust))

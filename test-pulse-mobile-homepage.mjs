@@ -24,6 +24,8 @@ try{
     await page.evaluate(()=>document.fonts.ready);
     await page.locator('.rr-pulse-item').first().locator('.rr-pulse-saddle img').first().evaluate(x=>x.decode());
     const count=await page.locator('.rr-pulse-item').count();assert.equal(count,4);
+    assert.equal(await page.locator('.rr-pulse-compact-open').first().innerText(),'Open Pulse');
+    assert.match(await page.locator('.rr-pulse-track').first().innerText(),/3:15 PM ET/);
     for(let i=0;i<count;i++){
      if(i)await page.locator('#rr-pulse-next').click();
      await page.waitForFunction(i=>{const rail=document.querySelector('#rr-pulse-rail'),c=rail.children[i];return Math.abs(c.getBoundingClientRect().left-rail.getBoundingClientRect().left)<3},i);
