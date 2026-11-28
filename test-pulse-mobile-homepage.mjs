@@ -30,10 +30,10 @@ try{
      if(i)await page.locator('#rr-pulse-next').click();
      await page.waitForFunction(i=>{const rail=document.querySelector('#rr-pulse-rail'),c=rail.children[i];return Math.abs(c.getBoundingClientRect().left-rail.getBoundingClientRect().left)<3},i);
      await page.evaluate(()=>window.scrollTo(0,0));
-     const g=await page.evaluate(i=>{const hero=document.querySelector('.heritage-hero'),pulse=document.querySelector('#rr-pulse'),body=document.querySelector('.heritage-body'),rail=document.querySelector('#rr-pulse-rail'),card=rail.children[i],r=rail.getBoundingClientRect(),c=card.getBoundingClientRect();return {width:innerWidth,pageWidth:document.documentElement.scrollWidth,placement:hero.nextElementSibling===pulse&&pulse.nextElementSibling===body,heroBottom:hero.getBoundingClientRect().bottom,pulseTop:pulse.getBoundingClientRect().top,pulseBottom:pulse.getBoundingClientRect().bottom,bodyTop:body.getBoundingClientRect().top,fold:innerHeight,previewBanner:document.querySelector('body>div[role="status"]')?.getBoundingClientRect().height||0,height:pulse.getBoundingClientRect().height,headerVisible:hero.querySelector('header').getBoundingClientRect().bottom<=hero.getBoundingClientRect().bottom,memberVisible:hero.querySelector('.rr-home-membership-link').getBoundingClientRect().bottom<=hero.getBoundingClientRect().bottom,cardContained:c.left>=r.left-3&&c.right<=r.right+3&&c.bottom<=r.bottom+3,actions:[...card.querySelectorAll('.rr-pulse-compact-open')].map(x=>{const b=x.getBoundingClientRect();return {height:b.height,contained:b.left>=c.left&&b.right<=c.right&&b.bottom<=c.bottom}}),badge:card.querySelector('.rr-pulse-signal').getBoundingClientRect().width}},i);
+     const g=await page.evaluate(i=>{const hero=document.querySelector('.heritage-hero'),pulse=document.querySelector('#rr-pulse'),body=document.querySelector('.heritage-body'),rail=document.querySelector('#rr-pulse-rail'),card=rail.children[i],r=rail.getBoundingClientRect(),c=card.getBoundingClientRect();return {width:innerWidth,pageWidth:document.documentElement.scrollWidth,placement:hero.nextElementSibling===pulse&&pulse.nextElementSibling===body,heroBottom:hero.getBoundingClientRect().bottom,pulseTop:pulse.getBoundingClientRect().top,pulseBottom:pulse.getBoundingClientRect().bottom,bodyTop:body.getBoundingClientRect().top,fold:innerHeight,previewBanner:document.querySelector('body>div[role="status"]')?.getBoundingClientRect().height||0,height:pulse.getBoundingClientRect().height,headerVisible:hero.querySelector('header').getBoundingClientRect().bottom<=hero.getBoundingClientRect().bottom,memberVisible:hero.querySelector('.rr-home-membership-link').getBoundingClientRect().bottom<=hero.getBoundingClientRect().bottom,cardContained:c.left>=r.left-3&&c.right<=r.right+3&&c.bottom<=r.bottom+3,actions:[...card.querySelectorAll('.rr-pulse-compact-open,.rr-pulse-compact-actions .rr-pulse-tool')].map(x=>{const b=x.getBoundingClientRect();return {height:b.height,contained:b.left>=c.left&&b.right<=c.right&&b.bottom<=c.bottom}}),badge:card.querySelector('.rr-pulse-signal').getBoundingClientRect().width}},i);
      assert.ok(g.headerVisible&&g.memberVisible&&g.placement&&g.pulseTop>=g.heroBottom-1&&g.bodyTop>=g.pulseBottom-1,JSON.stringify(g));
      assert.ok(g.pageWidth<=g.width+1&&g.cardContained,JSON.stringify(g));
-     assert.ok(g.actions.length===1&&g.actions.every(a=>a.height>=44&&a.contained),JSON.stringify(g));
+     assert.ok(g.actions.length===2&&g.actions.every(a=>a.height>=44&&a.contained),JSON.stringify(g));
      assert.equal(g.badge,36);assert.ok(g.height<=275,'Compact mobile module: '+JSON.stringify(g));
      if(width>=390)assert.ok(g.pulseBottom-g.previewBanner<=g.fold+1,'Full Pulse must fit initial mobile viewport before scrolling: '+JSON.stringify(g));
      console.log(name,width,i,JSON.stringify(g));
@@ -45,6 +45,11 @@ try{
     await page.screenshot({path:'pulse-mobile-homepage/'+name+'-'+width+'-full.png',fullPage:true});
     if(width===390){
      const card=page.locator('.rr-pulse-item').nth(count-2);
+     await card.locator('.rr-pulse-compact-actions .rr-pulse-tool').click();
+     const direct=page.locator('.rr-pulse-menu');await direct.waitFor();
+     assert.equal(await direct.getByRole('button',{name:'Download Card'}).count(),1);
+     const directDownload=page.waitForEvent('download');await direct.getByRole('button',{name:'Download Card'}).click();assert.match((await directDownload).suggestedFilename(),/\.png$/);
+     await card.locator('.rr-pulse-compact-actions .rr-pulse-tool').click();
      await card.locator('.rr-pulse-compact-open').click();
      await page.locator('.rr-pulse-detail .rr-pulse-item').waitFor();
      await page.locator('.rr-pulse-detail .rr-pulse-tool').click();
