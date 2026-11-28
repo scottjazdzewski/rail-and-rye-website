@@ -26,6 +26,7 @@ try{
     const count=await page.locator('.rr-pulse-item').count();assert.equal(count,4);
     assert.equal(await page.locator('.rr-pulse-compact-open').first().innerText(),'Open Pulse');
     assert.match(await page.locator('.rr-pulse-track').first().innerText(),/3:15 PM ET/);
+    let stableHeight=null,stableBodyTop=null;
     for(let i=0;i<count;i++){
      if(i)await page.locator('#rr-pulse-next').click();
      await page.waitForFunction(i=>{const rail=document.querySelector('#rr-pulse-rail'),c=rail.children[i];return Math.abs(c.getBoundingClientRect().left-rail.getBoundingClientRect().left)<3},i);
@@ -34,6 +35,8 @@ try{
      assert.ok(g.headerVisible&&g.memberVisible&&g.placement&&g.pulseTop>=g.heroBottom-1&&g.bodyTop>=g.pulseBottom-1,JSON.stringify(g));
      assert.ok(g.pageWidth<=g.width+1&&g.cardContained,JSON.stringify(g));
      assert.ok(g.actions.length===2&&g.actions.every(a=>a.height>=44&&a.contained),JSON.stringify(g));
+     if(stableHeight===null){stableHeight=g.height;stableBodyTop=g.bodyTop;}
+     assert.ok(Math.abs(g.height-stableHeight)<1&&Math.abs(g.bodyTop-stableBodyTop)<1,'Carousel must not move the homepage: '+JSON.stringify(g));
      assert.equal(g.badge,36);assert.ok(g.height<=275,'Compact mobile module: '+JSON.stringify(g));
      if(width>=390)assert.ok(g.pulseBottom-g.previewBanner<=g.fold+1,'Full Pulse must fit initial mobile viewport before scrolling: '+JSON.stringify(g));
      console.log(name,width,i,JSON.stringify(g));
