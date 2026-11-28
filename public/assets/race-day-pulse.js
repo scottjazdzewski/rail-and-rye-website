@@ -430,12 +430,10 @@
     scrollToIndex([...rail.children].indexOf(article),'instant');if(restoreFocus)link.focus({preventScroll:true});
   }
   shell.addEventListener('keydown',e=>{if(e.key==='Escape'&&expanded&&!closeShare){e.preventDefault();collapseInsight();}});
-  let observedCard=null;const cardObserver=typeof ResizeObserver==='function'?new ResizeObserver(()=>fitActiveCard()):null;
+  // The flex rail is sized by its tallest card at this viewport. Never
+  // change the rail height based on the selected card or scroll position.
   function fitActiveCard(){
-    if(shell.hidden||!rail.children[selected])return;
-    // A single visible card on mobile and desktop hero. Do not reserve the height of an offscreen long card.
-    const card=rail.children[selected];if(observedCard!==card){cardObserver?.disconnect();cardObserver?.observe(card);observedCard=card;}
-    if(matchMedia('(max-width:640px), (min-width:1121px)').matches){const compact=!detailMode&&matchMedia('(max-width:640px)').matches;const height=Math.ceil(card.getBoundingClientRect().height)+(compact?4:12);const value=height+'px';if(rail.style.height!==value)rail.style.height=value;}else rail.style.height='';
+    if(rail.style.height)rail.style.removeProperty('height');
   }
   window.addEventListener('resize',()=>{if(expanded&&!matchMedia('(min-width:641px)').matches)collapseInsight(false);fitActiveCard();},{passive:true});
   function scrollToIndex(index,behavior='smooth'){
