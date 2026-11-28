@@ -308,7 +308,11 @@
     const phrase=identityText&&message.includes(identityText)?identityText:horse&&message.includes(horse)?horse:'';
     if(phrase){
       const at=message.indexOf(phrase);
-      editorial.append(document.createTextNode(message.slice(0,at)),$('strong','rr-pulse-message-horse',phrase),document.createTextNode(message.slice(at+phrase.length)));
+      const featured=$('strong','rr-pulse-message-horse');
+      if(program&&phrase===identityText){
+        const mini=chip(program);mini.classList.add('rr-pulse-saddle--inline');featured.append(mini,document.createTextNode(' '+horse));
+      }else featured.textContent=phrase;
+      editorial.append(document.createTextNode(message.slice(0,at)),featured,document.createTextNode(message.slice(at+phrase.length)));
     }else editorial.textContent=message;
     body.append(editorial);
     content.append(body);article.append(content);
