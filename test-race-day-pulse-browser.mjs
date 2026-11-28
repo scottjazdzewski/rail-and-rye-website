@@ -96,7 +96,11 @@ try{
   assert.equal(await page.locator('.rr-pulse-logo').count(),1,'Approved brand mark appears in Pulse');
   const editorial=page.locator('.rr-pulse-message').first();
   assert.match(await editorial.evaluate(el=>getComputedStyle(el).fontFamily),/Montserrat/);
-  assert.equal(await editorial.locator('.rr-pulse-message-horse').innerText(),'#1 Sample Runner 0');
+  assert.equal((await editorial.locator('.rr-pulse-message-horse').innerText()).trim(),'Sample Runner 0');
+  const inline=editorial.locator('.rr-pulse-saddle--inline img');
+  assert.equal(await inline.getAttribute('src'),'/assets/approved/saddlecloths/1.png');
+  assert.equal(await inline.getAttribute('alt'),'Saddlecloth 1');
+  assert.ok(await inline.evaluate(img=>img.getBoundingClientRect().width<22),'Inline program chip is smaller than the main horse chip');
   assert.equal(await editorial.locator('.rr-pulse-message-horse').evaluate(el=>getComputedStyle(el).fontWeight),'700');
   if(width<=640){
     assert.ok(await page.locator('.rr-pulse-affected').first().isHidden(),'Mobile repeats no redundant named-horse line');
