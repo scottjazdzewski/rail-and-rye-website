@@ -221,6 +221,20 @@ assert.equal((await pulse.readRaceDayPulse(env,Date.parse('2026-11-27T07:59:00Z'
 assert.equal((await pulse.readRaceDayPulse(env,Date.parse('2026-11-27T08:01:00Z'))).date,'2026-11-27');
 assert.equal((await pulse.readRaceDayPulse(env,Date.parse('2026-11-27T08:01:00Z'))).items.length,1);
 env.PULSE_PUBLICATION_ENABLED='true';
+// A release may be deployed the prior evening without exposing anything early.
+const launchEnv={...env,PULSE_PUBLICATION_START_DATE:'2026-11-28'};
+assert.equal(pulse.pulseReleaseEnabled(launchEnv,Date.parse('2026-11-28T07:59:59Z')),false);
+assert.equal(pulse.pulseReleaseEnabled(launchEnv,Date.parse('2026-11-28T08:00:00Z')),true);
+assert.equal(pulse.pulseReleaseEnabled({...launchEnv,PULSE_PUBLICATION_ENABLED:'false'},Date.parse('2026-11-28T08:00:00Z')),false);
+assert.equal(pulse.pulseReleaseEnabled({...launchEnv,PULSE_PUBLICATION_START_DATE:'invalid'},Date.parse('2026-11-28T08:00:00Z')),false);
+const clockBeforeLaunch=Date.now;Date.now=()=>Date.parse('2026-11-28T07:59:59Z');
+try{
+ const early=await pulse.handlePulseApi(new Request('https://railandryeracing.com/api/race-day-pulse'),launchEnv);
+ assert.equal((await early.json()).status,'disabled');
+ assert.equal((await pulse.handlePulsePage(new Request('https://railandryeracing.com/pulse/2026-11-26/example'),launchEnv,[null,'2026-11-26','example'])).status,404);
+ assert.equal((await pulse.handlePulseImage(new Request('https://railandryeracing.com/pulse/2026-11-26/example/card-v1.png'),launchEnv,[null,'2026-11-26','example'])).status,404);
+}finally{Date.now=clockBeforeLaunch;}
+
 // Public page displays specific source-backed fact and escapes untrusted text.
 feed=await pulse.readRaceDayPulse(env,Date.parse('2026-11-27T08:01:00Z'));
 const originalNow=Date.now;Date.now=()=>Date.parse('2026-11-26T18:00:00Z');
