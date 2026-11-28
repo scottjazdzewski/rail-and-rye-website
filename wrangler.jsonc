@@ -21,7 +21,8 @@
   },
   "vars": {
     "PROJECTIONS_MEMBER_LAUNCH": "off",
-    "PULSE_PUBLICATION_ENABLED": "false"
+    "PULSE_PUBLICATION_ENABLED": "true",
+    "PULSE_PUBLICATION_START_DATE": "2026-11-28"
   },
   "r2_buckets": [
     {
