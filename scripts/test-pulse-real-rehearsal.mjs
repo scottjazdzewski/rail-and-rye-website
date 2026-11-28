@@ -15,7 +15,7 @@ const archive={schema_version:1,date:feed.date,items:feed.items};
 const env={PULSE_PUBLICATION_ENABLED:'true',CARDS_BUCKET:{
  async list(){return {objects:[],truncated:false}},
  async get(k){
-   if(k==='race-day-pulse/public/'+feed.date+'.json')return {json:async()=>archive};
+   if(k==='race-day-pulse/public/'+feed.date+'.json')return {customMetadata:{public_safe_derived:'true'},json:async()=>archive};
    const prefix='race-day-pulse/social/v1/'+feed.date+'/';
    if(!k.startsWith(prefix))return null;
    const filename=path.join(out,feed.date,k.slice(prefix.length));
