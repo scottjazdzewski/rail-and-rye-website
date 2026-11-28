@@ -41,11 +41,24 @@ export async function prepareScheduledTargetStages(env,now=Date.now()){
   let approved=packet.customer_edition;
   assert(approved?.race_date===date&&approved?.revision===1&&approved?.status==='initial'&&approved?.targets?.length===packet.targets.length,'Customer-ready stage mismatch');
   assert(approved.source.editorial_sha256===packet.editorial_sha256&&approved.publication_mode==='owner-approved-gpt','Customer release has no owner approval');
+  const activeMode=packet.source_active_runners!=null;
+  assert(activeMode||date<'2026-11-28','New Target List stages must distinguish listed and active runners');
   const expected=packet.source_track_count!=null&&packet.source_race_count!=null&&packet.source_listed_runners!=null
-    ?[packet.source_track_count,packet.source_race_count,packet.source_listed_runners]
-    :(date==='2026-11-26'?[6,56,488]:null); // compatibility with the immutable Nov26 stage
+    ?[packet.source_track_count,packet.source_race_count,activeMode?packet.source_active_runners:packet.source_listed_runners]
+    :(date==='2026-11-26'?[6,56,488]:null); // compatibility with immutable historical stages
   assert(expected&&expected.every(x=>Number.isInteger(x)&&x>0),'A newly dated Target List requires independently certified whole-source counts');
   const receipts=packet.source_receipts||[];
+  if(activeMode){
+   assert(Number.isInteger(packet.source_listed_runners)&&packet.source_listed_runners>=expected[2]&&Array.isArray(packet.source_exclusions),'Original roster accounting missing');
+   const exclusions=packet.source_exclusions;
+   assert(exclusions.length===packet.source_listed_runners-expected[2]&&new Set(exclusions.map(x=>norm(x.track)+'|'+x.race+'|'+String(x.program).toUpperCase())).size===exclusions.length&&exclusions.every(x=>norm(x.track)&&Number.isInteger(x.race)&&String(x.program)&&norm(x.horse)&&['NOT_DRAWN','SCRATCHED'].includes(x.status)),'Conditional roster exclusions not reconciled');
+   assert(receipts.reduce((a,x)=>a+x.listed_runners,0)===packet.source_listed_runners&&receipts.every(x=>Number.isInteger(x.listed_runners)&&x.listed_runners>=x.runners&&x.listed_runners-x.runners===exclusions.filter(e=>norm(e.track)===norm(x.track)).length),'Track listed/active proof differs');
+   assert(receipts.every(x=>x.tj_role_receipt?.all_roles_complete===true&&x.tj_role_receipt?.complete_active_runner_count===x.runners&&x.tj_role_receipt?.trainer_jockey_roles_proven===2*x.runners&&['receipt_sha256','score_sha256','effective_79_sha256','audit_sha256','pdf_sha256'].every(k=>/^[a-f0-9]{64}$/.test(x[k]))),'Actual consumed V4.1 receipt proof missing');
+   const manifest=await env.CARDS_BUCKET.get('projections/qa/'+date+'/staged-release.json');
+   if(!manifest){deferred++;continue;}
+   const manifestRaw=await manifest.text(), canonical=JSON.parse(manifestRaw);
+   assert(await hash(manifestRaw)===packet.source_manifest_sha256&&canonical.source_sha256===packet.source_zip_sha256&&canonical.release_at===packet.release_at&&canonical.status==='VERIFIED_STAGED'&&canonical.scope==='VERIFIED_COMPLETE_SLATE'&&canonical.tracks?.length===expected[0]&&canonical.tracks.every(t=>receipts.some(x=>norm(x.track)===norm(t.name)&&x.races===t.races&&x.runners===t.runners)),'Whole-slate canonical projection manifest differs');
+  }
   assert(receipts.length===expected[0]&&new Set(receipts.map(x=>x.track_code)).size===expected[0]
     &&receipts.reduce((a,x)=>a+x.races,0)===expected[1]
     &&receipts.reduce((a,x)=>a+x.runners,0)===expected[2],
