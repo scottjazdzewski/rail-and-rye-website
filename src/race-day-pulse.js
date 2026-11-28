@@ -88,6 +88,16 @@ function revisionToken(source){
   for(const ch of String(source))value=Math.imul(value^ch.charCodeAt(0),16777619);
   return '-rev-'+(value>>>0).toString(16).padStart(8,'0');
 }
+// Rank and probability are independent. Compare at displayed precision.
+function movementPhrase(before,after){
+  const a=Number(before.toFixed(1)),b=Number(after.toFixed(1));
+  return b===a?' (unchanged at the displayed precision).':', '+(b>a?'up':'down')+' from '+pct(before)+' on the original card.';
+}
+export function correctPulseNarrative(item){
+  if(!['NEW_FAVORITE','FAVORITE_SCRATCHED'].includes(item.kind)||item.metric?.label!=='WIN'||!Number.isFinite(item.metric.before)||!Number.isFinite(item.metric.after))return item;
+  const message=String(item.message||'').replace(/, (?:up|down) from \d+(?:\.\d+)?% on the original card\./,movementPhrase(item.metric.before,item.metric.after));
+  return {...item,message};
+}
 export function insightForRace(date,track,initial,revised,updatedAt,sourceVersion=''){
   const pair=compareRaces(initial,revised);
   if(!pair)return null;
@@ -129,7 +139,7 @@ export function insightForRace(date,track,initial,revised,updatedAt,sourceVersio
         message:context+'#'+newLead.program+' '+newLead.horse+
           ' moves to the top of our projections for the '+raceName+'. '+
           'The revised win chance is '+pct(newLead.win)+
-          (earlier?', up from '+pct(earlier.win)+' on the original card.':'.')};
+          (earlier?movementPhrase(earlier.win,newLead.win):'.')};
     }
   }
   const changed=[...after.values()].map(h=>({h,old:before.get(h.program),delta:h.win-before.get(h.program).win}))
@@ -365,7 +375,7 @@ async function archivedPulse(env,date,id){
   const item=data.items.find(x=>x?.date===date&&x.id===id);
   if(!item||!/^[-a-z0-9]{2,120}$/.test(String(item.id))||
      !['NEW_FAVORITE','FAVORITE_SCRATCHED','WIN_SHIFT','F4_SHIFT','SURFACE_SWITCH','PACE_ADVANTAGE'].includes(item.kind))return null;
-  return item;
+  return correctPulseNarrative(item);
 }
 export async function handlePulseApi(request,env){
   if(request.method!=='GET'&&request.method!=='HEAD')return result({error:'Method not allowed'},405);
@@ -380,6 +390,7 @@ export async function handlePulseApi(request,env){
   const cache=globalThis.caches?.default;
   const cacheUrl=new URL('/api/race-day-pulse',request.url);
   cacheUrl.searchParams.set('et_date',newYorkCutoff(Date.now()));
+  cacheUrl.searchParams.set('narrative','2');
   const cacheRequest=new Request(cacheUrl.toString(),{method:'GET'});
   if(cache){
     try{
@@ -437,38 +448,18 @@ export async function handlePulsePage(request,env,route){
   const canonical='https://railandryeracing.com/pulse/'+date+'/'+id;
   const imageURL=canonical+'/card-v1.png';
   const imageReady=(await handlePulseImage(new Request(imageURL,{method:'HEAD'}),env,[null,date,id])).ok;
-  const sharedChip=(program,scratched=false)=>{
-    const text=clean(program,8).toUpperCase(),parsed=/^(\d{1,2})([A-Z]?)$/.exec(text);
-    const number=parsed?Number(parsed[1]):0;
-    const className=scratched?'rr-pulse-saddle rr-pulse-saddle--scratch':'rr-pulse-saddle';
-    if(number>=1&&number<=20)
-      return '<span class="'+className+'"><img src="/assets/approved/saddlecloths/'+number+
-        '.png" width="32" height="32" alt="Saddlecloth '+escape(text)+'">'+
-        (parsed[2]?'<span class="rr-pulse-suffix">'+escape(parsed[2])+'</span>':'')+'</span>';
-    return '<span class="'+className+' rr-pulse-saddle-fallback">'+escape(text)+'</span>';
-  };
-  const detailItem=JSON.stringify({...item,hub_url:actionURL});
-  const detailCard='<section id="rr-pulse" class="rr-pulse rr-pulse-detail" hidden data-pulse-item="'+escape(detailItem)+'"><div class="rr-pulse-shell"><div class="rr-pulse-heading"><h2 class="rr-pulse-title">Race-Day Pulse</h2><span id="rr-pulse-count" hidden></span><div hidden><button id="rr-pulse-prev" type="button"></button><button id="rr-pulse-next" type="button"></button></div></div><div id="rr-pulse-rail" class="rr-pulse-rail"></div></div></section>';
-  const scratchLine=Array.isArray(item.scratches)&&item.scratches.length?
-    '<div class="rr-pulse-share-scratches"><span class="rr-pulse-scratch-label">SCRATCHED</span>'+
-    item.scratches.map(x=>'<span class="rr-pulse-scratch-identity">'+sharedChip(x.program,true)+'</span>').join('')+
-    '</div>':'';
+  const detailItem=JSON.stringify({...item,hub_url:actionURL,detail_action_text:historical?'Explore Today’s Intelligence Hub':'Full-Field Analysis'});
+  const detailCard='<section id="rr-pulse" class="rr-pulse rr-pulse-detail" hidden data-pulse-item="'+escape(detailItem)+'"><div class="rr-pulse-shell"><h1 class="rr-pulse-title">Race-Day Pulse</h1><span id="rr-pulse-count" hidden></span><div hidden><button id="rr-pulse-prev" type="button"></button><button id="rr-pulse-next" type="button"></button></div><div id="rr-pulse-rail" class="rr-pulse-rail"></div></div></section>';
+  const fallback='<div id="rr-pulse-detail-fallback"><h1>'+escape(item.track)+' · '+escape(ordinalRace(item.race_number))+'</h1><h2>'+escape(item.horse||headlineTitle)+'</h2><p>'+escape(desc)+'</p><a class="rr-pulse-primary" href="'+escape(actionURL)+'">'+escape(actionText)+'</a><a class="rr-pulse-secondary" href="/">Back to Pulse</a></div>';
   const html='<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'+
     '<title>'+escape(title)+'</title><meta name="description" content="'+escape(desc)+'">'+
     '<meta property="og:type" content="article"><meta property="og:title" content="'+escape(title)+'">'+
     '<meta property="og:description" content="'+escape(desc)+'"><meta property="og:url" content="'+escape(canonical)+'"><meta property="og:site_name" content="Rail &amp; Rye Racing">'+
     (imageReady?'<meta property="og:image" content="'+escape(imageURL)+'"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="675"><meta property="og:image:type" content="image/png"><meta property="og:image:alt" content="'+escape(title)+'"><meta name="twitter:image" content="'+escape(imageURL)+'">':'')+
     '<meta name="twitter:card" content="'+(imageReady?'summary_large_image':'summary')+'"><meta name="twitter:title" content="'+escape(title)+'"><meta name="twitter:description" content="'+escape(desc)+'"><link rel="canonical" href="'+escape(canonical)+'">'+
-    '<link rel="stylesheet" href="/assets/rail-rye-core.css"><link rel="stylesheet" href="/assets/race-day-pulse.css?v=13">'+
+    '<link rel="stylesheet" href="/assets/rail-rye-core.css"><link rel="stylesheet" href="/assets/race-day-pulse.css?v=14">'+
     '</head><body class="rr-pulse-standalone"><main class="rr-pulse-share-page"><a class="rr-pulse-home-link" href="/"><img src="/assets/approved/brand/rail-rye-ivory-logo.png" alt="" width="32" height="32">RAIL &amp; RYE RACING</a>'+
-    '<article class="rr-pulse-story"><p class="rr-pulse-eyebrow">RACE-DAY PULSE · '+escape(date)+'</p>'+
-    '<div class="rr-pulse-story-content">'+sharedChip(item.chip)+
-    '<div><h1>'+escape(item.track)+' · '+escape(ordinalRace(item.race_number))+'</h1><div class="rr-pulse-signal-row"><h2>'+escape(item.horse||headlineTitle)+'</h2></div>'+
-    '<p>'+escape(desc)+'</p></div></div>'+scratchLine+detailCard+
-    (imageReady?'<img class="rr-pulse-social-image" src="'+escape(imageURL)+'" alt="'+escape(title)+'" width="1200" height="675">':'')+
-    '<p class="rr-pulse-foot">Updated after source-verified scratch processing. Projections are estimates, not guarantees.</p>'+
-    '<a class="rr-pulse-primary" href="'+escape(actionURL)+'">'+escape(actionText)+'</a>'+
-    (imageReady?'<a class="rr-pulse-download" href="'+escape(imageURL)+'" download="rail-rye-pulse-'+escape(id)+'.png">Download Card</a>':'')+
-    '<a class="rr-pulse-secondary" href="/store/">Intelligence Hub</a><a class="rr-pulse-secondary" href="/">See today’s Race-Day Pulse</a></article></main><script src="/assets/race-day-pulse.js?v=13" defer></script></body></html>';
+    '<article class="rr-pulse-story">'+fallback+detailCard+
+    '<p class="rr-pulse-foot">Model projections are estimates, not guarantees.</p></article></main><script src="/assets/race-day-pulse.js?v=14" defer></script></body></html>';
   return new Response(request.method==='HEAD'?null:html,{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'public, max-age=45, must-revalidate','X-Content-Type-Options':'nosniff'}});
 }
