@@ -38,6 +38,10 @@ try{
      if(width>=390)assert.ok(g.pulseBottom-g.previewBanner<=g.fold+1,'Full Pulse must fit initial mobile viewport before scrolling: '+JSON.stringify(g));
      console.log(name,width,i,JSON.stringify(g));
     }
+    // Wrap from the final insight to the first, and back, on both mobile engines.
+    const at=async i=>page.waitForFunction(i=>{const rail=document.querySelector('#rr-pulse-rail');return Math.abs(rail.children[i].getBoundingClientRect().left-rail.getBoundingClientRect().left)<3&&document.querySelector('.rr-pulse-position').textContent===(i+1)+'/'+rail.children.length},i);
+    await page.locator('#rr-pulse-next').click();await at(0);
+    await page.locator('#rr-pulse-prev').click();await at(count-1);
     await page.locator('#rr-pulse-prev').click();
     await page.waitForFunction(i=>{const rail=document.querySelector('#rr-pulse-rail');return Math.abs(rail.children[i].getBoundingClientRect().left-rail.getBoundingClientRect().left)<1.5},count-2);
     await page.evaluate(()=>window.scrollTo(0,0));
