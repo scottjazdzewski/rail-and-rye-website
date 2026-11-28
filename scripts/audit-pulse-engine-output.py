@@ -24,6 +24,7 @@ client = boto3.client("s3", region_name="auto",
     aws_secret_access_key=os.environ["TRI_R2_SECRET_ACCESS_KEY"])
 JS = """
 import fs from 'node:fs';
+import path from 'node:path';
 import {readRaceDayPulse} from './src/race-day-pulse.js';
 const {date,now,objects}=JSON.parse(fs.readFileSync(0,'utf8'));
 const map=new Map(objects.map(x=>[x.key,x]));
@@ -56,6 +57,12 @@ if(result.date!==date||result.status!=='ok')throw Error('Worker integration audi
 const byKind={};
 for(const item of result.items){if(item.date!==date||item.id.startsWith('demo-')||!item.hub_url?.startsWith('/intelligence/race-cards/'))throw Error('Invalid public output');if(/model_receipts|f4_probabilities|parent_replay_proof|win_probability_exact/.test(JSON.stringify(item)))throw Error('Private field leak');byKind[item.kind]=(byKind[item.kind]||0)+1;}
 counts.eligible_items=result.items.length;
+// Explicit private rehearsal only: ephemeral, sanitized output for browser rendering.
+// Never export the source objects, receipts, or full runner matrices.
+if(process.env.PULSE_PRIVATE_REHEARSAL_DIR){
+ const dir=process.env.PULSE_PRIVATE_REHEARSAL_DIR;
+ fs.writeFileSync(path.join(dir,date+'.json'),JSON.stringify(result),{mode:0o600});
+}
 console.log(JSON.stringify({date,...counts,byKind}));
 """
 for day in DAYS:
