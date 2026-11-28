@@ -217,11 +217,12 @@
   // Owner-approved four-symbol family. Shared vector geometry for DOM and canvas.
   function signalType(item){
     if(item.kind==='NEW_FAVORITE')return 'favorite';
+    if(item.kind==='FAVORITE_SCRATCHED')return 'favorite-scratched';
     if(item.kind==='F4_SHIFT')return 'rank';
     if(item.kind==='PACE_ADVANTAGE')return 'pace';
     return 'scratch';
   }
-  const signalLabels={scratch:'SCRATCH IMPACT',favorite:'NEW PROJECTED FAVORITE',pace:'PACE ADVANTAGE',rank:'RANK MOVEMENT'};
+  const signalLabels={scratch:'WIN PROBABILITY SHIFT',favorite:'NEW PROJECTED FAVORITE',pace:'PACE ADVANTAGE',rank:'RANK MOVEMENT'};
   function signal(item){return item.kind==='FAVORITE_SCRATCHED'?'PROJECTED FAVORITE SCRATCHED':item.kind==='F4_SHIFT'?'SECOND-OR-THIRD PROBABILITY SHIFT':signalLabels[signalType(item)];}
   const signalArt={
     // Probability movement, not an X or a close/delete affordance.
@@ -232,6 +233,10 @@
     scratchDown:[
       {d:'M3 3V21H22',stroke:'#c5b994',w:1.5},
       {d:'M5.5 7L10 11.5L14 9L21 18M16 18H21V13',stroke:'#f0ad9e',w:2.5}
+    ],
+    'favorite-scratched':[
+      {d:'M12 2L14.5 7.8L21 8.5L16 12.5L17.5 19L12 15.5L6.5 19L8 12.5L3 8.5L9.5 7.8Z',stroke:'#e6b650',w:1.6},
+      {d:'M4 20L20 4',stroke:'#f0ad9e',w:2.6}
     ],
     favorite:[
       {d:'M12 1L13.8 5.4L18.6 5.7L14.9 8.8L16.1 13.3L12 10.7L7.9 13.3L9.1 8.8L5.4 5.7L10.2 5.4Z',fill:'#e6b650'},
@@ -349,8 +354,10 @@
     links.append(original,paid);footer.append(links,shareTools(item));article.append(footer);
     // Mobile homepage shows the entire essential insight; full actions live on the detail page.
     const compact=$('a','rr-pulse-compact-open','Open Pulse');compact.href=pulseUrl(item);
+    const compactActions=$('div','rr-pulse-compact-actions');
+    compactActions.append(compact,shareTools(item));
     const scratchesRow=article.querySelector('.rr-pulse-scratch-list');
-    if(scratchesRow)scratchesRow.append(compact);else {const compactRow=$('div','rr-pulse-compact-row');compactRow.append(compact);article.append(compactRow);}
+    if(scratchesRow)scratchesRow.append(compactActions);else {const compactRow=$('div','rr-pulse-compact-row');compactRow.append(compactActions);article.append(compactRow);}
     return article;
   }
   function expandInsight(article){
