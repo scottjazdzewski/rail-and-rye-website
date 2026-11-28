@@ -63,7 +63,7 @@ try{
   assert.equal(await page.locator('.rr-pulse-position').innerText(),'1/6');
   assert.ok(await page.locator('#rr-pulse-prev').isDisabled());
   for(const id of ['#rr-pulse-prev','#rr-pulse-next']){
-    const centered=await page.locator(id).evaluate(el=>{const a=el.getBoundingClientRect(),b=el.querySelector('svg').getBoundingClientRect();return Math.abs(a.x+a.width/2-b.x-b.width/2)<.5&&Math.abs(a.y+a.height/2-b.y-b.height/2)<.5;});
+    const centered=await page.locator(id).evaluate(el=>{const a=el.getBoundingClientRect(),b=el.querySelector('svg').getBoundingClientRect();const p=el.querySelector('path').getBBox();return Math.abs(a.x+a.width/2-b.x-b.width/2)<.5&&Math.abs(a.y+a.height/2-b.y-b.height/2)<.5&&Math.abs(p.x+p.width/2-12)<.01&&Math.abs(p.y+p.height/2-12)<.01;});
     assert.ok(centered,'Vector chevron must be centered');
   }
   assert.match(await page.locator('#rr-pulse-next').evaluate(el=>getComputedStyle(el).borderRadius),/^8px$/);
