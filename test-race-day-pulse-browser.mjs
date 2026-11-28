@@ -60,6 +60,9 @@ try{
   assert.deepEqual(errors,[],'No runtime errors width '+width);
   assert.ok(layout.pageWidth<=layout.viewport+1,'No horizontal page overflow: '+JSON.stringify({width,layout}));
   assert.equal(layout.cards,6,'Six actual insights; no synthetic CTA card');
+  assert.equal(await page.locator('.rr-pulse-position').innerText(),'1/6');
+  assert.ok(await page.locator('#rr-pulse-prev').isDisabled());
+  assert.match(await page.locator('#rr-pulse-next').evaluate(el=>getComputedStyle(el).borderRadius),/^9px$/);
   assert.ok(layout.imgs[0]>0,'Visible approved saddlecloth image loads; off-screen images may be lazy-loaded');
   const saddleStyle=await page.evaluate(()=>{
     const images=[...document.querySelectorAll('.rr-pulse-item:first-child .rr-pulse-saddle')];
