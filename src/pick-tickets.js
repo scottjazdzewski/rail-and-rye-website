@@ -304,7 +304,21 @@ export async function readPublishedPickTicketCards(env,raceDate){
    const ownerRelease=raw?.publication_mode==="owner-approved-gpt";
    if(ownerRelease!== (file.customMetadata?.publication_mode==="owner-approved-gpt"))continue;
    const card=normalizePickTickets(raw),scratches=publicScratches(raw?.scratches_by_race);
-   if(requiresFinalPickField(card.date)){if(!file.customMetadata?.published_at)throw Error("Missing final-field publication timestamp");await requireFinalPickField(env,card,{publishedAt:file.customMetadata.published_at});}
+   if(requiresFinalPickField(card.date)){
+    if(card.status==="initial_current"){
+     // Only the immutable, validated initial stage may use the initial-edition lane.
+     // Scratch revisions still require the current official final-field proof.
+     const md=file.customMetadata||{},stage=await env.CARDS_BUCKET.get("pick-tickets/staging/"+card.date+"/revision-0001.json");
+     if(card.revision!==1||scratches||!stage||stage.customMetadata?.stage_only!=="true"||!md.initial_stage_sha256||md.initial_stage_sha256!==stage.customMetadata.sha256)throw Error("Initial edition lacks approved stage binding");
+     const stagedText=await stage.text();
+     if(await sha256(stagedText)!==md.initial_stage_sha256)throw Error("Initial stage checksum mismatch");
+     const staged=JSON.parse(stagedText),row=staged.tracks?.find(r=>r.card?.track===card.track);
+     if(staged.date!==card.date||staged.prescratch!==true||staged.revision!==1||!row||JSON.stringify(requireCustomerPickPwin(normalizePickTickets(row.card)))!==JSON.stringify(card)||md.staged_release_at!==staged.release_at||Date.now()<Date.parse(staged.release_at))throw Error("Initial edition differs from verified stage or is not yet released");
+    }else{
+     if(!file.customMetadata?.published_at)throw Error("Missing final-field publication timestamp");
+     await requireFinalPickField(env,card,{publishedAt:file.customMetadata.published_at});
+    }
+   }
    if(card.date===match[1])cards.push({...card,...(scratches?{scratches_by_race:scratches}:{})});
   }catch(error){console.warn("Invalid published Pick Tickets edition skipped",object.key,String(error).slice(0,100));}
  }
