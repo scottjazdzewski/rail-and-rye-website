@@ -151,12 +151,12 @@
       if(item.kind==='NEW_FAVORITE')return 'New projected favorite';
       if(item.kind==='FAVORITE_SCRATCHED')return 'New leader after favorite scratched';
       if(item.kind==='F4_SHIFT')return diff>0?'Second-or-third probability rises':diff<0?'Second-or-third probability falls':'Second-or-third outlook changes';
-      if(item.kind==='PACE_ADVANTAGE')return 'Pace Fit improves';
-      return diff>0?'Win probability rises':diff<0?'Win probability falls':'Projection changes';
+      if(item.kind==='PACE_ADVANTAGE')return item.race_pace?'Projected pace: '+item.race_pace.before+' → '+item.race_pace.after:item.pace_fit?.before===item.pace_fit?.after?'Projected pace changes':'Pace Fit changes';
+      return diff>0?'Projected fair odds shorten':diff<0?'Projected fair odds lengthen':'Projection changes';
     };
     if(portrait)txt(concise(),W/2,takeawayY,32,ivory,600,B-24,'center');
     else {font(22,500);c.fillStyle=ivory;wrap(c,item.short_message||item.message,X,takeawayY,B,25,2);}
-    if(item.kind==='PACE_ADVANTAGE'&&item.pace_fit){const names={red:'Negative',gray:'Neutral',green:'Positive'};const before=names[item.pace_fit.before],after=names[item.pace_fit.after];if(before&&after)txt('Pace Fit: '+before+' → '+after,X,portrait?943:553,portrait?24:17,gold,700,B);}
+    if(item.kind==='PACE_ADVANTAGE'&&item.pace_fit&&!item.race_pace){const names={red:'Negative',gray:'Neutral',green:'Positive'};const before=names[item.pace_fit.before],after=names[item.pace_fit.after];if(before&&after)txt('Pace Fit: '+before+' → '+after,X,portrait?943:553,portrait?24:17,gold,700,B);}
     const scratches=Array.isArray(item.scratches)?item.scratches:[],sy=portrait?995:576,ss=portrait?57:29;
     if(scratches.length){txt('SCRATCHED',X,sy+(portrait?23:14),portrait?26:18,gold,800);let sx=X+(portrait?192:134);const step=ss+(portrait?10:8),capacity=Math.floor((R-sx+step-ss)/step),show=scratches.length>capacity?Math.max(0,capacity-1):scratches.length;for(const sc of scratches.slice(0,show)){await saddle(sc.program,sx,sy-(portrait?18:12),ss);sx+=step;}if(scratches.length>show)txt('+'+(scratches.length-show),sx,sy+(portrait?23:14),portrait?22:17,gold,750,R-sx);}
     const ctaY=portrait?1060:603,ctaH=portrait?132:35;
@@ -230,7 +230,7 @@
     if(item.kind==='PACE_ADVANTAGE')return 'pace';
     return 'scratch';
   }
-  const signalLabels={scratch:'WIN PROBABILITY SHIFT',favorite:'NEW PROJECTED FAVORITE',pace:'PACE ADVANTAGE',rank:'RANK MOVEMENT'};
+  const signalLabels={scratch:'PROJECTED FAIR ODDS SHIFT',favorite:'NEW PROJECTED FAVORITE',pace:'PROJECTED PACE CHANGE',rank:'RANK MOVEMENT'};
   function signal(item){return item.kind==='FAVORITE_SCRATCHED'?'PROJECTED FAVORITE SCRATCHED':item.kind==='F4_SHIFT'?'SECOND-OR-THIRD PROBABILITY SHIFT':signalLabels[signalType(item)];}
   const signalArt={
     // Probability movement, not an X or a close/delete affordance.
@@ -284,6 +284,7 @@
   }
   function paceComparison(item){
     const m=item.pace_fit;
+    if(item.kind==='PACE_ADVANTAGE'&&item.race_pace){const el=$('div','rr-pulse-pace-comparison');el.append($('span','rr-pulse-pace-label','RACE PACE'),$('span','rr-pulse-fit',item.race_pace.before),$('span','rr-pulse-arrow-mark','→'),$('span','rr-pulse-fit',item.race_pace.after));return el;}
     if(item.kind!=='PACE_ADVANTAGE'||!m||!['red','gray','green'].includes(m.before)||!['red','gray','green'].includes(m.after))return null;
     const names={red:'Negative',gray:'Neutral',green:'Positive'},el=$('div','rr-pulse-pace-comparison');
     el.append($('span','rr-pulse-pace-label','PACE FIT'),$('span','rr-pulse-fit rr-pulse-fit--'+m.before,names[m.before]),$('span','rr-pulse-arrow-mark','→'),$('span','rr-pulse-fit rr-pulse-fit--'+m.after,names[m.after]));return el;
@@ -298,7 +299,10 @@
     if(Number.isInteger(info?.projected_rank)&&info.projected_rank>0)out.push(['Projected Rank',ordinal(info.projected_rank)]);
     if(Number.isFinite(info?.win_probability)&&info.win_probability>0&&globalThis.RRRaceTitles?.formatFairOdds){
       const odds=globalThis.RRRaceTitles.formatFairOdds({win_probability_exact:info.win_probability});
-      if(odds&&odds!=='—')out.push(['Revised Fair Odds',odds]);
+      if(odds&&odds!=='—'){
+        const old=item.metric?.label==='WIN'?globalThis.RRRaceTitles.formatFairOdds({win_probability_exact:item.metric.before}):null;
+        out.push(old&&old!=='—'&&old!==odds?['Fair Odds',old+' → '+odds]:['Revised Fair Odds',odds]);
+      }
     }
     return out;
   }
