@@ -76,6 +76,14 @@ try{
      await card.locator('.rr-pulse-compact-actions .rr-pulse-tool').click();
      await card.locator('.rr-pulse-compact-open').click();
      await page.locator('.rr-pulse-detail .rr-pulse-item').waitFor();
+     assert.equal(await page.locator('.rr-pulse-detail .rr-pulse-item').count(),1);
+     assert.equal(await page.locator('#rr-pulse-detail-fallback').count(),0);
+     assert.equal(await page.locator('.rr-pulse-social-image').count(),0);
+     assert.equal(await page.locator('.rr-pulse-detail .rr-pulse-story-link').innerText(),'Back to Pulse');
+     assert.equal(await page.locator('.rr-pulse-detail .rr-pulse-paid-link').count(),1);
+     assert.equal(await page.locator('.rr-pulse-detail .rr-pulse-tool').count(),1);
+     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+     await page.screenshot({path:'pulse-mobile-homepage/'+name+'-single-detail.png',fullPage:true});
      await page.locator('.rr-pulse-detail .rr-pulse-tool').click();
      const menu=page.locator('.rr-pulse-menu');await menu.waitFor();
      assert.equal(await menu.getByRole('button',{name:'Download Card'}).count(),1);
