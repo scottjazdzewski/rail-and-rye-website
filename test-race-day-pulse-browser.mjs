@@ -62,7 +62,11 @@ try{
   assert.equal(layout.cards,6,'Six actual insights; no synthetic CTA card');
   assert.equal(await page.locator('.rr-pulse-position').innerText(),'1/6');
   assert.ok(await page.locator('#rr-pulse-prev').isDisabled());
-  assert.match(await page.locator('#rr-pulse-next').evaluate(el=>getComputedStyle(el).borderRadius),/^9px$/);
+  for(const id of ['#rr-pulse-prev','#rr-pulse-next']){
+    const centered=await page.locator(id).evaluate(el=>{const a=el.getBoundingClientRect(),b=el.querySelector('svg').getBoundingClientRect();return Math.abs(a.x+a.width/2-b.x-b.width/2)<.5&&Math.abs(a.y+a.height/2-b.y-b.height/2)<.5;});
+    assert.ok(centered,'Vector chevron must be centered');
+  }
+  assert.match(await page.locator('#rr-pulse-next').evaluate(el=>getComputedStyle(el).borderRadius),/^8px$/);
   assert.ok(layout.imgs[0]>0,'Visible approved saddlecloth image loads; off-screen images may be lazy-loaded');
   const saddleStyle=await page.evaluate(()=>{
     const images=[...document.querySelectorAll('.rr-pulse-item:first-child .rr-pulse-saddle')];
@@ -118,7 +122,7 @@ try{
   assert.ok(layout.railScrollable,'Scroller should overflow inside its own boundary');
   const geometry=await page.evaluate(()=>{
     const rail=document.querySelector('.rr-pulse-rail'),
-      card=document.querySelector('.rr-pulse-item'),share=card.querySelector('.rr-pulse-tool'),
+      card=document.querySelector('.rr-pulse-item'),share=card.querySelector('.rr-pulse-item-footer .rr-pulse-tool'),
       body=card.querySelector('.rr-pulse-message'),footer=card.querySelector('.rr-pulse-item-footer');
     const cb=card.getBoundingClientRect(),sb=share.getBoundingClientRect(),
       bb=body.getBoundingClientRect(),fb=footer.getBoundingClientRect(),style=getComputedStyle(body),
@@ -185,7 +189,7 @@ try{
   assert.ok(await page.locator('.rr-pulse-expanded-message').first().isHidden());
   assert.equal(await page.locator('.rr-pulse-item:visible').count(),6);
   // A click opens manual share menu; never posts to X without the user.
-  await page.locator('.rr-pulse-tool').first().click();
+  await page.locator('.rr-pulse-item-footer .rr-pulse-tool').first().click();
   assert.ok(await page.locator('.rr-pulse-menu').first().isVisible(),'Share control shows manual actions');
   assert.deepEqual(await page.locator('.rr-pulse-menu button').allTextContents(),['Share to X','Download Card','Copy Link']);
   const href=await page.locator('.rr-pulse-menu a').first().getAttribute('href');
@@ -209,7 +213,7 @@ try{
     assert.ok(new URL(shared).searchParams.get('text'));
 
   }
-  await page.locator('.rr-pulse-tool').first().click();
+  await page.locator('.rr-pulse-item-footer .rr-pulse-tool').first().click();
   await page.locator('#rr-pulse-next').click();
   assert.ok(!await page.locator('#rr-pulse-prev').isDisabled(),'Scroller arrows work');
   await page.close();
