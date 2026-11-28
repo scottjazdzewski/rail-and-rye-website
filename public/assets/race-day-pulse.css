@@ -371,3 +371,15 @@
  .heritage-home>.rr-pulse .rr-pulse-message .rr-pulse-saddle--inline{width:12.6px;height:12.6px}
  .heritage-home>.rr-pulse .rr-pulse-message .rr-pulse-saddle--inline>.rr-pulse-saddle{transform:scale(.45)}
 }
+
+/* Live owner polish: reuse the Race Cards horse-name font, not the display serif. */
+.rr-pulse .rr-pulse-horse-line .rr-pulse-headline{font-family:Inter,Arial,system-ui,sans-serif;font-weight:700;line-height:1.2;letter-spacing:0}
+.rr-pulse .rr-pulse-track{white-space:normal;letter-spacing:.045em}
+.rr-pulse-expanded .rr-pulse-rail{overflow:hidden}
+.rr-pulse-expanded .rr-pulse-item:not(.rr-pulse-is-expanded){display:none}
+.rr-pulse-expanded .rr-pulse-is-expanded{width:100%;max-width:100%;flex:0 0 100%;min-width:0}
+.rr-pulse-expanded .rr-pulse-is-expanded .rr-pulse-message{display:none}
+.rr-pulse-expanded-message[hidden]{display:none!important}
+.rr-pulse .rr-pulse-expanded-message{font:500 13px/1.5 var(--heritage-sans,Montserrat,Arial,sans-serif);color:#f3eadb;white-space:normal;overflow-wrap:anywhere;margin:5px 0 7px}
+.rr-pulse-expanded .rr-pulse-nav{visibility:hidden}
+.rr-pulse-expanded .rr-pulse-story-link{min-width:0;white-space:normal}
