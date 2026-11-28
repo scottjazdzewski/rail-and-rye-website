@@ -362,3 +362,8 @@
  .heritage-home>.rr-pulse .rr-pulse-message{font-size:11px;line-height:1.25;margin:1px 0 2px;white-space:nowrap!important;text-overflow:ellipsis;overflow:hidden}
  .rr-pulse-detail .rr-pulse-message{font-size:14px;line-height:1.45;margin:6px 0 8px}
 }
+
+/* Inline program identity: keep the existing approved artwork and body baseline. */
+.rr-pulse .rr-pulse-message .rr-pulse-saddle--inline{display:inline-grid;vertical-align:-0.17em;width:1.18em;height:1.18em;flex:none;border-radius:3px;box-shadow:none;margin-right:.12em}
+.rr-pulse .rr-pulse-message .rr-pulse-saddle--inline img{width:100%;height:100%;object-fit:contain;display:block}
+.rr-pulse .rr-pulse-message .rr-pulse-saddle--inline .rr-pulse-suffix{font-size:.48em;line-height:1}
