@@ -305,7 +305,14 @@ export async function readPublishedPickTicketCards(env,raceDate){
    if(ownerRelease!== (file.customMetadata?.publication_mode==="owner-approved-gpt"))continue;
    const card=normalizePickTickets(raw),scratches=publicScratches(raw?.scratches_by_race);
    if(requiresFinalPickField(card.date)){
-    if(card.status==="initial_current"){
+    if(card.status==="initial_current"&&card.date==="2026-11-28"&&card.revision===2){
+     // One-day owner-approved construction correction, not a scratch revision.
+     const md=file.customMetadata||{},key="pick-tickets/construction-revisions/"+card.date+"/"+slug(card.track)+"/approved-0002.json";
+     const approved=await env.CARDS_BUCKET.get(key);
+     if(!approved||approved.customMetadata?.customer_publish_approved!=="true"||!md.construction_approval_sha256)throw Error("Construction correction approval missing");
+     const atext=await approved.text(),a=JSON.parse(atext);
+     if(await sha256(atext)!==md.construction_approval_sha256||a.date!==card.date||a.track!==card.track||a.revision!==2||a.kind!=="OWNER_APPROVED_INITIAL_CONSTRUCTION_1128"||a.stage_sha256!==md.initial_stage_sha256||a.source_input_sha256!==card.source_input_sha256||a.customer_sha256!==await sha256(JSON.stringify(card))||scratches)throw Error("Construction correction binding mismatch");
+    }else if(card.status==="initial_current"){
      // Only the immutable, validated initial stage may use the initial-edition lane.
      // Scratch revisions still require the current official final-field proof.
      const md=file.customMetadata||{},stage=await env.CARDS_BUCKET.get("pick-tickets/staging/"+card.date+"/revision-0001.json");
