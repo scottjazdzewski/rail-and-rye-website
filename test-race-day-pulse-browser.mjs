@@ -2,7 +2,7 @@
 // race outcomes or paid selections are exposed. Run with Playwright Chromium.
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {readFileSync,mkdirSync} from 'node:fs';
+import {readFileSync,mkdirSync,writeFileSync} from 'node:fs';
 import {resolve,extname} from 'node:path';
 import {chromium} from 'playwright';
 const date='2026-11-26';
@@ -167,6 +167,9 @@ try{
     await download.saveAs('pulse-preview-screenshots/share-image.png');
     const png=readFileSync('pulse-preview-screenshots/share-image.png');
     assert.equal(png.readUInt32BE(16),1080);assert.equal(png.readUInt32BE(20),1350);
+    const landscape=Buffer.from(await page.evaluate(async item=>{const blob=await globalThis.RRPulseRenderImage(item,'landscape');return Array.from(new Uint8Array(await blob.arrayBuffer()));},make(0)));
+    assert.equal(landscape.readUInt32BE(16),1200);assert.equal(landscape.readUInt32BE(20),675);
+    writeFileSync('pulse-preview-screenshots/x-image.png',landscape);
     await page.evaluate(()=>{window.open=(url)=>{window.__pulseShareURL=url;return null;};});
     await page.getByRole('button',{name:'Share to X',exact:true}).click();
     const shared=await page.evaluate(()=>window.__pulseShareURL);
