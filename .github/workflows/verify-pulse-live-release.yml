@@ -31,6 +31,8 @@ jobs:
           from pathlib import Path
           base='https://railandryeracing.com'
           expected=Path('public/assets/race-day-pulse.js').read_bytes()
+          config=json.loads(Path('wrangler.jsonc').read_text())['vars']
+          start=config['PULSE_PUBLICATION_START_DATE']
           def get(path):
               req=urllib.request.Request(base+path,headers={'Cache-Control':'no-cache','User-Agent':'RailRyeReleaseQA/1.0'})
               with urllib.request.urlopen(req,timeout=15) as r:return r.read()
@@ -45,8 +47,15 @@ jobs:
                   now=datetime.now(ZoneInfo('America/New_York'))
                   date=(now.date()-timedelta(days=now.hour<3)).isoformat()
                   assert f['date']==date and isinstance(f['items'],list)
-                  if date<'2026-11-28':assert f['status']=='disabled' and not f['items']
-                  else:assert f['status']=='ok'
+                  if config['PULSE_PUBLICATION_ENABLED']!='true' or date<start:assert f['status']=='disabled' and not f['items']
+                  else:
+                      assert f['status']=='ok'
+                      if date=='2026-11-27':assert len(f['items'])>0
+                      assert all(i['date']==date and not i['id'].startswith('demo-') for i in f['items'])
+                      if f['items']:
+                          i=f['items'][0]
+                          detail=get('/pulse/'+i['date']+'/'+i['id']+bust).decode()
+                          assert 'Race-Day Pulse' in detail and 'model_receipts' not in detail
                   print('PULSE_LIVE_DEPLOYMENT_VERIFIED',json.dumps({'date':date,'status':f['status'],'insights':len(f['items']),'renderer_sha256':hashlib.sha256(live).hexdigest()}),flush=True)
                   break
               except Exception as e:
