@@ -170,8 +170,21 @@ export function paceInsightsForRace(date,track,initial,revised,updatedAt,sourceV
     if(['jockey','trainer'].some(f=>norm(a?.[f])!==norm(b?.[f])))return [];
   }
   const paceNames={weak:'Weak',moderate:'Moderate',strong:'Strong'};
-  const oldPace=paceNames[norm(initial.pace)],newPace=paceNames[norm(revised.pace)];
-  const racePaceChanged=!!oldPace&&!!newPace&&oldPace!==newPace;
+  // The dashboard's Moderate label may be an Insufficient-evidence fallback.
+  // Require the frozen evaluator's original race metadata, not display labels.
+  function verifiedPace(r){
+    const m=r?.pace_meta,shape=paceNames[norm(m?.pace_shape)];
+    if(!shape||norm(r.pace)!==norm(shape)||!Number.isInteger(m.field_size)||
+      m.field_size!==r.entries.length||!Number.isInteger(m.early_evidence_n)||
+      m.early_evidence_n<3||m.early_evidence_n>m.field_size||
+      !Number.isFinite(m.early_coverage)||m.early_coverage<0.60||
+      Math.abs(m.early_coverage-m.early_evidence_n/m.field_size)>1e-6||
+      !Number.isInteger(m.fast_early_n)||m.fast_early_n<0||m.fast_early_n>m.early_evidence_n)return null;
+    return shape;
+  }
+  const oldPace=verifiedPace(initial),newPace=verifiedPace(revised);
+  if(!oldPace||!newPace)return [];
+  const racePaceChanged=oldPace!==newPace;
   const candidates=[];
   for(const [key,runner] of after){
     const prev=before.get(key),a=fit(oldEntries.get(norm(key))),b=fit(currentEntries.get(norm(key)));
