@@ -104,16 +104,27 @@ const nonMaterial={...updatedDirt,entries:[run(1,45),run(2,55)]};
 assert.equal(pulse.insightForRace(before.race_date,before.track_name,originalTurf,
  nonMaterial,'2026-11-26T15:00:00Z'),null);
 // Pace Advantage is based on actual changed Pace Fit, not a PWIN threshold.
-const paceBefore={...before.races[0],surface:'Dirt',entries:before.races[0].entries.map(e=>({...e,metrics:[{label:'Pace Fit',value:'gray'}]}))};
-const paceAfter={...after.races[0],surface:'Dirt',entries:after.races[0].entries.map(e=>({...e,metrics:[{label:'Pace Fit',value:e.program_number==='2'?'green':'gray'}]}))};
+const paceMeta=(shape,n,fast)=>({pace_shape:shape,field_size:n,early_evidence_n:n,early_coverage:1,fast_early_n:fast});
+const paceBefore={...before.races[0],surface:'Dirt',pace:'Strong',pace_meta:paceMeta('Strong',4,2),entries:[run(1,40),run(2,30),run(3,20),run(4,10)].map(e=>({...e,metrics:[{label:'Pace Fit',value:'gray'}]}))};
+const paceAfter={...after.races[0],surface:'Dirt',pace:'Strong',pace_meta:paceMeta('Strong',3,2),entries:[run(1,35),run(2,50),run(4,15)].map(e=>({...e,metrics:[{label:'Pace Fit',value:e.program_number==='2'?'green':'gray'}]}))};
 const pace=pulse.paceInsightsForRace(before.race_date,before.track_name,paceBefore,paceAfter,'2026-11-26T15:00:00Z',fingerprint);
 assert.equal(pace.length,1);
 assert.equal(pace[0].kind,'PACE_ADVANTAGE');
 assert.equal(pace[0].chip,'2');
 assert.deepEqual(pace[0].pace_fit,{before:'gray',after:'green'});
 assert.match(pace[0].message,/Pace Fit changes from neutral to positive/);
-assert.equal(pulse.paceInsightsForRace(before.race_date,before.track_name,paceBefore,{...paceAfter,surface:'Turf'},'2026-11-26T15:00:00Z').length,0);
-assert.equal(pulse.paceInsightsForRace(before.race_date,before.track_name,paceBefore,{...paceAfter,entries:paceAfter.entries.map(e=>({...e,metrics:[]}))},'2026-11-26T15:00:00Z').length,0);
+assert.equal(pulse.paceInsightsForRace(before.race_date,before.track_name,paceBefore,{...paceAfter,surface:'Turf'},null).length,0);
+assert.equal(pulse.paceInsightsForRace(before.race_date,before.track_name,paceBefore,{...paceAfter,entries:paceAfter.entries.map(e=>({...e,metrics:[]}))},null).length,0);
+assert.equal(pulse.paceInsightsForRace(before.race_date,before.track_name,paceBefore,{...paceAfter,pace:'Moderate',pace_meta:undefined},null).length,0,'Display fallback is not pace evidence');
+assert.equal(pulse.paceInsightsForRace(before.race_date,before.track_name,paceBefore,{...paceAfter,pace:'Moderate',pace_meta:paceMeta('Insufficient',3,0)},null).length,0,'Unknown pace is not Moderate');
+// No second/third-only feed alerts; archived links remain readable.
+const underneathOnly={...after.races[0],entries:[run(1,56,{place:[.25,.2]}),run(2,44)]};
+const quietBefore={...before.races[0],entries:[run(1,55),run(2,43),run(3,2)]};
+assert.equal(pulse.insightForRace(before.race_date,before.track_name,quietBefore,underneathOnly,null),null);
+const racePace=pulse.paceInsightsForRace(before.race_date,before.track_name,paceBefore,{...paceAfter,pace:'Weak',pace_meta:paceMeta('Weak',3,1)},null);
+assert.equal(racePace.length,1);
+assert.deepEqual(racePace[0].race_pace,{before:'Strong',after:'Weak'});
+assert.match(racePace[0].message,/projected race pace changes from strong to weak/);
 assert.equal(event.kind,'NEW_FAVORITE');
 assert.equal(event.chip,'2');
 assert.equal(event.metric.label,'WIN');

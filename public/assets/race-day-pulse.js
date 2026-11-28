@@ -19,7 +19,15 @@
   if(!shell||!rail||!prev||!next)return;
   let selected=0,events=[],paused=false,revision='',pending=false,closeShare=null,expanded=null;
   const position=document.createElement('span');position.className='rr-pulse-position';position.setAttribute('aria-live','off');
-  if(!detailMode)next.before(position);
+  if(!detailMode){
+    next.before(position);
+    for(const [button,d] of [[prev,'M15.5 5L8.5 12L15.5 19'],[next,'M8.5 5L15.5 12L8.5 19']]){
+      const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg'),arrow=document.createElementNS(ns,'path');
+      svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('aria-hidden','true');
+      arrow.setAttribute('d',d);arrow.setAttribute('fill','none');arrow.setAttribute('stroke','currentColor');arrow.setAttribute('stroke-width','2.4');arrow.setAttribute('stroke-linecap','round');arrow.setAttribute('stroke-linejoin','round');
+      svg.append(arrow);button.replaceChildren(svg);
+    }
+  }
   function updatePosition(){position.textContent=(selected+1)+'/'+rail.children.length;position.setAttribute('aria-label','Insight '+(selected+1)+' of '+rail.children.length);}
 
   const $=(tag,className,text)=>{
@@ -143,12 +151,12 @@
       if(item.kind==='NEW_FAVORITE')return 'New projected favorite';
       if(item.kind==='FAVORITE_SCRATCHED')return 'New leader after favorite scratched';
       if(item.kind==='F4_SHIFT')return diff>0?'Second-or-third probability rises':diff<0?'Second-or-third probability falls':'Second-or-third outlook changes';
-      if(item.kind==='PACE_ADVANTAGE')return 'Pace Fit improves';
-      return diff>0?'Win probability rises':diff<0?'Win probability falls':'Projection changes';
+      if(item.kind==='PACE_ADVANTAGE')return item.race_pace?'Projected pace: '+item.race_pace.before+' → '+item.race_pace.after:item.pace_fit?.before===item.pace_fit?.after?'Projected pace changes':'Pace Fit changes';
+      return diff>0?'Projected fair odds shorten':diff<0?'Projected fair odds lengthen':'Projection changes';
     };
     if(portrait)txt(concise(),W/2,takeawayY,32,ivory,600,B-24,'center');
     else {font(22,500);c.fillStyle=ivory;wrap(c,item.short_message||item.message,X,takeawayY,B,25,2);}
-    if(item.kind==='PACE_ADVANTAGE'&&item.pace_fit){const names={red:'Negative',gray:'Neutral',green:'Positive'};const before=names[item.pace_fit.before],after=names[item.pace_fit.after];if(before&&after)txt('Pace Fit: '+before+' → '+after,X,portrait?943:553,portrait?24:17,gold,700,B);}
+    if(item.kind==='PACE_ADVANTAGE'&&item.pace_fit&&!item.race_pace){const names={red:'Negative',gray:'Neutral',green:'Positive'};const before=names[item.pace_fit.before],after=names[item.pace_fit.after];if(before&&after)txt('Pace Fit: '+before+' → '+after,X,portrait?943:553,portrait?24:17,gold,700,B);}
     const scratches=Array.isArray(item.scratches)?item.scratches:[],sy=portrait?995:576,ss=portrait?57:29;
     if(scratches.length){txt('SCRATCHED',X,sy+(portrait?23:14),portrait?26:18,gold,800);let sx=X+(portrait?192:134);const step=ss+(portrait?10:8),capacity=Math.floor((R-sx+step-ss)/step),show=scratches.length>capacity?Math.max(0,capacity-1):scratches.length;for(const sc of scratches.slice(0,show)){await saddle(sc.program,sx,sy-(portrait?18:12),ss);sx+=step;}if(scratches.length>show)txt('+'+(scratches.length-show),sx,sy+(portrait?23:14),portrait?22:17,gold,750,R-sx);}
     const ctaY=portrait?1060:603,ctaH=portrait?132:35;
@@ -217,11 +225,12 @@
   // Owner-approved four-symbol family. Shared vector geometry for DOM and canvas.
   function signalType(item){
     if(item.kind==='NEW_FAVORITE')return 'favorite';
+    if(item.kind==='FAVORITE_SCRATCHED')return 'favorite-scratched';
     if(item.kind==='F4_SHIFT')return 'rank';
     if(item.kind==='PACE_ADVANTAGE')return 'pace';
     return 'scratch';
   }
-  const signalLabels={scratch:'SCRATCH IMPACT',favorite:'NEW PROJECTED FAVORITE',pace:'PACE ADVANTAGE',rank:'RANK MOVEMENT'};
+  const signalLabels={scratch:'PROJECTED FAIR ODDS SHIFT',favorite:'NEW PROJECTED FAVORITE',pace:'PROJECTED PACE CHANGE',rank:'RANK MOVEMENT'};
   function signal(item){return item.kind==='FAVORITE_SCRATCHED'?'PROJECTED FAVORITE SCRATCHED':item.kind==='F4_SHIFT'?'SECOND-OR-THIRD PROBABILITY SHIFT':signalLabels[signalType(item)];}
   const signalArt={
     // Probability movement, not an X or a close/delete affordance.
@@ -232,6 +241,10 @@
     scratchDown:[
       {d:'M3 3V21H22',stroke:'#c5b994',w:1.5},
       {d:'M5.5 7L10 11.5L14 9L21 18M16 18H21V13',stroke:'#f0ad9e',w:2.5}
+    ],
+    'favorite-scratched':[
+      {d:'M12 2L14.5 7.8L21 8.5L16 12.5L17.5 19L12 15.5L6.5 19L8 12.5L3 8.5L9.5 7.8Z',stroke:'#e6b650',w:1.6},
+      {d:'M4 20L20 4',stroke:'#f0ad9e',w:2.6}
     ],
     favorite:[
       {d:'M12 1L13.8 5.4L18.6 5.7L14.9 8.8L16.1 13.3L12 10.7L7.9 13.3L9.1 8.8L5.4 5.7L10.2 5.4Z',fill:'#e6b650'},
@@ -271,6 +284,7 @@
   }
   function paceComparison(item){
     const m=item.pace_fit;
+    if(item.kind==='PACE_ADVANTAGE'&&item.race_pace){const el=$('div','rr-pulse-pace-comparison');el.append($('span','rr-pulse-pace-label','RACE PACE'),$('span','rr-pulse-fit',item.race_pace.before),$('span','rr-pulse-arrow-mark','→'),$('span','rr-pulse-fit',item.race_pace.after));return el;}
     if(item.kind!=='PACE_ADVANTAGE'||!m||!['red','gray','green'].includes(m.before)||!['red','gray','green'].includes(m.after))return null;
     const names={red:'Negative',gray:'Neutral',green:'Positive'},el=$('div','rr-pulse-pace-comparison');
     el.append($('span','rr-pulse-pace-label','PACE FIT'),$('span','rr-pulse-fit rr-pulse-fit--'+m.before,names[m.before]),$('span','rr-pulse-arrow-mark','→'),$('span','rr-pulse-fit rr-pulse-fit--'+m.after,names[m.after]));return el;
@@ -285,7 +299,10 @@
     if(Number.isInteger(info?.projected_rank)&&info.projected_rank>0)out.push(['Projected Rank',ordinal(info.projected_rank)]);
     if(Number.isFinite(info?.win_probability)&&info.win_probability>0&&globalThis.RRRaceTitles?.formatFairOdds){
       const odds=globalThis.RRRaceTitles.formatFairOdds({win_probability_exact:info.win_probability});
-      if(odds&&odds!=='—')out.push(['Revised Fair Odds',odds]);
+      if(odds&&odds!=='—'){
+        const old=item.metric?.label==='WIN'?globalThis.RRRaceTitles.formatFairOdds({win_probability_exact:item.metric.before}):null;
+        out.push(old&&old!=='—'&&old!==odds?['Fair Odds',old+' → '+odds]:['Revised Fair Odds',odds]);
+      }
     }
     return out;
   }
@@ -346,13 +363,29 @@
     const original=$('a','rr-pulse-story-link',detailMode?'Intelligence Hub':'Open Pulse');original.href=detailMode?'/store/':pulseUrl(item);
     if(!detailMode){original.setAttribute('aria-expanded','false');original.addEventListener('click',e=>{if(e.ctrlKey||e.metaKey||e.shiftKey||e.altKey||!matchMedia('(min-width:641px)').matches)return;e.preventDefault();if(expanded===article)collapseInsight();else expandInsight(article);});}
     const paid=$('a','rr-pulse-paid-link','Full-Field Analysis');paid.href=typeof item.hub_url==='string'&&item.hub_url.startsWith('/')&&!item.hub_url.startsWith('//')?item.hub_url:'/store/';
-    links.append(original,paid);footer.append(links,shareTools(item));article.append(footer);
+    const share=shareTools(item);links.append(original,paid);footer.append(links,share);article.append(footer);
     // Mobile homepage shows the entire essential insight; full actions live on the detail page.
+    if(detailMode)return article;
     const compact=$('a','rr-pulse-compact-open','Open Pulse');compact.href=pulseUrl(item);
+    const compactActions=$('div','rr-pulse-compact-actions');
+    compactActions.append(compact);if(matchMedia('(max-width:640px)').matches)compactActions.append(share);
     const scratchesRow=article.querySelector('.rr-pulse-scratch-list');
-    if(scratchesRow)scratchesRow.append(compact);else {const compactRow=$('div','rr-pulse-compact-row');compactRow.append(compact);article.append(compactRow);}
+    if(scratchesRow)scratchesRow.append(compactActions);else {const compactRow=$('div','rr-pulse-compact-row');compactRow.append(compactActions);article.append(compactRow);}
     return article;
   }
+  // Move the one real Share control across breakpoints, rather than
+  // retaining a hidden duplicate in another part of the card.
+  const compactMedia=matchMedia('(max-width:640px)');
+  compactMedia.addEventListener?.('change',()=>{
+    closeShare?.();
+    if(detailMode)return;
+    for(const card of rail.children){
+      const share=card.querySelector('.rr-pulse-share-group');
+      const target=card.querySelector(compactMedia.matches?'.rr-pulse-compact-actions':'.rr-pulse-item-footer');
+      if(share&&target)target.append(share);
+    }
+    fitActiveCard();
+  });
   function expandInsight(article){
     if(expanded)collapseInsight();
     selected=[...rail.children].indexOf(article);if(selected<0)return;

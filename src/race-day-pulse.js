@@ -119,13 +119,13 @@ export function insightForRace(date,track,initial,revised,updatedAt,sourceVersio
     // A scratched top choice creates an obvious new favorite by elimination.
     // Rank that routine change below genuine survivor-vs-survivor reversals.
     // Do not force publication of trivial elimination effects.
-    if(stayed||moved>=4){
+    if(stayed||!after.has(oldLead.program)){
       return {...common,kind:stayed?'NEW_FAVORITE':'FAVORITE_SCRATCHED',
         headline:stayed?'New Projected Favorite':'New Leader After Favorite Scratched',
         chip:newLead.program,horse:newLead.horse,
-        priority:(stayed?100:42)+Math.max(0,moved),
+        priority:(stayed?100:120)+Math.max(0,moved),
         metric:{label:'WIN',before:earlier.win,after:newLead.win},summary:publicSummary(newLead,after),
-        short_message:'#'+newLead.program+' '+newLead.horse+' moves to the top of our projections.',
+        short_message:stayed?'#'+newLead.program+' '+newLead.horse+' moves to the top of our projections.':'Projected favorite '+oldLead.horse+' scratched; '+newLead.horse+' now leads.',
         message:context+'#'+newLead.program+' '+newLead.horse+
           ' moves to the top of our projections for the '+raceName+'. '+
           'The revised win chance is '+pct(newLead.win)+
@@ -136,31 +136,14 @@ export function insightForRace(date,track,initial,revised,updatedAt,sourceVersio
     .sort((a,b)=>Math.abs(b.delta)-Math.abs(a.delta));
   if(changed[0]&&Math.abs(changed[0].delta)>=4){
     const x=changed[0];
-    return {...common,kind:'WIN_SHIFT',headline:'Scratch-Driven Projection Shift',chip:x.h.program,horse:x.h.horse,
+    return {...common,kind:'WIN_SHIFT',headline:'Projected Fair Odds Shift',chip:x.h.program,horse:x.h.horse,
       priority:50+Math.abs(x.delta),
       metric:{label:'WIN',before:x.old.win,after:x.h.win},summary:publicSummary(x.h,after),
-      short_message:x.h.program===newLead.program?'Remains our projected favorite after the scratches.':'Win Probability changes after the scratches.',
+      short_message:'Projected fair odds '+(x.delta>0?'shorten':'lengthen')+' after the scratches.',
       message:context+'#'+x.h.program+' '+x.h.horse+
         (x.h.program===newLead.program?' remains our top choice in the '+raceName+'.':' sees a change in the '+raceName+'.')+
         ' The win chance moves from '+pct(x.old.win)+' to '+pct(x.h.win)+
         '. '+(Math.abs(x.delta)<7?'A modest change, but enough to notice.':'That is a substantial change to the original projection.')};
-  }
-  const underneath=[...after.values()].map(h=>{
-    const prior=before.get(h.program);
-    const a=Number(h.f4.exact_p2)+Number(h.f4.exact_p3),b=Number(prior.f4.exact_p2)+Number(prior.f4.exact_p3);
-    return {h,a,b,delta:(a-b)*100};
-  }).filter(x=>Number.isFinite(x.a)&&Number.isFinite(x.b)&&x.a>=0&&x.a<=1&&x.b>=0&&x.b<=1)
-    .sort((a,b)=>Math.abs(b.delta)-Math.abs(a.delta));
-  if(underneath[0]&&Math.abs(underneath[0].delta)>=7){
-    const x=underneath[0];
-    return {...common,kind:'F4_SHIFT',headline:'Underneath Outlook Changes',chip:x.h.program,horse:x.h.horse,
-      priority:20+Math.abs(x.delta),
-      metric:{label:'SECOND_OR_THIRD',before:x.b*100,after:x.a*100},summary:publicSummary(x.h,after),
-      short_message:'The projected chance of finishing second or third has changed.',
-      message:context+'#'+x.h.program+' '+x.h.horse+
-        ' has moved in our Full Finishing Order Projections for the '+raceName+
-        '. The combined second-or-third chance is '+pct(x.a*100)+', compared with '+
-        pct(x.b*100)+' on the original card.'};
   }
   return null; // No forced posts, no unverified pace-causality claims.
 }
@@ -186,25 +169,43 @@ export function paceInsightsForRace(date,track,initial,revised,updatedAt,sourceV
     const a=oldEntries.get(norm(key)),b=currentEntries.get(norm(key));
     if(['jockey','trainer'].some(f=>norm(a?.[f])!==norm(b?.[f])))return [];
   }
+  const paceNames={weak:'Weak',moderate:'Moderate',strong:'Strong'};
+  // The dashboard's Moderate label may be an Insufficient-evidence fallback.
+  // Require the frozen evaluator's original race metadata, not display labels.
+  function verifiedPace(r){
+    const m=r?.pace_meta,shape=paceNames[norm(m?.pace_shape)];
+    if(!shape||norm(r.pace)!==norm(shape)||!Number.isInteger(m.field_size)||
+      m.field_size!==r.entries.length||!Number.isInteger(m.early_evidence_n)||
+      m.early_evidence_n<3||m.early_evidence_n>m.field_size||
+      !Number.isFinite(m.early_coverage)||m.early_coverage<0.60||
+      Math.abs(m.early_coverage-m.early_evidence_n/m.field_size)>1e-6||
+      !Number.isInteger(m.fast_early_n)||m.fast_early_n<0||m.fast_early_n>m.early_evidence_n)return null;
+    return shape;
+  }
+  const oldPace=verifiedPace(initial),newPace=verifiedPace(revised);
+  if(!oldPace||!newPace)return [];
+  const racePaceChanged=oldPace!==newPace;
   const candidates=[];
   for(const [key,runner] of after){
     const prev=before.get(key),a=fit(oldEntries.get(norm(key))),b=fit(currentEntries.get(norm(key)));
-    if(a===null||b===null||levels[b]<=levels[a])continue;
+    if(a===null||b===null)continue;
+    const fitChanged=levels[b]!==levels[a];
+    if(!racePaceChanged&&!fitChanged)continue;
     // No arbitrary probability-point threshold or Gold dependency.
     // Describe the actual Pace Fit change and show the actual PWIN comparison.
     const horse=runner.horse;
-    const label='Pace Fit improves from '+names[a]+' to '+names[b]+' after the scratches.';
+    const label=racePaceChanged?'Projected race pace: '+oldPace+' → '+newPace+'.':'Pace Fit '+(levels[b]>levels[a]?'improves':'weakens')+' from '+names[a]+' to '+names[b]+'.';
     candidates.push({
       id:slug(track)+'-race-'+revised.race_number+'-pace-'+slug(key)+revisionToken(sourceVersion),
       date,track:clean(track,90),race_number:revised.race_number,updated_at:updatedAt,
       post_time_et:clean(revised.post_time_et,38),
       hub_url:'/intelligence/race-cards/?date='+encodeURIComponent(date)+'&track='+encodeURIComponent(track)+'&race='+encodeURIComponent(String(revised.race_number)),
-      kind:'PACE_ADVANTAGE',headline:'Pace Advantage',chip:key,horse,
-      metric:{label:'WIN',before:prev.win,after:runner.win},pace_fit:{before:a,after:b},
+      kind:'PACE_ADVANTAGE',headline:racePaceChanged?'Projected Pace Change':'Pace Fit Change',chip:key,horse,
+      metric:{label:'WIN',before:prev.win,after:runner.win},pace_fit:{before:a,after:b},...(racePaceChanged?{race_pace:{before:oldPace,after:newPace}}:{}),
       summary:publicSummary(runner,after),short_message:label,
-      message:contextForPace(activeScratches,horse,a,b,names),
+      message:racePaceChanged?lead(activeScratches)+'projected race pace changes from '+oldPace.toLowerCase()+' to '+newPace.toLowerCase()+'. '+horse+' has revised win probability '+pct(runner.win)+'.'+(fitChanged?' Pace Fit changes from '+names[a]+' to '+names[b]+'.':''):contextForPace(activeScratches,horse,a,b,names),
       scratches:activeScratches.map(x=>({program:clean(x.program_number,8).toUpperCase(),horse:clean(x.horse_name,95)})),
-      priority:60+(levels[b]-levels[a])*10+Math.max(0,runner.win-prev.win)
+      priority:(racePaceChanged?95:65)+Math.abs(levels[b]-levels[a])*10+Math.abs(runner.win-prev.win)
     });
   }
   // Show the strongest pace change in each race without exposing the paid
@@ -458,7 +459,7 @@ export async function handlePulsePage(request,env,route){
     '<meta property="og:description" content="'+escape(desc)+'"><meta property="og:url" content="'+escape(canonical)+'"><meta property="og:site_name" content="Rail &amp; Rye Racing">'+
     (imageReady?'<meta property="og:image" content="'+escape(imageURL)+'"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="675"><meta property="og:image:type" content="image/png"><meta property="og:image:alt" content="'+escape(title)+'"><meta name="twitter:image" content="'+escape(imageURL)+'">':'')+
     '<meta name="twitter:card" content="'+(imageReady?'summary_large_image':'summary')+'"><meta name="twitter:title" content="'+escape(title)+'"><meta name="twitter:description" content="'+escape(desc)+'"><link rel="canonical" href="'+escape(canonical)+'">'+
-    '<link rel="stylesheet" href="/assets/rail-rye-core.css"><link rel="stylesheet" href="/assets/race-day-pulse.css?v=10">'+
+    '<link rel="stylesheet" href="/assets/rail-rye-core.css"><link rel="stylesheet" href="/assets/race-day-pulse.css?v=11">'+
     '</head><body class="rr-pulse-standalone"><main class="rr-pulse-share-page"><a class="rr-pulse-home-link" href="/"><img src="/assets/approved/brand/rail-rye-ivory-logo.png" alt="" width="32" height="32">RAIL &amp; RYE RACING</a>'+
     '<article class="rr-pulse-story"><p class="rr-pulse-eyebrow">RACE-DAY PULSE · '+escape(date)+'</p>'+
     '<div class="rr-pulse-story-content">'+sharedChip(item.chip)+
@@ -468,6 +469,6 @@ export async function handlePulsePage(request,env,route){
     '<p class="rr-pulse-foot">Updated after source-verified scratch processing. Projections are estimates, not guarantees.</p>'+
     '<a class="rr-pulse-primary" href="'+escape(actionURL)+'">'+escape(actionText)+'</a>'+
     (imageReady?'<a class="rr-pulse-download" href="'+escape(imageURL)+'" download="rail-rye-pulse-'+escape(id)+'.png">Download Card</a>':'')+
-    '<a class="rr-pulse-secondary" href="/store/">Intelligence Hub</a><a class="rr-pulse-secondary" href="/">See today’s Race-Day Pulse</a></article></main><script src="/assets/race-day-pulse.js?v=10" defer></script></body></html>';
+    '<a class="rr-pulse-secondary" href="/store/">Intelligence Hub</a><a class="rr-pulse-secondary" href="/">See today’s Race-Day Pulse</a></article></main><script src="/assets/race-day-pulse.js?v=11" defer></script></body></html>';
   return new Response(request.method==='HEAD'?null:html,{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'public, max-age=45, must-revalidate','X-Content-Type-Options':'nosniff'}});
 }

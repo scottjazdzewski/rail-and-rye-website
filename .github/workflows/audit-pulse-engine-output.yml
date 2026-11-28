@@ -6,6 +6,8 @@ on:
       - 'scripts/audit-pulse-engine-output.py'
       - 'src/race-day-pulse.js'
       - '.github/workflows/audit-pulse-engine-output.yml'
+  pull_request:
+    paths: ['src/race-day-pulse.js','.github/workflows/audit-pulse-engine-output.yml']
   workflow_dispatch:
 permissions:
   contents: read
