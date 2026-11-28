@@ -21,7 +21,7 @@
   const position=document.createElement('span');position.className='rr-pulse-position';position.setAttribute('aria-live','off');
   if(!detailMode){
     next.before(position);
-    for(const [button,d] of [[prev,'M14 5L7 12L14 19'],[next,'M10 5L17 12L10 19']]){
+    for(const [button,d] of [[prev,'M15.5 5L8.5 12L15.5 19'],[next,'M8.5 5L15.5 12L8.5 19']]){
       const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg'),arrow=document.createElementNS(ns,'path');
       svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('aria-hidden','true');
       arrow.setAttribute('d',d);arrow.setAttribute('fill','none');arrow.setAttribute('stroke','currentColor');arrow.setAttribute('stroke-width','2.4');arrow.setAttribute('stroke-linecap','round');arrow.setAttribute('stroke-linejoin','round');
