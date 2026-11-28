@@ -1,6 +1,8 @@
 import {prepareScheduledPickStages} from "./pick-tickets-staging.js";
 import {handleAdminProjectionUpload,handleAdminProjectionBatchUpload,readAdminProjectionCards} from './projections.js';
 import {readCertifiedF4Exotics} from './f4-exotics.js';
+import {handlePulseApi,handlePulsePage,handlePulseImage,capturePublishedPulseBaselines} from './race-day-pulse.js';
+import {evaluatePulseWatch} from './pulse-scratch-watch.js';
 import {handleAdminLongshotRadar,handleAdminLongshotEditorialPreview,publishLongshotRadarTab} from './longshot-radar.js';
 import {handleAdminPickTickets} from './pick-tickets.js';
 import {handleAdminTargetList,readAdminTargetListReview} from './target-list.js';
@@ -432,6 +434,11 @@ export default {
         const response=await serveProductDocument(original,{product});
         return request.method==='HEAD'?new Response(null,{status:response.status,headers:response.headers}):response;
       }
+      if(path==="/api/race-day-pulse")return handlePulseApi(request,env);
+      const pulseImage=path.match(/^\/pulse\/(\d{4}-\d{2}-\d{2})\/([a-z0-9-]+)\/card-v1\.png$/);
+      if(pulseImage)return handlePulseImage(request,env,pulseImage);
+      const pulseRoute=path.match(/^\/pulse\/(\d{4}-\d{2}-\d{2})\/([a-z0-9-]+)\/?$/);
+      if(pulseRoute)return handlePulsePage(request,env,pulseRoute);
       if(path==="/api/racing-wire")return handleRacingWire(request,env);
       if(path.startsWith("/api/product-tabs/"))return handleProductTabs(request,env,url);
       if(path.startsWith("/api/race-card-alerts/"))return handleRaceCardAlerts(request,env,url);
@@ -443,6 +450,18 @@ export default {
     }catch(e){console.error("Rail & Rye request error",e);return fail("An internal error occurred",500);}
   },
   async scheduled(controller,env,ctx){
+    // Pulse is an INDEPENDENT quarter-hour trigger. Do not accelerate or
+    // interfere with the approved 10-minute production/commerce jobs.
+    if(controller.cron==='*/15 0-7,13-23 * * *'){
+      ctx.waitUntil(evaluatePulseWatch(env,controller.scheduledTime).then(out=>{
+        if(out.status==='awaiting_approved_source_connector')
+          console.info('Race-Day Pulse watch window open; source remains disconnected',out.date);
+      }).catch(error=>console.warn('Pulse scratch watch gate deferred',String(error).slice(0,130))));
+      return;
+    }
+    ctx.waitUntil(capturePublishedPulseBaselines(env,controller.scheduledTime).then(out=>{
+      if(out.captured)console.info('Private Pulse original-field snapshots preserved',out.captured);
+    }).catch(e=>console.warn('Pulse baseline safety net deferred',String(e).slice(0,130))));
     ctx.waitUntil(applySingleTrackPriceChange(env).then(result=>{if(result.applied)console.info('Single-track default price updated',result.updated_count);}).catch(e=>console.warn('Single-track price update deferred',String(e.message||e).slice(0,140))));
     ctx.waitUntil(prepareScheduledPickStages(env).then(result=>{
       if(result.prepared)console.info("Dated Pick Tickets prepared for scheduled release",result.prepared);

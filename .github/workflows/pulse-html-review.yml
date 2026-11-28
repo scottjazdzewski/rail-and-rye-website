@@ -1,0 +1,43 @@
+name: Build working Pulse HTML comparison
+on:
+  push:
+    branches: [feature/race-day-pulse-v1]
+    paths: ['.github/workflows/pulse-html-review.yml','scripts/build-pulse-html-review.mjs']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  review:
+    if: github.ref == 'refs/heads/feature/race-day-pulse-v1'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install boto3==1.40.36
+      - name: Build review HTML from existing website code and real certified insights
+        env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+          PULSE_ENGINE_AUDIT_DATES: '2026-11-27'
+        run: |
+          set -euo pipefail
+          umask 077
+          export PULSE_PRIVATE_REHEARSAL_DIR="$(mktemp -d)"
+          trap 'rm -rf "$PULSE_PRIVATE_REHEARSAL_DIR"' EXIT
+          python scripts/audit-pulse-engine-output.py
+          node scripts/build-pulse-html-review.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pulse-working-html-review
+          path: pulse-html-review/*.html
+          if-no-files-found: error
+          retention-days: 2

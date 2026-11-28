@@ -1,0 +1,29 @@
+name: Race-Day Pulse pace evidence research (read-only)
+on:
+  push:
+    branches:
+      - feature/race-day-pulse-v1
+    paths:
+      - 'scripts/race_day_pulse_pace_research.py'
+      - '.github/workflows/verify-pulse-pace-research.yml'
+permissions:
+  contents: read
+jobs:
+  pace-research:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Synthetic research-only guard tests
+        run: python scripts/race_day_pulse_pace_research.py --self-test
+      - name: Read-only aggregate comparison of authenticated November 26 pairs
+        env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+        run: |
+          python -m pip install --quiet boto3
+          python scripts/race_day_pulse_pace_research.py

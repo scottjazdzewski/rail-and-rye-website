@@ -372,6 +372,20 @@ def sync_cards(cards, source_hash, bucket=BUCKET_DEFAULT, dry_run=False, client=
     pending = [(target, card) for target, card, action in actions if action == "write"]
     if dry_run:
         return len(pending), len(actions) - len(pending)
+    # Preserve the exact accepted original before the direct-to-R2 write.
+    from pulse_prescratch_archive import preserve, digest
+    for target, card, action in actions:
+        # Older verified export formats lack the exact lineage fields required by
+        # Pulse. Keep the established paid publisher intact, but hold Pulse until
+        # a certified original from the authoritative modern publisher exists.
+        if card.get("factor_basis")!="verified_prescratch" or not all(
+                re.fullmatch(r"[a-fA-F0-9]{64}",str(card.get("model_receipts",{}).get(k,"")))
+                for k in ("tri_sha256","f4_sha256")):
+            continue
+        raw=compact_json(card)
+        if isinstance(raw,str):raw=raw.encode("utf-8")
+        slug=target.rsplit("/",1)[-1].removesuffix(".json")
+        preserve(client,bucket,slug,card["race_date"],card["track_name"],raw,digest(raw))
     for target, card in pending:
         client.put_object(Bucket=bucket, Key=target, Body=compact_json(card),
                           ContentType="application/json; charset=utf-8",

@@ -1,0 +1,45 @@
+name: Pulse private prelaunch rehearsal
+on:
+  push:
+    branches: [feature/race-day-pulse-v1]
+    paths:
+      - '.github/workflows/pulse-prelaunch-rehearsal.yml'
+      - 'scripts/test-pulse-real-rehearsal.mjs'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pulse-prelaunch-rehearsal
+  cancel-in-progress: true
+jobs:
+  rehearsal:
+    if: github.ref == 'refs/heads/feature/race-day-pulse-v1'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install boto3==1.40.36
+      - name: Inspect tomorrow's staging and rehearse real data without publication
+        env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+          PULSE_ENGINE_AUDIT_DATES: '2026-11-27'
+        run: |
+          set -euo pipefail
+          umask 077
+          export PULSE_PRIVATE_REHEARSAL_DIR="$(mktemp -d)"
+          trap 'rm -rf "$PULSE_PRIVATE_REHEARSAL_DIR"' EXIT
+          python scripts/check-pulse-launch-stage.py
+          python scripts/audit-pulse-engine-output.py
+          npm install --no-save --no-package-lock playwright@1.56.1
+          npx playwright install --with-deps chromium
+          node scripts/test-pulse-real-rehearsal.mjs

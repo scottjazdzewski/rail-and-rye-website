@@ -1,0 +1,119 @@
+{
+  "date": "2026-11-26",
+  "status": "ok",
+  "source_status": "PRIVATE_SOURCE_VERIFIED_READ_ONLY",
+  "items": [
+    {
+      "id": "preview-churchill-r12-source-verified",
+      "date": "2026-11-26",
+      "track": "Churchill Downs",
+      "race_number": 12,
+      "kind": "SURFACE_SWITCH",
+      "chip": "9",
+      "horse": "Sweet Reward",
+      "headline": "Sweet Reward Moves To The Top",
+      "message": "Eight horses came out when Churchill's 12th was moved from turf to dirt. #9 Sweet Reward wasn't our first choice on grass, but now heads our revised projections. The win chance rises from 10.5% to 33.9%, with both the surface and the field changed.",
+      "scratches": [
+        {
+          "program": "1",
+          "horse": "Parisinthespring"
+        },
+        {
+          "program": "2",
+          "horse": "Silbury Hill"
+        },
+        {
+          "program": "3",
+          "horse": "Great Kerry Lee"
+        },
+        {
+          "program": "6",
+          "horse": "Kristi's Spirit"
+        },
+        {
+          "program": "7",
+          "horse": "Miso Speedy"
+        },
+        {
+          "program": "10",
+          "horse": "Halfway to Omaha"
+        },
+        {
+          "program": "11",
+          "horse": "Very Valentino"
+        },
+        {
+          "program": "12",
+          "horse": "Musical Delight"
+        }
+      ],
+      "hub_url": "/intelligence/race-cards/?date=2026-11-26&track=Churchill%20Downs&race=12"
+    },
+    {
+      "id": "preview-churchill-r5-source-verified",
+      "date": "2026-11-26",
+      "track": "Churchill Downs",
+      "race_number": 5,
+      "kind": "SURFACE_SWITCH",
+      "chip": "9",
+      "horse": "Multiplication",
+      "headline": "Multiplication Strengthens Her Position",
+      "message": "#9 Multiplication was our top choice before the 5th came off the turf. Five scratches later, she's still the one we favor, with her win projection rising from 29.4% to 46.1%. The smaller field helps her position, though the switch to dirt is part of the change, too.",
+      "scratches": [
+        {
+          "program": "2",
+          "horse": "Inflammabelle"
+        },
+        {
+          "program": "5",
+          "horse": "Spotty Showers"
+        },
+        {
+          "program": "6",
+          "horse": "Jill Jitterbug"
+        },
+        {
+          "program": "10",
+          "horse": "Mo Town Renee"
+        },
+        {
+          "program": "12",
+          "horse": "Dream On Stormy"
+        }
+      ],
+      "hub_url": "/intelligence/race-cards/?date=2026-11-26&track=Churchill%20Downs&race=5"
+    },
+    {
+      "id": "preview-churchill-r9-source-verified",
+      "date": "2026-11-26",
+      "track": "Churchill Downs",
+      "race_number": 9,
+      "kind": "WIN_SHIFT",
+      "chip": "7",
+      "horse": "Destino d'Oro",
+      "headline": "Destino d'Oro Gets A Little More Help",
+      "message": "#7 Destino d'Oro won the Grade 2 Hillsborough Stakes at Tampa Bay Downs earlier this year. With #5 Gallant Greta scratched from Churchill's 9th, she remains our top choice. Her win projection edges up from 33.1% to 37.5%. It's a modest improvement, not a reason to rethink the whole race.",
+      "scratches": [
+        {
+          "program": "5",
+          "horse": "Gallant Greta"
+        }
+      ],
+      "hub_url": "/intelligence/race-cards/?date=2026-11-26&track=Churchill%20Downs&race=9"
+    }
+  ],
+  "editorial_evidence": {
+    "churchill-12th": {
+      "evidence": "Certified original and revised TRI course/field change",
+      "reference": "research/pulse/2026-11-26-churchill-user-supplied.json"
+    },
+    "churchill-5th": {
+      "evidence": "Certified original and revised TRI course/field change",
+      "reference": "research/pulse/2026-11-26-churchill-user-supplied.json"
+    },
+    "churchill-9th": {
+      "evidence": "TRI original/revised snapshots and externally verified prior graded-stakes win",
+      "reference": "https://www.thoroughbreddailynews.com/destino-doro-wins-the-photo-in-hillsborough-stakes/"
+    }
+  }
+}

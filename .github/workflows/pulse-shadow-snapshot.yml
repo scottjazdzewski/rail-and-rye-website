@@ -1,0 +1,27 @@
+name: Private one-time Pulse prescratch shadow snapshot
+on:
+  push:
+    branches:
+      - feature/race-day-pulse-v1
+    paths:
+      - scripts/race_day_pulse_shadow_capture.py
+permissions:
+  contents: read
+jobs:
+  source-preservation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Capture verified original field once, privately
+        env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+          PULSE_SHADOW_TARGET_DATE: '2026-11-26'
+        run: |
+          python -m pip install --quiet boto3
+          python scripts/race_day_pulse_shadow_capture.py

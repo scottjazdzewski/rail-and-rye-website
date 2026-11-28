@@ -1,0 +1,373 @@
+/* Race-Day Pulse — canonical scoped styles. Never change the locked homepage. */
+.rr-pulse[hidden]{display:none!important}
+.rr-pulse{background:#071a2c;color:#f6f0e5;border-top:2px solid #b18a49;border-bottom:2px solid #b18a49}
+.rr-pulse-shell{max-width:1240px;margin:auto;padding:7px 16px 9px}
+.rr-pulse-heading{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
+.rr-pulse-title{font:700 clamp(16px,1.6vw,19px)/1.1 var(--heritage-serif,Georgia,serif);margin:0;color:#fff}
+.rr-pulse-eyebrow{font:700 9px/1.2 var(--heritage-sans,system-ui,sans-serif);letter-spacing:.1em;text-transform:uppercase;color:#e1b66e;margin:0 0 2px}
+.rr-pulse-count{font:500 10px/1.2 system-ui,sans-serif;color:#d9d3c7}
+.rr-pulse-nav{display:flex;gap:6px}
+.rr-pulse-arrow{width:27px;height:27px;border:1px solid #957b55;border-radius:50%;background:transparent;color:#f3e5ca;cursor:pointer;font:22px/1 var(--heritage-sans,system-ui,sans-serif)}
+.rr-pulse-arrow:disabled{opacity:.3;cursor:default}
+.rr-pulse-rail{display:flex;align-items:flex-start;overflow-y:hidden;gap:9px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:thin;scrollbar-color:#745e3a transparent;scroll-behavior:smooth;padding-bottom:3px}
+.rr-pulse-item{box-sizing:border-box;min-width:0;width:min(470px,calc(100% - 1px));flex:0 0 min(470px,calc(100% - 1px));max-width:calc(100% - 1px);scroll-snap-align:start;position:relative;border-radius:14px;border:1px solid #967c51;background:linear-gradient(130deg,rgba(32,63,84,.96),rgba(9,27,43,.99) 70%),url('/assets/approved/textures/parchment.jpg') center/cover;box-shadow:inset 0 1px 0 #efd39a30,0 2px 5px #0005;padding:9px 11px;min-height:0;display:flex;flex-direction:column;justify-content:space-between;gap:5px}
+.rr-pulse-item-layout{display:flex;gap:0;align-items:flex-start;min-width:0}
+.rr-pulse-copy{flex:1 1 0;min-width:0;max-width:100%;white-space:normal!important;overflow-wrap:anywhere}
+.rr-pulse-card-header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 3px}.rr-pulse-identity{min-width:0;flex:1}.rr-pulse-horse-line{display:flex;align-items:center;gap:7px;min-width:0;margin:0 0 3px}
+.rr-pulse-horse-line .rr-pulse-headline{margin:0;font-size:18px}
+.rr-pulse-signal-row{display:flex;align-items:center;justify-content:space-between;gap:4px;flex-wrap:wrap;margin-bottom:3px}
+.rr-pulse-signal{display:inline-flex;align-items:center;justify-content:center;flex:none;width:28px;height:28px;box-sizing:border-box;color:#e8ca8a;border:1px solid #b39761;border-radius:8px;background:linear-gradient(160deg,#304957,#10283b 65%,#0b2034);box-shadow:inset 0 1px 0 #efd39a35,inset 0 -1px 1px #0005,0 2px 3px #0005}
+.rr-pulse-category-icon{width:18px;height:18px;flex:none}
+.rr-pulse-signal--up{color:#79d4a6}.rr-pulse-signal--down{color:#f0ad9e}
+.rr-pulse-numbers{display:grid;grid-template-columns:minmax(0,1fr) 18px minmax(0,1fr) auto;align-items:center;gap:3px 7px;font:800 25px/1.1 system-ui,sans-serif;font-variant-numeric:tabular-nums;margin:3px 0 4px;padding:6px 8px;background:linear-gradient(155deg,#0d2235,#0a1c2c 58%,#132b3e);border:1px solid #ae946b65;border-radius:10px;box-shadow:inset 0 2px 5px #0005,inset 0 -1px 0 #ffffff0b}
+.rr-pulse-metric-label{grid-column:1/-1;font:700 8px/1.1 system-ui,sans-serif;letter-spacing:.06em;color:#dfbd79}
+.rr-pulse-prob-col,.rr-pulse-delta{display:flex;flex-direction:column;gap:2px;min-width:0}
+.rr-pulse-prob-caption{font:700 8px/1.1 system-ui,sans-serif;color:#d8c8ab;letter-spacing:.03em}
+.rr-pulse-prob-value{white-space:nowrap;font-variant-numeric:tabular-nums;letter-spacing:-.045em}
+.rr-pulse-flat{color:#dfbd79}
+.rr-pulse-context{display:flex;align-items:center;gap:12px;justify-content:center;margin:2px 0;color:#f4ead5;font:600 11px/1.2 system-ui,sans-serif}
+.rr-pulse-context-cell{display:flex;align-items:center;gap:5px;white-space:nowrap}
+.rr-pulse-context-value{font-size:12px;color:#f4ead5}
+.rr-pulse-pace-comparison{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin:2px 0 3px;font:700 10px/1.2 system-ui,sans-serif}
+.rr-pulse-pace-label{font-size:8px;color:#dfbd79;margin-right:2px;letter-spacing:.04em}
+.rr-pulse-fit{padding:3px 7px;border-radius:5px;border:1px solid #ffffff22;color:#fff}
+.rr-pulse-fit--red{background:#693e3b}.rr-pulse-fit--gray{background:#465565}.rr-pulse-fit--green{background:#205c42}
+.rr-pulse-prob-bar{display:block;width:100%;height:4px;border-radius:4px;background:#405264;overflow:hidden;box-shadow:inset 0 1px 2px #0007}
+.rr-pulse-prob-fill{display:block;height:100%;border-radius:4px;background:currentColor;box-shadow:inset 0 1px 0 #ffffff55}
+.rr-pulse-delta{font-size:13px;border-left:1px solid #a8905e44;padding-left:6px}
+.rr-pulse-before{color:#adb9c6}.rr-pulse-arrow-mark{color:#dfbd79;font-size:15px;text-align:center}.rr-pulse-up{color:#79d4a6}.rr-pulse-down{color:#f0ad9e}
+.rr-pulse-track{color:#dfbd79;letter-spacing:.08em;font:800 10px/1.3 system-ui,sans-serif;margin:0 0 3px}
+.rr-pulse-headline{font:700 16px/1.17 var(--heritage-serif,Georgia,serif);color:#fff;margin:0 0 3px}
+.rr-pulse-affected{color:#f5cf90;font:750 12px/1.2 system-ui,sans-serif;margin:0 0 3px}
+.rr-pulse-message{font:400 12px/1.35 system-ui,sans-serif;color:#eef0f3;margin:0;max-width:100%;white-space:normal!important;overflow-wrap:anywhere;word-break:normal}
+.rr-pulse-item-footer{display:flex;justify-content:space-between;align-items:center;flex-wrap:nowrap;width:100%;min-width:0;gap:7px;margin-top:auto}
+.rr-pulse-links{display:flex;flex:1 1 auto;min-width:0;flex-wrap:wrap;align-items:center;gap:8px}
+.rr-pulse-story-link,.rr-pulse-paid-link,.rr-pulse-cta-link{color:#f4d290;text-decoration:underline;text-underline-offset:3px;font:750 12px/1.2 system-ui,sans-serif}
+.rr-pulse-paid-link{display:inline-flex;align-items:center;justify-content:center;min-height:28px;box-sizing:border-box;padding:5px 9px;border:1px solid #c4a36a;border-radius:7px;background:linear-gradient(180deg,#f0d7a3,#d4b278);color:#102438;text-decoration:none;box-shadow:inset 0 1px 0 #ffffff66,0 2px 3px #0004;white-space:nowrap}
+.rr-pulse-paid-link:hover{background:#f3d9a5;color:#102438}
+.rr-pulse a:focus-visible,.rr-pulse button:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.rr-pulse-share-group{position:relative;display:block;flex:0 0 auto;z-index:3}
+.rr-pulse-tool{background:linear-gradient(160deg,#2a4353,#10283b);color:#f2d59a;border:1px solid #9c8055;border-radius:7px;font:800 11px/1 system-ui,sans-serif;padding:7px 9px;cursor:pointer}
+.rr-pulse-menu{position:fixed;bottom:16px;right:16px;background:#fff;color:#0b283c;border:1px solid #bead8b;border-radius:8px;padding:8px;z-index:10;box-shadow:0 10px 27px #0008;width:min(230px,calc(100vw - 32px))}
+.rr-pulse-menu[hidden]{display:none}
+.rr-pulse-menu button,.rr-pulse-menu a{display:block;box-sizing:border-box;width:100%;text-align:left;border:0;color:#102b43;background:transparent;padding:8px;border-radius:3px;font:500 13px/1.25 system-ui,sans-serif;text-decoration:none;cursor:pointer}
+.rr-pulse-menu button:hover,.rr-pulse-menu a:hover{background:#ebedf0}
+.rr-pulse-menu-status{display:block;color:#41556a;font-size:11px;padding:3px}
+/* Match the PRODUCTION Target List transparency correction, not generic PNG alpha.
+   The art remains original, but opaque white backing prevents race color bleeding,
+   with opacity=1 / no filter / no multiply blending for every saddlecloth. */
+.rr-pulse .rr-pulse-saddle,.rr-pulse-share-page .rr-pulse-saddle{position:relative;display:inline-grid;place-items:center;flex:0 0 34px;width:34px;height:34px;overflow:hidden;border-radius:7px;background:#fff!important;opacity:1!important;isolation:isolate;mix-blend-mode:normal!important;box-shadow:0 1px 4px #0007}
+.rr-pulse .rr-pulse-saddle img,.rr-pulse-share-page .rr-pulse-saddle img{display:block;width:100%;height:100%;object-fit:contain;background:#fff!important;opacity:1!important;filter:none!important;mix-blend-mode:normal!important}
+.rr-pulse .rr-pulse-saddle--scratch,.rr-pulse-share-page .rr-pulse-saddle--scratch{flex-basis:22px;width:22px;height:22px;border-radius:5px;overflow:hidden;background:#fff!important;opacity:1!important}
+.rr-pulse .rr-pulse-saddle--scratch img,.rr-pulse-share-page .rr-pulse-saddle--scratch img{width:100%;height:100%;background:#fff!important;opacity:1!important;mix-blend-mode:normal!important;filter:none!important}
+.rr-pulse-saddle-fallback{font:900 12px/1 system-ui,sans-serif;color:#0a2744!important}
+.rr-pulse-suffix{position:absolute;right:0;bottom:0;padding:0 2px;background:#102d53;color:#fff;border:1px solid #647482;border-radius:2px;font:900 8px/1.1 system-ui,sans-serif}
+.rr-pulse-scratch-list{display:flex;align-items:center;flex-wrap:wrap;gap:6px 7px;min-width:0;max-width:100%;overflow:visible;white-space:normal;padding:7px 0 6px;border-top:1px solid rgba(209,179,121,.2)}
+.rr-pulse-scratch-label{flex:none;color:#c8bda9;letter-spacing:.05em;font:800 9px/1.2 system-ui,sans-serif}
+.rr-pulse-scratch-identity{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
+.rr-pulse-scratch-name{color:#f7efea;font:650 11px/1.2 system-ui,sans-serif;white-space:normal;overflow-wrap:anywhere}
+.rr-pulse-cta{background:#1a3550;align-items:flex-start;justify-content:center}
+.rr-pulse-cta .rr-pulse-headline{font-size:17px}
+.rr-pulse-cta-link{font-size:14px;padding:10px 13px;border:1px solid #b78c51;border-radius:6px;margin-top:7px}
+/* Share page: all affected and scratched horses retain the same production chips. */
+.rr-pulse-share-page{background:#071a2c;min-height:100vh;color:#fff;padding:30px 20px;box-sizing:border-box}
+.rr-pulse-share-page a{color:#e5c184}
+.rr-pulse-home-link{display:flex;align-items:center;gap:9px;max-width:820px;margin:0 auto 22px;font:700 20px/1.2 var(--heritage-serif,Georgia,serif);letter-spacing:.07em}
+.rr-pulse-story{max-width:820px;margin:0 auto;background:#112c43;padding:clamp(20px,4vw,46px);border:1px solid #8c764e;border-radius:12px}
+.rr-pulse-story-content{display:flex;gap:18px;align-items:flex-start}
+.rr-pulse-story-content h1{margin:0 0 14px;color:#fff;font:700 clamp(24px,4vw,36px)/1.15 Georgia,serif}
+.rr-pulse-story-content h2{margin:0 0 12px;font:700 22px/1.2 Georgia,serif;color:#dfbd79}
+.rr-pulse-story-content p{font:17px/1.6 system-ui,sans-serif;margin:0 0 15px}
+.rr-pulse-share-scratches{display:flex;align-items:center;flex-wrap:wrap;gap:9px 10px;margin:18px 0;padding:13px 0;border-top:1px solid rgba(212,167,89,.3);border-bottom:1px solid rgba(212,167,89,.3)}
+.rr-pulse-share-scratches .rr-pulse-scratch-name{font-size:13px}
+.rr-pulse-share-scratches .rr-pulse-scratch-label{font-size:11px}
+.rr-pulse-foot{color:#b9c6cf;font:13px/1.4 system-ui,sans-serif;margin:28px 0}
+.rr-pulse-primary{display:inline-block;border:1px solid #cfaa6b;border-radius:6px;padding:13px 18px;margin-right:12px;font-weight:700}
+.rr-pulse-secondary{display:inline-block;padding:13px 0}
+.rr-pulse-brandhead{display:flex;align-items:center;gap:8px}
+.rr-pulse-logo{width:32px;height:32px;object-fit:contain;flex:none;opacity:1;filter:none}
+.rr-pulse .rr-pulse-scratch-label{padding-right:2px}
+.rr-pulse-item-footer{border-top:1px solid rgba(212,167,89,.12);padding-top:7px}
+.rr-pulse-story-link,.rr-pulse-paid-link{font-size:11px}
+.rr-pulse-cta-link{font-family:var(--heritage-sans,system-ui,sans-serif)}
+/* Desktop Pulse: in-flow grid prevents header overlap and clipped card controls. */
+@media(min-width:1121px){
+ .heritage-home>.heritage-hero:has(>.rr-pulse:not([hidden])){display:grid;grid-template-columns:minmax(0,1fr) minmax(350px,clamp(350px,35vw,460px));grid-template-rows:auto 1fr;column-gap:clamp(14px,2vw,36px);align-items:center;height:auto!important;min-height:0!important;padding-bottom:12px}
+ .heritage-hero:has(>.rr-pulse:not([hidden]))>.heritage-header{grid-column:1/-1;align-self:start;width:100%}
+ .heritage-hero:has(>.rr-pulse:not([hidden]))>.heritage-lead{grid-column:1;grid-row:2;width:100%;min-width:0;padding:clamp(12px,1.5vw,24px) 0 12px clamp(22px,3.2vw,64px);margin:0}
+ .heritage-hero:has(>.rr-pulse:not([hidden]))>.heritage-lead h1{font-size:clamp(46px,4.25vw,84px);line-height:.94;margin:12px 0 14px}
+ .heritage-hero:has(>.rr-pulse:not([hidden]))>.heritage-lead p{font-size:clamp(12px,1vw,16px);line-height:1.45;margin-top:12px}
+ .heritage-hero>.rr-pulse:not([hidden]){position:relative;grid-column:2;grid-row:2;top:auto;right:auto;width:auto;min-width:0;margin:10px clamp(22px,3.2vw,64px) 0 0;align-self:center;justify-self:stretch;z-index:4;border:1px solid #b18a49;border-radius:10px;background:rgba(7,26,44,.94);box-shadow:0 15px 42px rgba(0,0,0,.43);backdrop-filter:blur(7px)}
+ .heritage-hero>.rr-pulse .rr-pulse-shell{padding:7px 9px}
+ .heritage-hero>.rr-pulse .rr-pulse-heading{margin-bottom:4px}
+ .heritage-hero>.rr-pulse .rr-pulse-item{width:100%;min-width:100%;max-width:100%;flex-basis:100%;padding:8px 9px;gap:3px}
+ .heritage-hero>.rr-pulse .rr-pulse-eyebrow,.heritage-hero>.rr-pulse .rr-pulse-count{display:none}
+ .heritage-hero>.rr-pulse .rr-pulse-title{font-size:18px}
+ .heritage-hero>.rr-pulse .rr-pulse-numbers{padding:5px 7px;margin:2px 0 3px}
+ .heritage-hero>.rr-pulse .rr-pulse-scratch-list{padding:4px 0;gap:6px}
+ .heritage-hero>.rr-pulse .rr-pulse-item-footer{padding-top:4px}
+ .heritage-hero>.rr-pulse .rr-pulse-message{font-size:12px;display:block;overflow:visible}
+}
+@media(min-width:1121px) and (max-height:550px){
+ .heritage-home>.heritage-hero:has(>.rr-pulse:not([hidden])){padding-bottom:7px}
+ .heritage-hero>.rr-pulse:not([hidden]){margin-top:6px}
+ .heritage-hero>.rr-pulse .rr-pulse-shell{padding:5px 7px}
+ .heritage-hero>.rr-pulse .rr-pulse-logo{width:26px;height:26px}
+ .heritage-hero>.rr-pulse .rr-pulse-item{padding:6px 7px;gap:2px}
+ .heritage-hero>.rr-pulse .rr-pulse-horse-line .rr-pulse-headline{font-size:16px}
+ .heritage-hero>.rr-pulse .rr-pulse-saddle{width:28px;height:28px;flex-basis:28px}
+ .heritage-hero>.rr-pulse .rr-pulse-saddle--scratch{width:20px;height:20px;flex-basis:20px}
+ .heritage-hero>.rr-pulse .rr-pulse-numbers{font-size:23px;padding:4px 6px}
+ .heritage-hero>.rr-pulse .rr-pulse-message{font-size:11px;line-height:1.25}
+ .heritage-hero>.rr-pulse .rr-pulse-context{margin:1px 0;font-size:10px}
+ .heritage-hero>.rr-pulse .rr-pulse-scratch-list{padding:3px 0}
+ .heritage-hero>.rr-pulse .rr-pulse-item-footer{padding-top:3px}
+}
+.rr-pulse-nav:has(>.rr-pulse-arrow:disabled):not(:has(>.rr-pulse-arrow:not(:disabled))){visibility:hidden}
+/* Mobile: a shallow swipeable teaser, never a full-content card or new hero.
+   Full handicapper narrative remains on the individually linked article. */
+@media(max-width:640px){
+ .rr-pulse-shell{padding:5px 9px}
+ .rr-pulse-heading{align-items:center;margin-bottom:3px}
+ .rr-pulse-title{font-size:15px}
+ .rr-pulse-logo{width:28px;height:28px}
+ /* The logo and title carry brand identity on narrow screens.
+    Avoid repeating the kicker, insight count and named horse already in Analysis. */
+ .rr-pulse-eyebrow,.rr-pulse-count,.rr-pulse-affected{display:none}
+ .rr-pulse-brandhead{gap:6px}
+ .rr-pulse-item{flex-basis:calc(100% - 1px);width:calc(100% - 1px);padding:7px 8px;gap:3px}
+ .rr-pulse-item-layout{gap:7px}
+ .rr-pulse-headline{font-size:14px;margin-bottom:2px}
+ .rr-pulse-numbers{font-size:22px;gap:2px 5px;padding:4px 6px;grid-template-columns:minmax(0,1fr) 15px minmax(0,1fr) auto}
+ .rr-pulse-horse-line .rr-pulse-headline{font-size:16px}
+ .rr-pulse-horse-line{margin:0}
+ .rr-pulse-card-header{margin:0 0 2px}
+ .rr-pulse-context{line-height:1.1}
+ .rr-pulse-track{line-height:1.15}
+ .rr-pulse-category-icon{width:16px;height:16px}
+ .rr-pulse-delta{font-size:12px;padding-left:4px}
+ .rr-pulse-context{gap:7px;margin:1px 0;flex-wrap:nowrap;justify-content:space-between}
+ .rr-pulse-context .rr-pulse-prob-caption{letter-spacing:0;font-size:8px}
+ .rr-pulse-context-value{font-size:11px}
+ .rr-pulse-context-cell{gap:3px}
+ .rr-pulse-signal{width:24px;height:24px;border-radius:7px}
+ .rr-pulse-signal-row{gap:2px;margin-bottom:1px}
+ .rr-pulse-metric-label{font-size:8px}
+ .rr-pulse-numbers{margin:2px 0 2px}
+ .rr-pulse-track{font-size:9px;margin-bottom:1px}
+ .rr-pulse-affected{font-size:11px;margin-bottom:2px}
+ .rr-pulse-message{font-size:11px;line-height:1.25;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:1;overflow:hidden}
+ .rr-pulse .rr-pulse-saddle{width:30px;height:30px;flex-basis:30px}
+ .rr-pulse .rr-pulse-saddle--scratch{width:20px;height:20px;flex-basis:20px}
+ .rr-pulse-scratch-list{gap:3px 4px;padding:3px 0 3px}
+ .rr-pulse-scratch-label{font-size:8px}
+ .rr-pulse-item-footer{padding-top:3px;gap:5px}
+ .rr-pulse-links{gap:6px}
+ .rr-pulse-story-link,.rr-pulse-paid-link{font-size:10px}
+ .rr-pulse-tool{font-size:10px;padding:6px 7px;min-height:28px}
+ .rr-pulse-paid-link{padding:5px 7px;min-height:28px}
+ .rr-pulse-pace-comparison{margin:0;gap:4px}
+ .rr-pulse-fit{padding:2px 5px}
+ .rr-pulse-cta .rr-pulse-headline{font-size:16px}
+ .rr-pulse-story-content{flex-direction:column}
+ .rr-pulse-share-page .rr-pulse-saddle{width:34px;height:34px;flex-basis:34px}
+}
+@media(max-width:360px){
+ .rr-pulse-shell{padding:4px 7px}
+ .rr-pulse-item{padding:6px 7px;gap:2px}
+ .rr-pulse-heading{margin-bottom:2px}
+ .rr-pulse-numbers{padding-block:3px}
+ .rr-pulse .rr-pulse-saddle{width:28px;height:28px;flex-basis:28px}
+ .rr-pulse .rr-pulse-saddle--scratch{width:20px;height:20px;flex-basis:20px}
+ .rr-pulse-numbers{font-size:20px;gap:2px 4px}
+ .rr-pulse-context{gap:5px}
+ .rr-pulse-links{gap:5px}
+ .rr-pulse-item-footer{gap:4px}
+ .rr-pulse-paid-link{padding-inline:5px}
+}
+@media(prefers-reduced-motion:reduce){.rr-pulse-rail{scroll-behavior:auto}}
+
+/* Pulse polish: a contained single card with the shared site pill language.
+   Keep every action visible; scrolling is horizontal between complete cards. */
+.rr-pulse,.rr-pulse-shell,.rr-pulse-rail{box-sizing:border-box;min-width:0;max-width:100%}
+.rr-pulse-rail{padding-bottom:8px;scroll-padding-inline:0}
+.rr-pulse-item{min-width:0;box-sizing:border-box;overflow-wrap:anywhere}
+.rr-pulse-card-header{gap:10px}
+.rr-pulse-signal{width:36px;height:36px;border-radius:9px}
+.rr-pulse-category-icon{width:24px;height:24px}
+.rr-pulse-metric-label{font-size:11px;line-height:1.2;letter-spacing:.035em}
+.rr-pulse-prob-caption{font-size:10px;line-height:1.2}
+.rr-pulse-scratch-label{font-size:11px;line-height:1.2}
+.rr-pulse-pace-label{font-size:10px}
+.rr-pulse-context{gap:6px 12px;flex-wrap:wrap}
+.rr-pulse-context-cell{white-space:normal}
+.rr-pulse-context-value{font-size:13px}
+.rr-pulse-item-footer{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;padding-top:6px;align-items:center}
+.rr-pulse-links{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px;align-items:stretch}
+.rr-pulse .rr-pulse-story-link,.rr-pulse .rr-pulse-paid-link,.rr-pulse .rr-pulse-tool{
+ display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;
+ border:1px solid rgba(226,176,89,.92);border-radius:999px;
+ min-height:36px;padding:7px 10px;font:750 11px/1.2 Inter,Arial,system-ui,sans-serif;
+ letter-spacing:0;text-decoration:none;text-align:center;white-space:normal;
+ color:#f3e5ca;background:linear-gradient(180deg,#203b50,#10283b);box-shadow:none;cursor:pointer
+}
+.rr-pulse .rr-pulse-paid-link{background:linear-gradient(180deg,#f0d7a3,#d4b278);color:#102438}
+.rr-pulse .rr-pulse-story-link:hover,.rr-pulse .rr-pulse-tool:hover{background:#28465d;color:#fff}
+.rr-pulse .rr-pulse-paid-link:hover{background:#f3d9a5;color:#102438}
+.rr-pulse-menu{z-index:2147483000;box-sizing:border-box;width:min(270px,calc(100vw - 32px));max-height:calc(100dvh - 32px);overflow-y:auto;border-radius:12px}
+.rr-pulse-menu button{min-height:42px;font-weight:650}
+.rr-pulse-menu button:disabled{opacity:.5;cursor:wait}
+.rr-pulse-menu [hidden]{display:none!important}
+.rr-pulse-share-fallback{overflow-wrap:anywhere;text-decoration:underline!important}
+.rr-pulse-menu-status{line-height:1.4}
+@media(min-width:1121px){
+ .heritage-hero>.rr-pulse .rr-pulse-item{width:100%;min-width:0;max-width:100%;flex:0 0 100%}
+ .heritage-hero>.rr-pulse .rr-pulse-item-footer{padding-top:6px}
+ .heritage-hero>.rr-pulse .rr-pulse-shell{padding:7px 9px 5px}
+}
+@media(max-width:640px){
+ .rr-pulse-signal{width:30px;height:30px}
+ .rr-pulse-category-icon{width:20px;height:20px}
+ .rr-pulse-metric-label,.rr-pulse-scratch-label{font-size:10px}
+ .rr-pulse-prob-caption,.rr-pulse-context .rr-pulse-prob-caption{font-size:9px}
+ .rr-pulse-context-value{font-size:12px}
+ .rr-pulse-context{justify-content:center}
+ .rr-pulse .rr-pulse-story-link,.rr-pulse .rr-pulse-paid-link,.rr-pulse .rr-pulse-tool{font-size:10px;min-height:36px;padding:6px 8px}
+ .rr-pulse-message{display:block;overflow:visible;-webkit-line-clamp:unset}
+}
+@media(max-width:360px){
+ .rr-pulse-item-footer,.rr-pulse-links{gap:4px}
+ .rr-pulse .rr-pulse-story-link,.rr-pulse .rr-pulse-paid-link,.rr-pulse .rr-pulse-tool{padding-inline:6px}
+}
+
+/* Owner polish: the icon is the description badge, not decoration. */
+.rr-pulse .rr-pulse-signal,.rr-pulse-share-page .rr-pulse-signal{width:48px;height:48px;border-radius:12px;flex:0 0 48px}
+.rr-pulse .rr-pulse-category-icon,.rr-pulse-share-page .rr-pulse-category-icon{width:34px;height:34px}
+.rr-pulse-metric-label{font-size:13px;line-height:1.2}
+.rr-pulse-prob-caption{font-size:11px;line-height:1.2}
+.rr-pulse-scratch-label{font-size:12px}
+.rr-pulse .rr-pulse-item-footer{grid-template-columns:minmax(0,1fr) auto;gap:6px}
+.rr-pulse .rr-pulse-story-link,.rr-pulse .rr-pulse-paid-link,.rr-pulse .rr-pulse-tool{min-height:36px;border-radius:999px}
+.rr-pulse-menu button:disabled{cursor:not-allowed}
+.rr-pulse-share-page .rr-pulse-primary,.rr-pulse-share-page .rr-pulse-secondary,.rr-pulse-share-page .rr-pulse-download{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:8px 16px;margin:4px 6px 4px 0;border:1px solid #c4a36a;border-radius:999px;text-decoration:none;font:750 13px/1.2 Inter,Arial,system-ui,sans-serif}
+.rr-pulse-share-page .rr-pulse-primary{background:linear-gradient(180deg,#f0d7a3,#d4b278);color:#102438}
+.rr-pulse-share-page .rr-pulse-social-image{display:block;width:100%;max-width:820px;height:auto;margin:16px 0;border:1px solid #967c51;border-radius:12px;box-sizing:border-box}
+@media(max-width:640px){
+ .rr-pulse .rr-pulse-signal{width:40px;height:40px;flex-basis:40px;border-radius:10px}
+ .rr-pulse .rr-pulse-category-icon{width:28px;height:28px}
+ .rr-pulse-metric-label{font-size:11px}
+ .rr-pulse-prob-caption,.rr-pulse-context .rr-pulse-prob-caption{font-size:10px}
+ .rr-pulse-scratch-label{font-size:11px}
+}
+
+/* One medallion artwork: the same full SVG is serialized for PNG exports.
+   Its face/border are inside the SVG, not a second CSS approximation. */
+.rr-pulse .rr-pulse-signal{background:none;border:0;box-shadow:none;overflow:visible}
+.rr-pulse .rr-pulse-signal .rr-pulse-category-icon{width:100%;height:100%;display:block}
+.rr-pulse .rr-pulse-logo{background:transparent;border-radius:0;box-shadow:none}
+.rr-pulse .rr-pulse-context-value{font-weight:800}
+.rr-pulse .rr-pulse-numbers{box-shadow:inset 0 2px 6px #0006,inset 0 -1px 0 #ffffff14}
+.rr-pulse .rr-pulse-paid-link{box-shadow:inset 0 1px 0 #ffffff65,0 2px 4px #0004}
+
+/* Mobile homepage integration: single in-flow teaser, not a second hero. */
+@media(max-width:640px){
+ .heritage-home>.rr-pulse{width:100%;margin:0;position:relative;isolation:isolate}
+ .rr-pulse-shell{padding:7px 10px 5px}
+ .rr-pulse-heading{margin-bottom:5px;min-height:44px}
+ .rr-pulse-title{font-size:19px}
+ .rr-pulse-arrow{width:44px;height:44px;display:grid;place-items:center}
+ .rr-pulse-item{width:100%;max-width:100%;flex:0 0 100%;padding:9px;gap:4px}
+ .rr-pulse-horse-line .rr-pulse-headline{font-size:18px}
+ .rr-pulse-track{font-size:11px}
+ .rr-pulse-numbers{grid-template-columns:minmax(0,1fr) 16px minmax(0,1fr) auto;padding:6px;gap:3px 5px}
+ .rr-pulse-numbers .rr-pulse-prob-col .rr-pulse-prob-value{font-size:clamp(20px,6.1vw,28px)}
+ .rr-pulse-prob-bar{height:5px}
+ .rr-pulse-message{font-size:12px;line-height:1.3}
+ .rr-pulse .rr-pulse-story-link,.rr-pulse .rr-pulse-paid-link,.rr-pulse .rr-pulse-tool{min-height:44px;font-size:11px;padding:6px 8px}
+ .rr-pulse .rr-pulse-item-footer{align-items:stretch;grid-template-columns:minmax(0,1fr) auto;gap:5px}
+ .rr-pulse-links{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:5px}
+ .rr-pulse-share-group,.rr-pulse-tool{height:100%}
+ .rr-pulse-menu{bottom:max(12px,env(safe-area-inset-bottom));right:12px;width:min(300px,calc(100vw - 24px));max-height:calc(100dvh - 24px)}
+ .rr-pulse-menu button{min-height:44px}
+}
+@media(max-width:360px){
+ .rr-pulse-shell{padding-inline:7px}
+ .rr-pulse-item{padding:7px}
+ .rr-pulse .rr-pulse-story-link,.rr-pulse .rr-pulse-paid-link,.rr-pulse .rr-pulse-tool{padding-inline:5px;font-size:10px}
+ .rr-pulse-numbers{gap:3px 4px}
+ .rr-pulse-delta{padding-left:3px}
+}
+
+/* Approved mobile homepage compact layout: preserve all hero content and use
+   only its former blank space. Never overlay or hide the existing products. */
+.rr-pulse-compact-open,.rr-pulse-compact-row{display:none}
+@media(max-width:640px){
+ body.heritage-home:not(.heritage-inner-page):not(.heritage-store-page):has(>.rr-pulse:not([hidden]))>.heritage-hero{min-height:0!important;padding-bottom:14px}
+ .heritage-home>.rr-pulse .rr-pulse-shell{padding:4px 9px 3px}
+ .heritage-home>.rr-pulse .rr-pulse-heading{min-height:36px;margin:0 0 3px}
+ .heritage-home>.rr-pulse .rr-pulse-title{font-size:18px}
+ .heritage-home>.rr-pulse .rr-pulse-nav{gap:3px}
+ .heritage-home>.rr-pulse .rr-pulse-arrow{width:40px;height:40px}
+ .heritage-home>.rr-pulse .rr-pulse-item{padding:6px 8px;gap:2px}
+ .heritage-home>.rr-pulse .rr-pulse-card-header{margin-bottom:1px;gap:6px}
+ .heritage-home>.rr-pulse .rr-pulse-signal{width:36px;height:36px;flex-basis:36px}
+ .heritage-home>.rr-pulse .rr-pulse-track{font-size:10px}
+ .heritage-home>.rr-pulse .rr-pulse-numbers{padding:4px 6px;gap:2px 4px;margin:1px 0 2px}
+ .heritage-home>.rr-pulse .rr-pulse-numbers .rr-pulse-prob-col .rr-pulse-prob-value{font-size:clamp(20px,6vw,26px)}
+ .heritage-home>.rr-pulse .rr-pulse-context{gap:4px 9px;margin:1px 0}
+ .heritage-home>.rr-pulse .rr-pulse-message{font-size:11px;line-height:1.25;margin:2px 0}
+ .heritage-home>.rr-pulse .rr-pulse-item-footer{display:none}
+ .heritage-home>.rr-pulse .rr-pulse-scratch-list{padding:2px 0 0;gap:3px;align-items:center}
+ .heritage-home>.rr-pulse .rr-pulse-saddle--scratch{width:20px;height:20px;flex-basis:20px}
+ .heritage-home>.rr-pulse .rr-pulse-scratch-label{font-size:10px;padding-right:1px}
+ .heritage-home>.rr-pulse .rr-pulse-compact-row{display:flex;justify-content:flex-end}
+ .heritage-home>.rr-pulse .rr-pulse-compact-open{display:inline-flex;align-items:center;justify-content:center;margin-left:auto;min-height:44px;box-sizing:border-box;padding:5px 10px;border-radius:999px;border:1px solid #e2b059;background:linear-gradient(180deg,#f0d7a3,#d4b278);color:#102438;text-decoration:none;font:750 11px/1.1 Inter,Arial,system-ui,sans-serif;white-space:nowrap}
+ .heritage-home>.rr-pulse .rr-pulse-rail{padding-bottom:3px}
+}
+@media(max-width:360px){
+ .heritage-home>.rr-pulse .rr-pulse-shell{padding-inline:6px}
+ .heritage-home>.rr-pulse .rr-pulse-item{padding-inline:6px}
+ .heritage-home>.rr-pulse .rr-pulse-compact-open{padding-inline:6px;font-size:10px}
+}
+
+.rr-pulse-detail{border:0;border-radius:12px;margin:16px 0;background:transparent}.rr-pulse-detail .rr-pulse-shell{padding:0}.rr-pulse-detail .rr-pulse-item{width:100%;max-width:100%;flex-basis:100%}.rr-pulse-detail .rr-pulse-item-footer a,.rr-pulse-detail .rr-pulse-item-footer button{min-height:44px}
+
+/* Compact overview deliberately uses a single-line takeaway; the full
+   sentence, original and revised values, and every action remain in Open Pulse. */
+@media(max-width:640px){
+ .heritage-home>.rr-pulse .rr-pulse-message{display:block;white-space:nowrap!important;text-overflow:ellipsis;overflow:hidden;margin:1px 0;font-size:11px}
+ .heritage-home>.rr-pulse .rr-pulse-context-cell{white-space:nowrap}
+ .heritage-home>.rr-pulse .rr-pulse-context .rr-pulse-prob-caption{font-size:9px}
+ .heritage-home>.rr-pulse .rr-pulse-context{gap:3px 6px}
+ .heritage-home>.rr-pulse .rr-pulse-pace-comparison{font-size:9px;gap:3px}
+ .heritage-home>.rr-pulse .rr-pulse-pace-label{font-size:9px}
+}
+
+@media(max-width:640px){
+ /* Pace detail is already summarized in the one-line teaser. Its full
+    before/after factor pills remain visible on the individual insight. */
+ .heritage-home>.rr-pulse .rr-pulse-pace-comparison{display:none}
+ .heritage-home>.rr-pulse .rr-pulse-shell{padding-block:3px 2px}
+ .heritage-home>.rr-pulse .rr-pulse-heading{margin-bottom:2px}
+ .heritage-home>.rr-pulse .rr-pulse-item{padding-block:5px}
+ .heritage-home>.rr-pulse .rr-pulse-numbers{margin:0 0 1px}
+ .heritage-home>.rr-pulse .rr-pulse-context{margin:0}
+}
+
+/* Owner-approved editorial takeaway. Shared heritage typography, not UI status text. */
+.rr-pulse .rr-pulse-message{font-family:var(--heritage-sans,Montserrat,'Helvetica Neue',Arial,sans-serif);font-size:15px;font-weight:500;line-height:1.4;color:#f3eadb;letter-spacing:normal;margin:5px 0 7px}
+.rr-pulse .rr-pulse-message-horse{font-weight:700;color:#f6ecdc}
+@media(min-width:1121px){.heritage-hero>.rr-pulse .rr-pulse-message{font-size:12px;line-height:1.35;margin:3px 0 5px}}
+@media(max-width:640px){
+ .heritage-home>.rr-pulse .rr-pulse-message{font-size:11px;line-height:1.25;margin:1px 0 2px;white-space:nowrap!important;text-overflow:ellipsis;overflow:hidden}
+ .rr-pulse-detail .rr-pulse-message{font-size:14px;line-height:1.45;margin:6px 0 8px}
+}
+
+/* Inline identity scales the entire original chip, including its finish,
+   corners, white backing, shadow and actual suffix. No restyling. */
+.rr-pulse .rr-pulse-message .rr-pulse-saddle--inline{display:inline-block;position:relative;vertical-align:-2px;width:15.4px;height:15.4px;margin-right:.12em}
+.rr-pulse .rr-pulse-message .rr-pulse-saddle--inline>.rr-pulse-saddle{position:absolute;left:0;top:0;width:28px;height:28px;flex-basis:28px;transform:scale(.55);transform-origin:top left}
+@media(max-width:640px){
+ .heritage-home>.rr-pulse .rr-pulse-message .rr-pulse-saddle--inline{width:12.6px;height:12.6px}
+ .heritage-home>.rr-pulse .rr-pulse-message .rr-pulse-saddle--inline>.rr-pulse-saddle{transform:scale(.45)}
+}

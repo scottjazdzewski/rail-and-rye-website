@@ -1,0 +1,45 @@
+name: Retrieve actual November 26 Pulse examples
+on:
+  push:
+    branches: [feature/race-day-pulse-v1]
+    paths: ['.github/workflows/pulse-1126-owner-examples.yml']
+permissions:
+  contents: read
+jobs:
+  examples:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Read existing certified source pairs; return only public-safe selected insights
+        env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+        run: |
+          python -m pip install --quiet boto3
+          PYTHONPATH=scripts python - <<'PY'
+          import boto3, os, json, re, subprocess
+          from race_day_pulse_customer_example_audit import BUCKET, load, certified, HX
+          day='2026-11-26'
+          client=boto3.client('s3',region_name='auto',endpoint_url='https://'+os.environ['TRI_CLOUDFLARE_ACCOUNT_ID']+'.r2.cloudflarestorage.com',aws_access_key_id=os.environ['TRI_R2_ACCESS_KEY_ID'],aws_secret_access_key=os.environ['TRI_R2_SECRET_ACCESS_KEY'])
+          pairs=[]
+          for page in client.get_paginator('list_objects_v2').paginate(Bucket=BUCKET,Prefix='projections/dashboard/'+day+'/'):
+            for obj in page.get('Contents',[]):
+              slug=obj['Key'].split('/')[-1]
+              if not re.fullmatch(r'[a-z0-9-]+\.json',slug): continue
+              original,_=load(client,'race-day-pulse/prescratch/'+day+'/'+slug)
+              final,meta=load(client,obj['Key'])
+              ok,_=certified(original,final,meta)
+              if not ok or original.get('race_date')!=day or final.get('race_date')!=day or original.get('track_name')!=final.get('track_name'): continue
+              pace=original.get('badge_evaluator_version')=='TBS_FACTOR_BADGE_EVALUATOR_V1_2_6_FIT_CLASS_FORM_GUARDS' and bool(HX.fullmatch(str(original.get('badge_source_sha256','')))) and bool(HX.fullmatch(str(meta.get('badge_sha256',''))))
+              pairs.append({'original':original,'final':final,'pace':pace})
+          js="""import fs from 'node:fs';const mod=await import('data:text/javascript;base64,'+Buffer.from(fs.readFileSync('src/race-day-pulse.js','utf8')).toString('base64'));const pairs=JSON.parse(fs.readFileSync(0,'utf8'));let items=[];for(const {original,final,pace} of pairs){const old=new Map(original.races.map(r=>[r.race_number,r]));for(const r of final.races){const a=old.get(r.race_number);if(!a||!a.surface||String(a.surface).toLowerCase()!==String(r.surface).toLowerCase())continue;if(['track_condition','distance','temporary_rail_feet'].some(k=>String(a[k]??'').toLowerCase()!==String(r[k]??'').toLowerCase()))continue;const args=[final.race_date,final.track_name,a,r,null];const p=mod.insightForRace(...args);if(p)items.push(p);if(pace)items.push(...mod.paceInsightsForRace(...args));}}items.sort((a,b)=>b.priority-a.priority);console.log('PULSE_OWNER_EXAMPLES '+JSON.stringify({paired_tracks:pairs.length,qualified:items.length,examples:items.slice(0,12).map(({kind,track,race_number,chip,horse,metric,summary,pace_fit,short_message,scratches,hub_url})=>({kind,track,race_number,chip,horse,metric,summary,pace_fit,short_message,scratches:scratches.map(s=>s.program),hub_url}))}));"""
+          subprocess.run(['node','--input-type=module','-e',js],input=json.dumps(pairs),text=True,check=True)
+          PY

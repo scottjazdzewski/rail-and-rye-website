@@ -160,6 +160,9 @@ class TestPrescratchSync(unittest.TestCase):
         class Missing(Exception):
             def __init__(self):
                 self.response = {"Error": {"Code": "NoSuchKey"}}
+        class AlreadyExists(Exception):
+            def __init__(self):
+                self.response = {"ResponseMetadata": {"HTTPStatusCode": 412}}
         class Body:
             def __init__(self, value):
                 self.value = value
@@ -175,21 +178,33 @@ class TestPrescratchSync(unittest.TestCase):
                 item = self.saved[Key]
                 return {"Body": Body(item["Body"]), "Metadata": item["Metadata"]}
             def put_object(self, Bucket, Key, Body, Metadata, **kwargs):
+                if kwargs.get("IfNoneMatch") == "*" and Key in self.saved:
+                    raise AlreadyExists()
                 self.writes += 1
                 self.saved[Key] = {"Body": Body, "Metadata": Metadata}
         _, cards, _, result = build_cards(make_zip())
+        # Legacy format remains publishable, but never creates an uncertified Pulse baseline.
+        legacy = FakeR2()
+        self.assertEqual(sync_cards(cards, result["sha256"], client=legacy), (1, 0))
+        self.assertEqual(legacy.writes, 1)
+        # Exercise a modern certified archive shape using test-only receipts.
+        cards[0]["factor_basis"] = "verified_prescratch"
+        cards[0]["model_receipts"] = {"tri_sha256": "a"*64, "f4_sha256": "b"*64}
         client = FakeR2()
         self.assertEqual(sync_cards(cards, result["sha256"], client=client, dry_run=True), (1, 0))
         self.assertEqual(client.writes, 0)
         self.assertEqual(sync_cards(cards, result["sha256"], client=client), (1, 0))
         self.assertEqual(sync_cards(cards, result["sha256"], client=client), (0, 1))
-        self.assertEqual(client.writes, 1)
+        self.assertEqual(client.writes, 2, "Private Pulse baseline + original dashboard must be written")
         key = target_key(cards[0])
+        backup = key.replace("projections/dashboard/", "race-day-pulse/prescratch/", 1)
+        self.assertIn(backup, client.saved)
+        self.assertEqual(json.loads(client.saved[backup]["Body"])["projection_status"], "prescratch")
         self.assertEqual(json.loads(client.saved[key]["Body"])["projection_status"], "prescratch")
         client.saved[key]["Body"] = dump({"schema_version": 1, "projection_status": "post-scratch"})
         with self.assertRaisesRegex(Hold, "scratch-updated"):
             sync_cards(cards, result["sha256"], client=client)
-        self.assertEqual(client.writes, 1, "A newer post-scratch card must remain untouched")
+        self.assertEqual(client.writes, 2, "A newer post-scratch card and original Pulse baseline remain untouched")
 
 
     def test_original_badges_are_reused_without_rescoring(self):

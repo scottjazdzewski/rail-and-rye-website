@@ -53,6 +53,8 @@ jobs:
           node-version: '22'
       - name: Homepage visual baseline and asset integrity
         run: node test-homepage-lock.mjs
+      - name: Race-Day Pulse source-gated feed and sharing regression
+        run: node test-race-day-pulse.mjs
       - name: Dashboard projection and mobile data regression
         run: node test-projection-dashboard-mobile.mjs
       - name: Fully written sponsor-free stakes and source-verified graded trophies

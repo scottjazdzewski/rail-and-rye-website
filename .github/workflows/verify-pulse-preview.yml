@@ -1,0 +1,91 @@
+name: Verify Race-Day Pulse preview and calibration
+on:
+  pull_request:
+    paths:
+      - 'src/race-day-pulse.js'
+      - 'src/pulse-scratch-watch.js'
+      - 'src/index.js'
+      - 'wrangler.jsonc'
+      - 'test-pulse-scratch-watch.mjs'
+      - 'src/projections.js'
+      - 'public/index.html'
+      - 'public/assets/race-day-pulse.*'
+      - 'test-race-day-pulse*'
+      - 'test-pulse-mobile-homepage.mjs'
+      - 'staging/pulse-preview-worker.js'
+      - '.github/workflows/verify-pulse-preview.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  pulse-preview:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Source and release-gating regression
+        run: |
+          node --check src/race-day-pulse.js
+          node --check public/assets/race-day-pulse.js
+          node test-race-day-pulse.mjs
+          node test-pulse-scratch-watch.mjs
+          node test-homepage-lock.mjs
+      - name: Install browser tooling
+        run: |
+          npm install --no-save --no-package-lock playwright@1.56.1
+          npx playwright install --with-deps chromium webkit
+      - name: Real viewport, share and screenshot QA
+        run: |
+          node test-race-day-pulse-browser.mjs
+          node test-pulse-mobile-homepage.mjs
+          node scripts/render-pulse-social.mjs --demo
+      - name: Preserve screenshots for visual owner approval
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pulse-preview-six-viewports
+          path: pulse-preview-screenshots/*.png
+          if-no-files-found: ignore
+
+  historical-replay:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Read-only R2 historical availability and threshold audit
+        env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+          PULSE_CALIBRATION_DATES: '2026-11-24,2026-11-25,2026-11-26'
+        run: |
+          python -m pip install --quiet boto3
+          python scripts/race_day_pulse_replay_audit.py
+          python scripts/race_day_pulse_schedule_audit.py
+
+  base-regression-triage:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Record the exact unchanged production baseline test results
+        run: |
+          for test in test-projection-dashboard-mobile.mjs test-pick-tickets.mjs test-v5.mjs test-hub-private-review.mjs test-longshot-radar.mjs; do
+            echo "::group::Base $test"
+            node --experimental-sqlite "$test" && rc=0 || rc=$?
+            echo "BASE_TEST_EXIT $test $rc"
+            echo "::endgroup::"
+          done

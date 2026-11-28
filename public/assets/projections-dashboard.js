@@ -582,9 +582,20 @@ async function init(){
   else {const data=await api("/api/membership/projections");cards=data.cards||[];}
   status.hidden=true;
   if(!cards.length){empty.hidden=false;return;}
-  app.hidden=false;renderDates();renderTracks();
+  // A public Race-Day Pulse insight links to an exact paid race, without
+  // bypassing the existing entitlement-checked customer edition fetch. Ignore
+  // mismatched or invalid query parameters rather than changing other menus.
+  const links=new URLSearchParams(location.search);
+  const requestedDate=links.get("date")||"";
+  const requestedTrack=links.get("track")||"";
+  const requestedRace=Number(links.get("race"));
+  const safeRace=/^[1-9]\d{0,2}$/.test(links.get("race")||"")&&Number.isInteger(requestedRace);
+  app.hidden=false;renderDates(requestedDate);renderTracks(requestedTrack);
   app.dataset.mode=viewMode;
-  activeCard=selectedCard();activeRace=racesByPostTime(activeCard)[0]?.race_number||null;renderCard();
+  activeCard=selectedCard();
+  activeRace=safeRace&&racesByPostTime(activeCard).some(r=>r.race_number===requestedRace)
+    ?requestedRace:racesByPostTime(activeCard)[0]?.race_number||null;
+  renderCard();
   q("#rr-dash-date").addEventListener("change",onFiltersChanged);
   q("#rr-dash-track").addEventListener("change",()=>{if(viewMode==="track")onFiltersChanged();});
   q("#rr-dash-race-time").addEventListener("change",()=>{activeRace=Number(q("#rr-dash-race-time").value);renderCard();});

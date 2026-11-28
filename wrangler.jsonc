@@ -12,6 +12,7 @@
       "/membership/dashboard*",
       "/preview/*",
       "/api/*",
+      "/pulse/*",
       "/media/*",
       "/journal/*",
       "/store/",
@@ -19,7 +20,10 @@
     ]
   },
   "vars": {
-    "PROJECTIONS_MEMBER_LAUNCH": "off"
+    "PROJECTIONS_MEMBER_LAUNCH": "off",
+    "PULSE_PUBLICATION_ENABLED": "true",
+    "PULSE_PUBLICATION_START_DATE": "2026-11-28",
+    "PULSE_CAPTURE_BASELINES_ENABLED": "true"
   },
   "r2_buckets": [
     {
@@ -37,7 +41,8 @@
   "keep_vars": true,
   "triggers": {
     "crons": [
-      "*/10 * * * *"
+      "*/10 * * * *",
+      "*/15 0-7,13-23 * * *"
     ]
   }
 }
