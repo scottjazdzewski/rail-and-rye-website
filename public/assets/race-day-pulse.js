@@ -19,7 +19,15 @@
   if(!shell||!rail||!prev||!next)return;
   let selected=0,events=[],paused=false,revision='',pending=false,closeShare=null,expanded=null;
   const position=document.createElement('span');position.className='rr-pulse-position';position.setAttribute('aria-live','off');
-  if(!detailMode)next.before(position);
+  if(!detailMode){
+    next.before(position);
+    for(const [button,d] of [[prev,'M14 5L7 12L14 19'],[next,'M10 5L17 12L10 19']]){
+      const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg'),arrow=document.createElementNS(ns,'path');
+      svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('aria-hidden','true');
+      arrow.setAttribute('d',d);arrow.setAttribute('fill','none');arrow.setAttribute('stroke','currentColor');arrow.setAttribute('stroke-width','2.4');arrow.setAttribute('stroke-linecap','round');arrow.setAttribute('stroke-linejoin','round');
+      svg.append(arrow);button.replaceChildren(svg);
+    }
+  }
   function updatePosition(){position.textContent=(selected+1)+'/'+rail.children.length;position.setAttribute('aria-label','Insight '+(selected+1)+' of '+rail.children.length);}
 
   const $=(tag,className,text)=>{
