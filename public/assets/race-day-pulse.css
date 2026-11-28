@@ -353,3 +353,12 @@
  .heritage-home>.rr-pulse .rr-pulse-numbers{margin:0 0 1px}
  .heritage-home>.rr-pulse .rr-pulse-context{margin:0}
 }
+
+/* Owner-approved editorial takeaway. Shared heritage typography, not UI status text. */
+.rr-pulse .rr-pulse-message{font-family:var(--heritage-sans,Montserrat,'Helvetica Neue',Arial,sans-serif);font-size:15px;font-weight:500;line-height:1.4;color:#f3eadb;letter-spacing:normal;margin:5px 0 7px}
+.rr-pulse .rr-pulse-message-horse{font-weight:700;color:#f6ecdc}
+@media(min-width:1121px){.heritage-hero>.rr-pulse .rr-pulse-message{font-size:12px;line-height:1.35;margin:3px 0 5px}}
+@media(max-width:640px){
+ .heritage-home>.rr-pulse .rr-pulse-message{font-size:11px;line-height:1.25;margin:1px 0 2px;white-space:nowrap!important;text-overflow:ellipsis;overflow:hidden}
+ .rr-pulse-detail .rr-pulse-message{font-size:14px;line-height:1.45;margin:6px 0 8px}
+}
