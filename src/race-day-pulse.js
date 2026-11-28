@@ -88,7 +88,7 @@ function revisionToken(source){
   for(const ch of String(source))value=Math.imul(value^ch.charCodeAt(0),16777619);
   return '-rev-'+(value>>>0).toString(16).padStart(8,'0');
 }
-export function insightForRace(date,track,initial,revised,updatedAt,sourceVersion='',category='PRIMARY'){
+export function insightForRace(date,track,initial,revised,updatedAt,sourceVersion=''){
   const pair=compareRaces(initial,revised);
   if(!pair)return null;
   const {before,after,activeScratches}=pair,oldLead=winner(before),newLead=winner(after);
@@ -112,20 +112,20 @@ export function insightForRace(date,track,initial,revised,updatedAt,sourceVersio
     chip:newLead.program,scratches};
   // Hold mixed surface/scratch changes pending validated condition modeling.
   if(surfaceChanged)return null;
-  if(category==='PRIMARY'&&oldLead.program!==newLead.program){
+  if(oldLead.program!==newLead.program){
     const earlier=before.get(newLead.program);
     const stayed=after.has(oldLead.program);
     const moved=earlier?newLead.win-earlier.win:0;
     // A scratched top choice creates an obvious new favorite by elimination.
     // Rank that routine change below genuine survivor-vs-survivor reversals.
     // Do not force publication of trivial elimination effects.
-    if(stayed||moved>=4){
+    if(stayed||!after.has(oldLead.program)){
       return {...common,kind:stayed?'NEW_FAVORITE':'FAVORITE_SCRATCHED',
         headline:stayed?'New Projected Favorite':'New Leader After Favorite Scratched',
         chip:newLead.program,horse:newLead.horse,
-        priority:(stayed?100:42)+Math.max(0,moved),
+        priority:(stayed?100:120)+Math.max(0,moved),
         metric:{label:'WIN',before:earlier.win,after:newLead.win},summary:publicSummary(newLead,after),
-        short_message:'#'+newLead.program+' '+newLead.horse+' moves to the top of our projections.',
+        short_message:stayed?'#'+newLead.program+' '+newLead.horse+' moves to the top of our projections.':'Projected favorite '+oldLead.horse+' scratched; '+newLead.horse+' now leads.',
         message:context+'#'+newLead.program+' '+newLead.horse+
           ' moves to the top of our projections for the '+raceName+'. '+
           'The revised win chance is '+pct(newLead.win)+
@@ -134,33 +134,16 @@ export function insightForRace(date,track,initial,revised,updatedAt,sourceVersio
   }
   const changed=[...after.values()].map(h=>({h,old:before.get(h.program),delta:h.win-before.get(h.program).win}))
     .sort((a,b)=>Math.abs(b.delta)-Math.abs(a.delta));
-  if(category==='PRIMARY'&&changed[0]&&Math.abs(changed[0].delta)>=4){
+  if(changed[0]&&Math.abs(changed[0].delta)>=4){
     const x=changed[0];
-    return {...common,kind:'WIN_SHIFT',headline:'Scratch-Driven Projection Shift',chip:x.h.program,horse:x.h.horse,
+    return {...common,kind:'WIN_SHIFT',headline:'Projected Fair Odds Shift',chip:x.h.program,horse:x.h.horse,
       priority:50+Math.abs(x.delta),
       metric:{label:'WIN',before:x.old.win,after:x.h.win},summary:publicSummary(x.h,after),
-      short_message:x.h.program===newLead.program?'Remains our projected favorite after the scratches.':'Win Probability changes after the scratches.',
+      short_message:'Projected fair odds '+(x.delta>0?'shorten':'lengthen')+' after the scratches.',
       message:context+'#'+x.h.program+' '+x.h.horse+
         (x.h.program===newLead.program?' remains our top choice in the '+raceName+'.':' sees a change in the '+raceName+'.')+
         ' The win chance moves from '+pct(x.old.win)+' to '+pct(x.h.win)+
         '. '+(Math.abs(x.delta)<7?'A modest change, but enough to notice.':'That is a substantial change to the original projection.')};
-  }
-  const underneath=[...after.values()].map(h=>{
-    const prior=before.get(h.program);
-    const a=Number(h.f4.exact_p2)+Number(h.f4.exact_p3),b=Number(prior.f4.exact_p2)+Number(prior.f4.exact_p3);
-    return {h,a,b,delta:(a-b)*100};
-  }).filter(x=>Number.isFinite(x.a)&&Number.isFinite(x.b)&&x.a>=0&&x.a<=1&&x.b>=0&&x.b<=1)
-    .sort((a,b)=>Math.abs(b.delta)-Math.abs(a.delta));
-  if(underneath[0]&&Math.abs(underneath[0].delta)>=7){
-    const x=underneath[0];
-    return {...common,kind:'F4_SHIFT',headline:'Underneath Outlook Changes',chip:x.h.program,horse:x.h.horse,
-      priority:20+Math.abs(x.delta),
-      metric:{label:'SECOND_OR_THIRD',before:x.b*100,after:x.a*100},summary:publicSummary(x.h,after),
-      short_message:'The projected chance of finishing second or third has changed.',
-      message:context+'#'+x.h.program+' '+x.h.horse+
-        ' has moved in our Full Finishing Order Projections for the '+raceName+
-        '. The combined second-or-third chance is '+pct(x.a*100)+', compared with '+
-        pct(x.b*100)+' on the original card.'};
   }
   return null; // No forced posts, no unverified pace-causality claims.
 }
@@ -186,25 +169,30 @@ export function paceInsightsForRace(date,track,initial,revised,updatedAt,sourceV
     const a=oldEntries.get(norm(key)),b=currentEntries.get(norm(key));
     if(['jockey','trainer'].some(f=>norm(a?.[f])!==norm(b?.[f])))return [];
   }
+  const paceNames={weak:'Weak',moderate:'Moderate',strong:'Strong'};
+  const oldPace=paceNames[norm(initial.pace)],newPace=paceNames[norm(revised.pace)];
+  const racePaceChanged=!!oldPace&&!!newPace&&oldPace!==newPace;
   const candidates=[];
   for(const [key,runner] of after){
     const prev=before.get(key),a=fit(oldEntries.get(norm(key))),b=fit(currentEntries.get(norm(key)));
-    if(a===null||b===null||levels[b]<=levels[a])continue;
+    if(a===null||b===null)continue;
+    const fitChanged=levels[b]!==levels[a];
+    if(!racePaceChanged&&!fitChanged)continue;
     // No arbitrary probability-point threshold or Gold dependency.
     // Describe the actual Pace Fit change and show the actual PWIN comparison.
     const horse=runner.horse;
-    const label='Pace Fit improves from '+names[a]+' to '+names[b]+' after the scratches.';
+    const label=racePaceChanged?'Projected race pace: '+oldPace+' → '+newPace+'.':'Pace Fit '+(levels[b]>levels[a]?'improves':'weakens')+' from '+names[a]+' to '+names[b]+'.';
     candidates.push({
       id:slug(track)+'-race-'+revised.race_number+'-pace-'+slug(key)+revisionToken(sourceVersion),
       date,track:clean(track,90),race_number:revised.race_number,updated_at:updatedAt,
       post_time_et:clean(revised.post_time_et,38),
       hub_url:'/intelligence/race-cards/?date='+encodeURIComponent(date)+'&track='+encodeURIComponent(track)+'&race='+encodeURIComponent(String(revised.race_number)),
-      kind:'PACE_ADVANTAGE',headline:'Pace Advantage',chip:key,horse,
-      metric:{label:'WIN',before:prev.win,after:runner.win},pace_fit:{before:a,after:b},
+      kind:'PACE_ADVANTAGE',headline:racePaceChanged?'Projected Pace Change':'Pace Fit Change',chip:key,horse,
+      metric:{label:'WIN',before:prev.win,after:runner.win},pace_fit:{before:a,after:b},...(racePaceChanged?{race_pace:{before:oldPace,after:newPace}}:{}),
       summary:publicSummary(runner,after),short_message:label,
-      message:contextForPace(activeScratches,horse,a,b,names),
+      message:racePaceChanged?lead(activeScratches)+'projected race pace changes from '+oldPace.toLowerCase()+' to '+newPace.toLowerCase()+'. '+horse+' has revised win probability '+pct(runner.win)+'.'+(fitChanged?' Pace Fit changes from '+names[a]+' to '+names[b]+'.':''):contextForPace(activeScratches,horse,a,b,names),
       scratches:activeScratches.map(x=>({program:clean(x.program_number,8).toUpperCase(),horse:clean(x.horse_name,95)})),
-      priority:60+(levels[b]-levels[a])*10+Math.max(0,runner.win-prev.win)
+      priority:(racePaceChanged?95:65)+Math.abs(levels[b]-levels[a])*10+Math.abs(runner.win-prev.win)
     });
   }
   // Show the strongest pace change in each race without exposing the paid
@@ -313,14 +301,6 @@ export async function readRaceDayPulse(env,now=Date.now()){
       const revision=current.model_receipts.f4_sha256+'|'+current.model_receipts.official_changes_sha256;
       const post=insightForRace(date,current.track_name,earlier.get(race.race_number),race,updatedAt,revision);
       if(post)items.push(post);
-      // Independent finishing-order finding: do not suppress a qualified F4
-      // change just because the same race already has a win/favorite insight.
-      // Keep the existing primary ID stable for shared links; only new secondary
-      // findings have a category-specific ID. All original qualification gates stay.
-      if(post?.kind!=='F4_SHIFT'){
-        const order=insightForRace(date,current.track_name,earlier.get(race.race_number),race,updatedAt,revision,'F4_ONLY');
-        if(order)items.push({...order,id:slug(current.track_name)+'-race-'+race.race_number+'-f4'+revisionToken(revision)});
-      }
       // Reuse the existing approved factor badge provenance from the two TRI cards.
       if(original.badge_evaluator_version==='TBS_FACTOR_BADGE_EVALUATOR_V1_2_6_FIT_CLASS_FORM_GUARDS'&&HASH.test(original.badge_source_sha256||'')&&HASH.test(object.customMetadata?.badge_sha256||'')){
         items.push(...paceInsightsForRace(date,current.track_name,earlier.get(race.race_number),race,updatedAt,revision));
