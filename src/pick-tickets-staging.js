@@ -1,4 +1,3 @@
-import {requiresFinalPickField} from "./pick-final-field-gate.js";
 // Owner-approved dated staging; all content remains in private R2.
 import {normalizePickTickets,requireCustomerPickPwin} from "./pick-tickets.js";
 import {PICK_V34_ENGINE} from "./pick-tickets-v34.js";
@@ -129,8 +128,8 @@ export async function prepareScheduledPickStages(env,now=Date.now()){
   if(done){const d=JSON.parse(await done.text());if(d.sha256===digest)continue;}
   const batch=JSON.parse(raw);check(batch.date===date,"Staging date/key mismatch");
   const cards=validateStagedPickBatch(batch);
-  // Future editions remain in private staging until official scratch-final release.
-  if(requiresFinalPickField(date))continue;
+  // Owner-authorized initial edition: release the exact validated prescratch stage.
+  // Scratch revisions are separately gated; this never overwrites an existing edition.
   // Before any write, independently verify the exact immutable approved
   // upstream snapshot and its staging manifest. No alternate score is accepted.
   if(batch.tracks.some(r=>r.canonical_source)){
@@ -177,7 +176,7 @@ export async function prepareScheduledPickStages(env,now=Date.now()){
     check(storedCard.track===card.track&&storedCard.date===date&&storedCard.sequences.every(s=>s.review_probabilities),"Existing edition incomplete; hold");
    }else{
     const content=JSON.stringify(card);
-    await env.CARDS_BUCKET.put(target,content,{onlyIf:{etagDoesNotMatch:"*"},httpMetadata:{contentType:"application/json",cacheControl:"private, no-store"},customMetadata:{customer_publish_approved:"true",publication_mode:"owner-approved-gpt",revision:String(card.revision),source_sha256:card.source_input_sha256,content_sha256:await sha(content),staged_release_at:batch.release_at}});
+    await env.CARDS_BUCKET.put(target,content,{onlyIf:{etagDoesNotMatch:"*"},httpMetadata:{contentType:"application/json",cacheControl:"private, no-store"},customMetadata:{customer_publish_approved:"true",publication_mode:"owner-approved-gpt",revision:String(card.revision),source_sha256:card.source_input_sha256,content_sha256:await sha(content),staged_release_at:batch.release_at,initial_stage_sha256:digest}});
     const confirm=await env.CARDS_BUCKET.get(target);
     check(confirm&&await confirm.text()===content,"Stage write/readback conflict");
    }
