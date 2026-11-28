@@ -25,11 +25,13 @@ client = boto3.client("s3", region_name="auto",
 JS = """
 import fs from 'node:fs';
 import path from 'node:path';
-import {readRaceDayPulse} from './src/race-day-pulse.js';
+import {readRaceDayPulse,paceInsightsForRace} from './src/race-day-pulse.js';
 const {date,now,objects}=JSON.parse(fs.readFileSync(0,'utf8'));
 const map=new Map(objects.map(x=>[x.key,x]));
 const counts={dashboard_tracks:0,original_tracks:0,final_tracks:0,paired_tracks:0,final_without_baseline:0,unverified_lineage:0,certified_lineage:0,active_field_changes:0,eligible_items:0};
 const hash=/^[a-f0-9]{64}$/i;
+counts.pace_provenance_tracks=0;counts.pace_held_tracks=0;counts.race_pace_changes_verified=0;counts.pace_fit_or_race_changes_verified=0;counts.pace_candidates_held_provenance=0;
+const levels=new Set(['weak','moderate','strong']);
 for(const [key,v] of map){
   if(key.startsWith('race-day-pulse/prescratch/')){counts.original_tracks++;continue;}
   if(!key.startsWith('projections/dashboard/'))continue;
@@ -44,8 +46,10 @@ for(const [key,v] of map){
   const direct=hash.test(original.f4_sha256||'')&&original.f4_sha256===receipts.prescratch_parent_sha256;
   const replay=stored&&Object.keys(stored).length===Object.keys(original).length&&Object.entries(original).every(([k,v])=>stored[k]===v)&&hash.test(proof.replay_tri_sha256||'')&&proof.replay_f4_sha256===receipts.prescratch_parent_sha256;
   if(!(direct||replay))counts.unverified_lineage++;else counts.certified_lineage++;
+  const provenance=old.badge_evaluator_version==='TBS_FACTOR_BADGE_EVALUATOR_V1_2_6_FIT_CLASS_FORM_GUARDS'&&hash.test(old.badge_source_sha256||'')&&hash.test(v.metadata?.badge_sha256||'');
+  if(provenance)counts.pace_provenance_tracks++;else counts.pace_held_tracks++;
   const prev=new Map((old.races||[]).map(r=>[r.race_number,r]));
-  for(const race of c.races||[]){const p=prev.get(race.race_number);if(!p)continue;const a=new Set((p.entries||[]).map(e=>String(e.program_number)));if((race.entries||[]).some(e=>!a.has(String(e.program_number))))counts.active_field_changes++;}
+  for(const race of c.races||[]){const p=prev.get(race.race_number);if(!p)continue;const a=new Set((p.entries||[]).map(e=>String(e.program_number)));if((race.entries||[]).some(e=>!a.has(String(e.program_number))))counts.active_field_changes++; if(direct||replay){const pace=paceInsightsForRace(date,c.track_name,p,race,null);if(provenance){counts.pace_fit_or_race_changes_verified+=pace.length;counts.race_pace_changes_verified+=pace.filter(x=>x.race_pace).length;}else counts.pace_candidates_held_provenance+=pace.length;}}
 }
 const bucket={
   async list({prefix}){return {objects:[...map.keys()].filter(k=>k.startsWith(prefix)).map(key=>({key,uploaded:new Date(map.get(key).uploaded||now)})),truncated:false};},
