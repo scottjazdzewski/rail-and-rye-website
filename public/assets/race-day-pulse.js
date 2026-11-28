@@ -178,8 +178,9 @@
     const group=$('div','rr-pulse-share-group'),share=$('button','rr-pulse-tool','Share');
     share.type='button';share.setAttribute('aria-label','Share '+raceLabel(item));share.setAttribute('aria-expanded','false');
     const menu=$('div','rr-pulse-menu');menu.hidden=true;
-    const social=$('button','','Share to X'),download=$('button','','Download Card'),copy=$('button','','Copy Link');
-    for(const button of [social,download,copy])button.type='button';
+    const social=$('button','','Share to X'),download=$('button','','Download Card'),copy=$('button','','Copy Link'),photo=$('button','rr-pulse-save-photo','Save to Photos');
+    for(const button of [social,download,copy,photo])button.type='button';
+    photo.disabled=true;
     const notice=$('span','rr-pulse-menu-status');notice.setAttribute('role','status');
     const preview=$('p','rr-pulse-preview-status','Checking social preview…');preview.setAttribute('role','status');
     const link=$('a','rr-pulse-share-fallback',shareUrl(item));link.href=shareUrl(item);link.hidden=true;
@@ -193,8 +194,8 @@
     function prepare(){
       if(blob)return Promise.resolve(blob);
       if(preparing)return preparing;
-      download.disabled=true;notice.textContent='Preparing download…';
-      preparing=socialImage(item).then(value=>{blob=value;notice.textContent='';return value;}).catch(()=>{notice.textContent='Image unavailable. Close and reopen Share to retry.';return null;}).finally(()=>{download.disabled=!blob;preparing=null;});
+      download.disabled=photo.disabled=true;notice.textContent='Preparing download…';
+      preparing=socialImage(item).then(value=>{blob=value;notice.textContent='';return value;}).catch(()=>{notice.textContent='Image unavailable. Close and reopen Share to retry.';return null;}).finally(()=>{download.disabled=photo.disabled=!blob;preparing=null;});
       return preparing;
     }
     async function copyOrReveal(){
@@ -202,6 +203,30 @@
     }
     copy.addEventListener('click',async()=>{notice.textContent=await copyOrReveal()?'Link copied.':'Copy the insight link below.';});
     download.addEventListener('click',()=>{if(blob){downloadBlob(blob,shareFilename(item));notice.textContent='Card downloaded.';}});
+    photo.addEventListener('click',async()=>{
+      if(!blob)return;
+      const file=new File([blob],shareFilename(item),{type:'image/png'});
+      // The PNG was prepared when Share opened. Invoke native sharing directly
+      // on the tap, while iOS still has user activation.
+      try{
+        if(navigator.share&&navigator.canShare?.({files:[file]})){
+          await navigator.share({files:[file]});
+          notice.textContent='Use Save Image in the share sheet to add it to Photos.';
+          return;
+        }
+      }catch(error){
+        if(error?.name==='AbortError')return;
+      }
+      // Unsupported browser: display an actual PNG for touch-and-hold saving.
+      const image=$('img','rr-pulse-photo-preview');
+      image.alt='Race-Day Pulse card — touch and hold to save image';
+      const url=URL.createObjectURL(blob);image.src=url;
+      const dialog=$('dialog','rr-pulse-photo-dialog'),done=$('button','rr-pulse-tool','Close');
+      done.type='button';done.addEventListener('click',()=>dialog.close());
+      dialog.append($('p','','Touch and hold the image, then choose Save Image or Save to Photos.'),image,done);
+      dialog.addEventListener('close',()=>{URL.revokeObjectURL(url);dialog.remove();share.focus();},{once:true});
+      document.body.append(dialog);dialog.showModal();
+    });
     social.addEventListener('click',()=>{
       if(!previewReady)return;
       const url=shareUrl(item),text=item.short_message||item.message;
@@ -210,7 +235,7 @@
       window.open('https://x.com/intent/tweet?text='+encodeURIComponent(text)+'&url='+encodeURIComponent(url),'_blank','noopener,noreferrer');
       notice.textContent='If X does not show the preview, download the card and attach it manually.';
     });
-    menu.append(social,download,copy,preview,notice,link);
+    menu.append(social,photo,download,copy,preview,notice,link);
     function close(){menu.hidden=true;menu.remove();share.setAttribute('aria-expanded','false');if(closeShare===close)closeShare=null;}
     share.addEventListener('click',()=>{
       if(closeShare===close){close();return;}
