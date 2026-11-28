@@ -403,3 +403,9 @@
  .heritage-home>.rr-pulse .rr-pulse-compact-actions .rr-pulse-compact-open{margin:0;padding-inline:7px}
  .heritage-home>.rr-pulse .rr-pulse-compact-actions .rr-pulse-tool{min-height:44px;padding-inline:7px;font-size:10px}
 }
+
+/* Tablet rails preview the next card. Give the final real card enough trailing
+   scroll room to reach the same leading snap position; no duplicate story. */
+@media(min-width:641px) and (max-width:1120px){
+ .rr-pulse:not(.rr-pulse-expanded) .rr-pulse-rail:has(>.rr-pulse-item:nth-child(2))::after{content:"";flex:0 0 max(0px,calc(100% - 470px - 9px));pointer-events:none}
+}
