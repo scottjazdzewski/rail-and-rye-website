@@ -195,7 +195,8 @@ try{
   // A click opens manual share menu; never posts to X without the user.
   await page.locator('.rr-pulse-item-footer .rr-pulse-tool').first().click();
   assert.ok(await page.locator('.rr-pulse-menu').first().isVisible(),'Share control shows manual actions');
-  assert.deepEqual(await page.locator('.rr-pulse-menu button').allTextContents(),['Share to X','Download Card','Copy Link']);
+  assert.deepEqual(await page.locator('.rr-pulse-menu button:visible').allTextContents(),['Share to X','Download Card','Copy Link']);
+  assert.ok(await page.getByRole('button',{name:'Save to Photos',includeHidden:true}).isHidden());
   const href=await page.locator('.rr-pulse-menu a').first().getAttribute('href');
   assert.ok(new URL(href).pathname.startsWith('/pulse/'),'Share links to specific alert');
   if(width===1280){
