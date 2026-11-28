@@ -2,7 +2,7 @@ name: Prepare approved Pulse social cards
 on:
   workflow_dispatch:
   schedule:
-    - cron: '*/15 * * * *'
+    - cron: '*/15 0-7,13-23 * * *'
 permissions:
   contents: read
 concurrency:
@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   render:
-    if: github.ref == 'refs/heads/main' && vars.PULSE_SOCIAL_RELEASE_APPROVED == 'true'
+    if: github.ref == 'refs/heads/main' && vars.PULSE_SOCIAL_RELEASE_APPROVED != 'false'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -25,7 +25,9 @@ jobs:
           node --input-type=module <<'JS'
           import fs from 'node:fs';
           const f=JSON.parse(fs.readFileSync('/tmp/pulse-feed.json','utf8'));
+          if(f.status==='disabled'){fs.appendFileSync(process.env.GITHUB_OUTPUT,'missing=0\n');process.exit(0);}
           if(f.status!=='ok'||!Array.isArray(f.items)||f.preview)throw Error('Public feed unavailable');
+          if(f.date<'2026-11-28')throw Error('Before approved first racing day');
           const missing=[];
           for(const item of f.items){
             if(!/^\d{4}-\d{2}-\d{2}$/.test(item.date)||item.date!==f.date||!/^[-a-z0-9]{2,120}$/.test(item.id)||item.id.startsWith('demo-'))throw Error('Unexpected public item');
@@ -39,7 +41,7 @@ jobs:
       - name: Render only new public insights
         if: steps.feed.outputs.missing != '0'
         run: |
-          npm install --no-save --no-package-lock playwright
+          npm install --no-save --no-package-lock playwright@1.56.1
           npx playwright install --with-deps chromium
           mkdir -p /tmp/pulse-social
           node scripts/render-pulse-social.mjs --feed /tmp/pulse-feed.json --out /tmp/pulse-social
@@ -50,7 +52,7 @@ jobs:
           TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
           TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
         run: |
-          python -m pip install --quiet boto3
+          python -m pip install --quiet boto3==1.40.36
           python - <<'PY'
           import boto3, os, re, struct, pathlib, urllib.request, time
           from botocore.exceptions import ClientError
