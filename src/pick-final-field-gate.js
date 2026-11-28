@@ -1,7 +1,8 @@
-// Forward hard gate for ALL customer Pick Tickets, including direct R2 uploads.
+// Forward hard gate for scratch revisions and non-staged customer uploads.
+// Verified initial rollover editions use the separate stage-bound reader lane.
 // No model changes. Official evidence is supplied by the private Race Cards run.
 import {verifyCertifiedScratchFinalTrack} from "./f4-exotics.js";
-export const PICK_FINAL_FIELD_GATE_VERSION="2026-11-28-final-field-v1";
+export const PICK_FINAL_FIELD_GATE_VERSION="2026-11-28-initial-then-scratch-v2";
 export const requiresFinalPickField=date=>typeof date==="string"&&date>="2026-11-28";
 const need=(ok,msg)=>{if(!ok)throw Error("PICK_SCRATCH_HOLD: "+msg)};
 const hash=s=>typeof s==="string"&&/^[a-f0-9]{64}$/.test(s);
