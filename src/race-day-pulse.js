@@ -24,6 +24,13 @@ function newYorkCutoff(now){
   const day=parts.year+'-'+parts.month+'-'+parts.day;
   return Number(parts.hour)>=3?day:new Date(Date.parse(day+'T00:00:00Z')-86400000).toISOString().slice(0,10);
 }
+// Owner-approved first racing day. The optional start-date gate is evaluated
+// at the same Eastern 3AM cutoff as the feed, never the server's UTC date.
+export function pulseReleaseEnabled(env,now=Date.now()){
+  if(env?.PULSE_PUBLICATION_ENABLED!=='true')return false;
+  const start=env.PULSE_PUBLICATION_START_DATE;
+  return start===undefined||start===''||(DATE.test(start)&&newYorkCutoff(now)>=start);
+}
 function runners(race){
   const map=new Map();
   if(!Array.isArray(race?.entries))return null;
@@ -363,7 +370,7 @@ export async function handlePulseApi(request,env){
   if(request.method!=='GET'&&request.method!=='HEAD')return result({error:'Method not allowed'},405);
   // Explicit owner release only. A future merge/staging build must not turn
   // uncalibrated research results into live public posts by accident.
-  if(env?.PULSE_PUBLICATION_ENABLED!=='true')
+  if(!pulseReleaseEnabled(env))
     return new Response(JSON.stringify({date:newYorkCutoff(Date.now()),items:[],status:'disabled'}),{
       headers:{...HEADERS,'Cache-Control':'no-store'}});
   // Cache sanitized, public-only output at the Cloudflare edge, not private R2
@@ -395,7 +402,7 @@ const socialKey=(date,id)=>'race-day-pulse/social/v1/'+date+'/'+id+'.png';
 export async function handlePulseImage(request,env,route){
   const fail=(status)=>new Response(null,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
   if(request.method!=='GET'&&request.method!=='HEAD')return fail(405);
-  if(env?.PULSE_PUBLICATION_ENABLED!=='true')return fail(404);
+  if(!pulseReleaseEnabled(env))return fail(404);
   const [,date,id]=route;
   if(!/^[-a-z0-9]{2,120}$/.test(id)||!await archivedPulse(env,date,id))return fail(404);
   const object=await env.CARDS_BUCKET.get(socialKey(date,id));
@@ -410,7 +417,7 @@ export async function handlePulseImage(request,env,route){
 }
 export async function handlePulsePage(request,env,route){
   if(request.method!=='GET'&&request.method!=='HEAD')return new Response('Method not allowed',{status:405});
-  if(env?.PULSE_PUBLICATION_ENABLED!=='true')
+  if(!pulseReleaseEnabled(env))
     return new Response('Race-Day Pulse is not published.',{status:404,
       headers:{'Cache-Control':'no-store','X-Robots-Tag':'noindex, nofollow'}});
   const [,date,id]=route;
