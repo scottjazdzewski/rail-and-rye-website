@@ -353,6 +353,7 @@
     const paid=$('a','rr-pulse-paid-link','Full-Field Analysis');paid.href=typeof item.hub_url==='string'&&item.hub_url.startsWith('/')&&!item.hub_url.startsWith('//')?item.hub_url:'/store/';
     links.append(original,paid);footer.append(links,shareTools(item));article.append(footer);
     // Mobile homepage shows the entire essential insight; full actions live on the detail page.
+    if(detailMode)return article;
     const compact=$('a','rr-pulse-compact-open','Open Pulse');compact.href=pulseUrl(item);
     const compactActions=$('div','rr-pulse-compact-actions');
     compactActions.append(compact,shareTools(item));
