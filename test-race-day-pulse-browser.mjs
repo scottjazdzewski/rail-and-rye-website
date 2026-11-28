@@ -9,7 +9,7 @@ const date='2026-11-26';
 const make=(i)=>({
  id:'synthetic-downs-race-'+(i+1),date,track:'Synthetic Downs',
  race_number:i+1,post_time_et:'3:15 PM ET',updated_at:'2026-11-26T13:00:00Z',
- kind:i%2?'WIN_SHIFT':'NEW_FAVORITE',
+ kind:i===2?'FAVORITE_SCRATCHED':i===4?'F4_SHIFT':i%2?'WIN_SHIFT':'NEW_FAVORITE',
  chip:String((i%12)+1),horse:'Sample Runner '+i,
  scratches:[{program:'3',horse:'Scratch Three'},{program:'12A',horse:'Scratch Twelve A'}],
  headline:i%2?'Scratch-Driven Projection Shift':'New Projected Favorite',
@@ -95,6 +95,8 @@ try{
   assert.ok((await page.locator('.rr-pulse-headline').first().innerText()).includes('Sample Runner 0'));
   assert.equal(await page.locator('.rr-pulse-logo').count(),1,'Approved brand mark appears in Pulse');
   assert.match(await page.locator('.rr-pulse-track').first().innerText(),/3:15 PM ET/);
+  assert.equal(await page.locator('.rr-pulse-item').nth(2).locator('.rr-pulse-signal--scratch').getAttribute('aria-label'),'PROJECTED FAVORITE SCRATCHED');
+  assert.equal(await page.locator('.rr-pulse-item').nth(4).locator('.rr-pulse-signal--rank').getAttribute('aria-label'),'SECOND-OR-THIRD PROBABILITY SHIFT');
   assert.match(await page.locator('.rr-pulse-headline').first().evaluate(el=>getComputedStyle(el).fontFamily),/^Inter/);
   const editorial=page.locator('.rr-pulse-message').first();
   assert.match(await editorial.evaluate(el=>getComputedStyle(el).fontFamily),/Montserrat/);
