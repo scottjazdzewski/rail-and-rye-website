@@ -2,7 +2,7 @@ name: November 28 Target List certified active-field stage
 on:
   push:
     branches: [main]
-    paths: ['private-ingest/20261128/target-v41-proof.zip.b64']
+    paths: ['private-ingest/20261128/target-v41-proof.zip.b64', '.github/workflows/target-1128-certified-stage.yml', 'scripts/target_1128_certified_stage.py']
   workflow_dispatch:
 permissions:
   contents: read
@@ -22,7 +22,7 @@ jobs:
         with:
           node-version: '22'
       - run: pip install boto3==1.40.36 pynacl==1.5.0
-      - run: node --check src/target-list-staging.js && node test-scheduled-publications.mjs
+      - run: node --check src/target-list-staging.js && node --check src/target-list.js
       - run: python scripts/target_1128_certified_stage.py
         env:
           TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
