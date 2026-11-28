@@ -23,7 +23,9 @@ const ml=value=>{
 export async function prepareScheduledTargetStages(env,now=Date.now()){
  if(!env?.CARDS_BUCKET||!env?.STORE_DB)return {prepared:0,deferred:0};
  let prepared=0,deferred=0;
+ const failures=[];
  for(const date of todayAndTomorrow(now)){
+  try{
   const expiration=pdfExpiryFromRaceDate(date);
   if(!expiration||racePdfExpired(expiration,now))continue;
   const stageKey=stageRoot+date+'/revision-0001.json';
@@ -149,6 +151,11 @@ export async function prepareScheduledTargetStages(env,now=Date.now()){
   const receipt={date,sha256:digest,release_at:meta.release_at,editorial_sha256:packet.editorial_sha256,source_sha256:packet.source_zip_sha256,product_id:published.product_id,targets:approved.targets.length,original_targets:packet.targets.length,heldSelections,display_source_parity:true,max_scored_site_pct_delta:Math.round(maxSourceDelta*1e7)/1e7,catalog_release_at:catalog.release_at,prepared_at:new Date().toISOString()};
   await env.CARDS_BUCKET.put(marker,JSON.stringify(receipt),{httpMetadata:{contentType:'application/json',cacheControl:'private,no-store'},customMetadata:{sha256:await hash(JSON.stringify(receipt)),release_at:meta.release_at,stage_only:'false'}});
   prepared++;
+  }catch(error){
+   // Keep each date fail-closed, but an invalid earlier edition must not block a later certified stage.
+   failures.push(date+': '+String(error?.message||error));
+  }
  }
+ if(failures.length)throw Error('Target List dated stage reconciliation: '+failures.join('; '));
  return {prepared,deferred};
 }
