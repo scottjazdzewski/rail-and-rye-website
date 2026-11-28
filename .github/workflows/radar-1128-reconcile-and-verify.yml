@@ -1,0 +1,72 @@
+name: November 28 Radar final reconciliation and customer queue
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/radar-1128-reconcile-and-verify.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: radar-1128-stage
+  cancel-in-progress: false
+jobs:
+  stage:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: pip install --quiet pynacl==1.5.0 boto3==1.40.36
+      - name: Reconcile exact canonical fields and stage
+        env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+        run: python scripts/radar_1128_stage.py
+      - name: Verify exact private stage and scheduled customer queue
+        env:
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+        run: |
+          PYTHONPATH=scripts python - <<'PY'
+          import os,json,hashlib,time,boto3,urllib.request
+          from botocore.exceptions import ClientError
+          from radar_1128_stage import D,DUE,P,SRC,BUCKET
+          s=boto3.client("s3",endpoint_url="https://"+os.environ["TRI_CLOUDFLARE_ACCOUNT_ID"].strip()+".r2.cloudflarestorage.com",region_name="auto",aws_access_key_id=os.environ["TRI_R2_ACCESS_KEY_ID"].strip(),aws_secret_access_key=os.environ["TRI_R2_SECRET_ACCESS_KEY"].strip())
+          def get(k):
+           try:
+            o=s.get_object(Bucket=BUCKET,Key=k);return o["Body"].read(),o["Metadata"]
+           except ClientError as e:
+            if e.response["Error"]["Code"] in ("NoSuchKey","404","NotFound"):return None,{}
+            raise
+          raw,m=get(P+"revision-0001.json")
+          assert raw and m["stage_only"]=="true" and m["release_at"]==DUE
+          digest=hashlib.sha256(raw).hexdigest()
+          assert m["sha256"]==digest and m["source_sha256"]==SRC and len(json.loads(raw)["candidates"])==14
+          print("RADAR_PRIVATE_STAGE_READBACK_PASS",digest,flush=True)
+          for i in range(120):
+           receipt,_=get(P+"prepared-0001.json")
+           if receipt:
+            r=json.loads(receipt)
+            assert r["sha256"]==digest and r["date"]==D and r["release_at"]==DUE and r["catalog_release_at"]=="2026-11-28 08:00:00" and r["product_id"] and r["candidates"]==14
+            review,rm=get("intelligence/longshot-radar/review/"+D+".json")
+            customer,cm=get("racing-intelligence/product-tabs/longshot-radar/"+D+".json")
+            assert review==raw and rm["review_only"]=="true"
+            assert customer==raw and cm["customer_publish_approved"]=="true" and cm["content_sha256"]==digest
+            print("RADAR_CATALOG_QUEUE_VERIFIED",r["prepared_at"],"14 selections",r["catalog_release_at"],flush=True)
+            break
+           time.sleep(5)
+          else: raise RuntimeError("Customer queue marker not yet present")
+          req=urllib.request.Request("https://railandryeracing.com/api/products?qa=radar-nov28",headers={"Cache-Control":"no-cache","User-Agent":"RailRyeReleaseQA/1"})
+          with urllib.request.urlopen(req,timeout=25) as resp: products=json.load(resp)["products"]
+          rows=products+[item for p in products for item in p.get("included_products",[])]
+          assert not any(p.get("race_date")==D for p in rows)
+          assert any(p.get("race_date")=="2026-11-27" and p.get("category")=="Longshot Radar" for p in rows)
+          print("RADAR_PUBLIC_CUTOFF_PASS current edition remains available",flush=True)
+          PY
