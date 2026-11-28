@@ -37,6 +37,7 @@ try{
      console.log(name,width,i,JSON.stringify(g));
     }
     await page.locator('#rr-pulse-prev').click();
+    await page.waitForFunction(i=>{const rail=document.querySelector('#rr-pulse-rail');return Math.abs(rail.children[i].getBoundingClientRect().left-rail.getBoundingClientRect().left)<1.5},count-2);
     await page.evaluate(()=>window.scrollTo(0,0));
     await page.screenshot({path:'pulse-mobile-homepage/'+name+'-'+width+'-viewport.png'});
     await page.screenshot({path:'pulse-mobile-homepage/'+name+'-'+width+'-full.png',fullPage:true});
