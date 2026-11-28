@@ -1,0 +1,43 @@
+name: Audit live Pulse social previews
+on:
+  pull_request:
+    paths: ['.github/workflows/pulse-social-live-audit.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Verify public image bytes and share metadata without posting
+        run: |
+          python - <<'PY'
+          import urllib.request, urllib.error, json, struct, concurrent.futures
+          from html.parser import HTMLParser
+          base='https://railandryeracing.com'
+          def get(url):
+              with urllib.request.urlopen(urllib.request.Request(url,headers={'User-Agent':'RailRyeSocialQA/1.0'}),timeout=15) as response:
+                  return response.read(),response.headers.get_content_type()
+          class Meta(HTMLParser):
+              def __init__(self):super().__init__();self.meta={}
+              def handle_starttag(self,tag,attrs):
+                  a=dict(attrs)
+                  if tag=='meta':self.meta[a.get('property') or a.get('name')]=a.get('content')
+          feed=json.loads(get(base+'/api/race-day-pulse')[0])
+          assert feed['status']=='ok' and not feed.get('preview')
+          def verify(i):
+              url=base+'/pulse/'+i['date']+'/'+i['id']
+              try:
+                  html,_=get(url)
+                  p=Meta();p.feed(html.decode())
+                  png,kind=get(url+'/card-v1.png')
+                  assert kind=='image/png' and png[:8]==b'\x89PNG\r\n\x1a\n' and struct.unpack('>II',png[16:24])==(1200,675)
+                  assert p.meta.get('og:image')==url+'/card-v1.png'
+                  assert p.meta.get('twitter:image')==url+'/card-v1.png' and p.meta.get('twitter:card')=='summary_large_image'
+                  return True,i['id'],'ok'
+              except Exception as e:return False,i['id'],str(e)
+          with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool: results=list(pool.map(verify,feed['items']))
+          print('PULSE_SOCIAL_LIVE_AUDIT',json.dumps({'date':feed['date'],'items':len(results),'verified':sum(x[0] for x in results),'failed':[x[1:] for x in results if not x[0]]}))
+          assert results and all(x[0] for x in results)
+          PY
