@@ -1,0 +1,49 @@
+name: Verify November 28 Target List release queue
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/target-1128-verify-queue.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install boto3==1.40.36
+      - env:
+          TRI_R2_SECRET_ACCESS_KEY: ${{ secrets.TRI_R2_SECRET_ACCESS_KEY }}
+          TRI_R2_ACCESS_KEY_ID: ${{ secrets.TRI_R2_ACCESS_KEY_ID }}
+          TRI_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.TRI_CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          python - <<'PY'
+          import os,json,hashlib,time,boto3
+          from botocore.exceptions import ClientError
+          s=boto3.client('s3',region_name='auto',endpoint_url='https://'+os.environ['TRI_CLOUDFLARE_ACCOUNT_ID'].strip()+'.r2.cloudflarestorage.com',aws_access_key_id=os.environ['TRI_R2_ACCESS_KEY_ID'].strip(),aws_secret_access_key=os.environ['TRI_R2_SECRET_ACCESS_KEY'].strip())
+          b='rail-and-rye-private-cards'
+          def get(k):
+           try:
+            x=s.get_object(Bucket=b,Key=k);return x['Body'].read()
+           except ClientError as e:
+            if e.response['Error']['Code'] in ('404','NoSuchKey','NotFound'):return None
+            raise
+          p='intelligence/target-list/staging/'
+          for date in ['2026-11-27','2026-11-28']:
+           print('DATE',date,'STAGE',bool(get(p+date+'/revision-0001.json')),'PREPARED',bool(get(p+date+'/prepared-0001.json')))
+          p+='2026-11-28/'
+          stage=get(p+'revision-0001.json');qa=get(p+'qa-0001.json')
+          assert stage and qa,'Stage or QA absent'
+          q=json.loads(qa);assert q['stage_sha256']==hashlib.sha256(stage).hexdigest() and q['selected_races']==18 and q['roles']==1962
+          print('CERTIFIED_STAGE_VERIFIED',q['stage_sha256'])
+          for _ in range(10):
+           raw=get(p+'prepared-0001.json')
+           if raw:
+            r=json.loads(raw);assert r['sha256']==q['stage_sha256'] and r['targets']==18 and r['catalog_release_at']=='2026-11-28 08:00:00' and r['product_id'] and r['display_source_parity'] is True
+            print('TARGET_1128_QUEUE_VERIFIED',r['targets'],r['catalog_release_at']);break
+           time.sleep(5)
+          else: print('TARGET_1128_PREPARED_RECEIPT_NOT_YET_PRESENT')
+          PY
