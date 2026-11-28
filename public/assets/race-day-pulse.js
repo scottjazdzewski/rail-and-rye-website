@@ -220,9 +220,14 @@
   const signalLabels={scratch:'SCRATCH IMPACT',favorite:'NEW PROJECTED FAVORITE',pace:'PACE ADVANTAGE',rank:'RANK MOVEMENT'};
   function signal(item){return item.kind==='FAVORITE_SCRATCHED'?'PROJECTED FAVORITE SCRATCHED':item.kind==='F4_SHIFT'?'SECOND-OR-THIRD PROBABILITY SHIFT':signalLabels[signalType(item)];}
   const signalArt={
+    // Probability movement, not an X or a close/delete affordance.
     scratch:[
-      {d:'M7 3H21Q23 3 22.5 5L20 19Q19.6 21 17 21H3Q1 21 1.5 19L4 5Q4.5 3 7 3Z',fill:'#ed8b27',stroke:'#f6f0e5',w:1.2},
-      {d:'M8 7L15 17M17 7L10 17',stroke:'#10283d',w:2.7}
+      {d:'M3 3V21H22',stroke:'#c5b994',w:1.5},
+      {d:'M5.5 16L10 11.5L14 14L21 5.5M16 5.5H21V10.5',stroke:'#e6b650',w:2.5}
+    ],
+    scratchDown:[
+      {d:'M3 3V21H22',stroke:'#c5b994',w:1.5},
+      {d:'M5.5 7L10 11.5L14 9L21 18M16 18H21V13',stroke:'#f0ad9e',w:2.5}
     ],
     favorite:[
       {d:'M12 1L13.8 5.4L18.6 5.7L14.9 8.8L16.1 13.3L12 10.7L7.9 13.3L9.1 8.8L5.4 5.7L10.2 5.4Z',fill:'#e6b650'},
@@ -246,7 +251,8 @@
     svg.setAttribute('viewBox','0 0 100 100');svg.setAttribute('aria-hidden','true');svg.setAttribute('class','rr-pulse-category-icon');
     svg.innerHTML='<defs><linearGradient id="'+id+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#38586c"/><stop offset=".55" stop-color="#173449"/><stop offset="1" stop-color="#0b2033"/></linearGradient></defs><rect x="2" y="2" width="96" height="96" rx="22" fill="url(#'+id+')" stroke="#d0ae6a" stroke-width="2"/><rect x="5" y="5" width="90" height="90" rx="19" fill="none" stroke="#efd39a" stroke-opacity=".23"/>';
     const g=document.createElementNS(ns,'g');g.setAttribute('transform','translate(15 15) scale(2.9166667)');
-    for(const part of signalArt[signalType(item)]){const p=document.createElementNS(ns,'path');p.setAttribute('d',part.d);p.setAttribute('fill',part.fill||'none');if(part.stroke){p.setAttribute('stroke',part.stroke);p.setAttribute('stroke-width',part.w);p.setAttribute('stroke-linecap','round');p.setAttribute('stroke-linejoin','round');}g.append(p);}svg.append(g);return svg;
+    const type=signalType(item),art=type==='scratch'&&item.metric?.after<item.metric?.before?'scratchDown':type;
+    for(const part of signalArt[art]){const p=document.createElementNS(ns,'path');p.setAttribute('d',part.d);p.setAttribute('fill',part.fill||'none');if(part.stroke){p.setAttribute('stroke',part.stroke);p.setAttribute('stroke-width',part.w);p.setAttribute('stroke-linecap','round');p.setAttribute('stroke-linejoin','round');}g.append(p);}svg.append(g);return svg;
   }
   async function drawSignalMedallion(c,item,x,y,size){
     const svg=signalIcon(item);svg.setAttribute('width','100');svg.setAttribute('height','100');
