@@ -1,6 +1,5 @@
 """Preserve exact certified original dashboard bytes, never a reconstructed field."""
 import hashlib,json,re
-from botocore.exceptions import ClientError
 HEX=re.compile(r"^[a-f0-9]{64}$",re.I)
 def digest(raw):return hashlib.sha256(raw).hexdigest()
 def validate_original(raw,date,track):
@@ -24,8 +23,8 @@ def preserve(client,bucket,slug,date,track,raw,expected_sha):
     created=True
     try:
         client.put_object(Bucket=bucket,Key=key,Body=raw,IfNoneMatch="*",ContentType="application/json",CacheControl="private,no-store",Metadata={"stage":"PRESCRATCH_PULSE_BASE","original_source_sha256":expected_sha})
-    except ClientError as exc:
-        if exc.response["ResponseMetadata"]["HTTPStatusCode"]!=412:raise
+    except Exception as exc:
+        if getattr(exc,'response',{}).get('ResponseMetadata',{}).get('HTTPStatusCode')!=412:raise
         created=False
     saved=client.get_object(Bucket=bucket,Key=key)["Body"].read()
     assert saved==raw,"Existing immutable original differs; hold Pulse for track"
