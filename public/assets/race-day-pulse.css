@@ -418,3 +418,8 @@
 .rr-pulse-photo-dialog::backdrop{background:#000a}
 .rr-pulse-photo-dialog p{font:500 14px/1.4 Inter,Arial,sans-serif;margin:0 0 8px}
 .rr-pulse-photo-preview{display:block;width:auto;max-width:100%;max-height:68dvh;margin:0 auto 10px;object-fit:contain;-webkit-touch-callout:default;user-select:auto}
+
+/* Stable carousel geometry: all cards share the tallest natural card height
+   at the current responsive width. No text clipping or per-slide height changes. */
+.rr-pulse:not(.rr-pulse-detail):not(.rr-pulse-expanded) .rr-pulse-rail{align-items:stretch;height:auto}
+.rr-pulse:not(.rr-pulse-detail):not(.rr-pulse-expanded) .rr-pulse-rail>.rr-pulse-item{align-self:stretch;height:auto}
