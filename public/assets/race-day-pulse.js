@@ -134,7 +134,7 @@
     panel(X,py,B,ph,portrait?22:16,true);
     txt(m.label,X+20,py+(portrait?46:31),portrait?31:23,gold,800,B-40);
     const aX=X+(portrait?26:24),bX=X+B*.54,barW=B*(portrait?.40:.39);
-    const diff=item.metric.after-item.metric.before,col=diff>0?'#79d4a6':diff<0?'#f0ad9e':gold;
+    const diff=displayDelta(item.metric),col=diff>0?'#79d4a6':diff<0?'#f0ad9e':gold;
     const captionY=py+(portrait?100:63),numberY=py+(portrait?208:132),barY=py+(portrait?228:143);
     txt('ORIGINAL',aX,captionY,portrait?27:19,muted,750);
     txt('REVISED',bX,captionY,portrait?27:19,gold,750);
@@ -317,6 +317,7 @@
     const names={red:'Negative',gray:'Neutral',green:'Positive'},el=$('div','rr-pulse-pace-comparison');
     el.append($('span','rr-pulse-pace-label','PACE FIT'),$('span','rr-pulse-fit rr-pulse-fit--'+m.before,names[m.before]),$('span','rr-pulse-arrow-mark','→'),$('span','rr-pulse-fit rr-pulse-fit--'+m.after,names[m.after]));return el;
   }
+  function displayDelta(m){return Math.round((Number(m.after.toFixed(1))-Number(m.before.toFixed(1)))*10)/10;}
   function metricText(item){
     const m=item.metric;
     if(!m||!Number.isFinite(m.before)||!Number.isFinite(m.after)||m.before<0||m.after<0||m.before>100||m.after>100)return null;
@@ -346,7 +347,7 @@
     const horseLine=$('div','rr-pulse-horse-line');horseLine.append(chip(item.chip),$('h3','rr-pulse-headline',m&&item.horse?item.horse:titleCaseWords(item.headline)));const identity=$('div','rr-pulse-identity');identity.append(top.firstChild,horseLine);const header=$('div','rr-pulse-card-header');header.append(identity,top.lastChild);body.append(header);
     if(m){
       const numbers=$('div','rr-pulse-numbers');
-      const diff=item.metric.after-item.metric.before;
+      const diff=displayDelta(item.metric);
       const movement=diff>0?'rr-pulse-up':diff<0?'rr-pulse-down':'rr-pulse-flat';
       const delta=$('span','rr-pulse-delta '+movement);
       delta.append($('span','rr-pulse-prob-value',(diff>0?'+':'')+diff.toFixed(1)),$('span','rr-pulse-prob-caption','PTS'));
@@ -357,7 +358,7 @@
     }else if(item.horse)body.append($('p','rr-pulse-affected',item.horse+' · #'+item.chip));
     // Editorial copy: preserve certified wording and emphasize only the featured identity.
     // Use text nodes, never HTML from a feed.
-    const message=String(item.short_message||item.message||'');
+    const message=String(detailMode?(item.message||item.short_message||''):(item.short_message||item.message||''));
     const editorial=$('p','rr-pulse-message');
     const horse=String(item.horse||'').trim(),program=String(item.chip||'').trim();
     const identityText=horse&&program?'#'+program+' '+horse:horse;
@@ -388,9 +389,9 @@
     }
     const footer=$('div','rr-pulse-item-footer');
     const links=$('div','rr-pulse-links');
-    const original=$('a','rr-pulse-story-link',detailMode?'Intelligence Hub':'Open Pulse');original.href=detailMode?'/store/':pulseUrl(item);
+    const original=$('a','rr-pulse-story-link',detailMode?'Back to Pulse':'Open Pulse');original.href=detailMode?'/?pulse='+encodeURIComponent(item.id)+'#rr-pulse':pulseUrl(item);
     if(!detailMode){original.setAttribute('aria-expanded','false');original.addEventListener('click',e=>{if(e.ctrlKey||e.metaKey||e.shiftKey||e.altKey||!matchMedia('(min-width:641px)').matches)return;e.preventDefault();if(expanded===article)collapseInsight();else expandInsight(article);});}
-    const paid=$('a','rr-pulse-paid-link','Full-Field Analysis');paid.href=typeof item.hub_url==='string'&&item.hub_url.startsWith('/')&&!item.hub_url.startsWith('//')?item.hub_url:'/store/';
+    const paid=$('a','rr-pulse-paid-link',detailMode&&item.detail_action_text?item.detail_action_text:'Full-Field Analysis');paid.href=typeof item.hub_url==='string'&&item.hub_url.startsWith('/')&&!item.hub_url.startsWith('//')?item.hub_url:'/store/';
     const share=shareTools(item);links.append(original,paid);footer.append(links,share);article.append(footer);
     // Mobile homepage shows the entire essential insight; full actions live on the detail page.
     if(detailMode)return article;
@@ -483,7 +484,7 @@
   const liveLogo=shell.querySelector('.rr-pulse-logo');if(liveLogo)transparentLogo().then(art=>{liveLogo.src=art.toDataURL('image/png');}).catch(()=>{});
   // Reuse the existing sitewide North American tote formatting authority.
   import('/assets/rr-race-titles.js').catch(()=>{}).finally(()=>{
-    if(detailMode){try{const item=JSON.parse(shell.dataset.pulseItem);rail.replaceChildren(buildCard(item));shell.hidden=false;scrollToIndex(0,'instant');}catch(error){console.warn('Pulse detail unavailable',error.message);}return;}
+    if(detailMode){try{const item=JSON.parse(shell.dataset.pulseItem);rail.replaceChildren(buildCard(item));shell.hidden=false;document.getElementById('rr-pulse-detail-fallback')?.remove();scrollToIndex(0,'instant');}catch(error){console.warn('Pulse detail unavailable',error.message);}return;}
     load();setInterval(load,60000);
   });
   if(!detailMode&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
